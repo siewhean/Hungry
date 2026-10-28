@@ -576,6 +576,20 @@ export interface RecentReviewFeedEntry {
   venueName: string;
 }
 
+/** Opaque keyset cursor for the next page of a stall's menu. */
+export interface VenueMenuCursor {
+  score: number | null;
+  id: string;
+  /** The stall photo, so later pages drop it from dishes that have no photo of their own. */
+  venueImageUrl?: string;
+}
+
+export interface VenueMenuPage {
+  dishes: DishDetail[];
+  /** Set while more of the menu may exist. */
+  nextCursor?: VenueMenuCursor;
+}
+
 /** One page of the review feed, with the cursor taken from the raw rows read. */
 export interface RecentReviewFeedPage {
   entries: RecentReviewFeedEntry[];
@@ -606,6 +620,8 @@ export interface ListRecentReviewsOptions {
   dishIds?: string[];
   /** Only reviews written for this stall (read by its indexed venue column, not a long dish-id list). */
   venueId?: string;
+  /** Only reviews with at least one photo (the Reviews grid); dish and stall pages leave it off. */
+  withPhotos?: boolean;
 }
 
 export interface SubmitMenuPhotoInput {
@@ -853,6 +869,8 @@ export interface HungryService {
     requestAccountDeletion(request?: AccountDeletionRequest): Promise<PendingAccountDeletion>;
     getPendingAccountDeletion(): Promise<PendingAccountDeletion | null>;
     cancelAccountDeletion(): Promise<boolean>;
+    /** True while the deletion worker is processing this account's request (too late to keep). */
+    isAccountDeletionProcessing(): Promise<boolean>;
     forgotPassword(email: string): Promise<void>;
     /** Exchanges the `?code` from the password-reset link; this signs the user in. */
     exchangeRecoveryCode(token: string): Promise<void>;
@@ -937,6 +955,13 @@ export interface HungryService {
       metadata?: Record<string, string | number | boolean | null>;
     }): Promise<void>;
     listDishesByVenue(venueId: string): Promise<DishDetail[]>;
+    /**
+     * A stall's menu one page at a time, so the first dishes show at once. With no cursor it
+     * returns the page that comes with the venue detail. Throws when a page cannot be read,
+     * so a cut-short menu never looks complete. Services without paging leave it out and the
+     * caller uses listDishesByVenue.
+     */
+    listDishesByVenuePage?(venueId: string, cursor?: VenueMenuCursor): Promise<VenueMenuPage>;
     listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
     listDiscoveryFeedByLocation(
       request: DiscoveryLocationFeedRequest,
@@ -995,6 +1020,10 @@ export interface HungryService {
      * implementation must refuse to write if the live session belongs to anyone else.
      */
     toggleFavourite(dishId: string, expectedUserId?: string): Promise<boolean>;
+    /** Saves (true) or removes (false) a favourite with one idempotent write; no read first. */
+    setFavourite(dishId: string, saved: boolean, expectedUserId?: string): Promise<boolean>;
+    /** Saves several favourites with one idempotent multi-row write (a guest's pending saves). */
+    addFavourites(dishIds: string[], expectedUserId?: string): Promise<void>;
     /**
      * Saves the dish "Tried" mark on the server and resolves to the updated Tried list.
      * A dish the user reviewed stays in the list when un-ticked.
@@ -1271,7 +1300,8 @@ export interface HungryService {
     toggleSoldOut(outletId: string, dishId: string, soldOut?: boolean): Promise<boolean>;
     /** Sets or clears sold-out on many dishes in one call; resolves with the ids that changed. */
     setDishesSoldOut(outletId: string, dishIds: string[], soldOut: boolean): Promise<string[]>;
-    toggleFeatured(outletId: string, dishId: string): Promise<boolean>;
+    /** Toggles featured, or sets it when `featured` is given (retry-safe). Returns the new state. */
+    toggleFeatured(outletId: string, dishId: string, featured?: boolean): Promise<boolean>;
 
     // OCR Drafts
     getOCRDrafts(outletId: string): Promise<OCRDishDraft[]>;
@@ -1296,6 +1326,8 @@ export interface HungryService {
         limit?: number;
         /** Keyset page: only items created before this ISO timestamp. */
         before?: string;
+        /** With `before`: the id of the oldest item held, so rows sharing its timestamp are kept. */
+        beforeId?: string;
       },
     ): Promise<CustomerInteraction[]>;
     /** Posts a public reply, or replaces the existing one. */
@@ -1305,9 +1337,10 @@ export interface HungryService {
     reportInteraction(interactionId: string, reason: string): Promise<void>;
 
     // Featured Visitors
+    /** Keyset page on (visitedAt, reviewId): `before` and `beforeId` of the oldest row held. */
     listPopularVisitorCandidates(
       outletId: string,
-      options?: { limit?: number; before?: string },
+      options?: { limit?: number; before?: string; beforeId?: string },
     ): Promise<PopularVisitorCandidate[]>;
     listPopularVisitorPins(outletId: string): Promise<PopularVisitorPin[]>;
     pinPopularVisitor(outletId: string, reviewId: string): Promise<PopularVisitorPin>;
@@ -1428,6 +1461,10 @@ export interface HungryService {
       options?: PortfolioMutationOptions,
     ): Promise<PortfolioItem>;
     getPortfolioItems(portfolioId: string): Promise<PortfolioItem[]>;
+    /** Items of several lists in one read, keyed by list id. */
+    getPortfolioItemsForPortfolios(
+      portfolioIds: string[],
+    ): Promise<Record<string, PortfolioItem[]>>;
     /** Names, photos and prices for every item of a list in one call. */
     getPortfolioItemDetails(portfolioId: string): Promise<PortfolioItemDetailRow[]>;
     updatePortfolioItem(

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
+import AttributionCapture from "@/components/analytics/AttributionCapture";
 import AppLayoutWrapper from "@/components/layout/AppLayoutWrapper";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import Footer from "@/components/layout/Footer";
@@ -83,6 +84,7 @@ export default function RootLayout({
       <body>
         <JsonLd data={hungryJsonLd} />
         <Analytics />
+        <AttributionCapture />
         <AppLayoutWrapper
           publicHeader={
             <>

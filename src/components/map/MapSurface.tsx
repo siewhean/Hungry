@@ -50,6 +50,8 @@ export interface MapSurfaceMarker {
   isTrending?: boolean;
   /** The pin's own photo; a trending pin without one draws as a normal marker. */
   imageUrl?: string;
+  /** Set on a cluster: it draws as a bubble showing this count, sized by it. */
+  clusterCount?: number;
 }
 
 interface MapSurfaceProps extends PropsWithChildren {
@@ -116,7 +118,7 @@ function unprojectCoordinate(
   } as Coordinate;
 }
 
-function MarkerVisual({
+export function MarkerVisual({
   label,
   accent,
   selected,
@@ -124,6 +126,7 @@ function MarkerVisual({
   zoomLevel = 15,
   isTrending,
   imageUrl,
+  clusterCount,
 }: {
   label: string;
   accent: string;
@@ -132,9 +135,38 @@ function MarkerVisual({
   zoomLevel?: number;
   isTrending?: boolean;
   imageUrl?: string;
+  clusterCount?: number;
 }) {
   const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const showLabel = selected || zoomLevel >= 15.5;
+
+  if (clusterCount !== undefined) {
+    // A cluster always shows its count (clusters only exist zoomed out, where labels are hidden),
+    // so it never looks like a single stall.
+    const size = clusterCount >= 100 ? 52 : clusterCount >= 10 ? 44 : 36;
+    return (
+      <View
+        testID="map-cluster-bubble"
+        style={[
+          {
+            alignItems: "center",
+            backgroundColor: accent,
+            borderColor: palette.surface,
+            borderRadius: size / 2,
+            borderWidth: 3,
+            height: size,
+            justifyContent: "center",
+            width: size,
+          },
+          shadows.floating,
+        ]}
+      >
+        <AppText variant="bodySmallBold" style={{ color: palette.white }}>
+          {clusterCount > 999 ? "999+" : String(clusterCount)}
+        </AppText>
+      </View>
+    );
+  }
 
   if (isTrending && imageUrl) {
     return (
@@ -263,6 +295,7 @@ const MapMarkerButton = memo(function MapMarkerButton({
         zoomLevel={zoomLevel}
         isTrending={marker.isTrending}
         imageUrl={marker.imageUrl}
+        clusterCount={marker.clusterCount}
       />
     </Pressable>
   );

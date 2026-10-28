@@ -6,6 +6,7 @@ import {
   answerTaste,
   canSkipRest,
   draftFromSavedVector,
+  draftFromStoredQuiz,
   emptyTasteDraft,
   isTasteAnswered,
   liveTasteLine,
@@ -76,4 +77,19 @@ test("the live line shows how a standard dish feels to this person", () => {
     "A standard laksa is 6/10 spicy. It will feel like 6/10 to you.",
   );
   assert.match(liveTasteLine("spicy", 10), /feel like 3\/10 to you/);
+});
+
+test("a draft left mid-quiz comes back with only its answered tastes, moved to the new stops", () => {
+  const draft = draftFromStoredQuiz({
+    answers: { ...NEUTRAL_TASTE_VECTOR, spicy: 8, sweet: 2, rich: 9 },
+    answeredKeys: ["spicy", "sweet"],
+  });
+  assert.deepEqual(draft.answered, ["spicy", "sweet"]);
+  assert.equal(draft.values.spicy, 7.5);
+  assert.equal(draft.values.sweet, 2.5);
+  assert.equal(draft.values.rich, 5, "an unanswered taste stays at average");
+  assert.equal(
+    wasTasteSkipped(draftFromStoredQuiz({ answers: NEUTRAL_TASTE_VECTOR, answeredKeys: [] })),
+    true,
+  );
 });

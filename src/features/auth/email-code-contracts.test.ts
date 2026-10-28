@@ -58,9 +58,9 @@ test("sign-up and reset check-your-email screens verify the emailed code", () =>
   // Verifying signs the user in: hold RootNavigator's redirect before it, release on failure.
   assert.match(
     forgot,
-    /setPasswordRecoveryInProgress\(true\);\s*try \{\s*await getHungryService\(\)\.auth\.verifyEmailCode\(sentTo, code, "recovery"\);\s*\} catch \(error\) \{\s*setPasswordRecoveryInProgress\(false\);/,
+    /setPasswordRecoveryInProgress\(true\);\s*try \{\s*await getHungryService\(\)\.auth\.verifyEmailCode\(sentTo, code, "recovery"\);\s*\} catch \(error\) \{\s*if \(!fromSignedIn\) setPasswordRecoveryInProgress\(false\);/,
   );
-  assert.match(forgot, /navigate\("ResetPassword", \{ email: sentTo, recoveryVerified: true \}\)/);
+  assert.match(forgot, /navigate\("ResetPassword", \{\s*email: sentTo,\s*recoveryVerified: true,/);
   // Only a real boolean skips the link-code exchange; a deep link's "true" string does not.
   assert.match(
     read("src/app/screens/auth/ResetPasswordScreen.tsx"),
@@ -80,7 +80,10 @@ test("account deletion asks for an emailed code before the RPC", () => {
   );
 
   const settings = read("src/app/screens/profile/SettingsScreen.tsx");
-  assert.match(settings, /auth\.sendAccountDeletionCode\(\);\s*setDeletionCodeVisible\(true\);/);
+  assert.match(
+    settings,
+    /auth\.sendAccountDeletionCode\(\);\s*trackAnalyticsEvent\("account_deletion_code_sent"[^;]*;\s*setDeletionCodeVisible\(true\);/,
+  );
   assert.match(
     settings,
     /requestAccountDeletion\(\{\s*reason: "user_initiated_settings_flow",\s*code,/,

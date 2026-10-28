@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { VenueSummary } from "@/types/domain";
-import { dedupeNearestVenueCandidates, getVenueChainKey } from "./venueDedupe";
+import { dedupeNearestVenueCandidates, getVenueBrandKey, getVenueChainKey } from "./venueDedupe";
+
+test("the brand key never comes from the name alone (SEARCH-2)", () => {
+  assert.equal(getVenueBrandKey({ id: "v1" }), "id:v1");
+  assert.notEqual(getVenueBrandKey({ id: "v1" }), getVenueBrandKey({ id: "v2" }));
+  assert.equal(
+    getVenueBrandKey({ id: "v1", logoUrl: "https://logo.clearbit.com/yakun.com" }),
+    getVenueBrandKey({ id: "v2", logoUrl: "https://logo.clearbit.com/yakun.com" }),
+  );
+});
 
 function venue(overrides: Partial<VenueSummary> & Pick<VenueSummary, "id" | "name">): VenueSummary {
   return {
@@ -84,4 +93,31 @@ test("getVenueChainKey keeps stored brand logos from merging different chains", 
 
   assert.equal(getVenueChainKey(subway), getVenueChainKey(subwayToo));
   assert.notEqual(getVenueChainKey(subway), getVenueChainKey(kfc));
+});
+
+test("items without a venue are each kept, and an unknown distance loses to a known one", () => {
+  const kopi = (id: string) => venue({ id, name: "Kopi Corner" });
+  const items = [
+    { id: "a", venue: kopi("v1"), distance: undefined },
+    { id: "orphan-1", venue: undefined, distance: 10 },
+    { id: "b", venue: kopi("v2"), distance: 400 },
+    { id: "orphan-2", venue: undefined, distance: 20 },
+    { id: "c", venue: kopi("v3"), distance: 900 },
+  ];
+  const kept = dedupeNearestVenueCandidates(
+    items,
+    (item) => item.venue,
+    (item) => item.distance,
+  );
+  assert.deepEqual(
+    kept.map((item) => item.id),
+    ["orphan-1", "b", "orphan-2"],
+  );
+});
+
+test("a malformed or empty logo URL falls back to the venue id or name", () => {
+  assert.equal(getVenueBrandKey({ id: "v1", logoUrl: "not a url" }), "id:v1");
+  assert.equal(getVenueBrandKey({ id: "v1", logoUrl: "   " }), "id:v1");
+  assert.equal(getVenueBrandKey({ id: "v1", logoUrl: "https://logo.clearbit.com/" }), "id:v1");
+  assert.equal(getVenueChainKey(venue({ id: "v9", name: "(Pte Ltd)", logoUrl: "::" })), "name:v9");
 });

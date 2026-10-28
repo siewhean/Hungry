@@ -456,6 +456,8 @@ export interface SearchFilters {
   foodTypeTag?: string;
   maxPrice?: number;
   openOnly?: boolean;
+  /** Rows to ask the server for (default 20, server cap 50). */
+  limit?: number;
 }
 
 /** What Claude understood from a plain-language search such as "something soupy, under $8". */
@@ -704,6 +706,8 @@ export interface PublicUserProfile {
   canViewContent?: boolean;
   /** Stalls visited, counted on the server by the same rule as your own Stalls stat. */
   stallsVisited?: number;
+  /** Distinct dishes reviewed, the server's user_profiles.dishes_reviewed counter. */
+  dishesReviewed?: number;
 }
 
 export interface PublicMerchantProfile {
@@ -1304,6 +1308,8 @@ export interface PushPreferences {
   weeklyPicks: boolean;
   /** Lunch (11:30) and dinner (17:30) suggestion pushes. Off unless the user turns them on. */
   mealtimeSuggestions: boolean;
+  /** Follow-request pushes (notification_preferences.social_activity). On unless the user opts out. */
+  socialActivity: boolean;
   quietStartHour: number;
   quietEndHour: number;
   weeklyCap: number;
@@ -1313,6 +1319,7 @@ export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
   weeklyPicks: true,
   mealtimeSuggestions: false,
+  socialActivity: true,
   quietStartHour: 22,
   quietEndHour: 8,
   weeklyCap: 3,

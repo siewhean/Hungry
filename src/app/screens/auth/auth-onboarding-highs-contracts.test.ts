@@ -23,7 +23,7 @@ test("H106: the signup confirmation link is exchanged for a session, not refresh
   });
 
   const screen = read("src/app/screens/auth/EmailVerificationScreen.tsx");
-  assert.match(screen, /getHungryService\(\)\.auth\.confirmEmail\(code\)/);
+  assert.match(screen, /getHungryService\(\)\s*\.auth\.confirmEmail\(code\)/);
   assert.doesNotMatch(screen, /refreshSession|I Verified My Email|james\.cook@chef\.com/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
@@ -60,7 +60,11 @@ test("H108/H110: a reset holds the signed-in redirect until the success screen c
 
   const success = read("src/app/screens/auth/ResetPasswordSuccessScreen.tsx");
   assert.match(success, /title="Password updated"/);
-  assert.match(success, /label="Continue"/);
+  assert.match(success, /"Continue"/);
+  // AUTH-8: the reset keeps the account's own taste-quiz choice, and a failed finish stays
+  // here with a retry instead of dropping the user on Home.
+  assert.doesNotMatch(success, /skippedTasteQuiz: true/);
+  assert.match(success, /if \(migration\.status === "failed"\) \{\s*setFinishFailed\(true\);/);
   assert.match(success, /setPasswordRecoveryInProgress\(false\)/);
   assert.doesNotMatch(success, /Check your inbox|Open email client|Resend link|Reset link resent/);
 });
@@ -151,7 +155,10 @@ test("H111/H112/H113/H114/H120/H121: auth forms hide disabled OAuth, autofill, s
 test("H115/H116: quiz answers stay a draft until finish and a Profile retake starts from the saved vector", () => {
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
   assert.equal(quiz.match(/setTasteVector\(/g)?.length, 1);
-  assert.match(quiz, /flowMode === "profile" \? profile\.tasteVector : INITIAL/);
+  assert.match(
+    quiz,
+    /flowMode === "profile" \? profile\.tasteVector : \(draft\?\.quiz\?\.answers \?\? INITIAL\)/,
+  );
 });
 
 test("H117: cuisines picked before the cuisine step was cut are still sent with the quiz response", () => {
@@ -174,7 +181,11 @@ test("H119: picking a location from Settings returns there instead of re-complet
 
 test("H122: onboarding_completed fires once and a returning user's onboarding state is kept", () => {
   clearTrackedAnalyticsEvents();
-  useSessionStore.setState({ hasCompletedOnboarding: false, hasSkippedTasteQuiz: false });
+  useSessionStore.setState({
+    hasCompletedOnboarding: false,
+    hasSkippedTasteQuiz: false,
+    isAuthenticated: true,
+  });
   useSessionStore.getState().completeOnboarding(true);
   useSessionStore.getState().completeOnboarding(false);
 

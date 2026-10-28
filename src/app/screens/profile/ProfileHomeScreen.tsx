@@ -33,6 +33,7 @@ import {
   UserCheck,
   FolderHeart,
   FlaskConical,
+  Users,
 } from "lucide-react-native";
 import Svg, { Circle, Line, Polygon } from "react-native-svg";
 
@@ -51,6 +52,8 @@ import {
   hasTasteSignal,
 } from "@/features/profile/tasteFingerprint";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
@@ -74,6 +77,7 @@ import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useStallSubmissionStore } from "@/store/useStallSubmissionStore";
+import { useUIStore } from "@/store/useUIStore";
 import {
   BottomSheetBackdrop,
   BottomSheetFooter,
@@ -90,6 +94,8 @@ const OWN_POSTS_PAGE_SIZE = 60;
 const OWN_REVIEWS_INLINE_LIMIT = 20;
 /** Coming back to the tab within this window reuses the reviews already loaded. */
 const OWN_REVIEWS_STALE_MS = 60_000;
+/** getUserReviews' default page: a full page means the list may be cut off. */
+const OWN_REVIEWS_PAGE_SIZE = 200;
 
 function haveEqualPosts(left: StallPost[], right: StallPost[]) {
   if (left.length !== right.length) return false;
@@ -143,6 +149,18 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     [passportProgressMap],
   );
   const insets = useSafeAreaInsets();
+  const showToast = useUIStore((state) => state.showToast);
+  // The posts feed is archived: no Posts tab and no post reads without it.
+  const socialFeedEnabled = FEATURE_FLAGS.socialFeedEnabled;
+  /** Your approved follower/following counts; null until loaded, "unavailable" after a failed read. */
+  const [followCounts, setFollowCounts] = useState<
+    | {
+        followersCount: number;
+        followingCount: number;
+      }
+    | "unavailable"
+    | null
+  >(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const shareSnapPoints = useMemo(() => ["45%"], []);
   /** Incoming pending follow requests; null until loaded. */
@@ -191,13 +209,29 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const rootNavigation = getRootNavigation(navigation as any);
 
   const [activeShareTab, setActiveShareTab] = useState<"posts" | "reviews">(
-    FEATURE_FLAGS.reviewCreationEnabled ? "reviews" : "posts",
+    FEATURE_FLAGS.reviewCreationEnabled || !FEATURE_FLAGS.socialFeedEnabled ? "reviews" : "posts",
   );
   const handleReviewsCardPress = useCallback(() => {
     preloadRoute(navigation, "ReviewHistory");
     navigation.navigate("ReviewHistory");
   }, [navigation]);
-  const avatarSize = spacing[20];
+  // A/B test: signed-in people whose reviews loaded with none see a first-review card under
+  // the stats. Only they are exposed (not guests, the loading skeleton or a failed load).
+  const firstReviewNudgeEligible =
+    hasAccountProfile &&
+    FEATURE_FLAGS.reviewCreationEnabled &&
+    ownReviews !== null &&
+    !ownReviewsFailed &&
+    ownReviews.length === 0;
+  const firstReviewNudge = useExperimentVariant("profile_first_review_nudge_v1", {
+    enabled: firstReviewNudgeEligible,
+  });
+  const openReviewComposer = useCallback(() => {
+    trackAnalyticsEvent("profile_review_nudge_tapped", {});
+    rootNavigation.navigate("ReviewStack", { screen: "ReviewMain" });
+  }, [rootNavigation]);
+  // 76 inside the 80pt ring and its 2pt border on each side.
+  const avatarSize = spacing[20] - 4;
   const avatarInitials = useMemo(
     () =>
       profile.displayName
@@ -249,7 +283,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         if (isMounted) setMerchantAccount(account);
       })
       .catch((error) => {
-        console.error("Failed to load merchant account", error);
+        reportError(error, { screen: "ProfileHome", action: "load_merchant_account" });
       });
 
     return () => {
@@ -258,28 +292,28 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   }, [isAuthenticated, profile.id, setMerchantAccount]);
 
   // Loads run once per account; tried-stall changes only recompute progress (effect below).
+  // Waits for the account profile: the "guest-user" placeholder id is not a uuid.
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!hasAccountProfile) return;
     const logLoadError = (label: string) => (error: unknown) => {
-      console.error(`Failed to load ${label}:`, error);
+      reportError(error, { screen: "ProfileHome", action: `load_${label}` });
     };
 
     if (storiesEnabled) {
       void Promise.resolve(loadStories()).catch(logLoadError("stories"));
     }
 
-    void loadStallSubmissions().catch(logLoadError("stall submissions"));
-
-    // Tried stalls feed the Stalls stat, so they load with or without gamification.
-    void loadStallInteractions(profile.id).catch(logLoadError("stall interactions"));
+    void loadStallSubmissions().catch(logLoadError("stall_submissions"));
 
     if (gamificationEnabled) {
+      // Tried stalls feed only the Passport progress below.
+      void loadStallInteractions(profile.id).catch(logLoadError("stall_interactions"));
       void loadCredProfile(profile.id).catch(logLoadError("FoodCred"));
       void loadMissions(profile.id).catch(logLoadError("missions"));
     }
   }, [
     gamificationEnabled,
-    isAuthenticated,
+    hasAccountProfile,
     loadCredProfile,
     loadMissions,
     loadStallSubmissions,
@@ -308,7 +342,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   );
 
   useEffect(() => {
-    if (!hasAccountProfile) {
+    if (!hasAccountProfile || !socialFeedEnabled) {
       setProfilePosts([]);
       setHasMorePosts(false);
       setPostsLoadFailed(false);
@@ -323,7 +357,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       // Each source fails on its own, so a failed server read keeps the locally shared posts.
       const [ownPage, sharedPosts] = await Promise.all([
         loadOwnPostsPage(0).catch((error) => {
-          console.error("Failed to load profile posts:", error);
+          reportError(error, { screen: "ProfileHome", action: "load_posts" });
           return null;
         }),
         listSharedStallPosts().catch(() => [] as StallPost[]),
@@ -345,7 +379,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     return () => {
       isMounted = false;
     };
-  }, [hasAccountProfile, loadOwnPostsPage, profile.id, postsReloadKey, publishedPostsVersion]);
+  }, [
+    hasAccountProfile,
+    loadOwnPostsPage,
+    profile.id,
+    postsReloadKey,
+    publishedPostsVersion,
+    socialFeedEnabled,
+  ]);
 
   const loadMoreProfilePosts = () => {
     if (isLoadingMorePosts || !hasMorePosts) return;
@@ -357,7 +398,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         setHasMorePosts(rowCount === OWN_POSTS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load more posts:", error);
+        reportError(error, { screen: "ProfileHome", action: "load_more_posts" });
+        showToast({ message: "Couldn't load more posts. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMorePosts(false));
   };
@@ -387,7 +429,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         setOwnReviews(rows);
       })
       .catch((error) => {
-        console.error("Failed to load own reviews:", error);
+        reportError(error, { screen: "ProfileHome", action: "load_own_reviews" });
         if (!isActive) return;
         setOwnReviewsFailed(true);
         setOwnReviews((current) => current ?? []);
@@ -403,6 +445,32 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     }),
     [profile.stats.favouritesCount],
   );
+  // A full first page may be cut off: then the server's counter (distinct dishes reviewed).
+  const ownReviewCount =
+    ownReviews === null
+      ? null
+      : ownReviews.length >= OWN_REVIEWS_PAGE_SIZE
+        ? Math.max(profile.stats.dishesReviewed, ownReviews.length)
+        : ownReviews.length;
+
+  useEffect(() => {
+    // Refetched on focus so a follow or a removed follower shows on return.
+    if (!hasAccountProfile || !isFocused) return;
+    let isActive = true;
+    void getHungryService()
+      .social.getFollowCounts(profile.id)
+      .then((counts) => {
+        // No row is not "loading" either: the tiles must never shimmer forever.
+        if (isActive) setFollowCounts(counts ?? "unavailable");
+      })
+      .catch((error) => {
+        reportError(error, { screen: "ProfileHome", action: "load_follow_counts" });
+        if (isActive) setFollowCounts("unavailable");
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [hasAccountProfile, isFocused, profile.id]);
 
   useEffect(() => {
     // Refetch on focus so approving/declining on Follow Requests updates the row.
@@ -416,7 +484,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         if (isActive) setFollowRequestCount(count);
       })
       .catch((error) => {
-        console.error("Failed to load follow request count:", error);
+        reportError(error, { screen: "ProfileHome", action: "load_follow_request_count" });
       });
 
     return () => {
@@ -461,7 +529,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       await shareProfileLink(profile.id, profile.displayName);
       trackAnalyticsEvent("profile_shared", { channel: "system_share" });
     } catch (error) {
-      console.error("Error sharing profile:", error);
+      reportError(error, { screen: "ProfileHome", action: "share_profile" });
     }
   }, [profile.displayName, profile.id]);
 
@@ -479,7 +547,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       });
       trackAnalyticsEvent("taste_fingerprint_shared", { channel: "system_share" });
     } catch (error) {
-      console.error("Error sharing taste fingerprint outside app:", error);
+      reportError(error, { screen: "ProfileHome", action: "share_taste_fingerprint" });
     }
   }, [profile.id, tasteShareMessage]);
 
@@ -544,7 +612,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
   return (
     <ProfileScreenShell
-      title="Hungry"
+      title="Profile"
       showBack={false}
       testID="profile-home-screen"
       headerRight={
@@ -790,13 +858,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
 
             <View style={{ flex: 1, gap: spacing[1] }}>
-              <AppText
-                variant="h1"
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.78}
-                style={{ color: palette.text }}
-              >
+              {/* Two lines at full size, so large text is not shrunk back down. */}
+              <AppText variant="h1" numberOfLines={2} style={{ color: palette.text }}>
                 {profile.displayName}
               </AppText>
               {profile.bio ? (
@@ -835,7 +898,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
           </View>
 
-          {/* Saved, Reviews and Badges sit side by side, with no box around the three. */}
+          {/* Saved and Reviews (and Badges with the Passport) side by side, with no box around them. */}
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {FEATURE_FLAGS.favouritesEnabled ? (
               <StatBlock
@@ -849,20 +912,76 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             {FEATURE_FLAGS.reviewCreationEnabled ? (
               <StatBlock
                 label="Reviews"
-                value={ownReviews === null ? null : ownReviews.length}
+                value={ownReviewCount}
                 icon={<PencilLine size={14} color={palette.orange} />}
                 onPressIn={() => preloadRoute(navigation, "ReviewHistory")}
                 onPress={handleReviewsCardPress}
               />
             ) : null}
+            {gamificationEnabled ? (
+              // The Passport route exists only with gamification.
+              <StatBlock
+                label="Badges"
+                value={earnedBadgeCount}
+                icon={<Trophy size={14} color={palette.orange} />}
+                onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+                onPress={() => rootNavigation.navigate("PassportScreen")}
+              />
+            ) : null}
+          </View>
+          <View style={{ flexDirection: "row", gap: spacing[2] }} testID="profile-follow-counts">
             <StatBlock
-              label="Badges"
-              value={earnedBadgeCount}
-              icon={<Trophy size={14} color={palette.orange} />}
-              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-              onPress={() => rootNavigation.navigate("PassportScreen")}
+              label="Followers"
+              value={
+                followCounts === "unavailable"
+                  ? STAT_UNAVAILABLE
+                  : followCounts
+                    ? followCounts.followersCount
+                    : null
+              }
+              icon={<Users size={14} color={palette.orange} />}
+              onPressIn={() => preloadRoute(navigation, "Followers")}
+              onPress={() => navigation.navigate("Followers")}
+            />
+            <StatBlock
+              label="Following"
+              value={
+                followCounts === "unavailable"
+                  ? STAT_UNAVAILABLE
+                  : followCounts
+                    ? followCounts.followingCount
+                    : null
+              }
+              icon={<UserCheck size={14} color={palette.orange} />}
+              onPressIn={() => preloadRoute(navigation, "Following")}
+              onPress={() => navigation.navigate("Following")}
             />
           </View>
+          {firstReviewNudgeEligible && firstReviewNudge === "test" ? (
+            <View
+              testID="profile-first-review-nudge"
+              style={{
+                backgroundColor: palette.orangeLight,
+                borderRadius: componentRadii.card,
+                gap: spacing[2],
+                padding: spacing[4],
+              }}
+            >
+              <AppText variant="h3">Write your first review</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                Rate a dish you have eaten lately. Your reviews help other people pick what to order
+                and tune your Taste Fingerprint.
+              </AppText>
+              <Button
+                label="Write a review"
+                size="sm"
+                fullWidth={false}
+                leftIcon={<PencilLine size={16} color={palette.textOnOrange} />}
+                onPress={openReviewComposer}
+                style={{ alignSelf: "flex-start", minHeight: 44 }}
+              />
+            </View>
+          ) : null}
           {isAuthenticated && FEATURE_FLAGS.favouritesEnabled ? (
             <Button
               label="Collections"
@@ -920,7 +1039,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             >
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                 <FlaskConical color={palette.orange} size={20} />
-                <AppText variant="h2">Palate Fingerprint</AppText>
+                <AppText variant="h2">Taste Fingerprint</AppText>
               </View>
               {hasTasteFingerprint ? (
                 <Pressable
@@ -996,7 +1115,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 <View style={{ alignItems: "center", gap: spacing[3] }}>
                   <TasteRadar vector={profile.tasteVector} />
                   <Button
-                    label="Recalibrate taste vector"
+                    label="Retake the taste quiz"
                     onPress={() =>
                       rootNavigation.navigate("OnboardingStack", {
                         screen: "TasteQuiz",
@@ -1030,75 +1149,83 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 justifyContent: "space-between",
               }}
             >
-              <AppText variant="h2">Recent Hawker Log</AppText>
+              <AppText variant="h2">
+                {socialFeedEnabled ? "Recent activity" : "Your reviews"}
+              </AppText>
               {FEATURE_FLAGS.reviewCreationEnabled ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="View all reviews"
                   onPress={handleReviewsCardPress}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  style={{ justifyContent: "center", minHeight: 44 }}
                 >
-                  <AppText variant="bodySmall" style={{ color: palette.orange }}>
-                    View all{ownReviews ? ` (${ownReviews.length})` : ""}
+                  <AppText variant="bodySmall" style={{ color: palette.accentText }}>
+                    View all{ownReviewCount !== null ? ` (${ownReviewCount})` : ""}
                   </AppText>
                 </Pressable>
               ) : null}
             </View>
-            <View
-              style={{
-                alignSelf: "stretch",
-                flexDirection: "row",
-                borderWidth: 1,
-                borderRadius: radii.pill,
-                borderColor: palette.border,
-                backgroundColor: palette.surface,
-                overflow: "hidden",
-              }}
-            >
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Show profile posts"
-                accessibilityState={{ selected: activeShareTab === "posts" }}
-                onPress={() => setActiveShareTab("posts")}
+            {socialFeedEnabled ? (
+              <View
+                accessibilityRole="tablist"
                 style={{
-                  flex: 1,
-                  paddingVertical: spacing[2],
-                  alignItems: "center",
-                  backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
+                  alignSelf: "stretch",
+                  flexDirection: "row",
+                  borderWidth: 1,
+                  borderRadius: radii.pill,
+                  borderColor: palette.border,
+                  backgroundColor: palette.surface,
+                  overflow: "hidden",
                 }}
               >
-                <AppText
-                  style={{
-                    fontWeight: activeShareTab === "posts" ? 700 : 500,
-                    color: activeShareTab === "posts" ? palette.textOnOrange : palette.text,
-                  }}
-                >
-                  Posts
-                </AppText>
-              </Pressable>
-              {FEATURE_FLAGS.reviewCreationEnabled ? (
                 <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Show profile reviews"
-                  accessibilityState={{ selected: activeShareTab === "reviews" }}
-                  onPress={() => setActiveShareTab("reviews")}
+                  accessibilityRole="tab"
+                  accessibilityLabel="Show profile posts"
+                  accessibilityState={{ selected: activeShareTab === "posts" }}
+                  onPress={() => setActiveShareTab("posts")}
                   style={{
                     flex: 1,
                     paddingVertical: spacing[2],
                     alignItems: "center",
-                    backgroundColor: activeShareTab === "reviews" ? palette.orange : "transparent",
+                    backgroundColor: activeShareTab === "posts" ? palette.orange : "transparent",
                   }}
                 >
                   <AppText
                     style={{
-                      fontWeight: activeShareTab === "reviews" ? 700 : 500,
-                      color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                      fontWeight: activeShareTab === "posts" ? 700 : 500,
+                      color: activeShareTab === "posts" ? palette.textOnOrange : palette.text,
                     }}
                   >
-                    Reviews
+                    Posts
                   </AppText>
                 </Pressable>
-              ) : null}
-            </View>
+                {FEATURE_FLAGS.reviewCreationEnabled ? (
+                  <Pressable
+                    accessibilityRole="tab"
+                    accessibilityLabel="Show profile reviews"
+                    accessibilityState={{ selected: activeShareTab === "reviews" }}
+                    onPress={() => setActiveShareTab("reviews")}
+                    style={{
+                      flex: 1,
+                      paddingVertical: spacing[2],
+                      alignItems: "center",
+                      backgroundColor:
+                        activeShareTab === "reviews" ? palette.orange : "transparent",
+                    }}
+                  >
+                    <AppText
+                      style={{
+                        fontWeight: activeShareTab === "reviews" ? 700 : 500,
+                        color: activeShareTab === "reviews" ? palette.textOnOrange : palette.text,
+                      }}
+                    >
+                      Reviews
+                    </AppText>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
             {activeShareTab === "posts" ? (
               sortedProfilePosts.length ? (
                 <View
@@ -1108,24 +1235,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                     marginHorizontal: -spacing[4],
                   }}
                 >
-                  {sortedProfilePosts.map((post) => (
-                    <Pressable
-                      key={post.id}
-                      aria-label={`Open post ${post.caption || post.id}`}
-                      accessibilityLabel={`Open post ${post.caption || post.id}`}
-                      accessibilityRole="button"
-                      role="button"
-                      testID={`profile-post-tile-${post.id}`}
-                      style={{
-                        width: "33.333%",
-                        aspectRatio: 1,
-                      }}
-                      onPress={() =>
-                        rootNavigation.navigate("ActivityPostDetail", {
-                          postId: post.id,
-                        })
-                      }
-                    >
+                  {sortedProfilePosts.map((post) => {
+                    const image = (
                       <View style={{ flex: 1 }}>
                         <AccessibleImage
                           decorative
@@ -1134,8 +1245,38 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                           contentFit="cover"
                         />
                       </View>
-                    </Pressable>
-                  ))}
+                    );
+                    // The post detail lives in Activity; with Activity off a tile is a photo.
+                    return FEATURE_FLAGS.activityEnabled ? (
+                      <Pressable
+                        key={post.id}
+                        aria-label={`Open post ${post.caption || post.id}`}
+                        accessibilityLabel={`Open post ${post.caption || post.id}`}
+                        accessibilityRole="button"
+                        role="button"
+                        testID={`profile-post-tile-${post.id}`}
+                        style={{
+                          width: "33.333%",
+                          aspectRatio: 1,
+                        }}
+                        onPress={() =>
+                          rootNavigation.navigate("ActivityPostDetail", {
+                            postId: post.id,
+                          })
+                        }
+                      >
+                        {image}
+                      </Pressable>
+                    ) : (
+                      <View
+                        key={post.id}
+                        testID={`profile-post-tile-${post.id}`}
+                        style={{ width: "33.333%", aspectRatio: 1 }}
+                      >
+                        {image}
+                      </View>
+                    );
+                  })}
                 </View>
               ) : !postsLoaded ? (
                 <ProfileGridSkeleton />
@@ -1521,47 +1662,50 @@ function TasteRadar({ vector }: { vector: TasteVector }) {
 
   return (
     <View style={{ alignItems: "center", width: "100%", gap: spacing[3] }}>
-      <Svg
-        accessible={Platform.OS === "web" ? undefined : true}
-        accessibilityRole="image"
-        accessibilityLabel={`Taste vector: ${axes.map((axis) => `${axis} ${vector[axis].toFixed(1)} out of 10`).join(", ")}`}
-        width={260}
-        height={260}
-        viewBox="0 0 260 260"
-      >
-        {[92, 62, 31].map((radius) => (
-          <Polygon
-            key={radius}
-            points={polygon(radius)}
-            fill="none"
-            stroke={palette.border}
-            strokeWidth={1}
-          />
-        ))}
-        {axes.map((axis, index) => {
-          const end = point(index, 92);
-          return (
-            <Line
-              key={axis}
-              x1={130}
-              y1={130}
-              x2={end.x}
-              y2={end.y}
+      {/* Up to 260pt, never wider than the card: a 320-360pt phone leaves less than that. */}
+      <View testID="profile-taste-radar" style={{ aspectRatio: 1, maxWidth: 260, width: "100%" }}>
+        <Svg
+          accessible={Platform.OS === "web" ? undefined : true}
+          accessibilityRole="image"
+          accessibilityLabel={`Taste vector: ${axes.map((axis) => `${axis} ${vector[axis].toFixed(1)} out of 10`).join(", ")}`}
+          width="100%"
+          height="100%"
+          viewBox="0 0 260 260"
+        >
+          {[92, 62, 31].map((radius) => (
+            <Polygon
+              key={radius}
+              points={polygon(radius)}
+              fill="none"
               stroke={palette.border}
               strokeWidth={1}
             />
-          );
-        })}
-        <Polygon
-          points={values.map(({ x, y }) => `${x},${y}`).join(" ")}
-          fill={palette.orangeLight}
-          stroke={palette.orange}
-          strokeWidth={2.5}
-        />
-        {values.map(({ x, y }, index) => (
-          <Circle key={axes[index]} cx={x} cy={y} r={4} fill={palette.orange} />
-        ))}
-      </Svg>
+          ))}
+          {axes.map((axis, index) => {
+            const end = point(index, 92);
+            return (
+              <Line
+                key={axis}
+                x1={130}
+                y1={130}
+                x2={end.x}
+                y2={end.y}
+                stroke={palette.border}
+                strokeWidth={1}
+              />
+            );
+          })}
+          <Polygon
+            points={values.map(({ x, y }) => `${x},${y}`).join(" ")}
+            fill={palette.orangeLight}
+            stroke={palette.orange}
+            strokeWidth={2.5}
+          />
+          {values.map(({ x, y }, index) => (
+            <Circle key={axes[index]} cx={x} cy={y} r={4} fill={palette.orange} />
+          ))}
+        </Svg>
+      </View>
       <View
         style={{
           flexDirection: "row",
@@ -1592,6 +1736,9 @@ function TasteRadar({ vector }: { vector: TasteVector }) {
     </View>
   );
 }
+
+/** A stat whose read failed: a dash on screen, "unavailable" to a screen reader. */
+const STAT_UNAVAILABLE = "–";
 
 function StatBlock({
   label,
@@ -1644,7 +1791,13 @@ function StatBlock({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={value === null ? `${label}, loading` : `${label} ${value}`}
+      accessibilityLabel={
+        value === null
+          ? `${label}, loading`
+          : value === STAT_UNAVAILABLE
+            ? `${label}, unavailable`
+            : `${label} ${value}`
+      }
       onPressIn={onPressIn}
       onPress={onPress}
       style={({ pressed }) => {

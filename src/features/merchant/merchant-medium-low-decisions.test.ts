@@ -188,7 +188,7 @@ test("decision 28: sold-out dishes come back on at Singapore midnight", () => {
     /revoke all on function app_private\.reset_sold_out_dishes\(\) from public, anon, authenticated/,
   );
   assert.ok(existsSync("supabase/smoke/sold_out_nightly_reset.sql"));
-  assert.match(read("src/app/screens/merchant/MerchantMenuScreen.tsx"), /Sold Out Until Tomorrow/);
+  assert.match(read("src/app/screens/merchant/MerchantMenuScreen.tsx"), /Sold out until tomorrow/);
 });
 
 test("decision 29: postal codes resolve through OneMap only", async () => {

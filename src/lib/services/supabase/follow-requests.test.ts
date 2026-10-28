@@ -161,7 +161,7 @@ test("follow button shows Requested and tapping it cancels the request", () => {
   assert.match(store, /requestedUserIds: Record<string, boolean>/);
   assert.match(
     store,
-    /if \(!isFollowing && get\(\)\.requestedUserIds\[userId\]\) \{[\s\S]*service\.social\.cancelFollowRequest\(userId\)/,
+    /if \(!isFollowing && get\(\)\.requestedUserIds\[userId\]\) \{[\s\S]*service\.social\s*\.cancelFollowRequest\(userId\)/,
   );
   assert.match(store, /requestedUserIds: \{ \.\.\.prev\.requestedUserIds, \[userId\]: true \}/);
   assert.match(profile, /service\.getFollowStatus\(resolvedAuthorId\)/);

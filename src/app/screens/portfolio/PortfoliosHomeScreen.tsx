@@ -14,6 +14,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { usePortfolioStore, type PortfolioListScope } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { Portfolio } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfoliosHome">;
 type PortfolioTab = PortfolioListScope;
@@ -50,13 +51,15 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
   const load = useCallback(async () => {
     setLoadFailed(false);
     // Follows load on their own: a failure there must not hide the lists.
-    void loadFollowedPortfolios().catch((error) =>
-      console.error("Failed to load followed lists:", error),
-    );
+    void loadFollowedPortfolios().catch((error) => {
+      console.error("Failed to load followed lists:", error);
+      reportError(error, { screen: "PortfoliosHomeScreen", action: "load_followed_lists" });
+    });
     try {
       await loadPortfolioScope(activeTab);
     } catch (error) {
       console.error("Failed to load lists:", error);
+      reportError(error, { screen: "PortfoliosHomeScreen", action: "load_lists", tab: activeTab });
       trackAnalyticsEvent("list_load_failed", { list_kind: "portfolio" });
       setLoadFailed(true);
     }

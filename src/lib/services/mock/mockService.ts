@@ -694,6 +694,7 @@ function listMockRecentReviews(options?: ListRecentReviewsOptions): RecentReview
     .flatMap((dish): RecentReviewFeedEntry[] =>
       dish.reviews
         .filter((review) => !isMockReviewHiddenForViewer(review))
+        .filter((review) => !options?.withPhotos || review.photos.length > 0)
         .map((review) => ({
           review: {
             ...review,
@@ -1332,7 +1333,7 @@ function buildWeeklySummaryStats(outletId: string): MerchantWeeklySummary {
     totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
     dishViews: analytics.dishViews,
     topDishes: analytics.topDishes,
-    newReviews: reviews.length,
+    newReviews: analytics.reviewCount,
     averageRating: analytics.averageRating,
     ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
     unrepliedReviews,
@@ -1631,6 +1632,11 @@ export const hungryService: HungryService = {
       const hadPending = _isAuthenticated && Boolean(_pendingDeletionScheduledFor);
       if (hadPending) _pendingDeletionScheduledFor = undefined;
       return resolve(hadPending);
+    },
+
+    async isAccountDeletionProcessing() {
+      // The mock has no deletion worker.
+      return resolve(false);
     },
 
     async forgotPassword(_email) {
@@ -2134,6 +2140,23 @@ export const hungryService: HungryService = {
         },
       };
       return resolve(!isFav);
+    },
+
+    async setFavourite(dishId, saved) {
+      const isFav = _profile.favouriteDishIds.includes(dishId);
+      if (isFav === saved) return resolve(saved);
+      return this.toggleFavourite(dishId);
+    },
+
+    async addFavourites(dishIds) {
+      const added = [...new Set(dishIds)].filter((id) => !_profile.favouriteDishIds.includes(id));
+      const favouriteDishIds = [..._profile.favouriteDishIds, ...added];
+      _profile = {
+        ..._profile,
+        favouriteDishIds,
+        stats: { ..._profile.stats, favouritesCount: favouriteDishIds.length },
+      };
+      return resolve(undefined);
     },
 
     async getFavouriteDishIds() {
@@ -3232,11 +3255,11 @@ export const hungryService: HungryService = {
       return resolve(changed);
     },
 
-    async toggleFeatured(outletId, dishId) {
+    async toggleFeatured(outletId, dishId, featured) {
       const menu = getMerchantMenu(outletId);
       const dish = menu.find((menuDish) => menuDish.id === dishId);
       if (!dish) throw new Error(`Dish ${dishId} not found for outlet ${outletId}`);
-      const isFeatured = !dish.availabilityFlags.includes("Featured");
+      const isFeatured = featured ?? !dish.availabilityFlags.includes("Featured");
       dish.availabilityFlags = mergeAvailabilityFlag(
         dish.availabilityFlags,
         "Featured",
@@ -3321,10 +3344,17 @@ export const hungryService: HungryService = {
       }
       const before = filters?.before ? new Date(filters.before).getTime() : undefined;
       if (before !== undefined && Number.isFinite(before)) {
-        interactions = interactions.filter((i) => new Date(i.createdAt).getTime() < before);
+        const beforeId = filters?.beforeId;
+        interactions = interactions.filter((i) => {
+          const createdAt = new Date(i.createdAt).getTime();
+          return createdAt < before || Boolean(beforeId && createdAt === before && i.id < beforeId);
+        });
       }
+      // Newest first, ties by id descending: the same keyset order the database uses.
       interactions = [...interactions].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() ||
+          (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
       );
       if (filters?.limit !== undefined) {
         interactions = interactions.slice(0, Math.max(1, filters.limit));
@@ -4240,6 +4270,16 @@ export const hungryService: HungryService = {
             .map((item) => (canReadPrivateNotes ? item : { ...item, privateNotes: undefined })),
         ),
       );
+    },
+
+    async getPortfolioItemsForPortfolios(portfolioIds: string[]) {
+      const result: Record<string, PortfolioItem[]> = {};
+      for (const portfolioId of new Set(portfolioIds)) {
+        // Lists the viewer cannot see are left out, as RLS does on the server.
+        const items = await this.getPortfolioItems(portfolioId).catch(() => undefined);
+        if (items) result[portfolioId] = items;
+      }
+      return result;
     },
 
     async updatePortfolioItem(

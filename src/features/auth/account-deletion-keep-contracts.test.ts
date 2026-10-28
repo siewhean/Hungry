@@ -32,8 +32,14 @@ test("a failed deletion check or cancel is asked again on the next foreground", 
   assert.match(hook, /if \(state === "active"\) setForegroundCount/);
   assert.match(hook, /\[foregroundCount, isAuthReady, isAuthenticated, userId\]/);
   // Failed fetch, failed cancel, and a check cut short all clear promptedFor.
-  assert.match(hook, /\.catch\(\(\) => \{\s*settled = true;\s*retryOnNextForeground\(\);/);
-  assert.match(hook, /\.catch\(\(\) => \{\s*retryOnNextForeground\(\);\s*Alert\.alert\(/);
+  assert.match(
+    hook,
+    /\.catch\(\(error: unknown\) => \{\s*settled = true;\s*reportError\(error, \{ area: "deletion_grace_prompt_load" \}\);\s*retryOnNextForeground\(\);/,
+  );
+  assert.match(
+    hook,
+    /\.catch\(\(error: unknown\) => \{\s*reportError\(error, \{ area: "deletion_grace_prompt_cancel" \}\);\s*retryOnNextForeground\(\);\s*Alert\.alert\(/,
+  );
   assert.match(hook, /if \(!settled\) retryOnNextForeground\(\);/);
   assert.doesNotMatch(hook, /\.catch\(\(\) => undefined\)/);
 });
@@ -43,6 +49,9 @@ test("Profile and Settings show a Keep my account banner while deletion is pendi
   assert.match(banner, /auth\.getPendingAccountDeletion\(\)/);
   assert.match(banner, /auth\.cancelAccountDeletion\(\)/);
   assert.match(banner, /label="Keep my account"/);
-  assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /<PendingDeletionBanner \/>/);
+  assert.match(
+    read("src/app/screens/profile/SettingsScreen.tsx"),
+    /<PendingDeletionBanner onPendingChange=/,
+  );
   assert.match(read("src/app/screens/profile/ProfileHomeScreen.tsx"), /<PendingDeletionBanner \/>/);
 });

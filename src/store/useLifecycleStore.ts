@@ -19,8 +19,11 @@ interface LifecycleStoreState {
   recordedDate: string | null;
   /** The welcome back card was closed this app session. */
   welcomeBackDismissed: boolean;
+  /** welcome_back_shown was sent this app session; a remount of the card does not resend it. */
+  welcomeBackShown: boolean;
   recordAppOpen: () => Promise<void>;
   dismissWelcomeBack: () => void;
+  markWelcomeBackShown: () => void;
   reset: () => void;
 }
 
@@ -40,6 +43,7 @@ export const useLifecycleStore = create<LifecycleStoreState>()((set, get) => ({
   snapshot: null,
   recordedDate: null,
   welcomeBackDismissed: false,
+  welcomeBackShown: false,
 
   recordAppOpen: async () => {
     const today = singaporeDateKey();
@@ -63,5 +67,13 @@ export const useLifecycleStore = create<LifecycleStoreState>()((set, get) => ({
 
   dismissWelcomeBack: () => set({ welcomeBackDismissed: true }),
 
-  reset: () => set({ snapshot: null, recordedDate: null, welcomeBackDismissed: false }),
+  markWelcomeBackShown: () => set({ welcomeBackShown: true }),
+
+  reset: () =>
+    set({
+      snapshot: null,
+      recordedDate: null,
+      welcomeBackDismissed: false,
+      welcomeBackShown: false,
+    }),
 }));

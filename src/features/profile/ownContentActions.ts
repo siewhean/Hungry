@@ -46,7 +46,9 @@ export function promptOwnContentActions(target: {
   const confirmDelete = () =>
     Alert.alert(
       `Delete this ${target.label}?`,
-      `It is removed from your profile and everyone's feeds. This can't be undone.`,
+      target.label === "review"
+        ? "It is removed from your profile and the dish page. This can't be undone."
+        : "It is removed from your profile. This can't be undone.",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete", style: "destructive", onPress: target.onDelete },

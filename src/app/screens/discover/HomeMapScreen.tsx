@@ -41,9 +41,11 @@ import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { isMapEdgeBackSwipe } from "@/features/discovery/mapEdgeBack";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { useHungryTheme } from "@/theme";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
 // "Open now" is not offered on the map: the catalog only carries a copy of the stored
@@ -183,6 +185,8 @@ export function HomeMapScreen() {
   const listLevelRef = useRef<"list" | "full" | "min">("list");
 
   const animatedHeight = useRef(new Animated.Value(CAROUSEL_HEIGHT)).current;
+  // Where the sheet is (or is heading); the edge-back swipe only starts above it.
+  const sheetTargetHeightRef = useRef(CAROUSEL_HEIGHT);
   const isMinimized = useRef(false);
   // The sheet PanResponder is created once, so it reads the live mode from a ref.
   const displayModeRef = useRef(displayMode);
@@ -259,8 +263,9 @@ export function HomeMapScreen() {
           setRawVenueCards(venuePage.items);
           setMapLoadState("idle");
         })
-        .catch(() => {
+        .catch((error) => {
           // Keep the last good pins and cards on screen; say the refresh failed.
+          reportError(error, { screen: "HomeMapScreen", action: "load_map" });
           if (active) setMapLoadState("error");
         });
     }, MAP_REFETCH_DEBOUNCE_MS);
@@ -294,6 +299,7 @@ export function HomeMapScreen() {
       : undefined;
 
   const snapTo = (height: number) => {
+    sheetTargetHeightRef.current = height;
     Animated.spring(animatedHeight, {
       toValue: height,
       useNativeDriver: false,
@@ -349,7 +355,10 @@ export function HomeMapScreen() {
     if (query) {
       rememberSearch(query);
     }
-    trackAnalyticsEvent("map_filter_toggled", { filter: "search", enabled: Boolean(query) });
+    trackAnalyticsEvent("map_search_submitted", {
+      has_query: Boolean(query),
+      query_length: query.length,
+    });
     setMapQuery(query);
   }, [rememberSearch, searchText]);
   const clearMapSearch = useCallback(() => {
@@ -387,24 +396,33 @@ export function HomeMapScreen() {
     }),
   ).current;
 
+  // Always land on Discover: after sign-in or "open on map" the screen below may be Home.
+  const backToList = useCallback(() => {
+    navigation.popTo("MainTabs", { screen: "Discover" });
+  }, [navigation]);
+
   // Left-edge swipe back without an overlay strip: the root view only captures a
-  // horizontal move that began at the edge, so taps on the map, legend and cards pass through.
+  // horizontal move that began at the edge above the sheet, so taps on the map, legend and
+  // cards pass through and the card carousel still scrolls.
   const edgeBackZoneWidth = Math.max(28, insets.left + 24);
   const edgeBackPanResponder = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => false,
         onMoveShouldSetPanResponderCapture: (_, gestureState) =>
-          gestureState.x0 <= edgeBackZoneWidth &&
-          gestureState.dx > 12 &&
-          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5,
+          isMapEdgeBackSwipe(gestureState, {
+            edgeZoneWidth: edgeBackZoneWidth,
+            screenHeight,
+            sheetHeight: sheetTargetHeightRef.current,
+          }),
         onPanResponderRelease: (_, gestureState) => {
-          if ((gestureState.dx > 64 || gestureState.vx > 0.35) && navigation.canGoBack()) {
-            navigation.goBack();
+          // Same place as the List toggle, not whatever screen happens to be below.
+          if (gestureState.dx > 64 || gestureState.vx > 0.35) {
+            backToList();
           }
         },
       }),
-    [edgeBackZoneWidth, navigation],
+    [backToList, edgeBackZoneWidth, screenHeight],
   );
 
   useEffect(() => {
@@ -424,6 +442,7 @@ export function HomeMapScreen() {
               accessibilityLabel: `${item.count} venues. Double tap to zoom in.`,
               coordinate: { latitude: item.latitude, longitude: item.longitude },
               accent: getClusterPinColor(palette),
+              clusterCount: item.count,
             }
           : {
               id: `stall-${item.id}`,
@@ -435,11 +454,6 @@ export function HomeMapScreen() {
       ),
     [palette, rawMapItems],
   );
-
-  // Always land on Discover: after sign-in or "open on map" the screen below may be Home.
-  const backToList = useCallback(() => {
-    navigation.popTo("MainTabs", { screen: "Discover" });
-  }, [navigation]);
 
   const cameraPadding = useMemo(
     () => ({

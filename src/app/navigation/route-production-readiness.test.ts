@@ -158,7 +158,12 @@ test("signed-out app entry requires an account (no guest mode)", () => {
   assert.match(splash, /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/);
   assert.match(
     splash,
-    /if \(!hasCompletedOnboarding\) \{[\s\S]*name: "OnboardingStack"[\s\S]*screen: "OnboardingWelcome"/,
+    /if \(!hasCompletedOnboarding\) \{[\s\S]*routes: \[onboardingEntryRoute\(\)\]/,
+  );
+  // Fresh starts go to Welcome; an unfinished run under 24 hours old reopens on its step.
+  assert.match(
+    read("src/app/navigation/onboardingEntry.ts"),
+    /name: "OnboardingStack", params: \{ screen: "OnboardingWelcome" \}/,
   );
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
   assert.match(profileHome, /setReturnRoute\("Profile"\)/);

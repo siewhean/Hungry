@@ -64,13 +64,13 @@ test("merchant access, dashboard, and tab routes cover primary merchant entry po
     [
       /service\.merchant\.getAnalytics/,
       /navigation\.navigate\("BusinessProfileEditor"\)/,
-      /navigation\.navigate\("CustomerInbox"\)/,
+      /navigation\.navigate\("CustomerInbox"/,
       /navigation\.navigate\("FeaturedVisitors"\)/,
       /navigation\.navigate\("Menu"\)/,
-      /Manage Menu/,
-      /Recent Reviews/,
-      /Featured Visitors/,
-      /Actionable Insights/,
+      /Manage menu/,
+      /Recent reviews/,
+      /Featured visitors/,
+      /To do/,
     ],
     "merchant dashboard actions",
   );
@@ -301,7 +301,7 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
     assistant,
     [
       /merchant\.getAIInsights\(/,
-      /merchant\.getWeeklySummary\(/,
+      /type === "weekly_summary"/,
       /navigation\.navigate\("PromotionBuilder"\)/,
       /navigation\.navigate\("Menu"\)/,
       /navigation\.navigate\("BusinessProfileEditor"\)/,
@@ -376,7 +376,7 @@ test("merchant Playwright and native smoke coverage entry points stay registered
     [
       /test\.describe\("merchant catalog"/,
       /clickDevButton\(page, "Merchant"/,
-      /getByText\("Manage Menu"/,
+      /getByText\("Manage menu"/,
       /getByText\("Menu"/,
       /getByRole\("button", \{ name: "Add menu item" \}\)/,
     ],

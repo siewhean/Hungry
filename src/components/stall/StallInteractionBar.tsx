@@ -1,7 +1,7 @@
 /**
  * StallInteractionBar — Save / Visited / Add to List actions for a stall.
  *
- * Mounted inside StallDetailScreen. Uses useStallInteractionStore + useFoodCredStore.
+ * Mounted inside StallDetailScreen. Uses useStallInteractionStore (which awards Food Cred).
  * Save and Visited both toggle. Marking Visited needs a tried or reviewed dish from
  * this stall first (the same rule the dish page's "Tried" feeds); clearing it never does.
  * The buttons wait for the user's saved stalls to load, so a stall they already saved
@@ -10,7 +10,15 @@
 
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Bookmark, CheckCircle, Circle, ListPlus, MapPin, Send } from "lucide-react-native";
+import {
+  Bookmark,
+  CheckCircle,
+  Circle,
+  ListPlus,
+  MapPin,
+  PenLine,
+  Send,
+} from "lucide-react-native";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -19,13 +27,16 @@ import { AppText } from "@/components/ui/AppText";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useMissionStore } from "@/store/useMissionStore";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 
 interface StallInteractionBarProps {
   userId: string;
   stallId: string;
   /** False for guests: the same buttons show, and a tap goes through onRequireAuth. */
   isAuthenticated?: boolean;
-  onRequireAuth?: (message: string) => void;
+  /** `action` says what the guest tapped, so the screen can finish it after sign-in. */
+  onRequireAuth?: (message: string, action: "save" | "tried") => void;
   reviewPromptText?: string;
   hasReviewedDishAtVenue?: boolean;
   onReviewRequired?: () => void;
@@ -36,7 +47,7 @@ interface StallInteractionBarProps {
   isAddingToList?: boolean;
   /**
    * "card" is the in-page row (Save, Visited, Add to List). "sticky" is the bottom bar with
-   * Directions and Save; holding an icon offers Share, Mark visited and Save to a collection.
+   * Directions, Visited and Save; holding Save offers Saved stalls and Save to a collection.
    */
   layout?: "card" | "sticky";
   /** Card layout only: leave Save out when the sticky bar already carries it. */
@@ -86,6 +97,10 @@ export function StallInteractionBar({
   const [isLoadingInteractions, setIsLoadingInteractions] = useState(false);
   const isMounted = useRef(true);
   const showToast = useUIStore((state) => state.showToast);
+  // stall_bar_cta_v1: only users who see a sticky bar with both Directions and Review take part.
+  const ctaVariant = useExperimentVariant("stall_bar_cta_v1", {
+    enabled: layout === "sticky" && Boolean(onDirections) && Boolean(onReview),
+  });
 
   useEffect(() => {
     isMounted.current = true;
@@ -120,7 +135,7 @@ export function StallInteractionBar({
 
   async function handleSave() {
     if (!isAuthenticated) {
-      onRequireAuth?.("Sign in to save this stall.");
+      onRequireAuth?.("Sign in to save this stall.", "save");
       return;
     }
     if (!isLoaded) {
@@ -134,9 +149,16 @@ export function StallInteractionBar({
       // The sticky bar plays its own confirm; the in-page card needs one here.
       if (layout === "card" && !isSaved) confirmHaptic();
       if (!isSaved) {
-        // Just saved (not unsaved) — count toward missions
         onSaved?.();
-        await incrementProgress(userId, "save_stalls");
+        showToast({
+          message: "Saved. Find it in Profile, Saved, Stalls.",
+          tone: "success",
+          duration: 3000,
+        });
+        // Missions are extra: a failure there must not say the save failed.
+        void incrementProgress(userId, "save_stalls").catch((error) =>
+          reportError(error, { component: "StallInteractionBar", action: "mission_save_stalls" }),
+        );
       }
     } catch {
       // The store rolled the button back: say so instead of leaving a silent rejection.
@@ -148,7 +170,7 @@ export function StallInteractionBar({
 
   async function handleTried() {
     if (!isAuthenticated) {
-      onRequireAuth?.("Sign in to mark this stall visited.");
+      onRequireAuth?.("Sign in to mark this stall visited.", "tried");
       return;
     }
     if (!isLoaded) {
@@ -174,7 +196,9 @@ export function StallInteractionBar({
 
       const triedResult = await markTried(userId, stallId);
       if (triedResult.isTried) {
-        await incrementProgress(userId, "mark_tried");
+        void incrementProgress(userId, "mark_tried").catch((error) =>
+          reportError(error, { component: "StallInteractionBar", action: "mission_mark_tried" }),
+        );
         showToast({ message: "Marked as visited", tone: "success", duration: 3000 });
       } else {
         showToast({ message: "Removed from visited", tone: "info", duration: 3000 });
@@ -191,19 +215,35 @@ export function StallInteractionBar({
 
   if (layout === "sticky") {
     const interactionLoading = !isLoaded && isLoadingInteractions;
+    // directions_cta (stall_bar_cta_v1) swaps the two: Directions is the orange button and
+    // Review is an icon. The variant is only ever set when both exist.
+    const swapped =
+      ctaVariant === "directions_cta" && onDirections && onReview
+        ? { directions: onDirections, review: onReview }
+        : null;
     // Directions, Share and Visited are taps; holding Save offers a collection.
     const stickyActions: DetailAction[] = [
-      ...(onDirections
+      ...(swapped
         ? [
             {
-              id: "directions",
-              label: "Directions",
-              icon: MapPin,
-              onPress: onDirections,
-              accessibilityLabel: "Directions to this stall",
+              id: "review",
+              label: "Review",
+              icon: PenLine,
+              onPress: swapped.review,
+              accessibilityLabel: "Write a review",
             },
           ]
-        : []),
+        : onDirections
+          ? [
+              {
+                id: "directions",
+                label: "Directions",
+                icon: MapPin,
+                onPress: onDirections,
+                accessibilityLabel: "Directions to this stall",
+              },
+            ]
+          : []),
       ...(onShare
         ? [
             {
@@ -245,8 +285,8 @@ export function StallInteractionBar({
               holdTitle: "Save to",
               holdOptions: [
                 {
-                  id: "want-to-try",
-                  label: "Want to try",
+                  id: "saved-stalls",
+                  label: "Saved stalls",
                   icon: Bookmark,
                   selected: isSaved,
                   onPress: () => void handleSave(),
@@ -265,7 +305,18 @@ export function StallInteractionBar({
     return (
       <DetailActionBar
         actions={stickyActions}
-        cta={onReview ? { label: "Write a review", onPress: onReview } : undefined}
+        cta={
+          swapped
+            ? {
+                label: "Directions",
+                icon: MapPin,
+                onPress: swapped.directions,
+                accessibilityLabel: "Directions to this stall",
+              }
+            : onReview
+              ? { label: "Write a review", onPress: onReview }
+              : undefined
+        }
         testID="stall-action-bar"
       />
     );

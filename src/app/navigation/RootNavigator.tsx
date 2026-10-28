@@ -28,6 +28,7 @@ import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isE2eDeveloperLauncherBuild } from "@/lib/runtime/e2eDeveloperLauncher";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import { onboardingEntryRoute } from "./onboardingEntry";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking } from "./linking";
@@ -48,6 +49,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MainTabs",
   "MerchantTabs",
   "StallDetail",
+  "ReportProblem",
   "MerchantClaimExplainer",
   "DishDetail",
   "CatalogRawDetail",
@@ -484,7 +486,13 @@ function OfflineBanner() {
   );
 }
 
-function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }) {
+function ReviewSuccessModalHost({
+  onOpenHistory,
+  onOpenReview,
+}: {
+  onOpenHistory: () => void;
+  onOpenReview: (reviewId: string) => void;
+}) {
   const payload = useUIStore((state) => state.reviewSuccess);
   if (!payload) {
     return null;
@@ -492,7 +500,7 @@ function ReviewSuccessModalHost({ onOpenHistory }: { onOpenHistory: () => void }
 
   const { ReviewSuccessModal } =
     require("@/app/screens/review/ReviewSuccessModal") as typeof import("@/app/screens/review/ReviewSuccessModal");
-  return <ReviewSuccessModal onOpenHistory={onOpenHistory} />;
+  return <ReviewSuccessModal onOpenHistory={onOpenHistory} onOpenReview={onOpenReview} />;
 }
 
 function CredEarnedToastHost() {
@@ -531,6 +539,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
           hasCompletedOnboarding: state.hasCompletedOnboarding,
+          onboardingCompletionPending: state.onboardingCompletionPending,
+          returningAccountIntent: state.returningAccountIntent,
           onAuthRedirect: (route) => {
             state.setReturnRoute({ name: route.name, params: route.params });
           },
@@ -671,7 +681,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
+          routes: [onboardingEntryRoute()],
         });
         return;
       }
@@ -901,7 +911,10 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       <GlobalScrollBackButton />
       <OfflineBanner />
       {FEATURE_FLAGS.reviewCreationEnabled ? (
-        <ReviewSuccessModalHost onOpenHistory={() => navigationRef.navigate("ReviewHistory")} />
+        <ReviewSuccessModalHost
+          onOpenHistory={() => navigationRef.navigate("ReviewHistory")}
+          onOpenReview={(reviewId) => navigationRef.navigate("ReviewDetail", { reviewId })}
+        />
       ) : null}
       <FloatingToast />
       <CredEarnedToastHost />

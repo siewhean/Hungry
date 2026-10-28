@@ -25,6 +25,7 @@ import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { VenueSummary } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
@@ -51,7 +52,9 @@ export function WheelResultModal({ navigation, route }: Props) {
       .then((found) => {
         if (mounted) setFetchedVenue(found);
       })
-      .catch(() => undefined);
+      .catch((error) =>
+        reportError(error, { screen: "WheelResultModal", action: "load_winner_venue" }),
+      );
     return () => {
       mounted = false;
     };
@@ -152,8 +155,9 @@ export function WheelResultModal({ navigation, route }: Props) {
               ...shadows.card,
             }}
           >
-            <Trophy size={14} color={palette.white} />
-            <AppText variant="micro" style={{ color: palette.white, fontWeight: "900" }}>
+            {/* Dark text on amber: white on #F5A623 is 2.0:1. */}
+            <Trophy size={14} color={palette.navy} />
+            <AppText variant="micro" style={{ color: palette.navy, fontWeight: "900" }}>
               Winner
             </AppText>
           </LinearGradient>

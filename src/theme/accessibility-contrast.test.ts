@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { colors, contrastRatios } from "@/theme/tokens";
 import { getBadgeToneStyles, type BadgeTone } from "@/components/ui/badgeTones";
+import { readRepoFile } from "@/test/sourceContracts";
 
 type HexColor = `#${string}`;
 type RgbaColor = `rgba(${number}, ${number}, ${number}, ${number})`;
@@ -174,4 +175,64 @@ test("rating stars and orange CTA labels meet contrast targets", () => {
   // Discover "VALUE" badge: white on the light-mode success fill, dark ink in dark mode.
   assert.ok(contrast(colors.light.white as HexColor, colors.light.success as HexColor) >= 4.5);
   assert.ok(contrast(colors.dark.textOnOrange as HexColor, colors.dark.success as HexColor) >= 4.5);
+});
+
+test("Decide for Me and Wheel text on orange and amber passes 4.5:1", () => {
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    const [r, g, b] = parseHex(palette.orange);
+    // The taste-match badge background: `${palette.orange}22` over the screen background.
+    const tint = compositeRgbaOverBackground(
+      `rgba(${r}, ${g}, ${b}, ${0x22 / 255})` as RgbaColor,
+      palette.bg as HexColor,
+    );
+    assert.ok(contrast(palette.accentText as HexColor, tint) >= 4.5, `${mode} match badge`);
+    // "Why this dish?" label on the bgSoft card.
+    assert.ok(
+      contrast(palette.accentText as HexColor, palette.bgSoft as HexColor) >= 4.5,
+      `${mode} Why this dish`,
+    );
+    // Wheel "Winner" badge: navy ink on amber.
+    assert.ok(
+      contrast(palette.navy as HexColor, palette.amber as HexColor) >= 4.5,
+      `${mode} Winner badge`,
+    );
+  }
+  // Wheel home card subtitle: white on the deep end of the light-mode gradient.
+  assert.ok(contrast(colors.light.white as HexColor, colors.light.orangeDark as HexColor) >= 4.5);
+});
+
+test("MAP-12: Wheel home card text passes 4.5:1 on every gradient stop under its scrim, both modes", () => {
+  // WheelHomeScreen: gradient orangeControl -> orangeDark, with mediaScrimSubtle in dark mode.
+  const wheelHome = readRepoFile("src/app/screens/wheel/WheelHomeScreen.tsx");
+  assert.match(wheelHome, /colors=\{\[palette\.orangeControl, palette\.orangeDark\]\}/);
+  assert.match(wheelHome, /colorScheme === "dark" \?[\s\S]{0,400}palette\.mediaScrimSubtle/);
+  for (const mode of ["light", "dark"] as const) {
+    const palette = colors[mode];
+    for (const stop of ["orangeControl", "orangeDark"] as const) {
+      const behind =
+        mode === "dark"
+          ? compositeRgbaOverBackground(
+              palette.mediaScrimSubtle as RgbaColor,
+              palette[stop] as HexColor,
+            )
+          : (palette[stop] as HexColor);
+      const ratio = contrast(palette.white as HexColor, behind);
+      assert.ok(ratio >= 4.5, `${mode} ${stop}: ${ratio.toFixed(2)}`);
+    }
+  }
+});
+
+test("small link and label text uses accentText, not the brand orange (3.69:1 on white)", () => {
+  assert.ok(contrast(colors.light.orange as HexColor, colors.light.white as HexColor) < 4.5);
+  assert.ok(contrast(colors.light.accentText as HexColor, colors.light.white as HexColor) >= 4.5);
+  for (const file of [
+    "src/app/screens/onboarding/WelcomeScreen.tsx",
+    "src/app/screens/auth/EmailVerificationScreen.tsx",
+    "src/app/screens/catalog/CatalogRawDetailScreen.tsx",
+    "src/components/discover/WhatsHerePanel.tsx",
+    "src/components/review/MediaPicker.tsx",
+  ]) {
+    assert.doesNotMatch(readRepoFile(file), /color: palette\.orange\b/, `${file} text colour`);
+  }
 });

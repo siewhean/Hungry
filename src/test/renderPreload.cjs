@@ -197,6 +197,37 @@ function reanimatedOverrides() {
   });
 }
 
+// FlashList needs native layout to render rows. Under jsdom it renders every row in order, with
+// the header, empty and footer components, so list contents can be read in a render test.
+function flashListStub() {
+  const asElement = (value) =>
+    value == null ? null : React.isValidElement(value) ? value : React.createElement(value);
+  const FlashList = React.forwardRef(function FlashList(props, ref) {
+    React.useImperativeHandle(ref, () => ({
+      scrollToOffset() {},
+      scrollToIndex() {},
+      scrollToEnd() {},
+      scrollToTop() {},
+    }));
+    const data = props.data ?? [];
+    const rows = data.map((item, index) =>
+      React.createElement(
+        React.Fragment,
+        { key: props.keyExtractor ? props.keyExtractor(item, index) : String(index) },
+        props.renderItem({ item, index, target: "Cell" }),
+      ),
+    );
+    return React.createElement(
+      "div",
+      { "data-stub": "FlashList" },
+      asElement(props.ListHeaderComponent),
+      data.length ? rows : asElement(props.ListEmptyComponent),
+      asElement(props.ListFooterComponent),
+    );
+  });
+  return FlashList;
+}
+
 function permissionResult() {
   return {
     granted: true,
@@ -256,6 +287,17 @@ function notificationsOverrides() {
   };
 }
 
+const imageStub = (props = {}) =>
+  React.createElement("span", {
+    "data-stub": "expo-image.Image",
+    ...(props.testID ? { "data-testid": props.testID } : {}),
+    ref: (el) => {
+      if (el)
+        el.__triggerError = props.onError ? () => props.onError({ error: "failed" }) : undefined;
+    },
+  });
+imageStub.displayName = "Stub(expo-image.Image)";
+
 const STUBS = [
   [
     /^expo-font$/,
@@ -268,7 +310,9 @@ const STUBS = [
   [
     /^expo-image$/,
     {
-      Image: Object.assign(hostStub("expo-image.Image"), {
+      // Renders like the other stubs, plus a hook for tests: `el.__triggerError()` runs the
+      // image's onError, so a photo that fails to load can be simulated.
+      Image: Object.assign(imageStub, {
         prefetch: async () => true,
         clearMemoryCache: async () => true,
         clearDiskCache: async () => true,
@@ -305,7 +349,7 @@ const STUBS = [
   [/^react-native-reanimated$/, reanimatedOverrides()],
   [/^@gorhom\//, {}],
   [/^@shopify\/react-native-skia$/, {}],
-  [/^@shopify\/flash-list$/, {}],
+  [/^@shopify\/flash-list$/, { FlashList: flashListStub() }],
   [/^@rnmapbox\/maps$/, {}],
   [/^react-native-pager-view$/, {}],
   [/^react-native-screens/, {}],

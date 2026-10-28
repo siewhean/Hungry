@@ -1,8 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import {
-  BellRing,
   Bookmark,
   CircleCheck,
   Navigation,
@@ -25,6 +24,7 @@ import {
   formatFullStallAddress,
   getStallPin,
 } from "@/features/detail/stallLocation";
+import { describeMissingStalls, loadVenuesByIds } from "@/features/profile/loadVenuesByIds";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import type { CatalogRawDishDetail } from "@/lib/services/catalog";
 import { loadCatalogFavourites } from "@/lib/services/catalog/favourites";
@@ -38,11 +38,12 @@ import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useStallFollowStore } from "@/store/useStallFollowStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Bite } from "@/lib/services/types";
-import type { Portfolio } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
+import type { Portfolio, VenueSummary } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -56,6 +57,20 @@ const SECTION_LABELS: Record<SavedSection, string> = {
   stalls: "Stalls",
   posts: "Posts",
   lists: "Collections",
+};
+
+/** Posts are part of the archived social feed: their tab shows only when the feed is on. */
+export function visibleSavedSections(socialFeedEnabled: boolean): SavedSection[] {
+  return (Object.keys(SECTION_LABELS) as SavedSection[]).filter(
+    (key) => key !== "posts" || socialFeedEnabled,
+  );
+}
+
+const SECTION_HEADINGS: Record<SavedSection, string> = {
+  dishes: "Saved Dishes",
+  stalls: "Saved Stalls",
+  posts: "Saved Posts",
+  lists: "Your Collections",
 };
 
 /** Case-insensitive match on the dish or its stall, for the saved-dishes search box. */
@@ -131,30 +146,37 @@ export function FavouritesScreen({ navigation }: Props) {
   return (
     <ProfileScreenShell title="Saved">
       <View style={{ gap: spacing[1] }}>
-        <AppText variant="h1">Saved Dishes</AppText>
-        <AppText variant="bodySmall" tone="secondary">
-          {profile.favouriteDishIds.length} cravings saved for later
-        </AppText>
+        <AppText variant="h1">{SECTION_HEADINGS[section]}</AppText>
+        {section === "dishes" ? (
+          <AppText variant="bodySmall" tone="secondary">
+            {profile.favouriteDishIds.length} cravings saved for later
+          </AppText>
+        ) : null}
       </View>
-      <View
+      {/* Scrolls sideways so the tabs never clip at large text sizes or on small phones. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
         accessibilityRole="tablist"
-        style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[3] }}
+        contentContainerStyle={{ gap: spacing[2] }}
+        style={{ flexGrow: 0, marginBottom: spacing[3] }}
       >
-        {(Object.keys(SECTION_LABELS) as SavedSection[]).map((key) => (
+        {visibleSavedSections(FEATURE_FLAGS.socialFeedEnabled).map((key) => (
           <Chip
             key={key}
             label={SECTION_LABELS[key]}
+            accessibilityRole="tab"
             accessibilityLabel={`Saved ${SECTION_LABELS[key].toLowerCase()}`}
             selected={section === key}
             onPress={() => setSection(key)}
           />
         ))}
-      </View>
+      </ScrollView>
       {section === "stalls" ? (
         <SavedStallsSection
           onOpenStall={(venueId) => rootNavigation.navigate("StallDetail", { venueId })}
         />
-      ) : section === "posts" ? (
+      ) : section === "posts" && FEATURE_FLAGS.socialFeedEnabled ? (
         <SavedPostsSection
           onOpenPost={(postId) => rootNavigation.navigate("ActivityPostDetail", { postId })}
         />
@@ -438,6 +460,8 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
   const loadVersion = useRef(0);
   const hasLoadedRef = useRef(false);
   const favouriteKey = favouriteDishIds.join(",");
+  // The saved set this screen's own Remove produced; that change is already on screen.
+  const ownRemovalKey = useRef<string | null>(null);
 
   const load = useCallback(async () => {
     const version = ++loadVersion.current;
@@ -469,6 +493,11 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
 
   // Re-resolve when the saved set changes (e.g. a dish saved elsewhere).
   useEffect(() => {
+    if (ownRemovalKey.current !== null && ownRemovalKey.current === favouriteKey) {
+      ownRemovalKey.current = null;
+      return;
+    }
+    ownRemovalKey.current = null;
     void load();
     return () => {
       loadVersion.current += 1;
@@ -477,12 +506,20 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
 
   const removeFavourite = async (dish: CatalogRawDishDetail) => {
     setPendingDishId(dish.id);
+    // The store drops the id right away; the row is removed below, so skip the full re-read
+    // that saved-set change would trigger.
+    ownRemovalKey.current = favouriteDishIds.filter((id) => id !== dish.id).join(",");
     try {
-      const result = await toggleFavourite({ id: dish.id, venueId: dish.venueId });
+      const result = await toggleFavourite(
+        { id: dish.id, venueId: dish.venueId },
+        { surface: "saved" },
+      );
       showToast(
         result.status === "failed"
           ? { message: result.message, tone: "error" }
-          : { message: "Removed from favourites.", tone: "success" },
+          : result.status === "removed"
+            ? { message: "Removed from Saved.", tone: "success" }
+            : { message: "This dish is still saved.", tone: "info" },
       );
       if (result.status === "removed") {
         setDishes((current) => current.filter((item) => item.id !== dish.id));
@@ -637,41 +674,103 @@ function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & {
   );
 }
 
-/** Stalls you follow: the stall-level "save" (Follow on a stall page). */
+/**
+ * Stalls you saved with Save on a stall page (`user_stall_interactions.is_saved`), newest first.
+ * The stall rows come from the server in 50-id batches (`loadVenuesByIds`), so a saved stall that
+ * is not in the cached directory still shows, and so does the 51st.
+ */
 function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) => void }) {
   const { palette, spacing } = useHungryTheme();
-  const followedStallIds = useStallFollowStore((state) => state.followedStallIds);
-  const loadFollowedStalls = useStallFollowStore((state) => state.loadFollowedStalls);
-  const repository = getDataRepository();
+  const userId = useProfileStore((state) => state.profile.id);
+  const interactions = useStallInteractionStore((state) => state.interactions);
+  const isLoaded = useStallInteractionStore((state) => state.isLoaded);
+  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
+  const loadSavedStalls = useCallback(() => loadInteractions(userId), [loadInteractions, userId]);
+  const { failed: loadFailed, retry } = useRetryableLoad(loadSavedStalls, "saved stalls");
+  const [venues, setVenues] = useState<Map<string, VenueSummary> | null>(null);
+  const [missingCount, setMissingCount] = useState(0);
+  const [venuesFailed, setVenuesFailed] = useState(false);
+  const [venuesReloadKey, setVenuesReloadKey] = useState(0);
 
-  const isLoaded = useStallFollowStore((state) => state.isLoaded);
-  const { failed: loadFailed, retry } = useRetryableLoad(loadFollowedStalls, "saved stalls");
-
-  const venues = useMemo(
-    () => followedStallIds.map((id) => repository.getVenueById(id)).filter((venue) => !!venue),
-    [followedStallIds, repository],
+  const savedStallIds = useMemo(
+    () =>
+      Object.values(interactions)
+        .filter((interaction) => interaction.isSaved)
+        .sort((left, right) => (right.savedAt ?? "").localeCompare(left.savedAt ?? ""))
+        .map((interaction) => interaction.stallId),
+    [interactions],
   );
+  const savedKey = savedStallIds.join(",");
 
-  if (venues.length === 0) {
-    if (!isLoaded && !loadFailed) return <ProfileReviewsSkeleton />;
-    if (loadFailed) {
-      return (
-        <EmptyState
-          title="Couldn't load saved stalls"
-          body="Check your connection and try again."
-          ctaLabel="Retry"
-          onPress={retry}
-        />
-      );
+  useEffect(() => {
+    if (!isLoaded) return undefined;
+    const ids = savedKey ? savedKey.split(",") : [];
+    if (ids.length === 0) {
+      setVenues(new Map());
+      setMissingCount(0);
+      return undefined;
     }
+    let active = true;
+    setVenuesFailed(false);
+    loadVenuesByIds(ids)
+      .then((result) => {
+        if (!active) return;
+        setVenues(new Map(result.venues.map((row) => [row.id, row])));
+        setMissingCount(result.missingCount);
+      })
+      .catch((error) => {
+        reportError(error, { screen: "Favourites", action: "load_saved_stalls" });
+        if (active) setVenuesFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isLoaded, savedKey, venuesReloadKey]);
+
+  const onRetry = () => {
+    retry();
+    setVenuesReloadKey((key) => key + 1);
+  };
+  if (loadFailed || venuesFailed) {
     return (
-      <EmptyState title="No saved stalls yet" body="Tap Follow on a stall page to keep it here." />
+      <EmptyState
+        title="Couldn't load saved stalls"
+        body="Check your connection and try again."
+        ctaLabel="Retry"
+        onPress={onRetry}
+      />
+    );
+  }
+  if (!isLoaded || venues === null) return <ProfileReviewsSkeleton />;
+
+  const savedVenues = savedStallIds
+    .map((id) => venues.get(id))
+    .filter((venue): venue is VenueSummary => Boolean(venue));
+
+  const missingNote =
+    missingCount > 0 ? (
+      <AppText tone="secondary" variant="bodySmall">
+        {describeMissingStalls(missingCount)}
+      </AppText>
+    ) : null;
+
+  if (savedVenues.length === 0) {
+    // Every saved id came back with no stall: say so, rather than "No saved stalls yet".
+    return missingCount > 0 ? (
+      <EmptyState
+        title="Couldn't show your saved stalls"
+        body={describeMissingStalls(missingCount)}
+        ctaLabel="Retry"
+        onPress={onRetry}
+      />
+    ) : (
+      <EmptyState title="No saved stalls yet" body="Tap Save on a stall page to keep it here." />
     );
   }
 
   return (
     <View style={{ gap: spacing[3] }}>
-      {venues.map((venue) => (
+      {savedVenues.map((venue) => (
         <Pressable
           key={venue.id}
           accessibilityRole="button"
@@ -679,19 +778,19 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
           onPress={() => onOpenStall(venue.id)}
         >
           <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <BellRing color={palette.orange} size={18} />
+            <Bookmark color={palette.orange} fill={palette.orange} size={18} />
             <View style={{ flex: 1, gap: spacing[1] }}>
               <AppText variant="bodyBold">{venue.name}</AppText>
-              {venue.unitNumber ? (
+              {venue.buildingName || venue.unitNumber ? (
                 <AppText variant="bodySmall" tone="secondary">
-                  {venue.unitNumber}
-                  {venue.floor ? ` · ${venue.floor}` : ""}
+                  {[venue.unitNumber?.trim(), venue.buildingName].filter(Boolean).join(" · ")}
                 </AppText>
               ) : null}
             </View>
           </Card>
         </Pressable>
       ))}
+      {missingNote}
     </View>
   );
 }
@@ -710,6 +809,7 @@ function SavedListsSection({
   const { width } = useWindowDimensions();
   const profileId = useProfileStore((state) => state.profile.id);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
   const portfolios = usePortfolioStore((state) => state.portfolios);
   const items = usePortfolioStore((state) => state.items);
   const mineIds = usePortfolioStore((state) => state.scopeIds.mine);
@@ -719,11 +819,17 @@ function SavedListsSection({
   // Two columns inside the screen's spacing[4] gutters.
   const tileWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
 
-  useEffect(() => {
-    if (!canLoad) return;
-    // Your own lists by owner on the server, not a filter over everyone's newest 100.
-    void loadPortfolioScope("mine").catch((error) => console.error("Failed to load lists:", error));
-  }, [canLoad, loadPortfolioScope, profileId]);
+  // Your own lists by owner on the server, not a filter over everyone's newest 100. Keyed on the
+  // owner id the store queries with (the signed-in account first), so a switch reloads.
+  const ownerId = (isAuthenticated ? authenticatedUserId : undefined) ?? profileId;
+  const loadOwnLists = useCallback(
+    async () => {
+      if (canLoad) await loadPortfolioScope("mine");
+    },
+    // ownerId: a different account reloads its own lists.
+    [canLoad, loadPortfolioScope, ownerId],
+  );
+  const { failed: listsFailed, retry: retryLists } = useRetryableLoad(loadOwnLists, "saved lists");
 
   const ownLists = useMemo(() => {
     const byId = new Map(portfolios.map((portfolio) => [portfolio.id, portfolio]));
@@ -743,6 +849,17 @@ function SavedListsSection({
     }
     return covers;
   }, [items, ownLists, repository]);
+
+  if (listsFailed && ownLists.length === 0) {
+    return (
+      <EmptyState
+        title="Couldn't load your lists"
+        body="Check your connection and try again."
+        ctaLabel="Retry"
+        onPress={retryLists}
+      />
+    );
+  }
 
   return (
     <View style={{ gap: spacing[4] }}>

@@ -13,6 +13,12 @@ const defaultGates = [
 
 const optionalGates = [
   {
+    script: "waitlist:e2e",
+    description: "Waitlist signup stored end to end through /api/waitlist against a stand-in database.",
+    enabled: () => process.env.HUNGRY_PREDEPLOY_WAITLIST_E2E === "1",
+    skipReason: "set HUNGRY_PREDEPLOY_WAITLIST_E2E=1; starts a local dev server",
+  },
+  {
     script: "private-routes:qc",
     description: "Runtime private merchant/console page and API access checks.",
     enabled: () => Boolean(process.env.WEBSITE_BASE_URL) || process.env.HUNGRY_PREDEPLOY_WITH_SERVER === "1",

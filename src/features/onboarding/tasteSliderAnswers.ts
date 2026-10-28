@@ -24,6 +24,20 @@ export function emptyTasteDraft(): TasteDraft {
   return { values: { ...NEUTRAL_TASTE_VECTOR }, answered: [] };
 }
 
+/**
+ * Picks up a draft the person left mid-quiz (the draft store keeps answers, which ones were
+ * answered, and the question they were on). Old 2/5/8 answers move to the nearest stop.
+ */
+export function draftFromStoredQuiz(stored: {
+  answers: TasteVector;
+  answeredKeys: readonly TasteKey[];
+}): TasteDraft {
+  const values = { ...NEUTRAL_TASTE_VECTOR };
+  const answered = TASTE_SLIDER_ORDER.filter((key) => stored.answeredKeys.includes(key));
+  for (const key of answered) values[key] = stopForSavedAnswer(stored.answers[key]);
+  return { values, answered };
+}
+
 /** A retake from Profile starts from the saved vector, with every taste counted as answered. */
 export function draftFromSavedVector(vector: TasteVector): TasteDraft {
   const values = { ...NEUTRAL_TASTE_VECTOR };

@@ -8,6 +8,8 @@ import { AppText } from "./AppText";
 interface ChipProps {
   label: string;
   accessibilityLabel?: string;
+  /** "tab" inside a tablist; buttons otherwise. */
+  accessibilityRole?: "button" | "tab";
   selected?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
@@ -17,6 +19,7 @@ interface ChipProps {
 export function Chip({
   label,
   accessibilityLabel,
+  accessibilityRole = "button",
   selected = false,
   onPress,
   leftIcon,
@@ -79,7 +82,7 @@ export function Chip({
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected }}
       onPress={() => {

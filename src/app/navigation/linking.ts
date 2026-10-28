@@ -13,6 +13,10 @@ export interface LinkingAuthState {
   isAuthReady: boolean;
   isAuthenticated: boolean;
   hasCompletedOnboarding?: boolean;
+  /** Onboarding is done on the device but waits for the account step (OnboardingAuth). */
+  onboardingCompletionPending?: boolean;
+  /** Welcome's "Sign in" was tapped and nobody has signed in yet: signed-out links open Login. */
+  returningAccountIntent?: boolean;
   /** Called with the route a signed-out user was sent to onboarding/Login from. */
   onAuthRedirect?: (route: LinkingRoute) => void;
 }
@@ -122,6 +126,20 @@ export function parseAuthCallbackParams(rawPath: string): {
   return isSafeDeepLinkId(code) ? { code } : { error: "invalid" };
 }
 
+/**
+ * With double confirmation of an email change, the first of the two links GoTrue sends
+ * returns without a code but with "Confirmation link accepted. Please proceed to confirm
+ * link sent to the other email". That is progress, not a failure.
+ */
+export function isPartialEmailChangeConfirmation(rawPath: string): boolean {
+  const [beforeHash, hash = ""] = rawPath.split("#");
+  const queryIndex = beforeHash.indexOf("?");
+  const query = queryIndex >= 0 ? beforeHash.slice(queryIndex + 1) : "";
+  const message =
+    new URLSearchParams(query).get("message") ?? new URLSearchParams(hash).get("message");
+  return typeof message === "string" && /confirmation link accepted/i.test(message);
+}
+
 function createState(name: string, params?: Record<string, unknown>): LinkingState {
   return { routes: [params && Object.keys(params).length > 0 ? { name, params } : { name }] };
 }
@@ -182,7 +200,11 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
   // It has its own path so it never runs the sign-up path ("Email verified. Welcome").
   if (path === "auth/email-change") {
     const { code } = parseAuthCallbackParams(rawPath);
-    return createAuthState("EmailChange", code ? { code } : undefined);
+    if (code) return createAuthState("EmailChange", { code });
+    return createAuthState(
+      "EmailChange",
+      isPartialEmailChangeConfirmation(rawPath) ? { otherLinkPending: true } : undefined,
+    );
   }
   // OAuth returns are consumed by WebBrowser.openAuthSessionAsync.
   if (path === "auth/oauth") return undefined;
@@ -296,8 +318,28 @@ function isAuthRouteState(state: LinkingState | undefined): boolean {
   return activeRoute?.name === "AuthStack";
 }
 
-function signedOutState(hasCompletedOnboarding: boolean | undefined): LinkingState {
-  return hasCompletedOnboarding
+// Auth screens that only make sense signed out: a signed-in user who opens a "Log in" link
+// (or an old confirmation email with no code) would be stranded there, so they go Home.
+function isSignedOutOnlyAuthState(state: LinkingState): boolean {
+  const activeRoute = state.routes[state.routes.length - 1];
+  const params = activeRoute?.params as
+    | { screen?: string; params?: Record<string, unknown> }
+    | undefined;
+  const screen = params?.screen;
+  if (screen === "Login" || screen === "SignUp" || screen === "ForgotPassword") return true;
+  return screen === "EmailVerification" && !params?.params?.code;
+}
+
+function signedOutState(
+  hasCompletedOnboarding: boolean | undefined,
+  onboardingCompletionPending?: boolean,
+  returningAccountIntent?: boolean,
+): LinkingState {
+  // As Splash does: someone who finished the quiz but not the account step resumes there.
+  if (onboardingCompletionPending) {
+    return createState("OnboardingStack", { screen: "OnboardingAuth" });
+  }
+  return hasCompletedOnboarding || returningAccountIntent
     ? createState("AuthStack", { screen: "Login" })
     : createState("OnboardingStack", { screen: "OnboardingWelcome" });
 }
@@ -381,15 +423,27 @@ export function createRootLinking(
     getStateFromPath(path: string) {
       const state = sanitizeLinkingState(buildStateFromPath(path));
       if (!state) return undefined;
-      if (isAuthRouteState(state)) return state;
+      if (isAuthRouteState(state)) {
+        const { isAuthReady, isAuthenticated } = getAuthState();
+        if (isAuthReady && isAuthenticated && isSignedOutOnlyAuthState(state)) {
+          return createState("MainTabs", { screen: "Home" });
+        }
+        return state;
+      }
       trackSharedLinkOpened(state, path);
 
       // Mandatory sign-in: no app route opens without an authenticated session.
       // The link is remembered as the return route (Splash and the post-login
       // navigation consume it) instead of being dropped, including on a cold
       // start while auth is still settling.
-      const { isAuthReady, isAuthenticated, hasCompletedOnboarding, onAuthRedirect } =
-        getAuthState();
+      const {
+        isAuthReady,
+        isAuthenticated,
+        hasCompletedOnboarding,
+        onboardingCompletionPending,
+        returningAccountIntent,
+        onAuthRedirect,
+      } = getAuthState();
       const activeRoute = state.routes[state.routes.length - 1];
       const rememberRoute = (route: LinkingRoute | undefined) => {
         if (!route) return;
@@ -402,7 +456,11 @@ export function createRootLinking(
       }
       if (!isAuthenticated) {
         rememberRoute(activeRoute);
-        return signedOutState(hasCompletedOnboarding);
+        return signedOutState(
+          hasCompletedOnboarding,
+          onboardingCompletionPending,
+          returningAccountIntent,
+        );
       }
 
       return state;

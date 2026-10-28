@@ -13,6 +13,7 @@ import { tasteFlowScreenAt } from "@/features/onboarding/onboardingFlow";
 import {
   answerTaste,
   canSkipRest,
+  draftFromStoredQuiz,
   emptyTasteDraft,
   isTasteAnswered,
   liveTasteLine,
@@ -31,6 +32,7 @@ import {
 } from "@/features/onboarding/tasteSliderStops";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { getFreshOnboardingDraft, useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 import { useHungryTheme } from "@/theme";
 import { trackOnboardingStepSkipped, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
@@ -54,9 +56,19 @@ export function TasteSliderQuizScreen({ navigation, route }: Props) {
   const { width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   const flowMode = route.params?.mode ?? "onboarding";
-  const [index, setIndex] = useState(0);
-  const [draft, setDraft] = useState<TasteDraft>(emptyTasteDraft);
-  const [liveValue, setLiveValue] = useState(NEUTRAL_SLIDER_VALUE);
+  // A relaunch reopens the quiz with the answers given so far (a draft under 24 hours old).
+  const [stored] = useState(() =>
+    flowMode === "onboarding" ? getFreshOnboardingDraft()?.quiz : null,
+  );
+  const [index, setIndex] = useState(() =>
+    stored ? Math.max(0, Math.min(LAST_INDEX, stored.step)) : 0,
+  );
+  const [draft, setDraft] = useState<TasteDraft>(() =>
+    stored ? draftFromStoredQuiz(stored) : emptyTasteDraft(),
+  );
+  const [liveValue, setLiveValue] = useState(() =>
+    stored ? draftFromStoredQuiz(stored).values[TASTE_SLIDER_ORDER[index]!] : NEUTRAL_SLIDER_VALUE,
+  );
   const finishedRef = useRef(false);
 
   const key = TASTE_SLIDER_ORDER[index]!;
@@ -79,6 +91,16 @@ export function TasteSliderQuizScreen({ navigation, route }: Props) {
     });
   }, [index, key]);
 
+  // Keep the answers given so far, so closing the app mid-quiz does not lose them.
+  useEffect(() => {
+    if (flowMode !== "onboarding") return;
+    useOnboardingDraftStore.getState().rememberQuiz({
+      answers: tasteVectorFromDraft(draft),
+      answeredKeys: [...draft.answered],
+      step: index,
+    });
+  }, [draft, flowMode, index]);
+
   // Back (button, swipe or the Android key) steps to the previous question before it leaves the quiz.
   useEffect(() => {
     if (index === 0) return undefined;
@@ -94,13 +116,13 @@ export function TasteSliderQuizScreen({ navigation, route }: Props) {
     finishedRef.current = true;
     const answeredAny = !wasTasteSkipped(final);
     if (!answeredAny) trackOnboardingStepSkipped("taste");
-    navigation.navigate("DietaryPreferences", {
-      mode: flowMode,
-      initialPhase: "dietary",
-      ...(answeredAny
-        ? { answers: tasteVectorFromDraft(final), answeredKeys: [...final.answered] }
-        : {}),
+    // The dietary step reads the answers from the draft, not from route params.
+    useOnboardingDraftStore.getState().rememberQuiz({
+      answers: tasteVectorFromDraft(final),
+      answeredKeys: [...final.answered],
+      step: index,
     });
+    navigation.navigate("DietaryPreferences", { mode: flowMode, initialPhase: "dietary" });
   };
 
   const advance = (next: TasteDraft) => {

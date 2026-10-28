@@ -18,6 +18,7 @@ import {
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import type { MerchantPromotion, PromotionStatus } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
@@ -73,6 +74,7 @@ export function PromotionListScreen() {
       });
       updateOutletProfile(activeOutlet.id, updated);
     } catch (e) {
+      reportError(e, { screen: "PromotionList", action: "show_on_hungry" });
       showAlert("Could not show your stall", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setIsGoingLive(false);
@@ -91,8 +93,8 @@ export function PromotionListScreen() {
       const data = await getHungryService().merchant.getPromotions(activeOutlet.id);
       setPromotions(data);
     } catch (e) {
+      reportError(e, { screen: "PromotionList", action: "load_promotions" });
       setError(e instanceof Error ? e.message : "Failed to load promotions.");
-      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -189,7 +191,7 @@ export function PromotionListScreen() {
                 Create a promotion to attract more customers and boost your sales.
               </AppText>
               <Button
-                label="Create Promotion"
+                label="Create promotion"
                 variant="primary"
                 style={{ marginTop: spacing[4] }}
                 onPress={() => navigation.navigate("PromotionBuilder")}

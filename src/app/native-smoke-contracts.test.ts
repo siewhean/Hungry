@@ -147,6 +147,27 @@ test("authenticated fallback smoke requires staging credentials and an offline c
   assert.match(flow, /assertVisible: "Offline catalog"/);
   assert.match(discover, /testID=\{isOfflineCatalog \? "catalog-source-excel"/);
   assert.match(discover, /releaseId\?\.startsWith\("excel-fallback"\)/);
+  // Supabase builds show the redesigned Home, which hands off to the Excel Home only when
+  // the discovery feed fails too, so the outage smokes must take that RPC down as well.
+  const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
+  assert.match(flow, /get_discovery_feed_by_location unavailable/);
+  assert.match(spec, /catalog_raw_\|get_discovery_feed_by_location/);
+  assert.doesNotMatch(spec, /catalog-source-supabase/);
+});
+
+test("HOME-V4: outage smokes accept the rail title Home shows without a GPS fix", () => {
+  const flow = read(".maestro/ios-authenticated-fallback-smoke.yaml");
+  const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
+  const discover = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
+  // Fresh installs have no location grant, so Home titles the rail "Stalls".
+  assert.match(discover, /showDistance \? "Stalls near you" : "Stalls"/);
+  assert.doesNotMatch(flow, /assertVisible: "Stalls near you"/);
+  assert.match(flow, /assertVisible: "Stalls\( near you\)\?"/);
+  assert.doesNotMatch(spec, /getByText\("Stalls near you"/);
+  assert.match(spec, /getByText\(\/\^Stalls\( near you\)\?\$\/\)/);
+  // The Discover tab is labelled Home.
+  assert.match(flow, /tapOn:\n\s+text: "Home"/);
+  assert.match(spec, /getByText\("Home", \{ exact: true \}\)\.click\(\)/);
 });
 
 test("native media and interaction flows remain available as explicit authenticated targets", () => {

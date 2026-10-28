@@ -11,11 +11,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { FoodOpenness } from "@/types/domain";
-import {
-  OnboardingProgress,
-  trackOnboardingStepSkipped,
-  trackOnboardingStepViewed,
-} from "./OnboardingProgress";
+import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
@@ -38,16 +34,20 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
   const tasteProfile = useProfileStore((state) => state.profile.tasteProfile);
   const setFoodOpenness = useProfileStore((state) => state.setFoodOpenness);
   const showToast = useUIStore((state) => state.showToast);
-  const [selected, setSelected] = useState<FoodOpenness>(() =>
+  // The preselected answer; Continue without a tap keeps it, which is not a real choice.
+  const [initialSelection] = useState<FoodOpenness>(() =>
     tasteProfile?.foodOpenness ? resolveFoodOpenness(tasteProfile) : DEFAULT_FOOD_OPENNESS,
   );
+  const [selected, setSelected] = useState<FoodOpenness>(initialSelection);
 
   useEffect(() => {
     if (!isSettings) trackOnboardingStepViewed("openness");
   }, [isSettings]);
 
   const finish = (openness: FoodOpenness) => {
-    setFoodOpenness(openness, isSettings ? "settings" : "onboarding");
+    setFoodOpenness(openness, isSettings ? "settings" : "onboarding", {
+      changedFromDefault: openness !== initialSelection,
+    });
     if (isSettings) {
       showToast({ message: "Recommendations updated.", tone: "success" });
       navigation.goBack();
@@ -106,6 +106,7 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
                 key={option.value}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: isSelected }}
+                aria-checked={isSelected}
                 accessibilityLabel={option.label}
                 accessibilityHint={option.description}
                 onPress={() => setSelected(option.value)}
@@ -143,17 +144,6 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
         }}
       >
         <Button label={isSettings ? "Save" : "Continue"} onPress={() => finish(selected)} />
-        {isSettings ? null : (
-          <Button
-            label="Skip"
-            variant="ghost"
-            onPress={() => {
-              // Skip saves nothing: the default applies until the user picks one in Settings.
-              trackOnboardingStepSkipped("openness");
-              navigation.navigate("TasteProfileResult");
-            }}
-          />
-        )}
       </View>
     </SafeAreaView>
   );

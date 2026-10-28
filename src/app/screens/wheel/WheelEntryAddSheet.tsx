@@ -37,6 +37,7 @@ import type {
   DietaryFlag,
   UserProfile,
 } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const CATEGORIES: SearchCategory[] = [
   "local favourites",
@@ -333,7 +334,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
         .then((venues) => {
           if (mounted) setRemoteVenues(venues);
         })
-        .catch(() => {
+        .catch((error) => {
+          reportError(error, { screen: "WheelEntryAddSheet", action: "search_venues" });
           if (mounted) setRemoteVenues(null);
         });
     }, 250);

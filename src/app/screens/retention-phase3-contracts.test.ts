@@ -74,7 +74,7 @@ test("Decide For Me offers backup picks and a Not for me swap", () => {
   assert.match(source, /getOtherPicks\(candidates, resultIndex\)/);
   assert.match(
     source,
-    /buildPickReason\(\s*profile\.tasteVector,\s*pick,\s*pickMatch,\s*hasTasteProfile\s*\)/,
+    /buildPickReason\(\s*tasteVector,\s*pick,\s*pickMatch,\s*hasTasteProfile\s*\)/,
   );
 });
 

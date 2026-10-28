@@ -8,6 +8,7 @@ import DateTimePicker, { type DateTimePickerEvent } from "@react-native-communit
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { reportError } from "@/lib/monitoring/reportError";
 import {
   AccessibleImage,
   AppText,
@@ -39,10 +40,11 @@ type FormErrors = Partial<
 
 const SINGAPORE_POSTAL_CODE_PATTERN = /^\d{6}$/;
 
-function isHttpUrl(value: string) {
+/** Ordering links must be https, as the form's error says. */
+export function isHttpsUrl(value: string) {
   try {
     const url = new URL(value);
-    return (url.protocol === "https:" || url.protocol === "http:") && Boolean(url.hostname);
+    return url.protocol === "https:" && Boolean(url.hostname);
   } catch {
     return false;
   }
@@ -146,7 +148,12 @@ function clamp(value: number, min: number, max: number): number {
 
 const SUBMIT_FAILED_MESSAGE = "Couldn't submit the stall. Please try again.";
 
-function resolveSubmitErrorMessage(error: unknown): string {
+/** Exported for tests. */
+export function resolveSubmitErrorMessage(error: unknown): string {
+  // The row may have been saved: point to My submissions instead of inviting a duplicate.
+  if (error instanceof Error && error.name === "StallSubmissionUnconfirmedError") {
+    return error.message;
+  }
   const asText = findErrorMessage(error)?.toLowerCase() ?? "";
   // Our own server limits say something a person can act on; everything else (migration or
   // schema-cache errors, permission errors, raw codes) is not for them.
@@ -298,7 +305,8 @@ export function AddStallScreen({ navigation }: Props) {
         .then((venues) => {
           if (isActive) setSimilarVenues(venues.slice(0, 3));
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          reportError(error, { area: "add_stall_similar_venues" });
           if (isActive) setSimilarVenues([]);
         });
     }, 400);
@@ -408,12 +416,19 @@ export function AddStallScreen({ navigation }: Props) {
 
   const pickImages = async () => {
     // The system photo picker needs no library permission, so there is no pre-prompt.
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsMultipleSelection: true,
-      selectionLimit: MAX_STALL_IMAGES,
-      quality: 0.9,
-    });
+    let result: ImagePicker.ImagePickerResult;
+    try {
+      result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: true,
+        selectionLimit: MAX_STALL_IMAGES,
+        quality: 0.9,
+      });
+    } catch (error) {
+      reportError(error, { area: "add_stall_pick_images" });
+      showToast({ message: "Couldn't open your photos. Please try again.", tone: "error" });
+      return;
+    }
 
     if (result.canceled || !result.assets.length) return;
     setSelectedImages((current) => {
@@ -571,7 +586,7 @@ export function AddStallScreen({ navigation }: Props) {
     if (postalCode.trim() && !SINGAPORE_POSTAL_CODE_PATTERN.test(postalCode.trim())) {
       nextErrors.postalCode = "Enter a 6-digit postal code.";
     }
-    if (deliveryLink.trim() && !isHttpUrl(deliveryLink.trim())) {
+    if (deliveryLink.trim() && !isHttpsUrl(deliveryLink.trim())) {
       nextErrors.deliveryLink = "Enter a full link starting with https://";
     }
     setErrors(nextErrors);
@@ -627,11 +642,12 @@ export function AddStallScreen({ navigation }: Props) {
         time: "now",
       });
       showToast({
-        message: "Stall details submitted. Update added to Activities.",
+        message: "Stall details submitted. We'll review them soon.",
         tone: "success",
       });
       navigation.goBack();
     } catch (error) {
+      reportError(error, { area: "add_stall_submit" });
       showToast({
         message: resolveSubmitErrorMessage(error),
         tone: "error",

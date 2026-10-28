@@ -44,6 +44,8 @@ interface PortfolioState {
   /** Loads one tab's lists with its own server query and caches them by id. */
   loadPortfolioScope: (scope: PortfolioListScope) => Promise<void>;
   loadPortfolioItems: (portfolioId: string) => Promise<void>;
+  /** Loads the items of several lists in one read (save sheet, hold menu, Collections). */
+  loadItemsForPortfolios: (portfolioIds: string[]) => Promise<void>;
   loadPortfolioCollaborators: (portfolioId: string) => Promise<void>;
   checkFollowStatus: (portfolioId: string) => Promise<void>;
   /** Loads which lists the user follows, so the Following tab is right on a fresh install. */
@@ -54,7 +56,8 @@ interface PortfolioState {
   deletePortfolio: (id: string) => Promise<void>;
   publishPortfolio: (id: string) => Promise<void>;
 
-  addItem: (input: PortfolioItemCreateInput) => Promise<PortfolioItem>;
+  /** `surface` names the page the add came from, for the portfolio_item_added event. */
+  addItem: (input: PortfolioItemCreateInput, meta?: { surface?: string }) => Promise<PortfolioItem>;
   updateItem: (id: string, updates: Partial<PortfolioItemCreateInput>) => Promise<void>;
   deleteItem: (id: string, portfolioId: string) => Promise<void>;
   reorderItems: (portfolioId: string, itemIds: string[]) => Promise<void>;
@@ -98,6 +101,20 @@ type PortfolioSet = (
 
 function getAnalyticsUserId(): string | undefined {
   return useProfileStore.getState().profile.id;
+}
+
+/**
+ * The id that owns "your" lists: the signed-in auth user. The profile id can still be the
+ * "guest-user" placeholder while the profile loads, which made the "mine" query fail (or match
+ * nothing) and the save sheet offer a second "Hungry Picks".
+ */
+export function getPortfolioOwnerId(): string {
+  const { useSessionStore } = require("./useSessionStore") as typeof import("./useSessionStore");
+  const session = useSessionStore.getState();
+  return (
+    (session.isAuthenticated ? session.authenticatedUserId : undefined) ??
+    useProfileStore.getState().profile.id
+  );
 }
 
 function normalizeScore(score: PortfolioItemCreateInput["score"]): number | undefined {
@@ -151,7 +168,7 @@ function withoutId(ids: string[] | undefined, id: string): string[] | undefined 
 
 async function fetchPortfolioScope(scope: PortfolioListScope): Promise<Portfolio[]> {
   const service = getHungryService();
-  const profileId = useProfileStore.getState().profile.id;
+  const profileId = getPortfolioOwnerId();
   switch (scope) {
     case "mine":
       return service.portfolio.getPortfolios({ userId: profileId });
@@ -364,6 +381,13 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
+      loadItemsForPortfolios: async (portfolioIds: string[]) => {
+        const ids = [...new Set(portfolioIds)];
+        if (ids.length === 0) return;
+        const byList = await getHungryService().portfolio.getPortfolioItemsForPortfolios(ids);
+        set((state) => ({ items: { ...state.items, ...byList } }));
+      },
+
       loadPortfolioCollaborators: async (portfolioId: string) => {
         const service = getHungryService();
         try {
@@ -481,7 +505,7 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      addItem: async (input: PortfolioItemCreateInput) => {
+      addItem: async (input: PortfolioItemCreateInput, meta?: { surface?: string }) => {
         const normalizedInput = { ...input, score: normalizeScore(input.score) };
         const item = await mutatePortfolio(get, set, input.portfolioId, async () => {
           if (!get().items[input.portfolioId]) {
@@ -513,6 +537,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             dish_id: normalizedInput.dishId,
             stall_id: normalizedInput.stallId,
             score: normalizedInput.score,
+            surface: meta?.surface,
           },
           { userId: getAnalyticsUserId() },
         );
@@ -540,6 +565,11 @@ export const usePortfolioStore = create<PortfolioState>()(
           });
           if (portfolioId) {
             await get().refreshPortfolio(portfolioId);
+            // Show what the server kept (a cleared score is kept as it was until the RPC can
+            // clear it), not the optimistic local value.
+            await get()
+              .loadPortfolioItems(portfolioId)
+              .catch(() => undefined);
           }
         };
         await (portfolioId ? mutatePortfolio(get, set, portfolioId, write) : write());

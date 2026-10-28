@@ -4,12 +4,16 @@
 import assert from "node:assert/strict";
 import test, { afterEach, beforeEach } from "node:test";
 
+import { useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 import { resetTypedLines } from "@/features/onboarding/typedLines";
 import { cleanup, renderScreen } from "@/test/render";
 import { TasteQuizRoute } from "./TasteQuizRoute";
 import { TasteSliderQuizScreen } from "./TasteSliderQuizScreen";
 
-beforeEach(resetTypedLines);
+beforeEach(() => {
+  resetTypedLines();
+  useOnboardingDraftStore.getState().clearDraft();
+});
 afterEach(cleanup);
 
 const show = () => renderScreen(TasteSliderQuizScreen, { name: "TasteQuiz" });
@@ -36,6 +40,20 @@ test("skipping all six questions goes to the dietary step with no taste answers"
     "DietaryPreferences",
     { mode: "onboarding", initialPhase: "dietary" },
   ]);
+  assert.deepEqual(useOnboardingDraftStore.getState().quiz?.answeredKeys, []);
+  await view.unmount();
+});
+
+test("it reopens on the question a relaunch left off, with a fresh draft", async () => {
+  const draft = useOnboardingDraftStore.getState();
+  draft.rememberRoute("TasteQuiz");
+  draft.rememberQuiz({
+    answers: { spicy: 8, sweet: 5, salty: 5, sour: 5, rich: 5, aromatic: 5 },
+    answeredKeys: ["spicy"],
+    step: 1,
+  });
+  const view = await show();
+  assert.match(view.text(), /How sweet do you like your food and drinks\?/);
   await view.unmount();
 });
 

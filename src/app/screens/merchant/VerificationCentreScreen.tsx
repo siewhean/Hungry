@@ -26,6 +26,7 @@ import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "VerificationCentre">;
 type EvidenceMethod = "video_walkaround" | "licence_upload";
@@ -91,6 +92,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
       setPendingEvidence({ method, kind, uri });
       trackMerchantEvent("merchant_verification_started", activeOutlet.id, { method, source });
     } catch (e) {
+      reportError(e, { screen: "VerificationCentre", action: "pick_evidence" });
       setUploadError(e instanceof Error ? e.message : "Unable to open the photo picker.");
     }
   };
@@ -114,7 +116,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
       const updatedAccount = await getHungryService().merchant.getMerchantAccount();
       if (updatedAccount) setAccount(updatedAccount);
     } catch (e) {
-      console.error(e);
+      reportError(e, { screen: "VerificationCentre", action: "submit_evidence" });
       setUploadError(e instanceof Error ? e.message : "Unable to upload verification evidence.");
     } finally {
       setIsUploadingEvidence(false);
@@ -133,10 +135,12 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <ShieldCheck size={32} color={palette.success} />
             <AppText variant="h3" style={{ color: palette.success, marginTop: spacing[2] }}>
-              Verified Outlet
+              Verified outlet
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              Your outlet has been fully verified and is visible to customers.
+              {activeOutlet?.isLive
+                ? "Your outlet is verified and visible to customers."
+                : 'Your outlet is verified. Turn on "Show on Hungry" in your profile so customers can see it.'}
             </AppText>
           </View>
         );
@@ -150,8 +154,9 @@ export function VerificationCentreScreen({ navigation }: Props) {
             ]}
           >
             <Clock size={32} color={palette.orange} />
-            <AppText variant="h3" style={{ color: palette.orange, marginTop: spacing[2] }}>
-              Verification Pending
+            {/* orangeText: orange on the soft orange fill is under 4.5:1 at this size. */}
+            <AppText variant="h3" style={{ color: palette.orangeText, marginTop: spacing[2] }}>
+              Verification pending
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               Hungry is reviewing your documents. You can keep setting up your stall and menu while
@@ -169,7 +174,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <AlertCircle size={32} color={palette.error} />
             <AppText variant="h3" style={{ color: palette.error, marginTop: spacing[2] }}>
-              Verification Rejected
+              Verification rejected
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               {opsNote
@@ -194,7 +199,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <AlertCircle size={32} color={palette.warningText} />
             <AppText variant="h3" style={{ color: palette.warningText, marginTop: spacing[2] }}>
-              More Information Needed
+              More information needed
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
               {opsNote
@@ -219,7 +224,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
           >
             <ShieldAlert size={32} color={palette.orange} />
             <AppText variant="h3" style={{ color: palette.text, marginTop: spacing[2] }}>
-              {isExpired ? "Verification Expired" : "Verify Your Outlet"}
+              {isExpired ? "Verification expired" : "Verify your outlet"}
             </AppText>
             <AppText
               style={{ color: palette.textSecondary, marginTop: spacing[1], textAlign: "center" }}
@@ -290,12 +295,12 @@ export function VerificationCentreScreen({ navigation }: Props) {
     return (
       <View style={{ gap: spacing[4] }}>
         <AppText variant="h3" style={{ color: palette.text, marginBottom: spacing[4] }}>
-          Available Methods
+          Available methods
         </AppText>
 
         <MethodCard
           icon={<Video size={24} color={palette.orange} />}
-          title="Video Walkaround"
+          title="Video walkaround"
           description={`Attach a video of up to ${MAX_EVIDENCE_VIDEO_SECONDS / 60} minutes showing your stall front, menu, and kitchen.`}
           onPress={() => void handlePickEvidence("video_walkaround", "video")}
           isLoading={isUploadingEvidence}
@@ -303,7 +308,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
         <MethodCard
           icon={<FileText size={24} color={palette.orange} />}
-          title="Document Photo"
+          title="Document photo"
           description="Attach a photo of your SFA licence or ACRA business profile."
           onPress={() => void handlePickEvidence("licence_upload", "image")}
           isLoading={isUploadingEvidence}
@@ -311,7 +316,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
         <MethodCard
           icon={<Camera size={24} color={palette.orange} />}
-          title="Take Document Photo"
+          title="Take document photo"
           description="Use your camera to photograph your SFA licence or ACRA business profile."
           onPress={() => void handlePickEvidence("licence_upload", "image", "camera")}
           isLoading={isUploadingEvidence}

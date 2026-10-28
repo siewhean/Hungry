@@ -57,3 +57,25 @@ test("a save result for a different account is ignored", () => {
     useProfileStore.setState({ profile: before });
   }
 });
+
+test("a saved bio and a removed photo replace the old values", () => {
+  const before = useProfileStore.getState().profile;
+  try {
+    useProfileStore.setState({
+      profile: { ...before, bio: "old bio", avatarUrl: "https://x/old.jpg" },
+    });
+    useProfileStore.getState().applySavedProfileEdits({
+      ...before,
+      bio: "new bio",
+      avatarUrl: undefined,
+    });
+    const after = useProfileStore.getState().profile;
+    assert.equal(after.bio, "new bio");
+    assert.equal(after.avatarUrl, undefined, "a removed photo stays removed");
+
+    useProfileStore.getState().applySavedProfileEdits({ ...before, bio: undefined });
+    assert.equal(useProfileStore.getState().profile.bio, undefined, "a cleared bio is cleared");
+  } finally {
+    useProfileStore.setState({ profile: before });
+  }
+});

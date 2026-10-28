@@ -26,10 +26,17 @@ interface PhotoPagerProps {
   blurhash?: string;
   /** Drawn over the pager (gradients, overlays) without taking touches. */
   children?: ReactNode;
+  /** Runs when a tap opens the full-screen viewer, with the photo's position from 0. */
+  onViewerOpen?: (position: number) => void;
 }
 
 function pageIndex(event: NativeSyntheticEvent<NativeScrollEvent>, width: number) {
   return Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1));
+}
+
+/** The page to show when the photo list changed under the pager: never past the last photo. */
+export function clampPhotoIndex(index: number, count: number) {
+  return Math.max(0, Math.min(index, count - 1));
 }
 
 /**
@@ -44,16 +51,19 @@ export function PhotoPager({
   countBottomOffset,
   blurhash,
   children,
+  onViewerOpen,
 }: PhotoPagerProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const [index, setIndex] = useState(0);
+  const [storedIndex, setIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const viewerScrollRef = useRef<ScrollView>(null);
   const urls = photos.filter((url) => url.trim().length > 0);
   if (urls.length === 0) return null;
   const count = urls.length;
+  // Photos can shrink after a swipe (a blocked author's photos drop out): no "4 / 3".
+  const index = clampPhotoIndex(storedIndex, count);
 
   return (
     <View style={{ height, width }}>
@@ -70,7 +80,10 @@ export function PhotoPager({
             accessibilityRole="imagebutton"
             accessibilityLabel={`Photo ${position + 1} of ${count}, ${subject}`}
             accessibilityHint="Opens the photo full screen"
-            onPress={() => setViewerIndex(position)}
+            onPress={() => {
+              setViewerIndex(position);
+              onViewerOpen?.(position);
+            }}
             style={{ height, width }}
           >
             <AccessibleImage
@@ -173,7 +186,7 @@ export function PhotoPager({
               }}
             >
               <AppText variant="bodySmall" style={{ color: palette.white }}>
-                {viewerIndex + 1} / {count}
+                {clampPhotoIndex(viewerIndex, count) + 1} / {count}
               </AppText>
             </View>
           ) : null}

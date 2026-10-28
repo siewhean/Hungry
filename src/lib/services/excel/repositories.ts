@@ -3,7 +3,7 @@ import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import type { DecideForMeOptions, DataRepository } from "@/lib/services/types";
 import { dataRepositoryMock } from "@/lib/services/mock/repositories";
-import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
+import { sanitizeOfflineCatalogImageUrl } from "@/lib/services/catalog/media";
 import type {
   BuildingSummary,
   Coordinate,
@@ -48,10 +48,7 @@ function asString(value: unknown): string {
 }
 
 function sanitizeExcelImageUrl(value: unknown): string | undefined {
-  return sanitizeCatalogImageUrl(asString(value), {
-    rightsStatus: "approved",
-    approvedForDisplay: true,
-  });
+  return sanitizeOfflineCatalogImageUrl(asString(value));
 }
 
 function sanitizeExcelLogoUrl(value: unknown): string | undefined {

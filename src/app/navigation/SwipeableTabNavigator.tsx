@@ -194,7 +194,7 @@ const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
  * Release builds keep the Home/Review routes registered (many flows reset to
  * `MainTabs > Home`) but hide them from the tab bar. The redirect must stay
  * inert: it renders no Discover instance (that would mount extra
- * CatalogDiscoverHome trees and duplicate catalog requests) and only redirects
+ * Home trees and duplicate feed requests) and only redirects
  * while focused, so tab preloading can never bounce the user off Profile.
  */
 function ReleaseLandingRedirect() {
@@ -334,7 +334,13 @@ export function SwipeableTabNavigator() {
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
-      <Tab.Screen name="Discover" component={DiscoverWrapper} />
+      {/* With the feed hidden, the next pager page is the Home redirect, which bounces a
+          swipe straight back here. Swiping is off on Discover then; the tab bar still works. */}
+      <Tab.Screen
+        name="Discover"
+        component={DiscoverWrapper}
+        options={{ swipeEnabled: FEATURE_FLAGS.socialFeedEnabled }}
+      />
       {/* The social posts feed. No pager swipe: its photo carousels own horizontal swipes. */}
       <Tab.Screen
         name="Home"

@@ -165,7 +165,7 @@ export function PortfolioItemRow({
           </View>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Move list item up"
+            accessibilityLabel={`Move ${label} up`}
             disabled={isFirst}
             onPress={onMoveUp}
             style={[styles.iconButton, { opacity: isFirst ? 0.35 : 1 }]}
@@ -174,7 +174,7 @@ export function PortfolioItemRow({
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Move list item down"
+            accessibilityLabel={`Move ${label} down`}
             disabled={isLast}
             onPress={onMoveDown}
             style={[styles.iconButton, { opacity: isLast ? 0.35 : 1 }]}
@@ -193,7 +193,7 @@ export function PortfolioItemRow({
           ) : null}
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Delete list item"
+            accessibilityLabel={`Remove ${label} from this list`}
             onPress={onDelete}
             style={styles.iconButton}
           >

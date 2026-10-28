@@ -33,6 +33,12 @@ const DISH_REASONS: { kind: CatalogCorrectionKind; label: string; hint: string }
 ];
 
 const NOTE_MAX_LENGTH = 500;
+/**
+ * submit_catalog_correction refusals the server words for the user: the daily cap (54000) and
+ * a bad stall, dish or kind (22023). They are expected, so they are not sent to Sentry.
+ */
+const EXPECTED_REFUSAL_CODES = new Set(["54000", "22023"]);
+const SEND_FAILED_MESSAGE = "Couldn't send your report. Check your connection and try again.";
 
 /**
  * "Something wrong? Tell us": pick what is wrong with a stall or dish, add a note if you
@@ -60,14 +66,30 @@ export function ReportProblemScreen({ navigation, route }: Props) {
         ...(note.trim() ? { note: note.trim() } : {}),
       });
       showToast({ message: "Thanks, we'll check it.", tone: "success" });
-      navigation.goBack();
+      // A guest who signed in to report lands here straight from sign-in, above Home, not
+      // the page they reported from; send them back to that page instead (STALL-V4).
+      const state = navigation.getState();
+      const previous = state?.routes[(state.index ?? 0) - 1]?.name;
+      if (previous === "StallDetail" || previous === "DishDetail") {
+        navigation.goBack();
+      } else if (dishId) {
+        navigation.replace("DishDetail", { dishId });
+      } else {
+        navigation.replace("StallDetail", { venueId });
+      }
     } catch (error) {
-      reportError(error, { screen: "ReportProblem", action: "submitCatalogCorrection" });
+      const code = (error as { code?: unknown } | null)?.code;
+      const serverMessage = (error as { message?: unknown } | null)?.message;
+      const expected = typeof code === "string" && EXPECTED_REFUSAL_CODES.has(code);
+      if (!expected) {
+        reportError(error, { screen: "ReportProblem", action: "submitCatalogCorrection" });
+      }
       showToast({
+        // Network and unknown errors get plain words, never the raw error text.
         message:
-          error instanceof Error && error.message
-            ? error.message
-            : "Couldn't send your report. Please try again.",
+          expected && typeof serverMessage === "string" && serverMessage
+            ? serverMessage
+            : SEND_FAILED_MESSAGE,
         tone: "error",
       });
     } finally {
@@ -144,7 +166,7 @@ export function ReportProblemScreen({ navigation, route }: Props) {
             maxLength={NOTE_MAX_LENGTH}
             onChangeText={setNote}
             placeholder={
-              dishId ? "For example: it's $6.50 now" : "For example: it closes at 3pm on Sundays"
+              dishId ? "For example: it's S$6.50 now" : "For example: it closes at 3pm on Sundays"
             }
             placeholderTextColor={palette.textMuted}
             style={{

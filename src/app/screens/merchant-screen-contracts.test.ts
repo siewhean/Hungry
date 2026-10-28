@@ -203,7 +203,10 @@ test("Merchant screen contract: merchant route params match editable sub-screen 
     /PromotionBuilder: \{ promotionId\?: string; duplicateFromId\?: string \} \| undefined;/,
   );
   assert.match(navigationTypes, /OCRDrafts: undefined;/);
-  assert.match(navigationTypes, /CustomerInbox: undefined;/);
+  assert.match(
+    navigationTypes,
+    /CustomerInbox: \{ filter\?: "unreplied"; replyToId\?: string \} \| undefined;/,
+  );
   assert.match(navigationTypes, /FeaturedVisitors: undefined;/);
   assert.match(navigationTypes, /PromotionList: undefined;/);
   assert.match(navigationTypes, /AIAssistant: undefined;/);
@@ -296,18 +299,18 @@ test("Merchant screen contract: profile, menu, and analytics use production-read
     "verification evidence must be validated before a verification row can be written",
   );
   assert.ok(
-    submitVerification.indexOf('status: "submitted"') >
+    submitVerification.indexOf("buildVerificationSubmitPayload(") >
       submitVerification.indexOf('.from("merchant_verification_evidence").insert'),
     "verification status must become submitted only after evidence insert is attempted",
   );
   assert.match(menu, /title="Menu"/);
   assert.match(menu, /<FAB>/);
-  assert.match(menu, /Add Menu Item Manually/);
+  assert.match(menu, /Add menu item manually/);
   assert.match(menu, /Search menu/);
   assert.match(menu, /hidden from diners until Hungry verifies your stall/);
   assert.doesNotMatch(menu, /console\.error\(e\);\s*\}\s*\};/);
   assert.match(analytics, /showsVerticalScrollIndicator=\{false\}/);
-  assert.match(analytics, /See More/);
+  assert.match(analytics, /See more/);
   assert.match(dashboard, /getMerchantProfileGaps/);
   // Unreplied and menu counts come from the dashboard summary RPC, not full menu/inbox loads.
   assert.match(dashboard, /merchant\.getDashboardSummary\(/);
@@ -354,7 +357,8 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.match(promotionBuilder, /isAvailable/);
 
   assert.match(assistant, /merchant\.getAIInsights\(/);
-  assert.match(assistant, /merchant\.getWeeklySummary\(/);
+  // One read: the weekly summary is taken from the insights list (no second analytics call).
+  assert.doesNotMatch(assistant, /merchant\.getWeeklySummary\(/);
 
   assert.match(settings, /merchant\.getMerchantNotifications\(/);
   assert.match(settings, /merchant\.getWeeklySummaryStats\(/);

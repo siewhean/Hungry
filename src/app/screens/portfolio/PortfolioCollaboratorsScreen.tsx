@@ -14,6 +14,7 @@ import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioCollaborator, PortfolioCollaboratorRole } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioCollaborators">;
 
@@ -58,7 +59,8 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
     try {
       await loadPortfolioCollaborators(portfolioId);
       setCollaboratorsState("ready");
-    } catch {
+    } catch (error) {
+      reportError(error, { screen: "PortfolioCollaboratorsScreen", action: "load_collaborators" });
       setCollaboratorsState("error");
     }
   }, [loadPortfolioCollaborators, portfolioId]);
@@ -75,7 +77,8 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
       });
       setFollowing(rows.filter((row) => row.userId && row.userId !== profileId));
       setFollowingState("ready");
-    } catch {
+    } catch (error) {
+      reportError(error, { screen: "PortfolioCollaboratorsScreen", action: "load_following" });
       setFollowingState("error");
     }
   }, [profileId]);

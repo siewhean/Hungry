@@ -20,7 +20,7 @@ const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("stall reviews are one newest-first query naming each dish, with a write-review path", () => {
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
-  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*venueId: sideLoadVenueId,/);
+  assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
   assert.match(stallDetail, /on \{review\.dishName\}/);
   assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);
@@ -148,9 +148,10 @@ test("dish attributes never present placeholder taste data as fact", () => {
 });
 
 test("dish Tried is per dish and never clears the stall; Food Cred copy uses awarded points", () => {
+  // The stall is marked visited only the first time (shared Tried helper, DISH-V4).
   assert.match(
-    dishDetail,
-    /getInteraction\(dish\.venueId\)\?\.isTried\) \{\s*try \{\s*const result = await markTried/,
+    read("src/features/auth/finishGuestAction.ts"),
+    /getInteraction\(dish\.venueId\)\?\.isTried\) \{\s*return \{ saved: true, pointsAwarded: 0[\s\S]*await stalls\.markTried/,
   );
   assert.doesNotMatch(dishDetail, /-5 Food Cred|"\+5 Food Cred"|adjustPoints/);
   assert.match(dishDetail, /FEATURE_FLAGS\.gamificationEnabled && pointsAwarded > 0/);
@@ -162,8 +163,11 @@ test("dish Tried is per dish and never clears the stall; Food Cred copy uses awa
 });
 
 test("detail back buttons fall back to Home on cold-start links", () => {
+  assert.match(stallDetail, /const goBackOrHome = \(\) => \{\s*if \(navigation\.canGoBack\(\)\)/);
+  // DISH-16: the dish page has one back helper, to the Home tab (route "Discover").
+  assert.match(dishDetail, /const leaveDetail = \(\) => \{\s*if \(navigation\.canGoBack\(\)\)/);
+  assert.doesNotMatch(dishDetail, /screen: "Home"/);
   for (const source of [stallDetail, dishDetail]) {
-    assert.match(source, /const goBackOrHome = \(\) => \{\s*if \(navigation\.canGoBack\(\)\)/);
     assert.doesNotMatch(source, /onPress=\{\(\) => navigation\.goBack\(\)\}/);
   }
   assert.match(dishDetail, /ctaLabel="Search dishes"/);

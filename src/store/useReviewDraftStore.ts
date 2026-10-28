@@ -2,10 +2,11 @@ import { useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { REVIEW_MAX_TAGS } from "@/constants/taste";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { createClientReviewId, createInitialReviewDraft } from "@/features/review/reviewDraft";
 import { REVIEW_TEXT_MAX_LENGTH, clampFreeTextInput } from "@/lib/security/inputSanitization";
-import type { ReviewDraft } from "@/types/domain";
+import type { ReviewDraft, TasteKey } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
 const initialDraft = createInitialReviewDraft();
@@ -13,8 +14,21 @@ const initialDraft = createInitialReviewDraft();
 /** Most photos one review can carry; the picker and the store both enforce it. */
 export const REVIEW_MAX_PHOTOS = 5;
 
+/** The optional "How did it taste?" answers (0-10 per taste), for one dish. */
+export interface ReviewFeltTaste {
+  dishId?: string;
+  values: Partial<Record<TasteKey, number>>;
+}
+
+const emptyFeltTaste = (): ReviewFeltTaste => ({ values: {} });
+
 interface ReviewDraftState {
   draft: ReviewDraft;
+  /** Saved with the draft so a resumed review keeps its taste answers. */
+  feltTaste: ReviewFeltTaste;
+  /** Sets (or with undefined clears) one taste answer for `dishId`. */
+  setFeltTaste: (dishId: string, key: TasteKey, value: number | undefined) => void;
+  clearFeltTaste: () => void;
   isSubmitting: boolean;
   /** Client review id reused across retries of the same draft so retries never duplicate it. */
   pendingReviewId?: string;
@@ -36,6 +50,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
   persist(
     (set, get) => ({
       draft: initialDraft,
+      feltTaste: emptyFeltTaste(),
       isSubmitting: false,
       pendingReviewId: undefined,
       ensurePendingReviewId: () => {
@@ -65,6 +80,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
           if (!state.draft.selectedDishId) {
             return {
               draft: { ...state.draft, selectedVenueId, selectedDishId },
+              feltTaste: emptyFeltTaste(),
             };
           }
           return {
@@ -73,6 +89,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
               selectedVenueId,
               selectedDishId,
             },
+            feltTaste: emptyFeltTaste(),
             pendingReviewId: undefined,
           };
         }),
@@ -84,14 +101,19 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
           },
         })),
       toggleTag: (tag) =>
-        set((state) => ({
-          draft: {
-            ...state.draft,
-            selectedTags: state.draft.selectedTags.includes(tag)
-              ? state.draft.selectedTags.filter((value) => value !== tag)
-              : [...state.draft.selectedTags, tag],
-          },
-        })),
+        set((state) => {
+          const selected = state.draft.selectedTags.includes(tag);
+          // The server keeps at most REVIEW_MAX_TAGS; a ninth tap is ignored, not silently dropped later.
+          if (!selected && state.draft.selectedTags.length >= REVIEW_MAX_TAGS) return state;
+          return {
+            draft: {
+              ...state.draft,
+              selectedTags: selected
+                ? state.draft.selectedTags.filter((value) => value !== tag)
+                : [...state.draft.selectedTags, tag],
+            },
+          };
+        }),
       setRecommend: (recommend) =>
         set((state) => ({
           draft: {
@@ -121,9 +143,18 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
             photos: state.draft.photos.filter((photoUri) => photoUri !== uri),
           },
         })),
+      setFeltTaste: (dishId, key, value) =>
+        set((state) => {
+          const values = state.feltTaste.dishId === dishId ? { ...state.feltTaste.values } : {};
+          if (value === undefined) delete values[key];
+          else values[key] = value;
+          return { feltTaste: { dishId, values } };
+        }),
+      clearFeltTaste: () => set({ feltTaste: emptyFeltTaste() }),
       resetDraft: () =>
         set({
           draft: createInitialReviewDraft(),
+          feltTaste: emptyFeltTaste(),
           isSubmitting: false,
           pendingReviewId: undefined,
         }),
@@ -152,6 +183,7 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
       },
       partialize: (state) => ({
         draft: state.draft,
+        feltTaste: state.feltTaste,
         pendingReviewId: state.pendingReviewId,
       }),
     },

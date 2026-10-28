@@ -29,6 +29,7 @@ import {
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
   listDishesByVenueViaRpc,
+  listDishesByVenuePageViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
   refreshSupabaseRepositoryCache,
@@ -37,7 +38,7 @@ import {
   searchVenuesByLocationViaRpc,
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
-import { getSupabaseClient } from "@/lib/services/supabase/client";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
@@ -706,10 +707,21 @@ function mapLifecycleSnapshot(data: unknown): LifecycleSnapshot | null {
   };
 }
 
+/** A stall submission whose saved row could not be found after the write. */
+export class StallSubmissionUnconfirmedError extends Error {
+  constructor() {
+    super(
+      "We couldn't confirm your submission was saved. Check My submissions before trying again.",
+    );
+    this.name = "StallSubmissionUnconfirmedError";
+  }
+}
+
 function mapPushPreferencesRow(row: {
   stall_updates: boolean;
   weekly_picks: boolean;
   mealtime_suggestions: boolean;
+  social_activity: boolean;
   quiet_start_hour: number;
   quiet_end_hour: number;
   weekly_cap: number;
@@ -718,6 +730,7 @@ function mapPushPreferencesRow(row: {
     stallUpdates: row.stall_updates,
     weeklyPicks: row.weekly_picks,
     mealtimeSuggestions: row.mealtime_suggestions,
+    socialActivity: row.social_activity,
     quietStartHour: row.quiet_start_hour,
     quietEndHour: row.quiet_end_hour,
     weeklyCap: row.weekly_cap,
@@ -1091,12 +1104,24 @@ async function uploadReviewPhotos(
   return uploaded.filter((row): row is Row => Boolean(row));
 }
 
-async function mapSupabaseReviewRows(
+/** Text the account-deletion worker leaves on a deleted account's kept review (rating only). */
+export const DELETED_ACCOUNT_REVIEW_TEXT = "[deleted]";
+
+function isDeletedAccountReviewRow(row: Row): boolean {
+  return !asString(row.user_id) && asString(row.text) === DELETED_ACCOUNT_REVIEW_TEXT;
+}
+
+/** Exported for tests. Batches photo and author lookups for one page of review rows. */
+export async function mapSupabaseReviewRows(
   client: SupabaseClient,
   rows: Row[],
   options: { includePhotos?: boolean } = {},
 ): Promise<DishDetail["reviews"]> {
-  const reviewIds = rows.map((row) => asString(row.id)).filter((id): id is string => Boolean(id));
+  // A deleted account's kept review is a bare rating: its photos were removed from storage.
+  const reviewIds = rows
+    .filter((row) => !isDeletedAccountReviewRow(row))
+    .map((row) => asString(row.id))
+    .filter((id): id is string => Boolean(id));
   const userIds = rows
     .map((row) => asString(row.user_id))
     .filter((id): id is string => Boolean(id));
@@ -1165,22 +1190,24 @@ async function mapSupabaseReviewRows(
   return rows.map((row) => {
     const id = asString(row.id) ?? `${Date.now()}`;
     const userId = asString(row.user_id);
+    const fromDeletedAccount = isDeletedAccountReviewRow(row);
     return {
       id,
       dishId: asString(row.dish_id),
       venueId: asString(row.venue_id),
       authorId: userId,
-      authorName:
-        (userId ? namesByUserId.get(userId) : undefined) ??
-        asString(row.author_name) ??
-        "Hungry User",
+      authorName: fromDeletedAccount
+        ? "Deleted account"
+        : ((userId ? namesByUserId.get(userId) : undefined) ??
+          asString(row.author_name) ??
+          "Hungry User"),
       authorAvatarUrl: (userId ? avatarsByUserId.get(userId) : undefined) ?? undefined,
       rating: asNumber(row.rating) ?? 0,
       createdAt: asString(row.created_at) ?? new Date().toISOString(),
-      text: asString(row.text) ?? "",
-      tags: asStringArray(row.tags),
+      text: fromDeletedAccount ? "" : (asString(row.text) ?? ""),
+      tags: fromDeletedAccount ? [] : asStringArray(row.tags),
       wouldRecommend: asBoolean(row.would_recommend) ?? true,
-      photos: photosByReviewId.get(id) ?? [],
+      photos: fromDeletedAccount ? [] : (photosByReviewId.get(id) ?? []),
       helpfulCount: asNumber(row.helpful_count),
       editedAt: asString(row.edited_at),
       merchantReply: asString(row.merchant_reply_text)
@@ -1319,7 +1346,11 @@ async function fetchRecentReviewsPage(
   if (options?.dishIds && options.dishIds.length === 0) return { entries: [], hasMore: false };
   let query = client
     .from("reviews")
-    .select(REVIEW_FEED_COLUMNS)
+    // withPhotos: an inner join on review_photos (indexed by its (review_id, sort_order)
+    // unique key) keeps text-only reviews off the photo grid, so a page is all photo reviews.
+    .select(
+      options?.withPhotos ? `${REVIEW_FEED_COLUMNS},review_photos!inner(id)` : REVIEW_FEED_COLUMNS,
+    )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(limit);
@@ -1342,12 +1373,17 @@ async function fetchRecentReviewsPage(
   }
   const { data, error } = await query;
   if (error) throw error;
-  const rows = Array.isArray(data) ? (data as Row[]) : [];
+  const rows = Array.isArray(data) ? (data as unknown as Row[]) : [];
   const lastRow = rows[rows.length - 1];
   const lastCreatedAt = lastRow ? asString(lastRow.created_at) : undefined;
   const lastId = lastRow ? asString(lastRow.id) : undefined;
+  const entries = await buildRecentReviewEntries(client, rows);
   return {
-    entries: await buildRecentReviewEntries(client, rows),
+    // A deleted account's review keeps its photo rows (the join matches) but is shown without
+    // photos, so it would be a blank tile on the photo grid: leave it out there.
+    entries: options?.withPhotos
+      ? entries.filter((entry) => entry.review.photos.length > 0)
+      : entries,
     // From the raw rows: a dropped review must not look like the end of the feed.
     hasMore: rows.length >= limit,
     nextCursor: lastCreatedAt && lastId ? { before: lastCreatedAt, beforeId: lastId } : undefined,
@@ -1981,6 +2017,17 @@ function toRpcRadiusMeters(radiusMeters: number | undefined): number | null {
     : null;
 }
 
+// Loaded on first use: Sentry is a native module that plain service tests never need.
+function reportTasteRecommendationsError(error: unknown): void {
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action: "get_taste_recommendations" });
+  } catch {
+    // Reporting must never break the recommendations fallback.
+  }
+}
+
 async function getLiveTasteRecommendations(
   client: SupabaseClient,
   request: RecommendationSlateRequest,
@@ -2000,6 +2047,9 @@ async function getLiveTasteRecommendations(
 
   if (error) {
     console.warn("Failed to fetch live taste recommendations", error.message);
+    // The fallback (popular dishes) hides the failure from users, so it must reach Sentry;
+    // a rate-limit refusal is expected under load and is not reported.
+    if (error.code !== "rate_limited") reportTasteRecommendationsError(error);
     return undefined;
   }
   if (!Array.isArray(data)) return undefined;
@@ -2732,6 +2782,33 @@ async function getSupabaseMerchantAccount(
   };
 }
 
+/**
+ * The merchant_verifications row a merchant (re)submits. It never carries the decision fields
+ * (rejected_at, rejection_reason, verified_at, expires_at): the decision guard trigger refuses any
+ * merchant write that changes them, so clearing them here made every resubmission after a
+ * rejection fail with 42501. The old reason is only shown in the rejected/more-info states.
+ */
+export function buildVerificationSubmitPayload(outletId: string, method: string, now: Date) {
+  return {
+    outlet_id: outletId,
+    status: "submitted" as const,
+    method,
+    submitted_at: now.toISOString(),
+  };
+}
+
+/**
+ * Keyset page on (created_at, id) for the merchant review lists. A plain `created_at < before`
+ * skipped every row that shared the boundary timestamp with the last row of the previous page.
+ */
+function applyMerchantReviewKeyset<
+  Q extends { lt(column: string, value: string): Q; or(filter: string): Q },
+>(query: Q, before: string | undefined, beforeId: string | undefined): Q {
+  if (!before) return query;
+  if (!beforeId) return query.lt("created_at", before);
+  return query.or(`created_at.lt."${before}",and(created_at.eq."${before}",id.lt."${beforeId}")`);
+}
+
 async function getMerchantOutletRow(client: SupabaseClient, outletId: string): Promise<Row> {
   if (UUID_PATTERN.test(outletId)) {
     const { data, error } = await client
@@ -3188,10 +3265,14 @@ function mapMerchantNotification(row: Row): MerchantNotification {
   };
 }
 
-function buildWeeklySummaryFromAnalytics(
+/**
+ * The Settings weekly card. Review numbers come from the 7-day analytics, not from an inbox page:
+ * the inbox read was all-time and capped, so "new reviews this week" counted old reviews.
+ */
+export function buildWeeklySummaryFromAnalytics(
   outletId: string,
   analytics: MerchantAnalytics,
-  reviews: CustomerInteraction[],
+  unrepliedReviews: number,
   promotions: MerchantPromotion[],
 ): MerchantWeeklySummary {
   const now = new Date();
@@ -3205,10 +3286,10 @@ function buildWeeklySummaryFromAnalytics(
     totalViews: analytics.profileVisits + analytics.menuViews + analytics.dishViews,
     dishViews: analytics.dishViews,
     topDishes: analytics.topDishes,
-    newReviews: reviews.length,
+    newReviews: analytics.reviewCount,
     averageRating: analytics.averageRating,
     ratingChange: analytics.averageRating - analytics.previousPeriodComparison.averageRating,
-    unrepliedReviews: reviews.filter((review) => !review.reply).length,
+    unrepliedReviews,
     promotionViews: promotions.reduce(
       (sum, promotion) => sum + (promotion.analytics?.impressions ?? 0),
       0,
@@ -3594,10 +3675,11 @@ export const supabaseService: HungryService = {
       const { error } = await client.auth.signOut({ scope });
       if (!error) return;
       if (scope !== "local") throw error;
-      // A failed server revoke (offline) leaves the stored session in place; clear
-      // it locally anyway so the next launch does not sign the user back in.
-      const { error: localError } = await client.auth.signOut({ scope: "local" });
-      if (localError) throw localError;
+      // A failed server revoke (offline) returns before supabase-js removes the stored
+      // session, and a second signOut({ scope: "local" }) calls the server again and fails
+      // the same way. Remove the stored session directly (this also emits SIGNED_OUT), so
+      // the next launch does not sign the user back in.
+      await (client.auth as unknown as { _removeSession(): Promise<void> })._removeSession();
     },
 
     async getAccountDeletionBlocker() {
@@ -3679,6 +3761,21 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.rpc("cancel_my_account_deletion");
       if (error) throw error;
       return data === true;
+    },
+
+    async isAccountDeletionProcessing() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return false;
+      const { data, error } = await client
+        .from("account_deletion_requests")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "processing")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return Boolean(data);
     },
 
     async forgotPassword(email) {
@@ -3853,16 +3950,10 @@ export const supabaseService: HungryService = {
         else missing.push(id);
       }
       if (missing.length > 0) {
+        // One batched read, never one call per stall. When it fails (offline, rate cap) this
+        // throws: leaving the uncached stalls out would tell Saved and Followed stalls they closed.
         const fetched = await getVenuesByIdsViaRpc(missing);
-        if (fetched) {
-          fetched.forEach((venue) => cached.set(venue.id, venue));
-        } else {
-          // RPC not deployed yet: one detail read per stall, as before.
-          const singles = await Promise.all(
-            missing.map((id) => this.getVenue(id).catch(() => undefined)),
-          );
-          singles.forEach((venue) => venue && cached.set(venue.id, venue));
-        }
+        fetched?.forEach((venue) => cached.set(venue.id, venue));
       }
       return unique.flatMap((id) => cached.get(id) ?? []);
     },
@@ -3905,7 +3996,8 @@ export const supabaseService: HungryService = {
         p_venue_id: input.venueId,
         p_dish_id: input.dishId ?? null,
       });
-      if (error) return [];
+      // Thrown, not swallowed: the page reports it and shows no promotions.
+      if (error) throw error;
       return (Array.isArray(data) ? (data as Row[]) : []).map(mapPromotion);
     },
 
@@ -3915,7 +4007,8 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.rpc("get_public_merchant_profile", {
         p_venue_id: venueId,
       });
-      if (error) return undefined;
+      // Thrown, not swallowed: a lost temporary closure must reach Sentry.
+      if (error) throw error;
       const row = (Array.isArray(data) ? (data as Row[]) : [])[0];
       if (!row) return undefined;
       return {
@@ -3940,7 +4033,8 @@ export const supabaseService: HungryService = {
         .select("opening_schedule")
         .eq("id", venueId)
         .maybeSingle();
-      if (error || !data) return undefined;
+      if (error) throw error;
+      if (!data) return undefined;
       return toOpeningSchedule((data as Row).opening_schedule);
     },
 
@@ -4001,6 +4095,21 @@ export const supabaseService: HungryService = {
       }
     },
 
+    async listDishesByVenuePage(venueId, cursor) {
+      try {
+        return (
+          (await listDishesByVenuePageViaRpc(venueId, cursor)) ?? {
+            dishes: cursor ? [] : supabaseRepository.listDishesByVenue(venueId),
+          }
+        );
+      } catch (error) {
+        // Offline on the first page: a cached menu is better than none. Later pages throw.
+        const cached = cursor ? [] : supabaseRepository.listDishesByVenue(venueId);
+        if (cached.length > 0) return { dishes: cached };
+        throw error;
+      }
+    },
+
     async listPopularNearby(lat, lng) {
       return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
     },
@@ -4019,6 +4128,11 @@ export const supabaseService: HungryService = {
       const rpcResults = await searchDishesViaRpc(filters, tasteProfile);
       if (rpcResults) return rpcResults;
       const results = supabaseRepository.searchDishes(filters, tasteProfile);
+      if (results.length === 0 && isSupabaseConfigured() && getSupabaseClient()) {
+        // The RPC failed (offline, rate cap) and the cache has nothing: say so, so the screen
+        // shows its retry and reports, rather than "No match found".
+        throw new Error("Couldn't search dishes.");
+      }
       return results.map((dish) => ({
         dish,
         score: similarityScore(dish.tasteVector, tasteProfile),
@@ -4075,6 +4189,9 @@ export const supabaseService: HungryService = {
               )
             : [];
         }
+        // Only a backend without the RPC falls back. Any other error (the rate cap, a
+        // network failure) is thrown, so the privacy rule and the cap are never skipped.
+        if (rpc.error.code !== "42883" && rpc.error.code !== "PGRST202") throw rpc.error;
       }
       const { data, error } = await client
         .from("reviews")
@@ -4359,7 +4476,7 @@ export const supabaseService: HungryService = {
       if (!client) return undefined;
       const { data, error } = await client
         .from("public_profiles")
-        .select("id,display_name,avatar_url,bio,stalls_visited")
+        .select("id,display_name,avatar_url,bio,dishes_reviewed,stalls_visited")
         .eq("id", userId)
         .maybeSingle();
       if (error) throw error;
@@ -4369,6 +4486,10 @@ export const supabaseService: HungryService = {
         // RLS hides a private account from non-followers: fall back to the minimal
         // card (name, avatar, private flag) so the profile can say it is private.
         const card = await client.rpc("get_profile_card", { p_user_id: userId });
+        // A failed or rate-capped read is an error (the screen offers Retry), not "not found".
+        if (card.error && card.error.code !== "42883" && card.error.code !== "PGRST202") {
+          throw card.error;
+        }
         const cardRow = !card.error && Array.isArray(card.data) ? (card.data[0] as Row) : null;
         const cardId = cardRow ? asString(cardRow.id) : undefined;
         if (!cardRow || !cardId) return undefined;
@@ -4385,6 +4506,7 @@ export const supabaseService: HungryService = {
         displayName: asString(row.display_name) ?? "Hungry member",
         avatarUrl: asString(row.avatar_url),
         bio: asString(row.bio),
+        dishesReviewed: asNumber(row.dishes_reviewed),
         stallsVisited: asNumber(row.stalls_visited),
       };
     },
@@ -4462,6 +4584,50 @@ export const supabaseService: HungryService = {
         );
       if (error) throw error;
       return true;
+    },
+
+    async setFavourite(dishId: string, saved: boolean, expectedUserId?: string) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourite could be saved.");
+      }
+      // One idempotent write for the state the user asked for: no read first, so a failed or
+      // stale read can never turn "remove" into "save" (or two taps into a flip-flop).
+      if (!saved) {
+        const { error } = await client
+          .from("user_favourite_dishes")
+          .delete()
+          .eq("user_id", userId)
+          .eq("dish_id", dishId);
+        if (error) throw error;
+        return false;
+      }
+      const { error } = await client
+        .from("user_favourite_dishes")
+        .upsert(
+          { user_id: userId, dish_id: dishId },
+          { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+        );
+      if (error) throw error;
+      return true;
+    },
+
+    async addFavourites(dishIds: string[], expectedUserId?: string) {
+      const ids = [...new Set(dishIds)];
+      if (ids.length === 0) return;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to favourite dishes.");
+      if (expectedUserId && userId !== expectedUserId) {
+        throw new Error("Account changed before the favourites could be saved.");
+      }
+      const { error } = await client.from("user_favourite_dishes").upsert(
+        ids.map((dishId) => ({ user_id: userId, dish_id: dishId })),
+        { onConflict: "user_id,dish_id", ignoreDuplicates: true },
+      );
+      if (error) throw error;
     },
 
     async setDishTried(dishId: string, tried: boolean) {
@@ -4588,7 +4754,7 @@ export const supabaseService: HungryService = {
       const { data, error } = await client
         .from("notification_preferences")
         .select(
-          "stall_updates,weekly_picks,mealtime_suggestions,quiet_start_hour,quiet_end_hour,weekly_cap",
+          "stall_updates,weekly_picks,mealtime_suggestions,social_activity,quiet_start_hour,quiet_end_hour,weekly_cap",
         )
         .eq("user_id", userId)
         .maybeSingle();
@@ -4610,6 +4776,7 @@ export const supabaseService: HungryService = {
             stall_updates: next.stallUpdates,
             weekly_picks: next.weeklyPicks,
             mealtime_suggestions: next.mealtimeSuggestions,
+            social_activity: next.socialActivity,
             quiet_start_hour: next.quietStartHour,
             quiet_end_hour: next.quietEndHour,
             weekly_cap: next.weeklyCap,
@@ -4617,7 +4784,7 @@ export const supabaseService: HungryService = {
           { onConflict: "user_id" },
         )
         .select(
-          "stall_updates,weekly_picks,mealtime_suggestions,quiet_start_hour,quiet_end_hour,weekly_cap",
+          "stall_updates,weekly_picks,mealtime_suggestions,social_activity,quiet_start_hour,quiet_end_hour,weekly_cap",
         )
         .single();
       if (error) throw error;
@@ -5240,7 +5407,10 @@ export const supabaseService: HungryService = {
     async getFollowCounts(userId: string) {
       const client = requireSupabaseClient();
       const { data, error } = await client.rpc("get_follow_counts", { p_user_id: userId });
-      if (error || !Array.isArray(data) || data.length === 0) return null;
+      // A failed read (offline, rate cap) is an error for the caller to show and report;
+      // null means only that the server has no row.
+      if (error) throw error;
+      if (!Array.isArray(data) || data.length === 0) return null;
       const row = data[0] as Row;
       return {
         followersCount: asNumber(row.followers_count) ?? 0,
@@ -5755,7 +5925,8 @@ export const supabaseService: HungryService = {
       });
 
       const uploadPrefix = `${userId}/${Date.now()}-${sanitizeStorageSegment(input.stallName)}`;
-      const uploadedImages = await Promise.all(
+      // n-plus-one-ok: one storage upload per photo (at most six); there is no batch upload.
+      const uploadResults = await Promise.allSettled(
         imageUris.map((uri, index) =>
           uploadImageFromUri({
             client,
@@ -5765,6 +5936,25 @@ export const supabaseService: HungryService = {
           }),
         ),
       );
+      const uploadedImages = uploadResults.flatMap((result) =>
+        result.status === "fulfilled" ? [result.value] : [],
+      );
+      // A submission that is not saved must not leave its photos in storage.
+      const removeUploadedImages = () =>
+        uploadedImages.length
+          ? client.storage
+              .from("user-stall-submission-images")
+              .remove(uploadedImages.map((image) => image.path))
+              .then(
+                () => undefined,
+                () => undefined,
+              )
+          : Promise.resolve();
+      const failedUpload = uploadResults.find((result) => result.status === "rejected");
+      if (failedUpload) {
+        await removeUploadedImages();
+        throw (failedUpload as PromiseRejectedResult).reason;
+      }
       const uploaded = uploadedImages[0];
       if (!uploaded) {
         throw new Error("Stall image must be uploaded from your device.");
@@ -5811,6 +6001,8 @@ export const supabaseService: HungryService = {
         .rpc("submit_user_stall_submission", rpcPayload)
         .maybeSingle();
       let finalResult: { data: unknown; error: PostgrestError | null } = primarySubmit;
+      // Set when every direct insert failed on the schema: no row was written by it.
+      let directInsertFailed = false;
       const isFunctionSchemaError = (error: PostgrestError | null | undefined) => {
         if (!error) return false;
         const message = error.message.toLowerCase();
@@ -5847,16 +6039,6 @@ export const supabaseService: HungryService = {
           isColumnNotExistError(error) ||
           error?.message.toLowerCase().includes("schema cache")
         );
-
-      const isPermissionDeniedError = (error: PostgrestError | null | undefined) => {
-        if (!error) return false;
-        const message = error.message.toLowerCase();
-        return (
-          error.code === "42501" ||
-          message.includes("permission denied for table user_stall_submissions") ||
-          message.includes("permission denied for relation")
-        );
-      };
 
       if (
         primarySubmit.error &&
@@ -5969,18 +6151,21 @@ export const supabaseService: HungryService = {
           finalResult = { data: insertedRows, error: null };
         } else if (!insertError && !insertedRows) {
           finalResult = { data: null, error: null };
-        } else if (
-          insertError &&
-          (isRetryableInsertSchemaError(insertError) || isPermissionDeniedError(insertError))
-        ) {
+        } else if (insertError && isRetryableInsertSchemaError(insertError)) {
+          directInsertFailed = true;
           finalResult = { data: null, error: null };
         } else {
+          // Includes permission denied: the row was not saved, so this is a failure, not success.
+          await removeUploadedImages();
           throw insertError;
         }
       }
 
       const { data, error } = finalResult;
-      if (error) throw error;
+      if (error) {
+        await removeUploadedImages();
+        throw error;
+      }
 
       try {
         const fallbackMenuItems = input.menuItems ?? [];
@@ -6010,10 +6195,10 @@ export const supabaseService: HungryService = {
           updatedAt: new Date().toISOString(),
         };
 
-        if (!data) {
+        // An empty result confirms nothing either: look the row up as for no data.
+        if (!data || (Array.isArray(data) && data.length === 0)) {
           const fallbackWindowIso = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-          const trimmedStallName = input.stallName.trim();
-          const normalizedStallName = trimmedStallName.toLowerCase();
+          const normalizedStallName = input.stallName.trim().toLowerCase();
 
           const resolveByRecentFallback = async () => {
             const { data: fallbackRows, error: fallbackError } = await client
@@ -6034,7 +6219,7 @@ export const supabaseService: HungryService = {
                 return true;
               if (rowStall && rowStall === normalizedStallName && rowUrl === uploaded.publicUrl)
                 return true;
-              if (rowStall && rowStall === normalizedStallName) return true;
+              // A name alone could match an older submission of the same stall.
               return false;
             });
             if (!match) return { data: null, error: null };
@@ -6075,36 +6260,19 @@ export const supabaseService: HungryService = {
             return { data: null, error: null };
           };
 
-          const resolveByRecentName = async () => {
-            const { data: nameData, error: nameError } = await client
-              .from("user_stall_submissions")
-              .select("*")
-              .eq("user_id", userId)
-              .eq("stall_name", trimmedStallName)
-              .gte("created_at", fallbackWindowIso)
-              .order("created_at", { ascending: false })
-              .limit(1)
-              .maybeSingle();
-            if (nameError) return { error: null, data: null };
-            if (nameData) {
-              return { data: mapUserStallSubmission(client, asRecord(nameData)), error: null };
-            }
-            return { data: null, error: null };
-          };
-
           const imagePathFallback = await resolveByImagePath();
           if (imagePathFallback.data) return imagePathFallback.data;
 
           const imageUrlFallback = await resolveByImageUrl();
           if (imageUrlFallback.data) return imageUrlFallback.data;
 
-          const recentNameFallback = await resolveByRecentName();
-          if (recentNameFallback.data) return recentNameFallback.data;
-
           const recentFallback = await resolveByRecentFallback();
           if (recentFallback.data) return recentFallback.data;
 
-          return fallbackSubmission;
+          // Nothing confirms the row was saved; do not report a made-up submission as success.
+          // When the insert itself failed, nothing refers to the uploaded photos: remove them.
+          if (directInsertFailed) await removeUploadedImages();
+          throw new StallSubmissionUnconfirmedError();
         }
 
         if (typeof data === "string") {
@@ -6117,13 +6285,11 @@ export const supabaseService: HungryService = {
           if (rowById) {
             return mapUserStallSubmission(client, asRecord(rowById));
           }
-          return fallbackSubmission;
+          // The RPC returned the saved row's id; keep it even when the read-back fails.
+          return { ...fallbackSubmission, id: data };
         }
 
         if (Array.isArray(data)) {
-          if (data.length === 0) {
-            return fallbackSubmission;
-          }
           return mapUserStallSubmission(client, asRecord(data[0]));
         }
 
@@ -6133,6 +6299,7 @@ export const supabaseService: HungryService = {
         }
         return fallbackSubmission;
       } catch (parseError) {
+        if (parseError instanceof StallSubmissionUnconfirmedError) throw parseError;
         console.warn(
           "[submitDiscoveredStall] failed to parse rpc response, using fallback",
           parseError,
@@ -6459,17 +6626,9 @@ export const supabaseService: HungryService = {
 
       const { error } = await client
         .from("merchant_verifications")
-        .upsert(
-          {
-            outlet_id: resolvedOutletId,
-            status: "submitted",
-            method: evidence.method,
-            submitted_at: new Date().toISOString(),
-            rejected_at: null,
-            rejection_reason: null,
-          },
-          { onConflict: "outlet_id" },
-        )
+        .upsert(buildVerificationSubmitPayload(resolvedOutletId, evidence.method, new Date()), {
+          onConflict: "outlet_id",
+        })
         .select("id")
         .single();
       if (error) throw error;
@@ -6669,10 +6828,10 @@ export const supabaseService: HungryService = {
       return Array.isArray(data) ? data.filter((id): id is string => typeof id === "string") : [];
     },
 
-    async toggleFeatured(outletId, dishId) {
+    async toggleFeatured(outletId, dishId, featured) {
       const client = requireSupabaseClient();
       const outlet = await requireLinkedMerchantOutlet(client, outletId);
-      return setMerchantDishFlag(client, outlet, dishId, "featured");
+      return setMerchantDishFlag(client, outlet, dishId, "featured", featured);
     },
 
     async getOCRDrafts(outletId) {
@@ -6861,12 +7020,13 @@ export const supabaseService: HungryService = {
       let query = client
         .from("reviews")
         .select(
-          "id,dish_id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
+          "id,dish_id,user_id,author_name,rating,text,tags,created_at,merchant_reply_text,merchant_replied_at",
         )
         .eq("venue_id", venueId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
       if (filters?.unrepliedOnly) query = query.is("merchant_reply_text", null);
-      if (filters?.before) query = query.lt("created_at", filters.before);
+      query = applyMerchantReviewKeyset(query, filters?.before, filters?.beforeId);
       // Never an unbounded read: callers page with `before` (the oldest created_at they hold).
       query = query.limit(
         Math.min(Math.max(1, filters?.limit ?? MERCHANT_INBOX_MAX_ROWS), MERCHANT_INBOX_MAX_ROWS),
@@ -6880,14 +7040,18 @@ export const supabaseService: HungryService = {
       );
       const interactions = reviewRows.map((row) => {
         const rating = asNumber(row.rating);
+        // A deleted account's kept review is a bare rating, as on the dish page.
+        const fromDeletedAccount = isDeletedAccountReviewRow(row);
         return {
           id: asString(row.id) ?? "",
           outletId,
           type: "review" as InteractionType,
-          authorName: asString(row.author_name) ?? "Hungry diner",
+          authorName: fromDeletedAccount
+            ? "Deleted account"
+            : (asString(row.author_name) ?? "Hungry diner"),
           rating,
-          text: asString(row.text) ?? "",
-          tags: asStringArray(row.tags),
+          text: fromDeletedAccount ? "" : (asString(row.text) ?? ""),
+          tags: fromDeletedAccount ? [] : asStringArray(row.tags),
           createdAt: asString(row.created_at) ?? new Date().toISOString(),
           dishName: dishNameById.get(asString(row.dish_id) ?? ""),
           reply: asString(row.merchant_reply_text)
@@ -6954,8 +7118,13 @@ export const supabaseService: HungryService = {
         .from("reviews")
         .select("id,user_id,dish_id,venue_id,author_name,rating,text,created_at")
         .eq("venue_id", venueId)
-        .order("created_at", { ascending: false });
-      if (options?.before) candidateQuery = candidateQuery.lt("created_at", options.before);
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false });
+      candidateQuery = applyMerchantReviewKeyset(
+        candidateQuery,
+        options?.before,
+        options?.beforeId,
+      );
       candidateQuery = candidateQuery.limit(
         Math.min(Math.max(1, options?.limit ?? MERCHANT_INBOX_MAX_ROWS), MERCHANT_INBOX_MAX_ROWS),
       );
@@ -7285,11 +7454,18 @@ export const supabaseService: HungryService = {
     },
 
     async getWeeklySummaryStats(outletId) {
-      const analytics = await this.getAnalytics(outletId, "7d");
-      const reviews = await this.getInbox(outletId, { type: "review" });
-      const promotions = await this.getPromotions(outletId);
       // Read-only: opening Settings must not write a summary row for every visit.
-      return buildWeeklySummaryFromAnalytics(outletId, analytics, reviews, promotions);
+      const [analytics, summary, promotions] = await Promise.all([
+        this.getAnalytics(outletId, "7d"),
+        this.getDashboardSummary(outletId),
+        this.getPromotions(outletId),
+      ]);
+      return buildWeeklySummaryFromAnalytics(
+        outletId,
+        analytics,
+        summary.unrepliedReviews,
+        promotions,
+      );
     },
 
     async getMerchantNotifications(merchantAccountId) {
@@ -8143,6 +8319,32 @@ export const supabaseService: HungryService = {
       if (error) throw error;
       const items = (data || []).map((row) => mapPortfolioItem(row as unknown as Row));
       return attachPortfolioPrivateNotes(client, portfolioId, items);
+    },
+
+    async getPortfolioItemsForPortfolios(portfolioIds: string[]) {
+      const ids = [...new Set(portfolioIds)];
+      if (ids.length === 0) return {};
+      const client = getSupabaseClient();
+      if (!client) throw new Error("Supabase client not initialized");
+      const { data, error } = await client
+        .from("portfolio_items")
+        .select(PORTFOLIO_ITEM_COLUMNS)
+        .in("portfolio_id", ids)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      const grouped = new Map<string, PortfolioItem[]>(ids.map((id) => [id, []]));
+      for (const row of data || []) {
+        const item = mapPortfolioItem(row as unknown as Row);
+        grouped.get(item.portfolioId)?.push(item);
+      }
+      const entries = await Promise.all(
+        ids.map(
+          async (id) =>
+            // n-plus-one-ok: get_portfolio_private_notes takes one list id; an array version needs a migration.
+            [id, await attachPortfolioPrivateNotes(client, id, grouped.get(id) ?? [])] as const,
+        ),
+      );
+      return Object.fromEntries(entries);
     },
 
     async getPortfolioItemDetails(portfolioId: string) {

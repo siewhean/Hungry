@@ -133,7 +133,7 @@ BUILDING_TYPE_KEYWORDS = [
 ]
 
 # Python ports of the SQL helpers in
-# supabase/migrations/20260724113000_catalog_raw_publish_quality_gate.sql.
+# the retired 20260724113000_catalog_raw_publish_quality_gate.sql (see git history).
 MOCK_ID_RE = re.compile(r"(^|[-_:])(mock|test|fixture|demo|sample)([-_:]|$)", re.I)
 NON_CONSUMER_RULES = [
     ("convenience_store", re.compile(

@@ -46,10 +46,10 @@ test("meal-time suggestions: opt-in, skip users already active today, open Decid
   assert.match(service, /mealtime_suggestions: next\.mealtimeSuggestions/);
 });
 
-test("welcome back: only after more than a week away, behind welcome_back_v1", () => {
+test("welcome back: only after more than a week away, behind welcome_back_v2", () => {
   const card = read("src/components/home/WelcomeBackCard.tsx");
   assert.match(card, /!isReturningAfterBreak\(snapshot\.state\)\) return null/);
-  assert.match(card, /useExperimentVariant\("welcome_back_v1"\)/);
+  assert.match(card, /useExperimentVariant\("welcome_back_v2", \{ enabled: visible \}\)/);
   assert.match(card, /getWelcomeBackDishes\(snapshot\.previousActiveDate\)/);
   assert.match(card, /trackAnalyticsEvent\("welcome_back_shown"/);
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");

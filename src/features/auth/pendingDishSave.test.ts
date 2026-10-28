@@ -5,17 +5,23 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail } from "@/types/domain";
-import { flushPendingDishSave, rememberPendingDishSave } from "./pendingDishSave";
+import {
+  clearPendingDishSave,
+  flushPendingDishSave,
+  forgetPendingDishSave,
+  getPendingDishSaveIds,
+  rememberPendingDishSave,
+} from "./pendingDishSave";
 
 const dish = { id: "dish-chicken-rice", name: "Chicken Rice" } as DishDetail;
 
 function stubToggleAndServer(serverIds: string[]) {
   const calls: string[] = [];
-  const originalToggle = useProfileStore.getState().toggleFavourite;
+  const originalAdd = useProfileStore.getState().addFavourites;
   useProfileStore.setState({
-    toggleFavourite: async (target) => {
-      calls.push(target.id);
-      return { status: "saved" };
+    addFavourites: async (targets) => {
+      calls.push(...targets.map((target) => target.id));
+      return [];
     },
   });
   const current = useProfileStore.getState().profile;
@@ -26,7 +32,7 @@ function stubToggleAndServer(serverIds: string[]) {
   return {
     calls,
     restore: () => {
-      useProfileStore.setState({ toggleFavourite: originalToggle });
+      useProfileStore.setState({ addFavourites: originalAdd });
       profileService.getFavouriteDishIds = originalIds;
     },
   };
@@ -56,5 +62,58 @@ test("a stale pending save is not attached to a later sign-in", async () => {
     assert.deepEqual(stub.calls, []);
   } finally {
     stub.restore();
+  }
+});
+
+test("a guest can take a dish back out, and backing out of sign-in drops every pending save", async () => {
+  const stub = stubToggleAndServer([]);
+  const laksa = { id: "dish-laksa", name: "Laksa" } as DishDetail;
+  try {
+    clearPendingDishSave();
+    forgetPendingDishSave(dish.id);
+    assert.deepEqual(getPendingDishSaveIds(), [], "nothing to forget");
+    rememberPendingDishSave(dish);
+    rememberPendingDishSave(laksa);
+    rememberPendingDishSave(dish);
+    assert.deepEqual(getPendingDishSaveIds(), [laksa.id, dish.id], "a repeat moves to the end");
+    forgetPendingDishSave(laksa.id);
+    assert.deepEqual(getPendingDishSaveIds(), [dish.id]);
+    forgetPendingDishSave(dish.id);
+    await flushPendingDishSave();
+    assert.deepEqual(stub.calls, [], "an emptied list saves nothing");
+    rememberPendingDishSave(dish);
+    clearPendingDishSave();
+    await flushPendingDishSave();
+    assert.deepEqual(stub.calls, []);
+  } finally {
+    stub.restore();
+  }
+});
+
+test("dishes that could not be saved are named in an error toast", async () => {
+  const originalAdd = useProfileStore.getState().addFavourites;
+  const profileService = getHungryService().profile;
+  const originalIds = profileService.getFavouriteDishIds;
+  profileService.getFavouriteDishIds = async () => [];
+  useProfileStore.setState({ addFavourites: async (targets) => targets });
+  const laksa = { id: "dish-laksa", name: "Laksa" } as DishDetail;
+  try {
+    rememberPendingDishSave(dish);
+    rememberPendingDishSave(laksa);
+    await flushPendingDishSave();
+    assert.equal(
+      useUIStore.getState().toast?.message,
+      "Couldn't save 2 dishes. Try again from the dish.",
+    );
+    assert.equal(useUIStore.getState().toast?.tone, "error");
+    rememberPendingDishSave(laksa);
+    await flushPendingDishSave();
+    assert.equal(
+      useUIStore.getState().toast?.message,
+      "Couldn't save Laksa. Try again from the dish.",
+    );
+  } finally {
+    useProfileStore.setState({ addFavourites: originalAdd });
+    profileService.getFavouriteDishIds = originalIds;
   }
 });

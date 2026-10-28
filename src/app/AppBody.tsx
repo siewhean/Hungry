@@ -13,6 +13,9 @@ import { isE2eDeveloperLauncherRequested } from "@/lib/runtime/e2eDeveloperLaunc
 import { useSessionStore } from "@/store/useSessionStore";
 import { SignInPromptSheet } from "@/features/auth/SignInPromptSheet";
 import { SafetyActionsSheet } from "@/features/safety/SafetyActionsSheet";
+import { reportError } from "@/lib/monitoring/reportError";
+import { registerForStallAlerts } from "@/lib/notifications/push";
+import { subscribePushTokenSync } from "@/lib/notifications/pushTokenSync";
 
 const APP_SHELL_FONT_GRACE_MS = 900;
 
@@ -34,6 +37,17 @@ export function AppBody() {
   const showRootNavigator = passwordRecoveryInProgress
     ? mountedNavigatorIsRoot.current
     : wantsRootNavigator;
+
+  // Sign-out unbinds this phone's push token; bind it again on the next sign-in
+  // (only when notifications are already allowed, never with a prompt).
+  useEffect(
+    () =>
+      subscribePushTokenSync(
+        () => registerForStallAlerts({ askPermission: false }),
+        (error) => reportError(error, { area: "push_token_sync" }),
+      ),
+    [],
+  );
 
   useEffect(() => {
     if (fontsLoaded) {

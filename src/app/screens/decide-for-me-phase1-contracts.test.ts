@@ -50,8 +50,8 @@ test("Decide For Me has no fake cart, routes back to Discover, and tracks its fu
 test("taste quiz asks for a usual budget and saves it with dietary preferences", () => {
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 
-  assert.match(quiz, /Usual budget per dish/);
-  assert.match(quiz, /setMaxDishBudget\(maxDishBudget\)/);
+  assert.match(read("src/app/screens/onboarding/DietaryStep.tsx"), /Usual budget per dish/);
+  assert.match(quiz, /setMaxDishBudget\(maxDishBudget(, \{ surface(: flowMode)? \})?\)/);
 });
 
 test("setMaxDishBudget stores the budget locally and logs it", () => {

@@ -53,7 +53,7 @@ test("merchant FeaturedVisitors screen manages review-backed pins through servic
   assertSourceIncludes(
     types,
     [
-      /listPopularVisitorCandidates\(\s*outletId: string,\s*options\?: \{ limit\?: number; before\?: string \},?\s*\): Promise<PopularVisitorCandidate\[\]>/,
+      /listPopularVisitorCandidates\(\s*outletId: string,\s*options\?: \{ limit\?: number; before\?: string; beforeId\?: string \},?\s*\): Promise<PopularVisitorCandidate\[\]>/,
       /listPopularVisitorPins\(outletId: string\): Promise<PopularVisitorPin\[\]>/,
       /pinPopularVisitor\(outletId: string, reviewId: string\): Promise<PopularVisitorPin>/,
       /unpinPopularVisitor\(pinId: string\): Promise<void>/,

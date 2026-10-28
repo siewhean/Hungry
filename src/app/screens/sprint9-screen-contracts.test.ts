@@ -86,9 +86,9 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   );
   assert.match(
     forgotPasswordSource,
-    /accessibilityLabel=\{AUTH_COPY\.forgotPassword\.backToLogin\}/,
+    /const backLabel = fromSignedIn \? "Back" : AUTH_COPY\.forgotPassword\.backToLogin;[\s\S]*accessibilityLabel=\{backLabel\}/,
   );
-  assert.match(forgotPasswordSource, /accessibilityHint="Returns to the sign in screen"/);
+  assert.match(forgotPasswordSource, /"Returns to the sign in screen"/);
   assert.match(resetPasswordSource, /"Back to sign in"/);
   assert.match(
     resetPasswordSource,
@@ -130,6 +130,8 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   const manualLocation = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
   const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
+  const tiles = read("src/app/screens/onboarding/TasteOptionTiles.tsx");
+  const dietaryStep = read("src/app/screens/onboarding/DietaryStep.tsx");
 
   assert.match(locationPermission, /accessibilityLabel="Back to welcome"/);
   assert.match(locationPermission, /accessibilityHint="Returns to the welcome screen"/);
@@ -145,7 +147,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   );
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{result\.title\}`\}/);
   assert.match(
-    tasteProfileResult,
+    read("src/app/screens/onboarding/ResultDishCard.tsx"),
     /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
   assert.match(tasteProfileResult, /"Saved once you create your account at the end of setup"/);
@@ -182,8 +184,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /dishes\.length > 0 && tasteRanked\s*\? "Picked to match your taste/,
   );
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
-  // The three cards of a question are one radio group (r2 onboarding-L9).
-  assert.match(tasteQuiz, /accessibilityRole="radiogroup"/);
+  // The three cards of a question are one radio group (r2 onboarding-L9), as tiles or carousel.
+  assert.match(tiles, /accessibilityRole="radiogroup"/);
+  assert.match(tiles, /accessibilityRole="radio"/);
+  assert.match(tiles, /aria-checked=\{isSelected\}/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="radio"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
@@ -193,11 +197,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     tasteQuiz,
     /accessibilityState=\{\{ checked: isSelected, disabled: isTransitioning \}\}/,
   );
-  assert.match(
-    tasteQuiz,
-    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{label\}`\}/,
-  );
-  assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
+  assert.match(dietaryStep, /accessibilityRole="checkbox"/);
+  assert.match(dietaryStep, /accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/);
+  assert.match(dietaryStep, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(dietaryStep, /aria-checked=\{selected\}/);
   assert.match(tasteQuiz, /const \{ fontScale, height, width \} = useWindowDimensions\(\)/);
   assert.match(
     tasteQuiz,
@@ -221,7 +224,8 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
     /accessibilityRole="button"[\s\S]*accessibilityLabel=\{menuDishAccessibilityLabel\(dish\)\}/,
   );
   // The label carries the price, or "sold out today" (detail-L24).
-  assert.match(stallDetail, /\$\{dish\.name\}, sold out today/);
+  assert.match(stallDetail, /"sold out today"/);
+  assert.match(stallDetail, /dish\.mustOrder \? "must order" : null/);
   assert.match(stallDetail, /accessibilityHint="Opens this dish detail page"/);
 });
 
@@ -560,7 +564,7 @@ test("Sprint 9 screen contract: routed dish detail uses gallery-backed share flo
   const navigatorSource = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(source, /const repository = getDataRepository\(\)/);
-  assert.match(source, /buildDishGallery\(dish\)/);
+  assert.match(source, /buildDishHeroPhotos\(dish\)/);
   assert.match(source, /const canonicalDishUrl = webShareUrl\("dish", dish\.id\)/);
   assert.match(source, /ReviewShareSheet/);
   assert.match(source, /shareSheetRef\.current\?\.present\(\)/);
@@ -578,7 +582,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
 
   assert.match(source, /getDataRepository\(\)/);
   assert.match(source, /type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">/);
-  assert.match(source, /buildDishGallery\(dish\)/);
+  assert.match(source, /buildDishHeroPhotos\(dish\)/);
   // Unpriced dishes show the range or "Price not listed", never S$0.00.
   assert.match(read("src/features/detail/dishPrice.ts"), /function formatDishPrice\(/);
   assert.match(read("src/features/detail/dishPrice.ts"), /Price not listed/);
@@ -613,7 +617,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.doesNotMatch(source, /\{dish\.priceRange\}/);
   assert.doesNotMatch(source, /\{item\.priceRange\}/);
   // push, so Back returns to the previous dish.
-  assert.match(source, /navigation\.push\("DishDetail", \{ dishId: item\.id \}\)/);
+  assert.match(
+    source,
+    /navigation\.push\("DishDetail", \{\s*dishId: item\.id,\s*source: "more_from_stall"/,
+  );
   assert.match(navigatorSource, /const loadDishDetailScreenV2 =/);
   // The redundant DishDetailV2 alias route was removed; DishDetail is the V2 screen.
   assert.doesNotMatch(navigatorSource, /name="DishDetailV2"/);

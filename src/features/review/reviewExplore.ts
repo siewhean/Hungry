@@ -61,6 +61,83 @@ export function buildReviewExploreChips(
   return chips;
 }
 
+/**
+ * The chip a diner picked, kept in the rail even when its food or area dropped out of the top
+ * values after a reload, so the filter never jumps to another chip on its own.
+ */
+export function withSelectedReviewChip(
+  chips: readonly ReviewExploreChip[],
+  selectedId: string,
+): ReviewExploreChip[] {
+  if (chips.some((chip) => chip.id === selectedId)) return [...chips];
+  const [kind, ...rest] = selectedId.split(":");
+  const value = rest.join(":");
+  if ((kind === "food" || kind === "area") && value) {
+    return [...chips, { id: selectedId, kind, label: value, value }];
+  }
+  return [...chips];
+}
+
+/** The chip in force: the picked one when it is in the rail, otherwise "All" (never "taste"). */
+export function resolveActiveReviewChip(
+  chips: readonly ReviewExploreChip[],
+  selectedId: string,
+): ReviewExploreChip | undefined {
+  return (
+    chips.find((chip) => chip.id === selectedId) ??
+    chips.find((chip) => chip.kind === "all") ??
+    chips[0]
+  );
+}
+
+/**
+ * Reviews the viewer deleted this session, from any screen (ReviewDetail, a dish page, the
+ * grid's hold menu). The grid keeps pages it already loaded, so it drops these on its next focus
+ * instead of showing a tile that opens "This review isn't available".
+ */
+const deletedReviewIds = new Set<string>();
+
+export function markReviewDeletedForSession(reviewId: string): void {
+  deletedReviewIds.add(reviewId);
+}
+
+export function isReviewDeletedForSession(reviewId: string): boolean {
+  return deletedReviewIds.has(reviewId);
+}
+
+export function clearDeletedReviewsForSession(): void {
+  deletedReviewIds.clear();
+}
+
+/**
+ * What holding a grid tile does: manage your own review (when the service can edit it), report
+ * someone else's, or nothing. The tile's hint and screen-reader action follow it, so they never
+ * promise an action that does not happen.
+ */
+export function reviewTileHoldAction(options: {
+  isOwn: boolean;
+  canEditOwnReviews: boolean;
+}): "manage" | "report" | null {
+  if (!options.isOwn) return "report";
+  return options.canEditOwnReviews ? "manage" : null;
+}
+
+/**
+ * The reviews the grid may show: not hidden for this session (reported, blocked), and not the
+ * viewer's own review that moderation hid or removed (others cannot see it, so the public grid
+ * must not suggest they can).
+ */
+export function visibleGridReviews(
+  items: readonly ReviewFeedItem[],
+  options: { viewerId?: string; isHidden: (item: ReviewFeedItem) => boolean },
+): ReviewFeedItem[] {
+  return items.filter((item) => {
+    if (options.isHidden(item) || deletedReviewIds.has(item.review.id)) return false;
+    const own = Boolean(options.viewerId && item.review.authorId === options.viewerId);
+    return !(own && item.review.moderationState);
+  });
+}
+
 export function filterReviewExplore(
   items: readonly ReviewFeedItem[],
   chip: ReviewExploreChip | undefined,

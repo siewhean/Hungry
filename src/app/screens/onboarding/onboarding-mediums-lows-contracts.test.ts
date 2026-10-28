@@ -56,9 +56,12 @@ test("M3: an unanswered question is centred but not selected, and no answers mea
   const source = quiz();
   // Only a tap or a swipe marks a question answered.
   assert.match(source, /setAnsweredKeys\(\(current\) =>/);
-  assert.match(source, /flowMode === "profile" \? \[\.\.\.STEPS\] : \[\]/);
-  // The card the carousel was placed on is not an answer.
-  assert.match(source, /if \(index === scrollIndexRef\.current\) return;/);
+  assert.match(
+    source,
+    /flowMode === "profile" \? \[\.\.\.STEPS\] : \(draft\?\.quiz\?\.answeredKeys \?\? \[\]\)/,
+  );
+  // A swipe only moves the carousel (R4-ONB-5); the only way to answer is a tap.
+  assert.match(source, /A swipe only moves the cards to look at them; a tap is the answer\./);
   assert.doesNotMatch(source, /snappedIndex/);
 });
 
@@ -76,7 +79,12 @@ test("M5 and L3: the result fallback respects every dietary flag, and says so wh
   );
 
   const source = result();
-  assert.equal(source.match(/matchesAllDietaryFlags\(/g)?.length, 2, "both fallback paths filter");
+  // One builder tops the ranked picks up with popular dishes and filters both by diet and budget.
+  assert.equal(
+    source.match(/buildResultPicks\(/g)?.length,
+    4,
+    "every path builds the grid the same way",
+  );
   assert.match(source, /noDietaryPicksMessage\(/);
 
   assert.equal(
@@ -92,12 +100,14 @@ test("M5 and L3: the result fallback respects every dietary flag, and says so wh
 
 test("M6: dietary analytics carry a count, never the religious or health flags", () => {
   clearTrackedAnalyticsEvents();
-  useProfileStore.getState().setDietaryPreferences(["halal", "diabetic_friendly"]);
+  useProfileStore.getState().setDietaryPreferences(["halal", "diabetic_friendly"], {
+    surface: "profile",
+  });
   const event = getTrackedAnalyticsEvents().find(
     (entry) => entry.event === "dietary_preferences_set",
   );
   assert.ok(event);
-  assert.deepEqual(event.properties, { flag_count: 2 });
+  assert.deepEqual(event.properties, { flag_count: 2, surface: "profile" });
   assert.doesNotMatch(JSON.stringify(event), /halal|diabetic/);
 });
 
@@ -128,7 +138,8 @@ test("M1, L14: Welcome has no counter; the quiz shows one counter; Welcome copy 
   assert.doesNotMatch(welcomeSource, /<OnboardingProgress/);
   assert.doesNotMatch(welcomeSource, /Discover dishes, not just restaurants/);
   assert.match(welcomeSource, /Ranked by people who ate it/);
-  assert.doesNotMatch(quiz(), /<OnboardingProgress/);
+  // The quiz fills the Taste segment of the one shared bar; it has no counter of its own (R4-ONB-8).
+  assert.match(quiz(), /<OnboardingProgress\s+step="taste"/);
 });
 
 test("M7: only the photos a question shows are bundled, as WebP", () => {
@@ -148,7 +159,7 @@ test("M8: Welcome, Location and the quiz scroll instead of clipping at large tex
   // The taste phase of the quiz scrolls; its footer buttons stay outside the scroller.
   assert.match(
     quiz(),
-    /<ScrollView\s+style=\{\{ flex: 1 \}\}[\s\S]*\{headline\}[\s\S]*<\/ScrollView>/,
+    /<ScrollView\s+style=\{\{ flex: 1 \}\}[\s\S]*\{headingBlock\}[\s\S]*<\/ScrollView>/,
   );
 });
 
@@ -156,7 +167,7 @@ test("M9: every taste question, the dietary step and the area picker are tracked
   const progress = read(`${DIR}/OnboardingProgress.tsx`);
   assert.match(progress, /trackAnalyticsEvent\("onboarding_question_viewed"/);
   assert.match(progress, /trackAnalyticsEvent\("onboarding_area_picker_viewed"/);
-  assert.match(quiz(), /trackOnboardingQuestionViewed\("dietary", STEPS\.length\)/);
+  assert.match(quiz(), /trackOnboardingQuestionViewed\("dietary", questionKeys\.length\)/);
   assert.match(quiz(), /trackOnboardingQuestionViewed\(currentKey, step\)/);
   assert.match(picker(), /trackOnboardingAreaPickerViewed\(\)/);
 });
@@ -171,7 +182,7 @@ test("L1: each question lists its dishes mild to strong, so the example matches 
 test("L2: opening a dish from the result screen completes onboarding after navigating", () => {
   assert.match(
     result(),
-    /\.navigate\("DishDetail", \{ dishId: dish\.id \}\);[\s\S]*completeOnboarding\(hasSkippedTasteQuiz\);/,
+    /\.navigate\("DishDetail", \{\s*dishId: dish\.id,?\s*\}\);[\s\S]*completeOnboarding\(hasSkippedTasteQuiz\);/,
   );
 });
 
@@ -189,9 +200,16 @@ test("L5, L6: location copy is honest, the icon is neutral, and a blocked permis
   );
   assert.doesNotMatch(source, /Clock3|errorSoft/);
   assert.match(source, /icon: Star,\s*iconTone: "textSecondary"/);
-  // Blocked: toast and stay, with Open Settings next to Pick my area, even after an area was picked.
-  assert.match(source, /setPermissionBlocked\(true\);\s*showToast\([\s\S]*?return;/);
-  assert.match(source, /\{permissionBlocked \? \(\s*<Button\s*label="Open settings"/);
+  // Blocked: an inline note (not a toast over the buttons) and stay, with Open Settings next to
+  // Pick my area, even after an area was picked (R4-ONB-11).
+  assert.match(source, /setPermissionBlocked\(true\);\s*setBlockedNotice\([\s\S]*?return;/);
+  assert.doesNotMatch(source, /showToast/);
+  // Behaviour (Open settings as the primary action when blocked) is in onboarding.render.test.tsx.
+  assert.match(source, /\{showSettingsPrimary \? \(\s*<Button\s*label="Open settings"/);
+  assert.match(
+    source,
+    /\{permissionBlocked && manualLocation \? \(\s*<Button\s*label="Open settings"/,
+  );
 });
 
 test("L7: the quiz has a visible back arrow on every question", () => {
@@ -231,22 +249,22 @@ test("L11: the area list has Sembawang and Tengah, and finds areas by their comm
   assert.match(source, /area\.keywords\?\.some\(\(keyword\) => keyword\.includes\(needle\)\)/);
 });
 
-test("L13: Skip on the openness step saves nothing", () => {
+test("L13 (superseded by R4-ONB-16): the openness step has Continue only, no Skip that does almost the same", () => {
   const source = openness();
-  assert.match(
-    source,
-    /trackOnboardingStepSkipped\("openness"\);\s*navigation\.navigate\("TasteProfileResult"\);/,
-  );
+  assert.doesNotMatch(source, /label="Skip"/);
+  assert.doesNotMatch(source, /trackOnboardingStepSkipped/);
   assert.doesNotMatch(source, /finish\(DEFAULT_FOOD_OPENNESS\)/);
 });
 
-test("L15, L16: budget chips say S$, and the dietary button always says Continue with a None option", () => {
+test("L15, L16 (updated by R4-ONB-9): budget chips say S$, the dietary button says Continue, and No restrictions clears the diet", () => {
   const source = quiz();
-  assert.match(source, /label: "Under S\$6"/);
-  assert.match(source, /label: "Under S\$12"/);
-  assert.doesNotMatch(source, /No restrictions/);
+  const dietary = read(`${DIR}/DietaryStep.tsx`);
+  const options = read(`${DIR}/dietaryOptions.ts`);
+  assert.match(options, /label: "Under S\$6"/);
+  assert.match(options, /label: "Under S\$12"/);
+  assert.match(dietary, /label="No restrictions"/);
   assert.match(source, /label="Continue"\s*onPress=\{handleFinish\}/);
-  assert.match(source, /label: "None",[\s\S]*onPress: \(\) => setDietaryPreferencesState\(\[\]\)/);
+  assert.match(source, /onClear=\{\(\) => setDietaryPreferencesState\(\[\]\)\}/);
 });
 
 test("L17: the carousel is positioned in one place", () => {

@@ -33,6 +33,8 @@ export function PreAuthNavigator({ theme }: { theme: Theme }) {
           isAuthReady: state.isAuthReady,
           isAuthenticated: state.isAuthenticated,
           hasCompletedOnboarding: state.hasCompletedOnboarding,
+          onboardingCompletionPending: state.onboardingCompletionPending,
+          returningAccountIntent: state.returningAccountIntent,
         };
       },
       (route) => setReturnRoute({ name: route.name, params: route.params }),

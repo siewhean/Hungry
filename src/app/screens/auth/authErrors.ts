@@ -1,3 +1,5 @@
+import { getAuthFailureMessage } from "@/features/auth/authErrors";
+
 import { AUTH_COPY } from "./authCopy";
 
 export type AuthErrorLogContext = {
@@ -28,29 +30,11 @@ export function getAuthErrorLogContext(error: unknown): AuthErrorLogContext {
   };
 }
 
-function isNetworkError(error: unknown): boolean {
-  const message = (error as AuthErrorShape | null)?.message;
-  if (typeof message !== "string") return false;
-  const normalized = message.toLowerCase();
-  return (
-    normalized.includes("network request failed") ||
-    normalized.includes("failed to fetch") ||
-    normalized.includes("network error")
-  );
-}
-
+/** The sign-in failure message: account states first, then offline / rate limit / generic. */
 export function getLoginErrorMessage(error: unknown): string {
-  const { code, status } = getAuthErrorLogContext(error);
+  const { code } = getAuthErrorLogContext(error);
   if (code === "email_not_confirmed") return AUTH_COPY.login.emailNotConfirmedToast;
   if (code === "invalid_credentials") return AUTH_COPY.login.invalidCredentialsToast;
-  if (
-    code === "over_request_rate_limit" ||
-    code === "over_email_send_rate_limit" ||
-    status === 429
-  ) {
-    return AUTH_COPY.login.tooManyAttemptsToast;
-  }
   if (code === "user_banned") return AUTH_COPY.login.accountUnavailableToast;
-  if (isNetworkError(error) || status === 0) return AUTH_COPY.login.networkErrorToast;
-  return AUTH_COPY.login.genericErrorToast;
+  return getAuthFailureMessage(error, AUTH_COPY.login.genericErrorToast);
 }

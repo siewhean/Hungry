@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import { X } from "lucide-react-native";
 
@@ -8,12 +8,15 @@ import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLifecycleStore } from "@/store/useLifecycleStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useHungryTheme } from "@/theme";
 import type { LifecycleSnapshot, WelcomeBackDish } from "@/types/domain";
 import { AppText, Button, Card, IconButton } from "../ui";
 
 interface WelcomeBackCardProps {
   horizontalPadding: number;
+  /** False while the host screen is not on screen (tab warm-up), so no exposure is logged. */
+  visible?: boolean;
   onOpenDish: (dishId: string) => void;
   onOpenSaved: () => void;
 }
@@ -21,30 +24,38 @@ interface WelcomeBackCardProps {
 /**
  * Shown on Home to users back after more than a week (reactivated or
  * resurrected): their saved dishes and what is new at stalls they follow,
- * instead of a cold feed. Runs as the welcome_back_v1 experiment.
+ * instead of a cold feed. Runs as the welcome_back_v2 experiment (Home tab).
  */
 export function WelcomeBackCard(props: WelcomeBackCardProps) {
   const snapshot = useLifecycleStore((state) => state.snapshot);
   const dismissed = useLifecycleStore((state) => state.welcomeBackDismissed);
+  // The card's actions are saved dishes and new dishes at followed stalls; with neither there
+  // is nothing to tap, so those diners are not eligible in either arm.
+  const hasSavedDishes = useProfileStore((state) => state.profile.favouriteDishIds.length > 0);
+  const followsAStall = useStallFollowStore((state) => state.followedStallIds.length > 0);
 
   // Read the experiment only for eligible users, so exposure counts only them.
   if (!snapshot || dismissed || !isReturningAfterBreak(snapshot.state)) return null;
+  if (!hasSavedDishes && !followsAStall) return null;
   return <WelcomeBackExperiment snapshot={snapshot} {...props} />;
 }
 
 function WelcomeBackExperiment({
   snapshot,
   horizontalPadding,
+  visible = true,
   onOpenDish,
   onOpenSaved,
 }: WelcomeBackCardProps & { snapshot: LifecycleSnapshot }) {
   const { palette, radii, spacing } = useHungryTheme();
-  const variant = useExperimentVariant("welcome_back_v1");
+  // Fallback is control: before flags load (and with PostHog off) nothing renders.
+  const variant = useExperimentVariant("welcome_back_v2", { enabled: visible });
   const savedCount = useProfileStore((state) => state.profile.favouriteDishIds.length);
   const dismiss = useLifecycleStore((state) => state.dismissWelcomeBack);
   const [newDishes, setNewDishes] = useState<WelcomeBackDish[]>([]);
-  const hasTrackedShown = useRef(false);
-  const showCard = variant === "test";
+  const alreadyShown = useLifecycleStore((state) => state.welcomeBackShown);
+  const markShown = useLifecycleStore((state) => state.markWelcomeBackShown);
+  const showCard = visible && variant === "test";
 
   useEffect(() => {
     if (!showCard || !snapshot.previousActiveDate) return;
@@ -60,14 +71,15 @@ function WelcomeBackExperiment({
     };
   }, [showCard, snapshot.previousActiveDate]);
 
+  // Once per app session: Home remounts the card whenever its content reloads.
   useEffect(() => {
-    if (!showCard || hasTrackedShown.current) return;
-    hasTrackedShown.current = true;
+    if (!showCard || alreadyShown) return;
+    markShown();
     trackAnalyticsEvent("welcome_back_shown", {
       lifecycle_state: snapshot.state,
       days_since_previous: snapshot.daysSincePrevious,
     });
-  }, [showCard, snapshot.daysSincePrevious, snapshot.state]);
+  }, [alreadyShown, markShown, showCard, snapshot.daysSincePrevious, snapshot.state]);
 
   if (!showCard) return null;
 

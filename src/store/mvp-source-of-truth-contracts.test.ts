@@ -13,7 +13,7 @@ test("profile store treats Supabase writes as source of truth with guarded rollb
   const source = read("src/store/useProfileStore.ts");
 
   for (const method of [
-    "profile.toggleFavourite",
+    "profile.setFavourite",
     "profile.updateProfile",
     "profile.updateTasteVector",
     "profile.updateTasteProfile",
@@ -149,7 +149,7 @@ test("Change Password re-authenticates instead of exchanging a fake recovery cod
   const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
   assert.match(settingsScreen, /navigate\("ChangePassword"\)/);
   assert.match(settingsScreen, /auth\.canChangePassword\(\)/);
-  assert.match(settingsScreen, /\{canChangePassword && isAuthenticated \? \(/);
+  assert.match(settingsScreen, /\{canChangePassword \? \(/);
   assert.match(changePassword, /auth\.changePassword\(currentPassword, newPassword\)/);
   assert.match(rootNavigator, /name="ChangePassword"/);
 
@@ -305,7 +305,10 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     service,
     /authorAvatarUrl: \(userId \? avatarsByUserId\.get\(userId\) : undefined\)/,
   );
-  assert.match(service, /photos: photosByReviewId\.get\(id\) \?\? \[\]/);
+  assert.match(
+    service,
+    /photos: fromDeletedAccount \? \[\] : \(photosByReviewId\.get\(id\) \?\? \[\]\)/,
+  );
   assert.match(domain, /authorAvatarUrl\?: string/);
   // Reviewers without a photo get the Avatar fallback, never a stock face.
   assert.match(detailTransforms, /avatarUrl: review\.authorAvatarUrl,/);
@@ -315,7 +318,7 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
   // The stall reads its newest reviews in one query scoped to its menu, not one per dish.
-  assert.match(stallDetail, /reviews\.listRecentReviews\(\{\s*venueId: sideLoadVenueId,/);
+  assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
   assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviewsPage\(\{/);
@@ -331,7 +334,7 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   );
   assert.match(
     reviewFeed,
-    /serviceProviderMode === "mock" \? listReviewFeedItems\(repository\) : \(serviceReviewItems \?\? \[\]\)/,
+    /serviceProviderMode === "mock"\s*\?\s*listReviewFeedItems\(repository\)\s*:\s*\(serviceReviewItems \?\? \[\]\)/,
   );
   assert.match(reviewHistory, /serviceProviderMode === "supabase"\s*\?\s*remoteHistory/);
   assert.match(reviewHistory, /serviceProviderMode === "mock"/);

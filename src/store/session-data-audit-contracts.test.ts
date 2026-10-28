@@ -41,7 +41,7 @@ test("sign-out unbinds this device's push token before ending the Supabase sessi
   const session = read("src/store/useSessionStore.ts");
   assert.match(
     session,
-    /service\.push\.unregisterPushToken\(\)[\s\S]*?\.then\(\(\) => service\.auth\.signOut\(\)\)/,
+    /service\.push\.unregisterPushToken\(\)[\s\S]*?await service\.auth\.signOut\(\);/,
   );
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(service, /client\.rpc\("unregister_push_token", \{ p_token: token \}\)/);

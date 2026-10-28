@@ -1441,4 +1441,25 @@ Use the smallest check that matches the change risk.
 | 2026-10-23 | AI provider and model chosen by secrets (AI_PROVIDER / AI_MODEL; Gemini or Claude) | `src/lib/ai/aiProvider.test.ts` + `geminiHelper.test.ts` (12 pass, Claude and Gemini requests mocked); `dish-taste-tagging.test.ts`; `check:rate-limits`, `check:n-plus-one`, `check:edge-functions`, race-pattern audit | Pass / live Claude call pending | `typecheck`, `eslint` and the error-reporting contract test not run locally (they need installed deps); CI covers them. Needs `ANTHROPIC_API_KEY` on the Singapore project before switching; default stays Gemini, so nothing changes until the secrets are set. Re-run the answer-key eval per model before trusting auto-apply. |
 | 2026-10-23 | STITCH-BUILD-02 Stitch redesign (images 2-8) | typecheck; full npm test (1819, 0 fail); `test:render` 149/149; `eslint src` (0 errors); `check:n-plus-one`; `audit:races`; `test:coverage` + baseline update; prettier | Pass | Native visual smoke not run. Release builds use `CatalogDiscoverHome`, which lacks mall mode and For You. |
 | 2026-10-23 | STITCH-BUILD-03 round-2 owner feedback (24 items) | typecheck; full npm test (0 fail); `test:render` (0 fail); eslint on touched files (0 errors); `check:n-plus-one`; `test:coverage` + baseline update; prettier | Pass | 38 old source contracts updated to the owner's new decisions (no Helpful, no review comments, no Rice chip, no Save-this-stall card, search-only area picker). Dark mode keeps dark text on orange (white is 2.8:1 there). Native visual smoke not run. |
+
+## 2026-10-24 round-three page audit (branch claude/project-thread-cyx5eo)
+- npm test: 2035 pass after contract updates; npm run test:render: 395/395; npm run typecheck clean.
+- npm run test:coverage:update: lines 83.1%, branches 83.3%, functions 78.1% (baseline committed).
+- check:n-plus-one ok (4 baselined), check:rate-limits, audit:races, audit:supabase:migration-safety pass. No migrations in this branch.
+- Needs device check: quiz iOS swipe-back block (usePreventRemove), review photo pinch zoom.
+
+## 2026-10-25 redesign live in Supabase builds (worktree-agent-a6e4a2b7af914ed7e)
+- npm test: 2100 pass / 0 fail; npm run test:render: 408/408; typecheck clean; prettier --check src/ clean; lint 0 errors; check:n-plus-one ok (4 baselined).
+- npm run test:coverage: fails on 9 untouched files (authCopy, gamificationLimits, useComposerStore, publishErrorCopy, mockAnalytics, posthogSink, mock/persistence, useDiscoveryStore, useLocationStore); identical list at base b211e99e in this environment, so not caused by this change.
+
+## 2026-10-25 production readiness audit (claude/project-thread-seph6m)
+- npm run typecheck clean; npm test 2095 pass / 0 fail / 2 skipped; npm run test:render 409/409; lint 0 errors (341 warnings, unchanged); format:check clean; check:n-plus-one, audit:races, check:rate-limits, audit:supabase:migration-safety, check:edge-functions pass; test:coverage OK (lines 83.5%).
+- Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
+- Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.
+
+## 2026-10-27 onboarding round-four fixes (claude/project-thread-4cunlm)
+- npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
+- Playwright (mock web build, chromium): tests/e2e/onboarding-flow.spec.ts 6/6 (390x844 and 320x568); auth, guest-browsing, mandatory-onboarding-auth, production-route-gating specs pass.
+- Not verified: a device build; live PostHog flags (none exist yet; the new experiments are drafts).
+- Re-audit follow-up (N1-N4): typecheck clean; npm test 2128 pass / 0 fail; test:render 467/467; test:coverage OK; Playwright onboarding-flow.spec.ts 9/9 (rows fit at 390x844 and 320x568, crossfade, no [object Object] in the URL).
 | 2026-10-24 | ONBOARD-SLIDERS-01 slider taste questions | typecheck; full npm test; `test:render`; `eslint src`; `test:coverage` + baseline update; prettier | Pass (npm test 1892/0, test:render 174/0 plus new, eslint 0 errors, tsc, coverage baseline updated) | Native haptics, drag feel and the arc animation need a device check; mascot poses and scene images not in yet. |

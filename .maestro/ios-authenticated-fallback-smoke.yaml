@@ -1,7 +1,9 @@
 appId: ${APP_ID}
 ---
-# Prerequisite: run with an authenticated staging account and make only the
-# catalog RPC unavailable (network proxy, RPC fault injection, or staging rule).
+# Prerequisite: run with an authenticated staging account and make the catalog
+# RPCs and get_discovery_feed_by_location unavailable (network proxy, RPC fault
+# injection, or staging rule). Supabase builds show the redesigned Home, which
+# hands off to the offline (Excel) Home only when its discovery feed fails.
 # Authentication must remain valid throughout this flow.
 - launchApp
 - tapOn:
@@ -36,10 +38,10 @@ appId: ${APP_ID}
       - tapOn:
           text: "Sign in"
 - extendedWaitUntil:
-    visible: "Discover"
+    visible: "Home"
     timeout: 60000
 - tapOn:
-    text: "Discover"
+    text: "Home"
 - extendedWaitUntil:
     visible:
       id: "catalog-source-excel"
@@ -48,6 +50,7 @@ appId: ${APP_ID}
     id: "catalog-source-excel"
 - assertVisible: "Offline catalog"
 - assertVisible: "Nearby dishes"
-- assertVisible: "Stalls near you"
+# "Stalls near you" needs a GPS fix or a picked area; a fresh install has neither (regex).
+- assertVisible: "Stalls( near you)?"
 - assertVisible: "Browse the full directory"
 - takeScreenshot: "ios-authenticated-excel-fallback"

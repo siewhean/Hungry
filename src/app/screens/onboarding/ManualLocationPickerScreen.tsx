@@ -1,5 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Platform,
   Pressable,
@@ -10,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft, Building2, Check, LocateFixed, MapPin, Search, X } from "lucide-react-native";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { AppText, Button } from "@/components/ui";
@@ -95,7 +96,25 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const [mapBox, setMapBox] = useState<{ width: number; height: number } | null>(null);
   // The search options sit over the map until the diner picks something.
   const [optionsOpen, setOptionsOpen] = useState(true);
-  const isOnboarding = !isSettingsMode && !hasCompletedOnboarding;
+  // The Location step passes mode "onboarding"; the global flag is only a fallback for
+  // links that pass nothing, so a retake after onboarding still continues to the quiz.
+  const isOnboarding =
+    route.params?.mode === "onboarding" || (!isSettingsMode && !hasCompletedOnboarding);
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Focus the search for typing, but not under a screen reader: it would skip the
+  // heading and the back button and start reading the keyboard.
+  useEffect(() => {
+    let active = true;
+    void AccessibilityInfo.isScreenReaderEnabled()
+      .then((screenReaderOn) => {
+        if (active && !screenReaderOn) searchInputRef.current?.focus();
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
   const trimmedQuery = query.trim();
 
   // The search is a detour inside the Location step; the funnel should see it.
@@ -238,6 +257,18 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const showNoResults =
     trimmedQuery.length >= AREA_SEARCH_MIN_CHARS && !isSearching && results.length === 0;
 
+  // Results appear silently over the map; tell a screen reader how many there are.
+  const searchSettled = trimmedQuery.length >= AREA_SEARCH_MIN_CHARS && !isSearching;
+  useEffect(() => {
+    if (!searchSettled) return;
+    AccessibilityInfo.announceForAccessibility(
+      results.length === 0
+        ? `No areas or places match ${trimmedQuery}`
+        : `${results.length} ${results.length === 1 ? "result" : "results"}`,
+    );
+    // Once per settled search, not on every re-render of the same results.
+  }, [searchSettled, results.length]);
+
   return (
     <SafeAreaView
       style={{ backgroundColor: palette.bg, flex: 1 }}
@@ -287,7 +318,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               accessibilityLabel="Search for an area, mall, hawker centre or address"
               autoCapitalize="words"
               autoCorrect={false}
-              autoFocus
+              ref={searchInputRef}
               onChangeText={(text) => {
                 setQuery(text);
                 setOptionsOpen(true);
@@ -307,10 +338,16 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
-                hitSlop={10}
                 onPress={() => {
                   setQuery("");
                   setOptionsOpen(true);
+                }}
+                style={{
+                  alignItems: "center",
+                  height: 44,
+                  justifyContent: "center",
+                  marginRight: -spacing[3],
+                  width: 44,
                 }}
               >
                 <X color={palette.textMuted} size={18} />
@@ -320,6 +357,17 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
         </View>
 
         {isOnboarding ? <OnboardingProgress step="location" /> : null}
+        {/* Why the picker opened (location was denied): an inline note, not a toast over the buttons. */}
+        {isOnboarding && route.params?.notice ? (
+          <AppText
+            variant="bodySmall"
+            tone="secondary"
+            accessibilityRole="alert"
+            style={{ marginTop: spacing[2] }}
+          >
+            {route.params.notice}
+          </AppText>
+        ) : null}
 
         {/* The map fills the space between the search bar and the button; results float on it. */}
         <View

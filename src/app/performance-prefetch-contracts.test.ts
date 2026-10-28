@@ -116,7 +116,12 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeScreen, /activeFeedLoadIdRef/);
   assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
-  assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*repository,/);
+  // Live builds pass the feed-backed lookup; mock builds the repository (HOME-X5).
+  assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*biteDishLookup,/);
+  assert.match(
+    discover,
+    /const biteDishLookup = isSupabaseDataSource \? repositoryLookup : repository;/,
+  );
   assert.match(discover, /const repositoryLookup = useMemo<DiscoverRepositoryLookup>/);
   assert.match(discover, /const dishById = new Map<string, DishDetail \| undefined>\(\)/);
   assert.match(discover, /const dishesByVenue = new Map<string, DishDetail\[\]>\(\)/);
@@ -125,7 +130,11 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(discover, /discoverDishById\.get\(bite\.dishId\)/);
   assert.doesNotMatch(discover, /getDiscoverBiteCollection\("quickBites"/);
   assert.equal((quickBites.match(/getDiscoverBites\(/g) ?? []).length, 1);
-  assert.match(quickBites, /const fallbackBites = useMemo\(\(\) => getDiscoverBites\(\), \[\]\)/);
+  // Live builds never build the local list (HOME-X7).
+  assert.match(
+    quickBites,
+    /const fallbackBites = useMemo\(\s*\(\) => \(isSupabaseDataSource \? \[\] : getDiscoverBites\(\)\),/,
+  );
   assert.doesNotMatch(quickBites, /ActivityIndicator/);
   // While the live feed loads, skeletons show, not the whole local cache.
   assert.match(quickBites, /QuickBitesLoadingGrid/);
@@ -188,7 +197,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(discover, /scheduleIdleWork\([\s\S]*recordTasteInteraction[\s\S]*popular_right_now/);
   assert.match(
     discover,
-    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId, source: "home" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     homeScreen,

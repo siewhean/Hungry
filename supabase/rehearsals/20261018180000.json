@@ -1,0 +1,14 @@
+{
+  "version": "20261018180000",
+  "name": "20261018180000_account_deletion_residual_purge",
+  "result": "pass",
+  "rehearsed_at": "2026-10-24T11:31:15Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "fd8e183c87da7184f27001cb8a14337faf151670",
+  "up_sha256": "dcc11aa785179a3afa5f98a0e106e4d65869d8563ab5bcfc52842a36162e22ef",
+  "down_sha256": "442ebad91869092fb4571d6273088e44583aff36d3f25a65b8cfd1f30a6b9699",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/account_deletion_residual_purge.sql"]
+}

@@ -31,7 +31,6 @@
     "smoke:database:location": "node scripts/smoke_location_queries.mjs",
     "smoke:database:search": "node scripts/smoke_search_queries.mjs",
     "smoke:database:provenance": "npx supabase db query --db-url \"${SUPABASE_DB_URL:?SUPABASE_DB_URL is required (target Supabase Postgres URL)}\" -f supabase/smoke/catalog_display_provenance.sql",
-    "catalog:release:publish": "node scripts/publish-catalog-raw-release.mjs",
     "smoke:database:catalog-raw": "npx supabase db query --db-url \"${SUPABASE_DB_URL:?SUPABASE_DB_URL is required (target Supabase Postgres URL)}\" -f supabase/smoke/catalog_raw_reads.sql",
     "smoke:database:rls": "node scripts/smoke_rls.mjs",
     "smoke:ocr-staging": "node scripts/supabase-ocr-smoke.mjs",

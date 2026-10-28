@@ -9,6 +9,7 @@
     "build": "rm -f .next/lock && NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next build --webpack",
     "build:webpack": "rm -f .next/lock && NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next build --webpack",
     "bundle:budget": "node scripts/check-bundle-budget.mjs",
+    "waitlist:e2e": "node scripts/waitlist-e2e.mjs",
     "start": "rm -f .next/lock && NEXT_DISABLE_SWC=1 node ./node_modules/next/dist/bin/next start",
     "a11y:contracts": "node scripts/accessibility-contracts.mjs",
     "a11y:keyboard": "node scripts/keyboard-smoke.mjs",
