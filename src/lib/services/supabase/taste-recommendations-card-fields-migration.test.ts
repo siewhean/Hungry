@@ -73,6 +73,14 @@ test("candidates pass the checks the published catalog applies", () => {
   assert.doesNotMatch(UP, /catalog_display_image_url\(\s*v\.image_url/);
 });
 
+test("the distance shown is measured to the same point as the pin", () => {
+  assert.match(
+    UP,
+    /st_distance\(\s*coalesce\(v\.location, b\.location\),[\s\S]*?as distance_from_user/,
+  );
+  assert.match(UP, /coalesce\(v\.latitude, b\.latitude\) as pin_latitude/);
+});
+
 test("the ranking is the one already in production", () => {
   for (const line of [
     "0.50 * tg.confidence * tg.taste_score",

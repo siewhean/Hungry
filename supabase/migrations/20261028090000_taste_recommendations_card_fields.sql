@@ -8,7 +8,7 @@
 -- The first five columns and the ranking are unchanged. New columns carry what a card shows:
 -- stall name, unit and floor, price, rating, photo (the dish's own, rights-checked), food type,
 -- taste tags and vector, dietary flags, and the stall pin (venue latitude/longitude, else the
--- building's). distance_meters is now the distance from the caller when a position is sent.
+-- building's). distance_meters is now the distance from the caller to the stall when a position is sent.
 -- The candidates also pass the checks the published catalog applies (shown rights, not archived,
 -- not a merchant draft, not at a hidden non-food venue), because there is no catalog behind the
 -- cards any more.
@@ -124,10 +124,13 @@ as $$
       ) as display_image_url,
       coalesce(v.latitude, b.latitude) as pin_latitude,
       coalesce(v.longitude, b.longitude) as pin_longitude,
+      -- From the stall's own point when it has one (the same point the pin below carries); a
+      -- building can be a big mall where the two differ by 100 m or more. Ranking still uses
+      -- the building, as before.
       case
         when params.lat is not null and params.lng is not null then
           st_distance(
-            b.location,
+            coalesce(v.location, b.location),
             st_setsrid(st_makepoint(params.lng, params.lat), 4326)::geography
           )::integer
         else d.distance_meters
