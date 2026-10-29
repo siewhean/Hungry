@@ -43,7 +43,7 @@ test("push alerts are opt-in and tapped alerts open through deep link rules", ()
   assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks\}/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),
-    /weekly_picks: next\.weeklyPicks/,
+    /row\.weekly_picks = updates\.weeklyPicks/,
   );
   const push = read("src/lib/notifications/push.ts");
   assert.match(push, /trackAnalyticsEvent\("notification_opened"/);

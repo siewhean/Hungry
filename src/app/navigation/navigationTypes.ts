@@ -50,7 +50,7 @@ export type OnboardingStackParamList = {
   TasteQuiz:
     | {
         mode?: "onboarding" | "profile";
-        initialPhase?: "taste" | "dietary";
+        initialPhase?: "taste" | "dietary" | "budget"; // "budget": dietary step, scrolled to the budget
         /** The page the edit was opened from, for the preference events' surface. */
         source?: "settings";
       }

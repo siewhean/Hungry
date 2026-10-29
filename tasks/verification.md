@@ -1456,6 +1456,7 @@ Use the smallest check that matches the change risk.
 - npm run typecheck clean; npm test 2095 pass / 0 fail / 2 skipped; npm run test:render 409/409; lint 0 errors (341 warnings, unchanged); format:check clean; check:n-plus-one, audit:races, check:rate-limits, audit:supabase:migration-safety, check:edge-functions pass; test:coverage OK (lines 83.5%).
 - Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
 - Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.
+- ONB-X1 (20261028090000): typecheck clean; npm test 2105 pass / 0 fail; test:coverage OK; check:rate-limits, audit:races, check:n-plus-one pass. Migration up, down and re-up, and the smoke, run on a local Postgres 16 with stub tables (no pgvector/PostGIS there). NOT yet run: scripts/db/rehearse.sh on staging (needs sh's database passwords); check-migration-safety fails until supabase/rehearsals/20261028090000.json is committed.
 
 ## 2026-10-27 onboarding round-four fixes (claude/project-thread-4cunlm)
 - npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
@@ -1498,3 +1499,6 @@ Use the smallest check that matches the change risk.
 ### MAPDECIDE-R4 step 4 (MD-D4, MD-D12), 2026-10-28
 - typecheck clean; npm test 2186/0 fail; test:render 562/0 fail (decide.render.test.tsx gains the widen-then-drop, keyword and radius-chip cases); lint 0 errors; format clean; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
 - Migration, rollback and smoke run on a scratch Postgres 16 with stand-in tables (no PostGIS): up, down, up again; the new smoke passes (SMOKE_OK); whole-word ("ice" does not match "Rice Dishes"), plural ("noodle" matches "Noodles"), course ("drink"), stall cuisine tags and a pattern-like keyword all behave. Real staging rehearsal not run (no database password in this environment); `audit:supabase:migration-safety` fails only on the missing `supabase/rehearsals/20261029100000.json`.
+### ONB-ACCT account step progress, 2026-10-28
+
+- typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).

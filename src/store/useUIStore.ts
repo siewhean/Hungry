@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { applyAnalyticsPreference } from "@/lib/analytics/preference";
+
 import { hungryPersistStorage } from "./persistStorage";
 
 export type ToastTone = "success" | "error" | "info" | "warning";
@@ -9,6 +11,8 @@ export interface ToastPayload {
   message: string;
   tone?: ToastTone;
   duration?: number;
+  /** A button on the toast, e.g. Undo. The toast stays up for `duration` so there is time to tap. */
+  action?: { label: string; onPress: () => void };
   backgroundColor?: string;
   borderColor?: string;
   textColor?: string;
@@ -76,6 +80,9 @@ interface UIState {
   setReducedMotionEnabled: (enabled: boolean) => void;
   allowSearchHistory: boolean;
   setAllowSearchHistory: (enabled: boolean) => void;
+  /** "Share usage analytics": on by default, a device setting that survives sign-out. */
+  analyticsEnabled: boolean;
+  setAnalyticsEnabled: (enabled: boolean) => void;
   /** Device setting: kept across sign-outs and never overwritten by a server profile. */
   leftHandedMode: boolean;
   setLeftHandedMode: (enabled: boolean) => void;
@@ -123,6 +130,11 @@ export const useUIStore = create<UIState>()(
       setReducedMotionEnabled: (reducedMotionEnabled) => set({ reducedMotionEnabled }),
       allowSearchHistory: true,
       setAllowSearchHistory: (allowSearchHistory) => set({ allowSearchHistory }),
+      analyticsEnabled: true,
+      setAnalyticsEnabled: (analyticsEnabled) => {
+        applyAnalyticsPreference(analyticsEnabled);
+        set({ analyticsEnabled });
+      },
       leftHandedMode: false,
       setLeftHandedMode: (leftHandedMode) => set({ leftHandedMode }),
       signInPrompt: null,
@@ -147,8 +159,13 @@ export const useUIStore = create<UIState>()(
         hapticFeedbackEnabled: state.hapticFeedbackEnabled,
         reducedMotionEnabled: state.reducedMotionEnabled,
         allowSearchHistory: state.allowSearchHistory,
+        analyticsEnabled: state.analyticsEnabled,
         leftHandedMode: state.leftHandedMode,
       }),
+      // A saved opt-out applies before the first event of the next launch is sent.
+      onRehydrateStorage: () => (state) => {
+        if (state && state.analyticsEnabled === false) applyAnalyticsPreference(false);
+      },
     },
   ),
 );

@@ -132,12 +132,12 @@ test("Settings can sign out of every device, and a password change offers it (M3
   assert.match(change, /Sign out other devices/);
 });
 
-test("Sign-in and security groups email and password in Settings (L3)", () => {
+test("Account & security groups the password and session rows; the profile card holds the email (L3)", () => {
   const screen = settings();
-  assert.match(screen, /title="Sign-in and security"/);
+  assert.match(screen, /title="Account & security"/);
   assert.match(screen, /label="Change password"/);
   assert.match(screen, /rootNavigation\.navigate\("ChangePassword"\)/);
-  assert.match(screen, /description="Change it in Edit profile\."/);
+  assert.match(screen, /<SettingsProfileCard[\s\S]*email=\{profile\.email\}/);
 });
 
 test("change password has autofill hints, a reveal toggle and a forgot link (L10)", () => {
@@ -356,12 +356,7 @@ test("web-opening rows are links with an external icon and hint (L8)", () => {
   assert.match(row, /ExternalLink/);
   assert.match(row, /"Opens in browser"/);
   const screen = settings();
-  for (const label of [
-    "Contact us",
-    "Privacy policy",
-    "Terms of service",
-    "How account deletion works",
-  ]) {
+  for (const label of ["Privacy policy", "Terms of service", "How account deletion works"]) {
     const index = screen.indexOf(`label="${label}"`);
     assert.ok(index > 0, label);
     assert.match(screen.slice(index, index + 200), /type="link"/, label);

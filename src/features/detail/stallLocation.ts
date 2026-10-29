@@ -29,17 +29,24 @@ export function buildMapsSearchUrl(address: string, pin?: Coordinate) {
 }
 
 /**
- * Google Maps link for getting to a stall, shared by every Directions button. The search is
- * "stall, building, Singapore postal code" (a unit number such as #01-10 makes Maps lose the
- * place); a stall with no name falls back to its map pin.
+ * Google Maps link that opens the stall's listing (hours, photos, reviews) by searching its
+ * name with its building and address. A bare "lat,lng" query only drops a pin, so coordinates
+ * are used just when the stall has no building or address to search by.
  */
 export function buildStallMapsUrl(
-  stall: Pick<VenueSummary, "name"> & Omit<BuildingLocation, "name"> & { buildingName?: string },
+  stall: { name: string; buildingName?: string; address?: string; postalCode?: string },
   pin?: Coordinate,
 ) {
-  const postal = stall.postalCode ? `Singapore ${stall.postalCode}` : undefined;
-  const text = [stall.name, stall.buildingName ?? stall.address, postal].filter(Boolean).join(", ");
-  return buildMapsSearchUrl(text || "Singapore", text ? undefined : pin);
+  const hasPlace = Boolean(stall.buildingName || stall.address || stall.postalCode);
+  const query = [
+    stall.name,
+    stall.buildingName,
+    stall.address,
+    stall.postalCode ? `Singapore ${stall.postalCode}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  return buildMapsSearchUrl(query, hasPlace ? undefined : pin);
 }
 
 /**
