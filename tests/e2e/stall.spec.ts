@@ -50,10 +50,13 @@ test.describe("stall page", () => {
     page,
   }) => {
     await openStall(page);
-    const markVisited = page.getByRole("button", { name: "Mark this stall visited" });
+    const markVisited = page.getByRole("checkbox", { name: "Mark this stall visited" });
+    const visited = page.getByRole("checkbox", { name: "Visited", exact: true });
+    // The bar renders after the first paint: wait for whichever state it opens in.
+    await expect(markVisited.or(visited)).toBeVisible({ timeout: 30_000 });
     if (!(await markVisited.isVisible())) {
       // Already visited in the mock account: take the mark off first.
-      await page.getByRole("button", { name: "Visited", exact: true }).click();
+      await visited.click();
     }
     await expect(markVisited).toBeVisible({ timeout: 10_000 });
     const before = page.url();
