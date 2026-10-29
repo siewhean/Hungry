@@ -8,6 +8,7 @@ import type {
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { getVenueOpenState } from "@/utils/operatingHours";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
+import { isClosureActive } from "@/features/merchant/closure";
 
 /** Longest public reply a merchant can post under a review (also a database CHECK). */
 export const MERCHANT_REPLY_MAX_LENGTH = 1000;
@@ -62,7 +63,7 @@ export function getMerchantOutletStatus(
   now: Date = new Date(),
 ): MerchantOutletStatus {
   if (!outlet || !outlet.isLive) return "offline";
-  if (hasText(outlet.temporaryClosure)) return "closed";
+  if (hasText(outlet.temporaryClosure) || isClosureActive(outlet.closedUntil, now)) return "closed";
   const state = hasWeeklyHours(outlet.openingSchedule)
     ? getScheduleOpenState(outlet.openingSchedule, true, now)
     : getVenueOpenState(outlet.operatingHours, true, now);

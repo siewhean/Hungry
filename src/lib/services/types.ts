@@ -22,6 +22,7 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantDailyPoint,
   MerchantDashboardSummary,
   MerchantNotification,
   MerchantNotificationPreferences,
@@ -1413,6 +1414,8 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    /** Visits and actions per Singapore day for the Performance chart, oldest first. */
+    getDailySeries(outletId: string, dateRange: "7d" | "30d"): Promise<MerchantDailyPoint[]>;
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;

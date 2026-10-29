@@ -1,8 +1,12 @@
 -- Undo 20261029150000_merchant_closed_until_and_daily_series: the public merchant profile reads
--- only the free-text closure again, the daily series function and its rate rule are removed, and
--- closed_until is dropped. A closed_until a merchant set (a "closed today" or "closed until" they
--- have not yet reopened from) is lost; the table is copied to rollback_archive first.
+-- only the free-text closure again, the daily series function and its rate rule are removed,
+-- the three-featured-dishes cap trigger is removed and closed_until is dropped. A closed_until a
+-- merchant set (a "closed today" or "closed until" they have not yet reopened from) is lost; the
+-- table is copied to rollback_archive first.
 -- expect-row-loss: app_private.request_rate_rules
+
+drop trigger if exists trg_enforce_merchant_dish_featured_cap on public.dishes;
+drop function if exists app_private.enforce_merchant_dish_featured_cap();
 
 create schema if not exists rollback_archive;
 drop table if exists rollback_archive.merchant_outlets_closed_until_20261029150000;
@@ -25,7 +29,7 @@ returns table (
   is_verified boolean
 )
 language sql
-stable
+volatile
 security definer
 set search_path = public
 as $$

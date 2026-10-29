@@ -800,6 +800,17 @@ export interface MerchantAnalytics {
   };
 }
 
+/** One Singapore day of the Performance chart (get_merchant_daily_series). */
+export interface MerchantDailyPoint {
+  /** "YYYY-MM-DD", Singapore date. */
+  date: string;
+  profileVisits: number;
+  menuViews: number;
+  dishViews: number;
+  directionTaps: number;
+  saves: number;
+}
+
 /** What get_merchant_insight_facts returns: the counts the Insights rules read, from one call. */
 export interface MerchantInsightFacts {
   dishCount: number;

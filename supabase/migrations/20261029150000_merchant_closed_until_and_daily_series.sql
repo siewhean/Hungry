@@ -11,6 +11,10 @@
 --    taps and saves per Singapore day, zero-filled, in one call, for the Performance chart.
 --    SECURITY DEFINER body in app_private behind a SECURITY INVOKER public wrapper (the same
 --    shape as get_merchant_analytics), team-only, range capped at 31 days, rate limited.
+-- 3. At most three featured dishes per stall, enforced where every write lands (a trigger on
+--    dishes), so "Stall's pick" keeps its meaning. A merchant who already has more keeps them;
+--    only featuring one more is refused. The count is taken under a per-stall advisory lock, so two
+--    staff phones featuring at the same moment cannot both pass.
 -- Rollback: supabase/rollbacks/20261029150000_merchant_closed_until_and_daily_series.down.sql.
 
 alter table public.merchant_outlets
@@ -20,6 +24,7 @@ comment on column public.merchant_outlets.closed_until is
   'The stall is closed until this moment (set from the merchant app: closed today, or until a date). Ignored once it has passed.';
 
 -- Same columns and rules as 20261018171000 (verified outlets only); only temporary_closure changes.
+-- VOLATILE, as 20261022130000 made it: the rate limiter can only count volatile functions.
 create or replace function public.get_public_merchant_profile(p_venue_id text)
 returns table (
   outlet_id uuid,
@@ -34,7 +39,7 @@ returns table (
   is_verified boolean
 )
 language sql
-stable
+volatile
 security definer
 set search_path = public
 as $$
@@ -181,5 +186,68 @@ grant execute on function public.get_merchant_daily_series(uuid, timestamptz, ti
 insert into app_private.request_rate_rules (route, anon_per_minute, user_per_minute, note) values
   ('rpc/get_merchant_daily_series', null, 30, 'merchant Performance daily chart')
 on conflict (route) do nothing;
+
+-- 3. Featured dish cap (3 per stall).
+create or replace function app_private.enforce_merchant_dish_featured_cap()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, pg_catalog
+as $$
+declare
+  v_featured integer;
+begin
+  -- Service role, migrations and ops edits are not merchant writes.
+  if current_user not in ('authenticated', 'anon') or public.app_is_current_user_ops_admin() then
+    return new;
+  end if;
+  if new.archived_at is not null
+     or not exists (
+       select 1
+       from unnest(coalesce(new.availability_flags, '{}'::text[])) f
+       where public.merchant_normalize_availability_flag(f) = 'featured'
+     ) then
+    return new;
+  end if;
+  -- Already featured at this stall: saving other changes to it is not a new pick.
+  if tg_op = 'UPDATE'
+     and old.venue_id = new.venue_id
+     and old.archived_at is null
+     and exists (
+       select 1
+       from unnest(coalesce(old.availability_flags, '{}'::text[])) f
+       where public.merchant_normalize_availability_flag(f) = 'featured'
+     ) then
+    return new;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended('featured_dishes:' || new.venue_id, 0));
+
+  select count(*)::integer into v_featured
+  from public.dishes d
+  where d.venue_id = new.venue_id
+    and d.id <> new.id
+    and d.archived_at is null
+    and exists (
+      select 1
+      from unnest(coalesce(d.availability_flags, '{}'::text[])) f
+      where public.merchant_normalize_availability_flag(f) = 'featured'
+    );
+
+  if v_featured >= 3 then
+    raise exception 'You can feature up to 3 dishes. Remove Featured from another dish first.'
+      using errcode = '23514';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function app_private.enforce_merchant_dish_featured_cap() from public, anon, authenticated;
+
+drop trigger if exists trg_enforce_merchant_dish_featured_cap on public.dishes;
+create trigger trg_enforce_merchant_dish_featured_cap
+before insert or update of availability_flags, archived_at, venue_id on public.dishes
+for each row
+execute function app_private.enforce_merchant_dish_featured_cap();
 
 notify pgrst, 'reload schema';

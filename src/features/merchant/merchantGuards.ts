@@ -23,6 +23,14 @@ export function isVerificationCurrent(
   return !Number.isFinite(expiresAt) || expiresAt > now.getTime();
 }
 
+/** Until verification, only drafts can change: the database refuses edits to live dishes. */
+export function isLockedLiveDish(
+  dish: { isMerchantDraft?: boolean },
+  isVerified: boolean,
+): boolean {
+  return !isVerified && dish.isMerchantDraft === false;
+}
+
 /**
  * Resolve the merchant access level from current state.
  * - "none": feature disabled or no merchant account

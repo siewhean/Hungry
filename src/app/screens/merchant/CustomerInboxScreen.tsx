@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   AppText,
   Button,
+  ChipGroup,
   IconButton,
   FilterChipRail,
   Input,
@@ -29,6 +30,13 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { reportError } from "@/lib/monitoring/reportError";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
+import {
+  REPLY_SUGGESTION_KINDS,
+  REPLY_SUGGESTION_LABELS,
+  buildReplySuggestion,
+  type ReplySuggestionKind,
+} from "@/features/merchant/replySuggestions";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
@@ -636,6 +644,15 @@ function ReplyComposer({
   const [text, setText] = useState(initialText);
   const nearReplyLimit = text.length >= MERCHANT_REPLY_MAX_LENGTH * 0.9;
   const [isSending, setIsSending] = useState(false);
+  // Exposure is the composer opening on a review with no reply yet: the only place chips show.
+  const suggestionsVariant = useExperimentVariant("merchant_reply_suggestions_v1", {
+    enabled: !interaction.reply,
+  });
+  const showSuggestions = !interaction.reply && suggestionsVariant === "chips";
+  const [suggestion, setSuggestion] = useState<{
+    kind: ReplySuggestionKind;
+    text: string;
+  } | null>(null);
   // Its own dialog: the composer is a Modal, and a dialog from the screen would sit behind it.
   const { showAlert, dialog } = useMerchantDialog();
 
@@ -662,6 +679,13 @@ function ReplyComposer({
         useMerchantStore.getState().activeOutletId ?? undefined,
         { interaction_type: interaction.type },
       );
+      if (suggestion) {
+        trackMerchantEvent(
+          "merchant_reply_suggestion_used",
+          useMerchantStore.getState().activeOutletId ?? undefined,
+          { kind: suggestion.kind, edited: text !== suggestion.text },
+        );
+      }
       onSent(text);
     } catch (e) {
       reportError(e, { screen: "CustomerInbox", action: "send_reply" });
@@ -713,6 +737,54 @@ function ReplyComposer({
               onPress={requestClose}
             />
           </View>
+
+          {/* The review being answered stays in view while typing. */}
+          <View
+            accessible
+            accessibilityLabel={`Review by ${interaction.authorName}${
+              interaction.rating ? `, ${interaction.rating} out of 5` : ""
+            }: ${interaction.text}`}
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: componentRadii.card,
+              gap: spacing[1],
+              marginBottom: spacing[3],
+              padding: spacing[3],
+            }}
+          >
+            {typeof interaction.rating === "number" && interaction.rating > 0 ? (
+              <View style={{ flexDirection: "row", gap: 2 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={12}
+                    color={star <= interaction.rating! ? palette.starStroke : palette.border}
+                    fill={star <= interaction.rating! ? palette.starFill : "transparent"}
+                  />
+                ))}
+              </View>
+            ) : null}
+            <AppText variant="bodySmall" numberOfLines={2}>
+              {interaction.text}
+            </AppText>
+          </View>
+
+          {showSuggestions ? (
+            <View style={{ marginBottom: spacing[3] }}>
+              <ChipGroup
+                options={REPLY_SUGGESTION_KINDS.map((kind) => ({
+                  id: kind,
+                  label: REPLY_SUGGESTION_LABELS[kind],
+                }))}
+                selectedIds={suggestion ? [suggestion.kind] : []}
+                onSelect={(kind) => {
+                  const next = buildReplySuggestion(kind, interaction.authorName);
+                  setText(next);
+                  setSuggestion({ kind, text: next });
+                }}
+              />
+            </View>
+          ) : null}
 
           <Input
             accessibilityLabel="Your public reply"

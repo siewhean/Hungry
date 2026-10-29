@@ -2,7 +2,7 @@
 -- A stall with closed_until in the future reads as "Closed today" / "Closed until <date>" on the
 -- public merchant profile (guests included) and as its free-text closure once the date passes;
 -- the daily series is zero-filled per Singapore day, team-only, capped at 31 days, and not
--- callable by guests. Runs in a transaction and rolls back. Brings its own building.
+-- callable by guests; a stall can feature at most three dishes. Runs in a transaction and rolls back. Brings its own building.
 --   owner:    00000000-0000-0072-b000-000000000001
 --   stranger: 00000000-0000-0072-b000-000000000002
 --   account:  00000000-0000-0072-a000-000000000001
@@ -167,6 +167,56 @@ begin
     raise exception 'the daily series rate rule is missing';
   end if;
 end $$;
+
+-- 3. Featured dishes: three at most, per stall, however the flag is set.
+select set_config('request.jwt.claim.sub', '00000000-0000-0072-b000-000000000001', true);
+set local role authenticated;
+
+do $$
+declare
+  v_id text;
+begin
+  for v_id in select unnest(array['smoke-cu-dish-1', 'smoke-cu-dish-2', 'smoke-cu-dish-3']) loop
+    perform public.merchant_save_dish(
+      v_id, 'smoke-cu-venue', 'smoke-cu-building',
+      jsonb_build_object('name', v_id, 'price', 5, 'availability_flags', jsonb_build_array('featured'))
+    );
+  end loop;
+  perform public.merchant_save_dish(
+    'smoke-cu-dish-4', 'smoke-cu-venue', 'smoke-cu-building',
+    jsonb_build_object('name', 'smoke-cu-dish-4', 'price', 6)
+  );
+
+  begin
+    perform public.merchant_set_dish_availability_flag('smoke-cu-dish-4', 'smoke-cu-venue', 'featured', true);
+    raise exception 'a fourth featured dish should be refused';
+  exception when check_violation then
+    null;
+  end;
+  begin
+    perform public.merchant_save_dish(
+      'smoke-cu-dish-4', 'smoke-cu-venue', 'smoke-cu-building',
+      jsonb_build_object('availability_flags', jsonb_build_array('Featured'))
+    );
+    raise exception 'saving a fourth featured dish should be refused';
+  exception when check_violation then
+    null;
+  end;
+
+  -- An already featured dish can still be edited and kept featured.
+  perform public.merchant_save_dish(
+    'smoke-cu-dish-1', 'smoke-cu-venue', 'smoke-cu-building',
+    jsonb_build_object('price', 7, 'availability_flags', jsonb_build_array('featured', 'sold_out'))
+  );
+
+  -- Freeing a slot lets the fourth in.
+  perform public.merchant_set_dish_availability_flag('smoke-cu-dish-1', 'smoke-cu-venue', 'featured', false);
+  if not public.merchant_set_dish_availability_flag('smoke-cu-dish-4', 'smoke-cu-venue', 'featured', true) then
+    raise exception 'the fourth dish should be featured once a slot is free';
+  end if;
+end $$;
+
+reset role;
 
 select 'merchant_closed_until_and_daily_series_passed' as result;
 
