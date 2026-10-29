@@ -280,6 +280,19 @@ test("the sort control names the order the results are really in (SEARCH-X8)", (
   assert.equal(effectiveSortLabel("price", false), "Price: low to high");
 });
 
+test("picked food types join the Noodles and Rice keywords (SR4-24)", () => {
+  const base = { query: "", sort: "relevance" as const, coordinate };
+  assert.deepEqual(buildBrowseRequest({ ...base, filters: [] }).foodKeywords, []);
+  const request = buildBrowseRequest({
+    ...base,
+    filters: ["Noodles"],
+    foodTypes: ["Laksa", "Chicken Rice"],
+  });
+  assert.ok(request.foodKeywords?.includes("Laksa"));
+  assert.ok(request.foodKeywords?.includes("Chicken Rice"));
+  assert.ok((request.foodKeywords?.length ?? 0) > 2, "the Noodles keywords are still there");
+});
+
 test("the summary names the place instead of a radius (SEARCH-X2, SEARCH-12)", () => {
   const base = { count: 24, mode: "stalls" as const, hasQuery: false, widened: false };
   assert.equal(describeResultsSummary(base), "24 stalls within 3 km");
@@ -289,6 +302,22 @@ test("the summary names the place instead of a radius (SEARCH-X2, SEARCH-12)", (
     "24 stalls at Maxwell Food Centre",
   );
   assert.equal(describeResultsSummary({ ...base, hasQuery: true }), "24 stalls");
+  // The summary echoes the typed text (SR4-25).
+  assert.equal(
+    describeResultsSummary({ ...base, hasQuery: true, query: "laksa" }),
+    "24 stalls for “laksa”",
+  );
+  assert.equal(
+    describeResultsSummary({
+      ...base,
+      count: 1,
+      mode: "dishes",
+      hasQuery: true,
+      query: "laksa",
+      placeName: "Maxwell Food Centre",
+    }),
+    "1 dish for “laksa” at Maxwell Food Centre",
+  );
 });
 
 test("a share link keeps the place and the sort (SEARCH-5)", () => {

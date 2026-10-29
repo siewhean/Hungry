@@ -9,13 +9,14 @@ const { window } = dom;
 // A phone-sized viewport, so screens that lay out from the window height get sane numbers.
 window.innerWidth = 390;
 window.innerHeight = 844;
-for (const [key, value] of [
-  ["clientWidth", 390],
-  ["clientHeight", 844],
+// The document size follows the window, so a test can resize it (set innerWidth, then dispatch "resize").
+for (const [key, source] of [
+  ["clientWidth", "innerWidth"],
+  ["clientHeight", "innerHeight"],
 ]) {
   Object.defineProperty(window.document.documentElement, key, {
     configurable: true,
-    get: () => value,
+    get: () => window[source],
   });
 }
 
