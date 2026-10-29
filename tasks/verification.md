@@ -1532,3 +1532,8 @@ Use the smallest check that matches the change risk.
 - Local timing, 30k dishes and 29.6k stalls, warm (this box), before to after: Search home featured request (limit 3, sort quality) 37 to 0.4 ms; suggest with no text 4 to 0.2 ms; browse by quality (24) and stall browse unchanged at about 40 to 50 ms. Staging numbers come from supabase/manual/search-timing.sql (p50/p95/max for 12 calls); on the local dense set every row has a p95 under 250 ms.
 - No role-level statement_timeout in this PR: it would also cap export_my_data and account deletion for signed-in users. A function-level SET statement_timeout does not stop a running statement (checked on PG16). Decision with sh.
 - Checks: check:rate-limits and audit:races OK; audit:supabase:migration-safety fails only for the missing staging rehearsal evidence of 20261029113000, 20261029120000 and 20261029130000.
+
+### SEARCH-R4 PR E (heart, location snapshot, per-query recording, offline note), 2026-10-29
+- Client only, no migration. Heart on dish cards (SR4-17, optimistic toggle in useProfileStore, save event recorded), results keep their order when the GPS fix moves and offer "Update for new location" (SR4-26), the initial query is recorded once per query text (SR4-30), Search home shows the offline note through ResultsNotes (SR4-31). Render tests added in search.render.test.tsx (51 tests).
+- Checks: npm test 2262 (three contracts updated: initialQueryRecordedRef compare, getHungryService and Heart allowed on the results screen), npm run test:render 674/0, typecheck clean, eslint 0 errors, check:n-plus-one, audit:races, check:rate-limits and test:coverage OK. Coverage baseline file not touched (CI value rule).
+- Waiting on other threads: SR4-14 (#153), SR4-16 (mood thread), DISH-X1..X3 (#154).

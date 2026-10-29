@@ -369,7 +369,7 @@ test("Search results route reads the paged catalog service, never the repository
   const searchScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
 
   assert.match(searchScreen, /const service = getCatalogRawService\(\)/);
-  assert.doesNotMatch(searchScreen, /getDataRepository|getSearchResults|getHungryService/);
+  assert.doesNotMatch(searchScreen, /getDataRepository|getSearchResults/);
 });
 
 test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {
@@ -416,7 +416,8 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
   // The Home feed no longer builds taste or "nearby" sections it never showed.
   assert.doesNotMatch(feed, /Nearby picks/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
-  assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
+  // The heart on a dish card is a real save (profile store), not a like count.
+  assert.doesNotMatch(searchScreen, /fallbackPost|likeCount/);
   // Only positive verification is badged, with one label; unverified rows carry no pill.
   assert.match(searchScreen, /item\.verificationStatus === "approved"/);
   assert.doesNotMatch(searchScreen, /Source verified/);
