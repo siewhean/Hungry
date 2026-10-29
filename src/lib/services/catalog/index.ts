@@ -117,7 +117,16 @@ export interface CatalogRawVenueCard {
   /** The stall's best displayable dish: its rating and review count (quality_rating columns). */
   qualityRating?: number;
   qualityReviewCount?: number;
+  /** The stall's own logo, when it has one. */
+  logoUrl?: string;
+  /** Median price of the stall's mains (drinks and sides left out), for "Mains from S$x". */
+  mainPrice?: number;
   representativeDish?: Pick<
+    CatalogRawDishCard,
+    "id" | "name" | "imageUrl" | "price" | "verificationStatus"
+  >;
+  /** The stall's best dish for the typed query; only on stall search results. */
+  matchedDish?: Pick<
     CatalogRawDishCard,
     "id" | "name" | "imageUrl" | "price" | "verificationStatus"
   >;
@@ -182,6 +191,10 @@ export interface CatalogSuggestion {
   label: string;
   /** Building id, on place suggestions. */
   placeId?: string;
+  /** Venue id, on a stall suggestion whose name belongs to one stall; a chain's name has none. */
+  venueId?: string;
+  /** The stall's building, shown under a stall suggestion that has a venue id. */
+  subtitle?: string;
 }
 
 /** A mall, hawker centre, food court or other building with several stalls. */
@@ -557,6 +570,7 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
   const representative = asRecord(row.representative_dish);
   const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
   const representativeRightsStatus = asString(representative.media_rights_status) ?? "unverified";
+  const matched = asRecord(row.matched_dish);
   return {
     id: asString(row.id) ?? "",
     buildingId: asString(row.building_id) ?? "",
@@ -576,6 +590,19 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
     menuCount: asNumber(row.menu_count) ?? 0,
     qualityRating: asNumber(row.quality_rating),
     qualityReviewCount: asNumber(row.quality_review_count),
+    logoUrl: asString(row.logo_url),
+    mainPrice: asNumber(row.main_price),
+    matchedDish: asString(matched.id)
+      ? {
+          id: asString(matched.id) ?? "",
+          name: asString(matched.name) ?? "Unnamed dish",
+          imageUrl: sanitizeCatalogCardImageUrl(asString(matched.image_url), sourceRpc, {
+            rightsStatus: "unverified",
+          }),
+          price: asNumber(matched.price),
+          verificationStatus: verificationStatus(matched.verification_status),
+        }
+      : undefined,
     representativeDish: asString(representative.id)
       ? {
           id: asString(representative.id) ?? "",
@@ -618,7 +645,10 @@ function mapSuggestions(value: unknown): CatalogSuggestion[] {
     const kind = row.kind;
     if (!label || (kind !== "food_type" && kind !== "place" && kind !== "stall")) return [];
     const placeId = kind === "place" ? asString(row.id) : undefined;
-    return [placeId ? { kind, label, placeId } : { kind, label }];
+    if (placeId) return [{ kind, label, placeId }];
+    const venueId = kind === "stall" ? asString(row.id) : undefined;
+    if (venueId) return [{ kind, label, venueId, subtitle: asString(row.subtitle) }];
+    return [{ kind, label }];
   });
 }
 

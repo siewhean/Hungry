@@ -63,6 +63,8 @@ import {
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
+  stallCardDetail,
+  stallCardImage,
   toggleFilterId,
   type BrowseFilterId,
   type BrowseItem,
@@ -172,8 +174,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
   const isDish = mode === "dishes";
   const dish = isDish ? (item as CatalogRawDishCard) : undefined;
   const stall = isDish ? undefined : (item as StallRow);
-  const imageUrl =
-    item.imageUrl ?? ("representativeDish" in item ? item.representativeDish?.imageUrl : undefined);
+  const imageUrl = stall ? stallCardImage(stall) : item.imageUrl;
   const title = item.name;
   const stallName = dish ? dish.venueName : title;
   const stallRating = ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
@@ -185,6 +186,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
       ? `Top dish ${stallRating}`
       : undefined;
   const outlets = stall?.extraOutlets ?? 0;
+  const stallDetail = stall ? stallCardDetail(stall) : undefined;
   const isVerified = item.verificationStatus === "approved";
 
   return (
@@ -216,7 +218,11 @@ const RawCatalogCard = memo(function RawCatalogCard({
           ) : (
             // Most catalog rows have no cleared photo; show the stall's initials, not a grey caption.
             <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-              <StallLogoMark name={stallName} size={Math.round(itemWidth * 0.3)} />
+              <StallLogoMark
+                logoUrl={stall?.logoUrl}
+                name={stallName}
+                size={Math.round(itemWidth * 0.3)}
+              />
             </View>
           )}
           {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
@@ -262,6 +268,11 @@ const RawCatalogCard = memo(function RawCatalogCard({
           <AppText numberOfLines={2} tone="secondary" variant="micro">
             {cardSubtitle(mode, item)}
           </AppText>
+          {stallDetail ? (
+            <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
+              {stallDetail}
+            </AppText>
+          ) : null}
           {rating ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
               <Star color={palette.starFill} fill={palette.starFill} size={12} />
@@ -881,14 +892,16 @@ function RawCatalogBrowseGrid({
     (item: BrowseItem, index: number) => {
       const openedMode = modeRef.current;
       const releaseId = releaseIdRef.current;
-      // Live catalog dish ids are dish ids: open the dish page, which shows this catalog record
-      // if it can't load the dish. The offline copy and stalls keep the catalog page.
+      // Live catalog ids are dish and venue ids: open the dish or stall page. The stall page shows
+      // the catalog record if it can't load the stall; the offline copy keeps the catalog page.
       if (openedMode === "dishes" && !releaseId?.startsWith("excel-fallback")) {
         navigation.navigate("DishDetail", {
           dishId: item.id,
           source: "search",
           catalogFallback: { releaseId },
         });
+      } else if (openedMode === "stalls" && !releaseId?.startsWith("excel-fallback")) {
+        navigation.navigate("StallDetail", { venueId: item.id });
       } else {
         navigation.navigate("CatalogRawDetail", {
           kind: openedMode === "dishes" ? "dish" : "venue",

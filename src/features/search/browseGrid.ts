@@ -192,6 +192,7 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
     stall.name,
     stall.buildingName,
     topDishRating ? `top dish ${topDishRating}` : undefined,
+    stallCardDetail(stall),
     stall.menuCount > 0
       ? `${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`
       : undefined,
@@ -202,6 +203,24 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
   ]
     .filter(Boolean)
     .join(", ");
+}
+
+/**
+ * The stall card's price line: the best dish for the typed query ("Signature Laksa · S$6.00"), else
+ * the typical price of its mains ("Mains around S$5.00"). Drinks and sides do not count towards it.
+ */
+export function stallCardDetail(stall: CatalogRawVenueCard): string | undefined {
+  if (stall.matchedDish) {
+    const price = priceLabel(stall.matchedDish.price);
+    return price ? `${stall.matchedDish.name} · ${price}` : stall.matchedDish.name;
+  }
+  const mains = priceLabel(stall.mainPrice);
+  return mains ? `Mains around ${mains}` : undefined;
+}
+
+/** The stall card's photo: its own, else the dish that matched the query, else its top dish. */
+export function stallCardImage(stall: CatalogRawVenueCard): string | undefined {
+  return stall.imageUrl ?? stall.matchedDish?.imageUrl ?? stall.representativeDish?.imageUrl;
 }
 
 /** The card's second line: "Stall · Hawker centre" for dishes, the hawker centre for stalls. */
