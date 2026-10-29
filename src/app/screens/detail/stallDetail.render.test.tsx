@@ -2,7 +2,9 @@
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
+import { Linking } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
+import type * as ClipboardModule from "expo-clipboard";
 
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { ReportProblemScreen } from "@/app/screens/detail/ReportProblemScreen";
@@ -20,6 +22,8 @@ import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
+
+const Clipboard = require("expo-clipboard") as typeof ClipboardModule;
 
 const STALL = "venue-tian-tian";
 const restores: (() => void)[] = [];
@@ -448,4 +452,46 @@ test("STALL-X7: with nothing to go back to, the stall page goes to the Home tab 
   await view.press(view.findByText("Go to Home"));
   const call = navigation.calls.find((entry) => entry.method === "navigate");
   assert.deepEqual(call?.args, ["MainTabs", { screen: "Discover" }]);
+});
+
+test("STALL-LOC1: tapping the stall name copies it and says Copied", async () => {
+  const copied: string[] = [];
+  override(Clipboard, "setStringAsync", (async (value: string) => {
+    copied.push(value);
+    return true;
+  }) as typeof Clipboard.setStringAsync);
+  const view = await openStall();
+  await view.press(view.findByLabel("Tian Tian Chicken Rice, copy stall name"));
+  await view.settle();
+  assert.deepEqual(copied, ["Tian Tian Chicken Rice"]);
+  assert.equal(useUIStore.getState().toast?.message, "Copied");
+});
+
+test("STALL-LOC1: a failed copy says so instead of claiming Copied", async () => {
+  override(Clipboard, "setStringAsync", (async () => {
+    throw new Error("clipboard unavailable");
+  }) as typeof Clipboard.setStringAsync);
+  const view = await openStall();
+  await view.press(view.findByLabel("Tian Tian Chicken Rice, copy stall name"));
+  await view.settle();
+  assert.match(useUIStore.getState().toast?.message ?? "", /Couldn't copy/);
+});
+
+test("STALL-LOC2: the address is short and opens the stall in Google Maps, not its coordinates", async () => {
+  const opened: string[] = [];
+  override(Linking, "openURL", async (url: string) => {
+    opened.push(url);
+  });
+  const view = await openStall();
+  const card = view.findByLabel(/^Open maps for /);
+  assert.ok(card, "the address card is a Maps button");
+  // Unit and building only: no postcode, and the stall name is not repeated in the address.
+  const shown = card.getAttribute("aria-label") ?? "";
+  assert.doesNotMatch(shown, /Singapore \d{6}|\d{6}/);
+  assert.doesNotMatch(shown, /Tian Tian Chicken Rice/);
+  await view.press(card);
+  assert.equal(opened.length, 1);
+  const query = new URL(opened[0]).searchParams.get("query") ?? "";
+  assert.match(query, /^Tian Tian Chicken Rice/, "searches by the stall name first");
+  assert.doesNotMatch(query, /^-?\d+\.\d+,-?\d+\.\d+$/, "never a bare coordinate pair");
 });

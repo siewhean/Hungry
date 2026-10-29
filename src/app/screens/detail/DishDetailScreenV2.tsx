@@ -650,7 +650,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
   // Short enough that the stall card and Order on show without scrolling; shorter still
   // with no photo, where the name below already says what the dish is.
-  const heroHeight = heroPhotos.length > 0 ? Math.min(width * 0.62, 300) : 140;
+  // 4:3, so a typical food photo shows whole instead of a cropped strip.
+  const heroHeight = heroPhotos.length > 0 ? Math.min(width * 0.75, 420) : 140;
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [

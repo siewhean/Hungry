@@ -308,8 +308,10 @@ function RawCatalogBrowseGrid({
   const permission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
+  const showToast = useUIStore((state) => state.showToast);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const [mode, setMode] = useState(initialMode);
@@ -999,17 +1001,25 @@ function RawCatalogBrowseGrid({
           {isUsingDefaultLocation ? (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Location is off, so distances are from central Singapore. Choose your area"
-              onPress={() =>
-                navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
-              }
+              accessibilityLabel="Location is off, so distances are from central Singapore. Turn on location"
+              onPress={() => {
+                void grantLocation().then((granted) => {
+                  if (!granted) {
+                    showToast({
+                      message:
+                        "Location access is off. Turn it on in Settings to use your location.",
+                      tone: "info",
+                    });
+                  }
+                });
+              }}
               style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
             >
               <MapPinOff color={palette.textMuted} size={16} />
               <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
                 Location is off, so distances are from central Singapore.{" "}
                 <AppText variant="micro" style={{ color: palette.orange }}>
-                  Choose your area
+                  Turn on location
                 </AppText>
               </AppText>
             </Pressable>

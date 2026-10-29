@@ -56,7 +56,7 @@
     "src/features/detail/dishPrice.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
     "src/features/detail/similarDishes.ts": 86.7,
-    "src/features/detail/stallLocation.ts": 94.4,
+    "src/features/detail/stallLocation.ts": 96.4,
     "src/features/detail/stallOpenState.ts": 100,
     "src/features/detail/tasteMatch.ts": 100,
     "src/features/discover/areaCount.ts": 100,

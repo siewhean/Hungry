@@ -136,9 +136,9 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /minHeight: 48/);
   assert.doesNotMatch(grid, /height: 48/);
   assert.match(grid, /maxLength=\{CATALOG_QUERY_MAX_CHARS\}/);
-  // L10: the location-off note opens the area picker.
-  assert.match(grid, /screen: "ManualLocationPicker"/);
-  assert.match(grid, /Choose your area/);
+  // L10: the location-off note offers to turn location on (there is no area picker).
+  assert.doesNotMatch(grid, /ManualLocationPicker/);
+  assert.match(grid, /Turn on location/);
   // L12: one stable press handler; the live query is read from a ref when a card is tapped.
   assert.match(grid, /onOpen=\{handleOpen\}/);
   assert.match(grid, /queryRef\.current \|\| undefined/);
