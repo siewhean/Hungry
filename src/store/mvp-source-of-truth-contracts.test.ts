@@ -293,7 +293,9 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   const service = read("src/lib/services/supabase/supabaseService.ts");
   const domain = read("src/types/domain.ts");
   const detailTransforms = read("src/features/detail/detailTransforms.ts");
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const stallDetail =
+    read("src/app/screens/detail/StallDetailScreen.tsx") +
+    read("src/components/stall/StallReviewCard.tsx");
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   const reviewHistory = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
 

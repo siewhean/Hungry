@@ -41,7 +41,11 @@ test("Browse grid cards open the matching catalog record", () => {
 test("Two-column image grids cycle images every four seconds with page-scoped slide sets", () => {
   const cyclingImage = read("src/components/discover/CyclingGridImage.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  // The menu tiles moved out of the screen into StallMenuDish; read both together.
+  const stallDetail = [
+    read("src/app/screens/detail/StallDetailScreen.tsx"),
+    read("src/components/stall/StallMenuDish.tsx"),
+  ].join("\n");
 
   assert.match(cyclingImage, /const DEFAULT_CYCLE_MS = 4000/);
   assert.match(cyclingImage, /<ScrollView[\s\S]*horizontal[\s\S]*pagingEnabled/);
@@ -80,5 +84,8 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(stallDetail, /onPress=\{\(\) => onPress\(dish\)\}/);
   assert.match(stallDetail, /<NoDishPhoto dishName=\{dish\.name\}/);
   assert.match(stallDetail, /<StallMenuDishCard/);
-  assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/);
+  assert.match(
+    stallDetail,
+    /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id, source: "stall_menu" \}\)/,
+  );
 });

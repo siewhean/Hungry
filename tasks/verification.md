@@ -1485,6 +1485,15 @@ Use the smallest check that matches the change risk.
 - typecheck clean; npm test 2172/0 fail; test:render 537/537; lint 0 errors; format:check clean; test:coverage OK (baseline unchanged).
 - Playwright (mock web build): auth-flows 8/8, onboarding-flow, auth pass. Continue on Create account at 320x568 is at y=596 with two providers, so still just under the fold there; one provider (Android) is about 56 px higher.
 
+### STALL-R4 phase 1 (PR A), 2026-10-28
+- npm run typecheck clean; npm test 2186 / 0 fail (10 stale source contracts re-pointed at the moved components); npm run test:render 576/576; lint 0 errors; format:check clean; test:coverage OK (baseline regenerated for the new modules only); check:n-plus-one and audit:races clean.
+- Playwright (mock web build, chromium, local browser): tests/e2e/stall.spec.ts, all five behaviour assertions pass (rating pill, Save toggle and toast, one-tap visited and sheet, menu dish and Back, share). Each test still reports the sandbox's soft "no critical page errors" check as failed (ERR_TUNNEL_CONNECTION_FAILED to external hosts), same as the profile and checklist specs.
+- Not verified: a device build; the hero-fallback look on a real photo failure.
+
+### STALL-R4 phase 2 (PR B), 2026-10-28
+- npm test 2190 / 0 fail (4 new appClient tests: one request opens a stall, empty answers, older database falls back, no stall call means no detail call); typecheck, format, check:rate-limits, check:n-plus-one, audit:races, test:coverage clean.
+- Both migrations and both down files run on a throwaway Postgres 16 with stand-in tables: the visit gate pays 0 without a review, 5 with one (review found through the dish too), 0 on a repeat on a later day, 0 for another stall or no stall id; idempotent re-run; the down restores the original function text exactly. get_venue_detail returns the profile and promotions to anon, the claim status only to its owner, stays volatile.
+- audit:supabase:migration-safety fails only for the missing rehearsal JSON (staging is not reachable from here). Smokes not run against a real schema.
 ### MAPDECIDE-R4 step 1 (MD-D1, D2, D7, D8, D11, D13), 2026-10-28
 - typecheck clean; npm test 2181/0 fail; test:render 542/0 fail (decide.render.test.tsx gains D1, D7, D8, D11, D13); lint 0 errors; format clean; test:coverage OK (baseline unchanged).
 - Old tests that encoded the centred-cosine score (neutral = 50, opposite = 0) were rewritten to the new per-axis score.

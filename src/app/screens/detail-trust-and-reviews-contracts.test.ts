@@ -15,14 +15,20 @@ function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
-const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+// The review card is its own component: read it with the screen.
+const stallDetail =
+  read("src/app/screens/detail/StallDetailScreen.tsx") +
+  read("src/components/stall/StallReviewCard.tsx");
 const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
 test("stall reviews are one newest-first query naming each dish, with a write-review path", () => {
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
   assert.match(stallDetail, /on \{review\.dishName\}/);
-  assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
+  assert.match(
+    stallDetail,
+    /navigation\.navigate\("DishDetail", \{\s*dishId: review\.dishId,\s*source: "stall_review",?\s*\}\)/,
+  );
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);
   // One "Write a review" pill lives in the sticky bar; the Reviews heading carries no second link.
   assert.match(stallDetail, /onReview=\{[\s\S]*?openWriteReview/);
@@ -81,14 +87,14 @@ test("stall header shows rating, price, status, actions and delivery links", () 
   // Directions and Save live in the sticky bottom bar; Share floats over the photo.
   assert.match(stallDetail, /<StallInteractionBar[\s\S]*?layout="sticky"/);
   assert.match(stallDetail, /onDirections=/);
-  assert.match(stallDetail, /accessibilityLabel="Share stall"[\s\S]*?side="right"/);
+  assert.match(stallDetail, /<DetailCollapsingHeader[\s\S]*?shareLabel="Share stall"/);
   assert.match(read("src/components/stall/StallInteractionBar.tsx"), /label: "Directions"/);
   // Phone and email sit in a Contact details card; delivery uses the wide button row.
   assert.match(stallDetail, /Contact details/);
   assert.match(stallDetail, /label="Call"/);
   assert.match(stallDetail, /<DeliveryButtonRow/);
   assert.match(stallDetail, /cachedVenue && serviceProviderMode !== "supabase"/);
-  assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\.imageUrl/);
+  assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\?\.imageUrl/);
   assert.doesNotMatch(stallDetail, /hero dish photo/);
 });
 
