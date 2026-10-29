@@ -340,11 +340,29 @@ async function runPagedCatalogRead<T>(
   );
 }
 
+/**
+ * The Excel fallback loads its whole catalogue when its module is first required, and
+ * release bundles stub that data out (it throws on access). So the module is resolved
+ * on the first fallback read, never when the service is built: opening Discover must
+ * not touch it while Supabase is healthy.
+ */
+function createLazyExcelCatalogFallback(): CatalogReadService {
+  let resolved: CatalogReadService | null = null;
+  return new Proxy({} as CatalogReadService, {
+    get(_target, property) {
+      if (property === "clearCache" && !resolved) return () => undefined;
+      resolved ??= getExcelCatalogFallbackService();
+      const value = Reflect.get(resolved, property);
+      return typeof value === "function" ? value.bind(resolved) : value;
+    },
+  });
+}
+
 export function createResilientCatalogReadService(
   primary: CatalogReadService = (
     require("@/lib/services/catalog") as typeof import("@/lib/services/catalog")
   ).catalogRawService,
-  fallback: CatalogReadService = getExcelCatalogFallbackService(),
+  fallback: CatalogReadService = createLazyExcelCatalogFallback(),
 ): CatalogReadService {
   return {
     clearCache() {

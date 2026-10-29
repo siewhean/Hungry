@@ -416,7 +416,7 @@ test("the notes sit on one dismissible line with the rest behind +N more (SR4-6)
   await view.press(view.findByText("+2 more"));
   assert.match(view.text(), /MUIS/);
   assert.match(view.text(), /central Singapore/);
-  assert.ok(view.findByLabel(/Choose your area$/));
+  assert.ok(view.findByLabel(/Turn on location$/));
   await view.press(view.findByLabel("Show fewer notes"));
   assert.doesNotMatch(view.text(), /MUIS/);
   await view.press(view.findByLabel("Dismiss notes"));

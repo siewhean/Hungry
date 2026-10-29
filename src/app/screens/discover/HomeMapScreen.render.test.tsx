@@ -119,7 +119,7 @@ test("MD-M1 the carousel sheet is tall enough for a whole card", () => {
   assert.ok(num("CARD_IMAGE_HEIGHT") === 120 && num("SHEET_HEADER_HEIGHT") === 40);
 });
 
-test("MD-M3 with no location the map asks for it, and the recentre button asks before offering a place search", async () => {
+test("MD-M3 with no location the map asks for it, and the recentre button asks for the device location", async () => {
   useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
   let asked = 0;
   useLocationStore.setState({
@@ -138,11 +138,11 @@ test("MD-M3 with no location the map asks for it, and the recentre button asks b
   assert.equal(buttons.length, 2);
   await view.press(buttons[1]);
   await view.settle();
-  assert.equal(asked, 1, "the recentre button asks for the device location first");
-  assert.deepEqual(navigation.calls.at(-1), {
-    method: "navigate",
-    args: ["OnboardingStack", { screen: "ManualLocationPicker" }],
-  });
+  assert.equal(asked, 1, "the recentre button asks for the device location");
+  assert.ok(
+    !navigation.calls.some((call) => call.args[0] === "OnboardingStack"),
+    "a refusal does not open an area search",
+  );
 });
 
 test("with a location the map shows no location prompt", async () => {

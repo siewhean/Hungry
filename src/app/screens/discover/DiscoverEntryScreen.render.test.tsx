@@ -276,11 +276,16 @@ test("a halal diner's Home shows only halal dishes, also when the profile arrive
   assert.equal(batchedFlagReads.length, 1);
 });
 
-test("without a GPS fix or a pick the header says location is off and hides made-up distances", async () => {
+test("without a GPS fix or a pick the header says Singapore, offers to turn location on and hides made-up distances", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.match(view.text(), /Location is off\. Tap to choose your area\./);
-  assert.ok(view.findByLabel(/Location is off, choose your area$/));
+  assert.match(view.text(), /You are atSingapore/);
+  assert.match(view.text(), /Location is off, so these are picks across Singapore\./);
+  assert.ok(view.findByLabel("Turn on location"));
+  assert.equal(view.findByLabel(/choose your area/i), null, "there is no area picker");
+  // Stall rows name the building the stall is in, not its planning area.
+  assert.match(view.text(), /Maxwell Food Centre/);
+  assert.doesNotMatch(view.text(), /Downtown Core/);
   assert.doesNotMatch(view.text(), /\d+ ?m away|\d\.\d ?km/);
   await m.renderKit.cleanup();
 

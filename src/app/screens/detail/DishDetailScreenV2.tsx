@@ -651,9 +651,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const savedCount = dish.savedCount ?? 0;
   const savedCountLabel =
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
-  // Short enough that the stall card and Order on show without scrolling; shorter still
-  // with no photo, where the name below already says what the dish is.
-  const heroHeight = heroPhotos.length > 0 ? Math.min(width * 0.62, 300) : 140;
+  // 4:3, so a typical food photo shows whole instead of a cropped strip. The no-photo
+  // placeholder keeps the same height, so the page does not jump when a photo loads.
+  const heroHeight = Math.min(width * 0.75, 420);
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
@@ -1064,7 +1064,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     locations={[0, 0.58, 1]}
                     style={{
                       bottom: 0,
-                      height: Math.min(260, heroHeight),
+                      height: heroHeight * 0.45,
                       left: 0,
                       position: "absolute",
                       right: 0,
@@ -1084,14 +1084,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       padding: spacing[6],
                     }}
                   >
-                    <Utensils color={palette.orange} size={36} />
+                    <Utensils color={palette.orange} size={48} />
                   </View>
                   <LinearGradient
                     colors={heroGradientColors}
                     locations={[0, 0.58, 1]}
                     style={{
                       bottom: 0,
-                      height: Math.min(260, heroHeight),
+                      height: heroHeight * 0.45,
                       left: 0,
                       position: "absolute",
                       right: 0,

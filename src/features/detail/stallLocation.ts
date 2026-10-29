@@ -22,6 +22,33 @@ export function formatFullStallAddress(
     .join(", ");
 }
 
+/**
+ * The address as a diner says it: "#01-23, NUS UTown". The stall name is already the page
+ * title, and the street and postal code only matter to Google Maps, so they stay out of
+ * view. A stall with no building name shows its street instead, still without the postcode.
+ */
+export function formatShortStallAddress(
+  venue: Pick<VenueSummary, "unitNumber">,
+  building?: BuildingLocation,
+) {
+  return [venue.unitNumber?.trim(), building?.name?.trim() || building?.address?.trim()]
+    .filter(Boolean)
+    .join(", ");
+}
+
+/**
+ * The building a stall card names ("NUS UTown"), so a diner sees where to walk to. Falls back
+ * to the planning area ("Queenstown") when the stall has no building on record.
+ */
+export function stallBuildingLabel(
+  venue: Pick<VenueSummary, "buildingName" | "planningArea">,
+  building?: { name?: string },
+) {
+  return (
+    venue.buildingName?.trim() || building?.name?.trim() || venue.planningArea?.trim() || undefined
+  );
+}
+
 /** Google Maps search by address text, or by "lat,lng" when the stall has its own map pin. */
 export function buildMapsSearchUrl(address: string, pin?: Coordinate) {
   const query = pin ? `${pin.latitude},${pin.longitude}` : address;

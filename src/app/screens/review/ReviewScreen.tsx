@@ -712,22 +712,30 @@ export function ReviewScreen({ navigation, route }: Props) {
           >
             {pickerVenue ? (
               <>
-                <Button label="Back" variant="ghost" onPress={() => setPickerVenueId(null)} />
+                <Button
+                  label="Back"
+                  variant="ghost"
+                  fullWidth={false}
+                  onPress={() => setPickerVenueId(null)}
+                />
                 <AppText variant="h3" style={{ flex: 1 }} numberOfLines={1}>
                   {pickerVenue.name}
                 </AppText>
               </>
             ) : (
-              <Input
-                placeholder="Search dishes or stalls..."
-                accessibilityLabel="Search dishes or stalls"
-                value={query}
-                onChangeText={setQuery}
-                style={{ flex: 1 }}
-                autoFocus
-              />
+              // Buttons default to 100% wide, so Close/Back are fullWidth={false}; Input's outer
+              // wrapper sizes to its content, so this flex:1 slot lets the field fill the rest.
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Input
+                  placeholder="Search dishes or stalls..."
+                  accessibilityLabel="Search dishes or stalls"
+                  value={query}
+                  onChangeText={setQuery}
+                  autoFocus
+                />
+              </View>
             )}
-            <Button label="Close" variant="ghost" onPress={closePicker} />
+            <Button label="Close" variant="ghost" fullWidth={false} onPress={closePicker} />
           </View>
 
           {pickerVenue ? (

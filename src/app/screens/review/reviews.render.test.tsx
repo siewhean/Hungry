@@ -7,6 +7,7 @@ import test, { afterEach, beforeEach } from "node:test";
 import { Alert } from "react-native";
 
 import { ReviewDetailScreen } from "@/app/screens/review/ReviewDetailScreen";
+import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
 import { ReviewFeedScreen } from "@/app/screens/review/ReviewFeedScreen";
 import { ReviewSuccessModal } from "@/app/screens/review/ReviewSuccessModal";
 import {
@@ -494,4 +495,24 @@ test("tapping a review photo opens it full screen (REV-19)", async () => {
   assert.equal(view.findByLabel("Close photos"), null);
   await view.press(view.findByLabel("Photo 2 of 2, Katong Laksa, review by Emma"));
   assert.ok(view.findByLabel("Close photos"), "the full-screen viewer is open");
+});
+
+test("the Select stall & dish search fills the row beside Close instead of collapsing", async () => {
+  const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
+  await view.press(view.findByText("Select stall & dish"));
+  await view.settle();
+  const search = view.findByLabel("Search dishes or stalls");
+  assert.ok(search, "the picker's search field is on screen");
+  // Input's own wrapper sizes to its content, so the field only fills the row when something
+  // around it takes the free width (flex: 1) and can shrink (min-width: 0).
+  const slot = search.parentElement?.parentElement?.parentElement;
+  assert.match(slot?.getAttribute("style") ?? "", /flex: 1 1 0%/);
+  assert.match(slot?.getAttribute("style") ?? "", /min-width: 0px/);
+  // Buttons are 100% wide by default; Close would take the whole row and squeeze the field.
+  const close = view.findByLabel("Close") ?? view.findByText("Close");
+  assert.ok(close, "Close sits beside it");
+  assert.doesNotMatch(
+    close.closest("button, [role=button]")?.getAttribute("style") ?? "",
+    /width: 100%/,
+  );
 });

@@ -378,6 +378,7 @@ function RawCatalogBrowseGrid({
   const permission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
@@ -1164,10 +1165,19 @@ function RawCatalogBrowseGrid({
       id: "location",
       text: "Location is off, so distances are from central Singapore.",
       action: {
-        label: "Choose your area",
+        label: "Turn on location",
         accessibilityLabel:
-          "Location is off, so distances are from central Singapore. Choose your area",
-        onPress: () => navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" }),
+          "Location is off, so distances are from central Singapore. Turn on location",
+        onPress: () => {
+          void grantLocation().then((granted) => {
+            if (!granted) {
+              showToast({
+                message: "Location access is off. Turn it on in Settings to use your location.",
+                tone: "info",
+              });
+            }
+          });
+        },
       },
     });
   }

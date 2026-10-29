@@ -277,7 +277,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
       /<AppText variant="bodyBold">Address<\/AppText>/,
-      /\{stallAddress\}/,
+      /\{shortStallAddress \|\| stallAddress\}/,
       /Loading stall/,
       /<AppText variant="h2">Menu<\/AppText>/,
       /const \[visibleMenuItemCount, setVisibleMenuItemCount\] = useState\(INITIAL_MENU_ITEM_COUNT\)/,

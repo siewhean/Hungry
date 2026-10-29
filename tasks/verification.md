@@ -1524,6 +1524,10 @@ Use the smallest check that matches the change risk.
 
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).
 
+### UI-EIGHT review search, maps and images, 2026-10-29
+- typecheck clean; npm test 2244 pass / 0 fail; test:render 643 / 0 fail; test:coverage OK (stallLocation.ts 94.4 to 96.4, baseline updated); lint 0 errors (57 warnings, unchanged); format clean on touched code; check:rate-limits and check:n-plus-one OK.
+- Playwright screenshots of the mock web build at 390x844 (not a device): review picker search now fills the row beside Close (before: a 25 px pill under a full-width Close), tab bar shows Write like the other tabs, Home shows the Singapore header with "Turn on location" and stall rows with building + unit. Dish and stall photos, the logo circle and the Google Maps landing were not seen: mock images are remote and the mock stall has no building.
+- No migration.
 ### SEARCH-R4 PR A (relevance, parser chips, 429 copy), 2026-10-29
 - typecheck clean; npm test 2251 pass / 0 fail; test:render 641/0 fail (4 new search render tests); lint 0 errors; format clean on touched code; test:coverage OK (no baseline change needed); check:n-plus-one, check:rate-limits, audit:races OK.
 - Migration 20261029113000_catalog_search_relevance: smoke supabase/smoke/catalog_search_relevance.sql and the adapted hardening smoke pass on a local PG16 stand-in (pg_trgm, stubbed geography); down-then-up roundtrip clean. audit:supabase:migration-safety fails only for the missing staging rehearsal evidence (sh runs rehearse-pr.sh).

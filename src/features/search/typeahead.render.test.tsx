@@ -242,7 +242,7 @@ test("useTypeaheadMatches reports a failure once and says so", async () => {
 });
 
 test("useTypeaheadMatches asks the way the results page does: best match, from the same position", async () => {
-  const asked: Array<{ sort?: string; latitude?: number; longitude?: number }> = [];
+  const asked: { sort?: string; latitude?: number; longitude?: number }[] = [];
   stubCatalog({
     listDishes: async (request) => {
       asked.push({
