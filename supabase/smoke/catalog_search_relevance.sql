@@ -35,7 +35,9 @@ values
   ('00000000-0000-0229-a000-0000000000c1', 'rel-v7', 'rel-b2', 'Stall Zeta', 'Tampines Hub', 4.50, 3.5, 5, 'verified',
    st_setsrid(st_makepoint(103.9403, 1.3550), 4326)::geography),
   ('00000000-0000-0229-a000-0000000000c1', 'rel-v8', 'rel-b2', 'Plain Coffee Shop', 'Tampines Hub', 1.50, 3.0, 2, 'verified',
-   st_setsrid(st_makepoint(103.9404, 1.3550), 4326)::geography);
+   st_setsrid(st_makepoint(103.9404, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-v9', 'rel-b2', 'Corner Kitchen', 'Tampines Hub', 4.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography);
 
 insert into public.catalog_raw_dish_cards (
   release_id, id, venue_id, building_id, name, venue_name, building_name, food_type, price,
@@ -61,7 +63,23 @@ values
   ('00000000-0000-0229-a000-0000000000c1', 'rel-zeta-burger', 'rel-v7', 'rel-b2', 'Cheese Burger', 'Stall Zeta', 'Tampines Hub', 'Burger', 6.50, 3.5, 5, 'verified',
    st_setsrid(st_makepoint(103.9403, 1.3550), 4326)::geography),
   ('00000000-0000-0229-a000-0000000000c1', 'rel-kopi', 'rel-v8', 'rel-b2', 'Iced Coffee', 'Plain Coffee Shop', 'Tampines Hub', 'Coffee', 1.50, 3.0, 2, 'verified',
-   st_setsrid(st_makepoint(103.9404, 1.3550), 4326)::geography);
+   st_setsrid(st_makepoint(103.9404, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-steak', 'rel-v9', 'rel-b2', 'Beef Steak', 'Corner Kitchen', 'Tampines Hub', 'Western', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-steamed', 'rel-v9', 'rel-b2', 'Steamed Fish', 'Corner Kitchen', 'Tampines Hub', 'Fish', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-friedrice', 'rel-v8', 'rel-b2', 'Fried Rice', 'Plain Coffee Shop', 'Tampines Hub', 'Rice', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-spice', 'rel-v9', 'rel-b2', 'Spice Chicken', 'Corner Kitchen', 'Tampines Hub', 'Chicken', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-shami', 'rel-v9', 'rel-b2', 'Shami Kebab', 'Corner Kitchen', 'Tampines Hub', 'Kebab', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-teh', 'rel-v9', 'rel-b2', 'Teh Tarik', 'Corner Kitchen', 'Tampines Hub', 'Drinks', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-milo', 'rel-v9', 'rel-b2', 'Iced Milo', 'Corner Kitchen', 'Tampines Hub', 'Drinks', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography),
+  ('00000000-0000-0229-a000-0000000000c1', 'rel-ham', 'rel-v9', 'rel-b2', 'Ham Sandwich', 'Corner Kitchen', 'Tampines Hub', 'Western', 3.00, 3.0, 2, 'verified',
+   st_setsrid(st_makepoint(103.9405, 1.3550), 4326)::geography);
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0229-a000-000000000001', true);
 set local role authenticated;
@@ -115,6 +133,24 @@ begin
   v_page := public.catalog_raw_dishes_page(p_query => 'burger', p_sort => 'relevance', p_limit => 20);
   if v_page->'items'->0->>'id' is distinct from 'rel-zeta-burger' then
     raise exception 'burger should find the burger, got %', v_page->'items';
+  end if;
+
+  -- A word is matched where it starts, never inside another word ("teh" has the alias tea, which is
+  -- in "Steak"; "ice" is in "Rice" and "Spice"; "ham" is in "Shami").
+  v_page := public.catalog_raw_dishes_page(p_query => 'teh', p_sort => 'relevance', p_limit => 20);
+  select array_agg(i->>'id' order by i->>'id') into v_ids from jsonb_array_elements(v_page->'items') i;
+  if v_ids is distinct from array['rel-teh'] then
+    raise exception 'teh should find only the teh tarik, got %', v_ids;
+  end if;
+  v_page := public.catalog_raw_dishes_page(p_query => 'ice', p_sort => 'relevance', p_limit => 20);
+  select array_agg(i->>'id' order by i->>'id') into v_ids from jsonb_array_elements(v_page->'items') i;
+  if v_ids is distinct from array['rel-kopi', 'rel-milo'] then
+    raise exception 'ice should find the iced drinks, not Fried Rice or Spice Chicken, got %', v_ids;
+  end if;
+  v_page := public.catalog_raw_dishes_page(p_query => 'ham', p_sort => 'relevance', p_limit => 20);
+  select array_agg(i->>'id' order by i->>'id') into v_ids from jsonb_array_elements(v_page->'items') i;
+  if v_ids is distinct from array['rel-ham'] then
+    raise exception 'ham should find only the ham sandwich, not Shami Kebab, got %', v_ids;
   end if;
 
   -- SR4-5: shorthand and local names.

@@ -296,6 +296,66 @@ test("ParsedQueryChips: diet and price words become filters and removable chips 
   assert.equal(removed?.properties.part_kind, "dietary");
 });
 
+test("parsed filters that find nothing fall back to the whole text, with a note and the chip kept (SR4-2)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      // Dietary tags are sparse: only the plain text finds the dish.
+      const filtered = (request.dietaryFlags?.length ?? 0) > 0;
+      return page(filtered ? [] : [dishCard("1", { name: "Vegetarian Bee Hoon" })]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "vegetarian bee hoon" });
+  // The empty result switches to the whole text in a second step, which loads after its own pause.
+  await wait(500);
+  await wait(500);
+  const first = requests[0];
+  assert.equal(first?.query, "bee hoon");
+  assert.deepEqual(first?.dietaryFlags, ["vegetarian"]);
+  const last = requests.at(-1);
+  assert.equal(last?.query, "vegetarian bee hoon", "the whole text is searched");
+  assert.deepEqual(last?.dietaryFlags, []);
+  assert.match(view.text(), /Vegetarian Bee Hoon/);
+  const note = view.findByTestId("search-parsed-relaxed-note");
+  assert.ok(note, "the note says why the results changed");
+  assert.match(note.textContent ?? "", /Nothing matched with Vegetarian/);
+  assert.ok(view.findByLabel(/^Vegetarian, from your search/), "the chip stays");
+  assert.equal(view.findByText("No dishes"), null);
+  const relaxedEvent = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_parse_relaxed",
+  );
+  assert.equal(relaxedEvent?.properties.part_count, 1);
+  assert.equal(
+    getTrackedAnalyticsEvents().some((event) => event.event === "search_zero_results"),
+    false,
+    "a search that is retried with the whole text is not a zero-result search",
+  );
+
+  // Removing the chip searches "vegetarian" as a word, and the note goes away.
+  await view.press(view.findByLabel(/^Vegetarian, from your search/));
+  await wait(400);
+  assert.equal(view.findByTestId("search-parsed-relaxed-note"), null);
+  assert.equal(requests.at(-1)?.query, "vegetarian bee hoon");
+  assert.deepEqual(requests.at(-1)?.dietaryFlags, []);
+});
+
+test("parsed filters that find results keep the filtered search and show no note", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "halal laksa" });
+  await wait(400);
+  assert.equal(requests.at(-1)?.query, "laksa");
+  assert.equal(view.findByTestId("search-parsed-relaxed-note"), null);
+});
+
 test("a typed price cap lower than the Under S$6 chip wins, and the chip stays on its own (SR4-2)", async () => {
   const requests: CatalogPageRequest[] = [];
   stubCatalog({

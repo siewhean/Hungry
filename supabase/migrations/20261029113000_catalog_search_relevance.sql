@@ -172,6 +172,21 @@ $$;
 --   any_score:  every term matches the dish name, food type, stall name or building (0 otherwise);
 --               the stall counts 0.4 and the building 0.3
 -- Both are the mean over terms of the best spelling's score.
+-- True when p_needle begins a word of p_haystack ("tea" is in "Teh Tea" and "Iced Tea" but not "Steak",
+-- "ice" is in "Iced Milo" but not "Rice"). Both are lower case; punctuation counts as a word break.
+create or replace function app_private.catalog_starts_word(p_haystack text, p_needle text)
+returns boolean
+language sql
+immutable
+parallel safe
+set search_path = public, extensions
+as $$
+  select strpos(
+    ' ' || regexp_replace(p_haystack, '[^[:alnum:]]+', ' ', 'g'),
+    ' ' || btrim(regexp_replace(p_needle, '[^[:alnum:]]+', ' ', 'g'))
+  ) > 0
+$$;
+
 create or replace function app_private.catalog_text_match(
   p_slots integer[], p_variants text[], p_weights double precision[], p_n integer,
   p_dish_a text, p_dish_b text, p_other_a text, p_other_b text
@@ -209,12 +224,12 @@ begin
     h := 0;
     if la is not null then
       x := word_similarity(v, la);
-      if x < 0.6 and strpos(la, v) > 0 then x := 0.6; end if;
+      if x < 0.6 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
       if x >= 0.6 and x > h then h := x; end if;
     end if;
     if lb is not null then
       x := word_similarity(v, lb);
-      if x < 0.6 and strpos(lb, v) > 0 then x := 0.6; end if;
+      if x < 0.6 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
       if x >= 0.6 and x > h then h := x; end if;
     end if;
     h := h * p_weights[i];
@@ -225,12 +240,12 @@ begin
     else
       if lc is not null then
         x := word_similarity(v, lc);
-        if x < 0.6 and strpos(lc, v) > 0 then x := 0.6; end if;
+        if x < 0.6 and app_private.catalog_starts_word(lc, v) then x := 0.6; end if;
         if x >= 0.6 and 0.4 * x * p_weights[i] > v_a[s] then v_a[s] := 0.4 * x * p_weights[i]; end if;
       end if;
       if ld is not null then
         x := word_similarity(v, ld);
-        if x < 0.6 and strpos(ld, v) > 0 then x := 0.6; end if;
+        if x < 0.6 and app_private.catalog_starts_word(ld, v) then x := 0.6; end if;
         if x >= 0.6 and 0.3 * x * p_weights[i] > v_a[s] then v_a[s] := 0.3 * x * p_weights[i]; end if;
       end if;
     end if;
@@ -272,12 +287,12 @@ begin
     h := 0;
     if la is not null then
       x := word_similarity(v, la);
-      if x < 0.6 and strpos(la, v) > 0 then x := 0.6; end if;
+      if x < 0.6 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
       if x >= 0.6 and x > h then h := x; end if;
     end if;
     if lb is not null then
       x := word_similarity(v, lb);
-      if x < 0.6 and strpos(lb, v) > 0 then x := 0.6; end if;
+      if x < 0.6 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
       if x >= 0.6 and x > h then h := x; end if;
     end if;
     h := h * p_weights[i];
@@ -320,12 +335,12 @@ begin
     v := p_variants[i];
     if la is not null then
       x := word_similarity(v, la);
-      if x < 0.6 and strpos(la, v) > 0 then x := 0.6; end if;
+      if x < 0.6 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
       if x >= 0.6 and x * p_weights[i] > v_b[s] then v_b[s] := x * p_weights[i]; end if;
     end if;
     if lb is not null then
       x := word_similarity(v, lb);
-      if x < 0.6 and strpos(lb, v) > 0 then x := 0.6; end if;
+      if x < 0.6 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
       if x >= 0.6 and 0.3 * x * p_weights[i] > v_b[s] then v_b[s] := 0.3 * x * p_weights[i]; end if;
     end if;
   end loop;
@@ -338,6 +353,7 @@ end;
 $$;
 
 revoke all on function app_private.catalog_search_terms(text) from public, anon, authenticated;
+revoke all on function app_private.catalog_starts_word(text, text) from public, anon, authenticated;
 revoke all on function app_private.catalog_text_match(integer[], text[], double precision[], integer, text, text, text, text) from public, anon, authenticated;
 revoke all on function app_private.catalog_dish_term_scores(integer[], text[], double precision[], text, text) from public, anon, authenticated;
 revoke all on function app_private.catalog_venue_match(integer[], text[], double precision[], integer, text, text, double precision[]) from public, anon, authenticated;
@@ -400,7 +416,18 @@ begin
   if v_cursor is not null and (v_cursor->>'release_id')::uuid <> v_release then raise exception 'catalog cursor release mismatch' using errcode = '22023'; end if;
   if v_cursor is not null and v_cursor->>'fingerprint' <> v_fingerprint then raise exception 'catalog cursor query mismatch' using errcode = '22023'; end if;
 
-  with candidates as materialized (
+  with name_hit_venues as materialized (
+    -- Stalls with a dish that matches every word by its own name or food type. The same word filter
+    -- the candidates use, so the indexes narrow it to the dishes that can match; scoring only those.
+    select distinct d2.venue_id
+    from public.catalog_raw_dish_cards d2
+    where v_n > 0 and d2.release_id = v_release
+      and (v_n < 1 or d2.name ilike any(v_pat1) or d2.food_type ilike any(v_pat1) or v_tok1 <% d2.name or v_tok1 <% d2.food_type)
+      and (v_n < 2 or d2.name ilike any(v_pat2) or d2.food_type ilike any(v_pat2) or v_tok2 <% d2.name or v_tok2 <% d2.food_type)
+      and (v_n < 3 or d2.name ilike any(v_pat3) or d2.food_type ilike any(v_pat3) or v_tok3 <% d2.name or v_tok3 <% d2.food_type)
+      and (v_n < 4 or d2.name ilike any(v_pat4) or d2.food_type ilike any(v_pat4) or v_tok4 <% d2.name or v_tok4 <% d2.food_type)
+      and (app_private.catalog_text_match(v_slots, v_variants, v_weights, v_n, d2.name, d2.food_type, null, null))[1] > 0
+  ), candidates as materialized (
     select c.*, coalesce(st_distance(c.listing_location, st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography)::integer, 2147483647) as computed_distance,
       coalesce(c.price, 1000000)::double precision as price_key,
       round((case when v_query is null then 0::double precision
@@ -441,11 +468,7 @@ begin
           or v_tok4 <% c.name or v_tok4 <% c.food_type or v_tok4 <% c.venue_name or v_tok4 <% c.building_name)
         -- Matches through the stall or building only count when none of the stall's dishes match by
         -- their own name or food type ("chicken rice" lists the dish, not the stall's Pandan Cake).
-        and (m.scores[1] > 0 or (m.scores[2] > 0 and not exists (
-          select 1 from public.catalog_raw_dish_cards d2
-          where d2.release_id = v_release and d2.venue_id = c.venue_id
-            and (app_private.catalog_text_match(v_slots, v_variants, v_weights, v_n, d2.name, d2.food_type, null, null))[1] > 0
-        )))
+        and (m.scores[1] > 0 or (m.scores[2] > 0 and not exists (select 1 from name_hit_venues h where h.venue_id = c.venue_id)))
       ))
   ), page as materialized (
     select * from candidates c
@@ -605,6 +628,14 @@ begin
       and (cardinality(v_food_patterns) = 0 or fm.venue_id is not null)
       and (p_max_price is null or c.min_price <= p_max_price)
       and (p_lat is null or p_lng is null or p_radius_meters is null or st_dwithin(c.listing_location, st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography, p_radius_meters))
+      -- Cheap word filter first, so the scoring function only runs for stalls that can match: each word
+      -- must be near the stall name or building, or hit one of the stall's dishes (dish_term_hits).
+      and (v_n = 0 or (
+        (v_n < 1 or coalesce(dth.scores[1], 0) > 0 or c.name ilike any(v_pat1) or c.building_name ilike any(v_pat1) or v_tok1 <% c.name or v_tok1 <% c.building_name)
+        and (v_n < 2 or coalesce(dth.scores[2], 0) > 0 or c.name ilike any(v_pat2) or c.building_name ilike any(v_pat2) or v_tok2 <% c.name or v_tok2 <% c.building_name)
+        and (v_n < 3 or coalesce(dth.scores[3], 0) > 0 or c.name ilike any(v_pat3) or c.building_name ilike any(v_pat3) or v_tok3 <% c.name or v_tok3 <% c.building_name)
+        and (v_n < 4 or coalesce(dth.scores[4], 0) > 0 or c.name ilike any(v_pat4) or c.building_name ilike any(v_pat4) or v_tok4 <% c.name or v_tok4 <% c.building_name)
+      ))
       and (v_n = 0 or m.score > 0)
   ), page as materialized (
     select * from candidates c where v_cursor is null

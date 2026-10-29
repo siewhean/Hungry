@@ -329,6 +329,7 @@ drop function if exists app_private.catalog_venue_match(integer[], text[], doubl
 drop function if exists app_private.catalog_dish_term_scores(integer[], text[], double precision[], text, text);
 drop function if exists app_private.catalog_text_match(integer[], text[], double precision[], integer, text, text, text, text);
 drop function if exists app_private.catalog_search_terms(text);
+drop function if exists app_private.catalog_starts_word(text, text);
 drop table if exists public.catalog_food_aliases;
 
 notify pgrst, 'reload schema';

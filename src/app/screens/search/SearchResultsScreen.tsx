@@ -397,15 +397,25 @@ function RawCatalogBrowseGrid({
         : parsedFromText,
     [parseVariant, parsedFromText, typedQuery],
   );
-  const query = parsed.text;
   const parsedKey = parsed.parts.map((part) => part.key).join("|");
+  // Tags are sparse, so "vegetarian bee hoon" can find nothing as a filtered search while the plain
+  // text finds the dish. When the parsed reading has no results, the whole text is searched with no
+  // parsed filters; the chips stay, and removing one starts over.
+  const [relaxedScope, setRelaxedScope] = useState<string | undefined>();
+  const relaxScope = JSON.stringify([mode, typedQuery, filters, place?.id, parsedKey]);
+  const relaxed = relaxedScope === relaxScope;
+  const query = relaxed ? typedQuery : parsed.text;
+  const requestParsedKey = relaxed ? `${parsedKey}!` : parsedKey;
   const parsedFilters = useMemo(
-    () => ({ dietary: parsed.dietary, maxPrice: parsed.maxPrice }),
+    () =>
+      relaxed
+        ? { dietary: [], maxPrice: undefined }
+        : { dietary: parsed.dietary, maxPrice: parsed.maxPrice },
     // The key stands for the parts: a new array with the same parts must not reload the grid.
-    [parsedKey],
+    [requestParsedKey],
   );
   const tooShort = isTooShortQuery(query);
-  const widenScope = JSON.stringify([mode, query, filters, place?.id, parsedKey]);
+  const widenScope = JSON.stringify([mode, query, filters, place?.id, requestParsedKey]);
   const widenRadius = widenedScope === widenScope;
 
   // A link or a new navigation with other params replaces what the grid shows.
@@ -440,9 +450,9 @@ function RawCatalogBrowseGrid({
         longitude,
         widenRadius,
         place?.id,
-        parsedKey,
+        requestParsedKey,
       ]),
-    [filters, latitude, longitude, mode, parsedKey, place?.id, query, sort, widenRadius],
+    [filters, latitude, longitude, mode, requestParsedKey, place?.id, query, sort, widenRadius],
   );
 
   const loadPage = useCallback(
@@ -724,6 +734,17 @@ function RawCatalogBrowseGrid({
   // Zero results are logged only for a submitted query, once, with the (capped) text so
   // "what did people fail to find" can be answered. Partial typing is never logged.
   const hasNoResults = loadedKey === requestKey && !isLoading && !error && items.length === 0;
+  // The parsed filters found nothing: search the whole typed text instead (see `relaxed` above).
+  const willRelax = hasNoResults && !relaxed && parsed.parts.length > 0;
+  useEffect(() => {
+    if (!willRelax) return;
+    setRelaxedScope(relaxScope);
+    trackAnalyticsEvent("search_parse_relaxed", {
+      mode,
+      part_count: parsed.parts.length,
+      search_id: searchIdRef.current,
+    });
+  }, [mode, parsed.parts.length, relaxScope, willRelax]);
 
   // Results load while the user types, so a typed query that stays on screen is a search too,
   // not only one submitted with Enter. Not saved as a recent and not a taste signal.
@@ -742,7 +763,7 @@ function RawCatalogBrowseGrid({
     return () => clearTimeout(timer);
   }, [query, recordCommittedQuery, resultsSettled]);
   useEffect(() => {
-    if (!hasNoResults || !committedQuery) return;
+    if (!hasNoResults || willRelax || !committedQuery) return;
     if (committedQuery.toLowerCase() !== query.toLowerCase()) return;
     if (loggedZeroKeyRef.current === requestKey) return;
     loggedZeroKeyRef.current = requestKey;
@@ -754,7 +775,16 @@ function RawCatalogBrowseGrid({
       query_length: committedQuery.length,
       search_id: searchIdRef.current,
     });
-  }, [allowSearchHistory, committedQuery, filters, hasNoResults, mode, query, requestKey]);
+  }, [
+    allowSearchHistory,
+    committedQuery,
+    filters,
+    hasNoResults,
+    mode,
+    query,
+    requestKey,
+    willRelax,
+  ]);
 
   // "Did you mean": the closest food type for a typed query with no results. With filters on,
   // the filters are the likelier cause, so "Clear filters" is offered instead.
@@ -1006,6 +1036,19 @@ function RawCatalogBrowseGrid({
             </AppText>
           ) : null}
           <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
+          {relaxed ? (
+            <View
+              accessibilityLiveRegion="polite"
+              accessibilityRole="text"
+              testID="search-parsed-relaxed-note"
+              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+            >
+              <Info color={palette.textMuted} size={16} />
+              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+                {`Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${typedQuery}". Remove a chip to search without it.`}
+              </AppText>
+            </View>
+          ) : null}
           {place ? (
             <Pressable
               accessibilityRole="button"
