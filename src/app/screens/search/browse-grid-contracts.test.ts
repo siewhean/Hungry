@@ -35,7 +35,8 @@ test("Browse grid cards open the matching catalog record", () => {
     source,
     /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",\s*id: item\.id,/,
   );
-  assert.match(source, /item\.imageUrl \?\? \("representativeDish" in item/);
+  // A stall card shows its best cleared dish photo (stallCardImage); a dish card shows its own.
+  assert.match(source, /stallCardImage\(stall\) : item\.imageUrl/);
 });
 
 test("Two-column image grids cycle images every four seconds with page-scoped slide sets", () => {
