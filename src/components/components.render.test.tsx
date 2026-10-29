@@ -14,7 +14,11 @@ import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
-import { TasteRatingInput, nearestTasteRatingLevel } from "@/components/review/TasteRatingInput";
+import {
+  TASTE_RATING_LEVELS,
+  TasteRatingInput,
+  nearestTasteRatingLevel,
+} from "@/components/review/TasteRatingInput";
 import { DeliveryBrandLogo, hasDeliveryBrandLogo } from "@/components/dish/DeliveryBrandLogo";
 import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
@@ -654,6 +658,20 @@ test("TasteRatingInput picks a level, clears it on a second tap, and marks our g
   ]);
   assert.ok(view.findByLabel("Sweet: Light, suggested"));
   assert.equal(nearestTasteRatingLevel(8.9), 10);
+});
+
+test("TasteRatingInput's column names are short enough not to break mid-word, while the buttons keep the full names", async () => {
+  const view = await render(
+    createElement(TasteRatingInput, { values: {}, onChange: () => undefined }),
+  );
+  for (const short of ["None", "Light", "Med", "Strong", "Very"]) {
+    assert.ok(view.findByText(short), `${short} heads its column`);
+  }
+  assert.equal(view.findByText("Medium"), null, "no six-letter 'Medium' header to wrap");
+  for (const step of TASTE_RATING_LEVELS) {
+    assert.ok(step.short.length <= 6, `${step.label} header fits its column`);
+    assert.ok(view.findByLabel(`Spicy: ${step.label}`), "the radio keeps the full name");
+  }
 });
 
 test("TasteRadarChart shows the dish's typical taste and adds your taste only with a palette", async () => {

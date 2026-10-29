@@ -7,11 +7,12 @@ import { AppText } from "../ui";
 
 /** Five steps on the 0-10 taste scale, named for the reviewer. */
 export const TASTE_RATING_LEVELS = [
-  { value: 0, label: "None" },
-  { value: 2.5, label: "Light" },
-  { value: 5, label: "Medium" },
-  { value: 7.5, label: "Strong" },
-  { value: 10, label: "Very" },
+  { value: 0, label: "None", short: "None" },
+  { value: 2.5, label: "Light", short: "Light" },
+  // "Medium" broke mid-word over its column at 390pt inside the Tried popup.
+  { value: 5, label: "Medium", short: "Med" },
+  { value: 7.5, label: "Strong", short: "Strong" },
+  { value: 10, label: "Very", short: "Very" },
 ] as const;
 
 /** The step closest to a 0-10 level. */
@@ -54,7 +55,7 @@ export function TasteRatingInput({ values, suggestions, onChange }: Props) {
               tone="muted"
               style={{ flex: 1, minWidth: STEP_MIN_WIDTH, textAlign: "center" }}
             >
-              {step.label}
+              {step.short}
             </AppText>
           ))}
         </View>
