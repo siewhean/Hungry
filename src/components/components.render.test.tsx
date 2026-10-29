@@ -156,6 +156,22 @@ test("FloatingToast with an action shows a button that runs it and dismisses the
   assert.equal(useUIStore.getState().toast, null);
 });
 
+test("FloatingToast is a compact borderless pill, not a full-width bar with an orange border", async () => {
+  const view = await render(createElement(FloatingToast, {}));
+  useUIStore.getState().showToast({ message: "Copied", tone: "success", duration: 60_000 });
+  await view.settle();
+  const alert = view.container.querySelector('[role="alert"]') as HTMLElement | null;
+  assert.ok(alert, "the toast is an alert");
+  const style = alert.style;
+  assert.ok(
+    !style.borderWidth || style.borderWidth === "0px",
+    `no border (got ${style.borderWidth})`,
+  );
+  assert.equal(style.alignSelf, "center", "sized to its text, centred");
+  assert.equal(style.borderTopLeftRadius, "999px", "a pill");
+  useUIStore.getState().clearToast();
+});
+
 test("FloatingToast clears itself after its duration", async () => {
   const view = await render(createElement(FloatingToast, {}));
   useUIStore.getState().showToast({ message: "Gone soon", tone: "info", duration: 20 });

@@ -1065,7 +1065,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     locations={[0, 0.58, 1]}
                     style={{
                       bottom: 0,
-                      height: Math.min(260, heroHeight),
+                      height: heroHeight * 0.45,
                       left: 0,
                       position: "absolute",
                       right: 0,
