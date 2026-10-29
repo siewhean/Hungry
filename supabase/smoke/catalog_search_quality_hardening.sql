@@ -13,7 +13,7 @@ set local extra_float_digits = 0;
 -- search_dishes: every requested dietary flag must hold (no "any one flag" overlap).
 do $$
 declare
-  v_def text := pg_get_functiondef('public.search_dishes(text,double precision,double precision,integer,text[],integer,double precision,text,text,text,text[],numeric,boolean)'::regprocedure);
+  v_def text := pg_get_functiondef('public.search_dishes(text,double precision,double precision,integer,text[],integer,double precision,text,text,text,text[],numeric,boolean,text[],text[])'::regprocedure);
 begin
   if v_def like '%d.availability_flags && params.dietary_flags%' or v_def like '%v.dietary_tags && params.dietary_flags%' then
     raise exception 'search_dishes still lets one overlapping dietary flag through';

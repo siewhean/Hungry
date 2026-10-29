@@ -7,7 +7,7 @@ import { formatScheduleToday } from "@/utils/openingSchedule";
 
 import { formatDishPrice } from "./dishPrice";
 import { resolveStallOpenInfo } from "./stallOpenState";
-import { buildMapsSearchUrl, getStallPin } from "./stallLocation";
+import { buildMapsSearchUrl, buildStallMapsUrl, getStallPin } from "./stallLocation";
 import { tasteMatchLabel, tasteMatchPercent } from "./tasteMatch";
 
 // 2026-10-19 is a Monday. SGT = UTC+8.
@@ -30,12 +30,12 @@ const weekdaySchedule: OpeningSchedule = {
   },
 };
 
-test("detail-M4: taste match is centred on the neutral 5 and described in words", () => {
+test("detail-M4: taste match follows the per-axis gaps and is described in words", () => {
   const spicy = taste({ spicy: 9, sweet: 2 });
   assert.equal(tasteMatchPercent(spicy, spicy), 100);
-  assert.equal(tasteMatchPercent(taste({ spicy: 9, sweet: 1 }), taste({ spicy: 1, sweet: 9 })), 0);
-  // A neutral vector says nothing, so it never reads as a strong match.
-  assert.equal(tasteMatchPercent(taste(), spicy), 50);
+  assert.ok(tasteMatchPercent(taste({ spicy: 9, sweet: 1 }), taste({ spicy: 1, sweet: 9 })) < 30);
+  // A neutral vector never reads as a perfect match for a flavoured dish.
+  assert.ok(tasteMatchPercent(taste(), spicy) < 100);
   assert.equal(tasteMatchLabel(100), "Close to your taste");
   assert.equal(tasteMatchLabel(50), "Some overlap");
   assert.equal(tasteMatchLabel(10), "Different from your usual");
@@ -131,4 +131,20 @@ test("detail-M17: a dish with no price shows its range or 'Price not listed', ne
   assert.equal(formatDishPrice({ price: 0, priceRange: "S$4-S$6" }), "S$4-S$6");
   assert.equal(formatDishPrice({ price: 0, priceRange: "S$0" }), "Price not listed");
   assert.equal(formatDishPrice({ price: 0, priceRange: "" }), "Price not listed");
+});
+
+test("MD-D11: Directions searches the stall, building and postal code, not the unit number", () => {
+  const url = buildStallMapsUrl({
+    name: "Tian Tian Chicken Rice",
+    buildingName: "Maxwell Food Centre",
+    postalCode: "069184",
+  });
+  assert.equal(
+    url,
+    "https://www.google.com/maps/search/?api=1&query=Tian%20Tian%20Chicken%20Rice%2C%20Maxwell%20Food%20Centre%2C%20Singapore%20069184",
+  );
+  assert.match(
+    buildStallMapsUrl({ name: "" }, { latitude: 1.3, longitude: 103.8 }),
+    /query=1\.3%2C103\.8$/,
+  );
 });

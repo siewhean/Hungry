@@ -1485,6 +1485,32 @@ Use the smallest check that matches the change risk.
 - typecheck clean; npm test 2172/0 fail; test:render 537/537; lint 0 errors; format:check clean; test:coverage OK (baseline unchanged).
 - Playwright (mock web build): auth-flows 8/8, onboarding-flow, auth pass. Continue on Create account at 320x568 is at y=596 with two providers, so still just under the fold there; one provider (Android) is about 56 px higher.
 
+### MAPDECIDE-R4 step 1 (MD-D1, D2, D7, D8, D11, D13), 2026-10-28
+- typecheck clean; npm test 2181/0 fail; test:render 542/0 fail (decide.render.test.tsx gains D1, D7, D8, D11, D13); lint 0 errors; format clean; test:coverage OK (baseline unchanged).
+- Old tests that encoded the centred-cosine score (neutral = 50, opposite = 0) were rewritten to the new per-axis score.
+
+### MAPDECIDE-R4 step 2 (MD-M1, M2, M4, M5, D5, D6, D9, D10), 2026-10-28
+- typecheck clean; npm test 2181/0 fail; test:render 550/0 fail (new HomeMapScreen.render.test.tsx; decide.render.test.tsx gains D5, D6, D9, D10); lint 0 errors; format clean; test:coverage OK.
+- Walked the mock web build at 390x844 (Playwright): map cards, legend open, list sheet, Decide result with the dock (screenshots reviewed, not committed). Metro does not hot-reload in the sandbox, so the server was restarted per check.
+
+### MAPDECIDE-R4 step 3 (MD-M3, MD-D3), 2026-10-28
+- typecheck clean; npm test 2181/0 fail; test:render 559/0 fail (new LocationGate.render.test.tsx; map and decide render tests cover the gate); lint 0 errors; format clean; test:coverage OK.
+
+### MAPDECIDE-R4 step 4 (MD-D4, MD-D12), 2026-10-28
+- typecheck clean; npm test 2186/0 fail; test:render 562/0 fail (decide.render.test.tsx gains the widen-then-drop, keyword and radius-chip cases); lint 0 errors; format clean; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
+- Migration, rollback and smoke run on a scratch Postgres 16 with stand-in tables (no PostGIS): up, down, up again; the new smoke passes (SMOKE_OK); whole-word ("ice" does not match "Rice Dishes"), plural ("noodle" matches "Noodles"), course ("drink"), stall cuisine tags and a pattern-like keyword all behave. Real staging rehearsal not run (no database password in this environment); `audit:supabase:migration-safety` fails only on the missing `supabase/rehearsals/20261029100000.json`.
+
+### MAPDECIDE-R4 step 5 (MD-W1 to W7), 2026-10-28
+- typecheck clean; npm test 2191/0 fail; test:render 577/0 fail (new wheel.render.test.tsx, wheelSolo.render.test.tsx with production flags, WheelSvg.render.test.tsx); lint 0 errors; format clean; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
+- react-native-svg is stubbed in render tests (props dropped), so slice label rotation is tested as a function and the font by a source check; not seen on a device.
+
+### MAPDECIDE-R4 step 6 (MD-M6 to M15, B9, B10, A1 to A3, draft experiments), 2026-10-28
+- typecheck clean; npm test 2199/0 fail (three source-contract tests that pinned the old map and Decide code were updated); test:render 592/0 fail (map cards, Loading pill, pins cap, A2 event, Decide hours cache, A1 events, four draft-arm previews); lint 0 errors; format clean on touched code; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
+- No migration in this step. `getVenuesByIds` over 50 ids tested against the fake Supabase client (120 ids make calls of 50, 50, 20; one failed batch rejects).
+- Not walked on a device or the web build in this step.
+
+### MAPDECIDE-R4 step 7 (re-audit 1), 2026-10-28
+- Playwright walk of the mock web build at 390x844 (not a device): map, Decide and Wheel lobby screenshots reviewed. Wheel lobby fixes covered by wheel.render.test.tsx (empty-state wording). typecheck clean; npm test and test:render re-run after the change.
 ### ONB-ACCT account step progress, 2026-10-28
 
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).

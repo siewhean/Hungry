@@ -295,6 +295,10 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     floor: venue?.floor ?? "",
     name: toString(row.name),
     foodTypeTag: toString(row.food_type) || undefined,
+    ...(row.course ? { course: toString(row.course) } : {}),
+    ...(toStringArray(row.cuisine_tags).length
+      ? { cuisineTags: toStringArray(row.cuisine_tags) }
+      : {}),
     imageUrl,
     blurhash: toString(row.blurhash) || undefined,
     distanceMeters: toNumber(row.distance_meters),
@@ -1046,6 +1050,9 @@ export async function searchDishesViaRpc(
     p_cuisine_tags: filters.cuisineTags ?? null,
     p_max_price: filters.maxPrice ?? null,
     p_open_only: filters.openOnly ?? false,
+    // Sent only when the quiz asked, so a backend without the filters keeps working for search.
+    ...(filters.cuisineKeywords?.length ? { p_cuisine_keywords: filters.cuisineKeywords } : {}),
+    ...(filters.stapleKeywords?.length ? { p_staple_keywords: filters.stapleKeywords } : {}),
   });
   if (!rows) return undefined;
   return rows.map((row) => ({
@@ -1203,6 +1210,8 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
+const VENUE_SUMMARIES_BATCH = 50;
+
 /**
  * Stall summaries for many ids (up to 50) in one get_venue_summaries call (no menus). Undefined
  * when Supabase is not configured. Throws when the configured RPC failed (offline, rate cap), so
@@ -1211,13 +1220,26 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
 export async function getVenuesByIdsViaRpc(
   venueIds: string[],
 ): Promise<VenueSummary[] | undefined> {
-  const ids = [...new Set(venueIds)].slice(0, 50);
-  if (ids.length === 0) return [];
-  const rows = await rpcRows("get_venue_summaries", { p_venue_ids: ids });
-  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
-    throw new Error("Couldn't load these stalls.");
+  const unique = [...new Set(venueIds)];
+  if (unique.length === 0) return [];
+  // The RPC reads at most 50 stalls, so a longer list (a big Saved list) goes out as a few
+  // calls, side by side, instead of dropping the rest as "may have closed".
+  const chunks: string[][] = [];
+  for (let start = 0; start < unique.length; start += VENUE_SUMMARIES_BATCH) {
+    chunks.push(unique.slice(start, start + VENUE_SUMMARIES_BATCH));
   }
-  return rows?.map(mapRpcVenue);
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
+      rpcRows("get_venue_summaries", { p_venue_ids: ids }),
+    ),
+  );
+  if (results.some((rows) => !rows)) {
+    if (isSupabaseConfigured() && getSupabaseClient())
+      throw new Error("Couldn't load these stalls.");
+    return undefined;
+  }
+  return results.flatMap((rows) => (rows ?? []).map(mapRpcVenue));
 }
 
 /** Name, photo, stall and price for many dishes and stalls in one get_item_details call. */

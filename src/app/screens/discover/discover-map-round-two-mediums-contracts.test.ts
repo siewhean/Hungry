@@ -52,7 +52,8 @@ test("M13/M14: every pin is a labelled button, memoised, and the count is capped
 
 test("M19: a map search stays on the map as a query on the pins and the cards", () => {
   assert.doesNotMatch(map, /navigation\.navigate\("SearchResults", \{ initialQuery: query/);
-  assert.equal(map.match(/\bquery,\n/g)?.length, 2);
+  // The pins, the cards and (for the dish a card names) the dishes all carry the query.
+  assert.equal(map.match(/\bquery,\n/g)?.length, 3);
   assert.match(map, /setMapQuery\(query\)/);
   const catalog = readRepoFile("src/lib/services/catalog/index.ts");
   assert.match(catalog, /p_query: request\.query\.trim\(\)/);

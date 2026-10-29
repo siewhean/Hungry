@@ -9,7 +9,9 @@ test("H14: map pins, cards and list rows open the full stall page", () => {
   assert.doesNotMatch(map, /navigate\("CatalogRawDetail"/);
   // One opener, used by both card layouts and by a pin whose card is already selected.
   assert.equal(map.match(/navigation\.navigate\("StallDetail", \{ venueId \}\)/g)?.length, 1);
-  assert.equal(map.match(/openStall\((item|venue)\.id\)/g)?.length, 3);
+  // Cards and rows go through openCard (which counts the open), a pin through openStall itself.
+  assert.equal(map.match(/openStall\((item\.id|venueId)\)/g)?.length, 2);
+  assert.equal(map.match(/openCard\(venue\.id, index\)/g)?.length, 2);
 });
 
 test("H15: raw catalog publish and refresh apply the Discover display-rights rule", () => {
@@ -91,7 +93,7 @@ test("H18/H19: Decide for Me picks from the server and prefers open stalls", () 
   const decide = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
   assert.match(decide, /service\.discovery\.searchDishes\(/);
   assert.doesNotMatch(decide, /repository\.searchDishes\(/);
-  assert.match(decide, /preferOpenStalls\(ranked, new Map\(venues\.map\(/);
+  assert.match(decide, /preferOpenStalls\(ranked, venueCache\)/);
   assert.match(
     decide,
     /const hasNoMatch =\s*!isLocationApproximate &&\s*!isLoadingCandidates &&\s*!loadFailed &&\s*answerResult\.dishes\.length === 0 &&\s*!selectedDish;/,

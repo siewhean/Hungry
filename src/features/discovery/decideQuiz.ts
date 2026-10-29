@@ -111,8 +111,17 @@ function findOption(
   );
 }
 
+/** The fields the server search matches keywords on (search_dishes), so both agree. */
 function dishText(dish: DishDetail): string {
-  return [dish.name, dish.foodTypeTag ?? "", ...dish.tasteTags].join(" ").toLowerCase();
+  return [
+    dish.name,
+    dish.foodTypeTag ?? "",
+    dish.course ?? "",
+    ...dish.tasteTags,
+    ...(dish.cuisineTags ?? []),
+  ]
+    .join(" ")
+    .toLowerCase();
 }
 
 /**
@@ -139,6 +148,34 @@ export function hasDecideConstraints(answers: DecideAnswers): boolean {
 /** The price ceiling the diner chose, sent to the server search. */
 export function decideAnswerMaxPrice(answers: DecideAnswers): number | undefined {
   return findOption("price", answers)?.maxPrice;
+}
+
+export type DecideServerAnswer = "staple" | "cuisine" | "price";
+
+/**
+ * The answers the server search can filter on, least important first: when nothing fits all of
+ * them the screen drops them in this order. Flavour stays on the phone (it reads the taste bars).
+ */
+export const DECIDE_DROP_ORDER: readonly DecideServerAnswer[] = ["staple", "cuisine", "price"];
+
+/** Keywords and price ceiling for the server search, leaving out the answers in `dropped`. */
+export function decideServerFilters(
+  answers: DecideAnswers,
+  dropped: readonly DecideServerAnswer[] = [],
+): { cuisineKeywords?: string[]; stapleKeywords?: string[]; maxPrice?: number } {
+  const cuisine = dropped.includes("cuisine") ? undefined : findOption("cuisine", answers);
+  const staple = dropped.includes("staple") ? undefined : findOption("staple", answers);
+  const price = dropped.includes("price") ? undefined : findOption("price", answers);
+  return {
+    ...(cuisine?.keywords ? { cuisineKeywords: cuisine.keywords } : {}),
+    ...(staple?.keywords ? { stapleKeywords: staple.keywords } : {}),
+    ...(price?.maxPrice !== undefined ? { maxPrice: price.maxPrice } : {}),
+  };
+}
+
+/** Which of the server-side answers the diner actually gave, in drop order. */
+export function givenServerAnswers(answers: DecideAnswers): DecideServerAnswer[] {
+  return DECIDE_DROP_ORDER.filter((id) => Boolean(findOption(id, answers)));
 }
 
 /** The answered questions in quiz order, as labels for the result screen's chips. */
