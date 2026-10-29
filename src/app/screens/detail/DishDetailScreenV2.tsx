@@ -51,9 +51,9 @@ import {
   ratingsHeadline,
 } from "@/features/detail/dishReviewSummary";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
-import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
 import { useDishReviewActions } from "@/features/detail/useDishReviewActions";
-import { TriedFollowUp } from "@/features/detail/TriedFollowUp";
+import { TriedFollowUp, type FeltTaste } from "@/features/detail/TriedFollowUp";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { DishLoadingPreview } from "@/components/dish/DishLoadingPreview";
@@ -89,7 +89,13 @@ import { AccessibleImage, AppText, Button, EmptyState, FeedErrorBoundary } from 
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useHungryTheme } from "@/theme";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
-import type { DishDetail, OpeningSchedule, PublicMerchantProfile, Review } from "@/types/domain";
+import type {
+  DishDetail,
+  OpeningSchedule,
+  PublicMerchantProfile,
+  Review,
+  TasteKey,
+} from "@/types/domain";
 import { hasDishTasteSignal, isNeutralTasteVector } from "@/lib/ai/tasteEngine";
 import { tapHaptic } from "@/lib/haptics";
 import { openStallFromDish } from "./stallNavigation";
@@ -180,7 +186,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [dishRefreshKey, setDishRefreshKey] = useState(0);
   const selectReviewDish = useReviewDraftStore((state) => state.selectDish);
   const setReviewRating = useReviewDraftStore((state) => state.setRating);
-  const toggleReviewTag = useReviewDraftStore((state) => state.toggleTag);
+  const setReviewFeltTaste = useReviewDraftStore((state) => state.setFeltTaste);
   const resetReviewDraft = useReviewDraftStore((state) => state.resetDraft);
   // What diners who rated the taste say, per axis; undefined until 3+ diners rated one.
   const [dinerTaste, setDinerTaste] = useState<DinerTaste>();
@@ -747,21 +753,23 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   // The "you tried it" popup's stars and taste words go into the review draft for this dish.
   // A draft for another dish is left alone so the review screen can ask what to do with it.
-  const keepTriedAnswers = (triedRating: number, triedTags: string[]) => {
+  const keepTriedAnswers = (triedRating: number, triedFelt: FeltTaste) => {
     const { draft } = useReviewDraftStore.getState();
     if (!draft.selectedDishId || draft.selectedDishId === dish.id) {
       if (draft.selectedDishId !== dish.id) resetReviewDraft();
       selectReviewDish(dish.venueId, dish.id);
       if (triedRating > 0) setReviewRating(triedRating);
-      const chosen = useReviewDraftStore.getState().draft.selectedTags;
-      for (const tag of triedTags) if (!chosen.includes(tag)) toggleReviewTag(tag);
+      // The review screen shows these levels and sends them with the review.
+      for (const key of Object.keys(triedFelt) as TasteKey[]) {
+        setReviewFeltTaste(dish.id, key, triedFelt[key]);
+      }
     }
   };
 
   // From the popup: the review starts with the stars and taste words filled in.
-  const continueTriedReview = (triedRating: number, triedTags: string[]) => {
+  const continueTriedReview = (triedRating: number, triedFelt: FeltTaste) => {
     setTriedFollowUpPending(false);
-    keepTriedAnswers(triedRating, triedTags);
+    keepTriedAnswers(triedRating, triedFelt);
     handleReview();
   };
 
@@ -786,10 +794,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       !requireAccount(
         `Sign in to mark ${dish.name} as tried`,
         { name: "DishDetail", params: { dishId: dish.id } },
-        () =>
-          void markDishTriedAfterSignIn(dish, triedDishFacts(dish, hasTasteSignal)).then(
-            afterTriedMarked,
-          ),
+        () => {
+          holdCredPillForPopup();
+          void markDishTriedAfterSignIn(dish, triedDishFacts(dish, hasTasteSignal))
+            .then(afterTriedMarked)
+            .catch((error: unknown) => {
+              useUIStore.getState().releaseCredToast(true);
+              reportError(error, { screen: "DishDetail", action: "mark_tried_after_sign_in" });
+            });
+        },
       )
     ) {
       return;
@@ -819,15 +832,32 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     setIsTryingFood(true);
     try {
+      holdCredPillForPopup();
       afterTriedMarked(await markDishTried(dish, triedDishFacts(dish, hasTasteSignal)));
+    } catch (error) {
+      useUIStore.getState().releaseCredToast(true);
+      throw error;
     } finally {
       tryingFoodRef.current = false;
       setIsTryingFood(false);
     }
   };
 
+  // The "you tried it" popup follows a Tried mark when the diner can still review the dish.
+  const triedPopupEligible =
+    !FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed;
+
+  // One confirmation at a time: the Food Cred pill waits for the popup and the popup shows the
+  // points. The toast_cta variant has no popup, so its pill comes straight away.
+  function holdCredPillForPopup() {
+    if (triedPopupEligible && getExperimentVariant("dish_tried_prompt_v1") !== "toast_cta") {
+      useUIStore.getState().holdCredToast();
+    }
+  }
+
   function afterTriedMarked({ saved, stallMarkFailed }: DishTriedResult) {
     if (!saved) {
+      useUIStore.getState().releaseCredToast(true);
       showToast({ message: "Couldn't mark this dish as tried. Try again.", ...triedToastStyle });
       return;
     }
@@ -836,8 +866,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       : "Marked as tried.";
     // Rating only makes sense once the dish is tried; both the stars and the taste are optional.
     // The follow-up mounts only now, so its experiment exposes only diners who reach it.
-    const followUp =
-      !FEATURE_FLAGS.release01CoreOnly && FEATURE_FLAGS.reviewCreationEnabled && !hasReviewed;
+    const followUp = triedPopupEligible;
+    if (!followUp) useUIStore.getState().releaseCredToast(true);
     // One confirmation at a time: the popup is the confirmation when it follows, so the toast
     // waits for the variant that shows no popup. (Food Cred has its own app-wide pill.)
     triedMessageRef.current = message;
@@ -1104,7 +1134,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       accessibilityRole="text"
                       accessibilityLabel={`Rated ${dish.rating.toFixed(1)} out of 5 from ${
                         dish.reviewCount
-                      } ${dish.reviewCount === 1 ? "review" : "reviews"}`}
+                      } ${dish.reviewCount === 1 ? "rating" : "ratings"}`}
                       style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                     >
                       {/* One star and the exact score: five rounded stars hid 4.4 vs 3.6. */}
@@ -1113,7 +1143,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         {dish.rating.toFixed(1)}
                       </AppText>
                       <AppText variant="bodySmall" tone="secondary">
-                        ({dish.reviewCount} {dish.reviewCount === 1 ? "review" : "reviews"})
+                        ({dish.reviewCount} {dish.reviewCount === 1 ? "rating" : "ratings"})
                       </AppText>
                     </View>
                   ) : (
@@ -1225,7 +1255,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   <MapPin color={palette.orange} size={20} />
                 </View>
                 <View style={{ flex: 1, gap: spacing[0.5] }}>
-                  <AppText variant="bodyBold" numberOfLines={1}>
+                  <AppText variant="bodyBold" numberOfLines={2}>
                     {venueName}
                   </AppText>
                   <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>

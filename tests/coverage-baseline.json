@@ -190,7 +190,7 @@
     "src/lib/services/supabase/mediaUpload.ts": 65.4,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/supabaseRepository.ts": 67.2,
-    "src/lib/services/supabase/supabaseService.ts": 52.9,
+    "src/lib/services/supabase/supabaseService.ts": 53,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
     "src/store/persistStorage.ts": 66.5,

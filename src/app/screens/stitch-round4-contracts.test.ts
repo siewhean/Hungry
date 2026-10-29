@@ -16,7 +16,7 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   const followUp = read("src/features/detail/TriedFollowUp.tsx");
   assert.match(dish, /"Marked as tried\."[\s\S]*?setTriedFollowUpPending\(true\)/);
   assert.match(followUp, /<StarRating value=\{rating\} editable onChange=\{setRating\}/);
-  assert.match(followUp, /How did it taste\?[\s\S]*?<ChipGroup/);
+  assert.match(followUp, /How did it taste\?[\s\S]*?<TasteRatingInput/);
   assert.match(followUp, /label="Not now"/);
   // Not tried: grey circle, no tick. Tried: orange tick.
   assert.match(

@@ -24,6 +24,7 @@ import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
+import { useUIStore } from "@/store/useUIStore";
 import { resolveFoodCredLevel } from "@/constants/foodCredConfig";
 
 const AUTO_DISMISS_MS = 2500;
@@ -42,8 +43,24 @@ export function CredEarnedToast() {
     () =>
       useFoodCredStore.subscribe((state, previous) => {
         if (state.lastEarnedPoints <= 0 || state.totalPoints === previous.totalPoints) return;
+        // A popup that follows the award shows the points itself: no pill on top of it.
+        if (useUIStore.getState().credHold) {
+          useUIStore.getState().addHeldCredPoints(state.lastEarnedPoints);
+          return;
+        }
         awardIdRef.current += 1;
         setAward({ id: awardIdRef.current, points: state.lastEarnedPoints });
+      }),
+    [],
+  );
+  // Held points nothing used (the popup never showed) come back as a pill.
+  useEffect(
+    () =>
+      useUIStore.subscribe((state, previous) => {
+        const replay = state.credReplay;
+        if (!replay || replay === previous.credReplay) return;
+        awardIdRef.current += 1;
+        setAward({ id: awardIdRef.current, points: replay.points });
       }),
     [],
   );

@@ -51,6 +51,7 @@ export function SafetyActionsSheet() {
     : menu?.canBlock
       ? "Report or block"
       : `Report this ${label}`;
+  const reportOnly = !menu?.canHide && !menu?.canBlock;
 
   return (
     <BottomSheet
@@ -62,9 +63,14 @@ export function SafetyActionsSheet() {
       <View style={{ gap: spacing[3] }}>
         {step === "menu" ? (
           <>
-            <AppText variant="h3" accessibilityRole="header">
-              {title}
-            </AppText>
+            {reportOnly ? (
+              // The title would only repeat the one button, so a line of help stands in.
+              <AppText tone="secondary">{`Tell us what's wrong with this ${label}.`}</AppText>
+            ) : (
+              <AppText variant="h3" accessibilityRole="header">
+                {title}
+              </AppText>
+            )}
             <Button
               label={`Report this ${label}`}
               variant="secondary"

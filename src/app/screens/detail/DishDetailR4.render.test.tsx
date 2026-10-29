@@ -1,6 +1,7 @@
 // Round-four dish page fixes (DISH4-*). Run with `node scripts/test-render.mjs <this file>`.
 
 import assert from "node:assert/strict";
+import { act } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { DishDetailScreenV2 } from "@/app/screens/detail/DishDetailScreenV2";
@@ -21,6 +22,7 @@ import {
 import type { HungryService, RecentReviewFeedEntry } from "@/lib/services/types";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -35,6 +37,7 @@ beforeEach(async () => {
 });
 afterEach(async () => {
   await cleanup();
+  useUIStore.getState().releaseCredToast(false);
   for (const restore of restores.reverse()) restore();
   restores = [];
   setServiceProvider(baseProvider);
@@ -490,4 +493,109 @@ test("without a name, 'Search dishes' opens the search page", async () => {
   assert.deepEqual(view.navigation.calls.find((call) => call.method === "navigate")?.args, [
     "SearchHome",
   ]);
+});
+
+// ─── The Tried popup: Food Cred inside it, six taste axes (V2, V3) ───────────────────
+
+test("the header says 'ratings', matching the reviews section (V1)", async () => {
+  stubReviews([]);
+  const { dish, view } = await open();
+  const label = dish.reviewCount === 1 ? "rating" : "ratings";
+  assert.ok(view.findByText(new RegExp(`\\(${dish.reviewCount} ${label}\\)`)));
+  assert.equal(view.findByText(/\(\d+ reviews?\)/), null);
+});
+
+test("marking Tried holds the Food Cred pill and the popup shows the points itself", async () => {
+  stubReviews([]);
+  stubTried();
+  useUIStore.getState().releaseCredToast(false);
+  setExperimentOverride("dish_tried_prompt_v1", "control");
+  const { view } = await open();
+  await view.press(view.findByLabel("Tried"));
+  assert.deepEqual(useUIStore.getState().credHold, { points: 0 }, "the pill waits for the popup");
+  assert.equal(view.findByText(/Food Cred/), null, "nothing earned yet, nothing shown");
+
+  await act(async () => {
+    useUIStore.getState().addHeldCredPoints(5);
+  });
+  assert.ok(view.findByText("+5 Food Cred"));
+
+  await view.press(view.findByText("Not now"));
+  assert.equal(useUIStore.getState().credHold, null, "closing the popup ends the wait");
+  assert.equal(useUIStore.getState().credReplay, null, "the popup showed the points: no pill");
+});
+
+test("the toast_cta variant has no popup, so the pill is not held", async () => {
+  stubReviews([]);
+  stubTried();
+  useUIStore.getState().releaseCredToast(false);
+  setExperimentOverride("dish_tried_prompt_v1", "toast_cta");
+  const { view } = await open();
+  await view.press(view.findByLabel("Tried"));
+  assert.equal(useUIStore.getState().credHold, null);
+});
+
+test("a diner who already reviewed the dish gets no popup, so the pill is not held", async () => {
+  stubTried();
+  const dish = pickDish();
+  stubReviews([review("mine", { authorId: useProfileStore.getState().profile.id })]);
+  setExperimentOverride("dish_tried_prompt_v1", "control");
+  const view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: { dishId: dish.id, source: "home" },
+  });
+  await view.press(view.findByLabel("Tried"));
+  assert.equal(useUIStore.getState().credHold, null);
+});
+
+test("the popup asks the six taste levels the review editor uses, not word chips", async () => {
+  stubReviews([]);
+  stubTried();
+  setExperimentOverride("dish_tried_prompt_v1", "control");
+  useReviewDraftStore.getState().resetDraft();
+  const { dish, view } = await open();
+  await view.press(view.findByLabel("Tried"));
+  for (const axis of ["Sweet", "Spicy", "Sour", "Salty", "Rich", "Aromatic"]) {
+    assert.ok(view.findByLabel(`${axis}: Medium`), `${axis} has its row`);
+  }
+  assert.equal(view.findByText("Crispy"), null, "the word chips are gone");
+
+  await view.press(view.findByLabel("Spicy: Strong"));
+  await view.press(view.findByLabel("Rich: Light"));
+  await view.press(view.findByText("Not now"));
+  const { feltTaste, draft } = useReviewDraftStore.getState();
+  assert.equal(draft.selectedDishId, dish.id);
+  assert.deepEqual(feltTaste, { dishId: dish.id, values: { spicy: 7.5, rich: 2.5 } });
+});
+
+test("'Write a review' from the popup carries the taste levels into the review", async () => {
+  stubReviews([]);
+  stubTried();
+  setExperimentOverride("dish_tried_prompt_v1", "control");
+  useReviewDraftStore.getState().resetDraft();
+  const { dish, view } = await open();
+  await view.press(view.findByLabel("Tried"));
+  await view.press(view.findByTestId("star-5"));
+  await view.press(view.findByLabel("Sour: Very"));
+  // The bar has a "Write a review" too; this one is inside the popup.
+  const popupButton = Array.from(
+    view.findByTestId("tried-prompt-scroll")?.querySelectorAll<HTMLElement>("*") ?? [],
+  ).find((element) => element.textContent === "Write a review" && element.children.length === 0);
+  await view.press(popupButton ?? null);
+  const { feltTaste, draft } = useReviewDraftStore.getState();
+  assert.equal(draft.rating, 5);
+  assert.deepEqual(feltTaste.values, { sour: 10 });
+  assert.equal(feltTaste.dishId, dish.id);
+});
+
+test("a long stall name on the stall card may take two lines (V6)", async () => {
+  stubReviews([]);
+  const { view } = await open();
+  const card = view.findByLabel(/stall details$/);
+  assert.ok(card);
+  const name = Array.from(card.querySelectorAll<HTMLElement>("*")).find(
+    (element) => element.children.length === 0 && /line-clamp/.test(element.outerHTML),
+  );
+  assert.ok(name, "the stall name is clamped");
+  assert.match(name.outerHTML, /line-clamp: 2/);
 });

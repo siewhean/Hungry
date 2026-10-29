@@ -189,3 +189,20 @@ test("a rate rule on a STABLE or IMMUTABLE RPC is refused until it is made VOLAT
   });
   assert.deepEqual(run(volatileDefault), []);
 });
+
+test("a user-only RPC may be listed with a reason; a stale, empty or anon-callable entry is refused", () => {
+  const fn =
+    "create function public.read_thing() returns setof int language sql stable as $$ select 1 $$;";
+  const revoked = project({
+    "001_hook.sql": HOOK,
+    "002_fn.sql": `${fn}\nrevoke all on function public.read_thing() from public, anon;`,
+  });
+  assert.deepEqual(run(revoked), []);
+  assert.deepEqual(run(revoked, { userRpcs: { read_thing: "one cheap read per page open" } }), []);
+  assert.match(run(revoked, { userRpcs: { read_thing: " " } })[0], /needs a reason/);
+  assert.match(run(revoked, { userRpcs: { nope: "x" } })[0], /stale/);
+
+  const open = project({ "001_hook.sql": HOOK, "002_fn.sql": fn });
+  const problems = run(open, { userRpcs: { read_thing: "cheap" } });
+  assert.ok(problems.some((problem) => /callable by anon/.test(problem)));
+});

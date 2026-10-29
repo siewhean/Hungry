@@ -323,3 +323,27 @@ test("both navigators build web URLs without the email", () => {
     assert.match(source, /getPathFromState: withoutEmailParam\(getPathFromState\)/, file);
   }
 });
+
+test("a dish page URL carries neither the in-app source nor the prefill object", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  const options = linking.config as Parameters<typeof getPathFromState>[1];
+  const pathFor = withoutEmailParam(getPathFromState);
+  const state = {
+    routes: [
+      {
+        name: "DishDetail",
+        params: {
+          dishId: "dish-1",
+          source: "more_from_stall",
+          prefill: { name: "Laksa", price: 5 },
+        },
+      },
+    ],
+  };
+  assert.match(getPathFromState(state, options), /prefill=%5Bobject/, "the default path leaks it");
+  assert.equal(pathFor(state, options), "/dish/dish-1");
+
+  // `source` on other pages (search) is a real param and stays.
+  assert.equal(stripEmailQuery("/search?source=search_typed"), "/search?source=search_typed");
+  assert.equal(stripEmailQuery("/dish/d1?source=home&prefill=x&x=1"), "/dish/d1?x=1");
+});
