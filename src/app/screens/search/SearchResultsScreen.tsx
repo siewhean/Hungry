@@ -213,140 +213,144 @@ const RawCatalogCard = memo(function RawCatalogCard({
     </View>
   );
 
+  // The heart sits beside the card button, not inside it: a button inside a button is invalid HTML
+  // on web and breaks hydration.
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={cardAccessibilityLabel(mode, item)}
-      accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
-      onPress={() => onOpen(item, index)}
-      style={{ padding: spacing[1], width: itemWidth }}
-    >
-      <View
-        style={{
-          backgroundColor: palette.surface,
-          borderColor: palette.border,
-          borderRadius: componentRadii.card,
-          borderWidth: 1,
-          minHeight: itemWidth * 1.25,
-          overflow: "hidden",
-        }}
+    <View style={{ padding: spacing[1], width: itemWidth }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={cardAccessibilityLabel(mode, item)}
+        accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
+        onPress={() => onOpen(item, index)}
+        testID={`search-card-${mode}-${item.id}`}
       >
-        <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * 0.7 }}>
-          {imageUrl ? (
-            <AccessibleImage
-              source={{ uri: imageUrl }}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              decorative
-              fallback={placeholder}
-            />
-          ) : (
-            placeholder
-          )}
-          {dish && onToggleSave ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={saved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
-              accessibilityState={{ selected: saved }}
-              hitSlop={4}
-              onPress={() => onToggleSave(dish)}
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.surface,
-                borderRadius: radii.pill,
-                bottom: spacing[2],
-                height: 44,
-                justifyContent: "center",
-                position: "absolute",
-                right: spacing[2],
-                width: 44,
-              }}
-            >
-              <Heart
-                color={saved ? palette.error : palette.textMuted}
-                fill={saved ? palette.error : "transparent"}
-                size={20}
+        <View
+          style={{
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            borderWidth: 1,
+            minHeight: itemWidth * 1.25,
+            overflow: "hidden",
+          }}
+        >
+          <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * 0.7 }}>
+            {imageUrl ? (
+              <AccessibleImage
+                source={{ uri: imageUrl }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                decorative
+                fallback={placeholder}
               />
-            </Pressable>
-          ) : null}
-          {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
-          {isVerified ? (
-            <View
-              style={{
-                backgroundColor: palette.surface,
-                borderRadius: radii.pill,
-                left: spacing[2],
-                paddingHorizontal: spacing[2],
-                paddingVertical: spacing[1],
-                position: "absolute",
-                top: spacing[2],
-              }}
-            >
-              <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                Verified
-              </AppText>
-            </View>
-          ) : null}
-          {outlets > 0 ? (
-            <View
-              style={{
-                backgroundColor: palette.surface,
-                borderRadius: radii.pill,
-                paddingHorizontal: spacing[2],
-                paddingVertical: spacing[1],
-                position: "absolute",
-                right: spacing[2],
-                top: spacing[2],
-              }}
-            >
-              <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-        <View style={{ gap: spacing[1], padding: spacing[2] }}>
-          <AppText numberOfLines={2} variant="bodyBold">
-            {title}
-          </AppText>
-          <AppText numberOfLines={2} tone="secondary" variant="micro">
-            {cardSubtitle(mode, item)}
-          </AppText>
-          {stallDetail ? (
-            <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
-              {stallDetail}
-            </AppText>
-          ) : null}
-          {/* The line is reserved even with no rating or menu count, so cards in a row match (SR4-19). */}
-          <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
-            {rating ? (
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                <Star color={palette.starFill} fill={palette.starFill} size={12} />
-                <AppText tone="secondary" variant="micro">
-                  {rating}
+            ) : (
+              placeholder
+            )}
+            {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
+            {isVerified ? (
+              <View
+                style={{
+                  backgroundColor: palette.surface,
+                  borderRadius: radii.pill,
+                  left: spacing[2],
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: spacing[1],
+                  position: "absolute",
+                  top: spacing[2],
+                }}
+              >
+                <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                  Verified
                 </AppText>
               </View>
-            ) : stall && stall.menuCount > 0 ? (
-              <AppText tone="secondary" variant="micro">
-                {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
-              </AppText>
+            ) : null}
+            {outlets > 0 ? (
+              <View
+                style={{
+                  backgroundColor: palette.surface,
+                  borderRadius: radii.pill,
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: spacing[1],
+                  position: "absolute",
+                  right: spacing[2],
+                  top: spacing[2],
+                }}
+              >
+                <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                  {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
+                </AppText>
+              </View>
             ) : null}
           </View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <AppText tone="muted" variant="micro">
-              {item.distanceMeters !== undefined
-                ? formatBrowseDistance(item.distanceMeters)
-                : "Singapore"}
+          <View style={{ gap: spacing[1], padding: spacing[2] }}>
+            <AppText numberOfLines={2} variant="bodyBold">
+              {title}
             </AppText>
-            {dish?.price !== undefined ? (
-              <AppText style={{ color: palette.text }} variant="price">
-                S${dish.price.toFixed(2)}
+            <AppText numberOfLines={2} tone="secondary" variant="micro">
+              {cardSubtitle(mode, item)}
+            </AppText>
+            {stallDetail ? (
+              <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
+                {stallDetail}
               </AppText>
             ) : null}
+            {/* The line is reserved even with no rating or menu count, so cards in a row match (SR4-19). */}
+            <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
+              {rating ? (
+                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                  <Star color={palette.starFill} fill={palette.starFill} size={12} />
+                  <AppText tone="secondary" variant="micro">
+                    {rating}
+                  </AppText>
+                </View>
+              ) : stall && stall.menuCount > 0 ? (
+                <AppText tone="secondary" variant="micro">
+                  {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
+                </AppText>
+              ) : null}
+            </View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <AppText tone="muted" variant="micro">
+                {item.distanceMeters !== undefined
+                  ? formatBrowseDistance(item.distanceMeters)
+                  : "Singapore"}
+              </AppText>
+              {dish?.price !== undefined ? (
+                <AppText style={{ color: palette.text }} variant="price">
+                  S${dish.price.toFixed(2)}
+                </AppText>
+              ) : null}
+            </View>
           </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+      {dish && onToggleSave ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={saved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
+          accessibilityState={{ selected: saved }}
+          hitSlop={4}
+          onPress={() => onToggleSave(dish)}
+          style={{
+            alignItems: "center",
+            backgroundColor: palette.surface,
+            borderRadius: radii.pill,
+            height: 44,
+            justifyContent: "center",
+            position: "absolute",
+            right: spacing[1] + spacing[2],
+            top: spacing[1] + 1 + itemWidth * 0.7 - 44 - spacing[2],
+            width: 44,
+          }}
+        >
+          <Heart
+            color={saved ? palette.error : palette.textMuted}
+            fill={saved ? palette.error : "transparent"}
+            size={20}
+          />
+        </Pressable>
+      ) : null}
+    </View>
   );
 });
 
@@ -1624,6 +1628,7 @@ function RawCatalogBrowseGrid({
                   key={option.id}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
+                  aria-checked={selected}
                   onPress={() => handleSelectSort(option.id)}
                   style={{
                     alignItems: "center",

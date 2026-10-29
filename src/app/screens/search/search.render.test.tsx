@@ -446,7 +446,7 @@ for (const [width, cardWidth] of [
       await wait(400);
       const card = view.findByLabel(/^Dish 1,/);
       assert.ok(card, "a card");
-      assert.equal(card.style.width, cardWidth);
+      assert.equal(card.parentElement?.style.width, cardWidth);
       const row = view.findByTestId("search-sticky-row");
       assert.ok(row?.contains(view.findByLabel(/^Filters and sort/)));
     } finally {
@@ -461,6 +461,11 @@ test("a heart on a dish card saves it without opening it, and tapping again remo
   await wait(400);
   const heart = view.findByLabel("Save Dish 1");
   assert.ok(heart, "a heart on the card");
+  const openCard = view.findByLabel(/^Dish 1,/);
+  assert.ok(
+    openCard && !openCard.contains(heart),
+    "the heart is beside the card button, not inside it",
+  );
   const calls = view.navigation.calls.length;
   await view.press(heart);
   await wait(200);
