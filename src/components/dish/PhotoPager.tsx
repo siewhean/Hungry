@@ -28,6 +28,8 @@ interface PhotoPagerProps {
   children?: ReactNode;
   /** Runs when a tap opens the full-screen viewer, with the photo's position from 0. */
   onViewerOpen?: (position: number) => void;
+  /** Shown when no photo is left: none were given, or every one failed to load. */
+  fallback?: ReactNode;
 }
 
 function pageIndex(event: NativeSyntheticEvent<NativeScrollEvent>, width: number) {
@@ -52,15 +54,20 @@ export function PhotoPager({
   blurhash,
   children,
   onViewerOpen,
+  fallback,
 }: PhotoPagerProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [storedIndex, setIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  // Photos that failed to load (a dead link, a bad connection) are dropped, not left as a blank page.
+  const [failedUrls, setFailedUrls] = useState<ReadonlySet<string>>(() => new Set());
   const viewerScrollRef = useRef<ScrollView>(null);
-  const urls = photos.filter((url) => url.trim().length > 0);
-  if (urls.length === 0) return null;
+  const urls = photos.filter((url) => url.trim().length > 0 && !failedUrls.has(url));
+  const dropFailedPhoto = (url: string) =>
+    setFailedUrls((current) => (current.has(url) ? current : new Set(current).add(url)));
+  if (urls.length === 0) return <>{fallback ?? null}</>;
   const count = urls.length;
   // Photos can shrink after a swipe (a blocked author's photos drop out): no "4 / 3".
   const index = clampPhotoIndex(storedIndex, count);
@@ -92,6 +99,7 @@ export function PhotoPager({
               style={{ height, width }}
               placeholder={position === 0 ? blurhash : undefined}
               accessibilityLabel={`${subject} photo ${position + 1}`}
+              onError={() => dropFailedPhoto(url)}
             />
           </Pressable>
         ))}
@@ -155,6 +163,7 @@ export function PhotoPager({
                 contentFit="contain"
                 style={{ height: windowHeight, width: windowWidth }}
                 accessibilityLabel={`Photo ${position + 1} of ${count}, ${subject}`}
+                onError={() => dropFailedPhoto(url)}
               />
             ))}
           </ScrollView>

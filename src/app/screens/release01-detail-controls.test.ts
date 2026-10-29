@@ -57,7 +57,7 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   // Reviews show whenever detail controls do; only writing one needs reviewCreationEnabled.
   assert.match(
     stall,
-    /\{showDeferredDetailControls \? \(\s*<View style=\{\{ gap: spacing\[4\] \}\}>\s*<AppText variant="h2">Reviews<\/AppText>/,
+    /\{showDeferredDetailControls && !stallIsEmpty \? \(\s*<View onLayout=\{handleReviewsSectionLayout\} style=\{\{ gap: spacing\[4\] \}\}>\s*<AppText variant="h2">Reviews<\/AppText>/,
   );
   assert.match(
     stall,
@@ -74,6 +74,12 @@ test("detail catalog images use the shared sanitizer and provide neutral unavail
   ]) {
     const source = read(file);
     assert.match(source, /sanitizeCatalogImageUrl/);
-    assert.match(source, /photo unavailable/);
+    // The stall's neutral state lives in its hero fallback component.
+    assert.match(
+      file.includes("Stall")
+        ? `${source}${read("src/components/stall/StallHeroFallback.tsx")}`
+        : source,
+      /photo unavailable/,
+    );
   }
 });

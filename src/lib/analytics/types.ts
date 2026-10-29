@@ -69,6 +69,7 @@ export type AnalyticsEventName =
   | "stall_menu_dish_opened"
   | "stall_saved"
   | "stall_marked_tried"
+  | "stall_visited_dish_picked"
   | "dish_marked_tried"
   | "dish_liked"
   | "dish_more_from_opened"

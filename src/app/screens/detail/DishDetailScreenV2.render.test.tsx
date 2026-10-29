@@ -420,3 +420,34 @@ test("without a catalog fallback, or when the read failed, the dish page keeps i
     "a network failure offers Try again, not the catalog record",
   );
 });
+
+// ─── Rails with no photos (R4-STALL-5 shared item) ────────────────────────────────────────
+
+test("a 'More from' rail where no dish has a photo drops the grey photo blocks", async () => {
+  stubReviews([]);
+  const dish = pickDish();
+  const siblings = getDataRepository()
+    .listDishesByVenue(dish.venueId)
+    .filter((candidate) => candidate.id !== dish.id);
+  assert.ok(siblings.length > 0, "the stall has other dishes");
+  stub(getDataRepository(), "listDishesByVenue", (() => [
+    dish,
+    ...siblings.map((sibling) => ({ ...sibling, imageUrl: "", gallery: [] })),
+  ]) as never);
+  const view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: { dishId: dish.id, source: "home" },
+  });
+  assert.match(view.text(), /More from/);
+  assert.ok(
+    view.findByLabel(new RegExp(`^Open ${siblings[0].name}`)),
+    "the sibling is still listed",
+  );
+  for (const sibling of siblings) {
+    assert.equal(
+      view.findByLabel(`${sibling.name}, no photo yet`),
+      null,
+      `${sibling.name} has no grey placeholder block`,
+    );
+  }
+});
