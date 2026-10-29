@@ -146,20 +146,22 @@ test("Home sits below the status bar in every state", async () => {
   assert.match(root!.getAttribute("style") ?? "", /padding-top: 47px/);
 });
 
-test("without a GPS fix or a pick it names an area, asks to choose one and hides made-up distances", async () => {
-  stubCatalog();
+test("without a GPS fix or a pick it shows Singapore picks, offers to turn location on and hides made-up distances", async () => {
+  const catalog = stubCatalog();
   const view = await render(createElement(CatalogDiscoverHome));
-  assert.match(view.text(), /You are at/);
-  assert.match(view.text(), /Location is off\. Tap to choose your area\./);
+  assert.match(view.text(), /You are atSingapore/);
+  assert.match(view.text(), /Location is off, so these are picks across Singapore\./);
   assert.doesNotMatch(view.text(), /\d+(\.\d)? ?(m|km) away|1\.2 km/);
   assert.match(view.text(), /Jalan Berseh Food Centre/);
+  // Island-wide picks: the read covers the whole island, not the 3 km around the default point.
+  assert.ok(catalog.requests.length > 0);
+  assert.ok(catalog.requests.every((request) => request.radiusMeters === 30_000));
 
+  // There is no area picker: the header is not a button and nothing opens the area search.
+  assert.equal(view.findByTestId("catalog-discover-area")?.getAttribute("role"), null);
   const navigation = view.navigation;
-  await view.press(view.findByTestId("catalog-discover-area"));
-  assert.deepEqual(navigation.calls.at(-1), {
-    method: "navigate",
-    args: ["OnboardingStack", { screen: "ManualLocationPicker" }],
-  });
+  await view.press(view.findByLabel("Turn on location"));
+  assert.ok(!navigation.calls.some((call) => call.args[0] === "OnboardingStack"));
 });
 
 test("with a manual pick it names the area, formats km and offers current location", async () => {

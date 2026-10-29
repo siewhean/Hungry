@@ -13,6 +13,7 @@ import {
   Text,
 } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo, type ReactNode } from "react";
@@ -108,9 +109,10 @@ import {
   inferDishCategory,
 } from "@/features/detail/menuCategory";
 import {
-  buildMapsSearchUrl,
+  buildStallMapsUrl,
   formatDistanceFromUser,
   formatFullStallAddress,
+  formatShortStallAddress,
   formatStallPriceBand,
   getStallPin,
   summarizeStallRating,
@@ -489,6 +491,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const stallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
   // ALL CAPS licence names read as shouting; display only, the stored name is what is copied.
   const displayName = toDisplayName(venue?.name ?? "Stall");
+  // The card reads "#01-23, NUS UTown"; the street and postcode only go to Google Maps.
+  const shortStallAddress = venue ? formatShortStallAddress(venue, buildingLocation) : "";
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
@@ -960,8 +964,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
-  // Short enough that hours, address and Order on show without scrolling.
-  const heroHeight = Math.min(screenWidth * 0.45, 190);
+  // 4:3 when there are photos, so they show whole; a short branded header otherwise.
+  const heroHeight =
+    heroPhotos.length > 0 ? Math.min(screenWidth * 0.75, 420) : Math.min(screenWidth * 0.45, 190);
   const hoursRows = openInfo.weekRows;
   // A single listed "Hours" line that today's row already repeats has nothing more to expand.
   const hoursExpandable = hoursRows.some(
@@ -1063,10 +1068,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const openStallMaps = () => {
-    if (!stallAddress && !stallPin) return;
-    trackAnalyticsEvent("directions_opened", { stall_id: venue?.id, source: "stall_detail" });
+    if (!venue) return;
+    trackAnalyticsEvent("directions_opened", { stall_id: venue.id, source: "stall_detail" });
     recordTap("direction_tap");
-    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress, stallPin));
+    // Searches Google Maps by name + building + postcode so it lands on the stall's listing;
+    // the map pin is used only when the stall has no building or address to search by.
+    void openTrustedMapsUrl(
+      buildStallMapsUrl(
+        {
+          name: venue.name,
+          buildingName: buildingLocation.name,
+          address: buildingLocation.address,
+          postalCode: buildingLocation.postalCode,
+        },
+        stallPin,
+      ),
+    );
+  };
+
+  const copyStallName = async () => {
+    if (!venue) return;
+    try {
+      await Clipboard.setStringAsync(venue.name);
+      showToast({ message: "Copied", tone: "success", duration: 1500 });
+    } catch (error) {
+      reportStallError(error, "copy_stall_name");
+      showToast({ message: "Couldn't copy. Try again.", tone: "error" });
+    }
   };
 
   const openMerchantContact = (kind: "phone" | "email", value: string) => {
@@ -1289,7 +1317,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     />
                   ) : null}
                   <View style={{ flex: 1, gap: spacing[1] }}>
-                    <AppText variant="h1">{displayName}</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${venue.name}, copy stall name`}
+                      accessibilityHint="Copies the stall name"
+                      onPress={() => void copyStallName()}
+                    >
+                      <AppText variant="h1">{displayName}</AppText>
+                    </Pressable>
                     <AppText variant="body" tone="secondary">
                       {/* Centre · unit · distance; the full address lives in the Address card. */}
                       {[buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
@@ -1490,7 +1525,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   <AppText variant="bodyBold">Address</AppText>
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={`Open maps for ${stallAddress}`}
+                    accessibilityLabel={`Open maps for ${shortStallAddress || stallAddress}`}
+                    accessibilityHint="Opens the stall in Google Maps"
                     onPress={openStallMaps}
                     style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
                   >
@@ -1499,7 +1535,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     >
                       <MapPin color={palette.orange} size={18} />
                       <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
-                        {stallAddress}
+                        {shortStallAddress || stallAddress}
                       </AppText>
                     </View>
                   </Pressable>
@@ -1898,7 +1934,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   userId: profile.id,
                 })
               }
-              onDirections={stallAddress || stallPin ? openStallMaps : undefined}
+              onDirections={venue ? openStallMaps : undefined}
               hasReviewedDishAtVenue={hasReviewedDishAtVenue}
               onVisited={() => setVisitedSheetOpen(true)}
               showVisited={showDeferredDetailControls && isAuthenticated}

@@ -219,14 +219,14 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
   // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
-  // The round middle button writes a review.
+  // The middle button writes a review; it looks like any other tab.
   const tabItems = [
     { key: "Discover", route: routeByName.get("Discover"), icon: House, label: "Home" },
     ...(FEATURE_FLAGS.socialFeedEnabled
       ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: "Feed" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review" }]
+      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Write" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
       ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Reviews" }]
@@ -297,14 +297,13 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         return (
           <AppBottomTabItem
             key={routeKey}
-            accessibilityLabel={item.label}
+            accessibilityLabel={isCreateAction ? "Write a review" : item.label}
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}
             label={item.label}
             onPress={onPress}
             onPressIn={onPressIn}
-            showLabel={!isCreateAction}
           />
         );
       })}

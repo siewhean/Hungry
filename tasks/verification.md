@@ -1524,6 +1524,10 @@ Use the smallest check that matches the change risk.
 
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).
 
+### UI-EIGHT review search, maps and images, 2026-10-29
+- typecheck clean; npm test 2244 pass / 0 fail; test:render 643 / 0 fail; test:coverage OK (stallLocation.ts 94.4 to 96.4, baseline updated); lint 0 errors (57 warnings, unchanged); format clean on touched code; check:rate-limits and check:n-plus-one OK.
+- Playwright screenshots of the mock web build at 390x844 (not a device): review picker search now fills the row beside Close (before: a 25 px pill under a full-width Close), tab bar shows Write like the other tabs, Home shows the Singapore header with "Turn on location" and stall rows with building + unit. Dish and stall photos, the logo circle and the Google Maps landing were not seen: mock images are remote and the mock stall has no building.
+- No migration.
 ### SEARCH-R4 PR A (relevance, parser chips, 429 copy), 2026-10-29
 - typecheck clean; npm test 2251 pass / 0 fail; test:render 641/0 fail (4 new search render tests); lint 0 errors; format clean on touched code; test:coverage OK (no baseline change needed); check:n-plus-one, check:rate-limits, audit:races OK.
 - Migration 20261029113000_catalog_search_relevance: smoke supabase/smoke/catalog_search_relevance.sql and the adapted hardening smoke pass on a local PG16 stand-in (pg_trgm, stubbed geography); down-then-up roundtrip clean. audit:supabase:migration-safety fails only for the missing staging rehearsal evidence (sh runs rehearse-pr.sh).
@@ -1545,3 +1549,9 @@ Use the smallest check that matches the change risk.
 - Local timing, 30k dishes and 29.6k stalls, warm (this box), before to after: Search home featured request (limit 3, sort quality) 37 to 0.4 ms; suggest with no text 4 to 0.2 ms; browse by quality (24) and stall browse unchanged at about 40 to 50 ms. Staging numbers come from supabase/manual/search-timing.sql (p50/p95/max for 12 calls); on the local dense set every row has a p95 under 250 ms.
 - No role-level statement_timeout in this PR: it would also cap export_my_data and account deletion for signed-in users. A function-level SET statement_timeout does not stop a running statement (checked on PG16). Decision with sh.
 - Checks: check:rate-limits and audit:races OK; audit:supabase:migration-safety fails only for the missing staging rehearsal evidence of 20261029113000, 20261029120000 and 20261029130000.
+
+### SEARCH-R4 PR E (heart, location snapshot, per-query recording, offline note), 2026-10-29
+- Client only, no migration. Heart on dish cards (SR4-17, optimistic toggle in useProfileStore, save event recorded), results keep their order when the GPS fix moves and offer "Update for new location" (SR4-26), the initial query is recorded once per query text (SR4-30), Search home shows the offline note through ResultsNotes (SR4-31). Render tests added in search.render.test.tsx (51 tests).
+- Checks: npm test 2262 (three contracts updated: initialQueryRecordedRef compare, getHungryService and Heart allowed on the results screen), npm run test:render 674/0, typecheck clean, eslint 0 errors, check:n-plus-one, audit:races, check:rate-limits and test:coverage OK. Coverage baseline file not touched (CI value rule).
+- Waiting on other threads: SR4-14 (#153), SR4-16 (mood thread), DISH-X1..X3 (#154).
+- PR E browser walk: tests/e2e/search.spec.ts, 36 steps (Search home, typeahead, results, heart, Filters sheet, sort, Stalls tab, stall and dish open and back, Halal count, recents, empty results) at 390 and 320 wide, light and dark. 4/4 pass on desktop Chromium against the mock build once remote images resolve (this box blocks external hosts, so the run stubbed them; CI has network). The walk found two web-only defects, both fixed here: the heart was a button inside the card button (invalid HTML, hydration warning), and the sort options did not expose aria-checked.

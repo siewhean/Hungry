@@ -38,3 +38,12 @@ test("Stitch dish layout keeps taste, rating, price, and menu data dynamic", () 
     /Michelin Bib Gourmand|Halal-friendly ingredients|Grade A Hygiene|420 reviews/,
   );
 });
+
+test("the dish hero fade covers part of the photo, not a fixed 260 that swallows a 4:3 hero", () => {
+  const pager = dish.slice(dish.indexOf("<PhotoPager"), dish.indexOf("</PhotoPager>"));
+  assert.match(pager, /height: heroHeight \* 0\.45/);
+  assert.doesNotMatch(pager, /Math\.min\(260/);
+  // No photo: the placeholder is as tall as a photo hero, not a 140 pt strip.
+  assert.match(dish, /const heroHeight = Math\.min\(width \* 0\.75, 420\);/);
+  assert.doesNotMatch(dish, /Math\.min\(260, heroHeight\)/);
+});

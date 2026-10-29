@@ -142,7 +142,7 @@ test("M9/M10/M11: write button, every photo, tappable reviewer", () => {
   // Round 6: writing starts from the centre tab button; the grid marks multi-photo reviews
   // and each review's page shows every photo and links to the reviewer.
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  assert.match(tabs, /isCreateAction: true, icon: PenLine, label: "Write a review"/);
+  assert.match(tabs, /isCreateAction: true, icon: PenLine, label: "Write"/);
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   assert.match(feed, /photoCount > 1 \? \([\s\S]*?<Images/);
   const detail = read("src/app/screens/review/ReviewDetailScreen.tsx");

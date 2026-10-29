@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  Heart,
   Info,
   MapPin,
   MapPinOff,
@@ -42,6 +43,7 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { appendUniqueById } from "@/lib/services/catalog/paging";
 import { ParsedQueryChips } from "@/features/search/ParsedQueryChips";
 import { ResultsNotes, type ResultsNote } from "@/features/search/ResultsNotes";
@@ -77,7 +79,7 @@ import {
   type BrowseSortId,
   type StallRow,
 } from "@/features/search/browseGrid";
-import { getCatalogRawService } from "@/lib/services/serviceProvider";
+import { getCatalogRawService, getHungryService } from "@/lib/services/serviceProvider";
 import {
   CATALOG_OFFLINE_RELEASE_ID,
   CATALOG_QUERY_MAX_CHARS,
@@ -169,12 +171,17 @@ const RawCatalogCard = memo(function RawCatalogCard({
   itemWidth,
   mode,
   onOpen,
+  onToggleSave,
+  saved,
 }: {
   index: number;
   item: BrowseItem;
   itemWidth: number;
   mode: BrowseMode;
   onOpen: (item: BrowseItem, index: number) => void;
+  /** Dish cards only: saves the dish to Want to try. Absent when saving is switched off. */
+  onToggleSave?: (dish: CatalogRawDishCard) => void;
+  saved: boolean;
 }) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const isDish = mode === "dishes";
@@ -202,114 +209,144 @@ const RawCatalogCard = memo(function RawCatalogCard({
     </View>
   );
 
+  // The heart sits beside the card button, not inside it: a button inside a button is invalid HTML
+  // on web and breaks hydration.
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={cardAccessibilityLabel(mode, item)}
-      accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
-      onPress={() => onOpen(item, index)}
-      style={{ padding: spacing[1], width: itemWidth }}
-    >
-      <View
-        style={{
-          backgroundColor: palette.surface,
-          borderColor: palette.border,
-          borderRadius: componentRadii.card,
-          borderWidth: 1,
-          minHeight: itemWidth * 1.25,
-          overflow: "hidden",
-        }}
+    <View style={{ padding: spacing[1], width: itemWidth }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={cardAccessibilityLabel(mode, item)}
+        accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
+        onPress={() => onOpen(item, index)}
+        testID={`search-card-${mode}-${item.id}`}
       >
-        <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * 0.7 }}>
-          {imageUrl ? (
-            <AccessibleImage
-              source={{ uri: imageUrl }}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              decorative
-              fallback={placeholder}
-            />
-          ) : (
-            placeholder
-          )}
-          {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
-          {isVerified ? (
-            <View
-              style={{
-                backgroundColor: palette.surface,
-                borderRadius: radii.pill,
-                left: spacing[2],
-                paddingHorizontal: spacing[2],
-                paddingVertical: spacing[1],
-                position: "absolute",
-                top: spacing[2],
-              }}
-            >
-              <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                Verified
-              </AppText>
-            </View>
-          ) : null}
-          {outlets > 0 ? (
-            <View
-              style={{
-                backgroundColor: palette.surface,
-                borderRadius: radii.pill,
-                paddingHorizontal: spacing[2],
-                paddingVertical: spacing[1],
-                position: "absolute",
-                right: spacing[2],
-                top: spacing[2],
-              }}
-            >
-              <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-        <View style={{ gap: spacing[1], padding: spacing[2] }}>
-          <AppText numberOfLines={2} variant="bodyBold">
-            {title}
-          </AppText>
-          <AppText numberOfLines={2} tone="secondary" variant="micro">
-            {cardSubtitle(mode, item)}
-          </AppText>
-          {stallDetail ? (
-            <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
-              {stallDetail}
-            </AppText>
-          ) : null}
-          {/* The line is reserved even with no rating or menu count, so cards in a row match (SR4-19). */}
-          <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
-            {rating ? (
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                <Star color={palette.starFill} fill={palette.starFill} size={12} />
-                <AppText tone="secondary" variant="micro">
-                  {rating}
+        <View
+          style={{
+            backgroundColor: palette.surface,
+            borderColor: palette.border,
+            borderRadius: componentRadii.card,
+            borderWidth: 1,
+            minHeight: itemWidth * 1.25,
+            overflow: "hidden",
+          }}
+        >
+          <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * 0.7 }}>
+            {imageUrl ? (
+              <AccessibleImage
+                source={{ uri: imageUrl }}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+                decorative
+                fallback={placeholder}
+              />
+            ) : (
+              placeholder
+            )}
+            {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
+            {isVerified ? (
+              <View
+                style={{
+                  backgroundColor: palette.surface,
+                  borderRadius: radii.pill,
+                  left: spacing[2],
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: spacing[1],
+                  position: "absolute",
+                  top: spacing[2],
+                }}
+              >
+                <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                  Verified
                 </AppText>
               </View>
-            ) : stall && stall.menuCount > 0 ? (
-              <AppText tone="secondary" variant="micro">
-                {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
-              </AppText>
+            ) : null}
+            {outlets > 0 ? (
+              <View
+                style={{
+                  backgroundColor: palette.surface,
+                  borderRadius: radii.pill,
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: spacing[1],
+                  position: "absolute",
+                  right: spacing[2],
+                  top: spacing[2],
+                }}
+              >
+                <AppText variant="micro" style={{ color: palette.textSecondary }}>
+                  {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
+                </AppText>
+              </View>
             ) : null}
           </View>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <AppText tone="muted" variant="micro">
-              {item.distanceMeters !== undefined
-                ? formatBrowseDistance(item.distanceMeters)
-                : "Singapore"}
+          <View style={{ gap: spacing[1], padding: spacing[2] }}>
+            <AppText numberOfLines={2} variant="bodyBold">
+              {title}
             </AppText>
-            {dish?.price !== undefined ? (
-              <AppText style={{ color: palette.text }} variant="price">
-                S${dish.price.toFixed(2)}
+            <AppText numberOfLines={2} tone="secondary" variant="micro">
+              {cardSubtitle(mode, item)}
+            </AppText>
+            {stallDetail ? (
+              <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
+                {stallDetail}
               </AppText>
             ) : null}
+            {/* The line is reserved even with no rating or menu count, so cards in a row match (SR4-19). */}
+            <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
+              {rating ? (
+                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                  <Star color={palette.starFill} fill={palette.starFill} size={12} />
+                  <AppText tone="secondary" variant="micro">
+                    {rating}
+                  </AppText>
+                </View>
+              ) : stall && stall.menuCount > 0 ? (
+                <AppText tone="secondary" variant="micro">
+                  {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
+                </AppText>
+              ) : null}
+            </View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <AppText tone="muted" variant="micro">
+                {item.distanceMeters !== undefined
+                  ? formatBrowseDistance(item.distanceMeters)
+                  : "Singapore"}
+              </AppText>
+              {dish?.price !== undefined ? (
+                <AppText style={{ color: palette.text }} variant="price">
+                  S${dish.price.toFixed(2)}
+                </AppText>
+              ) : null}
+            </View>
           </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+      {dish && onToggleSave ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={saved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
+          accessibilityState={{ selected: saved }}
+          hitSlop={4}
+          onPress={() => onToggleSave(dish)}
+          style={{
+            alignItems: "center",
+            backgroundColor: palette.surface,
+            borderRadius: radii.pill,
+            height: 44,
+            justifyContent: "center",
+            position: "absolute",
+            right: spacing[1] + spacing[2],
+            top: spacing[1] + 1 + itemWidth * 0.7 - 44 - spacing[2],
+            width: 44,
+          }}
+        >
+          <Heart
+            color={saved ? palette.error : palette.textMuted}
+            fill={saved ? palette.error : "transparent"}
+            size={20}
+          />
+        </Pressable>
+      ) : null}
+    </View>
   );
 });
 
@@ -341,9 +378,14 @@ function RawCatalogBrowseGrid({
   const permission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const grantLocation = useLocationStore((state) => state.grantLocation);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
+  const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
+  const profileId = useProfileStore((state) => state.profile.id);
+  const showToast = useUIStore((state) => state.showToast);
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const [mode, setMode] = useState(initialMode);
   const [searchText, setSearchText] = useState(initialSearchQuery);
@@ -464,8 +506,40 @@ function RawCatalogBrowseGrid({
   // A picked area wins over GPS; without either the default point is used and disclosed below.
   const { coordinate: effectiveCoordinate, isApproximate: isUsingDefaultLocation } =
     getEffectiveLocation({ permission, currentLocation, manualCoordinate });
-  const latitude = roundCoordinate(effectiveCoordinate.latitude);
-  const longitude = roundCoordinate(effectiveCoordinate.longitude);
+  const liveLatitude = roundCoordinate(effectiveCoordinate.latitude);
+  const liveLongitude = roundCoordinate(effectiveCoordinate.longitude);
+  // The point the list was searched from. A GPS refresh while the diner scrolls does not reload
+  // the list; a new search does, and the first real fix replaces the built-in default point.
+  // Otherwise the diner is offered "Update for new location" (SR4-26).
+  const locationScope = JSON.stringify([
+    mode,
+    query,
+    filters,
+    foodTypes,
+    place?.id,
+    requestParsedKey,
+    sort,
+    widenRadius,
+  ]);
+  const [snapshot, setSnapshot] = useState({
+    scope: locationScope,
+    latitude: liveLatitude,
+    longitude: liveLongitude,
+    approximate: isUsingDefaultLocation,
+  });
+  if (snapshot.scope !== locationScope || (snapshot.approximate && !isUsingDefaultLocation)) {
+    setSnapshot({
+      scope: locationScope,
+      latitude: liveLatitude,
+      longitude: liveLongitude,
+      approximate: isUsingDefaultLocation,
+    });
+  }
+  const latitude = snapshot.latitude;
+  const longitude = snapshot.longitude;
+  const locationMoved =
+    !snapshot.approximate &&
+    (snapshot.latitude !== liveLatitude || snapshot.longitude !== liveLongitude);
   const coordinate = useMemo(() => ({ latitude, longitude }), [latitude, longitude]);
 
   const requestKey = useMemo(
@@ -705,10 +779,12 @@ function RawCatalogBrowseGrid({
 
   // A query that arrives with the screen (Search home, a link, a Discover chip) is a submitted one.
   // Discover chips already logged their taste signal and are not saved as recent searches.
-  const initialQueryRecordedRef = useRef(false);
+  // Kept per query text: a new search arriving on a screen that is already open (the Map bar, a
+  // link) is recorded too, not only the first one of the mount (SR4-30).
+  const initialQueryRecordedRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (initialQueryRecordedRef.current) return;
-    initialQueryRecordedRef.current = true;
+    if (initialQueryRecordedRef.current === initialSearchQuery) return;
+    initialQueryRecordedRef.current = initialSearchQuery;
     const fromDiscoverChip = initialSource === "discover_chip";
     recordCommittedQuery(initialSearchQuery, {
       recordTaste: isAuthenticated && !fromDiscoverChip,
@@ -1009,6 +1085,33 @@ function RawCatalogBrowseGrid({
     [navigation, recordTasteInteraction],
   );
 
+  // The heart on a dish card: one optimistic toggle in the profile store (a single upsert on the
+  // server, which ignores a second tap while the first is pending).
+  const savedDishIds = useMemo(() => new Set(favouriteDishIds), [favouriteDishIds]);
+  const handleToggleSave = useCallback(
+    async (dish: CatalogRawDishCard) => {
+      const result = await toggleFavourite(dish, { surface: "search" });
+      if (result.status === "failed") {
+        // A tap while a toggle is pending changes nothing: no toast for it.
+        if (result.reason !== "pending") showToast({ message: result.message, tone: "error" });
+        return;
+      }
+      if (result.status === "saved") {
+        void getHungryService().discovery.recordMerchantActionEvent({
+          eventType: "save",
+          venueId: dish.venueId,
+          dishId: dish.id,
+          userId: profileId,
+        });
+      }
+      showToast({
+        message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
+        tone: "success",
+      });
+    },
+    [profileId, showToast, toggleFavourite],
+  );
+
   const renderItem = useCallback(
     ({ item, index }: { item: BrowseItem; index: number }) => (
       <RawCatalogCard
@@ -1017,9 +1120,11 @@ function RawCatalogBrowseGrid({
         itemWidth={itemWidth}
         mode={mode}
         onOpen={handleOpen}
+        onToggleSave={FEATURE_FLAGS.favouritesEnabled ? handleToggleSave : undefined}
+        saved={savedDishIds.has(item.id)}
       />
     ),
-    [handleOpen, itemWidth, mode],
+    [handleOpen, handleToggleSave, itemWidth, mode, savedDishIds],
   );
 
   // Chain outlets and duplicate records of one stall show as a single card.
@@ -1060,10 +1165,19 @@ function RawCatalogBrowseGrid({
       id: "location",
       text: "Location is off, so distances are from central Singapore.",
       action: {
-        label: "Choose your area",
+        label: "Turn on location",
         accessibilityLabel:
-          "Location is off, so distances are from central Singapore. Choose your area",
-        onPress: () => navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" }),
+          "Location is off, so distances are from central Singapore. Turn on location",
+        onPress: () => {
+          void grantLocation().then((granted) => {
+            if (!granted) {
+              showToast({
+                message: "Location access is off. Turn it on in Settings to use your location.",
+                tone: "info",
+              });
+            }
+          });
+        },
       },
     });
   }
@@ -1196,6 +1310,29 @@ function RawCatalogBrowseGrid({
         ))}
       </ScrollView>
       <ResultsNotes notes={notes} />
+      {locationMoved ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Update for new location"
+          onPress={() =>
+            setSnapshot({
+              scope: locationScope,
+              latitude: liveLatitude,
+              longitude: liveLongitude,
+              approximate: false,
+            })
+          }
+          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+        >
+          <MapPin color={palette.orange} size={16} />
+          <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+            {"You've moved, so distances may have changed. "}
+            <AppText variant="micro" style={{ color: palette.orange }}>
+              Update for new location
+            </AppText>
+          </AppText>
+        </Pressable>
+      ) : null}
       <View
         style={{
           alignItems: "center",
@@ -1499,6 +1636,7 @@ function RawCatalogBrowseGrid({
                   key={option.id}
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
+                  aria-checked={selected}
                   onPress={() => handleSelectSort(option.id)}
                   style={{
                     alignItems: "center",

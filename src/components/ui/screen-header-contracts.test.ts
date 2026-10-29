@@ -272,7 +272,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /\{card\.venue\.name\}[\s\S]*flexShrink: 0[\s\S]*\{card\.venue\.unitNumber\}/,
+    /\{card\.venue\.name\}[\s\S]*flexShrink: 1[\s\S]*stallBuildingLabel\(card\.venue\), card\.venue\.unitNumber/,
   );
   assert.doesNotMatch(discover, /secondaryProducts\.map/);
   assert.match(discover, /minHeight: tallCardHeight/);
@@ -589,6 +589,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /Trending \$\{trendingAreaPhrase\}/);
   assert.match(discover, /Stalls \$\{discoverAreaPhrase\}/);
   assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
+  assert.match(discover, /const DISCOVER_ISLAND_RADIUS_METERS = 30_000/);
   assert.match(
     discover,
     /const isSupabaseDataSource = getServiceProvider\(\)\.mode === "supabase"/,
@@ -605,7 +606,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /setIsSupabaseDiscoveryFeedLoading\(false\)/);
   assert.match(
     discover,
-    /const discoveryService = getHungryService\(\)\.discovery[\s\S]*discoveryService\.countVenuesInArea\([\s\S]*discoverGeoCellLatitude,[\s\S]*discoverGeoCellLongitude,[\s\S]*DISCOVER_AREA_RADIUS_METERS,[\s\S]*discoverLocationLabel/,
+    /const discoveryService = getHungryService\(\)\.discovery[\s\S]*discoveryService\.countVenuesInArea\([\s\S]*discoverGeoCellLatitude,[\s\S]*discoverGeoCellLongitude,[\s\S]*discoverRadiusMeters,[\s\S]*discoverLocationLabel/,
   );
   assert.match(
     discover,

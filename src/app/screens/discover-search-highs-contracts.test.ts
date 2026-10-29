@@ -23,14 +23,17 @@ test("Discover feed falls back to the radius search and ranks by computed distan
   assert.match(smoke, /^rollback;/m);
 });
 
-test("Discover asks for an area instead of asserting the default location", () => {
+test("Discover follows the phone's location and offers to turn it on when it is off", () => {
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   // No OS permission prompt on mount; only the "Use current location" press asks.
   assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
   assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
-  // Owner decision (round 3): always an area, never just "Singapore"; the area is in orange.
-  assert.doesNotMatch(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
+  // Owner decision (2026-10-29): no area picker. The area follows the phone; with location
+  // off the header says "Singapore", the feed reads island-wide, and a banner offers
+  // "Turn on location".
+  assert.match(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
+  assert.match(screen, /DISCOVER_ISLAND_RADIUS_METERS/);
   assert.match(
     screen,
     /getNearestSingaporeArea\(discoverLocationLatitude, discoverLocationLongitude\)/,
@@ -40,10 +43,8 @@ test("Discover asks for an area instead of asserting the default location", () =
     screen,
     /style=\{\{ color: themeTints\.text \}\} numberOfLines=\{1\}>\s*\{discoverHeaderLabel\}/,
   );
-  assert.match(
-    screen,
-    /navigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
-  );
+  assert.match(screen, /accessibilityLabel="Turn on location"/);
+  assert.doesNotMatch(screen, /ManualLocationPicker|handleChangeArea/);
 });
 
 test("Decide for me picks and logs once, on the result screen, at the effective location", () => {

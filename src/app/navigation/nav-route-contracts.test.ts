@@ -204,10 +204,8 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
   assert.doesNotMatch(types, /DishDetailStandard/);
   assert.doesNotMatch(rootNavigator, /"SettingsV2"/);
   assert.match(favourites, /rootNavigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
-  assert.match(
-    settings,
-    /rootNavigation\.navigate\("OnboardingStack", \{\s*screen: "ManualLocationPicker",\s*params: \{ mode: "settings" \},\s*\}\)/,
-  );
+  // The area follows the phone's location: Settings no longer opens the area search.
+  assert.doesNotMatch(settings, /screen: "ManualLocationPicker"/);
   assert.match(merchantSettings, /CommonActions\.reset/);
   assert.match(
     merchantSettings,
