@@ -14,11 +14,16 @@ declare
   v_top_old constant text := E'where d.venue_id = cv.id\n        and d.price > 0\n';
   v_order constant text := E'        coalesce(''featured'' = any(d.availability_flags), false) desc,\n        d.must_order desc,\n        d.is_featured desc,';
   v_order_old constant text := E'        d.must_order desc,\n        d.is_featured desc,';
+  v_sold constant text := E'      order by\n        exists (\n          select 1\n          from unnest(coalesce(d.availability_flags, ''{}''::text[])) f\n          where public.merchant_normalize_availability_flag(f) = ''sold_out''\n        ) asc,\n        exists (\n          select 1\n          from dish_images di';
+  v_sold_old constant text := E'      order by\n        exists (\n          select 1\n          from dish_images di';
 begin
   if position('d.archived_at is null' in v_def) = 0 then
     return;
   end if;
-  execute replace(replace(replace(v_def, v_menu, v_menu_old), v_top, v_top_old), v_order, v_order_old);
+  execute replace(
+    replace(replace(replace(v_def, v_menu, v_menu_old), v_top, v_top_old), v_order, v_order_old),
+    v_sold, v_sold_old
+  );
 end;
 $$;
 

@@ -132,14 +132,14 @@ test("R4-7: coming back to the inbox shows a review that arrived meanwhile and k
 
 // ─── R4-2: Stall's pick on the diner stall page ─────────────────────────────
 
-test("R4-2: a Featured dish leads the diner menu with a Stall's pick badge", async () => {
+async function openStallWithFeatured(flags: string[]) {
   await enterScenario("user");
   const STALL = "venue-tian-tian";
   const dishes = getDataRepository().listDishesByVenue(STALL);
   assert.ok(dishes.length >= 2, "mock stall has a menu");
   // The alphabetically last dish is the one the stall features.
   const sorted = [...dishes].sort((a, b) => a.name.localeCompare(b.name));
-  const pick = { ...sorted[sorted.length - 1], availabilityFlags: ["featured"] };
+  const pick = { ...sorted[sorted.length - 1], availabilityFlags: flags };
   const rest = dishes.filter((dish) => dish.id !== pick.id);
   const base = getServiceProvider();
   const service = {
@@ -157,6 +157,27 @@ test("R4-2: a Featured dish leads the diner menu with a Stall's pick badge", asy
     name: "StallDetail",
     params: { venueId: STALL },
   });
+  return { view, pick, rest };
+}
+
+const menuLabels = () =>
+  (Array.from(document.body.querySelectorAll("[aria-label]")) as HTMLElement[])
+    .map((el) => el.getAttribute("aria-label") ?? "")
+    .filter((label) => /, /.test(label));
+
+test("R4-2: a Featured dish that is sold out loses its place at the top and its badge", async () => {
+  const baseline = await openStallWithFeatured([]);
+  const baselineAt = menuLabels().findIndex((label) => label.startsWith(`${baseline.pick.name},`));
+  await cleanup();
+
+  const { view, pick } = await openStallWithFeatured(["featured", "sold_out"]);
+  assert.doesNotMatch(view.text(), /STALL'S PICK/);
+  const at = menuLabels().findIndex((label) => label.startsWith(`${pick.name},`));
+  assert.ok(at >= 0 && at === baselineAt, "it sorts exactly where an ordinary dish would");
+});
+
+test("R4-2: a Featured dish leads the diner menu with a Stall's pick badge", async () => {
+  const { view, pick, rest } = await openStallWithFeatured(["featured"]);
   assert.match(view.text(), /STALL'S PICK/);
   // Menu cards are buttons labelled "<name>, ..." in page order.
   const labels = (Array.from(document.body.querySelectorAll("[aria-label]")) as HTMLElement[])

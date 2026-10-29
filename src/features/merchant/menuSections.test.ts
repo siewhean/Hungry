@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getDishSection,
   isFeatured,
+  isStallsPick,
   isSoldOut,
   listMenuSections,
   withDishSection,
@@ -34,4 +35,10 @@ test("isFeatured reads the featured flag however it was typed", () => {
   assert.equal(isFeatured(["Featured"]), true);
   assert.equal(isFeatured(["sold_out"]), false);
   assert.equal(isFeatured(undefined), false);
+});
+
+test("isStallsPick is a featured dish that can still be ordered", () => {
+  assert.equal(isStallsPick(["featured"]), true);
+  assert.equal(isStallsPick(["featured", "sold_out"]), false);
+  assert.equal(isStallsPick(["sold_out"]), false);
 });

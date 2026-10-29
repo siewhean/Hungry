@@ -7648,12 +7648,16 @@ export const supabaseService: HungryService = {
         client.rpc("get_merchant_insight_facts", { p_outlet_id: resolvedOutletId }),
         this.getAnalytics(resolvedOutletId, "7d"),
       ]);
-      if (factsResult.error) throw factsResult.error;
+      // An app build can run before the migration that adds the facts RPC (42883 / PGRST202):
+      // the tips that come from the analytics and the hours still show, the rest wait for it.
+      const factsMissing =
+        factsResult.error?.code === "42883" || factsResult.error?.code === "PGRST202";
+      if (factsResult.error && !factsMissing) throw factsResult.error;
       return [
         buildWeeklySummaryInsight(resolvedOutletId, analytics),
         ...buildMerchantInsights({
           outletId: resolvedOutletId,
-          facts: parseMerchantInsightFacts(factsResult.data),
+          facts: parseMerchantInsightFacts(factsMissing ? null : factsResult.data),
           analytics,
           openingSchedule: toOpeningSchedule(outlet.opening_schedule),
         }),

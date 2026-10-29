@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { AccessibleImage, AppText } from "@/components/ui";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { formatDishPrice } from "@/features/detail/dishPrice";
-import { isFeatured, isSoldOut } from "@/features/merchant/menuSections";
+import { isSoldOut, isStallsPick } from "@/features/merchant/menuSections";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
@@ -40,7 +40,7 @@ export function menuDishAccessibilityLabel(dish: DishDetail) {
   const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
   return [
     dish.name,
-    isFeatured(dish.availabilityFlags) ? "stall's pick" : null,
+    isStallsPick(dish.availabilityFlags) ? "stall's pick" : null,
     dish.mustOrder ? "must order" : null,
     status,
   ]
@@ -66,7 +66,7 @@ export function StallMenuDishCard({
   const { palette, radii, spacing } = useHungryTheme();
   // One still photo per tile: no per-tile timers or measuring, and a swipe never fights the tap.
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
-  const featured = isFeatured(dish.availabilityFlags);
+  const featured = isStallsPick(dish.availabilityFlags);
   const imageStyle = {
     width: "100%" as const,
     height: width * 0.7,
@@ -166,7 +166,7 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
   const soldOut = isSoldOut(dish.availabilityFlags);
-  const featured = isFeatured(dish.availabilityFlags);
+  const featured = isStallsPick(dish.availabilityFlags);
 
   return (
     <Pressable
@@ -199,12 +199,12 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
         {dish.mustOrder || featured || dish.reviewCount > 0 ? (
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
             {featured ? (
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+              <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
                 {"STALL'S PICK"}
               </AppText>
             ) : null}
             {dish.mustOrder ? (
-              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+              <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
                 MUST ORDER
               </AppText>
             ) : null}

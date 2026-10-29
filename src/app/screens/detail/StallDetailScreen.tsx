@@ -101,7 +101,7 @@ import type {
 } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
-import { isFeatured, isSoldOut } from "@/features/merchant/menuSections";
+import { isSoldOut, isStallsPick } from "@/features/merchant/menuSections";
 import {
   ALL_MENU_CATEGORY,
   compareMenuCategories,
@@ -757,11 +757,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
   }, [menuCategoryByDishId]);
   // The server returns the menu in search-rank order, which reads as random on a menu:
   // group by category (the chip order), then A-Z within it. Dishes the stall features go
-  // first (R4-2), so "Stall's pick" is what the diner sees at the top of the menu.
+  // first (R4-2) unless they are sold out, so "Stall's pick" is something the diner can order.
   const orderedMenuDishes = useMemo(() => {
     return [...dishes].sort(
       (left, right) =>
-        Number(isFeatured(right.availabilityFlags)) - Number(isFeatured(left.availabilityFlags)) ||
+        Number(isStallsPick(right.availabilityFlags)) -
+          Number(isStallsPick(left.availabilityFlags)) ||
         compareMenuCategories(
           menuCategoryByDishId[left.id] ?? "",
           menuCategoryByDishId[right.id] ?? "",

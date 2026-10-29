@@ -94,3 +94,15 @@ test("R4-3: a failed facts read rejects instead of showing an empty page", async
   fake.rpc.get_merchant_insight_facts = () => ({ data: null, error: new Error("denied") });
   await assert.rejects(() => service.merchant.getAIInsights(OUTLET), /denied/);
 });
+
+test("R4-3: before the facts migration is on the database the analytics tips still show", async () => {
+  setUp({ opening_schedule: { weekly: { mon: [{ open: "08:00", close: "15:00" }] } } }, [20]);
+  fake.rpc.get_merchant_insight_facts = () => ({
+    data: null,
+    error: Object.assign(new Error("function does not exist"), { code: "42883" }),
+  });
+  const insights = await service.merchant.getAIInsights(OUTLET);
+  assert.ok(insights.some((insight) => insight.id.startsWith("weekly-")));
+  assert.ok(insights.some((insight) => insight.id.startsWith("hours-peak-20")));
+  assert.ok(!insights.some((insight) => insight.id.startsWith("unreplied-")));
+});

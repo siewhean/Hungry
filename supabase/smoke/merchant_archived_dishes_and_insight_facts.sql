@@ -37,7 +37,8 @@ insert into merchant_verifications (outlet_id, status, verified_at)
 values ('00000000-0000-0071-d000-000000000001', 'verified', now());
 
 -- smoke-ar-plain is a must-order dish and would win the top dish on its own; smoke-ar-pick is
--- Featured and must beat it; smoke-ar-gone is archived and must never be named.
+-- Featured and must beat it; smoke-ar-soldfeat is Featured and must-order but sold out, so it
+-- must never be the top dish; smoke-ar-gone is archived and must never be named.
 insert into dishes (
   id, venue_id, building_id, name, price, must_order, availability_flags, archived_at,
   menu_approved_for_display, menu_rights_status, media_approved_for_display, media_rights_status
@@ -45,7 +46,9 @@ insert into dishes (
 values
   ('smoke-ar-plain', 'smoke-ar-venue', 'smoke-ar-building', 'Plain Noodles', 4, true, '{}', null,
    true, 'merchant_owned', true, 'merchant_owned'),
-  ('smoke-ar-pick', 'smoke-ar-venue', 'smoke-ar-building', 'Pick Laksa', 5, false, '{featured,sold_out}', null,
+  ('smoke-ar-pick', 'smoke-ar-venue', 'smoke-ar-building', 'Pick Laksa', 5, false, '{featured}', null,
+   true, 'merchant_owned', true, 'merchant_owned'),
+  ('smoke-ar-soldfeat', 'smoke-ar-venue', 'smoke-ar-building', 'Sold Featured', 5, true, '{featured,sold_out}', null,
    true, 'merchant_owned', true, 'merchant_owned'),
   ('smoke-ar-gone', 'smoke-ar-venue', 'smoke-ar-building', 'Removed Rice', 6, true, '{featured}', now(),
    true, 'merchant_owned', true, 'merchant_owned'),
@@ -57,8 +60,8 @@ select
   '00000000-0000-0071-e000-000000000001', '00000000-0000-0071-b000-000000000002',
   'smoke-ar-pick', 'smoke-ar-venue', 'Diner A', 4, 'Good', now() - interval '1 day', null;
 
--- 1. The feed: featured beats must-order, archived is never the top dish, a stall with only a
--- removed dish has no top dish.
+-- 1. The feed: featured beats must-order, a sold-out or archived dish is never the top dish, a
+-- stall with only a removed dish has no top dish.
 do $$
 declare
   v_top text;
@@ -69,7 +72,7 @@ begin
   from public.get_discovery_feed_by_location(null, 1.4601, 103.6101, 2000, 100) feed
   where feed.venue_id = 'smoke-ar-venue';
   if v_top is distinct from 'smoke-ar-pick' then
-    raise exception 'the featured dish should be the top dish, got %', v_top;
+    raise exception 'the featured, available dish should be the top dish, got %', v_top;
   end if;
 
   select count(*), max(feed.top_dish_id) into v_empty_rows, v_empty_top
@@ -106,15 +109,15 @@ declare
   v_facts jsonb;
 begin
   v_summary := public.get_merchant_dashboard_summary('00000000-0000-0071-d000-000000000001');
-  if (v_summary->>'menuCount')::integer <> 2 or (v_summary->>'dishesWithoutImages')::integer <> 2 then
+  if (v_summary->>'menuCount')::integer <> 3 or (v_summary->>'dishesWithoutImages')::integer <> 3 then
     raise exception 'dashboard summary counted an archived dish: %', v_summary;
   end if;
 
   v_facts := public.get_merchant_insight_facts('00000000-0000-0071-d000-000000000001');
-  if (v_facts->>'dishCount')::integer <> 2
-     or (v_facts->>'dishesWithoutPhoto')::integer <> 2
+  if (v_facts->>'dishCount')::integer <> 3
+     or (v_facts->>'dishesWithoutPhoto')::integer <> 3
      or (v_facts->>'soldOutCount')::integer <> 1
-     or v_facts->'soldOutNames' <> '["Pick Laksa"]'::jsonb
+     or v_facts->'soldOutNames' <> '["Sold Featured"]'::jsonb
      or (v_facts->>'unrepliedReviews')::integer <> 1
      or (v_facts->>'reviewsLast7Days')::integer <> 1 then
     raise exception 'unexpected insight facts: %', v_facts;

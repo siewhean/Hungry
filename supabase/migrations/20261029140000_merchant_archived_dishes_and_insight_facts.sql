@@ -4,9 +4,9 @@
 -- 1. A dish the merchant removed (dishes.archived_at, 20261021090000) stayed reachable: the Home
 --    feed still counted it for has_menu and could name it as the stall's top dish, and
 --    get_dish_detail still returned it to anyone holding the link. Both now skip archived dishes.
--- 2. The feed's top dish prefers a dish the merchant marked Featured (availability flag
---    "featured"), after the photo checks and before must_order, so "Stall's pick" and the Home
---    card agree.
+-- 2. The feed's top dish never names a dish that is sold out right now, and prefers a dish the
+--    merchant marked Featured (availability flag "featured"), after the photo checks and before
+--    must_order, so "Stall's pick" and the Home card agree.
 -- 3. get_merchant_dashboard_summary counted archived dishes in menuCount and dishesWithoutImages.
 -- 4. get_merchant_insight_facts(outlet) returns the counts behind the Insights screen in one
 --    call, so the screen builds its tips from real data instead of a single line.
@@ -28,6 +28,8 @@ declare
   v_repl_top constant text := E'where d.venue_id = cv.id\n        and d.archived_at is null\n        and d.price > 0\n';
   v_find_order constant text := E'        d.must_order desc,\n        d.is_featured desc,';
   v_repl_order constant text := E'        coalesce(''featured'' = any(d.availability_flags), false) desc,\n        d.must_order desc,\n        d.is_featured desc,';
+  v_find_sold constant text := E'      order by\n        exists (\n          select 1\n          from dish_images di';
+  v_repl_sold constant text := E'      order by\n        exists (\n          select 1\n          from unnest(coalesce(d.availability_flags, ''{}''::text[])) f\n          where public.merchant_normalize_availability_flag(f) = ''sold_out''\n        ) asc,\n        exists (\n          select 1\n          from dish_images di';
   v_hits integer;
 begin
   if position('d.archived_at is null' in v_def) > 0 then
@@ -45,7 +47,14 @@ begin
   if v_hits <> 1 then
     raise exception 'get_discovery_feed_by_location: expected 1 top dish ordering, found %', v_hits;
   end if;
-  execute replace(replace(replace(v_def, v_find_menu, v_repl_menu), v_find_top, v_repl_top), v_find_order, v_repl_order);
+  v_hits := (length(v_def) - length(replace(v_def, v_find_sold, ''))) / length(v_find_sold);
+  if v_hits <> 1 then
+    raise exception 'get_discovery_feed_by_location: expected 1 top dish photo ordering, found %', v_hits;
+  end if;
+  execute replace(
+    replace(replace(replace(v_def, v_find_menu, v_repl_menu), v_find_top, v_repl_top), v_find_order, v_repl_order),
+    v_find_sold, v_repl_sold
+  );
 end;
 $$;
 
