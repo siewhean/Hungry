@@ -28,6 +28,7 @@ export {
   BROWSE_FILTER_IDS,
   BUDGET_FILTER,
   BUDGET_MAX_PRICE,
+  CUISINE_FILTERS,
   isBrowseFilterId,
   parseFilterIds,
   toggleFilterId,
@@ -92,11 +93,16 @@ interface BrowseRequestInput {
   buildingId?: string;
   /** Typed filters ("halal laksa under $5"): dietary flags and a price cap on top of the chips. */
   parsed?: { dietary: readonly string[]; maxPrice?: number };
+  /** Food types picked from the release's most common ones; with the Noodles and Rice chips, any may match. */
+  foodTypes?: readonly string[];
 }
 
 export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageRequest {
   const query = input.query.trim();
-  const keywords = input.filters.flatMap((id) => FOOD_KEYWORDS[id] ?? []);
+  const keywords = [
+    ...input.filters.flatMap((id) => FOOD_KEYWORDS[id] ?? []),
+    ...(input.foodTypes ?? []),
+  ];
   const dietaryFlags = new Set<string>(input.parsed?.dietary ?? []);
   if (input.filters.includes("Halal")) dietaryFlags.add("halal");
   // The Under S$6 chip and a typed cap both apply: the lower one wins.
@@ -247,10 +253,13 @@ export function describeResultsSummary(input: {
   count: number;
   mode: BrowseMode;
   hasQuery: boolean;
+  /** The text searched for, echoed back: "1 dish for “laksa”". */
+  query?: string;
   placeName?: string;
   widened: boolean;
 }): string {
-  const count = describeMatchCount(input.count, input.mode);
+  const found = describeMatchCount(input.count, input.mode);
+  const count = input.hasQuery && input.query ? `${found} for “${input.query}”` : found;
   if (input.placeName !== undefined) return `${count} at ${input.placeName}`;
   if (input.hasQuery) return count;
   return `${count}${input.widened ? " in Singapore" : " within 3 km"}`;

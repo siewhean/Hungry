@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Platform,
   Pressable,
+  ScrollView,
   Share,
   StyleSheet,
   TextInput,
@@ -13,7 +14,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { BottomSheetModal } from "@gorhom/bottom-sheet";
+import { BottomSheetScrollView, type BottomSheetModal } from "@gorhom/bottom-sheet";
 import {
   ArrowLeft,
   Check,
@@ -22,6 +23,7 @@ import {
   MapPin,
   MapPinOff,
   Share2,
+  SlidersHorizontal,
   Star,
   X,
 } from "lucide-react-native";
@@ -34,14 +36,15 @@ import {
   BottomSheet,
   Button,
   Chip,
+  ChipGroup,
   EmptyState,
-  FilterChipRail,
   IconButton,
   Screen,
   Skeleton,
 } from "@/components/ui";
 import { appendUniqueById } from "@/lib/services/catalog/paging";
 import { ParsedQueryChips } from "@/features/search/ParsedQueryChips";
+import { ResultsNotes, type ResultsNote } from "@/features/search/ResultsNotes";
 import { parseSearchQuery, type ParsedQueryPart } from "@/features/search/queryParser";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
@@ -49,6 +52,7 @@ import {
   BROWSE_ALL_FILTER,
   BROWSE_FILTER_IDS,
   BROWSE_SORT_OPTIONS,
+  CUISINE_FILTERS,
   SEARCH_SHARE_LINKS_LIVE,
   buildBrowseRequest,
   buildSearchShareUrl,
@@ -110,10 +114,16 @@ function newSearchId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-const RAW_BROWSE_FILTER_OPTIONS = [BROWSE_ALL_FILTER, ...BROWSE_FILTER_IDS].map((filter) => ({
-  id: filter,
-  label: filter,
-}));
+// Japanese and Western stay valid in links but are not offered; the food types below the chips come
+// from the release itself (SR4-24).
+const RAW_BROWSE_FILTER_OPTIONS = [BROWSE_ALL_FILTER, ...BROWSE_FILTER_IDS]
+  .filter((filter) => !CUISINE_FILTERS.has(filter))
+  .map((filter) => ({
+    id: filter,
+    label: filter,
+  }));
+/** How many of the release's most common food types the Filters sheet offers. */
+const FOOD_TYPE_CHIP_COUNT = 8;
 /** A rate-limited search can be retried after this long (the limiter counts per minute). */
 const RATE_LIMIT_RETRY_MS = 10_000;
 /** "Search all Singapore" when the 3 km browse radius is empty: wide enough to cover the island. */
@@ -188,6 +198,13 @@ const RawCatalogCard = memo(function RawCatalogCard({
   const outlets = stall?.extraOutlets ?? 0;
   const stallDetail = stall ? stallCardDetail(stall) : undefined;
   const isVerified = item.verificationStatus === "approved";
+  // Most catalog rows have no cleared photo, and a photo can fail to load; either way show the
+  // stall's initials, not a grey caption.
+  const placeholder = (
+    <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+      <StallLogoMark logoUrl={stall?.logoUrl} name={stallName} size={Math.round(itemWidth * 0.3)} />
+    </View>
+  );
 
   return (
     <Pressable
@@ -214,16 +231,10 @@ const RawCatalogCard = memo(function RawCatalogCard({
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               decorative
+              fallback={placeholder}
             />
           ) : (
-            // Most catalog rows have no cleared photo; show the stall's initials, not a grey caption.
-            <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-              <StallLogoMark
-                logoUrl={stall?.logoUrl}
-                name={stallName}
-                size={Math.round(itemWidth * 0.3)}
-              />
-            </View>
+            placeholder
           )}
           {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
           {isVerified ? (
@@ -273,18 +284,21 @@ const RawCatalogCard = memo(function RawCatalogCard({
               {stallDetail}
             </AppText>
           ) : null}
-          {rating ? (
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star color={palette.starFill} fill={palette.starFill} size={12} />
+          {/* The line is reserved even with no rating or menu count, so cards in a row match (SR4-19). */}
+          <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
+            {rating ? (
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                <Star color={palette.starFill} fill={palette.starFill} size={12} />
+                <AppText tone="secondary" variant="micro">
+                  {rating}
+                </AppText>
+              </View>
+            ) : stall && stall.menuCount > 0 ? (
               <AppText tone="secondary" variant="micro">
-                {rating}
+                {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
               </AppText>
-            </View>
-          ) : stall && stall.menuCount > 0 ? (
-            <AppText tone="secondary" variant="micro">
-              {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
-            </AppText>
-          ) : null}
+            ) : null}
+          </View>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             <AppText tone="muted" variant="micro">
               {item.distanceMeters !== undefined
@@ -302,6 +316,9 @@ const RawCatalogCard = memo(function RawCatalogCard({
     </Pressable>
   );
 });
+
+/** One line of micro text; the rating line keeps this height when a card has nothing to show. */
+const RESERVED_LINE_HEIGHT = 16;
 
 const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
 
@@ -345,6 +362,10 @@ function RawCatalogBrowseGrid({
   const [filters, setFilters] = useState<readonly BrowseFilterId[]>(() =>
     parseFilterIds(initialFilter),
   );
+  // Food types picked from the release's most common ones, on top of the chips.
+  const [foodTypes, setFoodTypes] = useState<readonly string[]>([]);
+  const [foodTypeOptions, setFoodTypeOptions] = useState<readonly string[]>([]);
+  const filterCount = filters.length + foodTypes.length;
   const [sort, setSort] = useState<BrowseSortId>("relevance");
   // "Search all Singapore" applies only to the query, filters and place it was tapped for.
   const [widenedScope, setWidenedScope] = useState<string | null>(null);
@@ -370,7 +391,7 @@ function RawCatalogBrowseGrid({
   const rawSearchInputRef = useRef<TextInput | null>(null);
   const releaseIdRef = useRef<string | undefined>(undefined);
   const listRef = useRef<FlashListRef<BrowseItem>>(null);
-  const sortSheetRef = useRef<BottomSheetModal>(null);
+  const filterSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedQueryRef = useRef("");
   const loggedZeroKeyRef = useRef("");
   // One id per counted search, carried on its result-opened and zero-results events.
@@ -413,7 +434,7 @@ function RawCatalogBrowseGrid({
   // text finds the dish. When the parsed reading has no results, the whole text is searched with no
   // parsed filters; the chips stay, and removing one starts over.
   const [relaxedScope, setRelaxedScope] = useState<string | undefined>();
-  const relaxScope = JSON.stringify([mode, typedQuery, filters, place?.id, parsedKey]);
+  const relaxScope = JSON.stringify([mode, typedQuery, filters, foodTypes, place?.id, parsedKey]);
   const relaxed = relaxedScope === relaxScope;
   const query = relaxed ? typedQuery : parsed.text;
   const requestParsedKey = relaxed ? `${parsedKey}!` : parsedKey;
@@ -426,7 +447,7 @@ function RawCatalogBrowseGrid({
     [requestParsedKey],
   );
   const tooShort = isTooShortQuery(query);
-  const widenScope = JSON.stringify([mode, query, filters, place?.id, requestParsedKey]);
+  const widenScope = JSON.stringify([mode, query, filters, foodTypes, place?.id, requestParsedKey]);
   const widenRadius = widenedScope === widenScope;
 
   // A link or a new navigation with other params replaces what the grid shows.
@@ -456,6 +477,7 @@ function RawCatalogBrowseGrid({
         mode,
         query,
         filters,
+        foodTypes,
         sort,
         latitude,
         longitude,
@@ -463,7 +485,18 @@ function RawCatalogBrowseGrid({
         place?.id,
         requestParsedKey,
       ]),
-    [filters, latitude, longitude, mode, requestParsedKey, place?.id, query, sort, widenRadius],
+    [
+      filters,
+      foodTypes,
+      latitude,
+      longitude,
+      mode,
+      requestParsedKey,
+      place?.id,
+      query,
+      sort,
+      widenRadius,
+    ],
   );
 
   const loadPage = useCallback(
@@ -486,6 +519,7 @@ function RawCatalogBrowseGrid({
           releaseId: releaseIdRef.current,
           buildingId: place?.id,
           parsed: parsedFilters,
+          foodTypes,
         });
         if (widenRadius && !query && !place) request.radiusMeters = WIDE_RADIUS_METERS;
         const page =
@@ -559,6 +593,7 @@ function RawCatalogBrowseGrid({
             releaseId: releaseIdRef.current,
             buildingId: place?.id,
             parsed: parsedFilters,
+            foodTypes,
           });
           recordCatalogDiagnostic({
             operation:
@@ -594,6 +629,7 @@ function RawCatalogBrowseGrid({
       isAuthenticated,
       mode,
       parsedFilters,
+      foodTypes,
       place,
       query,
       requestKey,
@@ -802,7 +838,7 @@ function RawCatalogBrowseGrid({
   useEffect(() => {
     if (
       !hasNoResults ||
-      filters.length > 0 ||
+      filterCount > 0 ||
       parsed.parts.length > 0 ||
       query.length < CATALOG_QUERY_MIN_CHARS
     ) {
@@ -823,10 +859,58 @@ function RawCatalogBrowseGrid({
     return () => {
       active = false;
     };
-  }, [filters.length, hasNoResults, parsed.parts.length, query, service]);
+  }, [filterCount, hasNoResults, parsed.parts.length, query, service]);
+
+  // Android reads the hint's live region; iOS needs it announced.
+  useEffect(() => {
+    if (tooShort) {
+      AccessibilityInfo.announceForAccessibility(
+        `Type at least ${CATALOG_QUERY_MIN_CHARS} letters to search.`,
+      );
+    }
+  }, [tooShort]);
+
+  // The most common food types in the release become chips in the Filters sheet.
+  useEffect(() => {
+    let active = true;
+    service
+      .suggest("")
+      .then((suggestions) => {
+        if (!active) return;
+        setFoodTypeOptions(
+          suggestions
+            .filter((suggestion) => suggestion.kind === "food_type")
+            .slice(0, FOOD_TYPE_CHIP_COUNT)
+            .map((suggestion) => suggestion.label),
+        );
+      })
+      .catch((loadError) =>
+        reportError(loadError, { surface: "catalog_browse", load: "food_types" }),
+      );
+    return () => {
+      active = false;
+    };
+  }, [service]);
+
+  const clearFilters = useCallback(() => {
+    setFilters([]);
+    setFoodTypes([]);
+  }, []);
+
+  const handleSelectFoodType = useCallback(
+    (label: string) => {
+      const selected = !foodTypes.includes(label);
+      setFoodTypes((current) =>
+        current.includes(label) ? current.filter((value) => value !== label) : [...current, label],
+      );
+      trackAnalyticsEvent("search_filter_changed", { mode, filter: label, selected });
+    },
+    [foodTypes, mode],
+  );
 
   const handleSelectFilter = useCallback(
     (filter: string) => {
+      if (filter === BROWSE_ALL_FILTER) setFoodTypes([]);
       const next = toggleFilterId(filters, filter);
       setFilters(next);
       trackAnalyticsEvent("search_filter_changed", {
@@ -841,7 +925,7 @@ function RawCatalogBrowseGrid({
   const handleSelectSort = useCallback(
     (next: BrowseSortId) => {
       setSort(next);
-      sortSheetRef.current?.dismiss();
+      filterSheetRef.current?.dismiss();
       trackAnalyticsEvent("search_sort_changed", { mode, sort: next });
     },
     [mode],
@@ -953,25 +1037,207 @@ function RawCatalogBrowseGrid({
           count: matchCount,
           mode,
           hasQuery: Boolean(query),
+          query,
           placeName: place?.name,
           widened: widenRadius,
         })
       : undefined;
   const sortLabel = effectiveSortLabel(sort, Boolean(query), Boolean(place));
   const suggestedQuery =
-    didYouMean && didYouMean.query === query && filters.length === 0 && parsed.parts.length === 0
+    didYouMean && didYouMean.query === query && filterCount === 0 && parsed.parts.length === 0
       ? didYouMean.label
       : undefined;
   // A place lists its whole building with no radius, so there is nothing to widen.
   const radiusInPlay = !query && !widenRadius && !place;
 
+  const notes: ResultsNote[] = [];
+  if (isOfflineCopy) {
+    notes.push({
+      id: "offline",
+      testID: "search-offline-copy",
+      text: "You're seeing a saved copy of the catalog. It may be out of date.",
+    });
+  }
+  if (isUsingDefaultLocation) {
+    notes.push({
+      id: "location",
+      text: "Location is off, so distances are from central Singapore.",
+      action: {
+        label: "Choose your area",
+        accessibilityLabel:
+          "Location is off, so distances are from central Singapore. Choose your area",
+        onPress: () => navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" }),
+      },
+    });
+  }
+  if (filters.includes("Halal") || parsed.dietary.includes("halal")) {
+    notes.push({
+      id: "halal",
+      text: "Halal tags come from stalls and public listings, and are not all MUIS-certified. Check the stall's certificate if it matters to you.",
+    });
+  }
+
+  // Everything above the first card scrolls away with the list; only the search row stays put.
+  const listHeader = (
+    <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}>
+      <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
+      {relaxed ? (
+        <View
+          accessibilityLiveRegion="polite"
+          accessibilityRole="text"
+          testID="search-parsed-relaxed-note"
+          style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+        >
+          <Info color={palette.textMuted} size={16} />
+          <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+            {`Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${typedQuery}". Remove a chip to search without it.`}
+          </AppText>
+        </View>
+      ) : null}
+      {place ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Showing only ${place.name}. Tap to show everywhere`}
+          onPress={clearPlace}
+          style={{
+            alignItems: "center",
+            alignSelf: "flex-start",
+            backgroundColor: palette.surface,
+            borderColor: palette.orange,
+            borderRadius: 18,
+            borderWidth: 1,
+            flexDirection: "row",
+            gap: spacing[2],
+            minHeight: 36,
+            paddingHorizontal: spacing[3],
+          }}
+        >
+          <MapPin color={palette.orange} size={16} />
+          <AppText numberOfLines={1} variant="bodySmall" style={{ flexShrink: 1 }}>
+            {place.name}
+          </AppText>
+          <X color={palette.textMuted} size={16} />
+        </Pressable>
+      ) : null}
+      {offeredPlaces.length > 0 ? (
+        <View accessibilityLabel="Places" style={{ gap: spacing[1] }}>
+          <AppText tone="secondary" variant="micro">
+            Malls, hawker centres and food courts
+          </AppText>
+          {offeredPlaces.map((offered) => (
+            <Pressable
+              key={offered.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Show stalls at ${offered.name}`}
+              onPress={() => selectPlace({ id: offered.id, name: offered.name })}
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[2],
+                minHeight: 44,
+              }}
+            >
+              <MapPin color={palette.orange} size={18} />
+              <View style={{ flex: 1 }}>
+                <AppText numberOfLines={1} variant="bodyBold">
+                  {offered.name}
+                </AppText>
+                <AppText tone="secondary" variant="micro">
+                  {`${offered.venueCount} stalls`}
+                  {offered.distanceMeters !== undefined
+                    ? ` · ${formatBrowseDistance(offered.distanceMeters)}`
+                    : ""}
+                </AppText>
+              </View>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ alignItems: "center", gap: spacing[2] }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {allowModeSwitch ? (
+          <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
+            {(["dishes", "stalls"] as const).map((option) => (
+              <Chip
+                key={option}
+                accessibilityRole="tab"
+                label={MODE_LABELS[option]}
+                accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
+                selected={mode === option}
+                onPress={() => {
+                  if (option === mode) return;
+                  setItems([]);
+                  setMatchCount(undefined);
+                  setMode(option);
+                  trackAnalyticsEvent("search_mode_changed", { mode: option });
+                }}
+              />
+            ))}
+          </View>
+        ) : null}
+        {filters.map((filter) => (
+          <Chip
+            key={filter}
+            label={`${filter} ×`}
+            accessibilityLabel={`Remove ${filter} filter`}
+            selected
+            onPress={() => handleSelectFilter(filter)}
+          />
+        ))}
+        {foodTypes.map((label) => (
+          <Chip
+            key={`food:${label}`}
+            label={`${label} ×`}
+            accessibilityLabel={`Remove ${label} filter`}
+            selected
+            onPress={() => handleSelectFoodType(label)}
+          />
+        ))}
+      </ScrollView>
+      <ResultsNotes notes={notes} />
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          gap: spacing[2],
+          justifyContent: "space-between",
+        }}
+      >
+        <AppText accessibilityRole="text" tone="secondary" variant="bodySmall" style={{ flex: 1 }}>
+          {summary ?? " "}
+        </AppText>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Sort by, ${sortLabel}`}
+          onPress={() => filterSheetRef.current?.present()}
+          style={{ alignItems: "center", flexDirection: "row", gap: spacing[1], minHeight: 44 }}
+        >
+          <AppText variant="bodySmall">{sortLabel}</AppText>
+          <ChevronDown color={palette.textMuted} size={16} />
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
       <View style={{ flex: 1, backgroundColor: palette.bg }}>
         <View
-          style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingVertical: spacing[3] }}
+          style={{
+            gap: spacing[1],
+            paddingBottom: spacing[2],
+            paddingHorizontal: spacing[4],
+            paddingTop: spacing[3],
+          }}
         >
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+          <View
+            testID="search-sticky-row"
+            style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+          >
             <IconButton
               variant="ghost"
               accessibilityLabel="Go back"
@@ -1034,6 +1300,37 @@ function RawCatalogBrowseGrid({
                 </Pressable>
               ) : null}
             </View>
+            <View>
+              <IconButton
+                variant="ghost"
+                accessibilityLabel={
+                  filterCount > 0 ? `Filters and sort, ${filterCount} on` : "Filters and sort"
+                }
+                onPress={() => filterSheetRef.current?.present()}
+                icon={<SlidersHorizontal color={palette.text} size={20} />}
+              />
+              {filterCount > 0 ? (
+                <View
+                  pointerEvents="none"
+                  testID="search-filters-badge"
+                  style={{
+                    alignItems: "center",
+                    backgroundColor: palette.orange,
+                    borderRadius: 9,
+                    height: 18,
+                    justifyContent: "center",
+                    minWidth: 18,
+                    position: "absolute",
+                    right: 2,
+                    top: 2,
+                  }}
+                >
+                  <AppText variant="micro" style={{ color: palette.surface }}>
+                    {filterCount}
+                  </AppText>
+                </View>
+              ) : null}
+            </View>
             {SEARCH_SHARE_LINKS_LIVE ? (
               <IconButton
                 variant="ghost"
@@ -1044,176 +1341,15 @@ function RawCatalogBrowseGrid({
             ) : null}
           </View>
           {tooShort ? (
-            <AppText tone="secondary" variant="micro">
+            <AppText
+              accessibilityLiveRegion="polite"
+              accessibilityRole="text"
+              tone="secondary"
+              variant="micro"
+            >
               {`Type at least ${CATALOG_QUERY_MIN_CHARS} letters to search.`}
             </AppText>
           ) : null}
-          <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
-          {relaxed ? (
-            <View
-              accessibilityLiveRegion="polite"
-              accessibilityRole="text"
-              testID="search-parsed-relaxed-note"
-              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
-            >
-              <Info color={palette.textMuted} size={16} />
-              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
-                {`Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${typedQuery}". Remove a chip to search without it.`}
-              </AppText>
-            </View>
-          ) : null}
-          {place ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Showing only ${place.name}. Tap to show everywhere`}
-              onPress={clearPlace}
-              style={{
-                alignItems: "center",
-                alignSelf: "flex-start",
-                backgroundColor: palette.surface,
-                borderColor: palette.orange,
-                borderRadius: 18,
-                borderWidth: 1,
-                flexDirection: "row",
-                gap: spacing[2],
-                minHeight: 36,
-                paddingHorizontal: spacing[3],
-              }}
-            >
-              <MapPin color={palette.orange} size={16} />
-              <AppText numberOfLines={1} variant="bodySmall" style={{ flexShrink: 1 }}>
-                {place.name}
-              </AppText>
-              <X color={palette.textMuted} size={16} />
-            </Pressable>
-          ) : null}
-          {offeredPlaces.length > 0 ? (
-            <View accessibilityLabel="Places" style={{ gap: spacing[1] }}>
-              <AppText tone="secondary" variant="micro">
-                Malls, hawker centres and food courts
-              </AppText>
-              {offeredPlaces.map((offered) => (
-                <Pressable
-                  key={offered.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Show stalls at ${offered.name}`}
-                  onPress={() => selectPlace({ id: offered.id, name: offered.name })}
-                  style={{
-                    alignItems: "center",
-                    flexDirection: "row",
-                    gap: spacing[2],
-                    minHeight: 44,
-                  }}
-                >
-                  <MapPin color={palette.orange} size={18} />
-                  <View style={{ flex: 1 }}>
-                    <AppText numberOfLines={1} variant="bodyBold">
-                      {offered.name}
-                    </AppText>
-                    <AppText tone="secondary" variant="micro">
-                      {`${offered.venueCount} stalls`}
-                      {offered.distanceMeters !== undefined
-                        ? ` · ${formatBrowseDistance(offered.distanceMeters)}`
-                        : ""}
-                    </AppText>
-                  </View>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-          {allowModeSwitch ? (
-            <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
-              {(["dishes", "stalls"] as const).map((option) => (
-                <Chip
-                  key={option}
-                  accessibilityRole="tab"
-                  label={MODE_LABELS[option]}
-                  accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
-                  selected={mode === option}
-                  onPress={() => {
-                    if (option === mode) return;
-                    setItems([]);
-                    setMatchCount(undefined);
-                    setMode(option);
-                    trackAnalyticsEvent("search_mode_changed", { mode: option });
-                  }}
-                />
-              ))}
-            </View>
-          ) : null}
-          <FilterChipRail
-            options={RAW_BROWSE_FILTER_OPTIONS}
-            selectedIds={filters.length ? filters : [BROWSE_ALL_FILTER]}
-            onSelect={handleSelectFilter}
-          />
-          {filters.includes("Halal") || parsed.dietary.includes("halal") ? (
-            <View
-              accessibilityRole="text"
-              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
-            >
-              <Info color={palette.textMuted} size={16} />
-              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
-                Halal tags come from stalls and public listings, and are not all MUIS-certified.
-                Check the stall&apos;s certificate if it matters to you.
-              </AppText>
-            </View>
-          ) : null}
-          {isOfflineCopy ? (
-            <View
-              accessibilityRole="text"
-              testID="search-offline-copy"
-              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
-            >
-              <Info color={palette.textMuted} size={16} />
-              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
-                {"You're seeing a saved copy of the catalog. It may be out of date."}
-              </AppText>
-            </View>
-          ) : null}
-          {isUsingDefaultLocation ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Location is off, so distances are from central Singapore. Choose your area"
-              onPress={() =>
-                navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })
-              }
-              style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
-            >
-              <MapPinOff color={palette.textMuted} size={16} />
-              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
-                Location is off, so distances are from central Singapore.{" "}
-                <AppText variant="micro" style={{ color: palette.orange }}>
-                  Choose your area
-                </AppText>
-              </AppText>
-            </Pressable>
-          ) : null}
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[2],
-              justifyContent: "space-between",
-            }}
-          >
-            <AppText
-              accessibilityRole="text"
-              tone="secondary"
-              variant="bodySmall"
-              style={{ flex: 1 }}
-            >
-              {summary ?? " "}
-            </AppText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Sort by, ${sortLabel}`}
-              onPress={() => sortSheetRef.current?.present()}
-              style={{ alignItems: "center", flexDirection: "row", gap: spacing[1], minHeight: 44 }}
-            >
-              <AppText variant="bodySmall">{sortLabel}</AppText>
-              <ChevronDown color={palette.textMuted} size={16} />
-            </Pressable>
-          </View>
         </View>
         <View style={{ flex: 1, opacity: isRefreshing ? 0.45 : 1 }}>
           <FlashList
@@ -1230,6 +1366,7 @@ function RawCatalogBrowseGrid({
             }}
             onEndReachedThreshold={0.6}
             renderItem={renderItem}
+            ListHeaderComponent={listHeader}
             ListEmptyComponent={
               !isAuthenticated ? (
                 // A signed-out grid (after a session expiry and a back swipe) loads nothing.
@@ -1273,7 +1410,7 @@ function RawCatalogBrowseGrid({
                   <EmptyState
                     title="No matches found"
                     body={
-                      filters.length || parsed.parts.length
+                      filterCount || parsed.parts.length
                         ? "Try removing a filter or searching for something else."
                         : "Try another search."
                     }
@@ -1292,12 +1429,8 @@ function RawCatalogBrowseGrid({
                         }}
                       />
                     ) : null}
-                    {filters.length ? (
-                      <Button
-                        label="Clear filters"
-                        variant="secondary"
-                        onPress={() => setFilters([])}
-                      />
+                    {filterCount ? (
+                      <Button label="Clear filters" variant="secondary" onPress={clearFilters} />
                     ) : null}
                     {radiusInPlay ? (
                       <Button
@@ -1341,35 +1474,54 @@ function RawCatalogBrowseGrid({
           ) : null}
         </View>
       </View>
-      <BottomSheet ref={sortSheetRef} accessibilityLabel="Sort by" snapPoints={["40%"]}>
-        <View style={{ gap: spacing[2] }}>
+      <BottomSheet ref={filterSheetRef} accessibilityLabel="Filters and sort" snapPoints={["85%"]}>
+        <BottomSheetScrollView contentContainerStyle={{ gap: spacing[3] }}>
+          <AppText variant="h2">Filters</AppText>
+          <ChipGroup
+            options={RAW_BROWSE_FILTER_OPTIONS}
+            selectedIds={filters.length ? filters : foodTypes.length ? [] : [BROWSE_ALL_FILTER]}
+            onSelect={handleSelectFilter}
+          />
+          {foodTypeOptions.length > 0 ? (
+            <>
+              <AppText variant="h2">Food type</AppText>
+              <ChipGroup
+                options={foodTypeOptions.map((label) => ({ id: label, label }))}
+                selectedIds={foodTypes}
+                onSelect={handleSelectFoodType}
+              />
+            </>
+          ) : null}
           <AppText variant="h2">Sort by</AppText>
-          {BROWSE_SORT_OPTIONS.map((option) => {
-            const selected = option.id === sort;
-            return (
-              <Pressable
-                key={option.id}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: selected }}
-                onPress={() => handleSelectSort(option.id)}
-                style={{
-                  alignItems: "center",
-                  borderBottomColor: palette.border,
-                  borderBottomWidth: 1,
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  minHeight: 54,
-                  paddingVertical: spacing[3],
-                }}
-              >
-                <AppText variant="bodyBold" style={{ flex: 1 }}>
-                  {option.label}
-                </AppText>
-                {selected ? <Check size={18} color={palette.orange} /> : null}
-              </Pressable>
-            );
-          })}
-        </View>
+          <View>
+            {BROWSE_SORT_OPTIONS.map((option) => {
+              const selected = option.id === sort;
+              return (
+                <Pressable
+                  key={option.id}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected }}
+                  onPress={() => handleSelectSort(option.id)}
+                  style={{
+                    alignItems: "center",
+                    borderBottomColor: palette.border,
+                    borderBottomWidth: 1,
+                    flexDirection: "row",
+                    gap: spacing[3],
+                    minHeight: 48,
+                    paddingVertical: spacing[2],
+                  }}
+                >
+                  <AppText variant="bodyBold" style={{ flex: 1 }}>
+                    {option.label}
+                  </AppText>
+                  {selected ? <Check size={18} color={palette.orange} /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+          <Button label="Done" onPress={() => filterSheetRef.current?.dismiss()} />
+        </BottomSheetScrollView>
       </BottomSheet>
     </Screen>
   );
