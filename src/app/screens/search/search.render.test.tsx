@@ -2,7 +2,8 @@
 // Run with `node scripts/test-render.mjs src/app/screens/search/search.render.test.tsx`.
 
 import assert from "node:assert/strict";
-import { act } from "react";
+import { act, createElement, useState } from "react";
+import { NavigationRouteContext } from "@react-navigation/native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
@@ -26,10 +27,11 @@ import type {
 import { CatalogRateLimitedError, CatalogReleaseExpiredError } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { cleanup, renderScreen, type RenderResult } from "@/test/render";
+import { cleanup, render, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
 type Service = ReturnType<typeof getCatalogRawService>;
@@ -444,7 +446,7 @@ for (const [width, cardWidth] of [
       await wait(400);
       const card = view.findByLabel(/^Dish 1,/);
       assert.ok(card, "a card");
-      assert.equal(card.style.width, cardWidth);
+      assert.equal(card.parentElement?.style.width, cardWidth);
       const row = view.findByTestId("search-sticky-row");
       assert.ok(row?.contains(view.findByLabel(/^Filters and sort/)));
     } finally {
@@ -452,6 +454,123 @@ for (const [width, cardWidth] of [
     }
   });
 }
+
+test("a heart on a dish card saves it without opening it, and tapping again removes it (SR4-17)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  const heart = view.findByLabel("Save Dish 1");
+  assert.ok(heart, "a heart on the card");
+  const openCard = view.findByLabel(/^Dish 1,/);
+  assert.ok(
+    openCard && !openCard.contains(heart),
+    "the heart is beside the card button, not inside it",
+  );
+  const calls = view.navigation.calls.length;
+  await view.press(heart);
+  await wait(200);
+  assert.equal(view.navigation.calls.length, calls, "the card did not open");
+  assert.ok(view.findByLabel("Remove Dish 1 from saved"));
+  assert.ok(useProfileStore.getState().profile.favouriteDishIds.includes("1"));
+  assert.ok(
+    getTrackedAnalyticsEvents().some(
+      (event) => event.event === "dish_favourited" && event.properties.surface === "search",
+    ),
+  );
+  await view.press(view.findByLabel("Remove Dish 1 from saved"));
+  await wait(200);
+  assert.ok(view.findByLabel("Save Dish 1"));
+  assert.equal(useProfileStore.getState().profile.favouriteDishIds.includes("1"), false);
+});
+
+test("stall cards have no heart (SR4-17)", async () => {
+  stubCatalog({ listVenues: async () => page([stallCard("v1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "stalls" });
+  await wait(400);
+  assert.equal(view.findByLabel(/^Save /), null);
+});
+
+test("a search that arrives on an open results screen is recorded too (SR4-30)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  function RouteHarness() {
+    const [query, setQuery] = useState("laksa");
+    return createElement(
+      "div",
+      null,
+      createElement("button", { onClick: () => setQuery("mee pok"), "aria-label": "New search" }),
+      createElement(
+        NavigationRouteContext.Provider,
+        {
+          value: {
+            key: "r2",
+            name: "SearchResults",
+            params: { browseMode: "dishes", initialQuery: query },
+          } as never,
+        },
+        createElement(SearchResultsScreen),
+      ),
+    );
+  }
+  const view = await render(createElement(RouteHarness));
+  await wait(300);
+  await view.press(view.findByLabel("New search"));
+  await wait(300);
+  const lengths = getTrackedAnalyticsEvents()
+    .filter((event) => event.event === "search_query")
+    .map((event) => event.properties.query_length);
+  assert.deepEqual(lengths, ["laksa".length, "mee pok".length]);
+});
+
+test("a GPS refresh keeps the list; Update for new location reloads it (SR4-26)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request: CatalogPageRequest) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  withGps();
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  const loads = requests.length;
+  assert.equal(requests.at(-1)?.coordinate?.latitude, 1.28);
+  assert.equal(view.findByLabel("Update for new location"), null);
+
+  await act(async () => {
+    useLocationStore.setState({ currentLocation: { latitude: 1.31, longitude: 103.87 } });
+  });
+  await wait(400);
+  assert.equal(requests.length, loads, "walking does not reload the list");
+  assert.ok(view.findByLabel("Update for new location"));
+
+  await view.press(view.findByLabel("Update for new location"));
+  await wait(400);
+  assert.equal(requests.at(-1)?.coordinate?.latitude, 1.31);
+  assert.equal(view.findByLabel("Update for new location"), null);
+});
+
+test("a new search starts from where the diner is now (SR4-26)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request: CatalogPageRequest) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  withGps();
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  await act(async () => {
+    useLocationStore.setState({ currentLocation: { latitude: 1.31, longitude: 103.87 } });
+  });
+  await view.type(view.findByTestId("browse-results-search-input"), "laksa");
+  await wait(600);
+  assert.equal(requests.at(-1)?.query, "laksa");
+  assert.equal(requests.at(-1)?.coordinate?.latitude, 1.31);
+  assert.equal(view.findByLabel("Update for new location"), null);
+});
 
 test("a card with no rating keeps the rating line's height, so a row of cards lines up (SR4-19)", async () => {
   stubCatalog({
@@ -856,6 +975,15 @@ async function renderHome() {
   await view.settle();
   return view;
 }
+
+test("Search home says when it is showing the saved copy of the catalog (SR4-31)", async () => {
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: async () => ({ ...page([dishCard("1")]), releaseId: "excel-fallback-v1" }),
+  });
+  const view = await renderHome();
+  assert.ok(view.findByTestId("search-home-offline-copy"));
+});
 
 test("Search home control: the island-wide top 3, no star for an unreviewed dish (SEARCH-7)", async () => {
   const requests: CatalogPageRequest[] = [];
