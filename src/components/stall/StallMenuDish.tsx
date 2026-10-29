@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { AccessibleImage, AppText } from "@/components/ui";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { formatDishPrice } from "@/features/detail/dishPrice";
-import { isSoldOut } from "@/features/merchant/menuSections";
+import { isFeatured, isSoldOut } from "@/features/merchant/menuSections";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
@@ -38,7 +38,14 @@ export function shouldUseMenuList(dishes: readonly DishDetail[]) {
 /** Screen-reader label for a menu tile: name, price or sold out. */
 export function menuDishAccessibilityLabel(dish: DishDetail) {
   const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
-  return [dish.name, dish.mustOrder ? "must order" : null, status].filter(Boolean).join(", ");
+  return [
+    dish.name,
+    isFeatured(dish.availabilityFlags) ? "stall's pick" : null,
+    dish.mustOrder ? "must order" : null,
+    status,
+  ]
+    .filter(Boolean)
+    .join(", ");
 }
 
 type MenuDishProps = {
@@ -59,6 +66,7 @@ export function StallMenuDishCard({
   const { palette, radii, spacing } = useHungryTheme();
   // One still photo per tile: no per-tile timers or measuring, and a swipe never fights the tap.
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
+  const featured = isFeatured(dish.availabilityFlags);
   const imageStyle = {
     width: "100%" as const,
     height: width * 0.7,
@@ -93,7 +101,7 @@ export function StallMenuDishCard({
         ) : (
           <NoDishPhoto dishName={dish.name} style={imageStyle} />
         )}
-        {dish.mustOrder ? (
+        {dish.mustOrder || featured ? (
           <View
             style={{
               backgroundColor: palette.mediaScrim,
@@ -109,7 +117,7 @@ export function StallMenuDishCard({
               variant="micro"
               style={{ color: palette.white, fontWeight: "800", letterSpacing: 0.5 }}
             >
-              MUST ORDER
+              {featured ? "STALL'S PICK" : "MUST ORDER"}
             </AppText>
           </View>
         ) : null}
@@ -158,6 +166,7 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
   const soldOut = isSoldOut(dish.availabilityFlags);
+  const featured = isFeatured(dish.availabilityFlags);
 
   return (
     <Pressable
@@ -187,8 +196,13 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
             {dish.description}
           </AppText>
         ) : null}
-        {dish.mustOrder || dish.reviewCount > 0 ? (
+        {dish.mustOrder || featured || dish.reviewCount > 0 ? (
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            {featured ? (
+              <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
+                {"STALL'S PICK"}
+              </AppText>
+            ) : null}
             {dish.mustOrder ? (
               <AppText variant="micro" style={{ color: palette.orange, fontWeight: "800" }}>
                 MUST ORDER

@@ -18,6 +18,10 @@ export function isSoldOut(flags: readonly string[] | undefined): boolean {
   return hasAvailabilityFlag(flags, "sold_out");
 }
 
+export function isFeatured(flags: readonly string[] | undefined): boolean {
+  return hasAvailabilityFlag(flags, "featured");
+}
+
 export function isSectionFlag(flag: string): boolean {
   return flag.toLowerCase().startsWith(SECTION_PREFIX);
 }

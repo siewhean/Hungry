@@ -22,7 +22,14 @@ import {
   X,
 } from "lucide-react-native";
 
-import { AppText, Skeleton, EmptyState, FilterChipRail, InlineBanner } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  Skeleton,
+  EmptyState,
+  FilterChipRail,
+  InlineBanner,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
@@ -55,6 +62,9 @@ import {
 type DashboardRange = "today" | "7d" | "30d";
 
 // The shared chip rail gives each option a button role and selected state.
+/** A translucent white tile on the orange card: a valid colour in both palettes. */
+const ON_ORANGE_TILE = "rgba(255, 255, 255, 0.2)";
+
 const DASHBOARD_RANGE_OPTIONS: { id: DashboardRange; label: string }[] = [
   { id: "today", label: "Today" },
   { id: "7d", label: "7 days" },
@@ -648,7 +658,8 @@ export function MerchantDashboardScreen() {
               alignItems: "center",
               padding: spacing[4],
               gap: spacing[3],
-              backgroundColor: palette.orange,
+              // orangeControl keeps white text above 4.5:1 in both palettes (R4-8).
+              backgroundColor: palette.orangeControl,
               borderRadius: componentRadii.button,
             }}
           >
@@ -657,61 +668,22 @@ export function MerchantDashboardScreen() {
                 width: 56,
                 height: 56,
                 borderRadius: componentRadii.iconButton,
-                backgroundColor: palette.orangeLight + "40",
+                backgroundColor: ON_ORANGE_TILE,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <ClipboardList color={palette.textOnOrange} size={28} />
+              <ClipboardList color={palette.white} size={28} />
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3" style={{ color: palette.white, fontWeight: "800" }}>
                 Manage menu
               </AppText>
-              <AppText variant="bodySmall" style={{ color: palette.inverseTextSecondary }}>
+              <AppText variant="bodySmall" style={{ color: palette.white }}>
                 Update prices or add new dishes
               </AppText>
             </View>
             <ChevronRight color={palette.white} size={24} />
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Recent reviews. Read and reply to your customers"
-            onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
-            onPress={() => navigation.navigate("CustomerInbox")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              padding: spacing[4],
-              gap: spacing[3],
-              backgroundColor: palette.surface,
-              borderRadius: componentRadii.button,
-              borderWidth: 2,
-              borderColor: palette.orange,
-            }}
-          >
-            <View
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: componentRadii.iconButton,
-                backgroundColor: palette.orangeLight,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <MessageSquare color={palette.orange} size={28} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="h3" style={{ color: palette.text, fontWeight: "800" }}>
-                Recent reviews
-              </AppText>
-              <AppText variant="bodySmall" tone="muted">
-                Read and reply to your customers
-              </AppText>
-            </View>
-            <ChevronRight color={palette.textMuted} size={24} />
           </Pressable>
         </View>
 
@@ -760,15 +732,26 @@ export function MerchantDashboardScreen() {
 
         {/* Recent Activity */}
         <View style={{ gap: spacing[3] }}>
-          <AppText variant="h3" style={{ fontWeight: "800" }}>
-            Recent feedback
-          </AppText>
+          <View
+            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+          >
+            <AppText variant="h3" style={{ fontWeight: "800" }}>
+              Recent reviews
+            </AppText>
+            <Button
+              label="See all"
+              variant="ghost"
+              size="sm"
+              onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
+              onPress={() => navigation.navigate("CustomerInbox", { filter: "all" })}
+            />
+          </View>
           {latestFeedback ? (
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Latest review from ${latestFeedback.authorName}: ${latestFeedback.text}`}
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
-              onPress={() => navigation.navigate("CustomerInbox")}
+              onPress={() => navigation.navigate("CustomerInbox", { filter: "all" })}
               style={({ pressed }) => [
                 {
                   backgroundColor: palette.surface,

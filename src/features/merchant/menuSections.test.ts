@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getDishSection,
+  isFeatured,
   isSoldOut,
   listMenuSections,
   withDishSection,
@@ -27,4 +28,10 @@ test("listMenuSections de-duplicates case-insensitively in first-seen order", ()
     listMenuSections([["section:Rice"], ["section:drinks"], ["section:rice"], undefined]),
     ["Rice", "drinks"],
   );
+});
+
+test("isFeatured reads the featured flag however it was typed", () => {
+  assert.equal(isFeatured(["Featured"]), true);
+  assert.equal(isFeatured(["sold_out"]), false);
+  assert.equal(isFeatured(undefined), false);
 });

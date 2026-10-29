@@ -57,6 +57,11 @@ import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import {
+  buildMerchantInsights,
+  buildWeeklySummaryInsight,
+  parseMerchantInsightFacts,
+} from "@/features/merchant/insightRules";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { normalizeReviewPatch, normalizeReviewTags } from "@/features/review/reviewEdit";
 import type {
@@ -7635,19 +7640,23 @@ export const supabaseService: HungryService = {
     },
 
     async getAIInsights(outletId) {
-      const analytics = await this.getAnalytics(outletId, "7d");
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      // The counts come from one RPC and the analytics from another: two reads, not one per rule.
+      const [factsResult, analytics] = await Promise.all([
+        client.rpc("get_merchant_insight_facts", { p_outlet_id: resolvedOutletId }),
+        this.getAnalytics(resolvedOutletId, "7d"),
+      ]);
+      if (factsResult.error) throw factsResult.error;
       return [
-        {
-          id: `weekly-${outletId}`,
-          outletId,
-          type: "weekly_summary",
-          title: "Last 7 days",
-          body: `${analytics.reviewCount} customer ${analytics.reviewCount === 1 ? "review" : "reviews"} in the last 7 days.`,
-          actionLabel: "Open analytics",
-          actionTarget: "Analytics",
-          createdAt: new Date().toISOString(),
-          isDismissed: false,
-        },
+        buildWeeklySummaryInsight(resolvedOutletId, analytics),
+        ...buildMerchantInsights({
+          outletId: resolvedOutletId,
+          facts: parseMerchantInsightFacts(factsResult.data),
+          analytics,
+          openingSchedule: toOpeningSchedule(outlet.opening_schedule),
+        }),
       ] satisfies AIBusinessInsight[];
     },
 
