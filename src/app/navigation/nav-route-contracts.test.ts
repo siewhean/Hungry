@@ -197,7 +197,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
 test("root and nested route targets avoid stale or unregistered screens", () => {
   const types = read("src/app/navigation/navigationTypes.ts");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
-  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const favourites = read("src/app/screens/profile/SavedDishesSection.tsx");
   const settings = read("src/app/screens/profile/SettingsScreen.tsx");
   const merchantSettings = read("src/app/screens/merchant/MerchantSettingsScreen.tsx");
 

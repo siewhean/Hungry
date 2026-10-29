@@ -80,11 +80,8 @@ export function FloatingToast() {
         entering={FadeInDown.duration(motion.toast)}
         exiting={FadeOutUp.duration(motion.toast)}
       >
-        <Pressable
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-          onPress={clearToast}
-          style={[
+        {(() => {
+          const toastStyle = [
             shadows.floating,
             {
               backgroundColor: toastBackgroundColor,
@@ -95,17 +92,54 @@ export function FloatingToast() {
               borderCurve: componentCornerCurve.borderCurve,
               paddingHorizontal: spacing[3],
               paddingVertical: spacing[3],
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: "row" as const,
+              alignItems: "center" as const,
               gap: spacing[3],
             },
-          ]}
-        >
-          <Icon size={20} color={toastIconColor} />
-          <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
-            {toast.message}
-          </AppText>
-        </Pressable>
+          ];
+          const content = (
+            <>
+              <Icon size={20} color={toastIconColor} />
+              <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
+                {toast.message}
+              </AppText>
+            </>
+          );
+          // With an action the toast is a plain alert box: a button inside a pressable would
+          // nest two buttons (invalid on web), so only the action button is pressable.
+          if (toast.action) {
+            const action = toast.action;
+            return (
+              <View accessibilityRole="alert" accessibilityLiveRegion="polite" style={toastStyle}>
+                {content}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={action.label}
+                  hitSlop={8}
+                  onPress={() => {
+                    clearToast();
+                    action.onPress();
+                  }}
+                  style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: spacing[2] }}
+                >
+                  <AppText style={{ color: palette.orange, fontWeight: "700" }}>
+                    {action.label}
+                  </AppText>
+                </Pressable>
+              </View>
+            );
+          }
+          return (
+            <Pressable
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+              onPress={clearToast}
+              style={toastStyle}
+            >
+              {content}
+            </Pressable>
+          );
+        })()}
       </Animated.View>
     </View>
   );

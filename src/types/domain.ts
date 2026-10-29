@@ -264,6 +264,8 @@ export interface DishSummary {
   updatedAt?: string;
   /** How many diners saved this dish. Undefined when the count is not available. */
   savedCount?: number;
+  /** The stall's position, when the read that produced this dish carried it (taste picks). */
+  venuePin?: Coordinate;
 }
 
 export interface Review {

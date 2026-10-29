@@ -18,6 +18,17 @@ test("a stall whose building is not in the demo list still gets a distance from 
   assert.match(label ?? "", /^4[45]\dm away$/);
 });
 
+test("a pick that carries its stall pin needs no venue lookup at all", () => {
+  const label = resultDistanceLabel(
+    origin,
+    { buildingId: "bld-prod-7001", venueId: "v-9", venuePin: nearPin },
+    () => {
+      throw new Error("the venue cache must not be read (it starts the catalog download)");
+    },
+  );
+  assert.match(label ?? "", /^4[45]\dm away$/);
+});
+
 test("a distance over a kilometre is shown in km", () => {
   const label = resultDistanceLabel(
     origin,
