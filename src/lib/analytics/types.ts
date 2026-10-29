@@ -34,6 +34,8 @@ export type AnalyticsEventName =
   | "search_shared"
   | "search_sort_changed"
   | "search_filter_changed"
+  | "search_parse_applied"
+  | "search_parse_removed"
   | "search_mode_changed"
   | "search_suggestion_opened"
   | "search_home_featured_opened"

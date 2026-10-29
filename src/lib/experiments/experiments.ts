@@ -195,6 +195,24 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["dish_viewed", "review_started", "search_query", "search_zero_results"],
   },
   /**
+   * Search results: "halal laksa under $5" is read as the Halal and Under S$5 filters plus the
+   * text "laksa" (test) or sent as plain text (control). Read in the results grid only for a
+   * query of 2+ words that the parser changes. Draft until the PostHog flag exists; the
+   * fallback is the parsed reading, which ships to everyone first. A chip the user removes
+   * (search_parse_removed) means the reading was wrong.
+   */
+  search_query_parsing_v1: {
+    variants: ["control", "parsed"],
+    fallback: "parsed",
+    status: "draft",
+    surface: "search",
+    hypothesis:
+      "Reading diet and price words in a typed search as filters gives fewer zero-result searches and more result opens for multi-word queries than sending every word as text.",
+    primaryMetric: "search_result_opened",
+    guardrailMetrics: ["search_zero_results", "search_parse_removed", "search_query"],
+    minSamplePerArm: 1300,
+  },
+  /**
    * Stall page sticky bar: the orange button is Directions and Review becomes an icon.
    * Read in StallInteractionBar only when the bar has both Directions and Review.
    */

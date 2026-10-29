@@ -1514,3 +1514,9 @@ Use the smallest check that matches the change risk.
 ### ONB-ACCT account step progress, 2026-10-28
 
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).
+
+### SEARCH-R4 PR A (relevance, parser chips, 429 copy), 2026-10-29
+- typecheck clean; npm test 2251 pass / 0 fail; test:render 641/0 fail (4 new search render tests); lint 0 errors; format clean on touched code; test:coverage OK (no baseline change needed); check:n-plus-one, check:rate-limits, audit:races OK.
+- Migration 20261029113000_catalog_search_relevance: smoke supabase/smoke/catalog_search_relevance.sql and the adapted hardening smoke pass on a local PG16 stand-in (pg_trgm, stubbed geography); down-then-up roundtrip clean. audit:supabase:migration-safety fails only for the missing staging rehearsal evidence (sh runs rehearse-pr.sh).
+- Local timing on 156k synthetic rows: selective queries as fast as or faster than the old code; very broad queries (rice, ck, stall pages) about 1.5 to 3x slower. Real-data EXPLAIN is for staging and PR D.
+- Place-word chips were not added: the DB's token-AND search already handles place words.

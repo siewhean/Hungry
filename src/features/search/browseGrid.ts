@@ -90,11 +90,20 @@ interface BrowseRequestInput {
   releaseId?: string;
   /** A mall, hawker centre or food court: lists its whole building, however far away. */
   buildingId?: string;
+  /** Typed filters ("halal laksa under $5"): dietary flags and a price cap on top of the chips. */
+  parsed?: { dietary: readonly string[]; maxPrice?: number };
 }
 
 export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageRequest {
   const query = input.query.trim();
   const keywords = input.filters.flatMap((id) => FOOD_KEYWORDS[id] ?? []);
+  const dietaryFlags = new Set<string>(input.parsed?.dietary ?? []);
+  if (input.filters.includes("Halal")) dietaryFlags.add("halal");
+  // The Under S$6 chip and a typed cap both apply: the lower one wins.
+  const caps = [
+    input.filters.includes(BUDGET_FILTER) ? BUDGET_MAX_PRICE : undefined,
+    input.parsed?.maxPrice,
+  ].filter((cap): cap is number => cap !== undefined);
   return {
     query: query || undefined,
     coordinate: input.coordinate,
@@ -104,12 +113,12 @@ export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageReques
     releaseId: input.cursor ? input.releaseId : undefined,
     limit: 24,
     sort: effectiveSort(input.sort, Boolean(query), Boolean(input.buildingId)),
-    dietaryFlags: input.filters.includes("Halal") ? ["halal"] : [],
+    dietaryFlags: [...dietaryFlags],
     cuisineTags: input.filters
       .filter((id) => CUISINE_FILTERS.has(id))
       .map((id) => id.toLowerCase()),
     foodKeywords: keywords,
-    maxPrice: input.filters.includes(BUDGET_FILTER) ? BUDGET_MAX_PRICE : undefined,
+    maxPrice: caps.length ? Math.min(...caps) : undefined,
   };
 }
 

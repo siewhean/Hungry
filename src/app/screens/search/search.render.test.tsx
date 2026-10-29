@@ -23,7 +23,7 @@ import type {
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
-import { CatalogReleaseExpiredError } from "@/lib/services/catalog";
+import { CatalogRateLimitedError, CatalogReleaseExpiredError } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -251,6 +251,107 @@ test("stall cards show the top dish rating and keep same-name stalls apart (SEAR
   assert.equal((view.text().match(/4\.4 \(30\)/g) ?? []).length, 2);
   // SEARCH-V5: the pill says it is the top dish's rating, not the stall's.
   assert.equal((view.text().match(/Top dish 4\.4 \(30\)/g) ?? []).length, 2);
+});
+
+test("ParsedQueryChips: diet and price words become filters and removable chips (SR4-2)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "halal laksa under $5" });
+  await wait(400);
+  const first = requests.at(-1);
+  assert.equal(first?.query, "laksa", "the filter words are not searched for");
+  assert.deepEqual(first?.dietaryFlags, ["halal"]);
+  assert.equal(first?.maxPrice, 5);
+  const chips = view.findByTestId("search-parsed-chips");
+  assert.ok(chips, "the parsed filters show as chips");
+  assert.match(chips.textContent ?? "", /Halal/);
+  assert.match(chips.textContent ?? "", /Under S\$5/);
+  // The input keeps what was typed.
+  const input = view.findByTestId("browse-results-search-input") as HTMLInputElement;
+  assert.equal(input.value, "halal laksa under $5");
+  const applied = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_parse_applied",
+  );
+  assert.equal(applied?.properties.part_count, 2);
+  assert.equal(applied?.properties.part_kinds, "dietary,price");
+
+  // Removing the Halal chip searches for the word "halal" instead; the price stays a filter.
+  await view.press(view.findByLabel(/^Halal, from your search/));
+  await wait(400);
+  const after = requests.at(-1);
+  assert.equal(after?.query, "halal laksa");
+  assert.deepEqual(after?.dietaryFlags, []);
+  assert.equal(after?.maxPrice, 5);
+  assert.equal(view.findByLabel(/^Halal, from your search/), null);
+  assert.ok(view.findByLabel(/^Under S\$5, from your search/));
+  const removed = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_parse_removed",
+  );
+  assert.equal(removed?.properties.part_kind, "dietary");
+});
+
+test("a typed price cap lower than the Under S$6 chip wins, and the chip stays on its own (SR4-2)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  await renderResults({
+    browseMode: "dishes",
+    initialQuery: "laksa below 4",
+    initialFilter: "Under S$6",
+  });
+  await wait(400);
+  assert.equal(requests.at(-1)?.maxPrice, 4);
+});
+
+test("a query with no filter words has no chips and is sent as typed", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "chicken rice" });
+  await wait(400);
+  assert.equal(requests.at(-1)?.query, "chicken rice");
+  assert.equal(view.findByTestId("search-parsed-chips"), null);
+  assert.equal(
+    getTrackedAnalyticsEvents().some((event) => event.event === "search_parse_applied"),
+    false,
+  );
+});
+
+test("a rate-limited search says to wait, not to check the connection, and Retry waits (SR4-15)", async () => {
+  let calls = 0;
+  stubCatalog({
+    listDishes: async () => {
+      calls += 1;
+      throw new CatalogRateLimitedError();
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "laksa" });
+  await wait(400);
+  assert.match(view.text(), /Too many searches/);
+  assert.doesNotMatch(view.text(), /Check your connection/);
+  const retry = view.findByText(/^Try again in \d+s$/);
+  assert.ok(retry, "Retry shows the wait");
+  const before = calls;
+  await view.press(retry);
+  await wait(50);
+  assert.equal(calls, before, "Retry does nothing until the wait is over");
 });
 
 // ---- Search home
