@@ -5,20 +5,19 @@
 import { rankForYou } from "@/features/discover/mallMode";
 import { hasPersonalTasteProfile } from "@/lib/ai/tasteEngine";
 import type { Bite } from "@/lib/services/types";
-import type { DietaryFlag, DishDetail, TasteVector } from "@/types/domain";
+import type { DishDetail, TasteVector } from "@/types/domain";
 
 export type TasteOrderOptions = {
   tasteVector: TasteVector;
-  dietaryFlags: DietaryFlag[];
-  maxDishBudget?: number;
   preferBuildingId?: string;
 };
 
 /**
  * The bites in the diner's palate order, each with a one-line reason ("Spicy, the way you like
- * it"). A dietary need is a hard rule, so the dishes the ranking drops are left out; a bite
- * whose dish is not loaded cannot be judged and follows the ranked ones. A diner with no palate
- * yet keeps the old order and gets no reasons: there is nothing to rank by.
+ * it"). It only reorders: nothing is dropped, because what Home shows is the diner's call (the
+ * Dietary and Value chips filter), not the ranking's. A bite whose dish is not loaded cannot be
+ * ranked and follows the ranked ones. A diner with no palate yet keeps the old order and gets no
+ * reasons: there is nothing to rank by.
  */
 export function tasteOrderBites(
   bites: readonly Bite[],
@@ -32,14 +31,18 @@ export function tasteOrderBites(
     const dish = dishById.get(bite.dishId);
     return dish ? [dish] : [];
   });
-  const picks = rankForYou(dishes, { ...options, limit: dishes.length });
+  const picks = rankForYou(dishes, {
+    ...options,
+    dietaryFlags: [],
+    limit: dishes.length,
+  });
   const rankByDishId = new Map(picks.map((pick, index) => [pick.dish.id, index] as const));
   const ranked = bites
     .filter((bite) => rankByDishId.has(bite.dishId))
     .sort((a, b) => rankByDishId.get(a.dishId)! - rankByDishId.get(b.dishId)!);
-  const unjudged = bites.filter((bite) => !dishById.has(bite.dishId));
+  const unranked = bites.filter((bite) => !rankByDishId.has(bite.dishId));
   return {
-    bites: [...ranked, ...unjudged],
+    bites: [...ranked, ...unranked],
     reasons: new Map(picks.map((pick) => [pick.dish.id, pick.reason] as const)),
   };
 }

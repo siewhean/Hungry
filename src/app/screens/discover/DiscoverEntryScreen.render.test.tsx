@@ -605,8 +605,7 @@ test("H4-10: saved needs name the chip, and a sparse feed explains itself instea
   assert.ok(showAll, "the way out is on screen");
   await view.press(showAll);
   assert.match(view.text(), /Stalls in /, "the stall list is back");
-  // A palate-ranked rail keeps the dietary rule: no dish is confirmed yet, so none is offered.
-  assert.doesNotMatch(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Dishes near you/);
 });
 
 test("H4-10: clearing every saved need in Settings switches the dietary filter off", async () => {
@@ -925,4 +924,25 @@ test("H4-2: if the palate read fails, Home still shows the feed in its own order
   } finally {
     console.warn = warn;
   }
+});
+
+test("H4-2: ranking never hides dishes; with the Dietary chip off a halal diner still sees every dish", async () => {
+  givePalate(6);
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      dietaryPreferences: ["halal"],
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(PALATE_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.doesNotMatch(view.text(), /Dish 2/, "the Dietary chip is on: only halal dishes");
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  const text = view.text();
+  const rail = text.slice(text.indexOf("Dishes near you"));
+  assert.match(rail, /Dish 7/);
+  assert.match(rail, /Dish 2/, "turning the chip off brings every dish back, in palate order");
+  assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"));
 });

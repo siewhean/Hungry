@@ -1070,6 +1070,17 @@ export async function searchDishesViaRpc(
   }));
 }
 
+// Loaded on first use: Sentry is a native module that plain service tests never need.
+function reportDiscoveryTasteError(error: unknown): void {
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action: "discovery_feed_taste_vectors" });
+  } catch {
+    // Reporting must never break the feed.
+  }
+}
+
 /** Taste vectors for these dishes in one read. Empty when the read fails: Home then keeps feed order. */
 async function loadDishTasteByDishId(
   dishIds: string[],
@@ -1082,6 +1093,7 @@ async function loadDishTasteByDishId(
     .in("dish_id", dishIds);
   if (error || !Array.isArray(data)) {
     console.warn("Supabase discovery taste vectors read failed");
+    reportDiscoveryTasteError(error ?? new Error("dish_taste_vectors returned no rows array"));
     return new Map();
   }
   return new Map(
@@ -1145,22 +1157,20 @@ export async function listDiscoveryFeedByLocationViaRpc(
   // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
   // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
   // the column is missing, this page's top-dish flags come from one batched read.
-  if (rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row)) {
-    const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
-    const flagsByDishId = await loadDishDietaryFlagsByDishId(dishIds);
-    if (flagsByDishId) {
-      rows = rows.map((row) => ({
-        ...row,
-        top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
-      }));
-    }
-  }
-
-  // The feed has no taste columns; Home ranks "Dishes near you" by palate, so this page's
-  // vectors come from one batched read.
-  const tasteByDishId = await loadDishTasteByDishId([
-    ...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean)),
+  // The feed has no taste columns either; Home ranks "Dishes near you" by palate, so this
+  // page's vectors come from one batched read, alongside the flags read.
+  const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
+  const needsDietaryFlags = rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row);
+  const [flagsByDishId, tasteByDishId] = await Promise.all([
+    needsDietaryFlags ? loadDishDietaryFlagsByDishId(dishIds) : undefined,
+    loadDishTasteByDishId(dishIds),
   ]);
+  if (flagsByDishId) {
+    rows = rows.map((row) => ({
+      ...row,
+      top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
+    }));
+  }
 
   const venues = rows.map(mapDiscoveryFeedVenue);
   const results = rows

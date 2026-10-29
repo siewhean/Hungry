@@ -26,7 +26,7 @@ function dish(id: string, overrides: Partial<DishDetail> = {}): DishDetail {
   } as DishDetail;
 }
 
-const OPTIONS = { tasteVector: SPICY_FAN, dietaryFlags: [] };
+const OPTIONS = { tasteVector: SPICY_FAN };
 
 test("tasteOrderBites puts the dish closest to the palate first and says why", () => {
   const bites = [bite("mild"), bite("hot")];
@@ -48,7 +48,7 @@ test("tasteOrderBites keeps the old order, with no reasons, when there is no pal
     ["a", dish("a")],
     ["b", dish("b", { tasteVector: { ...NEUTRAL, spicy: 9 } })],
   ]);
-  const result = tasteOrderBites(bites, dishes, { tasteVector: NEUTRAL, dietaryFlags: [] });
+  const result = tasteOrderBites(bites, dishes, { tasteVector: NEUTRAL });
   assert.deepEqual(
     result.bites.map((item) => item.dishId),
     ["a", "b"],
@@ -56,19 +56,18 @@ test("tasteOrderBites keeps the old order, with no reasons, when there is no pal
   assert.equal(result.reasons.size, 0);
 });
 
-test("tasteOrderBites drops a dish that breaks a dietary need and keeps one it cannot judge", () => {
-  const bites = [bite("pork"), bite("halal"), bite("unknown")];
+test("tasteOrderBites only reorders: a dish with a dietary flag gap or a high price stays in", () => {
+  const bites = [bite("pricey"), bite("halal"), bite("unknown")];
   const dishes = new Map([
-    ["pork", dish("pork")],
+    ["pricey", dish("pricey", { price: 40 })],
     ["halal", dish("halal", { dietaryFlags: ["halal"] })],
   ]);
-  const { bites: ordered } = tasteOrderBites(bites, dishes, {
-    ...OPTIONS,
-    dietaryFlags: ["halal"],
-  });
-  assert.deepEqual(
-    ordered.map((item) => item.dishId),
-    ["halal", "unknown"],
+  const { bites: ordered } = tasteOrderBites(bites, dishes, OPTIONS);
+  assert.deepEqual(ordered.map((item) => item.dishId).sort(), ["halal", "pricey", "unknown"]);
+  assert.equal(
+    ordered.at(-1)?.dishId,
+    "unknown",
+    "a bite with no loaded dish follows the ranked ones",
   );
 });
 

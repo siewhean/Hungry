@@ -1913,20 +1913,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       rankByTaste
         ? tasteOrderBites(quickBitePool, discoverDishById, {
             tasteVector: profile.tasteVector,
-            dietaryFlags: profile.dietaryPreferences,
-            maxDishBudget: profile.maxDishBudget,
             preferBuildingId: currentPlaceId,
           })
         : { bites: quickBitePool, reasons: NO_BITE_REASONS },
-    [
-      currentPlaceId,
-      discoverDishById,
-      profile.dietaryPreferences,
-      profile.maxDishBudget,
-      profile.tasteVector,
-      quickBitePool,
-      rankByTaste,
-    ],
+    [currentPlaceId, discoverDishById, profile.tasteVector, quickBitePool, rankByTaste],
   );
   // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
   const [trendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] = useMemo(
