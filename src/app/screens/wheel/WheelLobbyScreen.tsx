@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { FlatList, Pressable, View, StyleSheet } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Copy, List, Trash2, Users, Plus } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
@@ -8,7 +8,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
+import { getWheelSliceColors } from "@/components/wheel/WheelSvg";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { isExperimentAssignmentReady, useExperimentVariant } from "@/lib/experiments/experiments";
+import { reportError } from "@/lib/monitoring/reportError";
 import { leaveWheelStack } from "@/features/wheel/leaveWheel";
+import { loadWheelPrefill } from "@/features/wheel/loadPrefill";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
 import { selectActiveWheelEntries, useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelEntry } from "@/types/domain";
@@ -29,8 +36,67 @@ export function WheelLobbyScreen({ navigation }: Props) {
   const removeEntry = useWheelStore((s) => s.removeEntry);
   const triggerSpin = useWheelStore((s) => s.triggerSpin);
 
+  const addEntry = useWheelStore((s) => s.addEntry);
+  const profile = useProfileStore((s) => s.profile);
+  const locationPermission = useLocationStore((s) => s.permission);
+  const currentLocation = useLocationStore((s) => s.currentLocation);
+  const manualCoordinate = useLocationStore((s) => s.manualCoordinate);
+  const { coordinate: origin, isApproximate } = getEffectiveLocation({
+    permission: locationPermission,
+    currentLocation,
+    manualCoordinate,
+  });
+
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  // MD-W2: a new wheel starts with the nearest open stalls instead of an empty list.
+  const [prefilling, setPrefilling] = useState(false);
+  const [prefilledCount, setPrefilledCount] = useState(0);
+  // The prefill ran and nothing near the diner is open: say so, rather than a bare empty wheel.
+  const [prefillFoundNone, setPrefillFoundNone] = useState(false);
+  const prefillStarted = useRef(false);
+  const isHostMember = members.find((m) => m.id === myMemberId)?.isHost ?? false;
+  const partyId = party?.id;
+  const prefillEligible = Boolean(partyId) && isHostMember && !isApproximate;
+  const prefillVariant = useExperimentVariant("wheel_prefill_v1", { enabled: prefillEligible });
+  const prefillReady = isExperimentAssignmentReady("wheel_prefill_v1");
+  useEffect(() => {
+    // Once per wheel, for its host, and only where "nearby" means something: a guessed location
+    // would fill the wheel with stalls that are not near the diner.
+    if (!partyId || !isHostMember || isApproximate || prefillStarted.current) return;
+    // Wait for the arm (wheel_prefill_v1) so a late flag load cannot fill a control wheel.
+    if (!prefillReady) return;
+    prefillStarted.current = true;
+    if (prefillVariant === "control") return;
+    if (useWheelStore.getState().entries.length > 0) return;
+    let active = true;
+    setPrefilling(true);
+    loadWheelPrefill({
+      origin,
+      dietaryFlags: profile.dietaryPreferences,
+      tasteVector: profile.tasteVector,
+    })
+      .then((stalls) => {
+        // The diner got ahead of it by adding a stall themselves: leave their wheel alone.
+        if (!active || useWheelStore.getState().entries.length > 0) return;
+        for (const stall of stalls) {
+          addEntry(stall.venueId, stall.buildingId, stall.label, stall.imageUrl, "prefill");
+        }
+        setPrefilledCount(stalls.length);
+        setPrefillFoundNone(stalls.length === 0);
+        trackAnalyticsEvent("wheel_prefilled", { party_id: partyId, count: stalls.length });
+      })
+      .catch((error: unknown) => {
+        reportError(error, { screen: "WheelLobby", action: "prefill" });
+      })
+      .finally(() => {
+        if (active) setPrefilling(false);
+      });
+    return () => {
+      active = false;
+    };
+    // The origin and profile are read once, when the wheel opens.
+  }, [partyId, isHostMember, isApproximate, prefillReady, prefillVariant]);
 
   const activeEntries = useMemo(() => selectActiveWheelEntries(entries), [entries]);
 
@@ -45,6 +111,12 @@ export function WheelLobbyScreen({ navigation }: Props) {
 
   const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const canSpin = activeEntries.length >= 2;
+  // MD-W4: a disabled Spin says what it is waiting for.
+  const spinLabel = canSpin
+    ? "Spin wheel"
+    : activeEntries.length === 1
+      ? "Add one more to spin"
+      : "Add two to spin";
 
   async function copyCode() {
     await Clipboard.setStringAsync(party!.code);
@@ -63,8 +135,10 @@ export function WheelLobbyScreen({ navigation }: Props) {
     leaveWheelStack(navigation);
   }
 
-  function renderEntry({ item }: { item: WheelEntry }) {
+  function renderEntry({ item, index }: { item: WheelEntry; index: number }) {
     const canRemove = isHost || item.addedByMemberId === myMemberId;
+    // The dot is the colour of this option's slice on the wheel.
+    const slice = getWheelSliceColors(palette, index, activeEntries.length);
     return (
       <View
         style={{
@@ -82,8 +156,9 @@ export function WheelLobbyScreen({ navigation }: Props) {
             width: 10,
             height: 10,
             borderRadius: radii.pill,
-            backgroundColor: palette.orange,
-            ...shadows.card,
+            backgroundColor: slice.fill,
+            borderColor: palette.orange,
+            borderWidth: 1,
           }}
         />
         <AppText variant="bodyBold" style={{ flex: 1 }}>
@@ -254,16 +329,41 @@ export function WheelLobbyScreen({ navigation }: Props) {
               keyExtractor={(item) => item.id}
               renderItem={renderEntry}
               contentContainerStyle={{ flexGrow: 1 }}
+              ListHeaderComponent={
+                prefilledCount > 0 ? (
+                  <AppText
+                    variant="bodySmall"
+                    tone="secondary"
+                    style={{ padding: spacing[3], paddingBottom: 0 }}
+                  >
+                    {`We added ${prefilledCount} open stalls near you. Remove any you don't fancy, or add your own.`}
+                  </AppText>
+                ) : null
+              }
               ListEmptyComponent={
-                <EmptyState
-                  title="The wheel is empty"
-                  body={
-                    PARTY_ENABLED
-                      ? "Add some spots to start the party."
-                      : "Add some spots, then spin to decide."
-                  }
-                  icon={<Plus size={36} color={palette.textMuted} />}
-                />
+                prefilling ? (
+                  <View
+                    accessible
+                    accessibilityLabel="Finding open stalls near you"
+                    accessibilityLiveRegion="polite"
+                    style={{ alignItems: "center", gap: spacing[3], padding: spacing[8] }}
+                  >
+                    <ActivityIndicator color={palette.orange} />
+                    <AppText tone="secondary">Finding open stalls near you…</AppText>
+                  </View>
+                ) : (
+                  <EmptyState
+                    title="The wheel is empty"
+                    body={
+                      prefillFoundNone
+                        ? "No stalls near you are open right now. Add a few spots yourself."
+                        : PARTY_ENABLED
+                          ? "Add some spots to start the party."
+                          : "Add some spots, then spin to decide."
+                    }
+                    icon={<Plus size={36} color={palette.textMuted} />}
+                  />
+                )
               }
             />
           </Card>
@@ -281,10 +381,10 @@ export function WheelLobbyScreen({ navigation }: Props) {
             />
             {isHost && (
               <Button
-                label="Spin wheel"
+                label={spinLabel}
                 onPress={handleSpin}
                 disabled={!canSpin}
-                style={{ flex: 1.5 }}
+                style={{ flex: 1 }}
               />
             )}
           </View>

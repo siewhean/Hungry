@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Flag, MoreHorizontal, Plus, Share2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -21,8 +21,8 @@ import {
 import { useItemDetailsState, type ItemDetail } from "@/features/checklistPortfolio/useItemLabels";
 import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { shareLink, type ShareChannel } from "@/features/share/messagingShare";
-import { usePortfolioStore } from "@/store/usePortfolioStore";
-import { useProfileStore } from "@/store/useProfileStore";
+import { getPortfolioOwnerId, usePortfolioStore } from "@/store/usePortfolioStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioItem } from "@/types/domain";
 
@@ -47,12 +47,17 @@ function formatPortfolioItemLabel(
 }
 
 function showListError(error: unknown) {
-  Alert.alert("List update failed", listErrorMessage(error, "Please refresh and try again."));
+  // A toast, not Alert.alert: that is a no-op on web.
+  useUIStore.getState().showToast({
+    message: listErrorMessage(error, "List update failed. Please refresh and try again."),
+    tone: "error",
+  });
 }
 
 export function PortfolioDetailScreen({ navigation, route }: Props) {
   const { palette, spacing } = useHungryTheme();
-  const profile = useProfileStore((state) => state.profile);
+  // The signed-in account first: the profile id can lag it right after sign-in or a switch.
+  const viewerId = getPortfolioOwnerId();
   const portfolioId = route.params.portfolioId;
   const {
     portfolios,
@@ -103,11 +108,11 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const conflict = conflicts[portfolioId];
   // Stable fallback: a new [] each render re-ran effects keyed on the items (render loop).
   const portfolioItems = items[portfolioId] ?? EMPTY_PORTFOLIO_ITEMS;
-  const isOwner = portfolio?.ownerId === profile.id;
+  const isOwner = portfolio?.ownerId === viewerId;
   // Editors may add, reorder and remove items (the item RPCs allow them); publish,
   // edit details, collaborators and delete stay owner-only.
   const myRole = collaborators[portfolioId]?.find(
-    (collaborator) => collaborator.userId === profile.id,
+    (collaborator) => collaborator.userId === viewerId,
   )?.role;
   const canEdit = isOwner || myRole === "editor";
   const rootNavigation = getRootNavigation(navigation as any);
@@ -115,6 +120,9 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   // Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it).
   const [visibilityDialog, setVisibilityDialog] = useState<"publish" | "unpublish" | null>(null);
+  const [confirm, setConfirm] = useState<
+    { kind: "leaveList" } | { kind: "deleteList" } | { kind: "removeItem"; itemId: string } | null
+  >(null);
   const [addOpen, setAddOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -352,24 +360,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                   fullWidth={false}
                   variant="secondary"
                   disabled={isSaving}
-                  onPress={() => {
-                    Alert.alert(
-                      "Leave this list?",
-                      "You'll stop seeing it under Shared with me. The owner can add you again.",
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Leave",
-                          style: "destructive",
-                          onPress: () =>
-                            void runOwnerAction(async () => {
-                              await leavePortfolio(portfolio.id, profile.id);
-                              navigation.goBack();
-                            }),
-                        },
-                      ],
-                    );
-                  }}
+                  onPress={() => setConfirm({ kind: "leaveList" })}
                 />
               ) : null}
               {/* Only public lists can be reported (portfolio_flags insert policy). */}
@@ -450,17 +441,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
               onMoveUp={() => moveItem(item.id, -1)}
               onMoveDown={() => moveItem(item.id, 1)}
               onEdit={() => setEditingItem(item)}
-              onDelete={() => {
-                Alert.alert("Remove item?", "This removes it from this list.", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Remove",
-                    style: "destructive",
-                    onPress: () =>
-                      void deleteItem(item.id, portfolioId).catch((error) => showListError(error)),
-                  },
-                ]);
-              }}
+              onDelete={() => setConfirm({ kind: "removeItem", itemId: item.id })}
             />
           ))}
         </>
@@ -564,26 +545,67 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           {
             text: "Delete list",
             style: "destructive",
-            // The menu is a modal that is still closing: let it finish before the alert opens.
-            onPress: () =>
-              setTimeout(() => {
-                Alert.alert("Delete this list?", "This can't be undone.", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: () =>
-                      void runOwnerAction(async () => {
-                        await deletePortfolio(portfolio.id);
-                        navigation.goBack();
-                      }),
-                  },
-                ]);
-              }, 300),
+            // The menu is a modal that is still closing: let it finish before the confirm opens.
+            onPress: () => setTimeout(() => setConfirm({ kind: "deleteList" }), 300),
           },
           { text: "Cancel", style: "cancel" },
         ]}
         onClose={() => setMenuOpen(false)}
+      />
+
+      <Dialog
+        visible={confirm?.kind === "leaveList"}
+        title="Leave this list?"
+        message="You'll stop seeing it under Shared with me. The owner can add you again."
+        buttons={[
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Leave",
+            style: "destructive",
+            onPress: () =>
+              void runOwnerAction(async () => {
+                await leavePortfolio(portfolio.id, viewerId);
+                navigation.goBack();
+              }),
+          },
+        ]}
+        onClose={() => setConfirm(null)}
+      />
+      <Dialog
+        visible={confirm?.kind === "deleteList"}
+        title="Delete this list?"
+        message="This can't be undone."
+        buttons={[
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () =>
+              void runOwnerAction(async () => {
+                await deletePortfolio(portfolio.id);
+                navigation.goBack();
+              }),
+          },
+        ]}
+        onClose={() => setConfirm(null)}
+      />
+      <Dialog
+        visible={confirm?.kind === "removeItem"}
+        title="Remove item?"
+        message="This removes it from this list."
+        buttons={[
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Remove",
+            style: "destructive",
+            onPress: () => {
+              const itemId = confirm?.kind === "removeItem" ? confirm.itemId : undefined;
+              if (itemId)
+                void deleteItem(itemId, portfolioId).catch((error) => showListError(error));
+            },
+          },
+        ]}
+        onClose={() => setConfirm(null)}
       />
 
       <ReportListSheet

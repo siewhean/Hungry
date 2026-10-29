@@ -23,15 +23,13 @@ test("Stitch reviews use the viewer's real review data and preserve review actio
 });
 
 test("Stitch saved dishes keep live saved state and use safe directions", () => {
-  const source = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const source = read("src/app/screens/profile/SavedDishesSection.tsx");
+  const card = read("src/components/saved/SavedDishCard.tsx");
 
-  assert.match(source, /profile\.favouriteDishIds\.length/);
-  assert.match(source, /toggleFavourite\(dish\)/);
-  assert.match(source, /prefetchDishDetail\(dish\.id, repository\)/);
-  assert.match(
-    source,
-    /openTrustedMapsUrl\(\s*buildMapsSearchUrl\(destination, getStallPin\(venue\)\),?\s*\)/,
-  );
-  assert.match(source, /navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
-  assert.doesNotMatch(source, /Open now|No queue|Saved 3d ago|350m away/);
+  assert.match(source, /toggleFavourite\(input, \{ surface: "saved" \}\)/);
+  assert.match(source, /preloadRoute\(rootNavigation, "DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(source, /openTrustedMapsUrl\(url\)/);
+  assert.match(source, /buildSavedDirectionsUrl\(dish\)/);
+  assert.match(source, /navigate\("DishDetail", \{ dishId: dish\.id, source: "saved" \}\)/);
+  assert.doesNotMatch(source + card, /Open now|No queue|Saved 3d ago|350m away/);
 });

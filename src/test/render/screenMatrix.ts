@@ -177,7 +177,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DecideForMeQuizScreen",
     file: "src/app/screens/discover/DecideForMeQuizScreen.tsx",
     scenario: "user",
-    expect: /What kind of food\?/,
+    expect: /What kind of food\?|Where are you eating\?/,
   },
   {
     name: "DecideForMeResultScreen",

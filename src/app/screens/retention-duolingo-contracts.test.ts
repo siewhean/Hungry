@@ -43,7 +43,7 @@ test("meal-time suggestions: opt-in, skip users already active today, open Decid
   const settings = read("src/components/settings/StallAlertsSettings.tsx");
   assert.match(settings, /handleToggle\("mealtimeSuggestions", value\)/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
-  assert.match(service, /mealtime_suggestions: next\.mealtimeSuggestions/);
+  assert.match(service, /row\.mealtime_suggestions = updates\.mealtimeSuggestions/);
 });
 
 test("welcome back: only after more than a week away, behind welcome_back_v2", () => {

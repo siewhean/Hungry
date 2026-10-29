@@ -8,6 +8,7 @@ import { AccessibilityInfo } from "react-native";
 
 import { DecideForMeQuizScreen } from "@/app/screens/discover/DecideForMeQuizScreen";
 import { DecideForMeResultScreen } from "@/app/screens/discover/DecideForMeResultScreen";
+import { DAY_ORDER, getSingaporeDay } from "@/utils/operatingHours";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   EXPERIMENTS,
@@ -119,7 +120,7 @@ test("Not for me does not refetch the pool, and never offers a turned-down dish 
   assert.equal(searchCalls.length, 1);
   assert.equal(searchCalls[0].limit, 50, "Decide asks for the full pool");
 
-  await view.press(view.findByText("Not for me"));
+  await view.press(view.findByText("Another pick"));
   assert.match(view.text(), /Laksa/);
   assert.equal(searchCalls.length, 1, "the taste signal does not reload the pool");
   assert.equal(useProfileStore.getState().tasteInteractionEvents.length, 1);
@@ -127,11 +128,11 @@ test("Not for me does not refetch the pool, and never offers a turned-down dish 
 
   // The second dismissal empties the pool: the radius widens, the same two dishes come back and
   // stay hidden, so the screen says so instead of looping A, B, A.
-  await view.press(view.findByText("Not for me"));
+  await view.press(view.findByText("Another pick"));
   assert.equal(searchCalls.length, 2);
-  assert.equal(searchCalls[1].radius, 1000);
+  assert.equal(searchCalls[1].radius, 2000);
   assert.match(view.text(), /That's everything nearby/);
-  assert.match(view.text(), /You've seen every match within 1\.0 km/);
+  assert.match(view.text(), /You've seen every match within 2\.0 km/);
   assert.equal(view.findByText("Chicken Rice"), null);
   assert.equal(events("decide_for_me_no_match").length, 0, "seen everything is not no-match");
 });
@@ -199,17 +200,277 @@ test("quiz answers are sent to the search, shown as chips, and a dropped answer 
   });
 });
 
-test("the price answer is dropped and retried once when nothing nearby is under it", async () => {
+test("the price answer is dropped only after wider radii also hold nothing under it", async () => {
   serve(async () =>
     searchCalls.at(-1)?.maxPrice ? [] : [dish("a", "Wagyu Ramen", { price: 18 })],
   );
   const view = await renderResult({ surface: "discover", answers: { price: "under5" } });
   assert.deepEqual(
-    searchCalls.map((call) => call.maxPrice),
-    [5, undefined],
+    searchCalls.map((call) => [call.radius, call.maxPrice]),
+    [
+      [1000, 5],
+      [2000, 5],
+      [4000, 5],
+      [1000, undefined],
+    ],
   );
   assert.match(view.text(), /Wagyu Ramen/);
   assert.match(view.text(), /Under S\$5 \(left out\)/);
+});
+
+test("MD-D4 cuisine and staple answers go to the server, and a wider radius is tried before an answer is dropped", async () => {
+  serve(async () =>
+    searchCalls.at(-1)?.radius === 2000
+      ? [dish("a", "Wanton Mee", { foodTypeTag: "Noodles", cuisineTags: ["Chinese"] })]
+      : [],
+  );
+  const view = await renderResult({
+    surface: "discover",
+    answers: { cuisine: "chinese", staple: "noodles" },
+  });
+  assert.deepEqual(
+    searchCalls.map((call) => call.radius),
+    [1000, 2000],
+  );
+  assert.ok(searchCalls[0].cuisineKeywords?.includes("chinese"));
+  assert.ok(searchCalls[0].stapleKeywords?.includes("noodle"));
+  assert.match(view.text(), /Wanton Mee/);
+  assert.doesNotMatch(view.text(), /left out/, "a match one step out keeps every answer");
+  assert.ok(view.container.querySelector('[aria-label="Your answers: Chinese, Noodles"]'));
+});
+
+test("MD-D4 when no radius fits, answers are dropped staple first, cuisine next", async () => {
+  serve(async () => {
+    const last = searchCalls.at(-1);
+    return last?.stapleKeywords || last?.cuisineKeywords
+      ? []
+      : [dish("a", "Chicken Rice", { foodTypeTag: "Rice Dishes" })];
+  });
+  const view = await renderResult({
+    surface: "discover",
+    answers: { cuisine: "malay", staple: "soup" },
+  });
+  const shape = searchCalls.map((call) => [
+    call.radius,
+    Boolean(call.cuisineKeywords),
+    Boolean(call.stapleKeywords),
+  ]);
+  assert.deepEqual(shape.slice(-2), [
+    [1000, true, false],
+    [1000, false, false],
+  ]);
+  assert.match(view.text(), /Chicken Rice/);
+  assert.match(view.text(), /Malay \(left out\)/);
+  assert.match(view.text(), /Soup \(left out\)/);
+});
+
+test("MD-D12 the radius starts at 1 km and the chips pick another one", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  assert.equal(searchCalls[0].radius, 1000);
+  const chips = view.container.querySelectorAll('[aria-label^="Search within"]');
+  assert.equal(chips.length, 4);
+  assert.ok(
+    view.container.querySelector('[aria-label="Search within 1 kilometres, selected"]'),
+    "the radius in use is announced as selected",
+  );
+  await view.press(view.container.querySelector('[aria-label="Search within 4 kilometres"]'));
+  assert.equal(searchCalls.at(-1)?.radius, 4000);
+  assert.ok(view.container.querySelector('[aria-label="Search within 4 kilometres, selected"]'));
+  assert.equal(events("decide_for_me_radius_picked").length, 1);
+  // Picking the radius already shown looks again rather than doing nothing.
+  const before = searchCalls.length;
+  await view.press(
+    view.container.querySelector('[aria-label="Search within 4 kilometres, selected"]'),
+  );
+  assert.equal(searchCalls.length, before + 1);
+});
+
+test("MD-B10 opening hours are read once per stall for the visit, not again for every radius", async () => {
+  serve([dish("a", "Chicken Rice"), dish("b", "Laksa")]);
+  const asked: string[][] = [];
+  discovery.getVenuesByIds = (async (ids: string[]) => {
+    asked.push(ids);
+    return ids.map((id) => ({
+      id,
+      name: id,
+      operatingHours: "Daily 12am-11:59pm",
+      isOpen: true,
+    }));
+  }) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  assert.equal(asked.length, 1);
+  await view.press(view.container.querySelector('[aria-label="Search within 4 kilometres"]'));
+  assert.equal(asked.length, 1, "the same two stalls are not read again");
+});
+
+test("MD-D8 Other picks name the stall and say why they are offered", async () => {
+  serve([
+    dish("a", "Laksa", { distanceMeters: 100, price: 6 }),
+    dish("b", "Chicken Rice", { venueName: "Tian Tian", distanceMeters: 300, price: 4 }),
+    dish("c", "Chicken Rice", {
+      venueName: "Ah Tai",
+      distanceMeters: 250,
+      price: 7,
+      rating: 4.9,
+    }),
+  ]);
+  const view = await renderResult({ surface: "push" });
+  // The best rated stall leads; the backups name their stalls and what they beat it on.
+  assert.match(view.text(), /Tian Tian · S\$4\.00 · 300 m away/);
+  assert.match(view.text(), /Laksa Stall · S\$6\.00 · 100 m away/);
+  assert.match(view.text(), /Closer · Cheaper/);
+});
+
+test("MD-D11 Directions is offered, and opens the stall's Google Maps search, when the stall read fails", async () => {
+  serve([dish("a", "Chicken Rice", { venueName: "Tian Tian" })]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.ok(view.findByText("Directions"));
+});
+
+test("MD-D7 when every stall is closed the screen says so first and does not repeat Closed", async () => {
+  const today = getSingaporeDay();
+  const otherDay = DAY_ORDER[(DAY_ORDER.indexOf(today) + 3) % 7];
+  serve([dish("a", "Chicken Rice")]);
+  discovery.getVenuesByIds = (async () => [
+    {
+      id: "venue-a",
+      name: "Chicken Rice Stall",
+      operatingHours: `${otherDay} 10am-11am`,
+      isOpen: false,
+    },
+  ]) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.match(view.text(), /Everything within 1\.0 km is closed right now/);
+  assert.match(view.text(), /Closed/);
+  assert.doesNotMatch(view.text(), /Closed · Closed/);
+});
+
+test("MD-D13 skipping the questions offers Answer a few questions, not Change answers", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const navigation = createFakeNavigation();
+  const view = await renderResult({ surface: "discover", answers: {} }, navigation);
+  await view.settle();
+  assert.equal(view.findByText("Change answers"), null);
+  await view.press(view.findByText("Answer a few questions"));
+  assert.equal(navigation.calls.at(-1)?.method, "replace");
+});
+
+test("MD-D1 the headline match sits between the lowest and highest Palate match bar", async () => {
+  useSessionStore.setState({ hasSkippedTasteQuiz: false });
+  const user = { sweet: 6, spicy: 6, sour: 6, salty: 6, rich: 6, aromatic: 6 };
+  useProfileStore.setState((state) => ({ profile: { ...state.profile, tasteVector: user } }));
+  serve([
+    dish("a", "Chicken Rice", {
+      tasteVector: { sweet: 9, spicy: 9, sour: 8, salty: 7, rich: 9, aromatic: 8 },
+    }),
+  ]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  const headline = Number(/(\d+)% taste match/.exec(view.text())?.[1]);
+  const bars = [...view.text().matchAll(/(?:Sweet|Spicy|Sour|Salty|Rich|Aroma\w*)(\d+)%/g)].map(
+    (match) => Number(match[1]),
+  );
+  assert.equal(bars.length, 6, view.text());
+  assert.ok(
+    headline <= Math.max(...bars) && headline >= Math.min(...bars),
+    `${headline} vs ${bars}`,
+  );
+});
+
+test("MD-D5 the dish name and stall come before the badges, chips and explanation", async () => {
+  serve([dish("a", "Chicken Rice", { venueName: "Tian Tian" })]);
+  const view = await renderResult({ surface: "discover", answers: { price: "under5" } });
+  const text = view.text();
+  const nameAt = text.indexOf("Chicken Rice");
+  assert.ok(nameAt >= 0);
+  for (const later of ["Popular nearby", "Under S$5", "Within", "Why this dish?"]) {
+    assert.ok(text.indexOf(later) > nameAt, `${later} comes after the dish name`);
+  }
+});
+
+test("MD-D6 Another pick sits in the dock next to Directions and asks for the next dish", async () => {
+  serve([dish("a", "Chicken Rice"), dish("b", "Laksa")]);
+  const view = await renderResult({ surface: "push" });
+  const dock = view.findByLabel("Another pick instead of Chicken Rice")!.parentElement!;
+  assert.ok(dock.textContent?.includes("Directions"), "same row as Directions");
+  await view.press(view.findByText("Another pick"));
+  assert.match(view.text(), /Laksa/);
+});
+
+test("decide_initial_radius_v1: the control arm starts at 0.5 km, the shipped arm at 1 km", async () => {
+  setExperimentOverride("decide_initial_radius_v1", "control");
+  try {
+    serve([dish("a", "Chicken Rice")]);
+    const view = await renderResult({ surface: "push" });
+    assert.equal(searchCalls[0].radius, 500);
+    assert.ok(
+      view.container.querySelector('[aria-label="Search within 0.5 kilometres, selected"]'),
+    );
+  } finally {
+    setExperimentOverride("decide_initial_radius_v1", null);
+  }
+});
+
+test("MD-A1 Another pick and an Other pick are each counted", async () => {
+  serve([dish("a", "Chicken Rice"), dish("b", "Laksa"), dish("c", "Fish Soup")]);
+  const view = await renderResult({ surface: "push" });
+  await view.press(view.findByText("Another pick"));
+  assert.deepEqual(
+    events("decide_reroll").map((record) => record.properties),
+    [{ surface: "push", seen: 1 }],
+  );
+  await view.press(view.findByLabel(/^Pick /));
+  assert.equal(events("decide_other_pick").length, 1);
+  assert.equal(events("decide_other_pick")[0].properties.position, 0);
+});
+
+test("MD-D9 picking an Other pick or Another pick scrolls back to the top", async () => {
+  const scrolls: unknown[] = [];
+  const original = HTMLElement.prototype.scroll;
+  HTMLElement.prototype.scroll = function (arg?: unknown) {
+    scrolls.push(arg);
+  } as typeof HTMLElement.prototype.scroll;
+  try {
+    serve([dish("a", "Chicken Rice"), dish("b", "Laksa"), dish("c", "Fish Soup")]);
+    const view = await renderResult({ surface: "push" });
+    await view.press(view.findByLabel(/^Pick Laksa|^Pick Fish Soup/));
+    assert.ok(scrolls.length >= 1, "scrolled after an Other pick");
+    const before = scrolls.length;
+    await view.press(view.findByText("Another pick"));
+    assert.ok(scrolls.length > before, "scrolled after Another pick");
+  } finally {
+    HTMLElement.prototype.scroll = original;
+  }
+});
+
+test("MD-D10 the end state offers Change answers and Start over", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const navigation = createFakeNavigation();
+  const view = await renderResult(
+    { surface: "discover", answers: { price: "under5" } },
+    navigation,
+  );
+  await view.press(view.findByText("Another pick"));
+  await view.settle();
+  assert.match(view.text(), /That's everything nearby/);
+  assert.ok(view.findByText("Change answers"), "Change answers is offered");
+  await view.press(view.findByText("Start over"));
+  assert.deepEqual(navigation.calls.at(-1), {
+    method: "replace",
+    args: ["DecideForMeQuiz", {}],
+  });
+});
+
+test("MD-D3 with no location the result screen asks for it instead of the area picker", async () => {
+  useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  assert.ok(view.findByTestId("location-gate"));
+  assert.equal(view.findByText("Choose your area"), null);
+  assert.equal(searchCalls.length, 0, "nothing is searched without a location");
 });
 
 // ---- Quiz ----
@@ -311,6 +572,20 @@ test("a double tap answers one question, not the next one too", async () => {
   assert.match(view.text(), /QUESTION 2 OF 4/);
 });
 
+test("MD-D3 with no location fix the quiz asks for location before question 1", async () => {
+  useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
+  const view = await renderQuiz();
+  assert.ok(view.findByTestId("location-gate"));
+  assert.doesNotMatch(view.text(), /QUESTION 1 OF/);
+  assert.match(view.text(), /Where are you eating\?/);
+});
+
+test("MD-D3 once a location is known the quiz starts at question 1", async () => {
+  const view = await renderQuiz();
+  assert.equal(view.findByTestId("location-gate"), null);
+  assert.match(view.text(), /QUESTION 1 OF/);
+});
+
 test("finishing the quiz sends decide_quiz_completed once, announces each question, and passes the answers on", async () => {
   const clock = advanceClock();
   const announced: string[] = [];
@@ -344,6 +619,26 @@ test("finishing the quiz sends decide_quiz_completed once, announces each questi
     assert.equal(events("decide_for_me_triggered").length, 0, "Discover already counted the tap");
   } finally {
     AccessibilityInfo.announceForAccessibility = originalAnnounce;
+    clock.restore();
+  }
+});
+
+test("MD-A1 each question reached is counted once, so the drop-off step can be read", async () => {
+  const clock = advanceClock();
+  try {
+    const view = await renderQuiz();
+    await view.press(view.findByLabel("Malay"));
+    clock.step();
+    await view.press(view.findByLabel("Rice"));
+    assert.deepEqual(
+      events("decide_quiz_step_viewed").map((record) => record.properties),
+      [
+        { step: 1, questions: 4 },
+        { step: 2, questions: 4 },
+        { step: 3, questions: 4 },
+      ],
+    );
+  } finally {
     clock.restore();
   }
 });

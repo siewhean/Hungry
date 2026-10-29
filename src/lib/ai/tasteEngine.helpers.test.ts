@@ -80,9 +80,28 @@ test("vector helpers clamp, average and fall back", () => {
   assert.equal(tasteAxisMatchPercent(0, 10), 0);
   assert.equal(
     tasteMatchPercent(NEUTRAL_TASTE_VECTOR, vector({ spicy: 9 })),
-    50,
-    "neutral reads 50",
+    87,
+    "a neutral diner weighs every axis equally",
   );
   assert.equal(tasteMatchPercent(vector({ spicy: 9 }), vector({ spicy: 9 })), 100);
-  assert.equal(tasteMatchPercent(vector({ spicy: 9 }), vector({ spicy: 1 })), 0);
+  assert.equal(
+    tasteMatchPercent(vector({ spicy: 9 }), vector({ spicy: 1 })),
+    50,
+    "missing the one axis they care about costs half the score",
+  );
+});
+
+test("MD-D1 the overall match lies between the worst and best axis match", () => {
+  const user = vector({ sweet: 6, spicy: 6, sour: 6, salty: 6, rich: 6, aromatic: 6 });
+  const dish = vector({ sweet: 9, spicy: 9, sour: 8, salty: 7, rich: 9, aromatic: 8 });
+  const overall = tasteMatchPercent(user, dish);
+  const axes = (["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const).map((axis) =>
+    tasteAxisMatchPercent(user[axis], dish[axis]),
+  );
+  assert.ok(overall <= Math.max(...axes) && overall >= Math.min(...axes), `${overall} vs ${axes}`);
+  assert.ok(overall < 100, "a dish with more of everything is not a 100% match");
+});
+
+test("MD-D1 a bland dish scores low for a diner who cares about heat and richness", () => {
+  assert.ok(tasteMatchPercent(vector({ spicy: 10, rich: 9 }), NEUTRAL_TASTE_VECTOR) < 40);
 });
