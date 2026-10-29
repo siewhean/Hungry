@@ -57,6 +57,7 @@ import { AuthTermsNotice } from "../auth/AuthTermsNotice";
 import { AUTH_COPY, getProviderErrorMessage, type AuthProvider } from "../auth/authCopy";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
+import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingAuth">;
@@ -105,6 +106,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
 
   useEffect(() => {
     trackAuthScreenViewed("onboarding_auth");
+    trackOnboardingStepViewed("account");
   }, []);
 
   useEffect(() => {
@@ -381,6 +383,11 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
               <ArrowLeft color={palette.text} size={22} />
             </Pressable>
           ) : null}
+
+          {/* The last of the five onboarding steps: setup is not done until the account exists. */}
+          <View style={{ marginBottom: spacing[4] }}>
+            <OnboardingProgress step="account" />
+          </View>
 
           {/* Header */}
           <View style={{ marginBottom: spacing[6] }}>

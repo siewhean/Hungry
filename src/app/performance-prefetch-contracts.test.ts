@@ -224,7 +224,7 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   const iconButton = read("src/components/ui/IconButton.tsx");
   const merchantDashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
   const merchantMenu = read("src/app/screens/merchant/MerchantMenuScreen.tsx");
-  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const favourites = read("src/app/screens/profile/SavedDishesSection.tsx");
   const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const socialPostDetail = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");

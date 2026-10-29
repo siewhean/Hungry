@@ -7,7 +7,7 @@ import {
   Sparkles,
   Store,
   UserPlus,
-  UtensilsCrossed,
+  Utensils,
 } from "lucide-react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -133,9 +133,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       {permissionDenied ? (
         <SettingsRow
           editorial
+          iconTone="neutral"
           label="Notifications are off for Hungry"
           description="Open settings to turn them on. Until then these alerts can't reach you."
-          icon={<BellOff size={20} color={palette.orange} />}
+          icon={<BellOff size={20} color={palette.textSecondary} />}
           onPress={() => void Linking.openSettings().catch(() => {})}
           isLast={false}
         />
@@ -143,20 +144,22 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       {loadState === "error" ? (
         <SettingsRow
           editorial
+          iconTone="neutral"
           label="Couldn't load your alert settings"
           description="Tap to try again."
-          icon={<RefreshCw size={20} color={palette.orange} />}
+          icon={<RefreshCw size={20} color={palette.textSecondary} />}
           onPress={() => loadPreferences()}
           isLast={false}
         />
       ) : null}
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Menu changes at followed stalls"
         description={`New dishes, price changes and restocks. Quiet ${formatHour(
           preferences.quietStartHour,
         )} to ${formatHour(preferences.quietEndHour)}, at most ${preferences.weeklyCap} a week.`}
-        icon={<BellRing size={20} color={palette.orange} />}
+        icon={<BellRing size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.stallUpdates}
         dimmed={permissionDenied}
@@ -166,9 +169,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Weekly picks"
         description="A Monday nudge when your new dish picks are ready on Home."
-        icon={<Sparkles size={20} color={palette.orange} />}
+        icon={<Sparkles size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.weeklyPicks}
         dimmed={permissionDenied}
@@ -178,9 +182,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Lunch and dinner ideas"
         description="Three picks at 11:30am or 5:30pm, only on days you haven't opened Hungry yet."
-        icon={<UtensilsCrossed size={20} color={palette.orange} />}
+        icon={<Utensils size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.mealtimeSuggestions}
         dimmed={permissionDenied}
@@ -190,9 +195,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Follow requests"
         description="When someone asks to follow your private profile."
-        icon={<UserPlus size={20} color={palette.orange} />}
+        icon={<UserPlus size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.socialActivity}
         dimmed={permissionDenied}
@@ -202,8 +208,9 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Followed stalls"
-        icon={<Store size={20} color={palette.orange} />}
+        icon={<Store size={20} color={palette.textSecondary} />}
         type="navigation"
         onPress={onOpenFollowedStalls}
         isLast

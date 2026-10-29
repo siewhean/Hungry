@@ -47,6 +47,7 @@ export function ChangePasswordScreen() {
     defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
   });
   const newPasswordValue = watch("newPassword");
+  // One control for all three fields: three identical buttons are noise for a screen reader.
   const visibilityToggle = (
     <Pressable
       accessible
@@ -158,7 +159,6 @@ export function ChangePasswordScreen() {
                 textContentType="newPassword"
                 autoComplete="new-password"
                 passwordRules={PASSWORD_RULES}
-                rightIcon={visibilityToggle}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.newPassword}
@@ -179,7 +179,6 @@ export function ChangePasswordScreen() {
                 textContentType="newPassword"
                 autoComplete="new-password"
                 passwordRules={PASSWORD_RULES}
-                rightIcon={visibilityToggle}
                 value={value}
                 onChangeText={onChange}
                 error={!!errors.confirmPassword}

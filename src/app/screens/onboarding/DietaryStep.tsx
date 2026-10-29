@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { Check, Search } from "lucide-react-native";
 
@@ -19,6 +19,8 @@ interface DietaryStepProps {
   onClear: () => void;
   budget: number | undefined;
   onBudgetChange: (value: number | undefined) => void;
+  /** Reports where the budget block starts in the parent scroll content, to scroll to it. */
+  onBudgetLayout?: (y: number) => void;
 }
 
 /**
@@ -32,10 +34,19 @@ export function DietaryStep({
   onClear,
   budget,
   onBudgetChange,
+  onBudgetLayout,
 }: DietaryStepProps) {
   const { palette, spacing } = useHungryTheme();
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
+  // The step's own offset in the parent scroll plus the budget's offset inside the step.
+  const stepY = useRef<number | null>(null);
+  const budgetY = useRef<number | null>(null);
+  const reportBudgetOffset = () => {
+    if (stepY.current !== null && budgetY.current !== null) {
+      onBudgetLayout?.(stepY.current + budgetY.current);
+    }
+  };
   const searching = query.trim().length > 0;
   const visible = expanded
     ? searching
@@ -45,7 +56,13 @@ export function DietaryStep({
   const hiddenCount = SORTED_DIETARY_OPTIONS.length - visible.length;
 
   return (
-    <View style={{ gap: spacing[3], paddingHorizontal: spacing[3] }}>
+    <View
+      onLayout={(event) => {
+        stepY.current = event.nativeEvent.layout.y;
+        reportBudgetOffset();
+      }}
+      style={{ gap: spacing[3], paddingHorizontal: spacing[3] }}
+    >
       <AppText variant="bodySmall" tone="muted">
         Allergen details can be incomplete, so always check with the stall.
       </AppText>
@@ -95,19 +112,27 @@ export function DietaryStep({
       {searching && visible.length === 0 ? (
         <EmptyState title="No match" body="Try another word, like halal, vegetarian or nuts." />
       ) : null}
-      <AppText variant="h3" style={{ marginTop: spacing[1] }}>
-        Usual budget per dish
-      </AppText>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-        {BUDGET_OPTIONS.map((option) => (
-          <Chip
-            key={option.label}
-            label={option.label}
-            accessibilityLabel={`Budget ${option.label}`}
-            selected={budget === option.value}
-            onPress={() => onBudgetChange(option.value)}
-          />
-        ))}
+      <View
+        onLayout={(event) => {
+          budgetY.current = event.nativeEvent.layout.y;
+          reportBudgetOffset();
+        }}
+        style={{ gap: spacing[3] }}
+      >
+        <AppText variant="h3" style={{ marginTop: spacing[1] }}>
+          Usual budget per dish
+        </AppText>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          {BUDGET_OPTIONS.map((option) => (
+            <Chip
+              key={option.label}
+              label={option.label}
+              accessibilityLabel={`Budget ${option.label}`}
+              selected={budget === option.value}
+              onPress={() => onBudgetChange(option.value)}
+            />
+          ))}
+        </View>
       </View>
     </View>
   );
