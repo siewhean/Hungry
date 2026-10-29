@@ -478,6 +478,7 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     imageUrl: toString(row.venue_image_url) || toString(row.building_image_url) || undefined,
     logoUrl: toString(row.venue_logo_url, toString(row.logo_url)) || undefined,
     buildingName: toString(row.building_name) || undefined,
+    distanceMeters: row.distance_meters == null ? undefined : toNumber(row.distance_meters),
   };
 }
 

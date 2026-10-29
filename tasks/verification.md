@@ -1514,3 +1514,8 @@ Use the smallest check that matches the change risk.
 ### ONB-ACCT account step progress, 2026-10-28
 
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).
+
+### HOME-R4 phase 1, 2026-10-29
+
+- typecheck clean; DiscoverEntryScreen render tests 26/26 (5 audit repros now green), full test:render 654 pass, npm test 2245 pass, test:coverage OK (lines 84.3%); lint 0 errors.
+- Not walked on a device or the web build in this step; no migration, endpoint or query added.

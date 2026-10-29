@@ -157,7 +157,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /const \[isSearchExpanded, setIsSearchExpanded\]/);
   assert.doesNotMatch(discover, /searchRevealProgress|revealSearch|hideSearch/);
   assert.match(discover, /SearchX/);
-  assert.match(discover, /function FilteredResultsEmptyState/);
+  // One page-level empty state with a way out, not an empty block per section.
+  assert.doesNotMatch(discover, /FilteredResultsEmptyState/);
+  assert.match(discover, /ctaLabel=\{filteredEmptyCtaLabel\}/);
   assert.doesNotMatch(discover, /const showDiscoverFilterEmptyState =/);
   assert.doesNotMatch(
     discover,
@@ -180,7 +182,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : cards\.length \? \([\s\S]*\) : isFiltering \? \([\s\S]*<FilteredResultsEmptyState preserveHeight minHeight=\{layout\.reservedHeight\} \/>/,
+    /<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : cards\.length \? \([\s\S]*\) : null\}/,
   );
   for (const [rail, cards] of [
     ["quickBites", "quickBiteCards"],
@@ -194,7 +196,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const DiscoverBiteCard = memo\(function DiscoverBiteCard/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\) : isDiscoverFiltering \?/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\)\)\s*\) : null\}/,
   );
   assert.match(
     discover,
@@ -202,7 +204,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const nearestChainCards = dedupeNearestVenueCandidates\([\s\S]*filteredCards,[\s\S]*\(card\) => card\.venue,[\s\S]*\(card\) => card\.topDish\?\.distanceMeters/,
+    /const nearestChainCards = dedupeNearestVenueCandidates\([\s\S]*filteredCards,[\s\S]*\(card\) => card\.venue,[\s\S]*\(card\) => card\.venue\.distanceMeters \?\? card\.topDish\?\.distanceMeters/,
   );
   assert.match(discover, /type DiscoverStallShowcaseCard = \{/);
   assert.match(discover, /id: string/);
@@ -292,10 +294,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /type DiscoverChipId = "dietary" \| "spicy" \| "halal" \| "late" \| "cheap"/,
   );
-  assert.match(
-    discover,
-    /const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag\[\] = \["halal", "vegetarian", "pork_free"\]/,
-  );
+  // Saved needs all hold; with none saved the chip opens the dietary settings instead.
+  assert.doesNotMatch(discover, /DISCOVER_DIETARY_FALLBACKS/);
   assert.match(
     discover,
     /const \[activeDiscoverChipIds, setActiveDiscoverChipIds\] = useState<DiscoverChipId\[\]>\(\(\) =>\s*profile\.dietaryPreferences\.length \? \["dietary"\] : \[\],?\s*\)/,
@@ -356,10 +356,13 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const showDiscoverFilterRailSkeleton =[\s\S]*showPopularFoodFilterSkeleton \|\| showInitialDiscoverSkeleton/,
   );
-  assert.match(discover, /chipId === "dietary"[\s\S]*discoverDietaryFlags\.some/);
+  assert.match(
+    discover,
+    /chipId === "dietary"[\s\S]*profile\.dietaryPreferences\.every\(\(flag\) => dish\.dietaryFlags\.includes\(flag\)\)/,
+  );
   assert.match(discover, /chipId === "halal"[\s\S]*dietaryFlags\.includes\("halal"\)/);
   assert.match(discover, /chipId === "spicy"[\s\S]*tasteVector\.spicy >= 6/);
-  assert.match(discover, /chipId === "cheap"[\s\S]*dish\.price < 8/);
+  assert.match(discover, /chipId === "cheap"[\s\S]*dish\.price < HOME_CHEAP_PRICE_LIMIT/);
   assert.doesNotMatch(discover, /navigation\.navigate\("UserProfile"/);
   assert.match(
     discover,
@@ -367,7 +370,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const quickBiteCards = useMemo\([\s\S]*filterDiscoverBites\(unfilteredQuickBiteCards\)/,
+    /const quickBiteCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.quickBites\)\.slice\(0, 6\)/,
   );
   assert.match(discover, /const discoverRailCardWidth = screenWidth \* 0\.55/);
   assert.match(discover, /const discoverRailImageHeight = 130/);
@@ -386,28 +389,24 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /const decisionCardLabelFontSize = Math\.max\(15, typography\.bodySmallBold\.fontSize \+ 1\)/,
   );
   assert.match(discover, /const decisionCardLabelMaxWidth = Math\.max\(/);
-  assert.match(
-    discover,
-    /const popularFoodLabelLineHeight = typography\.bodySmallBold\.fontSize \+ spacing\[1\]/,
-  );
   assert.doesNotMatch(discover, /width: screenWidth \* 0\.65/);
   assert.doesNotMatch(discover, /height: 160/);
   assert.doesNotMatch(discover, /height: 150/);
   assert.match(
     discover,
-    /const unfilteredTrendingCards = useMemo\([\s\S]*discoverBiteCollections\.trending\.slice\(0, 6\)[\s\S]*const trendingCards = useMemo\([\s\S]*filterDiscoverBites\(unfilteredTrendingCards\)/,
+    /const unfilteredTrendingCards = useMemo\([\s\S]*discoverBiteCollections\.trending\.slice\(0, 6\)[\s\S]*const trendingCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.trending\)\.slice\(0, 6\)/,
   );
   assert.match(
     discover,
-    /const unfilteredEditorChoiceCards = useMemo\([\s\S]*discoverBiteCollections\.editorChoice\.slice\(0, 6\)[\s\S]*const editorChoiceCards = useMemo\([\s\S]*filterDiscoverBites\(unfilteredEditorChoiceCards\)/,
+    /const unfilteredEditorChoiceCards = useMemo\([\s\S]*discoverBiteCollections\.editorChoice\.slice\(0, 6\)[\s\S]*const editorChoiceCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.editorChoice\)\.slice\(0, 6\)/,
   );
   assert.match(
     discover,
-    /const unfilteredBudgetCards = useMemo\([\s\S]*discoverBiteCollections\.budget\.slice\(0, 6\)[\s\S]*const budgetCards = useMemo\([\s\S]*filterDiscoverBites\(unfilteredBudgetCards\)/,
+    /const unfilteredBudgetCards = useMemo\([\s\S]*discoverBiteCollections\.budget\.slice\(0, 6\)[\s\S]*const budgetCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.budget\)\.slice\(0, 6\)/,
   );
   assert.match(
     discover,
-    /const unfilteredLateNightCards = useMemo\([\s\S]*discoverBiteCollections\.lateNight\.slice\(0, 5\)[\s\S]*const lateNightCards = useMemo\([\s\S]*filterDiscoverBites\(unfilteredLateNightCards\)/,
+    /const unfilteredLateNightCards = useMemo\([\s\S]*discoverBiteCollections\.lateNight\.slice\(0, 5\)[\s\S]*const lateNightCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.lateNight\)\.slice\(0, 5\)/,
   );
   assert.match(discover, /const areaStallCards = useMemo/);
   assert.match(discover, /onPress=\{\(\) => onSeeAll\(rail\)\}/);
@@ -525,11 +524,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /paddingRight: spacing\[4\]/);
   assert.doesNotMatch(discover, /visibleIntentRailWidth/);
   assert.doesNotMatch(discover, /visibleIntentChipWidths/);
-  assert.match(discover, /function HalalLogoIcon\(\{ color \}: \{ color: string \}\)/);
-  assert.match(discover, />\s*حلال\s*<\/AppText>/);
+  // A neutral icon until the MUIS display decision: no Arabic mark that reads as a certificate.
+  assert.doesNotMatch(discover, /HalalLogoIcon|حلال/);
   assert.match(
     discover,
-    /chip\.id === "halal" \? \(\s*<HalalLogoIcon color=\{isActive \? palette\.orange : themeTints\.secondaryText\} \/>/,
+    /chip\.id === "halal" \? \(\s*\/\/[^\n]*\n\s*<Drumstick size=\{14\} color=\{isActive \? palette\.orange : themeTints\.secondaryText\} \/>/,
   );
   assert.doesNotMatch(discover, /Home,\s*Utensils/);
   assert.match(
@@ -613,7 +612,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const showInitialDiscoverSkeleton = isSupabaseDataSource && isSupabaseDiscoveryFeedLoading/,
+    /const showInitialDiscoverSkeleton =\s*isSupabaseDataSource &&\s*isSupabaseDiscoveryFeedLoading &&\s*\(supabaseDiscoveryFeed === null \|\| loadedDiscoverFeedKey !== discoverFeedKey\)/,
   );
   assert.match(
     discover,
@@ -675,7 +674,10 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   const searchResults = read("src/app/screens/search/SearchResultsScreen.tsx");
   // The two big photo tiles are gone: trending dishes lead, and the full lists are two compact links.
   // Without a GPS fix or a pick the list drops distances from the default point (HOME-17).
-  assert.match(discover, /<TrendingList[\s\S]*?bites=\{trendingListBites\}/);
+  assert.match(
+    discover,
+    /<TrendingList[\s\S]*?bites=\{showInitialDiscoverSkeleton \? \[\] : trendingListBites\}/,
+  );
   assert.match(discover, /The full lists stay one tap away/);
   assert.match(
     discover,
@@ -819,7 +821,7 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
   assert.doesNotMatch(discover, /Sparkles/);
   assert.match(
     discover,
-    /const shouldRenderDiscoverRail = \(count: number, minItems = 1\) =>\s*showDiscoverFilterRailSkeleton \|\| count >= minItems \|\| isDiscoverFiltering/,
+    /const shouldRenderDiscoverRail = \(count: number, minItems = 1\) =>\s*showDiscoverFilterRailSkeleton \|\| count >= \(isDiscoverFiltering \? 1 : minItems\)/,
   );
   for (const cards of ["quickBiteCards", "editorChoiceCards", "budgetCards", "areaStallCards"]) {
     assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length[,)]`));
