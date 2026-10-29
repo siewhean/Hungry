@@ -584,6 +584,22 @@ export const EXPERIMENTS = {
     ],
     minSamplePerArm: 400,
   },
+  /**
+   * A "Get your stall ready" checklist on the Verification Centre for an unverified outlet
+   * (verify, five dishes, hours, a photo), against the plain verification landing. Read in
+   * VerificationCentreScreen only while the outlet is not verified. Draft until the Merchant
+   * Centre ships to production.
+   */
+  merchant_setup_checklist_v1: {
+    variants: ["control", "checklist"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "A progress checklist gets more new merchants to a verified stall with at least five dishes than the verification landing alone, as Shopify's setup guide does for new sellers.",
+    primaryMetric: "merchant_verification_submitted",
+    guardrailMetrics: ["merchant_dish_created", "merchant_mode_opened"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

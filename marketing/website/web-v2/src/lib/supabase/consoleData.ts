@@ -269,24 +269,122 @@ async function getUserRecords() {
   return { records, warning };
 }
 
+const CLAIM_SELECT =
+  "id,venue_id,contact_name,contact_email,contact_phone,uen,notes,status,created_at,updated_at";
+
+/** Stall claims with the stall's name, so ops can see what is being claimed. */
+async function getMerchantClaimRecords(): Promise<{ records: ConsoleRecord[]; warning?: string }> {
+  if (!isSupabaseServiceConfigured()) return { records: [] };
+
+  try {
+    const { data } = await supabaseFetchOnDemand<Row[]>("rest/v1/merchant_claim_interests", {
+      params: { limit: READ_LIMIT, order: "created_at.desc", select: CLAIM_SELECT },
+      serviceRole: true,
+    });
+    const claims = asRowArray(data);
+    const venueIds = Array.from(
+      new Set(claims.map((row) => asString(row.venue_id)).filter((id): id is string => Boolean(id))),
+    );
+    const names = new Map<string, string>();
+    if (venueIds.length > 0) {
+      // One read for every stall name, not one per claim.
+      const { data: venues } = await supabaseFetchOnDemand<Row[]>("rest/v1/venues", {
+        params: {
+          id: `in.(${venueIds.map((id) => `"${postgrestValue(id)}"`).join(",")})`,
+          select: "id,name,unit_number",
+        },
+        serviceRole: true,
+      });
+      for (const venue of asRowArray(venues)) {
+        const id = asString(venue.id);
+        if (id) {
+          names.set(id, [asString(venue.name), asString(venue.unit_number)].filter(Boolean).join(" "));
+        }
+      }
+    }
+    return {
+      records: claims.map((row) => {
+        const venueId = asString(row.venue_id) ?? "";
+        const contact = [asString(row.contact_name), asRedactedEmail(row.contact_email)]
+          .filter(Boolean)
+          .join(" • ");
+        return {
+          id: asString(row.id) ?? "unknown",
+          metadata: {
+            kind: "claim",
+            ...cleanMetadata(row, ["contact_email", "contact_phone", "uen", "notes"]),
+          },
+          status: asString(row.status),
+          subtitle: contact || undefined,
+          title: names.get(venueId) || venueId || "Unknown stall",
+          updatedAt: asString(row.updated_at) ?? asString(row.created_at),
+        };
+      }),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown Supabase error";
+    return { records: [], warning: `merchant_claim_interests: ${message}` };
+  }
+}
+
 async function getMerchantApplicationRecords() {
-  const [verifications, interests] = await Promise.all([
+  const [verifications, claims] = await Promise.all([
     fetchRows(
       "merchant_verifications",
       "id,outlet_id,status,method,submitted_at,updated_at,verified_at",
       { order: "updated_at.desc" },
     ),
-    fetchRows(
-      "merchant_claim_interests",
-      "id,email,status,business_name,created_at,updated_at",
-      { order: "created_at.desc" },
-    ),
+    getMerchantClaimRecords(),
   ]);
 
   return {
-    records: [...verifications.records, ...interests.records].slice(0, READ_LIMIT),
-    warnings: [verifications.warning, interests.warning].filter(Boolean) as string[],
+    records: [...claims.records, ...verifications.records].slice(0, READ_LIMIT * 2),
+    warnings: [verifications.warning, claims.warning].filter(Boolean) as string[],
   };
+}
+
+export type MerchantClaimAction = "approve" | "reject" | "contacted";
+
+/**
+ * Ops decide a claim by hand. Approving runs approve_merchant_claim, which creates the merchant
+ * account, owner role and outlet in one transaction (and is safe to repeat). The other actions
+ * only move the status, and never touch a claim that is already approved.
+ */
+export async function reviewMerchantClaim(
+  actor: ConsoleActor,
+  claimId: string,
+  action: MerchantClaimAction,
+) {
+  if (action === "approve") {
+    const { data } = await supabaseFetchOnDemand<unknown>("rest/v1/rpc/approve_merchant_claim", {
+      body: { p_claim_id: claimId },
+      method: "POST",
+      serviceRole: true,
+    });
+    await recordConsoleAuditEvent(actor, {
+      action: "merchant_claim_approved",
+      metadata: data && typeof data === "object" ? (data as Record<string, unknown>) : {},
+      targetId: claimId,
+      targetType: "merchant_claim",
+    });
+    return data;
+  }
+
+  const status = action === "reject" ? "rejected" : "contacted";
+  await supabaseFetchOnDemand<unknown>("rest/v1/merchant_claim_interests", {
+    body: { status, status_updated_at: new Date().toISOString() },
+    method: "PATCH",
+    params: { id: eq(claimId), status: "neq.converted" },
+    prefer: "return=minimal",
+    serviceRole: true,
+  });
+  await recordConsoleAuditEvent(actor, {
+    action: `merchant_claim_${status}`,
+    metadata: { status },
+    targetId: claimId,
+    targetType: "merchant_claim",
+  });
+  return { status };
 }
 
 async function getReportsRecords() {
@@ -434,7 +532,12 @@ export async function getConsoleRouteDataset(
     records = applications.records;
     metrics = [
       { label: "Applications", value: formatCount(records.length), detail: "Verification and claim rows" },
-      { label: "Needs action", value: formatCount(records.filter((record) => record.status !== "verified").length) },
+      {
+        label: "Needs action",
+        value: formatCount(
+          records.filter((record) => !["verified", "converted", "rejected"].includes(record.status ?? "")).length,
+        ),
+      },
     ];
   } else if (normalizedSection === "reports") {
     const reports = await getReportsRecords();

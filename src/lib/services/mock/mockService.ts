@@ -618,6 +618,8 @@ function withMockViewerReactions(bite: Bite): Bite {
   };
 }
 const _merchantClaimInterests = new Set<string>();
+/** Submission time of each mock claim, by the same key. */
+const _merchantClaimSubmittedAt = new Map<string, string>();
 const _merchantInteractionReports: {
   interactionId: string;
   reason: string;
@@ -3293,6 +3295,7 @@ export const hungryService: HungryService = {
       }
 
       _merchantClaimInterests.add(claimKey);
+      _merchantClaimSubmittedAt.set(claimKey, new Date().toISOString());
       return resolve({
         claimId: `mock-merchant-claim-${Date.now()}`,
         status: "created",
@@ -3304,6 +3307,26 @@ export const hungryService: HungryService = {
         _isAuthenticated && _merchantClaimInterests.has(`${_profile.id}:${venueId}`)
           ? ("submitted" as const)
           : ("none" as const),
+      );
+    },
+
+    async getMyMerchantClaims() {
+      if (!_isAuthenticated) return resolve([]);
+      const prefix = `${_profile.id}:`;
+      return resolve(
+        Array.from(_merchantClaimInterests)
+          .filter((key) => key.startsWith(prefix))
+          .map((key) => {
+            const venueId = key.slice(prefix.length);
+            return {
+              claimId: `mock-merchant-claim-${venueId}`,
+              venueId,
+              venueName: venues.find((venue) => venue.id === venueId)?.name ?? "Your stall",
+              status: "submitted" as const,
+              submittedAt: _merchantClaimSubmittedAt.get(key) ?? new Date().toISOString(),
+            };
+          })
+          .sort((left, right) => right.submittedAt.localeCompare(left.submittedAt)),
       );
     },
 

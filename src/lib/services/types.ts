@@ -771,6 +771,15 @@ export interface MerchantClaimSubmissionResult {
 /** Where the signed-in user's claim for a stall stands, in diner-facing terms. */
 export type MerchantClaimStatus = "none" | "submitted" | "in_review" | "approved" | "rejected";
 
+/** One of the signed-in user's own stall claims, for the Merchant Centre gate. */
+export interface MerchantClaimSummary {
+  claimId: string;
+  venueId: string;
+  venueName: string;
+  status: Exclude<MerchantClaimStatus, "none">;
+  submittedAt: string;
+}
+
 export interface DraftDishRow {
   id: string;
   venueId: string;
@@ -1460,6 +1469,8 @@ export interface HungryService {
     ): Promise<MerchantClaimSubmissionResult>;
     /** The caller's own claim for this stall ("none" when there is no claim or no session). */
     getMerchantClaimStatus(venueId: string): Promise<MerchantClaimStatus>;
+    /** The caller's own claims, newest first, with the stall names. Empty when signed out. */
+    getMyMerchantClaims(): Promise<MerchantClaimSummary[]>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,
