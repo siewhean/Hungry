@@ -82,6 +82,11 @@ export function isTooShortQuery(query: string): boolean {
   return query.length > 0 && query.length < CATALOG_QUERY_MIN_CHARS;
 }
 
+/** ~100 m buckets, so a GPS refresh that barely moves does not reset the list. */
+export function roundCoordinate(value: number) {
+  return Math.round(value * 1000) / 1000;
+}
+
 interface BrowseRequestInput {
   query: string;
   filters: readonly BrowseFilterId[];
