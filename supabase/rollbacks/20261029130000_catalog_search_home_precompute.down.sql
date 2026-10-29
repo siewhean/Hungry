@@ -3,6 +3,7 @@
 -- 20261029120000_catalog_venue_card_logo_main_price, then drop the highlights, the triggers, the indexes
 -- and the quality_score columns.
 -- down-loses-data: quality_score on both card tables and catalog_release_highlights; the up migration (or the next publish) rebuilds them
+-- expect-row-loss: public.catalog_release_highlights
 
 drop trigger if exists catalog_release_highlights_on_activate on public.catalog_releases;
 drop function if exists app_private.catalog_release_highlights_on_activate();
