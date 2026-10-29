@@ -381,7 +381,6 @@ function RawCatalogBrowseGrid({
   const grantLocation = useLocationStore((state) => state.grantLocation);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const allowSearchHistory = useUIStore((state) => state.allowSearchHistory);
-  const showToast = useUIStore((state) => state.showToast);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
   const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
