@@ -18,6 +18,8 @@ import {
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
+  stallCardDetail,
+  stallCardImage,
   toggleFilterId,
   type StallRow,
 } from "./browseGrid";
@@ -359,4 +361,75 @@ test("a stall seen in a second building counts one more outlet only once", () =>
     rows.map((row) => [row.id, row.extraOutlets]),
     [["v1", 1]],
   );
+});
+
+test("stallCardDetail names the matched dish with its price, else the typical price of the mains", () => {
+  const matched = {
+    ...stall("v1", "Laksa House", "b1"),
+    mainPrice: 5,
+    matchedDish: {
+      id: "d1",
+      name: "Signature Laksa",
+      price: 6,
+      verificationStatus: "raw" as const,
+    },
+  };
+  assert.equal(stallCardDetail(matched), "Signature Laksa · S$6.00");
+  assert.equal(
+    stallCardDetail({ ...matched, matchedDish: { ...matched.matchedDish, price: undefined } }),
+    "Signature Laksa",
+  );
+  assert.equal(stallCardDetail({ ...matched, matchedDish: undefined }), "Mains around S$5.00");
+  assert.equal(stallCardDetail(stall("v2", "Plain", "b1")), undefined);
+});
+
+test("stallCardImage prefers the stall photo, then the matched dish, then the top dish", () => {
+  const dish = (imageUrl?: string) => ({
+    id: "d1",
+    name: "Laksa",
+    imageUrl,
+    verificationStatus: "raw" as const,
+  });
+  const base = stall("v1", "Laksa House", "b1");
+  assert.equal(
+    stallCardImage({
+      ...base,
+      imageUrl: "https://x/stall.jpg",
+      matchedDish: dish("https://x/matched.jpg"),
+      representativeDish: dish("https://x/top.jpg"),
+    }),
+    "https://x/stall.jpg",
+  );
+  assert.equal(
+    stallCardImage({
+      ...base,
+      matchedDish: dish("https://x/matched.jpg"),
+      representativeDish: dish("https://x/top.jpg"),
+    }),
+    "https://x/matched.jpg",
+  );
+  assert.equal(
+    stallCardImage({ ...base, representativeDish: dish("https://x/top.jpg") }),
+    "https://x/top.jpg",
+  );
+  assert.equal(stallCardImage(base), undefined);
+});
+
+test("a stall card's screen reader label includes its matched dish", () => {
+  const label = cardAccessibilityLabel("stalls", {
+    ...stall("v1", "Laksa House", "b1"),
+    matchedDish: { id: "d1", name: "Signature Laksa", price: 6, verificationStatus: "raw" },
+  });
+  assert.match(label, /Signature Laksa · S\$6\.00/);
+});
+
+test("stalls that share a logo file merge into one card with an outlet count", () => {
+  const logo = "https://project.supabase.co/storage/v1/object/public/brand-logos/yakun.png";
+  const rows = mergeStallOutlets([
+    { ...stall("v1", "Ya Kun Kaya Toast", "b1"), logoUrl: logo },
+    { ...stall("v2", "Ya Kun Kaya Toast", "b2"), logoUrl: logo },
+    stall("v3", "Ya Kun Kaya Toast", "b3"),
+  ]);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0]?.extraOutlets, 1);
 });

@@ -105,6 +105,14 @@ begin
       and (cardinality(v_food_patterns) = 0 or fm.venue_id is not null)
       and (p_max_price is null or c.min_price <= p_max_price)
       and (p_lat is null or p_lng is null or p_radius_meters is null or st_dwithin(c.listing_location, st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography, p_radius_meters))
+      -- Cheap word filter first, so the scoring function only runs for stalls that can match: each word
+      -- must be near the stall name or building, or hit one of the stall's dishes (dish_term_hits).
+      and (v_n = 0 or (
+        (v_n < 1 or coalesce(dth.scores[1], 0) > 0 or c.name ilike any(v_pat1) or c.building_name ilike any(v_pat1) or v_tok1 <% c.name or v_tok1 <% c.building_name)
+        and (v_n < 2 or coalesce(dth.scores[2], 0) > 0 or c.name ilike any(v_pat2) or c.building_name ilike any(v_pat2) or v_tok2 <% c.name or v_tok2 <% c.building_name)
+        and (v_n < 3 or coalesce(dth.scores[3], 0) > 0 or c.name ilike any(v_pat3) or c.building_name ilike any(v_pat3) or v_tok3 <% c.name or v_tok3 <% c.building_name)
+        and (v_n < 4 or coalesce(dth.scores[4], 0) > 0 or c.name ilike any(v_pat4) or c.building_name ilike any(v_pat4) or v_tok4 <% c.name or v_tok4 <% c.building_name)
+      ))
       and (v_n = 0 or m.score > 0)
   ), page as materialized (
     select * from candidates c where v_cursor is null
