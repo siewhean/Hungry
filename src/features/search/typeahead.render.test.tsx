@@ -12,7 +12,12 @@ import {
   useTypeaheadMatches,
   type TypeaheadMatches,
 } from "@/features/search/useTypeaheadMatches";
-import type { CatalogPage, CatalogRawDishCard, CatalogRawVenueCard } from "@/lib/services/catalog";
+import {
+  CatalogRateLimitedError,
+  type CatalogPage,
+  type CatalogRawDishCard,
+  type CatalogRawVenueCard,
+} from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { cleanup, render } from "@/test/render";
 
@@ -230,6 +235,68 @@ test("useTypeaheadMatches reports a failure once and says so", async () => {
       errors.map((error) => (error as Error).message),
       ["down"],
     );
+  } finally {
+    console.error = original;
+    globals.__DEV__ = previousDev;
+  }
+});
+
+test("useTypeaheadMatches asks the way the results page does: best match, from the same position", async () => {
+  const asked: Array<{ sort?: string; latitude?: number; longitude?: number }> = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      asked.push({
+        sort: request.sort,
+        latitude: request.coordinate?.latitude,
+        longitude: request.coordinate?.longitude,
+      });
+      return page([dish("1")]);
+    },
+    listVenues: async (request) => {
+      asked.push({
+        sort: request.sort,
+        latitude: request.coordinate?.latitude,
+        longitude: request.coordinate?.longitude,
+      });
+      return page([stall("1")]);
+    },
+  });
+  await render(createElement(Probe, { query: "laksa", enabled: true, onChange: () => undefined }));
+  await wait(600);
+  assert.equal(asked.length, 2);
+  for (const request of asked) {
+    assert.equal(request.sort, "relevance");
+    assert.equal(
+      typeof request.latitude,
+      "number",
+      "the dishes and stalls are asked for near the user",
+    );
+    assert.equal(typeof request.longitude, "number");
+  }
+});
+
+test("useTypeaheadMatches shows a rate limit as an error but does not report it", async () => {
+  const errors: unknown[] = [];
+  const original = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") errors.push(args[1]);
+  };
+  try {
+    stubCatalog({
+      listDishes: async () => {
+        throw new CatalogRateLimitedError();
+      },
+      listVenues: async () => page<CatalogRawVenueCard>([]),
+    });
+    const view = await render(
+      createElement(Probe, { query: "laksa", enabled: true, onChange: () => undefined }),
+    );
+    await wait(600);
+    assert.match(view.text(), /error:0:0/);
+    assert.deepEqual(errors, []);
   } finally {
     console.error = original;
     globals.__DEV__ = previousDev;

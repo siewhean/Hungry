@@ -7,8 +7,9 @@
 --     unreviewed cards come last. The displayed rating is untouched.
 --   * catalog_release_highlights: popular food types and the top dishes, built when a release becomes
 --     active (trigger on catalog_releases) and for the current release here. catalog_suggest with no
---     text and the Search home featured request (sort quality, limit 3, no text, filters or location) read it
---     instead of grouping and sorting every dish card.
+--     text reads the food types; the Search home featured request (sort quality, limit 3, no text,
+--     filters or location) reads the ids of the top ten and joins them to the live dish cards, so a
+--     deleted or edited dish never shows stale.
 --   * No statement_timeout change: a role-level timeout also applies to export and account deletion.
 --     Decision with sh.
 -- The page and suggest bodies are copied from 20261029113000_catalog_search_relevance.sql (dishes page) and
@@ -111,16 +112,13 @@ as $$
       ) t
     ), '[]'::jsonb),
     coalesce((
-      select jsonb_agg(
-        (to_jsonb(f) - 'listing_location' - 'quality_score') || jsonb_build_object('distance_meters', null)
-        order by coalesce(f.quality_score, -1) desc, f.review_count desc, f.id
-      )
+      select jsonb_agg(f.id order by coalesce(f.quality_score, -1) desc, f.review_count desc, f.id)
       from (
-        select c.*
+        select c.id, c.quality_score, c.review_count
         from public.catalog_raw_dish_cards c
         where c.release_id = p_release
         order by coalesce(c.quality_score, -1) desc, c.review_count desc, c.id
-        limit 3
+        limit 10
       ) f
     ), '[]'::jsonb),
     now()
@@ -221,13 +219,24 @@ begin
      and cardinality(coalesce(p_building_types, '{}')) = 0 and cardinality(v_food_patterns) = 0
      and p_max_price is null and not coalesce(p_open_only, false) and p_venue_id is null and p_building_id is null
      and v_limit = 3 and p_sort = 'quality' then
+    -- Only the ids of the top ten were stored at publish; the cards are read live, so a dish that was
+    -- deleted or edited since (catalog_raw_refresh_venue) is never shown stale. The first 3 that still exist.
     select jsonb_build_object(
-      'items', (select coalesce(jsonb_agg(e.value order by e.ord), '[]'::jsonb) from jsonb_array_elements(h.featured_dishes) with ordinality e(value, ord) where e.ord <= v_limit),
+      'items', coalesce(jsonb_agg((to_jsonb(f) - 'listing_location' - 'quality_score') || jsonb_build_object('distance_meters', null)
+        order by coalesce(f.quality_score, -1) desc, f.review_count desc, f.id), '[]'::jsonb),
       'next_cursor', null, 'release_id', v_release,
       'match_count', least(coalesce((v_totals->>'dishes')::integer, 0), 100), 'totals', v_totals)
     into v_items
-    from public.catalog_release_highlights h where h.release_id = v_release;
-    if v_items is not null then return v_items; end if;
+    from (
+      select c.*
+      from public.catalog_release_highlights h
+      join public.catalog_raw_dish_cards c
+        on c.release_id = v_release and c.id in (select jsonb_array_elements_text(h.featured_dishes))
+      where h.release_id = v_release
+      order by coalesce(c.quality_score, -1) desc, c.review_count desc, c.id
+      limit v_limit
+    ) f;
+    if jsonb_array_length(v_items->'items') > 0 then return v_items; end if;
   end if;
 
   with name_hit_venues as materialized (

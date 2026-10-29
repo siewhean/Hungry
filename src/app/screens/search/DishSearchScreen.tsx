@@ -372,7 +372,7 @@ export function DishSearchScreen() {
             }}
             icon={<ArrowLeft color={palette.text} size={18} />}
           />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Input
               ref={searchInputRef}
               autoFocus
@@ -398,6 +398,8 @@ export function DishSearchScreen() {
               movingPlaceholderPhrases={DISH_SEARCH_PLACEHOLDER_PHRASES}
               accessibilityLabel="Search dishes, stalls, or hawker centres"
               returnKeyType="search"
+              // A web <input> will not shrink below its default width unless told to; at 320 it pushed the page 21pt sideways.
+              style={{ minWidth: 0 }}
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={() => openResults(searchText, "search_typed")}
@@ -838,21 +840,11 @@ export function DishSearchScreen() {
                     source={{ uri: dish.imageUrl }}
                     accessibilityLabel={dish.name}
                     contentFit="cover"
+                    fallback={<FeaturedDishPlaceholder />}
                     style={{ borderRadius: radii.md, height: 88, width: 88 }}
                   />
                 ) : (
-                  <View
-                    style={{
-                      alignItems: "center",
-                      backgroundColor: palette.orangeLight,
-                      borderRadius: radii.md,
-                      height: 88,
-                      justifyContent: "center",
-                      width: 88,
-                    }}
-                  >
-                    <Utensils color={palette.orange} size={28} />
-                  </View>
+                  <FeaturedDishPlaceholder />
                 )}
                 <View style={{ flex: 1, gap: spacing[1] }}>
                   <AppText variant="bodyBold" numberOfLines={2}>
@@ -887,6 +879,25 @@ export function DishSearchScreen() {
         ) : null}
       </Animated.View>
     </Screen>
+  );
+}
+
+/** The tile a featured dish shows when it has no photo or its photo fails to load. */
+function FeaturedDishPlaceholder() {
+  const { palette, radii } = useHungryTheme();
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.orangeLight,
+        borderRadius: radii.md,
+        height: 88,
+        justifyContent: "center",
+        width: 88,
+      }}
+    >
+      <Utensils color={palette.orange} size={28} />
+    </View>
   );
 }
 

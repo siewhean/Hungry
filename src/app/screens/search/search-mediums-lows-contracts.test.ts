@@ -226,3 +226,11 @@ test("L1: the search sanitiser no longer deletes SQL words", () => {
   const source = read("src/lib/security/inputSanitization.ts");
   assert.doesNotMatch(source, /SQL_META_REGEX/);
 });
+
+test("SR4 re-audit: Search home fits a 320 screen and a failed featured photo shows a tile", () => {
+  const source = read("src/app/screens/search/DishSearchScreen.tsx");
+  // A web <input> keeps its default width unless it may shrink; at 320 it pushed the page 21pt sideways.
+  assert.match(source, /<View style=\{\{ flex: 1, minWidth: 0 \}\}>\s*<Input/);
+  assert.match(source, /style=\{\{ minWidth: 0 \}\}/);
+  assert.match(source, /fallback=\{<FeaturedDishPlaceholder \/>\}/);
+});

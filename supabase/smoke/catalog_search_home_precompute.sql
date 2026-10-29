@@ -186,6 +186,32 @@ $$;
 
 reset role;
 
+-- The featured list holds ids only, so a dish deleted or edited after the highlights were built (the
+-- per-venue refresh does this to the active release) never shows stale: the top card goes, a price changes.
+delete from public.catalog_raw_dish_cards where release_id = '00000000-0000-0230-a000-0000000000d1' and id = 'ph-d5';
+update public.catalog_raw_dish_cards set price = 9.99 where release_id = '00000000-0000-0230-a000-0000000000d1' and id = 'ph-d2';
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0230-a000-000000000002', true);
+set local role authenticated;
+
+do $$
+declare
+  v_page jsonb;
+  v_ids text;
+begin
+  v_page := public.catalog_raw_dishes_page(p_sort => 'quality', p_limit => 3, p_release_id => '00000000-0000-0230-a000-0000000000d1');
+  select string_agg(i->>'id', ',' order by o) into v_ids from jsonb_array_elements(v_page->'items') with ordinality t(i, o);
+  if v_ids <> 'ph-d2,ph-d1,ph-d4' then
+    raise exception 'the featured request should drop a deleted dish and take the next one, got %', v_ids;
+  end if;
+  if (v_page->'items'->0->>'price')::numeric <> 9.99 then
+    raise exception 'the featured request should show the current price, got %', v_page->'items'->0;
+  end if;
+end;
+$$;
+
+reset role;
+
 -- Writing a rating or a review count keeps the score in step; clearing the reviews clears the score.
 update public.catalog_raw_dish_cards set rating = 2.00, review_count = 30 where release_id = '00000000-0000-0230-a000-0000000000d1' and id = 'ph-d1';
 do $$

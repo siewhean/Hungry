@@ -435,10 +435,10 @@ test("the too-short hint is a live region (SR4-29)", async () => {
 });
 
 for (const [width, cardWidth] of [
-  [320, "160px"],
-  [390, "195px"],
+  [320, "148px"],
+  [390, "183px"],
 ] as const) {
-  test(`at ${width} wide the cards are half the screen and the search row keeps Filters (SR4-6)`, async () => {
+  test(`at ${width} wide the cards share the width between the 12pt list gutters and the search row keeps Filters (SR4-6)`, async () => {
     resizeWindow(width);
     try {
       stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
