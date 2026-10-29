@@ -1539,3 +1539,9 @@ Use the smallest check that matches the change risk.
 ### SEARCH-R4 PR C (compact header, image fallback, Search home typeahead), 2026-10-29
 - typecheck clean; npm test 2260 pass / 0 fail; test:render 668 pass / 0 fail (new: header, notes line, food-type chips, reserved card line, image-failure fallback, 320 and 390 width tests, Search home typeahead loading / ready / empty / error, ResultsNotes and useTypeaheadMatches on their own); lint 0 errors; format clean; test:coverage OK; check:n-plus-one OK. No migration in this PR.
 - Render harness: the jsdom document size now follows window.innerWidth/innerHeight (it was fixed at 390 x 844), so a test can resize the window and dispatch "resize".
+
+### SEARCH-R4 PR D (Bayesian score, release highlights), 2026-10-29
+- Migration 20261029130000_catalog_search_home_precompute: smoke supabase/smoke/catalog_search_home_precompute.sql passes on the local PG16 stand-in after A and B; down-then-up roundtrip clean (B's and A's smokes still pass after the down).
+- Local timing, 30k dishes and 29.6k stalls, warm (this box), before to after: Search home featured request (limit 3, sort quality) 37 to 0.4 ms; suggest with no text 4 to 0.2 ms; browse by quality (24) and stall browse unchanged at about 40 to 50 ms. Staging numbers come from supabase/manual/search-timing.sql (p50/p95/max for 12 calls); on the local dense set every row has a p95 under 250 ms.
+- No role-level statement_timeout in this PR: it would also cap export_my_data and account deletion for signed-in users. A function-level SET statement_timeout does not stop a running statement (checked on PG16). Decision with sh.
+- Checks: check:rate-limits and audit:races OK; audit:supabase:migration-safety fails only for the missing staging rehearsal evidence of 20261029113000, 20261029120000 and 20261029130000.
