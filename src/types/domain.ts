@@ -701,6 +701,8 @@ export interface MerchantOutlet {
   operatingHours: string;
   openingSchedule?: OpeningSchedule;
   temporaryClosure?: string;
+  /** The stall is closed until this instant (ISO); ignored once it has passed. null clears it. */
+  closedUntil?: string | null;
   profilePhotoUrl?: string;
   coverPhotoUrl?: string;
   galleryUrls: string[];

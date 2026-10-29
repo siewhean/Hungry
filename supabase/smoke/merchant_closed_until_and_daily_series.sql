@@ -1,0 +1,173 @@
+-- Smoke checks for 20261029150000_merchant_closed_until_and_daily_series.sql.
+-- A stall with closed_until in the future reads as "Closed today" / "Closed until <date>" on the
+-- public merchant profile (guests included) and as its free-text closure once the date passes;
+-- the daily series is zero-filled per Singapore day, team-only, capped at 31 days, and not
+-- callable by guests. Runs in a transaction and rolls back. Brings its own building.
+--   owner:    00000000-0000-0072-b000-000000000001
+--   stranger: 00000000-0000-0072-b000-000000000002
+--   account:  00000000-0000-0072-a000-000000000001
+--   outlet:   00000000-0000-0072-d000-000000000001
+
+begin;
+
+insert into buildings (id, slug, name, building_type, latitude, longitude, floors)
+values ('smoke-cu-building', 'smoke-cu-building', 'Smoke CU Building', 'hawker_centre', 1.4701, 103.6201, array['01']);
+
+insert into venues (id, building_id, name, unit_number, floor)
+values ('smoke-cu-venue', 'smoke-cu-building', 'Smoke CU Stall', '#01-01', '01');
+
+insert into auth.users (id, email)
+values
+  ('00000000-0000-0072-b000-000000000001', 'cu-owner@example.test'),
+  ('00000000-0000-0072-b000-000000000002', 'cu-stranger@example.test');
+
+insert into merchant_accounts (id, user_id, display_name, email)
+values ('00000000-0000-0072-a000-000000000001', '00000000-0000-0072-b000-000000000001', 'Smoke CU Merchant', 'cu-owner@example.test');
+
+insert into merchant_outlets (id, merchant_account_id, venue_id, building_id, name, business_type, is_live)
+values (
+  '00000000-0000-0072-d000-000000000001', '00000000-0000-0072-a000-000000000001',
+  'smoke-cu-venue', 'smoke-cu-building', 'Smoke CU Stall', 'hawker_stall', true
+);
+
+select set_config('request.jwt.claim.role', 'service_role', true);
+insert into merchant_verifications (outlet_id, status, verified_at)
+values ('00000000-0000-0072-d000-000000000001', 'verified', now());
+
+-- Two profile visits yesterday (SGT), one today.
+insert into merchant_analytics_events (
+  merchant_account_id, outlet_id, venue_id, session_id, event_type, dedupe_key, occurred_at
+)
+select
+  '00000000-0000-0072-a000-000000000001', '00000000-0000-0072-d000-000000000001',
+  'smoke-cu-venue', 'smoke-cu-session-' || n, 'stall_profile_view', 'smoke-cu-' || n,
+  case when n <= 2
+    then (date_trunc('day', now() at time zone 'Asia/Singapore') - interval '12 hours') at time zone 'Asia/Singapore'
+    else now() - interval '1 minute' end
+from generate_series(1, 3) as n;
+
+-- 1. Closed today / closed until, read as a guest.
+set local role anon;
+
+do $$
+begin
+  if (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue')) is not null then
+    raise exception 'an open stall should have no closure text';
+  end if;
+end $$;
+
+reset role;
+
+update merchant_outlets
+set closed_until = (date_trunc('day', now() at time zone 'Asia/Singapore') + interval '1 day') at time zone 'Asia/Singapore'
+where id = '00000000-0000-0072-d000-000000000001';
+
+set local role anon;
+
+do $$
+begin
+  if (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue')) is distinct from 'Closed today' then
+    raise exception 'closed until midnight should read Closed today, got %',
+      (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue'));
+  end if;
+end $$;
+
+reset role;
+
+update merchant_outlets
+set closed_until = (date_trunc('day', now() at time zone 'Asia/Singapore') + interval '5 days') at time zone 'Asia/Singapore'
+where id = '00000000-0000-0072-d000-000000000001';
+
+set local role anon;
+
+do $$
+declare
+  v_expected text := 'Closed until ' || to_char(date_trunc('day', now() at time zone 'Asia/Singapore') + interval '5 days', 'FMDD Mon');
+begin
+  if (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue')) is distinct from v_expected then
+    raise exception 'expected %, got %', v_expected,
+      (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue'));
+  end if;
+end $$;
+
+reset role;
+
+-- A date in the past is ignored; the free-text closure shows again.
+update merchant_outlets
+set closed_until = now() - interval '1 hour', temporary_closure = 'Renovating'
+where id = '00000000-0000-0072-d000-000000000001';
+
+set local role anon;
+
+do $$
+begin
+  if (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue')) is distinct from 'Renovating' then
+    raise exception 'an expired closed_until should fall back to the free-text closure';
+  end if;
+end $$;
+
+reset role;
+
+-- 2. Daily series: owner reads it; zero-filled; capped; stranger and guest cannot.
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0072-b000-000000000001', true);
+set local role authenticated;
+
+do $$
+declare
+  v_series jsonb;
+begin
+  v_series := public.get_merchant_daily_series(
+    '00000000-0000-0072-d000-000000000001',
+    (date_trunc('day', now() at time zone 'Asia/Singapore') - interval '2 days') at time zone 'Asia/Singapore',
+    null
+  );
+  if jsonb_array_length(v_series) <> 3 then
+    raise exception 'expected 3 days, got %', v_series;
+  end if;
+  if (v_series->0->>'profileVisits')::integer <> 0
+     or (v_series->1->>'profileVisits')::integer <> 2
+     or (v_series->2->>'profileVisits')::integer <> 1 then
+    raise exception 'unexpected daily visits: %', v_series;
+  end if;
+  begin
+    perform public.get_merchant_daily_series('00000000-0000-0072-d000-000000000001', now() - interval '40 days', null);
+    raise exception 'a 40 day range should be refused';
+  exception when invalid_parameter_value then
+    null;
+  end;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0072-b000-000000000002', true);
+set local role authenticated;
+
+do $$
+begin
+  begin
+    perform public.get_merchant_daily_series('00000000-0000-0072-d000-000000000001', null, null);
+    raise exception 'stranger read the daily series';
+  exception when insufficient_privilege then
+    null;
+  end;
+end $$;
+
+reset role;
+
+do $$
+begin
+  if has_function_privilege('anon', 'public.get_merchant_daily_series(uuid, timestamptz, timestamptz)', 'execute') then
+    raise exception 'anon can execute get_merchant_daily_series';
+  end if;
+  if (select prosecdef from pg_proc where oid = 'public.get_merchant_daily_series(uuid, timestamptz, timestamptz)'::regprocedure) then
+    raise exception 'the public daily series wrapper must be SECURITY INVOKER';
+  end if;
+  if not exists (select 1 from app_private.request_rate_rules where route = 'rpc/get_merchant_daily_series') then
+    raise exception 'the daily series rate rule is missing';
+  end if;
+end $$;
+
+select 'merchant_closed_until_and_daily_series_passed' as result;
+
+rollback;
