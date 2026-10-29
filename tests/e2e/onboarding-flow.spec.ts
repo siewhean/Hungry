@@ -159,7 +159,8 @@ test("an account made after the quiz lands on Home with the diner's picks or a w
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: /^(Start exploring|Save my picks)$/ }).click();
 
-  // The account step leads with an emailed code; this run uses the password form.
+  // The account step is the fifth of five and leads with an emailed code; this run uses the password form.
+  await expect(page.getByRole("progressbar", { name: "Step 5 of 5" })).toBeVisible();
   await page.getByRole("button", { name: "Use a password instead" }).click();
   await page.getByLabel("Name shown on your reviews").fill("Mei");
   await page

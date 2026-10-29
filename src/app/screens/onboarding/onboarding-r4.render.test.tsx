@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { clearPendingDishSave, getPendingDishSaveIds } from "@/features/auth/pendingDishSave";
-import { clearTrackedAnalyticsEvents } from "@/lib/analytics";
+import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   EXPERIMENTS,
   clearExperimentOverrides,
@@ -351,11 +351,38 @@ test("experiment onboarding_result_payoff_v1: a signed-out user is exposed, a si
 
 // ─── One progress bar (R4-ONB-2, 8) ────────────────────────────────────────────────────────────
 
-test("R4-ONB-2: the account step counts as step 5 of 5, so Done reads 4 of 5", async () => {
-  const { OnboardingProgress } = await import("./OnboardingProgress");
-  const Account = () => <OnboardingProgress step="account" />;
-  const view = await renderScreen(Account as never, { name: "OnboardingAuth" });
-  assert.ok(view.findByLabel("Step 5 of 5"));
+test("R4-ONB-2: the real account step shows Step 5 of 5 with every segment up to it filled", async () => {
+  clearExperimentOverrides();
+  const view = await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+  assert.equal(progressLabel(), "Step 5 of 5");
+  for (const index of [1, 2, 3, 4, 5]) {
+    const fill = (
+      view.findByTestId(`onboarding-progress-segment-${index}`)!.firstElementChild as HTMLElement
+    ).style.width;
+    assert.equal(fill, "100%", `segment ${index} is filled on the last step`);
+  }
+});
+
+test("R4-ONB-2: the account step uses the shared email-code form with visible labels", async () => {
+  clearExperimentOverrides();
+  const view = await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+  const text = view.container.textContent ?? "";
+  assert.match(text, /Email/, "the email field has a visible label, not just a placeholder");
+  assert.match(text, /Name/, "the sign-up form asks for a name with a visible label");
+  assert.match(text, /Use a password instead/);
+});
+
+test("R4-ONB-2: the account step reports onboarding_step_viewed as step 5", async () => {
+  clearExperimentOverrides();
+  clearTrackedAnalyticsEvents();
+  await renderScreen(OnboardingAuthScreen as never, { name: "OnboardingAuth" });
+  const [viewed] = getTrackedAnalyticsEvents().filter((r) => r.event === "onboarding_step_viewed");
+  assert.deepEqual(viewed?.properties, {
+    step: "account",
+    step_number: 5,
+    step_index: 6,
+    surface: "onboarding",
+  });
 });
 
 test("R4-ONB-8: the quiz fills the Taste segment of the shared bar, one question at a time", async () => {

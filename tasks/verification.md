@@ -1456,6 +1456,7 @@ Use the smallest check that matches the change risk.
 - npm run typecheck clean; npm test 2095 pass / 0 fail / 2 skipped; npm run test:render 409/409; lint 0 errors (341 warnings, unchanged); format:check clean; check:n-plus-one, audit:races, check:rate-limits, audit:supabase:migration-safety, check:edge-functions pass; test:coverage OK (lines 83.5%).
 - Read-only checks on prod (frluxwpqqyomiqmjzavd): Supabase advisors, Sentry (4 unresolved, all simulator builds), content counts. No writes.
 - Update after owner decisions (map + camera shipped in released builds): typecheck clean; npm test 2094 pass / 0 fail; test:render 408/408; lint 0 errors; prettier clean; test:coverage OK (lines 83.5%). Released-build contract test now asserts the Mapbox plugin, CAMERA and NSCameraUsageDescription are kept. Needs a device check on a fresh build with EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN set.
+- ONB-X1 (20261028090000): typecheck clean; npm test 2105 pass / 0 fail; test:coverage OK; check:rate-limits, audit:races, check:n-plus-one pass. Migration up, down and re-up, and the smoke, run on a local Postgres 16 with stub tables (no pgvector/PostGIS there). NOT yet run: scripts/db/rehearse.sh on staging (needs sh's database passwords); check-migration-safety fails until supabase/rehearsals/20261028090000.json is committed.
 
 ## 2026-10-27 onboarding round-four fixes (claude/project-thread-4cunlm)
 - npm run typecheck clean; npm test 2124 pass / 0 fail / 2 skipped; npm run test:render 463/463; lint 0 errors; test:coverage OK (baseline updated).
@@ -1507,3 +1508,6 @@ Use the smallest check that matches the change risk.
 - typecheck clean; npm test 2199/0 fail (three source-contract tests that pinned the old map and Decide code were updated); test:render 592/0 fail (map cards, Loading pill, pins cap, A2 event, Decide hours cache, A1 events, four draft-arm previews); lint 0 errors; format clean on touched code; test:coverage OK and baseline updated; check:n-plus-one, check:rate-limits, audit:races OK.
 - No migration in this step. `getVenuesByIds` over 50 ids tested against the fake Supabase client (120 ids make calls of 50, 50, 20; one failed batch rejects).
 - Not walked on a device or the web build in this step.
+### ONB-ACCT account step progress, 2026-10-28
+
+- typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).

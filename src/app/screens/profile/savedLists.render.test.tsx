@@ -156,10 +156,10 @@ test("Saved has no Posts tab with the social feed off; tabs are tabs; the headin
   const stallsTab = view.findByLabel("Saved stalls");
   assert.ok(stallsTab);
   assert.equal(stallsTab?.getAttribute("role"), "tab");
-  assert.ok(view.findByText("Saved Dishes"));
+  assert.ok(view.findByText("Saved dishes"));
   await view.press(stallsTab);
-  assert.ok(view.findByText("Saved Stalls"));
-  assert.equal(view.findByText("Saved Dishes"), null);
+  assert.ok(view.findByText("Saved stalls"));
+  assert.equal(view.findByText("Saved dishes"), null);
 });
 
 // ─── SAVED-1, SAVED-5 ────────────────────────────────────────────────────────────────────────

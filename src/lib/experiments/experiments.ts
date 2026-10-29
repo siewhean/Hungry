@@ -226,6 +226,52 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["dish_favourited", "dish_unfavourited", "list_item_removed", "dish_viewed"],
   },
   /**
+   * Saved > Dishes list: large photo cards (control) or compact rows, about five to a screen.
+   * Read in SavedDishes once the dish list has loaded. Draft until the PostHog flag exists.
+   */
+  saved_card_density_v1: {
+    variants: ["control", "compact_rows"],
+    fallback: "control",
+    status: "draft",
+    surface: "saved-lists",
+    hypothesis:
+      "Compact rows, about five to a screen, get more saved dishes opened per Saved visit than large photo cards.",
+    primaryMetric: "saved_item_opened",
+    guardrailMetrics: ["dish_unfavourited", "saved_directions_opened"],
+    minSamplePerArm: 1500,
+  },
+  /**
+   * The sort Saved opens on: Recent (control) or Nearest. Eligible only when the device
+   * position is known. Draft until the PostHog flag exists.
+   */
+  saved_default_sort_v1: {
+    variants: ["control", "nearest"],
+    fallback: "control",
+    status: "draft",
+    surface: "saved-lists",
+    hypothesis:
+      "Opening Saved on the nearest dishes turns more saves into visits than opening on the newest saves.",
+    primaryMetric: "saved_directions_opened",
+    guardrailMetrics: ["saved_item_opened", "dish_unfavourited"],
+    minSamplePerArm: 1500,
+  },
+  /**
+   * Removing a saved dish: a plain toast (control) or a toast with Undo for five seconds. Draft
+   * until the PostHog flag exists; the fallback is the Undo design so it ships to everyone first.
+   * Measure re-saves of the same dish_id within 10 minutes of dish_unfavourited.
+   */
+  saved_remove_undo_v1: {
+    variants: ["control", "undo_toast"],
+    fallback: "undo_toast",
+    status: "draft",
+    surface: "saved-lists",
+    hypothesis:
+      "A five-second Undo on the remove toast cuts accidental removals, measured as re-saves of the same dish soon after a remove.",
+    primaryMetric: "dish_favourited",
+    guardrailMetrics: ["dish_unfavourited", "saved_undo_used"],
+    minSamplePerArm: 1500,
+  },
+  /**
    * Dining preferences on Settings start open instead of folded. Measure dietary_preferences_set
    * with surface = "settings": the Settings rows tag it, and a profile edit sends it only when
    * the flags changed. Draft until the PostHog flag exists.

@@ -139,7 +139,8 @@ test("account deletion purges locally, records a notice, then signs out; confirm
     /Alert\.alert\(\s*"(Sign out|Delete account|Deletion request failed)"/,
   );
   assert.match(settings, /<Dialog\s+visible=\{accountDialog === "signOut"\}/);
-  assert.match(settings, /<Dialog\s+visible=\{accountDialog === "deleteAccount"\}/);
+  // The delete step is its own modal (not Alert.alert), so it also works on web.
+  assert.match(settings, /<AccountDeletionDialog\s+visible=\{accountDialog === "deleteAccount"\}/);
   const run = settings.slice(settings.indexOf("const submitDeletionCode"));
   const purgeIndex = run.indexOf("await purgePersistedAccountData()");
   const noticeIndex = run.indexOf("setAuthNotice(");
