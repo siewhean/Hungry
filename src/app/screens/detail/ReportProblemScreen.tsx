@@ -45,11 +45,13 @@ const SEND_FAILED_MESSAGE = "Couldn't send your report. Check your connection an
  * like, and it goes to the team's queue to check.
  */
 export function ReportProblemScreen({ navigation, route }: Props) {
-  const { venueId, dishId, subjectName } = route.params;
+  const { venueId, dishId, subjectName, initialKind } = route.params;
   const { componentRadii, palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const reasons = dishId ? DISH_REASONS : STALL_REASONS;
-  const [kind, setKind] = useState<CatalogCorrectionKind | null>(null);
+  const [kind, setKind] = useState<CatalogCorrectionKind | null>(
+    initialKind && reasons.some((reason) => reason.kind === initialKind) ? initialKind : null,
+  );
   const [note, setNote] = useState("");
   const [isSending, setIsSending] = useState(false);
   const subject = subjectName ?? (dishId ? "this dish" : "this stall");
