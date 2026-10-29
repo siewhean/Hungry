@@ -301,6 +301,11 @@ export function DishSearchScreen() {
       });
       return;
     }
+    if (suggestion.kind === "stall" && suggestion.venueId) {
+      // A stall name that belongs to one stall opens that stall; a chain's name searches all outlets.
+      navigation.navigate("StallDetail", { venueId: suggestion.venueId });
+      return;
+    }
     openResults(suggestion.label, "search_suggestion", suggestionMode(suggestion));
   };
 
@@ -427,7 +432,11 @@ export function DishSearchScreen() {
                 <Pressable
                   key={`${suggestion.kind}:${suggestion.label}`}
                   accessibilityRole="button"
-                  accessibilityLabel={`Search ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}`}
+                  accessibilityLabel={
+                    suggestion.venueId
+                      ? `Open ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}${suggestion.subtitle ? ` at ${suggestion.subtitle}` : ""}`
+                      : `Search ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}`
+                  }
                   onPress={() => openSuggestion(suggestion, "typeahead")}
                   style={{
                     alignItems: "center",
@@ -440,7 +449,9 @@ export function DishSearchScreen() {
                   <View style={{ flex: 1 }}>
                     <AppText numberOfLines={1}>{suggestion.label}</AppText>
                     <AppText tone="secondary" variant="micro">
-                      {SUGGESTION_KIND_LABELS[suggestion.kind]}
+                      {suggestion.subtitle
+                        ? `${SUGGESTION_KIND_LABELS[suggestion.kind]} · ${suggestion.subtitle}`
+                        : SUGGESTION_KIND_LABELS[suggestion.kind]}
                     </AppText>
                   </View>
                 </Pressable>

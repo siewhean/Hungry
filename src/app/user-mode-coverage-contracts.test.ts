@@ -227,6 +227,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
   assertSourceIncludes(
     searchResults,
     [
+      /navigation\.navigate\("StallDetail", \{ venueId: item\.id \}\)/,
       /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",/,
       /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/,
       /type: "search_query"/,

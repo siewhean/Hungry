@@ -253,6 +253,97 @@ test("stall cards show the top dish rating and keep same-name stalls apart (SEAR
   assert.equal((view.text().match(/Top dish 4\.4 \(30\)/g) ?? []).length, 2);
 });
 
+function stallCard(id: string, overrides: Partial<CatalogRawVenueCard> = {}): CatalogRawVenueCard {
+  return {
+    id,
+    buildingId: "maxwell",
+    name: `Laksa House ${id}`,
+    buildingName: "Maxwell Food Centre",
+    menuCount: 3,
+    verificationStatus: "raw",
+    menuRightsStatus: "merchant_owned",
+    mediaRightsStatus: "merchant_owned",
+    ...overrides,
+  };
+}
+
+test("stall cards show the matched dish and the main price, and open the stall (SR4-3, SR4-4, SR4-8, SR4-9)", async () => {
+  stubCatalog({
+    listVenues: async () =>
+      page([
+        stallCard("v1", {
+          logoUrl: "https://example.com/logo.png",
+          mainPrice: 5,
+          matchedDish: { id: "d1", name: "Signature Laksa", price: 6, verificationStatus: "raw" },
+        }),
+        stallCard("v2", { mainPrice: 7.5 }),
+      ]),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "stalls", initialQuery: "laksa" });
+  await wait(400);
+  assert.match(view.text(), /Signature Laksa · S\$6\.00/, "the dish that matched the query");
+  assert.match(view.text(), /Mains around S\$7\.50/, "the typical price of the mains");
+  // A stall with a logo shows it; one without falls back to its initials.
+  assert.equal(view.findByLabel("Laksa House v1 stall logo unavailable"), null);
+  assert.ok(view.findByLabel("Laksa House v2 stall logo unavailable"));
+
+  await view.press(view.findByLabel(/^Laksa House v1,/));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["StallDetail", { venueId: "v1" }],
+  });
+  const opened = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_result_opened",
+  );
+  assert.equal(opened?.properties.mode, "stalls");
+});
+
+test("the offline copy keeps the catalog page for a stall tap", async () => {
+  stubCatalog({
+    listVenues: async () => ({
+      ...page([stallCard("v1")]),
+      releaseId: "excel-fallback-1",
+    }),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "stalls" });
+  await wait(400);
+  await view.press(view.findByLabel(/^Laksa House v1,/));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["CatalogRawDetail", { kind: "venue", id: "v1", releaseId: "excel-fallback-1" }],
+  });
+});
+
+test("Search home: a stall suggestion with a venue id opens the stall; a chain's name searches", async () => {
+  stubCatalog({
+    suggest: async () => [
+      { kind: "stall", label: "Sungei Road Laksa", venueId: "v9", subtitle: "Maxwell Food Centre" },
+      { kind: "stall", label: "Ya Kun Kaya Toast" },
+    ],
+    listDishes: async () => page<CatalogRawDishCard>([]),
+  });
+  const view = await renderHome();
+  await view.type(view.findByLabel("Search dishes, stalls, or hawker centres"), "sungei");
+  await wait(400);
+  assert.match(view.text(), /Stall · Maxwell Food Centre/);
+  await view.press(view.findByLabel("Open Sungei Road Laksa, Stall at Maxwell Food Centre"));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["StallDetail", { venueId: "v9" }],
+  });
+
+  await view.type(view.findByLabel("Search dishes, stalls, or hawker centres"), "ya kun");
+  await wait(400);
+  await view.press(view.findByLabel("Search Ya Kun Kaya Toast, Stall"));
+  const call = view.navigation.calls.at(-1);
+  assert.equal(call?.method, "navigate");
+  assert.equal((call?.args[0] as string) ?? "", "SearchResults");
+  assert.equal((call?.args[1] as { browseMode?: string }).browseMode, "stalls");
+  assert.equal((call?.args[1] as { initialQuery?: string }).initialQuery, "Ya Kun Kaya Toast");
+});
+
 test("ParsedQueryChips: diet and price words become filters and removable chips (SR4-2)", async () => {
   const requests: CatalogPageRequest[] = [];
   stubCatalog({
