@@ -13,6 +13,7 @@ import {
   formatOpenLabel,
   isVenueOpenNow,
   keepScoreOrder,
+  minutesUntilOpening,
   preferOpenStalls,
   rankDecideCandidates,
 } from "./decideForMeCandidates";
@@ -212,4 +213,22 @@ test("decide_initial_radius_v1: 1 km for the shipped arm, 0.5 km for the control
   } finally {
     clearExperimentOverrides();
   }
+});
+
+test("a stall with no readable hours is open exactly when its own flag says so", () => {
+  assert.equal(isVenueOpenNow(venue("flag-open", "", true), TEN_PM_SGT), true);
+  assert.equal(isVenueOpenNow(venue("flag-closed", "", false), TEN_PM_SGT), false);
+});
+
+test("minutesUntilOpening reads the opening time from the label, wrapping past midnight", () => {
+  // 22:00 in Singapore.
+  assert.equal(minutesUntilOpening({ status: "closed", detail: "Opens 11pm" }, TEN_PM_SGT), 60);
+  assert.equal(minutesUntilOpening({ status: "closed", detail: "Opens 5:30am" }, TEN_PM_SGT), 450);
+  assert.equal(minutesUntilOpening({ status: "closed", detail: "Opens 12am" }, TEN_PM_SGT), 120);
+  assert.equal(minutesUntilOpening({ status: "closed", detail: "Opens 10pm" }, TEN_PM_SGT), 0);
+  assert.equal(
+    minutesUntilOpening({ status: "closed", detail: "Closed today" }, TEN_PM_SGT),
+    Infinity,
+  );
+  assert.equal(minutesUntilOpening({ status: "closed" }, TEN_PM_SGT), Infinity);
 });
