@@ -1192,6 +1192,40 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
   return rows;
 }
 
+/** Forgets the reused get_venue_detail result, so the next read of that stall is fresh. */
+export function invalidateVenueDetail(venueId: string): void {
+  venueDetailRequests.delete(venueId);
+}
+
+/**
+ * The merchant reads get_venue_detail returns with the stall (profile, promotions, own claim
+ * status), when that call is already in flight or fresh for this stall. Undefined means "ask the
+ * separate RPCs": no detail call was made (a dish page asking about its stall), the call failed,
+ * or the database predates the columns. Never starts a get_venue_detail call of its own: it embeds
+ * a 50-dish page.
+ */
+export async function getInlineMerchantReads(venueId: string): Promise<
+  | {
+      profile: Row | null;
+      promotions: Row[];
+      claimStatus: string | null;
+    }
+  | undefined
+> {
+  const cached = venueDetailRequests.get(venueId);
+  if (!cached || Date.now() - cached.at >= VENUE_DETAIL_REUSE_MS) return undefined;
+  const row = (await cached.rows)?.[0];
+  if (!row || !("merchant_profile" in row)) return undefined;
+  const profile = row.merchant_profile;
+  const promotions = row.active_promotions;
+  const claimStatus = row.claim_status;
+  return {
+    profile: profile && typeof profile === "object" ? (profile as Row) : null,
+    promotions: Array.isArray(promotions) ? (promotions as Row[]) : [],
+    claimStatus: typeof claimStatus === "string" ? claimStatus : null,
+  };
+}
+
 /** Throws when the configured get_venue_detail RPC failed (offline, timeout). */
 async function getVenueDetailRowsOrThrow(venueId: string): Promise<Row[] | undefined> {
   const rows = await getVenueDetailRows(venueId);
