@@ -2,6 +2,7 @@
 -- catalog_raw_venues_page from 20261022110000 and catalog_suggest from 20261022020300 (VOLATILE, as
 -- 20261022130000 left it), then drop the search helpers and the alias table.
 -- down-loses-data: catalog_food_aliases is a seed table; the up migration re-creates the same rows
+-- expect-row-loss: public.catalog_food_aliases
 
 create or replace function public.catalog_raw_dishes_page(
   p_query text default null, p_lat double precision default null, p_lng double precision default null,
