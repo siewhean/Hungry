@@ -35,6 +35,7 @@ import {
 } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { formatBrowseDistance } from "@/features/search/browseGrid";
+import { ResultsNotes } from "@/features/search/ResultsNotes";
 import { useTypeaheadMatches } from "@/features/search/useTypeaheadMatches";
 import {
   CATALOG_SUGGEST_MIN_CHARS,
@@ -339,6 +340,11 @@ export function DishSearchScreen() {
     navigation.navigate("StallDetail", { venueId: stall.id });
   };
 
+  // Everything on this screen can come from the bundled copy of the catalog (SR4-31).
+  const offlineCopy = [featured.releaseId, matches.releaseId].some((id) =>
+    id?.startsWith("excel-fallback"),
+  );
+
   const showRecents = allowSearchHistory && recentSearches.length > 0;
 
   const quickFilter = (filter?: string) =>
@@ -398,6 +404,17 @@ export function DishSearchScreen() {
             />
           </View>
         </View>
+        {offlineCopy ? (
+          <ResultsNotes
+            notes={[
+              {
+                id: "offline",
+                testID: "search-home-offline-copy",
+                text: "You're seeing a saved copy of the catalog. It may be out of date.",
+              },
+            ]}
+          />
+        ) : null}
         {!trimmedSearchText ? (
           <ScrollView
             horizontal
