@@ -135,7 +135,8 @@ export type MerchantTabParamList = {
   // Extended sections
   VerificationCentre: undefined;
   HomeBasedVerification: undefined;
-  BusinessProfileEditor: undefined;
+  /** `section` scrolls the long form to that part when it opens. */
+  BusinessProfileEditor: { section?: "location" | "hours" | "contact" } | undefined;
   DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
   /** `filter` opens a filtered list; `replyToId` opens the reply composer for that review. */

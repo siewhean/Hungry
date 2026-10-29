@@ -443,6 +443,7 @@ export function MerchantMenuScreen() {
   return (
     <Screen
       title="Menu"
+      showBack={false}
       scroll={false}
       headerRight={
         <Button

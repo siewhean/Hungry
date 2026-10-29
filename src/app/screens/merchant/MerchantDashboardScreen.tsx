@@ -35,6 +35,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { ApprovalNotice } from "@/components/merchant/ApprovalNotice";
 import { ClosurePanel, type ClosureChoice } from "@/components/merchant/ClosurePanel";
 import { getClosureLabel } from "@/features/merchant/closure";
+import { formatRelativeDate } from "@/features/profile/relativeDate";
 import { formatCount } from "@/features/merchant/performanceFormat";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
@@ -246,6 +247,63 @@ function ActionCard({
   );
 }
 
+// ─── Tool tile (Home 2x2 grid) ────────────────────────────────────────────────
+
+/** Compact entry to a business tool; the sentence is read aloud but not shown, to keep Home short. */
+function ToolTile({
+  title,
+  description,
+  icon,
+  onPress,
+  onPressIn,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+  onPressIn?: () => void;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${description}`}
+      onPressIn={onPressIn}
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          flexBasis: "47%",
+          flexGrow: 1,
+          minHeight: 88,
+          backgroundColor: palette.surface,
+          borderRadius: componentRadii.button,
+          padding: spacing[4],
+          borderWidth: 1,
+          borderColor: palette.border,
+          gap: spacing[2],
+          opacity: pressed ? 0.8 : 1,
+        },
+      ]}
+    >
+      <View
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: componentRadii.iconButton,
+          backgroundColor: palette.bgSoft,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {icon}
+      </View>
+      <AppText variant="bodyBold" style={{ color: palette.text }}>
+        {title}
+      </AppText>
+    </Pressable>
+  );
+}
+
 // ─── Inline reply card (merchant_inline_reply_v1 "inline" arm) ──────────────
 
 /** The newest unreplied review with a Reply button, in place of the unreplied count card. */
@@ -319,7 +377,16 @@ export function MerchantDashboardScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MerchantTabParamList>>();
   const isFocused = useIsFocused();
 
-  const [dateRange, setDateRange] = useState<DashboardRange>("today");
+  // The range the merchant picked here or on Performance; until then the experiment decides
+  // between Today (control) and 7 days.
+  const pickedRange = useMerchantStore((state) => state.analyticsRange);
+  const setAnalyticsRange = useMerchantStore((state) => state.setAnalyticsRange);
+  const defaultRangeVariant = useExperimentVariant("merchant_home_default_range_v1", {
+    enabled: pickedRange === null,
+  });
+  const dateRange: DashboardRange =
+    pickedRange ?? (defaultRangeVariant === "seven_days" ? "7d" : "today");
+  const setDateRange = setAnalyticsRange;
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [summary, setSummary] = useState<MerchantDashboardSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -479,17 +546,12 @@ export function MerchantDashboardScreen() {
 
   if (isLoading && !analytics) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
-        <Skeleton
-          height={180}
-          width="100%"
-          style={{ margin: 16, borderRadius: componentRadii.card }}
-        />
-        <Skeleton
-          height={180}
-          width="100%"
-          style={{ margin: 16, borderRadius: componentRadii.card }}
-        />
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: palette.bg, padding: spacing[4], gap: spacing[4] }}
+        edges={["top"]}
+      >
+        <Skeleton height={180} width="100%" style={{ borderRadius: componentRadii.card }} />
+        <Skeleton height={180} width="100%" style={{ borderRadius: componentRadii.card }} />
       </SafeAreaView>
     );
   }
@@ -747,41 +809,36 @@ export function MerchantDashboardScreen() {
             Business tools
           </AppText>
 
-          <ActionCard
-            title="Promotions"
-            description="Create and manage offers for nearby customers."
-            icon={<Megaphone size={20} color={palette.orange} />}
-            actionText="Open promotions"
-            onPressIn={() => prefetchMerchantRoute("PromotionList")}
-            onPress={() => navigation.navigate("PromotionList")}
-          />
-
-          <ActionCard
-            title="Featured visitors"
-            description="Pin popular visitor reviews to your public stall page."
-            icon={<Users size={20} color={palette.orange} />}
-            actionText="Manage visitors"
-            onPressIn={() => prefetchMerchantRoute("FeaturedVisitors")}
-            onPress={() => navigation.navigate("FeaturedVisitors")}
-          />
-
-          <ActionCard
-            title="Insights"
-            description="See a simple summary of your stall's recent activity."
-            icon={<Sparkles size={20} color={palette.orange} />}
-            actionText="View insights"
-            onPressIn={() => prefetchMerchantRoute("AIAssistant")}
-            onPress={() => navigation.navigate("AIAssistant")}
-          />
-
-          <ActionCard
-            title="Merchant settings"
-            description="Alerts, verification and account."
-            icon={<Settings size={20} color={palette.textSecondary} />}
-            actionText="Open settings"
-            onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
-            onPress={() => navigation.navigate("MerchantSettings")}
-          />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
+            <ToolTile
+              title="Promotions"
+              description="Create and manage offers for nearby customers."
+              icon={<Megaphone size={22} color={palette.orange} />}
+              onPressIn={() => prefetchMerchantRoute("PromotionList")}
+              onPress={() => navigation.navigate("PromotionList")}
+            />
+            <ToolTile
+              title="Featured visitors"
+              description="Pin popular visitor reviews to your public stall page."
+              icon={<Users size={22} color={palette.orange} />}
+              onPressIn={() => prefetchMerchantRoute("FeaturedVisitors")}
+              onPress={() => navigation.navigate("FeaturedVisitors")}
+            />
+            <ToolTile
+              title="Insights"
+              description="See a simple summary of your stall's recent activity."
+              icon={<Sparkles size={22} color={palette.orange} />}
+              onPressIn={() => prefetchMerchantRoute("AIAssistant")}
+              onPress={() => navigation.navigate("AIAssistant")}
+            />
+            <ToolTile
+              title="Merchant settings"
+              description="Alerts, verification and account."
+              icon={<Settings size={22} color={palette.textSecondary} />}
+              onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
+              onPress={() => navigation.navigate("MerchantSettings")}
+            />
+          </View>
         </View>
 
         {/* Recent Activity */}
@@ -837,7 +894,7 @@ export function MerchantDashboardScreen() {
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                     <AppText variant="bodyBold">{latestFeedback.authorName}</AppText>
                     <AppText variant="micro" tone="muted">
-                      {new Date(latestFeedback.createdAt).toLocaleDateString()}
+                      {formatRelativeDate(latestFeedback.createdAt)}
                     </AppText>
                   </View>
                   <AppText variant="bodySmall" numberOfLines={2}>

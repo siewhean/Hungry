@@ -31,6 +31,13 @@ import { reportError } from "@/lib/monitoring/reportError";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import {
+  getSentimentStats,
+  isRatingFilter,
+  matchesRatingFilter,
+  type RatingFilter,
+} from "@/features/merchant/inboxFilters";
+import { formatRelativeDate } from "@/features/profile/relativeDate";
+import {
   REPLY_SUGGESTION_LABELS,
   buildReplySuggestion,
   canFillReplySuggestion,
@@ -42,7 +49,7 @@ import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
-type InboxFilter = InteractionType | "all" | "unreplied";
+type InboxFilter = InteractionType | RatingFilter | "all" | "unreplied";
 
 /** Reviews loaded per page; "Load more" fetches the next older page. */
 const INBOX_PAGE_SIZE = 30;
@@ -53,13 +60,18 @@ const REVIEW_QUOTE_EXPAND_FROM = 160;
 const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
   { id: "all", label: "All" },
   { id: "unreplied", label: "Unreplied" },
-  { id: "review", label: "Reviews" },
+  { id: "rating_low", label: "1–2★" },
+  { id: "rating_mid", label: "3★" },
+  { id: "rating_high", label: "4–5★" },
 ];
 
 const INBOX_EMPTY_LABELS: Record<InboxFilter, string> = {
   all: "No customer reviews to show yet.",
   unreplied: "No unreplied reviews.",
   review: "No reviews to show yet.",
+  rating_low: "No 1–2★ reviews in the reviews loaded so far.",
+  rating_mid: "No 3★ reviews in the reviews loaded so far.",
+  rating_high: "No 4–5★ reviews in the reviews loaded so far.",
   comment: "No comments to show.",
   post_mention: "No mentions to show.",
   question: "No questions to show.",
@@ -248,10 +260,10 @@ export function CustomerInboxScreen() {
           "merchant_customer_interaction_reported",
           useMerchantStore.getState().activeOutletId ?? undefined,
         );
-        showAlert("Reported", "Interaction sent for moderation review.");
+        showAlert("Reported", "Thanks, our team will look at this review.");
       } catch (e) {
         reportError(e, { screen: "CustomerInbox", action: "report_interaction" });
-        showAlert("Error", "Failed to report interaction.");
+        showAlert("Couldn't report this review", "Please try again in a moment.");
       }
     },
     [showAlert],
@@ -292,7 +304,7 @@ export function CustomerInboxScreen() {
               );
             } catch (e) {
               reportError(e, { screen: "CustomerInbox", action: "remove_reply" });
-              showAlert("Error", "Failed to remove the reply.");
+              showAlert("Couldn't remove your reply", "Please try again in a moment.");
             }
           },
         },
@@ -314,8 +326,13 @@ export function CustomerInboxScreen() {
   }, []);
 
   const visibleInteractions = useMemo(
-    () => (unrepliedOnly ? interactions.filter((item) => !item.reply) : interactions),
-    [unrepliedOnly, interactions],
+    () =>
+      unrepliedOnly
+        ? interactions.filter((item) => !item.reply)
+        : isRatingFilter(filter)
+          ? interactions.filter((item) => matchesRatingFilter(item, filter))
+          : interactions,
+    [filter, unrepliedOnly, interactions],
   );
 
   return (
@@ -363,7 +380,7 @@ export function CustomerInboxScreen() {
             <View style={[styles.emptyContainer, { padding: 60 }]}>
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
-                All caught up!
+                {isRatingFilter(filter) ? "Nothing here" : "All caught up!"}
               </AppText>
               <AppText variant="bodySmall" tone="muted">
                 {INBOX_EMPTY_LABELS[filter]}
@@ -415,19 +432,7 @@ function SentimentSummary({
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
 
-  const stats = useMemo(() => {
-    if (interactions.length === 0) return null;
-    const total = interactions.length;
-    const positive = interactions.filter((i) => (i.rating || 0) >= 4).length;
-    const negative = interactions.filter((i) => (i.rating || 0) > 0 && (i.rating || 0) <= 2).length;
-    const neutral = total - positive - negative;
-    return {
-      total,
-      positive: Math.round((positive / total) * 100),
-      negative: Math.round((negative / total) * 100),
-      neutral: Math.round((neutral / total) * 100),
-    };
-  }, [interactions]);
+  const stats = useMemo(() => getSentimentStats(interactions), [interactions]);
 
   if (!stats) return null;
 
@@ -447,8 +452,8 @@ function SentimentSummary({
       <AppText variant="bodyBold">Sentiment summary</AppText>
       <AppText variant="micro" tone="muted">
         {hasMore
-          ? `Your ${stats.total} most recent reviews`
-          : `All ${stats.total} ${stats.total === 1 ? "review" : "reviews"}`}
+          ? `Your ${stats.total} most recent rated reviews`
+          : `All ${stats.total} rated ${stats.total === 1 ? "review" : "reviews"}`}
       </AppText>
       <View
         style={{
@@ -538,7 +543,7 @@ function InteractionCard({
           <View>
             <AppText variant="bodyBold">{interaction.authorName}</AppText>
             <AppText variant="micro" tone="muted">
-              {new Date(interaction.createdAt).toLocaleDateString()} • {typeLabel}
+              {formatRelativeDate(interaction.createdAt)} • {typeLabel}
             </AppText>
           </View>
         </View>
@@ -595,7 +600,7 @@ function InteractionCard({
             </AppText>
             <AppText variant="micro" tone="muted">
               {" "}
-              • {new Date(interaction.reply.repliedAt).toLocaleDateString()}
+              • {formatRelativeDate(interaction.reply.repliedAt)}
             </AppText>
           </View>
           <AppText variant="bodySmall">{interaction.reply.text}</AppText>
@@ -693,7 +698,10 @@ function ReplyComposer({
       onSent(text);
     } catch (e) {
       reportError(e, { screen: "CustomerInbox", action: "send_reply" });
-      showAlert("Error", e instanceof Error ? e.message : "Failed to send reply.");
+      showAlert(
+        "Couldn't send your reply",
+        e instanceof Error ? e.message : "Please try again in a moment.",
+      );
     } finally {
       setIsSending(false);
     }

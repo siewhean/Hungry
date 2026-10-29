@@ -304,6 +304,7 @@ export function DishEditorScreen() {
     try {
       allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
     } catch (e) {
+      reportError(e, { screen: "DishEditor", action: "suggest_allergens" });
       showAlert("Check unavailable", errorMessage(e, "Please try again."));
       return;
     }
@@ -349,7 +350,7 @@ export function DishEditorScreen() {
 
   if (error) {
     return (
-      <Screen title="Error">
+      <Screen title="Dish">
         <EmptyState
           title="Failed to load dish"
           body="Your dish details could not be loaded."

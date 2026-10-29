@@ -57,7 +57,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
 
   if (!activeOutlet) {
     return (
-      <Screen title="Error">
+      <Screen title="Verification">
         <EmptyState
           title="No outlet selected"
           body="Choose an outlet to continue with verification."
@@ -350,7 +350,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
   };
 
   return (
-    <Screen title="Verification Centre">
+    <Screen title="Verification centre">
       <View style={{ gap: spacing[6], width: "100%" }}>
         {status === "verified" && activeOutlet.isLive ? null : (
           <ClaimStepper current={status === "verified" ? 3 : 2} />

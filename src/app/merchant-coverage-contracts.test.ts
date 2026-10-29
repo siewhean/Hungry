@@ -312,7 +312,6 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
     settings,
     [
       /merchant\.getMerchantNotifications\(/,
-      /merchant\.getWeeklySummaryStats\(/,
       // Low-rating push alerts are real (reviews trigger -> notification_jobs -> send-notifications).
       /merchant\.getNotificationPreferences\(/,
       /merchant\.updateNotificationPreferences\(account\.id, \{\s*lowRatingAlerts: enabled,/,
@@ -320,8 +319,8 @@ test("merchant inbox, promotions, AI assistant, and settings use service-backed 
       /registerForStallAlerts\(\{ askPermission: false \}\)/,
       /Hungry sends low-rating push alerts to the account owner as soon as the review is/,
       // Preferences failing to load must not take the alerts list down with them.
-      /\.getNotificationPreferences\(account\.id\)\s*\.catch\(\(\) => null\)/,
-      /registerForStallAlerts\(\)\.catch\(\(\) => false\)/,
+      /\.getNotificationPreferences\(account\.id\)\s*\.catch\(reportAndUse\("load_prefs", null\)\)/,
+      /registerForStallAlerts\(\)\.catch\(reportAndUse\("register_device", false\)\)/,
       // Web cannot register for push, so it never offers "Allow notifications".
       /Platform\.OS !== "web" && !isDeviceRegistered/,
       /Low-rating alerts go to the Hungry app on your phone\./,

@@ -601,6 +601,21 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["merchant_dish_created", "merchant_mode_opened"],
     minSamplePerArm: 400,
   },
+  /**
+   * The numbers range Home opens on: Today (control) against 7 days, which Performance already
+   * uses. Today is often zero early in the day. Read in MerchantDashboardScreen only until the
+   * merchant picks a range. Draft until the Merchant Centre ships to production.
+   */
+  merchant_home_default_range_v1: {
+    variants: ["control", "seven_days"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Opening Home on the last 7 days instead of Today shows merchants real numbers early in the day, so more of them come back to Home on a later day, as Google Business Profile's 28-day default does.",
+    primaryMetric: "merchant_dashboard_viewed",
+    guardrailMetrics: ["merchant_analytics_range_changed", "merchant_customer_inbox_viewed"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;
