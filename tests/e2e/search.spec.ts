@@ -15,15 +15,66 @@ import {
 const WIDTHS = [390, 320];
 const SCHEMES = ["light", "dark"] as const;
 
+// The page itself and every scroll view or container 300pt or wider: none may be scrolled
+// sideways or hold content wider than itself. (Scroll views meant to scroll sideways, such as the
+// chip rows, may be wider inside, but they may not start scrolled.)
 async function expectNoHorizontalScroll(page: Page, where: string) {
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
-  expect(overflow, `${where} must not scroll sideways`).toBeLessThanOrEqual(0);
+  const overflow = await page.evaluate(() => {
+    const found: string[] = [];
+    const root = document.documentElement;
+    if (root.scrollWidth > root.clientWidth) {
+      found.push(`page is ${root.scrollWidth} wide in ${root.clientWidth}`);
+    }
+    for (const element of Array.from(document.querySelectorAll<HTMLElement>("*"))) {
+      if (element.clientWidth < 300 || element.getClientRects().length === 0) continue;
+      const overflowX = getComputedStyle(element).overflowX;
+      const scrollsOnPurpose = overflowX === "auto" || overflowX === "scroll";
+      const label = element.getAttribute("aria-label") ?? element.getAttribute("data-testid") ?? "";
+      if (element.scrollLeft > 0) {
+        found.push(`${element.tagName} ${label} starts scrolled ${element.scrollLeft}`);
+      } else if (!scrollsOnPurpose && element.scrollWidth > element.clientWidth + 1) {
+        found.push(
+          `${element.tagName} ${label} holds ${element.scrollWidth} in ${element.clientWidth}`,
+        );
+      }
+    }
+    return found;
+  });
+  expect(overflow, `${where} must not scroll sideways`).toEqual([]);
 }
 
-async function openSearchHome(page: Page, width: number, scheme: (typeof SCHEMES)[number]) {
+// The walk needs no internet: photos come from a tiny stand-in image. "broken" answers with bytes
+// that are not an image, which is what a failed photo looks like to the app.
+const PIXEL_PNG = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+  "base64",
+);
+
+async function stubImages(page: Page, mode: "ok" | "broken") {
+  await page.unroute(isOutsideImage).catch(() => undefined);
+  await page.route(isOutsideImage, (route) =>
+    route.request().resourceType() === "image"
+      ? route.fulfill(
+          mode === "ok"
+            ? { status: 200, contentType: "image/png", body: PIXEL_PNG }
+            : { status: 200, contentType: "image/png", body: Buffer.from("not an image") },
+        )
+      : route.continue(),
+  );
+}
+
+function isOutsideImage(url: URL) {
+  return url.hostname !== "localhost" && url.hostname !== "127.0.0.1";
+}
+
+async function openSearchHome(
+  page: Page,
+  width: number,
+  scheme: (typeof SCHEMES)[number],
+  images: "ok" | "broken" = "ok",
+) {
   await page.emulateMedia({ colorScheme: scheme });
+  await stubImages(page, images);
   await resetAppState(page);
   await startOnboardedMockSession(page);
   await page.setViewportSize({ width, height: 800 });
@@ -217,4 +268,29 @@ test.describe("search page walk", () => {
       });
     }
   }
+
+  test("a photo that fails to load shows the stall mark, not a blank tile", async ({ page }) => {
+    const marks = () =>
+      page
+        .getByLabel(/ stall logo unavailable$/)
+        .filter({ visible: true })
+        .count();
+    const searchLaksa = async (images: "ok" | "broken") => {
+      await openSearchHome(page, 390, "light", images);
+      const field = page.getByPlaceholder("Try laksa or chicken rice").first();
+      await field.fill("laksa");
+      await field.press("Enter");
+      await expect(page.getByTestId("search-sticky-row")).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('[data-testid^="search-card-dishes-"]').first()).toBeVisible();
+      // Photos have loaded or failed by the time the images settle.
+      await page.waitForLoadState("networkidle");
+      return marks();
+    };
+    const withPhotos = await searchLaksa("ok");
+    const withBrokenPhotos = await searchLaksa("broken");
+    expect(
+      withBrokenPhotos,
+      "cards whose photo fails show the stall mark in its place",
+    ).toBeGreaterThan(withPhotos);
+  });
 });
