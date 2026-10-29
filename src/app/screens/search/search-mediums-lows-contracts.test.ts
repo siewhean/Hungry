@@ -151,7 +151,7 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /not all MUIS-certified/);
   // L5: the search can be shared.
   assert.match(grid, /accessibilityLabel="Share this search"/);
-  assert.match(grid, /buildSearchShareUrl\(\{ query, filters, mode, place, sort \}\)/);
+  assert.match(grid, /buildSearchShareUrl\(\{ query: typedQuery, filters, mode, place, sort \}\)/);
 });
 
 test("M8: one search event for guests and members; zero results only for submitted queries", () => {

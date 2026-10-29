@@ -45,7 +45,7 @@ import {
 import { isSoldOut } from "@/features/merchant/menuSections";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
 import { DetailActionBar, type DetailAction } from "@/components/detail/DetailActionBar";
-import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
+import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
 import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { PhotoPager } from "@/components/dish/PhotoPager";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
@@ -261,6 +261,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return getStallPin(venue, buildingPoint) ?? buildingPoint;
   }, [venue]);
   const similarNearby = useSimilarDishesNearby(dish, similarSearchPoint);
+  // A rail where no dish has a photo drops the grey photo block: text tiles read as complete.
+  const moreFromHasPhotos = moreFromStall.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
+  const similarHasPhotos = similarNearby.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarDishHeading = dish ? similarDishQuery(dish.name) || dish.name : "dishes";
 
   // One shared helper decides open/closed for both pages: the owner's temporary closure,
@@ -755,6 +758,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     showToast({
       message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
       tone: "success",
+      ...(result.status === "saved" && FEATURE_FLAGS.portfoliosEnabled
+        ? {
+            duration: 5000,
+            action: { label: "Add to a list", onPress: () => void addToPortfolio() },
+          }
+        : {}),
     });
   };
 
@@ -975,9 +984,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       holdOptions: [
                         {
                           id: "want-to-try",
-                          label: "Want to try",
+                          // The row toggles, so when it is saved it says what a press does.
+                          label: isSaved ? "Remove from Want to try" : "Want to try",
                           icon: Bookmark,
-                          selected: isSaved,
                           onPress: () => void handleSave(),
                         },
                         ...(collectionsLoading
@@ -1018,21 +1027,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     <FeedErrorBoundary title="Dish details unavailable" body="Couldn't load this dish — try again.">
       <SafeAreaView style={{ backgroundColor: palette.bg, flex: 1 }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          {/* First in the tree so screen readers reach Back first; zIndex keeps it on top. */}
-          <View
-            pointerEvents="box-none"
-            style={{
-              elevation: 10,
-              height: insets.top + 64,
-              left: 0,
-              position: "absolute",
-              right: 0,
-              top: 0,
-              zIndex: 10,
-            }}
-          >
-            <FloatingBackButton onPress={leaveDetail} />
-          </View>
+          {/* First in the tree so screen readers reach Back first; the name fades in once the photo has. */}
+          <DetailCollapsingHeader
+            scrollY={heroScrollY}
+            heroHeight={heroHeight}
+            title={dish.name}
+            onBack={leaveDetail}
+          />
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
@@ -1442,12 +1443,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                             decorative
                           />
-                        ) : (
+                        ) : moreFromHasPhotos ? (
                           <NoDishPhoto
                             dishName={item.name}
                             style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                           />
-                        )}
+                        ) : null}
                         <View style={{ gap: spacing[1], padding: spacing[3] }}>
                           <AppText variant="bodyBold" numberOfLines={1}>
                             {item.name}
@@ -1515,13 +1516,13 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                                 style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                                 decorative
                               />
-                            ) : (
+                            ) : similarHasPhotos ? (
                               <NoDishPhoto
                                 dishName={item.name}
                                 style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                               />
-                            )}
-                            {away ? (
+                            ) : null}
+                            {away && similarHasPhotos ? (
                               <View
                                 style={{
                                   backgroundColor: palette.surface,
@@ -1540,6 +1541,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             ) : null}
                           </View>
                           <View style={{ gap: spacing[0.5], padding: spacing[3] }}>
+                            {away && !similarHasPhotos ? (
+                              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                                {away}
+                              </AppText>
+                            ) : null}
                             <AppText variant="bodyBold" numberOfLines={1}>
                               {item.venueName}
                             </AppText>

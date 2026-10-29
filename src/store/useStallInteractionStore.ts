@@ -42,15 +42,25 @@ interface StallInteractionState {
   /**
    * Toggle `isTried` for a stall.
    * Returns the post-toggle state and how many Food Cred points were awarded.
+   *
+   * Marking a stall visited is one tap and never needs a review. Points for it need one:
+   * the server pays `stall_marked_tried` only once the diner has reviewed a dish at the
+   * stall. `skipPoints` leaves the request out when the caller knows there is no review.
    */
   markTried: (
     userId: string,
     stallId: string,
     sourceScreen?: StallInteractionSourceScreen,
+    options?: { skipPoints?: boolean },
   ) => Promise<{
     isTried: boolean;
     pointsAwarded: number;
   }>;
+  /**
+   * A review was just posted for a dish at this stall: if the diner had already marked the
+   * stall visited, the visit's points are due now. The server pays once per stall.
+   */
+  awardVisitAfterReview: (userId: string, stallId: string) => Promise<void>;
   markReviewed: (userId: string, stallId: string) => Promise<void>;
   /** Reset — dev/test only */
   _reset: () => void;
@@ -144,7 +154,7 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
     }
   },
 
-  markTried: async (userId, stallId, sourceScreen = "StallDetail") => {
+  markTried: async (userId, stallId, sourceScreen = "StallDetail", options) => {
     const existing = get().interactions[stallId];
     const shouldUnmark = existing?.isTried ?? false;
     const now = new Date().toISOString();
@@ -188,7 +198,7 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
         ).length - 1;
       // The mark is stored: count it before the points, which must never fail the mark.
       trackStallMarkedTried({ stallId, sourceScreen });
-      if (withinCredCutoff("stall_marked_tried", todayTriedCount)) {
+      if (!options?.skipPoints && withinCredCutoff("stall_marked_tried", todayTriedCount)) {
         // Report what was actually credited: the server can award 0 (daily cap, repeat).
         try {
           await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
@@ -203,6 +213,18 @@ export const useStallInteractionStore = create<StallInteractionState>()((set, ge
       isTried: !shouldUnmark,
       pointsAwarded,
     };
+  },
+
+  awardVisitAfterReview: async (userId, stallId) => {
+    try {
+      // Reviewing from the composer, not the stall page: the visits may not be loaded yet.
+      await get().loadInteractions(userId);
+      if (!get().interactions[stallId]?.isTried) return;
+      await useFoodCredStore.getState().awardPoints("stall_marked_tried", stallId);
+    } catch (error) {
+      // The review is posted; a points failure must never surface as a review failure.
+      reportError(error, { store: "stallInteraction", action: "award_visit_after_review" });
+    }
   },
 
   markReviewed: async (userId, stallId) => {

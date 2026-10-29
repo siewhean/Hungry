@@ -178,7 +178,7 @@ test("Search browse: guests can browse, chips never show everything, errors stay
   assert.doesNotMatch(results, /Sign in to browse the full directory/);
   assert.match(
     readRepoFile("src/features/search/browseGrid.ts"),
-    /dietaryFlags: input\.filters\.includes\("Halal"\) \? \["halal"\] : \[\]/,
+    /if \(input\.filters\.includes\("Halal"\)\) dietaryFlags\.add\("halal"\)/,
   );
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);

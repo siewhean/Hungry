@@ -41,6 +41,9 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { appendUniqueById } from "@/lib/services/catalog/paging";
+import { ParsedQueryChips } from "@/features/search/ParsedQueryChips";
+import { parseSearchQuery, type ParsedQueryPart } from "@/features/search/queryParser";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
   BROWSE_ALL_FILTER,
@@ -77,7 +80,11 @@ import {
   type CatalogRawDishCard,
   type CatalogRawVenueCard,
 } from "@/lib/services/catalog";
-import { CatalogAccessError, CatalogReleaseExpiredError } from "@/lib/services/catalog";
+import {
+  CatalogAccessError,
+  CatalogRateLimitedError,
+  CatalogReleaseExpiredError,
+} from "@/lib/services/catalog";
 import {
   recordCatalogDiagnostic,
   summarizeCatalogRequest,
@@ -105,6 +112,8 @@ const RAW_BROWSE_FILTER_OPTIONS = [BROWSE_ALL_FILTER, ...BROWSE_FILTER_IDS].map(
   id: filter,
   label: filter,
 }));
+/** A rate-limited search can be retried after this long (the limiter counts per minute). */
+const RATE_LIMIT_RETRY_MS = 10_000;
 /** "Search all Singapore" when the 3 km browse radius is empty: wide enough to cover the island. */
 const WIDE_RADIUS_METERS = 30_000;
 
@@ -345,6 +354,9 @@ function RawCatalogBrowseGrid({
   // The page on screen came from the bundled offline copy, not the live catalog.
   const [isOfflineCopy, setIsOfflineCopy] = useState(false);
   const [didYouMean, setDidYouMean] = useState<{ query: string; label: string } | null>(null);
+  // Set when the limiter answered 429: Retry waits until then, because trying again fails again.
+  const [retryAvailableAt, setRetryAvailableAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const requestVersion = useRef(0);
   const rawSearchInputRef = useRef<TextInput | null>(null);
   const releaseIdRef = useRef<string | undefined>(undefined);
@@ -357,9 +369,55 @@ function RawCatalogBrowseGrid({
   const service = getCatalogRawService();
   const itemWidth = width / 2;
 
-  const query = useMemo(() => normalizeQuery(searchText), [searchText]);
+  const typedQuery = useMemo(() => normalizeQuery(searchText), [searchText]);
+  // Filters read out of the typed text ("halal laksa under $5"). A chip the user removed puts its
+  // words back into the search text; the removal lasts while those words are still typed.
+  const [dismissedParts, setDismissedParts] = useState<readonly string[]>([]);
+  const parsedFromText = useMemo(
+    () => parseSearchQuery(typedQuery, new Set(dismissedParts)),
+    [dismissedParts, typedQuery],
+  );
+  // Typing, clearing and picking a suggestion all go through here, so a removal is forgotten as
+  // soon as the words it was for are gone from the text.
+  const updateSearchText = useCallback((text: string) => {
+    setSearchText(text);
+    setDismissedParts((current) => {
+      if (current.length === 0) return current;
+      const present = new Set(parseSearchQuery(normalizeQuery(text)).parts.map((part) => part.key));
+      const kept = current.filter((key) => present.has(key));
+      return kept.length === current.length ? current : kept;
+    });
+  }, []);
+  // Exposed only when the parser changes a query of 2+ words; the fallback is the parsed reading.
+  const parseVariant = useExperimentVariant("search_query_parsing_v1", {
+    enabled: parsedFromText.parts.length > 0 && typedQuery.includes(" "),
+  });
+  const parsed = useMemo(
+    () =>
+      parseVariant === "control"
+        ? { text: typedQuery, dietary: [], maxPrice: undefined, parts: [] }
+        : parsedFromText,
+    [parseVariant, parsedFromText, typedQuery],
+  );
+  const parsedKey = parsed.parts.map((part) => part.key).join("|");
+  // Tags are sparse, so "vegetarian bee hoon" can find nothing as a filtered search while the plain
+  // text finds the dish. When the parsed reading has no results, the whole text is searched with no
+  // parsed filters; the chips stay, and removing one starts over.
+  const [relaxedScope, setRelaxedScope] = useState<string | undefined>();
+  const relaxScope = JSON.stringify([mode, typedQuery, filters, place?.id, parsedKey]);
+  const relaxed = relaxedScope === relaxScope;
+  const query = relaxed ? typedQuery : parsed.text;
+  const requestParsedKey = relaxed ? `${parsedKey}!` : parsedKey;
+  const parsedFilters = useMemo(
+    () =>
+      relaxed
+        ? { dietary: [], maxPrice: undefined }
+        : { dietary: parsed.dietary, maxPrice: parsed.maxPrice },
+    // The key stands for the parts: a new array with the same parts must not reload the grid.
+    [requestParsedKey],
+  );
   const tooShort = isTooShortQuery(query);
-  const widenScope = JSON.stringify([mode, query, filters, place?.id]);
+  const widenScope = JSON.stringify([mode, query, filters, place?.id, requestParsedKey]);
   const widenRadius = widenedScope === widenScope;
 
   // A link or a new navigation with other params replaces what the grid shows.
@@ -384,8 +442,19 @@ function RawCatalogBrowseGrid({
   const coordinate = useMemo(() => ({ latitude, longitude }), [latitude, longitude]);
 
   const requestKey = useMemo(
-    () => JSON.stringify([mode, query, filters, sort, latitude, longitude, widenRadius, place?.id]),
-    [filters, latitude, longitude, mode, place?.id, query, sort, widenRadius],
+    () =>
+      JSON.stringify([
+        mode,
+        query,
+        filters,
+        sort,
+        latitude,
+        longitude,
+        widenRadius,
+        place?.id,
+        requestParsedKey,
+      ]),
+    [filters, latitude, longitude, mode, requestParsedKey, place?.id, query, sort, widenRadius],
   );
 
   const loadPage = useCallback(
@@ -396,6 +465,7 @@ function RawCatalogBrowseGrid({
       if (append) setIsLoadingMore(true);
       else setIsLoading(true);
       setError(null);
+      setRetryAvailableAt(null);
       setLoadMoreFailed(false);
       try {
         const request = buildBrowseRequest({
@@ -406,6 +476,7 @@ function RawCatalogBrowseGrid({
           cursor,
           releaseId: releaseIdRef.current,
           buildingId: place?.id,
+          parsed: parsedFilters,
         });
         if (widenRadius && !query && !place) request.radiusMeters = WIDE_RADIUS_METERS;
         const page =
@@ -463,6 +534,11 @@ function RawCatalogBrowseGrid({
             setError(
               loadError instanceof Error ? loadError.message : "Could not load the catalog.",
             );
+            if (loadError instanceof CatalogRateLimitedError) {
+              const retryAt = Date.now() + RATE_LIMIT_RETRY_MS;
+              setNow(Date.now());
+              setRetryAvailableAt(retryAt);
+            }
             setItems([]);
           }
           const request = buildBrowseRequest({
@@ -473,6 +549,7 @@ function RawCatalogBrowseGrid({
             cursor,
             releaseId: releaseIdRef.current,
             buildingId: place?.id,
+            parsed: parsedFilters,
           });
           recordCatalogDiagnostic({
             operation:
@@ -507,6 +584,7 @@ function RawCatalogBrowseGrid({
       filters,
       isAuthenticated,
       mode,
+      parsedFilters,
       place,
       query,
       requestKey,
@@ -516,8 +594,24 @@ function RawCatalogBrowseGrid({
     ],
   );
 
+  // Ticks once a second while Retry is waiting out the limiter.
+  useEffect(() => {
+    if (retryAvailableAt === null || Date.now() >= retryAvailableAt) return;
+    const timer = setInterval(() => {
+      const current = Date.now();
+      setNow(current);
+      if (current >= retryAvailableAt) clearInterval(timer);
+    }, 1_000);
+    return () => clearInterval(timer);
+  }, [retryAvailableAt]);
+
   const loadPageRef = useRef<typeof loadPage | undefined>(undefined);
   loadPageRef.current = loadPage;
+  // Read when a search is committed, so the parse of the text on screen is logged with it.
+  const parsedPartsRef = useRef<readonly ParsedQueryPart[]>(parsed.parts);
+  useEffect(() => {
+    parsedPartsRef.current = parsed.parts;
+  }, [parsed.parts]);
 
   // A search is committed by Enter, a suggestion or a link, not by typing pauses: one search
   // event, one taste signal and one recent-search entry each, the same for guests and members.
@@ -544,6 +638,16 @@ function RawCatalogBrowseGrid({
         search_id: searchIdRef.current,
         source: options.source,
       });
+      const parts = parsedPartsRef.current;
+      if (parts.length > 0) {
+        trackAnalyticsEvent("search_parse_applied", {
+          mode,
+          part_count: parts.length,
+          // Kinds only: a religious dietary choice is never reported by name.
+          part_kinds: [...new Set(parts.map((part) => part.kind))].join(","),
+          search_id: searchIdRef.current,
+        });
+      }
       if (options.remember) rememberSearch(committed);
       if (options.recordTaste) {
         recordTasteInteraction({
@@ -619,10 +723,10 @@ function RawCatalogBrowseGrid({
     (next: BrowsePlace) => {
       trackAnalyticsEvent("search_place_selected", { mode });
       setItems([]);
-      setSearchText("");
+      updateSearchText("");
       setPlace(next);
     },
-    [mode],
+    [mode, updateSearchText],
   );
   const clearPlace = useCallback(() => {
     setItems([]);
@@ -632,6 +736,17 @@ function RawCatalogBrowseGrid({
   // Zero results are logged only for a submitted query, once, with the (capped) text so
   // "what did people fail to find" can be answered. Partial typing is never logged.
   const hasNoResults = loadedKey === requestKey && !isLoading && !error && items.length === 0;
+  // The parsed filters found nothing: search the whole typed text instead (see `relaxed` above).
+  const willRelax = hasNoResults && !relaxed && parsed.parts.length > 0;
+  useEffect(() => {
+    if (!willRelax) return;
+    setRelaxedScope(relaxScope);
+    trackAnalyticsEvent("search_parse_relaxed", {
+      mode,
+      part_count: parsed.parts.length,
+      search_id: searchIdRef.current,
+    });
+  }, [mode, parsed.parts.length, relaxScope, willRelax]);
 
   // Results load while the user types, so a typed query that stays on screen is a search too,
   // not only one submitted with Enter. Not saved as a recent and not a taste signal.
@@ -650,7 +765,7 @@ function RawCatalogBrowseGrid({
     return () => clearTimeout(timer);
   }, [query, recordCommittedQuery, resultsSettled]);
   useEffect(() => {
-    if (!hasNoResults || !committedQuery) return;
+    if (!hasNoResults || willRelax || !committedQuery) return;
     if (committedQuery.toLowerCase() !== query.toLowerCase()) return;
     if (loggedZeroKeyRef.current === requestKey) return;
     loggedZeroKeyRef.current = requestKey;
@@ -662,12 +777,28 @@ function RawCatalogBrowseGrid({
       query_length: committedQuery.length,
       search_id: searchIdRef.current,
     });
-  }, [allowSearchHistory, committedQuery, filters, hasNoResults, mode, query, requestKey]);
+  }, [
+    allowSearchHistory,
+    committedQuery,
+    filters,
+    hasNoResults,
+    mode,
+    query,
+    requestKey,
+    willRelax,
+  ]);
 
   // "Did you mean": the closest food type for a typed query with no results. With filters on,
   // the filters are the likelier cause, so "Clear filters" is offered instead.
   useEffect(() => {
-    if (!hasNoResults || filters.length > 0 || query.length < CATALOG_QUERY_MIN_CHARS) return;
+    if (
+      !hasNoResults ||
+      filters.length > 0 ||
+      parsed.parts.length > 0 ||
+      query.length < CATALOG_QUERY_MIN_CHARS
+    ) {
+      return;
+    }
     let active = true;
     service
       .suggest(query)
@@ -683,7 +814,7 @@ function RawCatalogBrowseGrid({
     return () => {
       active = false;
     };
-  }, [filters.length, hasNoResults, query, service]);
+  }, [filters.length, hasNoResults, parsed.parts.length, query, service]);
 
   const handleSelectFilter = useCallback(
     (filter: string) => {
@@ -707,6 +838,20 @@ function RawCatalogBrowseGrid({
     [mode],
   );
 
+  const handleRemoveParsedPart = useCallback(
+    (part: ParsedQueryPart) => {
+      setDismissedParts((current) =>
+        current.includes(part.key) ? current : [...current, part.key],
+      );
+      trackAnalyticsEvent("search_parse_removed", {
+        mode,
+        part_kind: part.kind,
+        search_id: searchIdRef.current,
+      });
+    },
+    [mode],
+  );
+
   const handleBack = useCallback(() => {
     // Cold starts and links have nothing to go back to.
     if (navigation.canGoBack()) {
@@ -717,7 +862,7 @@ function RawCatalogBrowseGrid({
   }, [navigation]);
 
   const handleShare = useCallback(() => {
-    const url = buildSearchShareUrl({ query, filters, mode, place, sort });
+    const url = buildSearchShareUrl({ query: typedQuery, filters, mode, place, sort });
     trackAnalyticsEvent("search_shared", { mode, filter_count: filters.length });
     // iOS sends both message and url, so the link goes only in `url` there.
     const content =
@@ -725,7 +870,7 @@ function RawCatalogBrowseGrid({
         ? { message: "Search Hungry", url }
         : { message: `Search Hungry: ${url}` };
     void Share.share(content).catch(() => undefined);
-  }, [filters, mode, place, query, sort]);
+  }, [filters, mode, place, sort, typedQuery]);
 
   // Cards get one stable press handler; the live query and release are read when a card is tapped.
   const queryRef = useRef(query);
@@ -803,7 +948,9 @@ function RawCatalogBrowseGrid({
       : undefined;
   const sortLabel = effectiveSortLabel(sort, Boolean(query), Boolean(place));
   const suggestedQuery =
-    didYouMean && didYouMean.query === query && filters.length === 0 ? didYouMean.label : undefined;
+    didYouMean && didYouMean.query === query && filters.length === 0 && parsed.parts.length === 0
+      ? didYouMean.label
+      : undefined;
   // A place lists its whole building with no radius, so there is nothing to widen.
   const radiusInPlay = !query && !widenRadius && !place;
 
@@ -826,7 +973,7 @@ function RawCatalogBrowseGrid({
                 accessibilityLabel={`Search ${mode}`}
                 autoCorrect={false}
                 maxLength={CATALOG_QUERY_MAX_CHARS}
-                onChangeText={setSearchText}
+                onChangeText={updateSearchText}
                 onSubmitEditing={() =>
                   recordCommittedQuery(searchText, {
                     recordTaste: true,
@@ -867,7 +1014,7 @@ function RawCatalogBrowseGrid({
                   accessibilityLabel="Clear search"
                   hitSlop={8}
                   onPress={() => {
-                    setSearchText("");
+                    updateSearchText("");
                     rawSearchInputRef.current?.focus();
                   }}
                   style={browseStyles.clearButton}
@@ -889,6 +1036,20 @@ function RawCatalogBrowseGrid({
             <AppText tone="secondary" variant="micro">
               {`Type at least ${CATALOG_QUERY_MIN_CHARS} letters to search.`}
             </AppText>
+          ) : null}
+          <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
+          {relaxed ? (
+            <View
+              accessibilityLiveRegion="polite"
+              accessibilityRole="text"
+              testID="search-parsed-relaxed-note"
+              style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+            >
+              <Info color={palette.textMuted} size={16} />
+              <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
+                {`Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${typedQuery}". Remove a chip to search without it.`}
+              </AppText>
+            </View>
           ) : null}
           {place ? (
             <Pressable
@@ -974,7 +1135,7 @@ function RawCatalogBrowseGrid({
             selectedIds={filters.length ? filters : [BROWSE_ALL_FILTER]}
             onSelect={handleSelectFilter}
           />
-          {filters.includes("Halal") ? (
+          {filters.includes("Halal") || parsed.dietary.includes("halal") ? (
             <View
               accessibilityRole="text"
               style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
@@ -1077,6 +1238,25 @@ function RawCatalogBrowseGrid({
                 />
               ) : isLoading ? (
                 <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
+              ) : error && retryAvailableAt !== null ? (
+                // The limiter said slow down: a connection check would not help, and Retry waits.
+                <View style={{ gap: spacing[2] }}>
+                  <EmptyState
+                    title="Too many searches"
+                    body="You're searching faster than we can keep up. Wait a few seconds, then try again."
+                  />
+                  <View style={{ alignItems: "center" }}>
+                    <Button
+                      label={
+                        now >= retryAvailableAt
+                          ? "Try again"
+                          : `Try again in ${Math.ceil((retryAvailableAt - now) / 1_000)}s`
+                      }
+                      disabled={now < retryAvailableAt}
+                      onPress={() => void loadPage()}
+                    />
+                  </View>
+                </View>
               ) : error ? (
                 <EmptyState
                   title="Catalog unavailable"
@@ -1090,7 +1270,7 @@ function RawCatalogBrowseGrid({
                   <EmptyState
                     title="No matches found"
                     body={
-                      filters.length
+                      filters.length || parsed.parts.length
                         ? "Try removing a filter or searching for something else."
                         : "Try another search."
                     }
@@ -1100,7 +1280,7 @@ function RawCatalogBrowseGrid({
                       <Button
                         label={`Did you mean "${suggestedQuery}"?`}
                         onPress={() => {
-                          setSearchText(suggestedQuery);
+                          updateSearchText(suggestedQuery);
                           recordCommittedQuery(suggestedQuery, {
                             recordTaste: true,
                             remember: true,

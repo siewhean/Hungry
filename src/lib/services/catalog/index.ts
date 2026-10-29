@@ -17,6 +17,7 @@ export type CatalogErrorKind =
   | "network"
   | "rpc"
   | "release_expired"
+  | "rate_limited"
   | "unavailable";
 
 /** Pages served from the bundled offline copy (the Excel fallback) carry this release id. */
@@ -297,6 +298,17 @@ export class CatalogReleaseExpiredError extends CatalogAccessError {
   }
 }
 
+/**
+ * The request limiter answered 429: the caller is searching faster than the endpoint allows.
+ * Retrying straight away fails again, and it is not a connection problem, so it has its own copy.
+ */
+export class CatalogRateLimitedError extends CatalogAccessError {
+  constructor(message = "Too many searches in a minute. Try again in a moment.", cause?: unknown) {
+    super(message, { kind: "rate_limited", fallbackEligible: false, cause });
+    this.name = "CatalogRateLimitedError";
+  }
+}
+
 export class CatalogNetworkError extends CatalogAccessError {
   constructor(message = "The online catalog could not be reached.", cause?: unknown) {
     super(message, { kind: "network", fallbackEligible: true, cause });
@@ -369,6 +381,16 @@ function looksLikeNetworkFailure(value: unknown): boolean {
     message.includes("aborted") ||
     message.includes("socket") ||
     message.includes("connection")
+  );
+}
+
+/** The limiter answers 429 with {"code":"rate_limited"} (app_private.check_request_rate). */
+function looksLikeRateLimited(value: unknown): boolean {
+  const message = errorMessage(value).toLowerCase();
+  return (
+    errorStatus(value) === 429 ||
+    errorCode(value) === "rate_limited" ||
+    message.includes("too many requests")
   );
 }
 
@@ -449,6 +471,7 @@ export function classifyCatalogAccessError(value: unknown, context: "session" | 
   if (looksLikeConfigurationFailure(value)) return new CatalogConfigurationError(message, value);
   if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
   if (looksLikeAuthorizationFailure(value)) return new CatalogAuthorizationError(message, value);
+  if (looksLikeRateLimited(value)) return new CatalogRateLimitedError(undefined, value);
   if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
   if (looksLikeExpiredRelease(value)) return new CatalogReleaseExpiredError(undefined, value);
   if (looksLikeContractFailure(value)) return new CatalogContractError(message, value);
