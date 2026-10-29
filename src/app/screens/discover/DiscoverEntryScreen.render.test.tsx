@@ -76,6 +76,9 @@ const FEED_ROWS = [
   feedRow(4, { venue_name: "Lao Ban", top_dish_name: "Beancurd" }),
 ];
 
+/** dish_taste_vectors rows the live feed's taste read returns; empty means no palate data. */
+let tasteRows: Record<string, unknown>[] = [];
+
 function serveLiveFeed(rows: Record<string, unknown>[] = FEED_ROWS) {
   fake.rpc.get_discovery_feed_by_location = () => ({ data: rows, error: null });
   fake.rpc.count_venues_in_area = () => ({ data: rows.length, error: null });
@@ -99,6 +102,7 @@ function serveLiveFeed(rows: Record<string, unknown>[] = FEED_ROWS) {
     data: [{ id: HALAL_FLAG_ID, slug: "halal" }],
     error: null,
   });
+  fake.tables.dish_taste_vectors = () => ({ data: tasteRows, error: null });
 }
 
 /** Tables the synchronous repository downloads in full when anything reads it. */
@@ -170,6 +174,7 @@ beforeEach(async () => {
   fake.queries.length = 0;
   fake.rpc = {};
   fake.tables = {};
+  tasteRows = [];
   m.analytics.clearTrackedAnalyticsEvents();
   setLocation();
   m.useProfileStore.setState((state) => ({
@@ -194,6 +199,7 @@ afterEach(async () => {
   await m.renderKit.settle();
   (m.FEATURE_FLAGS as { release01CoreOnly: boolean }).release01CoreOnly = false;
   m.experiments.setExperimentFlagSource(undefined);
+  m.experiments.clearExperimentOverrides();
   m.experiments.resetExperimentSession();
   m.provider.setMockServiceProvider();
 });
@@ -598,7 +604,9 @@ test("H4-10: saved needs name the chip, and a sparse feed explains itself instea
   const showAll = view.findByLabel("Show all dishes");
   assert.ok(showAll, "the way out is on screen");
   await view.press(showAll);
-  assert.match(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Stalls in /, "the stall list is back");
+  // A palate-ranked rail keeps the dietary rule: no dish is confirmed yet, so none is offered.
+  assert.doesNotMatch(view.text(), /Dishes near you/);
 });
 
 test("H4-10: clearing every saved need in Settings switches the dietary filter off", async () => {
@@ -715,4 +723,206 @@ test("H4-25: a rail counts one impression per visit, so leaving Home and coming 
   await events.setFocused(true);
   assert.equal(railImpressions().length, 2);
   assert.equal(impressions().filter((event) => event.properties?.rail === "area_stalls").length, 2);
+});
+
+// ---- Round four, phase 2 (home-plan.md): cold start, palate order, one rail per dish.
+
+/** Rows for a nearby area where `menus` stalls have a menu and `bare` do not. */
+function mixedFeed(menus: number, bare: number) {
+  return [
+    ...Array.from({ length: menus }, (_, i) =>
+      feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null }),
+    ),
+    ...Array.from({ length: bare }, (_, i) =>
+      coldRow(menus + i + 1, { venue_name: `Bare Stall ${i + 1}` }),
+    ),
+  ];
+}
+
+function countOf(text: string, pattern: RegExp) {
+  return (text.match(pattern) ?? []).length;
+}
+
+test("R4-B2: with no menus nearby the stalls stay in one list under a single note", async () => {
+  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.equal(countOf(text, /Menu coming soon/g), 0, "no per-row repeat");
+  assert.equal(countOf(text, /Menus are coming to these stalls/g), 1, "one note instead");
+  assert.match(text, /Stall 1/);
+  assert.doesNotMatch(text, /More stalls nearby/, "nothing to fold under: every stall is bare");
+});
+
+test("H4-1: with no dish rails the classics stand in as 'Popular dishes in Singapore'", async () => {
+  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Popular dishes in Singapore/);
+  assert.doesNotMatch(view.text(), /Hawker classics/);
+});
+
+test("H4-1: with dishes nearby the classics keep their name", async () => {
+  serveLiveFeed(Array.from({ length: 8 }, (_, i) => feedRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Hawker classics/);
+  assert.doesNotMatch(view.text(), /Popular dishes in Singapore/);
+});
+
+test("H4-1: stalls without menus fold into one row under the stalls that have them", async () => {
+  serveLiveFeed(mixedFeed(3, 5));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const before = view.text();
+  assert.match(before, /Stall 1/);
+  assert.doesNotMatch(before, /Bare Stall 1/, "folded until the diner opens the row");
+  assert.equal(countOf(before, /Menu coming soon/g), 0);
+  const group = view.findByLabel("More stalls nearby, menus coming. 5 stalls");
+  assert.ok(group, "the folded row is on screen");
+  assert.match(before, /More stalls nearby · menus coming/);
+
+  await view.press(group);
+  const after = view.text();
+  for (let i = 1; i <= 5; i += 1) assert.match(after, new RegExp(`Bare Stall ${i}`));
+  assert.deepEqual(
+    m.analytics
+      .getTrackedAnalyticsEvents()
+      .filter((event) => event.event === "home_cold_start_group_opened")
+      .map((event) => event.properties),
+    [{ surface: "home", count: 5 }],
+  );
+});
+
+test("H4-1: a stall with a menu and no reviews asks for the first one", async () => {
+  serveLiveFeed(mixedFeed(2, 1));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(countOf(view.text(), /Be the first to review/g), 2);
+});
+
+test("H4-1: the control arm keeps 'Menu coming soon' on every bare stall", async () => {
+  m.experiments.setExperimentOverride("home_cold_start_v1", "control");
+  serveLiveFeed(mixedFeed(3, 4));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(countOf(view.text(), /Menu coming soon/g), 4);
+  assert.doesNotMatch(view.text(), /More stalls nearby/);
+  assert.doesNotMatch(view.text(), /Popular dishes in Singapore/);
+});
+
+test("H4-3: the review-count rail is called 'Most reviewed', as its See all page is", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Most reviewed in /);
+  assert.doesNotMatch(view.text(), /Trending/);
+});
+
+test("H4-4: a dish shows in the first rail it qualifies for, not in every rail", async () => {
+  // Twelve dishes, all rated 4.5 with reviews and under S$8: each qualifies for every rail.
+  serveLiveFeed(
+    Array.from({ length: 12 }, (_, i) => feedRow(i + 1, { top_dish_price: 4 + (i % 3) })),
+  );
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  const shown = [...text.matchAll(/Dish (\d+)/g)].map((match) => match[1]);
+  assert.ok(shown.length >= 11, "the first rails are full");
+  // The rails the repeats leave too thin to look like one (Top rated, Budget) are hidden.
+  assert.equal(new Set(shown).size, shown.length, `repeated dishes: ${shown.join(",")}`);
+});
+
+test("H4-2: with a palate, Dishes near you follows it and says why", async () => {
+  const rows = Array.from({ length: 8 }, (_, i) =>
+    feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null, top_dish_price: 9 + i }),
+  );
+  // Dish 7 is the spiciest, dish 8 the mildest; feed order would put dish 1 first.
+  tasteRows = rows.map((row, i) => ({
+    dish_id: row.top_dish_id,
+    sweet: 5,
+    spicy: i === 6 ? 9 : i === 7 ? 1 : 5,
+    sour: 5,
+    salty: 5,
+    rich: 5,
+    aromatic: 5,
+  }));
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(rows);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  const rail = text.slice(text.indexOf("Dishes near you"));
+  assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"), "the spicy dish leads the rail");
+  assert.match(rail, /Spicy, the way you like it/);
+  assert.equal(
+    fake.queries.filter((query) => query.table === "dish_taste_vectors").length,
+    1,
+    "the palate data is one batched read, not one per dish",
+  );
+});
+
+const PALATE_ROWS = Array.from({ length: 8 }, (_, i) =>
+  feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null, top_dish_price: 9 + i }),
+);
+
+function givePalate(spicyDishIndex: number) {
+  tasteRows = PALATE_ROWS.map((row, i) => ({
+    dish_id: row.top_dish_id,
+    sweet: 5,
+    spicy: i === spicyDishIndex ? 9 : 5,
+    sour: 5,
+    salty: 5,
+    rich: 5,
+    aromatic: 5,
+  }));
+}
+
+test("H4-2: a diner without a palate keeps feed order and sees no reason line", async () => {
+  givePalate(6);
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(PALATE_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.doesNotMatch(text, /the way you like it/);
+  assert.match(text, /Dish 1/);
+  assert.doesNotMatch(text, /Dish 7/, "the rail holds the first six dishes of the feed");
+});
+
+test("H4-2: the control arm keeps feed order even with a palate", async () => {
+  givePalate(6);
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  m.experiments.setExperimentOverride("home_taste_rank_v1", "control");
+  serveLiveFeed(PALATE_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.doesNotMatch(text, /the way you like it/);
+  assert.match(text, /Dish 1/);
+  assert.doesNotMatch(text, /Dish 7/, "the rail holds the first six dishes of the feed");
+});
+
+test("H4-2: if the palate read fails, Home still shows the feed in its own order", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(PALATE_ROWS);
+  fake.tables.dish_taste_vectors = () => ({ data: null, error: { message: "down" } });
+  const warn = console.warn;
+  console.warn = () => undefined;
+  try {
+    const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+    assert.match(view.text(), /Dishes near you/);
+    assert.match(view.text(), /Dish 1/);
+  } finally {
+    console.warn = warn;
+  }
 });

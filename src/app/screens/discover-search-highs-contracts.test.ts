@@ -66,7 +66,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /title=\{`Trending \$\{trendingAreaPhrase\}`\}/);
+  assert.match(screen, /title=\{`Most reviewed \$\{trendingAreaPhrase\}`\}/);
   assert.match(screen, /Top rated/);
 });
 

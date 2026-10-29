@@ -1519,3 +1519,9 @@ Use the smallest check that matches the change risk.
 
 - typecheck clean; DiscoverEntryScreen render tests 26/26 (5 audit repros now green), full test:render 654 pass, npm test 2245 pass, test:coverage OK (lines 84.3%); lint 0 errors.
 - Not walked on a device or the web build in this step; no migration, endpoint or query added.
+
+### HOME-R4 phase 2, 2026-10-29
+
+- typecheck clean; DiscoverEntryScreen render tests 38/38 (R4-B2 plus H4-1/2/3/4 and the palate-read failure), components.render 40/40 (TrendingList icon fallback, MenuLessStallGroup), homeRanking unit tests 5/5, full test:render 668 pass, npm test pass, test:coverage OK (lines 84.3%); lint 0 errors.
+- One new batched read (`dish_taste_vectors ... in(dish_ids)`, a single query per feed page, no N+1); no migration, no new endpoint, so rate limits and races are unaffected. A failed read keeps feed order (console.warn, like the neighbouring loaders).
+- Not walked on a device or the web build in this step.

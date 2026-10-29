@@ -254,7 +254,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
   const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const userModeStallPress = segmentBetween(
     discover,
-    "if (isUserMode) {",
+    'buttonId: "vertical_stall_showcase_card"',
     'navigation.navigate("MapZoomedIn"',
   );
 
