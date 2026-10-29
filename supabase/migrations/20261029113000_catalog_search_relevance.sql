@@ -167,11 +167,6 @@ $$;
 -- ("noodle" in "noodles", worth at least 0.6). The three functions below inline this rule: they run
 -- once per candidate row, and a call per field would dominate the query.
 
--- Scores one row against the terms of a query. Result: {dish_score, any_score}.
---   dish_score: every term matches the dish name or food type (0 otherwise)
---   any_score:  every term matches the dish name, food type, stall name or building (0 otherwise);
---               the stall counts 0.4 and the building 0.3
--- Both are the mean over terms of the best spelling's score.
 -- True when p_needle begins a word of p_haystack ("tea" is in "Teh Tea" and "Iced Tea" but not "Steak",
 -- "ice" is in "Iced Milo" but not "Rice"). Both are lower case; punctuation counts as a word break.
 create or replace function app_private.catalog_starts_word(p_haystack text, p_needle text)
@@ -187,6 +182,12 @@ as $$
   ) > 0
 $$;
 
+-- Scores one row against the terms of a query. Result: {dish_score, any_score}.
+--   dish_score: every term matches the dish name or food type (0 otherwise)
+--   any_score:  every term matches the dish name, food type, stall name or building (0 otherwise);
+--               the stall counts 0.4 and the building 0.3
+-- Both are the mean over terms of the best spelling's score.
+-- Plain variables, not arrays, for the four terms: this runs once per candidate row.
 create or replace function app_private.catalog_text_match(
   p_slots integer[], p_variants text[], p_weights double precision[], p_n integer,
   p_dish_a text, p_dish_b text, p_other_a text, p_other_b text
@@ -199,66 +200,71 @@ as $$
 declare
   la text := lower(p_dish_a);
   lb text := lower(p_dish_b);
-  lc text := lower(p_other_a);
-  ld text := lower(p_other_b);
-  v_d double precision[];
-  v_a double precision[];
+  lc text;
+  ld text;
+  d1 double precision := 0; d2 double precision := 0; d3 double precision := 0; d4 double precision := 0;
+  a1 double precision := 0; a2 double precision := 0; a3 double precision := 0; a4 double precision := 0;
   i integer;
+  n integer := cardinality(p_variants);
   s integer;
   v text;
+  w double precision;
   h double precision;
   x double precision;
-  d_ok boolean := true;
-  a_ok boolean := true;
-  d_sum double precision := 0;
-  a_sum double precision := 0;
+  ho double precision;
 begin
   if coalesce(p_n, 0) = 0 then
     return array[0, 0]::double precision[];
   end if;
-  v_d := array_fill(0::double precision, array[p_n]);
-  v_a := v_d;
-  for i in 1..cardinality(p_variants) loop
-    s := p_slots[i];
+  for i in 1..n loop
     v := p_variants[i];
+    w := p_weights[i];
     h := 0;
     if la is not null then
       x := word_similarity(v, la);
-      if x < 0.6 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
-      if x >= 0.6 and x > h then h := x; end if;
+      if x < 0.6 and strpos(la, v) > 0 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
+      if x >= 0.6 then h := x; end if;
     end if;
-    if lb is not null then
+    if lb is not null and h < 1 then
       x := word_similarity(v, lb);
-      if x < 0.6 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
+      if x < 0.6 and strpos(lb, v) > 0 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
       if x >= 0.6 and x > h then h := x; end if;
     end if;
-    h := h * p_weights[i];
+    h := h * w;
+    s := p_slots[i];
     if h > 0 then
-      -- A dish-field hit (at least 0.6) always beats the stall (at most 0.4) and building (0.3).
-      if h > v_d[s] then v_d[s] := h; end if;
-      if h > v_a[s] then v_a[s] := h; end if;
+      if s = 1 then if h > d1 then d1 := h; end if; if h > a1 then a1 := h; end if;
+      elsif s = 2 then if h > d2 then d2 := h; end if; if h > a2 then a2 := h; end if;
+      elsif s = 3 then if h > d3 then d3 := h; end if; if h > a3 then a3 := h; end if;
+      else if h > d4 then d4 := h; end if; if h > a4 then a4 := h; end if;
+      end if;
     else
+      if lc is null and p_other_a is not null then lc := lower(p_other_a); end if;
+      if ld is null and p_other_b is not null then ld := lower(p_other_b); end if;
+      ho := 0;
       if lc is not null then
         x := word_similarity(v, lc);
-        if x < 0.6 and app_private.catalog_starts_word(lc, v) then x := 0.6; end if;
-        if x >= 0.6 and 0.4 * x * p_weights[i] > v_a[s] then v_a[s] := 0.4 * x * p_weights[i]; end if;
+        if x < 0.6 and strpos(lc, v) > 0 and app_private.catalog_starts_word(lc, v) then x := 0.6; end if;
+        if x >= 0.6 then ho := 0.4 * x * w; end if;
       end if;
       if ld is not null then
         x := word_similarity(v, ld);
-        if x < 0.6 and app_private.catalog_starts_word(ld, v) then x := 0.6; end if;
-        if x >= 0.6 and 0.3 * x * p_weights[i] > v_a[s] then v_a[s] := 0.3 * x * p_weights[i]; end if;
+        if x < 0.6 and strpos(ld, v) > 0 and app_private.catalog_starts_word(ld, v) then x := 0.6; end if;
+        if x >= 0.6 and 0.3 * x * w > ho then ho := 0.3 * x * w; end if;
+      end if;
+      if ho > 0 then
+        if s = 1 then if ho > a1 then a1 := ho; end if;
+        elsif s = 2 then if ho > a2 then a2 := ho; end if;
+        elsif s = 3 then if ho > a3 then a3 := ho; end if;
+        else if ho > a4 then a4 := ho; end if;
+        end if;
       end if;
     end if;
   end loop;
-  for s in 1..p_n loop
-    if v_d[s] <= 0 then d_ok := false; end if;
-    if v_a[s] <= 0 then a_ok := false; end if;
-    d_sum := d_sum + v_d[s];
-    a_sum := a_sum + v_a[s];
-  end loop;
+  -- every term must match (dish fields for [1], any field for [2]); the score is the mean
   return array[
-    case when d_ok then d_sum / p_n else 0 end,
-    case when a_ok then a_sum / p_n else 0 end
+    case when p_n >= 1 and d1 <= 0 then 0 when p_n >= 2 and d2 <= 0 then 0 when p_n >= 3 and d3 <= 0 then 0 when p_n >= 4 and d4 <= 0 then 0 else (d1 + d2 + d3 + d4) / p_n end,
+    case when p_n >= 1 and a1 <= 0 then 0 when p_n >= 2 and a2 <= 0 then 0 when p_n >= 3 and a3 <= 0 then 0 when p_n >= 4 and a4 <= 0 then 0 else (a1 + a2 + a3 + a4) / p_n end
   ]::double precision[];
 end;
 $$;
@@ -276,8 +282,9 @@ as $$
 declare
   la text := lower(p_name);
   lb text := lower(p_food_type);
-  v_s double precision[] := array[0, 0, 0, 0]::double precision[];
+  s1 double precision := 0; s2 double precision := 0; s3 double precision := 0; s4 double precision := 0;
   i integer;
+  s integer;
   v text;
   h double precision;
   x double precision;
@@ -287,18 +294,25 @@ begin
     h := 0;
     if la is not null then
       x := word_similarity(v, la);
-      if x < 0.6 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
-      if x >= 0.6 and x > h then h := x; end if;
+      if x < 0.6 and strpos(la, v) > 0 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
+      if x >= 0.6 then h := x; end if;
     end if;
-    if lb is not null then
+    if lb is not null and h < 1 then
       x := word_similarity(v, lb);
-      if x < 0.6 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
+      if x < 0.6 and strpos(lb, v) > 0 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
       if x >= 0.6 and x > h then h := x; end if;
     end if;
     h := h * p_weights[i];
-    if h > v_s[p_slots[i]] then v_s[p_slots[i]] := h; end if;
+    if h > 0 then
+      s := p_slots[i];
+      if s = 1 then if h > s1 then s1 := h; end if;
+      elsif s = 2 then if h > s2 then s2 := h; end if;
+      elsif s = 3 then if h > s3 then s3 := h; end if;
+      else if h > s4 then s4 := h; end if;
+      end if;
+    end if;
   end loop;
-  return v_s;
+  return array[s1, s2, s3, s4]::double precision[];
 end;
 $$;
 
@@ -316,39 +330,45 @@ as $$
 declare
   la text := lower(p_name);
   lb text := lower(p_building);
-  v_b double precision[];
+  b1 double precision := 0.8 * coalesce(p_dish_scores[1], 0);
+  b2 double precision := 0.8 * coalesce(p_dish_scores[2], 0);
+  b3 double precision := 0.8 * coalesce(p_dish_scores[3], 0);
+  b4 double precision := 0.8 * coalesce(p_dish_scores[4], 0);
   i integer;
   s integer;
   v text;
   x double precision;
-  b_sum double precision := 0;
+  h double precision;
 begin
   if coalesce(p_n, 0) = 0 then
     return 0;
   end if;
-  v_b := array_fill(0::double precision, array[p_n]);
-  for s in 1..p_n loop
-    v_b[s] := 0.8 * coalesce(p_dish_scores[s], 0);
-  end loop;
   for i in 1..cardinality(p_variants) loop
-    s := p_slots[i];
     v := p_variants[i];
+    h := 0;
     if la is not null then
       x := word_similarity(v, la);
-      if x < 0.6 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
-      if x >= 0.6 and x * p_weights[i] > v_b[s] then v_b[s] := x * p_weights[i]; end if;
+      if x < 0.6 and strpos(la, v) > 0 and app_private.catalog_starts_word(la, v) then x := 0.6; end if;
+      if x >= 0.6 then h := x * p_weights[i]; end if;
     end if;
     if lb is not null then
       x := word_similarity(v, lb);
-      if x < 0.6 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
-      if x >= 0.6 and 0.3 * x * p_weights[i] > v_b[s] then v_b[s] := 0.3 * x * p_weights[i]; end if;
+      if x < 0.6 and strpos(lb, v) > 0 and app_private.catalog_starts_word(lb, v) then x := 0.6; end if;
+      if x >= 0.6 and 0.3 * x * p_weights[i] > h then h := 0.3 * x * p_weights[i]; end if;
+    end if;
+    if h > 0 then
+      s := p_slots[i];
+      if s = 1 then if h > b1 then b1 := h; end if;
+      elsif s = 2 then if h > b2 then b2 := h; end if;
+      elsif s = 3 then if h > b3 then b3 := h; end if;
+      else if h > b4 then b4 := h; end if;
+      end if;
     end if;
   end loop;
-  for s in 1..p_n loop
-    if v_b[s] <= 0 then return 0; end if;
-    b_sum := b_sum + v_b[s];
-  end loop;
-  return b_sum / p_n;
+  if (p_n >= 1 and b1 <= 0) or (p_n >= 2 and b2 <= 0) or (p_n >= 3 and b3 <= 0) or (p_n >= 4 and b4 <= 0) then
+    return 0;
+  end if;
+  return (b1 + b2 + b3 + b4) / p_n;
 end;
 $$;
 
@@ -442,6 +462,7 @@ begin
              + case when c.verification_status in ('verified', 'approved') then 0.02 else 0 end
              + case when c.image_url is not null then 0.01 else 0 end end)::numeric, 6)::double precision as relevance
     from public.catalog_raw_dish_cards c
+    left join name_hit_venues nh on nh.venue_id = c.venue_id
     cross join lateral (
       select case when v_n = 0 then array[0, 0]::double precision[]
         else app_private.catalog_text_match(v_slots, v_variants, v_weights, v_n, c.name, c.food_type, c.venue_name, c.building_name) end as scores
@@ -468,7 +489,7 @@ begin
           or v_tok4 <% c.name or v_tok4 <% c.food_type or v_tok4 <% c.venue_name or v_tok4 <% c.building_name)
         -- Matches through the stall or building only count when none of the stall's dishes match by
         -- their own name or food type ("chicken rice" lists the dish, not the stall's Pandan Cake).
-        and (m.scores[1] > 0 or (m.scores[2] > 0 and not exists (select 1 from name_hit_venues h where h.venue_id = c.venue_id)))
+        and (m.scores[1] > 0 or (m.scores[2] > 0 and nh.venue_id is null))
       ))
   ), page as materialized (
     select * from candidates c
