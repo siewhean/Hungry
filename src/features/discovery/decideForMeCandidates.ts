@@ -1,13 +1,30 @@
-import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
+import { getExperimentVariant } from "@/lib/experiments/experiments";
+import { filterSafeDishes } from "@/lib/ai/dietaryGate";
+import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
-import { getVenueOpenState, type OpenState } from "@/utils/operatingHours";
+import { getSingaporeMinutes, getVenueOpenState, type OpenState } from "@/utils/operatingHours";
 import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
 
 /** Decide for Me starts at the first radius and widens one step at a time. */
 export const DECIDE_RADIUS_STEPS_METERS = [500, 1000, 2000, 4000];
-export const DECIDE_INITIAL_RADIUS_METERS = DECIDE_RADIUS_STEPS_METERS[0];
+/** 0.5 km held too few stalls in the suburbs; the diner can narrow or widen it on the result. */
+export const DECIDE_INITIAL_RADIUS_METERS = DECIDE_RADIUS_STEPS_METERS[1];
 
-/** Taste-ranked dishes, with the budget treated as a preference rather than a hard rule. */
+/** The first radius for this diner: 1 km, or 0.5 km in the control arm of decide_initial_radius_v1. */
+export function decideInitialRadiusMeters(options: { expose?: boolean } = {}): number {
+  return getExperimentVariant("decide_initial_radius_v1", options) === "control"
+    ? DECIDE_RADIUS_STEPS_METERS[0]
+    : DECIDE_INITIAL_RADIUS_METERS;
+}
+
+/** Picks within this many match points are "the same quality"; the food-history mix may swap them. */
+export const DECIDE_SCORE_BAND = 5;
+
+/**
+ * Dishes ranked by the match the screen shows (`tasteMatchPercent`), nearest then best rated
+ * breaking ties. A diner without a trusted taste profile sees "Popular nearby" instead of a
+ * number, so those picks rank by rating, then distance. The budget is a preference, not a rule.
+ */
 export function rankDecideCandidates(
   dishes: DishDetail[],
   options: {
@@ -15,21 +32,46 @@ export function rankDecideCandidates(
     dietaryFlags: DietaryFlag[];
     radiusMeters: number;
     maxDishBudget?: number;
+    /** Defaults to "the vector differs from the all-5s guest default". */
+    hasTasteProfile?: boolean;
   },
 ): DishDetail[] {
-  const byId = new Map(dishes.map((dish) => [dish.id, dish]));
-  const ranked = runRecommendationPipeline(dishes, {
-    userVector: options.tasteVector,
-    dietaryFlags: options.dietaryFlags,
-    radiusMeters: options.radiusMeters,
-    neophiliaIndex: 5,
-  })
-    .map((result) => byId.get(result.dishId))
-    .filter((dish): dish is DishDetail => Boolean(dish));
+  const hasTasteProfile = options.hasTasteProfile ?? hasPersonalTasteProfile(options.tasteVector);
+  const scoreOf = (dish: DishDetail) =>
+    hasTasteProfile
+      ? tasteMatchPercent(options.tasteVector, dish.tasteVector)
+      : dish.reviewCount > 0
+        ? dish.rating
+        : 0;
+  const ranked = filterSafeDishes(dishes, options.dietaryFlags)
+    .filter((dish) => dish.distanceMeters <= options.radiusMeters)
+    .map((dish) => ({ dish, score: scoreOf(dish) }))
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        a.dish.distanceMeters - b.dish.distanceMeters ||
+        b.dish.rating - a.dish.rating,
+    )
+    .map(({ dish }) => dish);
   if (options.maxDishBudget === undefined) return ranked;
   const budget = options.maxDishBudget;
   const withinBudget = ranked.filter((dish) => dish.price <= budget);
   return withinBudget.length ? withinBudget : ranked;
+}
+
+/**
+ * Keeps a re-ordered list (the food-history mix) from putting a dish above one that matches more
+ * than `band` points better: stable sort by score band, so only near-equal picks can swap.
+ */
+export function keepScoreOrder(
+  dishes: DishDetail[],
+  scoreOf: (dish: DishDetail) => number,
+  band: number = DECIDE_SCORE_BAND,
+): DishDetail[] {
+  return dishes
+    .map((dish, index) => ({ dish, index, tier: Math.floor(scoreOf(dish) / band) }))
+    .sort((a, b) => b.tier - a.tier || a.index - b.index)
+    .map(({ dish }) => dish);
 }
 
 /**
@@ -75,9 +117,37 @@ export function preferOpenStalls(
   };
   const open = dishes.filter((dish) => stateFor(dish.venueId).status === "open");
   const unknown = dishes.filter((dish) => stateFor(dish.venueId).status === "unknown");
-  const closed = dishes.filter((dish) => stateFor(dish.venueId).status === "closed");
+  // Closed stalls come back soonest-opening first, so "everything is closed" still leads with
+  // the pick that is nearest to opening.
+  const closed = dishes
+    .filter((dish) => stateFor(dish.venueId).status === "closed")
+    .map((dish, index) => ({
+      dish,
+      index,
+      wait: minutesUntilOpening(stateFor(dish.venueId), now),
+    }))
+    .sort((a, b) => a.wait - b.wait || a.index - b.index)
+    .map(({ dish }) => dish);
   const eligible = [...open, ...unknown];
   return eligible.length
     ? { candidates: eligible, onlyClosed: false, openStateByVenueId }
     : { candidates: closed, onlyClosed: closed.length > 0, openStateByVenueId };
+}
+
+/** "Opens 7am" / "Opens 5:30pm" as minutes from `now`; Infinity when there is no time to read. */
+export function minutesUntilOpening(state: OpenState, now: Date = new Date()): number {
+  const match = /opens (\d{1,2})(?::(\d{2}))?\s*(am|pm)/i.exec(state.detail ?? "");
+  if (!match) return Number.POSITIVE_INFINITY;
+  const hour = (Number(match[1]) % 12) + (match[3].toLowerCase() === "pm" ? 12 : 0);
+  const opensAt = hour * 60 + Number(match[2] ?? 0);
+  const wait = opensAt - getSingaporeMinutes(now);
+  return wait >= 0 ? wait : wait + 24 * 60;
+}
+
+/** "Open now · Closes 9pm", "Closed today", "Closed · Opens 7am": never "Closed · Closed today". */
+export function formatOpenLabel(state: OpenState | undefined): string | undefined {
+  if (!state || state.status === "unknown") return undefined;
+  if (state.status === "open") return ["Open now", state.detail].filter(Boolean).join(" · ");
+  if (!state.detail) return "Closed";
+  return /^closed/i.test(state.detail) ? state.detail : `Closed · ${state.detail}`;
 }

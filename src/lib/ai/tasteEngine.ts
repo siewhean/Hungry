@@ -133,29 +133,28 @@ export function countNegativeTasteSignals(
   ).length;
 }
 
-/**
- * Match percent for display, 0-100. Both vectors are centred on the neutral 5
- * before the cosine, so an all-positive 0-10 dish no longer looks close to
- * everyone. 50 means no particular lean either way; opposite tastes go to 0.
- * (The blended score above keeps ranking; this one is only for showing a number.)
- */
-export function tasteMatchPercent(user: TasteVector, dish: TasteVector): number {
-  const centre = (vector: TasteVector): TasteVector => ({
-    sweet: vector.sweet - NEUTRAL_AXIS,
-    spicy: vector.spicy - NEUTRAL_AXIS,
-    sour: vector.sour - NEUTRAL_AXIS,
-    salty: vector.salty - NEUTRAL_AXIS,
-    rich: vector.rich - NEUTRAL_AXIS,
-    aromatic: vector.aromatic - NEUTRAL_AXIS,
-  });
-  const cos = cosineSimilarity(centre(user), centre(dish));
-  // cosineSimilarity returns 0 for a zero vector, which maps to the neutral 50.
-  return Math.round(((Math.max(-1, Math.min(1, cos)) + 1) / 2) * 100);
-}
-
 /** Per-axis match for the "Palate match" bars: a 5-point gap or more reads as 0. */
 export function tasteAxisMatchPercent(userValue: number, dishValue: number): number {
   return Math.round(Math.max(0, 1 - Math.abs(userValue - dishValue) / 5) * 100);
+}
+
+/**
+ * Match percent for display and for ranking, 0-100: a weighted average of the six per-axis
+ * matches the "Palate match" bars show, so the headline number can never sit above the best bar
+ * or below the worst. Axes the diner feels strongly about (far from the neutral 5) weigh more, so
+ * a bland dish does not score well for someone who lives for heat. 100 means every axis agrees;
+ * a dish that is "more of everything" than the diner does not score 100 (a cosine of the centred
+ * vectors did).
+ */
+export function tasteMatchPercent(user: TasteVector, dish: TasteVector): number {
+  let weighted = 0;
+  let weights = 0;
+  for (const axis of TASTE_AXES) {
+    const weight = 1 + Math.abs(user[axis] - NEUTRAL_AXIS);
+    weighted += weight * Math.max(0, 1 - Math.abs(user[axis] - dish[axis]) / 5);
+    weights += weight;
+  }
+  return Math.round((weighted / weights) * 100);
 }
 
 // ─── Recommendation ───────────────────────────────────────────────────────────

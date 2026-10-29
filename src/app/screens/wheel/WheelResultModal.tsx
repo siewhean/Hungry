@@ -13,13 +13,21 @@ import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { MapPin, Navigation, Trophy, RotateCcw, CheckCircle2 } from "lucide-react-native";
+import { MapPin, Navigation, Store, Trophy, RotateCcw, CheckCircle2 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  formatDistanceFromUser,
+  buildStallMapsUrl,
+  getStallPin,
+} from "@/features/detail/stallLocation";
+import { findBuildingById } from "@/features/discovery/discovery";
 import { leaveWheelStack } from "@/features/wheel/leaveWheel";
+import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -60,6 +68,24 @@ export function WheelResultModal({ navigation, route }: Props) {
     };
   }, [winnerVenueId, cachedVenue]);
   const venue = cachedVenue ?? fetchedVenue;
+  // Where it is and how far: the building, the unit and the distance from the diner.
+  const locationPermission = useLocationStore((s) => s.permission);
+  const currentLocation = useLocationStore((s) => s.currentLocation);
+  const manualCoordinate = useLocationStore((s) => s.manualCoordinate);
+  const { coordinate: origin, isApproximate } = getEffectiveLocation({
+    permission: locationPermission,
+    currentLocation,
+    manualCoordinate,
+  });
+  const building = winnerEntry ? findBuildingById(winnerEntry.buildingId) : undefined;
+  const buildingName = venue?.buildingName ?? building?.name;
+  const unitLine = [venue?.floor, venue?.unitNumber].filter(Boolean).join(" ");
+  const placeLine = [buildingName, unitLine].filter(Boolean).join(" · ");
+  const stallPin = venue ? getStallPin(venue, building?.coordinate) : undefined;
+  // Distance from the built-in default point is not distance from the user.
+  const distanceLabel = isApproximate
+    ? undefined
+    : formatDistanceFromUser(origin, stallPin ?? building?.coordinate);
   const dishes = winnerEntry ? repository.listDishesByVenue(winnerEntry.venueId) : [];
   const heroDish = dishes[0];
 
@@ -91,6 +117,25 @@ export function WheelResultModal({ navigation, route }: Props) {
     });
     // Once per result shown.
   }, [winnerEntryId]);
+
+  function handleDirections() {
+    if (!winnerEntry) return;
+    trackAnalyticsEvent("directions_opened", {
+      stall_id: winnerEntry.venueId,
+      source: "wheel",
+    });
+    void openTrustedMapsUrl(
+      buildStallMapsUrl(
+        {
+          name: winnerEntry.label,
+          buildingName,
+          address: venue?.address,
+          postalCode: venue?.postalCode,
+        },
+        stallPin,
+      ),
+    );
+  }
 
   function handleStallDetail() {
     if (!winnerEntry) return;
@@ -200,7 +245,7 @@ export function WheelResultModal({ navigation, route }: Props) {
               {winnerEntry?.label ?? "—"}
             </AppText>
 
-            {venue ? (
+            {placeLine ? (
               <View
                 style={{
                   flexDirection: "row",
@@ -211,18 +256,30 @@ export function WheelResultModal({ navigation, route }: Props) {
               >
                 <MapPin size={14} color={palette.orange} />
                 <AppText variant="bodySmall" tone="secondary">
-                  {venue.floor} {venue.unitNumber}
+                  {placeLine}
                 </AppText>
               </View>
+            ) : null}
+            {distanceLabel ? (
+              <AppText variant="bodySmall" tone="secondary">
+                {distanceLabel}
+              </AppText>
             ) : null}
           </View>
 
           {/* CTA dock */}
           <View style={{ gap: spacing[3] }}>
             <Button
+              label="Directions"
+              onPress={handleDirections}
+              leftIcon={<Navigation size={18} color={palette.white} />}
+            />
+
+            <Button
               label="View stall details"
               onPress={handleStallDetail}
-              leftIcon={<Navigation size={18} color={palette.white} />}
+              variant="secondary"
+              leftIcon={<Store size={18} color={palette.text} />}
             />
 
             {isClassic ? (

@@ -23,7 +23,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
-import { WheelSvg } from "@/components/wheel/WheelSvg";
+import { WheelSvg, getWheelSliceColors } from "@/components/wheel/WheelSvg";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { getSpinWinnerIndex, selectActiveWheelEntries, useWheelStore } from "@/store/useWheelStore";
@@ -375,10 +375,25 @@ export function WheelSpinScreen({ navigation }: Props) {
           paddingBottom: spacing[3],
         }}
       >
-        {activeEntries.map((entry) => (
-          <AppText key={entry.id} variant="micro" tone="secondary">
-            {entry.label}
-          </AppText>
+        {activeEntries.map((entry, index) => (
+          <View
+            key={entry.id}
+            style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
+          >
+            <View
+              style={{
+                backgroundColor: getWheelSliceColors(palette, index, activeEntries.length).fill,
+                borderColor: palette.orange,
+                borderRadius: 5,
+                borderWidth: 1,
+                height: 10,
+                width: 10,
+              }}
+            />
+            <AppText variant="micro" tone="secondary">
+              {entry.label}
+            </AppText>
+          </View>
         ))}
       </View>
 

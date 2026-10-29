@@ -25,6 +25,7 @@ import {
   getBuildingDetailViaRpc,
   getItemDetailsViaRpc,
   getInlineMerchantReads,
+  getSavedDishCardsViaRpc,
   getVenueByIdViaRpc,
   invalidateVenueDetail,
   getVenuesByIdsViaRpc,
@@ -34,6 +35,7 @@ import {
   listDishesByVenuePageViaRpc,
   listPopularNearbyViaRpc,
   listVenuesByBuildingViaRpc,
+  mapTasteCardRow,
   refreshSupabaseRepositoryCache,
   refreshSupabaseRepositoryVenueDishes,
   searchDishesViaRpc,
@@ -748,7 +750,8 @@ async function fetchFavouriteDishIdsForUser(
   const { data, error } = await client
     .from("user_favourite_dishes")
     .select("dish_id")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
   if (error || !Array.isArray(data)) return [];
   return (data as Row[])
     .map((row) => asString(row.dish_id))
@@ -1997,7 +2000,14 @@ function mapRecommendationRpcRows(rows: Row[]): RankedRecommendation[] {
   return rows
     .map((row) => {
       const dishId = asString(row.dish_id);
-      const dish = dishId ? supabaseRepository.getDishById(dishId) : undefined;
+      // The card the RPC sent. Looking the dish up in the repository would start the full
+      // catalog download as a side effect; only rows from before the card columns existed (ids
+      // only) still need that lookup.
+      const dish = dishId
+        ? row.venue_name === undefined
+          ? supabaseRepository.getDishById(dishId)
+          : mapTasteCardRow(row)
+        : undefined;
       if (!dish) return null;
 
       const matchScore = asNumber(row.match_score) ?? 0;
@@ -2061,7 +2071,8 @@ async function getLiveTasteRecommendations(
 
   const rows = data as Row[];
   let mapped = mapRecommendationRpcRows(rows);
-  if (rows.length > 0 && mapped.length === 0) {
+  // Only an id-only reply needs the full catalog to be turned into dishes.
+  if (rows.length > 0 && mapped.length === 0 && rows[0]?.venue_name === undefined) {
     await refreshSupabaseRepositoryCache();
     mapped = mapRecommendationRpcRows(rows);
   }
@@ -4033,6 +4044,12 @@ export const supabaseService: HungryService = {
       }));
     },
 
+    async getSavedDishCards(dishIds) {
+      const cards = await getSavedDishCardsViaRpc(dishIds);
+      if (!cards) throw new Error("Couldn't load your saved dishes.");
+      return cards;
+    },
+
     async listVenuesByBuilding(buildingId) {
       return (
         (await listVenuesByBuildingViaRpc(buildingId)) ??
@@ -4883,23 +4900,20 @@ export const supabaseService: HungryService = {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to change notification settings.");
-      const current = await supabaseService.push.getPreferences();
-      const next = { ...current, ...updates };
+      // Only the columns being changed go in the upsert (ON CONFLICT updates just those), so
+      // a switch changed on another phone is never written back with a stale value.
+      const row: Record<string, unknown> = { user_id: userId };
+      if (updates.stallUpdates !== undefined) row.stall_updates = updates.stallUpdates;
+      if (updates.weeklyPicks !== undefined) row.weekly_picks = updates.weeklyPicks;
+      if (updates.mealtimeSuggestions !== undefined)
+        row.mealtime_suggestions = updates.mealtimeSuggestions;
+      if (updates.socialActivity !== undefined) row.social_activity = updates.socialActivity;
+      if (updates.quietStartHour !== undefined) row.quiet_start_hour = updates.quietStartHour;
+      if (updates.quietEndHour !== undefined) row.quiet_end_hour = updates.quietEndHour;
+      if (updates.weeklyCap !== undefined) row.weekly_cap = updates.weeklyCap;
       const { data, error } = await client
         .from("notification_preferences")
-        .upsert(
-          {
-            user_id: userId,
-            stall_updates: next.stallUpdates,
-            weekly_picks: next.weeklyPicks,
-            mealtime_suggestions: next.mealtimeSuggestions,
-            social_activity: next.socialActivity,
-            quiet_start_hour: next.quietStartHour,
-            quiet_end_hour: next.quietEndHour,
-            weekly_cap: next.weeklyCap,
-          },
-          { onConflict: "user_id" },
-        )
+        .upsert(row, { onConflict: "user_id" })
         .select(
           "stall_updates,weekly_picks,mealtime_suggestions,social_activity,quiet_start_hour,quiet_end_hour,weekly_cap",
         )

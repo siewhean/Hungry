@@ -1,0 +1,14 @@
+{
+  "version": "20261028090000",
+  "name": "20261028090000_taste_recommendations_card_fields",
+  "result": "pass",
+  "rehearsed_at": "2026-10-28T17:32:06Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "12ed84525f2e3afe416f4bcc8e15f317fd3c64b9",
+  "up_sha256": "a3017c26cbdacac01327a6e841750ec4a3dcbcfe3f6aaf3ebc80d562d1ab1a7b",
+  "down_sha256": "3781f7e2ff6b1dac571a8a9ffd8fba10ea3e49ac62c3de2c088644c37266d035",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/taste_recommendations_card_fields.sql"]
+}

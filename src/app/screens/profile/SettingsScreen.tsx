@@ -1,14 +1,13 @@
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import * as Updates from "expo-updates";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Linking, Platform, Share, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   Accessibility,
-  AtSign,
-  Ban,
+  BarChart3,
   Compass,
   Database,
   Download,
@@ -22,20 +21,20 @@ import {
   LocateFixed,
   Lock,
   LogOut,
-  Mail,
   MapPin,
   MessageCircle,
   RotateCcw,
+  Salad,
   Scale,
   Settings2,
   Shield,
   Smartphone,
+  Sparkles,
   SunMoon,
   Trash2,
-  User,
   UserX,
-  UtensilsCrossed,
   Vibrate,
+  Wallet,
 } from "lucide-react-native";
 import { useShallow } from "zustand/react/shallow";
 
@@ -45,6 +44,11 @@ import { Button, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
+import {
+  AccountDeletionDialog,
+  type DeletionReason,
+} from "@/components/settings/AccountDeletionDialog";
+import { SettingsProfileCard } from "@/components/settings/SettingsProfileCard";
 import { SettingsChoiceSheet } from "@/components/settings/SettingsChoiceSheet";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { foodOpennessLabel } from "@/constants/taste";
@@ -159,6 +163,8 @@ export function SettingsScreen() {
     setReducedMotionEnabled,
     allowSearchHistory,
     setAllowSearchHistory,
+    analyticsEnabled,
+    setAnalyticsEnabled,
     leftHandedMode,
     setLeftHandedMode,
     showToast,
@@ -172,6 +178,8 @@ export function SettingsScreen() {
       setReducedMotionEnabled: state.setReducedMotionEnabled,
       allowSearchHistory: state.allowSearchHistory,
       setAllowSearchHistory: state.setAllowSearchHistory,
+      analyticsEnabled: state.analyticsEnabled,
+      setAnalyticsEnabled: state.setAnalyticsEnabled,
       leftHandedMode: state.leftHandedMode,
       setLeftHandedMode: state.setLeftHandedMode,
       showToast: state.showToast,
@@ -187,6 +195,20 @@ export function SettingsScreen() {
     enabled: isAuthenticated,
   });
 
+  // Neutral grey icons on grey discs; colour is kept for state (error red, accent actions).
+  const iconColor = palette.textSecondary;
+  const neutralRow = { editorial: true, iconTone: "neutral" } as const;
+  const isNative = Platform.OS !== "web";
+
+  // The denominator for every Settings experiment: one view per time the screen comes into focus.
+  const isSignedInRef = useRef(isAuthenticated);
+  isSignedInRef.current = isAuthenticated;
+  useFocusEffect(
+    useCallback(() => {
+      trackAnalyticsEvent("settings_viewed", { signed_in: isSignedInRef.current });
+    }, []),
+  );
+
   const normalizedThemePreference: ThemePreference =
     themePreference === "system" || themePreference === "light" || themePreference === "dark"
       ? themePreference
@@ -200,6 +222,8 @@ export function SettingsScreen() {
   const [visibilitySheetVisible, setVisibilitySheetVisible] = useState(false);
   const [canChangePassword, setCanChangePassword] = useState(false);
   const [deletionPending, setDeletionPending] = useState(false);
+  // The optional one-tap reason from the delete dialog, kept for the event sent with the request.
+  const deletionReason = useRef<DeletionReason | null>(null);
   const handlePendingDeletionChange = useCallback(
     (pending: boolean) => setDeletionPending(pending),
     [],
@@ -303,6 +327,7 @@ export function SettingsScreen() {
     | "codeSendFailed"
     | "ownerBlocked"
     | "noAccountEmail"
+    | "contact"
     | null
   >(null);
 
@@ -352,7 +377,10 @@ export function SettingsScreen() {
         reason: "user_initiated_settings_flow",
         code,
       }));
-      trackAnalyticsEvent("account_deletion_requested", { surface: "settings" });
+      trackAnalyticsEvent("account_deletion_requested", {
+        surface: "settings",
+        reason_choice: deletionReason.current ?? "none",
+      });
     } catch (error) {
       if (isAuthCodeError(error)) throw error;
       setDeletionCodeVisible(false);
@@ -427,6 +455,8 @@ export function SettingsScreen() {
   };
 
   const openAppSettings = async () => {
+    // Web has no phone settings to open; that is not an error worth reporting.
+    if (typeof Linking.openSettings !== "function") return;
     try {
       await Linking.openSettings();
     } catch (error) {
@@ -455,6 +485,13 @@ export function SettingsScreen() {
         onConfirm: () => void openAppSettings(),
       });
     }
+  };
+
+  // Turning it off sends nothing (not even this change); turning it on says so.
+  const handleAnalyticsToggle = (enabled: boolean) => {
+    setAnalyticsEnabled(enabled);
+    if (enabled)
+      trackAnalyticsEvent("settings_changed", { setting: "usage_analytics", value: true });
   };
 
   const handleSearchHistoryToggle = (enabled: boolean) => {
@@ -504,9 +541,17 @@ export function SettingsScreen() {
         "This clears the area you picked. Hungry will use your device location when location access is allowed.",
       confirmLabel: "Reset",
       onConfirm: () => {
-        void clearManualLocation().then(() =>
-          showToast({ message: "Your selected location has been cleared.", tone: "success" }),
-        );
+        void clearManualLocation()
+          .then(() =>
+            showToast({ message: "Your selected location has been cleared.", tone: "success" }),
+          )
+          .catch((error: unknown) => {
+            reportError(error, { area: "settings_reset_location" });
+            showToast({
+              message: "Couldn't reset your location. Please try again.",
+              tone: "error",
+            });
+          });
       },
     });
   };
@@ -519,21 +564,26 @@ export function SettingsScreen() {
       confirmLabel: "Clear",
       onConfirm: () => {
         void (async () => {
-          // Only caches: the session, profile and location stay so nothing is signed out.
-          await Promise.all([
-            hungryPersistStorage?.removeItem("hungry-search-v1"),
-            hungryPersistStorage?.removeItem("hungry-review-draft-v1"),
-            clearImageCache(),
-          ]);
-          deleteExportFile();
-          resetDraft();
-          clearSearchState();
-          clearSearchHistory();
-          trackAnalyticsEvent("settings_local_cache_cleared", {});
-          showToast({
-            message: "Local cache cleared. Searches, drafts and cached images were removed.",
-            tone: "success",
-          });
+          try {
+            // Only caches: the session, profile and location stay so nothing is signed out.
+            await Promise.all([
+              hungryPersistStorage?.removeItem("hungry-search-v1"),
+              hungryPersistStorage?.removeItem("hungry-review-draft-v1"),
+              clearImageCache(),
+            ]);
+            deleteExportFile();
+            resetDraft();
+            clearSearchState();
+            clearSearchHistory();
+            trackAnalyticsEvent("settings_local_cache_cleared", {});
+            showToast({
+              message: "Local cache cleared. Searches, drafts and cached images were removed.",
+              tone: "success",
+            });
+          } catch (error) {
+            reportError(error, { area: "settings_clear_local_cache" });
+            showToast({ message: "Couldn't clear the cache. Please try again.", tone: "error" });
+          }
         })();
       },
     });
@@ -555,16 +605,18 @@ export function SettingsScreen() {
       confirmLabel: "Sign out everywhere",
       destructive: true,
       onConfirm: () => {
+        // Supabase answers a global sign-out with SIGNED_OUT; that is not an expired session.
+        expectSignOut();
+        // Set first: Login may mount on that SIGNED_OUT, before the call below resolves.
+        setAuthNotice({ message: "Signed out of all devices.", tone: "success" });
         void getHungryService()
           .auth.signOut({ scope: "global" })
           .then(() => {
             signOut();
-            rootNavigation.reset({
-              index: 0,
-              routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-            });
+            resetToLogin();
           })
           .catch((error: unknown) => {
+            setAuthNotice(null);
             reportError(error, { area: "settings_sign_out_everywhere" });
             showToast({
               message: "Couldn't sign out everywhere. Check your connection and try again.",
@@ -596,20 +648,30 @@ export function SettingsScreen() {
       {isAuthenticated ? (
         <PendingDeletionBanner onPendingChange={handlePendingDeletionChange} />
       ) : null}
+
+      {isAuthenticated ? (
+        <SettingsProfileCard
+          name={profile.displayName}
+          email={profile.email}
+          avatarUrl={profile.avatarUrl}
+          onPress={() => navigation.navigate("EditProfile")}
+        />
+      ) : null}
+
       <SettingsSection
         // Remount when the variant resolves after flags load, so the fold state follows it.
         key={`dining-${diningVariant}`}
         editorial
         collapsible
         defaultCollapsed={diningVariant === "control"}
-        title="Dining preferences"
+        title="Your taste"
         collapsedSummary={diningSummary}
       >
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Dietary preferences"
           description="Choose the dietary flags used for your recommendations."
-          icon={<UtensilsCrossed size={20} color={palette.orange} />}
+          icon={<Salad size={20} color={iconColor} />}
           type="navigation"
           value={
             profile.dietaryPreferences.length
@@ -625,10 +687,10 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Flavour profile"
           description="Review the taste answers behind your recommendations."
-          icon={<Compass size={20} color={palette.orange} />}
+          icon={<Compass size={20} color={iconColor} />}
           type="navigation"
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
@@ -639,23 +701,23 @@ export function SettingsScreen() {
           isLast={false}
         />
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Meal budget"
-          icon={<UtensilsCrossed size={20} color={palette.orange} />}
+          icon={<Wallet size={20} color={iconColor} />}
           type="navigation"
           value={profile.maxDishBudget ? `Up to S$${profile.maxDishBudget}` : "Not set"}
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
               screen: "TasteQuiz",
-              params: { mode: "profile", initialPhase: "dietary", source: "settings" },
+              params: { mode: "profile", initialPhase: "budget", source: "settings" },
             })
           }
           isLast={false}
         />
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Trying new food"
-          icon={<Compass size={20} color={palette.orange} />}
+          icon={<Sparkles size={20} color={iconColor} />}
           type="navigation"
           value={foodOpenness}
           onPress={() =>
@@ -668,64 +730,13 @@ export function SettingsScreen() {
         />
         {isAuthenticated ? (
           <SettingsRow
-            editorial
+            {...neutralRow}
             label="Reset food history"
-            icon={<UtensilsCrossed size={20} color={palette.orange} />}
+            icon={<History size={20} color={iconColor} />}
             onPress={handleResetFoodHistory}
             isLast
           />
         ) : null}
-      </SettingsSection>
-
-      <SettingsSection editorial title="Location & notifications">
-        <SettingsRow
-          editorial
-          label="Location"
-          icon={<MapPin size={20} color={palette.orange} />}
-          onPress={() =>
-            rootNavigation.navigate("OnboardingStack", {
-              screen: "ManualLocationPicker",
-              params: { mode: "settings" },
-            })
-          }
-          value={location || (locationPermission === "granted" ? "Use GPS" : "Not set")}
-          isLast={false}
-        />
-        <SettingsRow
-          editorial
-          label="Location permission"
-          icon={<LocateFixed size={20} color={palette.orange} />}
-          type="navigation"
-          value={
-            locationPermission === "granted"
-              ? "Allowed"
-              : locationPermission === "denied"
-                ? "Not allowed"
-                : "Not asked yet"
-          }
-          description={
-            locationPermission === "unknown"
-              ? "Tap to allow location access"
-              : "Change this in your device settings"
-          }
-          onPress={() => void handleLocationPermissionPress()}
-          isLast={false}
-        />
-        <SettingsRow
-          editorial
-          label="Reset selected location"
-          icon={<RotateCcw size={20} color={palette.orange} />}
-          onPress={handleResetLocation}
-          isLast={false}
-        />
-        <SettingsRow
-          editorial
-          label="Phone permissions"
-          icon={<Settings2 size={20} color={palette.orange} />}
-          onPress={openAppSettings}
-          value="Open settings"
-          isLast
-        />
       </SettingsSection>
 
       {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
@@ -740,61 +751,16 @@ export function SettingsScreen() {
         />
       ) : null}
 
-      {isAuthenticated ? (
-        <>
-          <SettingsSection editorial title="Account & sync">
-            <SettingsRow
-              editorial
-              label="Edit profile"
-              icon={<User size={20} color={palette.orange} />}
-              onPress={() => navigation.navigate("EditProfile")}
-              value={profile.displayName}
-              isLast
-            />
-          </SettingsSection>
-
-          <SettingsSection editorial title="Sign-in and security">
-            <SettingsRow
-              editorial
-              label="Email"
-              icon={<AtSign size={20} color={palette.orange} />}
-              type="navigation"
-              value={profile.email?.trim() || "Not linked"}
-              description="Change it in Edit profile."
-              onPress={() => navigation.navigate("EditProfile")}
-              isLast={false}
-            />
-            {canChangePassword ? (
-              <SettingsRow
-                editorial
-                label="Change password"
-                icon={<KeyRound size={20} color={palette.orange} />}
-                onPress={() => rootNavigation.navigate("ChangePassword")}
-                isLast={false}
-              />
-            ) : null}
-            <SettingsRow
-              editorial
-              label="Sign out of all devices"
-              description="Ends your Hungry session on every phone, including this one."
-              icon={<Smartphone size={20} color={palette.orange} />}
-              onPress={handleSignOutEverywhere}
-              isLast
-            />
-          </SettingsSection>
-        </>
-      ) : null}
-
-      <SettingsSection editorial title="Data & privacy">
+      <SettingsSection editorial title="Privacy & data">
         {isAuthenticated ? (
           <SettingsRow
+            {...neutralRow}
             label="Profile visibility"
-            editorial
             icon={
               isProfilePrivate ? (
-                <Lock size={20} color={palette.orange} />
+                <Lock size={20} color={iconColor} />
               ) : (
-                <Eye size={20} color={palette.orange} />
+                <Eye size={20} color={iconColor} />
               )
             }
             type="navigation"
@@ -806,73 +772,157 @@ export function SettingsScreen() {
         ) : null}
         {isAuthenticated ? (
           <SettingsRow
-            editorial
+            {...neutralRow}
             label={BLOCKED_AND_HIDDEN_TITLE}
-            icon={<UserX size={20} color={palette.orange} />}
+            icon={<UserX size={20} color={iconColor} />}
             type="navigation"
             onPress={() => rootNavigation.navigate("BlockedAndHidden")}
             isLast={false}
           />
         ) : null}
         <SettingsRow
-          editorial
+          {...neutralRow}
+          label="Share usage analytics"
+          description="Helps us see what to fix. Crash reports are still sent."
+          icon={<BarChart3 size={20} color={iconColor} />}
+          type="toggle"
+          isEnabled={analyticsEnabled}
+          onToggle={handleAnalyticsToggle}
+          isLast={false}
+        />
+        <SettingsRow
+          {...neutralRow}
           label="Allow search history"
-          icon={<History size={20} color={palette.orange} />}
+          icon={<History size={20} color={iconColor} />}
           type="toggle"
           isEnabled={allowSearchHistory}
           onToggle={handleSearchHistoryToggle}
           isLast={false}
         />
         <SettingsRow
-          editorial
-          label="Clear local cache"
-          icon={<Eraser size={20} color={palette.orange} />}
-          onPress={handleClearLocalData}
+          {...neutralRow}
+          label="Location"
+          icon={<MapPin size={20} color={iconColor} />}
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "ManualLocationPicker",
+              params: { mode: "settings" },
+            })
+          }
+          value={location || (locationPermission === "granted" ? "Use GPS" : "Not set")}
           isLast={false}
         />
+        {isNative ? (
+          <SettingsRow
+            {...neutralRow}
+            label="Location permission"
+            icon={<LocateFixed size={20} color={iconColor} />}
+            type="navigation"
+            value={
+              locationPermission === "granted"
+                ? "Allowed"
+                : locationPermission === "denied"
+                  ? "Not allowed"
+                  : "Not asked yet"
+            }
+            description={
+              locationPermission === "unknown"
+                ? "Tap to allow location access"
+                : "Change this in your device settings"
+            }
+            onPress={() => void handleLocationPermissionPress()}
+            isLast={false}
+          />
+        ) : null}
+        <SettingsRow
+          {...neutralRow}
+          label="Reset selected location"
+          icon={<RotateCcw size={20} color={iconColor} />}
+          onPress={handleResetLocation}
+          isLast={false}
+        />
+        {isNative ? (
+          <SettingsRow
+            {...neutralRow}
+            label="Phone permissions"
+            icon={<Settings2 size={20} color={iconColor} />}
+            onPress={openAppSettings}
+            value="Open settings"
+            isLast={false}
+          />
+        ) : null}
         {isAuthenticated ? (
           <SettingsRow
-            editorial
+            {...neutralRow}
             label={isExportingData ? "Preparing your data…" : "Download my data"}
-            icon={<Download size={20} color={palette.orange} />}
+            icon={<Download size={20} color={iconColor} />}
             onPress={handleExportData}
             busy={isExportingData}
             isLast={false}
           />
         ) : null}
         <SettingsRow
-          editorial
+          {...neutralRow}
+          label="Clear local cache"
+          icon={<Eraser size={20} color={iconColor} />}
+          onPress={handleClearLocalData}
+          isLast={false}
+        />
+        <SettingsRow
+          {...neutralRow}
           label="How account deletion works"
-          icon={<Shield size={20} color={palette.orange} />}
+          icon={<Shield size={20} color={iconColor} />}
           type="link"
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
           isLast
         />
       </SettingsSection>
 
-      <SettingsSection editorial title="Accessibility and display">
+      {isAuthenticated ? (
+        <SettingsSection editorial title="Account & security">
+          {canChangePassword ? (
+            <SettingsRow
+              {...neutralRow}
+              label="Change password"
+              icon={<KeyRound size={20} color={iconColor} />}
+              onPress={() => rootNavigation.navigate("ChangePassword")}
+              isLast={false}
+            />
+          ) : null}
+          <SettingsRow
+            {...neutralRow}
+            label="Sign out of all devices"
+            description="Ends your Hungry session on every phone, including this one."
+            icon={<Smartphone size={20} color={iconColor} />}
+            onPress={handleSignOutEverywhere}
+            isLast
+          />
+        </SettingsSection>
+      ) : null}
+
+      <SettingsSection editorial title="Display & accessibility">
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Theme"
-          icon={<SunMoon size={20} color={palette.orange} />}
+          icon={<SunMoon size={20} color={iconColor} />}
           type="navigation"
           value={THEME_LABELS[normalizedThemePreference]}
           onPress={() => setThemeSheetVisible(true)}
           isLast={false}
         />
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Reduce motion"
-          icon={<Accessibility size={20} color={palette.orange} />}
+          icon={<Accessibility size={20} color={iconColor} />}
           type="toggle"
           isEnabled={reducedMotionEnabled}
           onToggle={handleDeviceToggle("reduce_motion", setReducedMotionEnabled)}
           isLast={false}
         />
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Haptic feedback"
-          icon={<Vibrate size={20} color={palette.orange} />}
+          icon={<Vibrate size={20} color={iconColor} />}
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
           onToggle={handleDeviceToggle("haptic_feedback", setHapticFeedbackEnabled)}
@@ -880,10 +930,10 @@ export function SettingsScreen() {
         />
         {hasMerchantAccount ? (
           <SettingsRow
-            editorial
+            {...neutralRow}
             label="Left-handed mode"
             description="Moves the add button on your merchant menu to the left side."
-            icon={<Hand size={20} color={palette.orange} />}
+            icon={<Hand size={20} color={iconColor} />}
             type="toggle"
             isEnabled={leftHandedMode}
             onToggle={handleDeviceToggle("left_handed_mode", setLeftHandedMode)}
@@ -892,59 +942,49 @@ export function SettingsScreen() {
         ) : null}
       </SettingsSection>
 
-      <SettingsSection editorial title="Support">
+      <SettingsSection editorial title="Help & legal">
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Contact us"
-          type="link"
-          icon={<MessageCircle size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl(WEB_LINKS.help)}
+          description="Email us or open the help centre."
+          icon={<MessageCircle size={20} color={iconColor} />}
+          type="navigation"
+          onPress={() => setAccountDialog("contact")}
           isLast={false}
         />
         <SettingsRow
-          editorial
-          label="Email support"
-          type="link"
-          icon={<Mail size={20} color={palette.orange} />}
-          onPress={() => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`)}
-          isLast={false}
-        />
-        <SettingsRow
-          editorial
+          {...neutralRow}
           label="Privacy policy"
           type="link"
-          icon={<FileText size={20} color={palette.orange} />}
+          icon={<FileText size={20} color={iconColor} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
           isLast={false}
         />
         <SettingsRow
-          editorial
+          {...neutralRow}
           label="Terms of service"
           type="link"
-          icon={<Scale size={20} color={palette.orange} />}
+          icon={<Scale size={20} color={iconColor} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
-          isLast
+          isLast={false}
         />
-      </SettingsSection>
-
-      <SettingsSection editorial title="About">
         <SettingsRow
-          editorial
+          {...neutralRow}
+          label="Open-source data"
+          icon={<Database size={20} color={iconColor} />}
+          type="value"
+          description="Venue details include data © OpenStreetMap contributors (ODbL), Overture Maps Foundation and Foursquare Open Source Places."
+          isLast={false}
+        />
+        <SettingsRow
+          {...neutralRow}
           label="Version"
-          icon={<Info size={20} color={palette.orange} />}
+          icon={<Info size={20} color={iconColor} />}
           type="value"
           value={appVersion}
           description="Tap to copy."
           onPress={handleCopyVersion}
           onLongPress={handleCopyVersion}
-          isLast={false}
-        />
-        <SettingsRow
-          editorial
-          label="Data sources"
-          icon={<Database size={20} color={palette.orange} />}
-          type="value"
-          description="Venue details include data © OpenStreetMap contributors (ODbL), Overture Maps Foundation and Foursquare Open Source Places."
           isLast
         />
       </SettingsSection>
@@ -952,7 +992,7 @@ export function SettingsScreen() {
       {isAuthenticated ? (
         <SettingsSection editorial>
           <SettingsRow
-            editorial
+            {...neutralRow}
             label="Sign out"
             icon={<LogOut size={20} color={palette.error} />}
             onPress={handleSignOut}
@@ -987,22 +1027,35 @@ export function SettingsScreen() {
         onClose={() => setAccountDialog(null)}
       />
       <Dialog
-        visible={accountDialog === "deleteAccount"}
-        title="Delete account"
-        message={`Your profile is hidden straight away, and your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
+        visible={accountDialog === "contact"}
+        title="Contact us"
+        message={`Email ${SUPPORT_EMAIL}, or find answers in the help centre.`}
         buttons={[
           {
-            text: "Email me a code",
-            style: "destructive",
-            onPress: () => {
-              void sendDeletionCode();
-            },
+            text: "Email us",
+            style: "default",
+            onPress: () => void openTrustedExternalUrl(`mailto:${SUPPORT_EMAIL}`),
+          },
+          {
+            text: "Help centre",
+            style: "default",
+            onPress: () => void openTrustedExternalUrl(WEB_LINKS.help),
           },
           { text: "Cancel", style: "cancel" },
         ]}
-        onClose={() =>
-          setAccountDialog((current) => (current === "deleteAccount" ? null : current))
-        }
+        onClose={() => setAccountDialog((current) => (current === "contact" ? null : current))}
+      />
+      <AccountDeletionDialog
+        visible={accountDialog === "deleteAccount"}
+        message={`Your profile is hidden straight away, and your account and personal data will be deleted in ${ACCOUNT_DELETION_GRACE_DAYS} days. To keep your account, sign in before then and choose Keep my account. After that, deletion is permanent. Menu photos you shared stay on the stall without your name, and some security, moderation, or legal records may remain in anonymized form.`}
+        onDownloadData={handleExportData}
+        isDownloading={isExportingData}
+        onContinue={(reason) => {
+          deletionReason.current = reason;
+          setAccountDialog(null);
+          void sendDeletionCode();
+        }}
+        onCancel={() => setAccountDialog(null)}
       />
       <Dialog
         visible={accountDialog === "deleteFailed"}

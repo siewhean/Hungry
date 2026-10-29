@@ -198,7 +198,7 @@ test("H36: collaborators are picked from people you follow and shown by name", a
   assert.doesNotMatch(screen, /Paste a Hungry user id|isn't available yet/);
   assert.match(screen, /social\.listFollowing\(profileId,/);
   assert.match(screen, /addCollaborator\(portfolioId, person\.userId, role\)/);
-  assert.match(screen, /removeCollaborator\(portfolioId, collaborator\.userId\)/);
+  assert.match(screen, /removeCollaborator\(portfolioId, target\.userId\)/);
   assert.match(screen, /label="Viewer"[\s\S]*label="Editor"/);
   // Ids are keys only: rows render names and avatars, never userId text.
   assert.doesNotMatch(row, />\s*\{collaborator\.userId\}/);

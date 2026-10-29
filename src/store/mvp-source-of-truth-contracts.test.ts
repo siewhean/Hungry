@@ -81,6 +81,8 @@ test("every Settings switch backed by useUIStore has a consumer outside Settings
     leftHandedMode: "src/components/ui/FAB.tsx",
     reducedMotionEnabled: "src/hooks/useReduceMotion.ts",
     allowSearchHistory: "src/store/useSearchStore.ts",
+    // "Share usage analytics" gates trackAnalyticsEvent.
+    analyticsEnabled: "src/lib/analytics/mockAnalytics.ts",
   };
 
   const settingsKeys = [

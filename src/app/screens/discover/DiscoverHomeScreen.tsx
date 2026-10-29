@@ -105,7 +105,7 @@ import { useCurrentPlace } from "@/features/discover/currentPlace";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
-import { DECIDE_INITIAL_RADIUS_METERS } from "@/features/discovery/decideForMeCandidates";
+import { decideInitialRadiusMeters } from "@/features/discovery/decideForMeCandidates";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
@@ -2237,7 +2237,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     trackAnalyticsEvent("decide_for_me_triggered", {
       surface: "discover",
       location_granted: locationPermission === "granted",
-      radius_m: DECIDE_INITIAL_RADIUS_METERS,
+      radius_m: decideInitialRadiusMeters(),
     });
     // The quiz asks a few questions (each can be left to the app), then the result screen
     // picks the dish with the same effective location as this feed.
