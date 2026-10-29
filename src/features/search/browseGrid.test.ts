@@ -116,6 +116,46 @@ test("the request maps chips to RPC filters; Noodles and Rice use food keywords 
   assert.equal(request.query, undefined);
 });
 
+test("typed filters add dietary flags and a price cap to the chips; the lower cap wins (SR4-2)", () => {
+  const parsedOnly = buildBrowseRequest({
+    query: "laksa",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: ["halal", "pork_free"], maxPrice: 5 },
+  });
+  assert.deepEqual(parsedOnly.dietaryFlags, ["halal", "pork_free"]);
+  assert.equal(parsedOnly.maxPrice, 5);
+  // Halal typed and chosen is one flag, and the Under S$6 chip does not raise a typed S$5 cap.
+  const both = buildBrowseRequest({
+    query: "laksa",
+    filters: ["Halal", "Under S$6"],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: ["halal"], maxPrice: 5 },
+  });
+  assert.deepEqual(both.dietaryFlags, ["halal"]);
+  assert.equal(both.maxPrice, 5);
+  const raised = buildBrowseRequest({
+    query: "laksa",
+    filters: ["Under S$6"],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: [], maxPrice: 9 },
+  });
+  assert.equal(raised.maxPrice, 6);
+  // Filters alone (the whole query was "halal") still browse near the user.
+  const filtersOnly = buildBrowseRequest({
+    query: "",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: ["halal"] },
+  });
+  assert.equal(filtersOnly.query, undefined);
+  assert.equal(filtersOnly.radiusMeters, 3_000);
+});
+
 test("typed text searches everywhere, keeps the release only for next pages (search-M1)", () => {
   const first = buildBrowseRequest({
     query: "laksa",
