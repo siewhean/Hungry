@@ -67,6 +67,7 @@ import {
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
+  roundCoordinate,
   stallCardDetail,
   stallCardImage,
   toggleFilterId,
@@ -132,11 +133,6 @@ const WIDE_RADIUS_METERS = 30_000;
 /** Religious dietary choices are reported as "dietary", not by name (privacy, like onboarding). */
 function analyticsFilterName(filter: string) {
   return filter === "Halal" ? "dietary" : filter;
-}
-
-/** ~100 m buckets, so a GPS refresh that barely moves does not reset the list. */
-function roundCoordinate(value: number) {
-  return Math.round(value * 1000) / 1000;
 }
 
 function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: BrowseMode }) {
@@ -397,7 +393,8 @@ function RawCatalogBrowseGrid({
   // One id per counted search, carried on its result-opened and zero-results events.
   const searchIdRef = useRef<string | undefined>(undefined);
   const service = getCatalogRawService();
-  const itemWidth = width / 2;
+  // The list sits 12 in from each edge and each card has 4 of its own, so cards line up with the header's 16.
+  const itemWidth = (width - spacing[3] * 2) / 2;
 
   const typedQuery = useMemo(() => normalizeQuery(searchText), [searchText]);
   // Filters read out of the typed text ("halal laksa under $5"). A chip the user removed puts its
@@ -1079,7 +1076,7 @@ function RawCatalogBrowseGrid({
 
   // Everything above the first card scrolls away with the list; only the search row stays put.
   const listHeader = (
-    <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}>
+    <View style={{ gap: spacing[3], paddingHorizontal: spacing[1], paddingBottom: spacing[2] }}>
       <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
       {relaxed ? (
         <View
@@ -1359,6 +1356,7 @@ function RawCatalogBrowseGrid({
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             numColumns={2}
+            contentContainerStyle={{ paddingHorizontal: spacing[3] }}
             onEndReached={() => {
               if (nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed) {
                 void loadPage(nextCursor, true);

@@ -711,7 +711,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(searchResults, /"Search all dishes"[\s\S]*"Search all stalls"/);
   assert.doesNotMatch(searchResults, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
   assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{2\}/);
-  assert.match(searchResults, /const itemWidth = width \/ 2/);
+  assert.match(searchResults, /const itemWidth = \(width - spacing\[3\] \* 2\) \/ 2/);
   assert.match(searchResults, /navigation\.navigate\("CatalogRawDetail"/);
   assert.match(searchResults, /navigation\.navigate\("StallDetail", \{ venueId: item\.id \}\)/);
   assert.doesNotMatch(searchResults, /Dishes nearby/);
