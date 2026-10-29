@@ -63,7 +63,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   );
   assertSourceIncludes(
     searchResults,
-    [/<FilterChipRail[\s\S]*options=\{RAW_BROWSE_FILTER_OPTIONS\}/],
+    [/<ChipGroup[\s\S]*options=\{RAW_BROWSE_FILTER_OPTIONS\}/],
     "Search Results browse filters",
   );
   assertSourceIncludes(

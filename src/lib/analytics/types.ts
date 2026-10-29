@@ -39,6 +39,7 @@ export type AnalyticsEventName =
   | "search_parse_relaxed"
   | "search_mode_changed"
   | "search_suggestion_opened"
+  | "search_typeahead_opened"
   | "search_home_featured_opened"
   | "category_chip_tapped"
   | "dietary_chip_tapped"

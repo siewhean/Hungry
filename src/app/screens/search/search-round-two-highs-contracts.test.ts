@@ -108,7 +108,7 @@ test("H24: Search home suggests as you type and shows popular food types", () =>
 test("H25: cards without a photo show the stall's initials, not a grey caption", () => {
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.doesNotMatch(grid, /Image unavailable/);
-  assert.match(grid, /<StallLogoMark name=\{stallName\}/);
+  assert.match(grid, /<StallLogoMark[\s\S]*?name=\{stallName\}/);
 });
 
 test("H26: raw cards store only images cleared by catalog_display_image_url", () => {
