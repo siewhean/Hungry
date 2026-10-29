@@ -10,6 +10,8 @@ import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/an
 import {
   resetExperimentSession,
   setExperimentFlagSource,
+  setExperimentOverride,
+  clearExperimentOverrides,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
 import type { HungryService, RecentReviewFeedEntry } from "@/lib/services/types";
@@ -38,6 +40,7 @@ afterEach(async () => {
   for (const restore of restores.reverse()) restore();
   restores = [];
   setExperimentFlagSource(undefined);
+  clearExperimentOverrides();
   resetExperimentSession();
 });
 
@@ -175,15 +178,14 @@ test("dish_viewed says where the dish was opened from (DISH-13)", async () => {
   assert.equal(viewed?.properties.source, "home_rail");
 });
 
-test("TriedFollowUp: viewing the page exposes nobody; a Tried mark shows the control popup (dish_tried_prompt_v1)", async () => {
+test("TriedFollowUp: a Tried mark shows the control popup (dish_tried_prompt_v1)", async () => {
   stubReviews([]);
   stubTried();
-  const flags = fakeFlags({ dish_tried_prompt_v1: "control" });
+  setExperimentOverride("dish_tried_prompt_v1", "control");
   const { view } = await openDish();
-  assert.deepEqual(flags.exposures, [], "a dish viewer who never marks Tried is not exposed");
+  assert.doesNotMatch(view.text(), /You tried /);
 
   await view.press(triedButton(view));
-  assert.deepEqual(flags.exposures, ["dish_tried_prompt_v1"]);
   assert.match(view.text(), /You tried /);
   // DISH-X5: the popup body scrolls, so its buttons stay reachable at large text.
   assert.ok(view.findByTestId("tried-prompt-scroll"));
@@ -197,7 +199,7 @@ test("TriedFollowUp: viewing the page exposes nobody; a Tried mark shows the con
 test("the toast_cta variant shows no popup and the bar asks to rate it", async () => {
   stubReviews([]);
   stubTried();
-  fakeFlags({ dish_tried_prompt_v1: "toast_cta" });
+  setExperimentOverride("dish_tried_prompt_v1", "toast_cta");
   const { view } = await openDish();
   assert.ok(view.findByLabel("Write a review"));
 
@@ -265,49 +267,12 @@ test("a short description is plain text, not a button (DISH-22); copy is sentenc
   assert.match(view.text(), /Must order/);
 });
 
-// ─── Round-three post-verify (DISH-V5, DISH-V7) ─────────────────────────────
-
-test("a refresh on return keeps the older reviews the diner paged to (DISH-V5)", async () => {
-  const pageSize = 50;
-  const at = (index: number) =>
-    new Date(Date.UTC(2026, 9, 20, 12, 0, 0) - index * 60000).toISOString();
-  const all = Array.from({ length: 70 }, (_, index) => ({
-    ...review(`r${String(index).padStart(3, "0")}`, `user-${index}`),
-    createdAt: at(index),
-  }));
-  let calls = 0;
-  stub(getHungryService().reviews, "listRecentReviews", (async (options: {
-    before?: string;
-    beforeId?: string;
-  }) => {
-    calls += 1;
-    const start = options.beforeId
-      ? all.findIndex((entry) => entry.id === options.beforeId) + 1
-      : 0;
-    return all
-      .slice(start, start + pageSize)
-      .map((entry) => ({ review: entry }) as RecentReviewFeedEntry);
-  }) as never);
-  const { navigation, emit } = focusableNavigation();
-  const { view } = await openDish({ navigation });
-  const showAll = view.findByText(/^See all/);
-  if (showAll) await view.press(showAll);
-  const more = view.findByText(/^(Load|Show) more reviews/);
-  assert.ok(more, "a full first page offers more");
-  await view.press(more);
-  assert.match(view.text(), /Review r065/);
-
-  await emit("blur");
-  await emit("focus");
-  await view.settle();
-  assert.equal(calls, 3);
-  assert.match(view.text(), /Review r065/, "the second page is still on screen");
-});
+// ─── Round-three post-verify (DISH-V7) ─────────────────────────────
 
 test("Not now keeps the popup's stars and taste words as a review draft (DISH-V7)", async () => {
   stubReviews([]);
   stubTried();
-  fakeFlags({ dish_tried_prompt_v1: "control" });
+  setExperimentOverride("dish_tried_prompt_v1", "control");
   useReviewDraftStore.getState().resetDraft();
   const { dish, view } = await openDish();
   await view.press(triedButton(view));

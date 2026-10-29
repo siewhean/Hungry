@@ -37,6 +37,7 @@ import { ResultDishCard } from "./ResultDishCard";
 import { resultDistanceLabel } from "./resultDistance";
 import { buildResultPicks, fewDietaryPicksMessage, type ResultPick } from "./fillResultPicks";
 import { describeTaste, noDietaryPicksMessage } from "./resultPicks";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
@@ -268,6 +269,8 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const openDish = (dish: DishDetail) => {
     navigation.getParent<NavigationProp<RootStackParamList>>()?.navigate("DishDetail", {
       dishId: dish.id,
+      source: "taste_result",
+      prefill: dishPrefillFrom(dish),
     });
     // Opening a dish is leaving the flow: if the app is closed while the user
     // browses, the next launch must not start onboarding again. Done after

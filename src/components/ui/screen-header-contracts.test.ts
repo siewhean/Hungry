@@ -751,7 +751,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   );
   assert.match(
     quickBites,
-    /const openBite = useCallback\([\s\S]*navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
+    /const openBite = useCallback\([\s\S]*navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
   );
   assert.match(quickBites, /onOpen=\{openBite\}/);
   assert.doesNotMatch(quickBites, /navigation\.navigate\("StallDetail"/);

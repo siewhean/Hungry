@@ -16,7 +16,7 @@ import {
   runRecommendationPipeline,
 } from "@/lib/ai/tasteEngine";
 import { parseMoodIntent } from "@/lib/ai/moodSearch";
-import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { AUTH_REDIRECTS } from "@/constants/links";
 import { getAuthErrorCode } from "@/features/auth/authErrors";
 import {
@@ -92,6 +92,7 @@ import type {
   CustomerInteraction,
   DietaryFlag,
   DishDetail,
+  DishTasteRatingSummary,
   HawkerTasteTag,
   InteractionType,
   MerchantAccount,
@@ -119,6 +120,7 @@ import type {
   OpeningSchedule,
   PublicMerchantProfile,
   SearchFilters,
+  TasteKey,
   TasteProfile,
   TasteInteractionEvent,
   TasteInteractionType,
@@ -4031,6 +4033,31 @@ export const supabaseService: HungryService = {
         if (cached) return cached;
         throw error;
       }
+    },
+
+    async getDishTasteRatingSummary(dishId) {
+      const client = getSupabaseClient();
+      if (!client || !dishId) return {};
+      const { data, error } = await client.rpc("get_dish_taste_rating_summary", {
+        p_dish_id: dishId,
+      });
+      // Thrown, not swallowed: the page reports it and keeps the estimate.
+      if (error) throw error;
+      const summary: DishTasteRatingSummary = {};
+      for (const row of Array.isArray(data) ? (data as Row[]) : []) {
+        const axis = asString(row.axis);
+        const average = asNumber(row.average);
+        const raters = asNumber(row.rater_count);
+        if (
+          average === undefined ||
+          raters === undefined ||
+          !TASTE_DIMENSIONS.some((dimension) => dimension.key === axis)
+        ) {
+          continue;
+        }
+        summary[axis as TasteKey] = { average, raters };
+      }
+      return summary;
     },
 
     async listActivePromotionsForTarget(input) {

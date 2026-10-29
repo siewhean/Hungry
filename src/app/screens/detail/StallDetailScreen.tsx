@@ -139,6 +139,7 @@ import type {
 } from "@/types/domain";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 /** The platform's own share glyph: the box-and-arrow on iOS, the three dots on Android. */
@@ -1152,7 +1153,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
       dishId: activeDish.id,
       userId: isAuthenticated ? profile.id : undefined,
     });
-    navigation.navigate("DishDetail", { dishId: activeDish.id, source: "stall_menu" });
+    navigation.navigate("DishDetail", {
+      dishId: activeDish.id,
+      source: "stall_menu",
+      prefill: dishPrefillFrom({ ...activeDish, venueName: venue.name }),
+    });
   };
 
   const handleClaimThisStall = async () => {

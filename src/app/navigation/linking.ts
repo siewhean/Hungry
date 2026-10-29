@@ -222,7 +222,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     if (!dishId) return undefined;
     return isCatalogDeepLinkMode()
       ? createStateOverHome("CatalogRawDetail", { kind: "dish", id: dishId })
-      : createStateOverHome("DishDetail", { dishId });
+      : createStateOverHome("DishDetail", { dishId, source: "deep_link" });
   }
   if (parts[0] === "venue" || parts[0] === "stall") {
     const venueId = decodePathSegment(parts[1]);

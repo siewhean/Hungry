@@ -1842,6 +1842,11 @@ export const hungryService: HungryService = {
       );
     },
 
+    async getDishTasteRatingSummary() {
+      // The mock keeps no per-diner taste ratings: the page shows its estimate only.
+      return resolve({});
+    },
+
     async getDish(id) {
       const dish = dishes.find((d) => d.id === id);
       if (!dish) return resolve(undefined);

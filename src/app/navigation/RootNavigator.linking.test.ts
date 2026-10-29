@@ -68,7 +68,10 @@ test("fresh users are sent to onboarding before protected catalog deep links", (
     name: "OnboardingStack",
     params: { screen: "OnboardingWelcome" },
   });
-  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+  assert.deepEqual(capturedRoute, {
+    name: "DishDetail",
+    params: { dishId: "dish-123", source: "deep_link" },
+  });
 });
 
 test("a deep-link cold start with the account step pending resumes OnboardingAuth, not Login", () => {
@@ -90,7 +93,10 @@ test("a deep-link cold start with the account step pending resumes OnboardingAut
     name: "OnboardingStack",
     params: { screen: "OnboardingAuth" },
   });
-  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+  assert.deepEqual(capturedRoute, {
+    name: "DishDetail",
+    params: { dishId: "dish-123", source: "deep_link" },
+  });
 });
 
 test("onboarded signed-out users are sent to login and retain a safe return route", () => {
@@ -112,7 +118,10 @@ test("onboarded signed-out users are sent to login and retain a safe return rout
     name: "AuthStack",
     params: { screen: "Login" },
   });
-  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+  assert.deepEqual(capturedRoute, {
+    name: "DishDetail",
+    params: { dishId: "dish-123", source: "deep_link" },
+  });
 
   // Cold start before auth settles: nothing opens, but the link is remembered.
   authState = { ...authState, isAuthReady: false };
@@ -122,7 +131,7 @@ test("onboarded signed-out users are sent to login and retain a safe return rout
   authState = { ...authState, isAuthReady: true, isAuthenticated: true };
   assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[1], {
     name: "DishDetail",
-    params: { dishId: "dish-123" },
+    params: { dishId: "dish-123", source: "deep_link" },
   });
 });
 

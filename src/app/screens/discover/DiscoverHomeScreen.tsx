@@ -111,6 +111,7 @@ import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPla
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
 import { getSingaporeHour, getVenueOpenState } from "@/utils/operatingHours";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
 
@@ -2815,7 +2816,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     key={pick.dish.id}
                     pick={pick}
                     onPressIn={() => prefetchDishDetail(pick.dish.id, repository)}
-                    onPress={() => navigation.navigate("DishDetail", { dishId: pick.dish.id })}
+                    onPress={() =>
+                      navigation.navigate("DishDetail", {
+                        dishId: pick.dish.id,
+                        source: "home_pick",
+                        prefill: dishPrefillFrom(pick.dish),
+                      })
+                    }
                   />
                 ))
               ) : (

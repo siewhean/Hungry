@@ -19,7 +19,10 @@ const migration = (name: string) => read(`supabase/migrations/${name}`);
 
 const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 const service = read("src/lib/services/supabase/supabaseService.ts");
-const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+// The dish review card is its own component: read it with the screen.
+const dishDetail =
+  read("src/app/screens/detail/DishDetailScreenV2.tsx") +
+  read("src/components/dish/DishReviewCard.tsx");
 // The review card is its own component: read it with the screen.
 const stallDetail =
   read("src/app/screens/detail/StallDetailScreen.tsx") +

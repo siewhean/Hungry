@@ -201,7 +201,10 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   };
 
   const openDish = (dishId: string) => {
-    getRootNavigation(navigation as any).navigate("DishDetail", { dishId });
+    getRootNavigation(navigation as any).navigate("DishDetail", {
+      dishId,
+      source: "review_history",
+    });
   };
 
   return (

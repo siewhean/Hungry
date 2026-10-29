@@ -119,7 +119,7 @@ test("review history shows only the user's own rating with one CTA", () => {
   assert.equal(source.match(/accessibilityLabel="Write a review"/g)?.length, 1);
   assert.doesNotMatch(source, /Taste Journal|Foodie Footprint/);
   assert.doesNotMatch(source, /"review-history-entry"/);
-  assert.match(source, /navigate\("DishDetail", \{ dishId \}\)/);
+  assert.match(source, /navigate\("DishDetail", \{\s*dishId,\s*source: "review_history",?\s*\}\)/);
 });
 
 test("cred toast is event driven, auto-dismisses and announces", () => {

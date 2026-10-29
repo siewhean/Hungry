@@ -1518,3 +1518,7 @@ Use the smallest check that matches the change risk.
 ### ONB-ACCT account step progress, 2026-10-28
 
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).
+
+### DISH-R4 dish page fixes (Phase A, no migration), 2026-10-29
+- Stacked on #142 (stall page). typecheck clean; npm test 2267 pass; test:render all pass after updating three card-navigation tests for `prefill`; test:coverage OK (baseline global kept at 84.4/85.4/80.4, the lower CI value; per-file entries added); lint 0 errors (warnings unchanged in kind); format:check clean; check:rate-limits, check:n-plus-one, audit:races pass (get_dish_taste_rating_summary is revoked from anon and already shipped in 20261024100000).
+- New tests: dishComponents.render.test.tsx, DishDetailR4.render.test.tsx, dishSources/dishPrefill/dishReviewSummary/dishTasteSummary unit tests, dishTasteRatingSummary.behaviour.test.ts, stall "..." assertion. Playwright tests/e2e/dish-detail.spec.ts on the mock web build (Chromium, 390x844 and 320x640): 4/4 pass across runs (one run saw sandbox-only ERR_TUNNEL_CONNECTION_FAILED image errors). Not run on a device.

@@ -4,6 +4,7 @@ import { AppText, Avatar } from "@/components/ui";
 import {
   CaptionPreview,
   OwnReviewActions,
+  ReviewMoreButton,
   ReviewPhotoStrip,
   ReviewReaderActions,
 } from "@/components/review";
@@ -83,6 +84,17 @@ export function StallReviewCard({
         <AppText variant="micro" tone="muted">
           {formatTimeAgo(review.createdAt)}
         </AppText>
+        {isOwn ? null : (
+          <ReviewMoreButton
+            review={{
+              id: review.reviewId,
+              authorId: review.authorId,
+              authorName: review.authorName,
+            }}
+            returnRoute={{ name: "StallDetail", params: { venueId } }}
+            onRemoved={onRemoved}
+          />
+        )}
       </View>
       <View style={{ marginTop: spacing[2] }}>
         <CaptionPreview text={review.text} />

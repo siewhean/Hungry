@@ -28,6 +28,7 @@ export type ParamKey =
   | "checklist"
   | "checklistPicker"
   | "dish"
+  | "dishReviews"
   | "portfolio"
   | "portfolioPicker"
   | "report"
@@ -129,6 +130,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     scenario: "user",
     expect: /Tian Tian Chicken Rice/,
     params: "dish",
+  },
+  {
+    name: "DishReviewsScreen",
+    file: "src/app/screens/detail/DishReviewsScreen.tsx",
+    scenario: "user",
+    expect: /Reviews/,
+    params: "dishReviews",
   },
   {
     name: "MerchantClaimExplainerScreen",

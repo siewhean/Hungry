@@ -164,4 +164,6 @@ test("StallReviewCard names the author and dish, and opens each", async () => {
   assert.match(view.container.textContent ?? "", /Reply from the owner/);
   await view.press(view.findByLabel("Open Laksa"));
   assert.deepEqual(opened, ["dish"]);
+  // Someone else's review has a visible "..." to report or block, not only a long-press.
+  assert.ok(view.findByLabel("Report or block, review by Mei"));
 });

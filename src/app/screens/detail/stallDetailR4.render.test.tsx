@@ -232,10 +232,13 @@ test("R4-STALL-5: pressing a menu row opens that dish", async () => {
   const [first] = useMenuWithPhotos(0, 3);
   const view = await openStall();
   await view.press(view.findByLabel(new RegExp(`^${first.name}`)));
-  assert.deepEqual(view.navigation.calls.find((call) => call.method === "navigate")?.args, [
-    "DishDetail",
-    { dishId: first.id, source: "stall_menu" },
-  ]);
+  const [screen, params] = view.navigation.calls.find((call) => call.method === "navigate")
+    ?.args as [string, { dishId: string; source: string; prefill?: { name: string } }];
+  assert.equal(screen, "DishDetail");
+  assert.equal(params.dishId, first.id);
+  assert.equal(params.source, "stall_menu");
+  // The dish page paints the name at once from what the menu row knew.
+  assert.equal(params.prefill?.name, first.name);
 });
 
 // ─── The empty stall (R4-STALL-1) ────────────────────────────────────────────────────────

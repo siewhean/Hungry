@@ -201,7 +201,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   );
   assert.match(
     homeScreen,
-    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id, source: "feed" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     quickBites,

@@ -119,7 +119,20 @@ test("the live card has Directions, Tried and Review, and opens the dish page (S
 
   await view.press(view.findByLabel("Open Laksa at Nam Sing"));
   const open = view.navigation.calls.find((call) => call.method === "navigate");
-  assert.deepEqual(open?.args, ["DishDetail", { dishId: LAKSA.id, source: "saved" }]);
+  assert.deepEqual(open?.args, [
+    "DishDetail",
+    {
+      dishId: LAKSA.id,
+      source: "saved",
+      prefill: {
+        name: LAKSA.name,
+        imageUrl: LAKSA.imageUrl,
+        price: LAKSA.price,
+        venueId: LAKSA.venueId,
+        venueName: "Nam Sing",
+      },
+    },
+  ]);
   const opened = eventsNamed("saved_item_opened");
   assert.equal(opened.length, 1);
   assert.equal(opened[0].properties.position, 0);

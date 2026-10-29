@@ -632,7 +632,9 @@ export function UserProfileContent({
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
                 <FavouriteDishesRow
                   dishIds={pinnedDishIds}
-                  onOpenDish={(dishId) => rootNavigation.navigate("DishDetail", { dishId })}
+                  onOpenDish={(dishId) =>
+                    rootNavigation.navigate("DishDetail", { dishId, source: "user_profile" })
+                  }
                 />
                 <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
                 {showPosts() ? (
@@ -753,6 +755,7 @@ export function UserProfileContent({
                                   });
                                   rootNavigation.navigate("DishDetail", {
                                     dishId: review.dishId as string,
+                                    source: "user_profile",
                                   });
                                 }
                               : undefined

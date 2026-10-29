@@ -245,7 +245,6 @@ test("a running experiment with no PostHog flag is a rollout, not a test", () =>
   // the arm everyone should get.
   const RUNNING_WITHOUT_FLAG: readonly string[] = [
     "welcome_back_v2",
-    "dish_tried_prompt_v1",
     "onboarding_account_framing_v1",
     "stall_bar_cta_v1",
     "catalog_save_to_list_v1",

@@ -45,19 +45,25 @@ export function SafetyActionsSheet() {
 
   const label = menu?.label ?? "post";
   const authorName = menu?.authorName ?? "this user";
+  // Someone else's content (nothing to hide): the sheet says what it offers, not "Manage".
+  const title = menu?.canHide
+    ? `Manage ${label}`
+    : menu?.canBlock
+      ? "Report or block"
+      : `Report this ${label}`;
 
   return (
     <BottomSheet
       ref={sheetRef}
       snapPoints={["52%"]}
-      accessibilityLabel={`Manage ${label}`}
+      accessibilityLabel={title}
       onDismiss={handleDismiss}
     >
       <View style={{ gap: spacing[3] }}>
         {step === "menu" ? (
           <>
             <AppText variant="h3" accessibilityRole="header">
-              {`Manage ${label}`}
+              {title}
             </AppText>
             <Button
               label={`Report this ${label}`}

@@ -440,7 +440,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         position,
         source: "profile_reviews",
       });
-      rootNavigation.navigate("DishDetail", { dishId: review.dishId });
+      rootNavigation.navigate("DishDetail", { dishId: review.dishId, source: "profile" });
     },
     [rootNavigation],
   );
@@ -1043,7 +1043,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           <FavouriteDishesRow
             dishIds={pinnedDishIds}
             candidateDishIds={pinCandidateIds}
-            onOpenDish={(dishId) => rootNavigation.navigate("DishDetail", { dishId })}
+            onOpenDish={(dishId) =>
+              rootNavigation.navigate("DishDetail", { dishId, source: "profile" })
+            }
             onSave={async (ids) => {
               const saved = await savePinnedDishes(ids);
               showToast(

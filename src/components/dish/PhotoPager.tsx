@@ -73,7 +73,8 @@ export function PhotoPager({
   const index = clampPhotoIndex(storedIndex, count);
 
   return (
-    <View style={{ height, width }}>
+    // The tint shows while a photo loads, instead of a white block.
+    <View style={{ backgroundColor: palette.surfaceRaised, height, width }}>
       <ScrollView
         horizontal
         pagingEnabled

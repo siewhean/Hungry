@@ -28,6 +28,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "./ProfileStack";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type Tab = "want" | "tried";
 
@@ -152,7 +153,11 @@ export function SavedDishesSection({ navigation, saved, tab, onTabChange }: Prop
       tab,
       layout,
     });
-    rootNavigation.navigate("DishDetail", { dishId: dish.id, source: "saved" });
+    rootNavigation.navigate("DishDetail", {
+      dishId: dish.id,
+      source: "saved",
+      prefill: dishPrefillFrom(dish),
+    });
   };
 
   const openDirections = (dish: SavedDish) => {

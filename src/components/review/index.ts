@@ -7,3 +7,5 @@ export * from "./ReviewModerationNotice";
 export * from "./ReviewReaderActions";
 export * from "./CaptionPreview";
 export * from "./TasteRatingInput";
+export * from "./ReviewMoreButton";
+export * from "./ReviewStars";

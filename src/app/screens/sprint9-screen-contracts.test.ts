@@ -592,7 +592,8 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
-  assert.match(source, /How it tastes to you/);
+  assert.match(source, /<DishTasteCard/);
+  assert.match(read("src/components/dish/DishTasteCard.tsx"), /How it tastes to you/);
   // Owner decision (round 2): similar dishes nearby replace the hours on the dish page.
   assert.match(source, /useSimilarDishesNearby\(/);
   assert.match(source, /More from \{venueName\}/);
@@ -630,7 +631,10 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? dishes\[0\]/);
   assert.match(launcherSource, /const openSampleDishDetail = \(\) =>/);
   assert.match(launcherSource, /completeAuth\(\);[\s\S]*completeOnboarding\(false\);/);
-  assert.match(launcherSource, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(
+    launcherSource,
+    /navigation\.navigate\("DishDetail", \{ dishId: dish\.id, source: "developer" \}\)/,
+  );
   assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
 });
 
