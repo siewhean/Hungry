@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Easing, Pressable, ScrollView, TextInput, View, Text } from "react-native";
 import {
   ArrowLeft,
@@ -19,11 +19,11 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
   AppText,
-  Button,
   ChipGroup,
   IconButton,
   Input,
   Screen,
+  Skeleton,
 } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -35,9 +35,11 @@ import {
 } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { formatBrowseDistance } from "@/features/search/browseGrid";
+import { useTypeaheadMatches } from "@/features/search/useTypeaheadMatches";
 import {
   CATALOG_SUGGEST_MIN_CHARS,
   type CatalogRawDishCard,
+  type CatalogRawVenueCard,
   type CatalogSuggestion,
 } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
@@ -101,7 +103,6 @@ export function DishSearchScreen() {
   const [selectedCategory, setSelectedCategory] = useState<SearchCategory | undefined>();
   // Search results own the paged catalog request; this landing screen stays
   // free of local recommendations so it never hydrates the whole catalog.
-  const entryY = useRef(new Animated.Value(reduceMotion ? 0 : -28)).current;
   const entryOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
   const trimmedSearchText = searchText.trim();
   // Suggestions are kept with the text they answer, so stale ones never show.
@@ -130,6 +131,8 @@ export function DishSearchScreen() {
   }, []);
   const showSuggestions = trimmedSearchText.length >= CATALOG_SUGGEST_MIN_CHARS;
   const suggestions = suggestionResult.query === trimmedSearchText ? suggestionResult.items : [];
+  const suggestionsLoading = showSuggestions && suggestionResult.query !== trimmedSearchText;
+  const matches = useTypeaheadMatches(trimmedSearchText, showSuggestions);
 
   // Popular food types fill the empty state; suggestions follow the text as it is typed.
   useEffect(() => {
@@ -247,7 +250,11 @@ export function DishSearchScreen() {
         .then((items) => {
           if (active) setSuggestionResult({ query: trimmedSearchText, items });
         })
-        .catch((error) => reportLoadError("suggestions", error));
+        .catch((error) => {
+          reportLoadError("suggestions", error);
+          // Nothing to suggest, so the loading rows stop.
+          if (active) setSuggestionResult({ query: trimmedSearchText, items: [] });
+        });
     }, SUGGEST_DEBOUNCE_MS);
     return () => {
       active = false;
@@ -256,26 +263,18 @@ export function DishSearchScreen() {
   }, [reportLoadError, showSuggestions, trimmedSearchText]);
 
   useEffect(() => {
+    // A fade only: sliding the page in while the keyboard opens moves the field under the thumb.
     if (reduceMotion) {
-      entryY.setValue(0);
       entryOpacity.setValue(1);
       return;
     }
-    Animated.parallel([
-      Animated.timing(entryY, {
-        toValue: 0,
-        duration: motion.screenTransition,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(entryOpacity, {
-        toValue: 1,
-        duration: motion.screenTransition,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [entryOpacity, entryY, motion.screenTransition, reduceMotion]);
+    Animated.timing(entryOpacity, {
+      toValue: 1,
+      duration: motion.screenTransition,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [entryOpacity, motion.screenTransition, reduceMotion]);
 
   const openResults = (query: string, source: SearchHomeSource, browseMode?: BrowseMode) => {
     // The results grid saves a submitted query as a recent search, once it commits it.
@@ -301,7 +300,43 @@ export function DishSearchScreen() {
       });
       return;
     }
+    if (suggestion.kind === "stall" && suggestion.venueId) {
+      // A stall name that belongs to one stall opens that stall; a chain's name searches all outlets.
+      navigation.navigate("StallDetail", { venueId: suggestion.venueId });
+      return;
+    }
     openResults(suggestion.label, "search_suggestion", suggestionMode(suggestion));
+  };
+
+  const openMatchedDish = (dish: CatalogRawDishCard, position: number) => {
+    trackAnalyticsEvent("search_typeahead_opened", { kind: "dish", position });
+    // The offline copy has only the read-only catalog page.
+    if (matches.releaseId?.startsWith("excel-fallback")) {
+      navigation.navigate("CatalogRawDetail", {
+        kind: "dish",
+        id: dish.id,
+        releaseId: matches.releaseId,
+      });
+      return;
+    }
+    navigation.navigate("DishDetail", {
+      dishId: dish.id,
+      source: "search_typeahead",
+      catalogFallback: { releaseId: matches.releaseId },
+    });
+  };
+
+  const openMatchedStall = (stall: CatalogRawVenueCard, position: number) => {
+    trackAnalyticsEvent("search_typeahead_opened", { kind: "stall", position });
+    if (matches.releaseId?.startsWith("excel-fallback")) {
+      navigation.navigate("CatalogRawDetail", {
+        kind: "venue",
+        id: stall.id,
+        releaseId: matches.releaseId,
+      });
+      return;
+    }
+    navigation.navigate("StallDetail", { venueId: stall.id });
   };
 
   const showRecents = allowSearchHistory && recentSearches.length > 0;
@@ -316,7 +351,6 @@ export function DishSearchScreen() {
         style={{
           gap: spacing[5],
           opacity: entryOpacity,
-          transform: [{ translateY: entryY }],
         }}
       >
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
@@ -332,7 +366,7 @@ export function DishSearchScreen() {
             }}
             icon={<ArrowLeft color={palette.text} size={18} />}
           />
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Input
               ref={searchInputRef}
               autoFocus
@@ -358,6 +392,8 @@ export function DishSearchScreen() {
               movingPlaceholderPhrases={DISH_SEARCH_PLACEHOLDER_PHRASES}
               accessibilityLabel="Search dishes, stalls, or hawker centres"
               returnKeyType="search"
+              // A web <input> will not shrink below its default width unless told to; at 320 it pushed the page 21pt sideways.
+              style={{ minWidth: 0 }}
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={() => openResults(searchText, "search_typed")}
@@ -385,7 +421,7 @@ export function DishSearchScreen() {
               {
                 label: "Halal",
                 filter: "Halal",
-                icon: <AppText style={{ color: palette.success }}>✓</AppText>,
+                icon: undefined,
               },
             ].map((item) => (
               <Pressable
@@ -414,38 +450,122 @@ export function DishSearchScreen() {
             ))}
           </ScrollView>
         ) : null}
-        {showSuggestions && suggestions.length > 0 ? (
-          <View accessibilityLabel="Suggestions" style={{ gap: spacing[1] }}>
-            {suggestions.map((suggestion) => {
-              const Icon =
-                suggestion.kind === "food_type"
-                  ? Utensils
-                  : suggestion.kind === "place"
-                    ? MapPin
-                    : Store;
-              return (
-                <Pressable
-                  key={`${suggestion.kind}:${suggestion.label}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Search ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}`}
-                  onPress={() => openSuggestion(suggestion, "typeahead")}
-                  style={{
-                    alignItems: "center",
-                    flexDirection: "row",
-                    gap: spacing[3],
-                    minHeight: 44,
-                  }}
-                >
-                  <Icon color={palette.textMuted} size={18} />
-                  <View style={{ flex: 1 }}>
-                    <AppText numberOfLines={1}>{suggestion.label}</AppText>
-                    <AppText tone="secondary" variant="micro">
-                      {SUGGESTION_KIND_LABELS[suggestion.kind]}
-                    </AppText>
-                  </View>
-                </Pressable>
-              );
-            })}
+        {showSuggestions ? (
+          <View accessibilityLabel="Search suggestions" style={{ gap: spacing[3] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Search for ${trimmedSearchText}`}
+              onPress={() => openResults(searchText, "search_typed")}
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: 44,
+              }}
+            >
+              <SearchIcon color={palette.orange} size={18} />
+              <AppText
+                numberOfLines={1}
+                style={{ color: palette.orange, flex: 1 }}
+                variant="bodyBold"
+              >
+                {`Search “${trimmedSearchText}”`}
+              </AppText>
+              <ChevronRight color={palette.textMuted} size={18} />
+            </Pressable>
+            {suggestions.length > 0 ? (
+              <View accessibilityLabel="Suggestions" style={{ gap: spacing[1] }}>
+                {suggestions.map((suggestion) => {
+                  const Icon =
+                    suggestion.kind === "food_type"
+                      ? Utensils
+                      : suggestion.kind === "place"
+                        ? MapPin
+                        : Store;
+                  return (
+                    <Pressable
+                      key={`${suggestion.kind}:${suggestion.label}`}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        suggestion.venueId
+                          ? `Open ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}${suggestion.subtitle ? ` at ${suggestion.subtitle}` : ""}`
+                          : `Search ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}`
+                      }
+                      onPress={() => openSuggestion(suggestion, "typeahead")}
+                      style={{
+                        alignItems: "center",
+                        flexDirection: "row",
+                        gap: spacing[3],
+                        minHeight: 44,
+                      }}
+                    >
+                      <Icon color={palette.textMuted} size={18} />
+                      <View style={{ flex: 1 }}>
+                        <AppText numberOfLines={1}>{suggestion.label}</AppText>
+                        <AppText tone="secondary" variant="micro">
+                          {suggestion.subtitle
+                            ? `${SUGGESTION_KIND_LABELS[suggestion.kind]} · ${suggestion.subtitle}`
+                            : SUGGESTION_KIND_LABELS[suggestion.kind]}
+                        </AppText>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : suggestionsLoading ? (
+              <TypeaheadSkeleton label="Finding suggestions" rows={2} />
+            ) : null}
+            {matches.status === "loading" ? (
+              <TypeaheadSkeleton label="Finding matches" rows={3} />
+            ) : matches.status === "error" ? (
+              <AppText accessibilityLiveRegion="polite" tone="secondary" variant="bodySmall">
+                {"Couldn't load matches. Search above to try again."}
+              </AppText>
+            ) : matches.status === "ready" &&
+              matches.dishes.length + matches.stalls.length === 0 ? (
+              suggestions.length === 0 && !suggestionsLoading ? (
+                <AppText accessibilityLiveRegion="polite" tone="secondary" variant="bodySmall">
+                  {`No matches for “${trimmedSearchText}”. Check the spelling or try a shorter word.`}
+                </AppText>
+              ) : null
+            ) : matches.status === "ready" ? (
+              <View accessibilityLabel="Matching dishes and stalls" style={{ gap: spacing[2] }}>
+                {matches.dishes.length > 0 ? (
+                  <AppText accessibilityRole="header" variant="h3">
+                    Dishes
+                  </AppText>
+                ) : null}
+                {matches.dishes.map((dish, position) => (
+                  <TypeaheadRow
+                    key={`dish:${dish.id}`}
+                    accessibilityLabel={`Open ${dish.name} from ${dish.venueName}`}
+                    icon={<Utensils color={palette.textMuted} size={18} />}
+                    onPress={() => openMatchedDish(dish, position)}
+                    subtitle={`${dish.venueName}${dish.price != null ? ` · S$${dish.price.toFixed(2)}` : ""}`}
+                    title={dish.name}
+                  />
+                ))}
+                {matches.stalls.length > 0 ? (
+                  <AppText accessibilityRole="header" variant="h3">
+                    Stalls
+                  </AppText>
+                ) : null}
+                {matches.stalls.map((stall, position) => (
+                  <TypeaheadRow
+                    key={`stall:${stall.id}`}
+                    accessibilityLabel={
+                      stall.buildingName
+                        ? `Open ${stall.name} at ${stall.buildingName}`
+                        : `Open ${stall.name}`
+                    }
+                    icon={<Store color={palette.textMuted} size={18} />}
+                    onPress={() => openMatchedStall(stall, position)}
+                    subtitle={stall.buildingName ?? "Singapore"}
+                    title={stall.name}
+                  />
+                ))}
+              </View>
+            ) : null}
           </View>
         ) : null}
         {trimmedSearchText ? (
@@ -571,7 +691,7 @@ export function DishSearchScreen() {
                       alignItems: "center",
                       height: 44,
                       justifyContent: "center",
-                      width: 36,
+                      width: 44,
                     }}
                   >
                     <X color={palette.textMuted} size={16} />
@@ -703,24 +823,14 @@ export function DishSearchScreen() {
                     source={{ uri: dish.imageUrl }}
                     accessibilityLabel={dish.name}
                     contentFit="cover"
+                    fallback={<FeaturedDishPlaceholder />}
                     style={{ borderRadius: radii.md, height: 88, width: 88 }}
                   />
                 ) : (
-                  <View
-                    style={{
-                      alignItems: "center",
-                      backgroundColor: palette.orangeLight,
-                      borderRadius: radii.md,
-                      height: 88,
-                      justifyContent: "center",
-                      width: 88,
-                    }}
-                  >
-                    <Utensils color={palette.orange} size={28} />
-                  </View>
+                  <FeaturedDishPlaceholder />
                 )}
                 <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="bodyBold" numberOfLines={1}>
+                  <AppText variant="bodyBold" numberOfLines={2}>
                     {dish.name}
                   </AppText>
                   <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
@@ -733,29 +843,86 @@ export function DishSearchScreen() {
                       : ""}
                   </AppText>
                   {/* A rating with no reviews behind it is not a rating (no "★ 0.0"). */}
-                  {dish.rating != null && (dish.reviewCount ?? 0) > 0 ? (
-                    <AppText variant="micro" tone="secondary">
-                      <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
-                    </AppText>
-                  ) : null}
-                </View>
-                <View style={{ alignItems: "flex-end", gap: spacing[4] }}>
-                  {dish.price != null ? (
-                    <AppText variant="bodyBold" style={{ color: palette.text }}>
-                      S${dish.price.toFixed(2)}
-                    </AppText>
-                  ) : null}
-                  <ChevronRight color={palette.textMuted} size={18} />
+                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                    {dish.rating != null && (dish.reviewCount ?? 0) > 0 ? (
+                      <>
+                        <Text style={{ color: palette.starFill }}>★</Text>
+                        {` ${dish.rating.toFixed(1)} (${dish.reviewCount})`}
+                      </>
+                    ) : null}
+                    {dish.rating != null && (dish.reviewCount ?? 0) > 0 && dish.price != null
+                      ? " · "
+                      : ""}
+                    {dish.price != null ? `S$${dish.price.toFixed(2)}` : ""}
+                  </AppText>
                 </View>
               </Pressable>
             ))}
           </View>
         ) : null}
-        <Button
-          label={trimmedSearchText ? "See all results" : "Browse dishes near you"}
-          onPress={() => openResults(searchText, "search_typed")}
-        />
       </Animated.View>
     </Screen>
+  );
+}
+
+/** The tile a featured dish shows when it has no photo or its photo fails to load. */
+function FeaturedDishPlaceholder() {
+  const { palette, radii } = useHungryTheme();
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.orangeLight,
+        borderRadius: radii.md,
+        height: 88,
+        justifyContent: "center",
+        width: 88,
+      }}
+    >
+      <Utensils color={palette.orange} size={28} />
+    </View>
+  );
+}
+
+function TypeaheadSkeleton({ label, rows }: { label: string; rows: number }) {
+  const { spacing } = useHungryTheme();
+  return (
+    <View accessibilityLabel={label} accessibilityRole="progressbar" style={{ gap: spacing[2] }}>
+      {Array.from({ length: rows }, (_, index) => (
+        <Skeleton key={index} width="100%" height={44} borderRadius={12} />
+      ))}
+    </View>
+  );
+}
+
+function TypeaheadRow({
+  accessibilityLabel,
+  icon,
+  onPress,
+  subtitle,
+  title,
+}: {
+  accessibilityLabel: string;
+  icon: ReactNode;
+  onPress: () => void;
+  subtitle: string;
+  title: string;
+}) {
+  const { spacing } = useHungryTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], minHeight: 48 }}
+    >
+      {icon}
+      <View style={{ flex: 1 }}>
+        <AppText numberOfLines={1}>{title}</AppText>
+        <AppText numberOfLines={1} tone="secondary" variant="micro">
+          {subtitle}
+        </AppText>
+      </View>
+    </Pressable>
   );
 }
