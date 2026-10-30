@@ -1,4 +1,6 @@
 export * from "./AppText";
+export * from "./AppSymbol";
+export * from "./PressableScale";
 export * from "./AppHeader";
 export * from "./AppBottomTabItem";
 export * from "./Avatar";
@@ -29,4 +31,3 @@ export * from "./SelectField";
 export * from "./Skeleton";
 export * from "./StatusChip";
 export * from "./StickyBottomBar";
-export * from "./AppSymbol";

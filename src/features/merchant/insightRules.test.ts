@@ -81,6 +81,37 @@ test("a stall without opening hours is asked for them; with hours the peak hour 
   assert.equal(build({}, hours, 9).length, 0);
 });
 
+test("R5-1: hours typed as text are not reported as missing", () => {
+  const withText = (operatingHours?: string) =>
+    buildMerchantInsights({
+      outletId: "o1",
+      facts: quiet,
+      operatingHours,
+      now: NOW,
+    });
+  const textOnly = withText("7:00 AM – 3:00 PM");
+  assert.equal(textOnly.length, 1);
+  assert.equal(textOnly[0].id, "hours-text-only:o1");
+  assert.equal(textOnly[0].title, "Set hours for each day");
+  assert.match(textOnly[0].body, /Diners see "7:00 AM – 3:00 PM"/);
+  assert.match(textOnly[0].body, /open now/);
+  assert.equal(textOnly[0].actionTarget, "BusinessProfileEditor");
+  // Blank text still counts as no hours.
+  assert.equal(withText("   ")[0].id, "hours-missing:o1");
+  assert.equal(withText(undefined)[0].id, "hours-missing:o1");
+  // A real weekly schedule wins over the text.
+  assert.equal(
+    buildMerchantInsights({
+      outletId: "o1",
+      facts: quiet,
+      openingSchedule: hours,
+      operatingHours: "7:00 AM – 3:00 PM",
+      now: NOW,
+    }).length,
+    0,
+  );
+});
+
 test("hour coverage handles overnight ranges and the end of the day", () => {
   const night: OpeningSchedule = { weekly: { fri: [{ open: "22:00", close: "02:00" }] } };
   assert.equal(isHourCoveredBySchedule(night, 23), true);

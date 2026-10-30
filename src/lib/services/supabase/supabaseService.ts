@@ -7898,13 +7898,21 @@ export const supabaseService: HungryService = {
       return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
     },
 
-    async getDailySeries(outletId, dateRange) {
+    async getDailySeries(outletId, dateRange, period = "current") {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
+      // The previous period is the same number of whole Singapore days, ending the day before.
+      const days = dateRange === "7d" ? 7 : 30;
+      const today = new Date();
+      const previous = period === "previous";
       const { data, error } = await client.rpc("get_merchant_daily_series", {
         p_outlet_id: asString(outlet.id) ?? outletId,
-        p_since: getMerchantAnalyticsSince(dateRange),
-        p_until: null,
+        p_since: previous
+          ? (startOfSingaporeDate(singaporeDateOnly(today, 1 - 2 * days))?.toISOString() ?? null)
+          : getMerchantAnalyticsSince(dateRange),
+        p_until: previous
+          ? (startOfSingaporeDate(singaporeDateOnly(today, 1 - days))?.toISOString() ?? null)
+          : null,
       });
       if (error) throw error;
       return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
@@ -8022,6 +8030,7 @@ export const supabaseService: HungryService = {
           facts: parseMerchantInsightFacts(factsMissing ? null : factsResult.data),
           analytics,
           openingSchedule: toOpeningSchedule(outlet.opening_schedule),
+          operatingHours: asString(outlet.operating_hours),
         }),
       ] satisfies AIBusinessInsight[];
     },

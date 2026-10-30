@@ -1230,6 +1230,7 @@ function getAIInsightsForOutlet(
       facts,
       analytics,
       openingSchedule: outlet.openingSchedule,
+      operatingHours: outlet.operatingHours,
     }),
   ].filter((insight) => !typeSet || typeSet.has(insight.type));
 }
@@ -3761,22 +3762,33 @@ export const hungryService: HungryService = {
       return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
     },
 
-    async getDailySeries(outletId, dateRange) {
+    async getDailySeries(outletId, dateRange, period = "current") {
       getMerchantOutlet(outletId);
       const analytics = buildMockMerchantAnalytics(outletId, dateRange);
       const days = dateRange === "7d" ? 7 : 30;
+      const previous = period === "previous";
       const dates = Array.from({ length: days }, (_, index) =>
-        singaporeDateOnly(new Date(), index - (days - 1)),
+        singaporeDateOnly(new Date(), index - (days - 1) - (previous ? days : 0)),
       );
       // A fixed wobble splits each total across the days, and the days add up to the total.
-      const weights = dates.map((_, index) => 1 + ((index * 7) % 5));
-      const [visits, menu, dishViews, directions, saves] = [
-        analytics.profileVisits,
-        analytics.menuViews,
-        analytics.dishViews,
-        analytics.directionTaps,
-        analytics.saves,
-      ].map((total) => distributeAcrossDays(total, weights));
+      const weights = dates.map((_, index) => 1 + ((previous ? index * 3 + 1 : index * 7) % 5));
+      const [visits, menu, dishViews, directions, saves] = (
+        previous
+          ? [
+              analytics.previousPeriodComparison.profileVisits,
+              analytics.previousPeriodComparison.menuViews,
+              0,
+              0,
+              0,
+            ]
+          : [
+              analytics.profileVisits,
+              analytics.menuViews,
+              analytics.dishViews,
+              analytics.directionTaps,
+              analytics.saves,
+            ]
+      ).map((total) => distributeAcrossDays(total, weights));
       return resolve(
         dates.map((date, index) => ({
           date,

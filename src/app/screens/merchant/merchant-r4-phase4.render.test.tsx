@@ -304,7 +304,7 @@ test("R4-28: rating chips filter the loaded reviews and unrated ones are left ou
   stub("getInbox", async () => [review(1, 5), review(2, 3), review(3, 1), review(4, undefined)]);
   const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
   await view.settle();
-  for (const label of ["All", "Unreplied", "1–2★", "3★", "4–5★"]) {
+  for (const label of ["All", "Unreplied", "1–2", "3", "4–5"]) {
     assert.ok(view.findByText(label), `${label} chip`);
   }
   assert.equal(view.findByText("Reviews"), null, "the Reviews chip duplicated All");
@@ -312,10 +312,10 @@ test("R4-28: rating chips filter the loaded reviews and unrated ones are left ou
   assert.match(view.text(), /33% Positive/);
   assert.doesNotMatch(view.text(), /25% Neutral/);
 
-  await view.press(view.findByText("3★"));
+  await view.press(view.findByText("3"));
   assert.match(view.text(), /Reviewer 2/);
   assert.doesNotMatch(view.text(), /Reviewer 1\b|Reviewer 3\b/);
-  await view.press(view.findByText("1–2★"));
+  await view.press(view.findByText("1–2"));
   assert.match(view.text(), /Reviewer 3/);
   assert.doesNotMatch(view.text(), /Reviewer 2\b/);
 });
@@ -324,7 +324,7 @@ test("R4-28: an empty rating chip says so instead of 'All caught up'", async () 
   stub("getInbox", async () => [review(1, 5)]);
   const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
   await view.settle();
-  await view.press(view.findByText("1–2★"));
+  await view.press(view.findByText("1–2"));
   assert.match(view.text(), /Nothing here/);
   assert.doesNotMatch(view.text(), /All caught up/);
 });

@@ -13,17 +13,20 @@ import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import {
+  AppSymbol,
   AppText,
   Button,
   ChipGroup,
   IconButton,
   FilterChipRail,
+  type FilterChipRailOption,
   Input,
   Screen,
   Avatar,
   Skeleton,
   EmptyState,
 } from "@/components/ui";
+import { confirmHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -57,21 +60,21 @@ const INBOX_PAGE_SIZE = 30;
 const REVIEW_QUOTE_EXPAND_FROM = 160;
 
 // The inbox is fed by reviews only; comments and mentions are not collected yet.
-const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
+const INBOX_FILTER_OPTIONS: FilterChipRailOption<InboxFilter>[] = [
   { id: "all", label: "All" },
   { id: "unreplied", label: "Unreplied" },
-  { id: "rating_low", label: "1–2★" },
-  { id: "rating_mid", label: "3★" },
-  { id: "rating_high", label: "4–5★" },
+  { id: "rating_low", label: "1–2", accessibilityLabel: "1 to 2 stars" },
+  { id: "rating_mid", label: "3", accessibilityLabel: "3 stars" },
+  { id: "rating_high", label: "4–5", accessibilityLabel: "4 to 5 stars" },
 ];
 
 const INBOX_EMPTY_LABELS: Record<InboxFilter, string> = {
   all: "No customer reviews to show yet.",
   unreplied: "No unreplied reviews.",
   review: "No reviews to show yet.",
-  rating_low: "No 1–2★ reviews in the reviews loaded so far.",
-  rating_mid: "No 3★ reviews in the reviews loaded so far.",
-  rating_high: "No 4–5★ reviews in the reviews loaded so far.",
+  rating_low: "No 1–2 star reviews in the reviews loaded so far.",
+  rating_mid: "No 3 star reviews in the reviews loaded so far.",
+  rating_high: "No 4–5 star reviews in the reviews loaded so far.",
   comment: "No comments to show.",
   post_mention: "No mentions to show.",
   question: "No questions to show.",
@@ -314,6 +317,7 @@ export function CustomerInboxScreen() {
   );
 
   const handleReplySent = useCallback((interactionId: string, text: string) => {
+    confirmHaptic();
     setReplyingTo(null);
     // Patch in place, keeping the scroll position and every page already loaded.
     setInteractions((current) =>
@@ -352,6 +356,17 @@ export function CustomerInboxScreen() {
           options={INBOX_FILTER_OPTIONS}
           selectedId={filter}
           onSelect={setFilter}
+          renderLeftIcon={(option, selected) =>
+            option.id.startsWith("rating_") ? (
+              <AppSymbol
+                name="star.fill"
+                fallback={Star}
+                filled
+                size={12}
+                color={selected ? palette.orange : palette.textSecondary}
+              />
+            ) : undefined
+          }
           gap={spacing[2]}
         />
 

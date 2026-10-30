@@ -7,17 +7,19 @@ import {
   type LayoutChangeEvent,
   type ScrollView,
 } from "react-native";
-import { Camera, Image as ImageIcon } from "lucide-react-native";
+import { BadgeCheck, Camera, Image as ImageIcon } from "lucide-react-native";
 import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { confirmHaptic } from "@/lib/haptics";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { MerchantImageField } from "@/components/merchant/MerchantImageField";
 import { OpeningHoursEditor } from "@/components/merchant/OpeningHoursEditor";
 import { MapSurface } from "@/components/map";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Button,
   ChipGroup,
@@ -367,6 +369,7 @@ export function BusinessProfileEditorScreen() {
       reset(data);
       updateOutletProfile(activeOutlet.id, updated);
       trackMerchantEvent("merchant_profile_updated", activeOutlet.id, { is_live: data.isLive });
+      confirmHaptic();
       showAlert(
         "Saved",
         !data.isLive
@@ -492,9 +495,17 @@ export function BusinessProfileEditorScreen() {
               { backgroundColor: palette.successSoft, borderColor: palette.success },
             ]}
           >
-            <AppText variant="bodySmallBold" style={{ color: palette.success }}>
-              ✓ Verified by Hungry
-            </AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1.5] }}>
+              <AppSymbol
+                name="checkmark.seal.fill"
+                fallback={BadgeCheck}
+                size={16}
+                color={palette.success}
+              />
+              <AppText variant="bodySmallBold" style={{ color: palette.success }}>
+                Verified by Hungry
+              </AppText>
+            </View>
           </View>
         )}
 

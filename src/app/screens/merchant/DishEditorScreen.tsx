@@ -4,6 +4,8 @@ import { Camera, X } from "lucide-react-native";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 
 import { MerchantImageField } from "@/components/merchant/MerchantImageField";
+import { TagChipsInput } from "@/components/merchant/TagChipsInput";
+import { mostUsedTags } from "@/features/merchant/tagSuggestions";
 import {
   AppText,
   Button,
@@ -15,6 +17,7 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { confirmHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -98,6 +101,7 @@ export function DishEditorScreen() {
   const [originalImageUrl, setOriginalImageUrl] = useState("");
   const [section, setSection] = useState("");
   const [existingSections, setExistingSections] = useState<string[]>([]);
+  const [popularTags, setPopularTags] = useState<string[]>([]);
   const [otherFlags, setOtherFlags] = useState<string[]>([]);
   const [dietaryFlags, setDietaryFlags] = useState<DietaryFlag[]>([]);
   const [isAvailable, setIsAvailable] = useState(true);
@@ -121,6 +125,7 @@ export function DishEditorScreen() {
       // (pending verification) are still editable by their owner.
       const menu = await getHungryService().merchant.getMenu(activeOutlet.id);
       setExistingSections(listMenuSections(menu.map((item) => item.availabilityFlags)));
+      setPopularTags(mostUsedTags(menu));
       if (ocrDraftId) {
         const drafts = await getHungryService().merchant.getOCRDrafts(activeOutlet.id);
         const draft = drafts.find((item) => item.id === ocrDraftId);
@@ -253,6 +258,7 @@ export function DishEditorScreen() {
         });
       } else {
         // Not visible to diners yet: this one needs to be read, so it stays a dialog.
+        confirmHaptic();
         showAlert(
           dishId ? "Dish updated" : "Dish added",
           "Saved. Diners will see your menu once Hungry verifies your stall.",
@@ -477,12 +483,11 @@ export function DishEditorScreen() {
             <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[2] }}>
               Shown to diners on the dish, e.g. spicy, comfort food.
             </AppText>
-            <Input
-              accessibilityLabel="Tags"
-              value={tags}
-              onChangeText={setTags}
-              placeholder="Comma separated (e.g. spicy, springy noodles)"
-              multiline
+            <TagChipsInput
+              tags={parseCommaSeparated(tags)}
+              onChange={(next) => setTags(next.join(", "))}
+              suggestions={popularTags}
+              placeholder="e.g. spicy, springy noodles"
             />
           </View>
 

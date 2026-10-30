@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { CommonActions, useNavigation, useRoute } from "@react-navigation/native";
 import type { NavigationProp } from "@react-navigation/native";
+import type { SFSymbol } from "expo-symbols";
 import { LayoutDashboard, UtensilsCrossed, BarChart3, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -88,7 +89,7 @@ function MerchantSignInGate({
           {/* Already signed in: the Login screen would be a dead end, so offer the way out instead. */}
           {isAuthenticated ? (
             <Button
-              label="Switch to Customer Mode"
+              label="Switch to customer mode"
               onPress={() => {
                 useMerchantStore.getState().setMerchantModeActive(false);
                 rootNavigation?.dispatch(
@@ -115,7 +116,7 @@ function MerchantSignInGate({
           )}
           {isMock && (
             <Button
-              label="Sign In as Mock Merchant"
+              label="Sign in as mock merchant"
               variant="secondary"
               onPress={handleMockLogin}
               fullWidth
@@ -167,7 +168,7 @@ function MerchantAccessGate({
             />
             {/* Always-available exits: an unverified merchant is never trapped here. */}
             <Button
-              label="Switch to Customer Mode"
+              label="Switch to customer mode"
               variant="secondary"
               onPress={() => {
                 useMerchantStore.getState().setMerchantModeActive(false);
@@ -357,6 +358,13 @@ const loadMerchantSettingsScreen = memoizeLoader(() =>
   ),
 );
 
+type MerchantTabConfig = {
+  icon: typeof LayoutDashboard;
+  label: string;
+  symbol: SFSymbol;
+  focusedSymbol?: SFSymbol;
+};
+
 function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
@@ -407,14 +415,29 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           }
         };
 
-        const tabConfig =
+        const tabConfig: MerchantTabConfig =
           route.name === "Dashboard"
-            ? { icon: LayoutDashboard, label: "Home" }
+            ? {
+                icon: LayoutDashboard,
+                label: "Home",
+                symbol: "house",
+                focusedSymbol: "house.fill",
+              }
             : route.name === "Menu"
-              ? { icon: UtensilsCrossed, label: "Menu" }
+              ? { icon: UtensilsCrossed, label: "Menu", symbol: "fork.knife" }
               : route.name === "Analytics"
-                ? { icon: BarChart3, label: "Performance" }
-                : { icon: Store, label: "Profile" };
+                ? {
+                    icon: BarChart3,
+                    label: "Performance",
+                    symbol: "chart.bar",
+                    focusedSymbol: "chart.bar.fill",
+                  }
+                : {
+                    icon: Store,
+                    label: "Profile",
+                    symbol: "storefront",
+                    focusedSymbol: "storefront.fill",
+                  };
         const Icon = tabConfig.icon;
 
         const color = isFocused ? palette.orangeText : palette.textMuted;
@@ -426,6 +449,8 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
             color={color}
             focused={isFocused}
             icon={Icon}
+            symbol={tabConfig.symbol}
+            focusedSymbol={tabConfig.focusedSymbol}
             label={tabConfig.label}
             onPress={onPress}
             onPressIn={() => {
@@ -605,7 +630,7 @@ export function MerchantTabs() {
               fullWidth
             />
             <Button
-              label="Switch to Customer Mode"
+              label="Switch to customer mode"
               variant="secondary"
               onPress={() => {
                 setMerchantModeActive(false);

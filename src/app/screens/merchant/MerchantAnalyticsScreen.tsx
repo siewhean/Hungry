@@ -1,9 +1,19 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Pressable, View, StyleSheet, ScrollView } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { BarChart3, TrendingUp, Star, Users, Clock, Flame, X } from "lucide-react-native";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  TrendingUp,
+  Star,
+  Users,
+  Clock,
+  Flame,
+  X,
+} from "lucide-react-native";
 
-import { AppText, Screen, FilterChipRail, Skeleton, EmptyState } from "@/components/ui";
+import { AppSymbol, AppText, Screen, FilterChipRail, Skeleton, EmptyState } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -11,12 +21,12 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 import {
   formatAverageRating,
-  formatPeakHour,
   formatRatingChange,
   formatReviewCountLabel,
 } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { DailyBarChart } from "@/components/merchant/DailyBarChart";
+import { PeakHoursChart } from "@/components/merchant/PeakHoursChart";
 import { formatCount, formatShare } from "@/features/merchant/performanceFormat";
 import type { MerchantAnalytics, MerchantDailyPoint } from "@/types/domain";
 
@@ -49,8 +59,8 @@ function formatSaveRate(saves: number, profileVisits: number) {
 }
 
 /** Spoken form of a trend label, so the change is not carried by colour alone. */
-function describeTrend(trend: string): string {
-  const spoken = trend.replace("★", " stars");
+function describeTrend(trend: string, inStars: boolean): string {
+  const spoken = inStars && /^[+-]?\d/.test(trend) ? `${trend} stars` : trend;
   if (spoken.startsWith("+")) return `up ${spoken.slice(1)}`;
   if (spoken.startsWith("-")) return `down ${spoken.slice(1)}`;
   return spoken;
@@ -89,6 +99,7 @@ export function MerchantAnalyticsScreen() {
 
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [dailySeries, setDailySeries] = useState<MerchantDailyPoint[] | null>(null);
+  const [previousSeries, setPreviousSeries] = useState<MerchantDailyPoint[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const range: AnalyticsRange = useMerchantStore((state) => state.analyticsRange) ?? "7d";
   const setRange = useMerchantStore((state) => state.setAnalyticsRange);
@@ -113,20 +124,25 @@ export function MerchantAnalyticsScreen() {
     try {
       const merchant = getHungryService().merchant;
       // The chart is a bonus: if it cannot load, the numbers still show.
-      const seriesRequest =
+      const seriesRequest = (period: "current" | "previous") =>
         range === "today"
           ? Promise.resolve(null)
-          : merchant.getDailySeries(activeOutletId, range).catch((e) => {
-              reportError(e, { screen: "MerchantAnalytics", action: "load_daily_series" });
+          : merchant.getDailySeries(activeOutletId, range, period).catch((e) => {
+              reportError(e, {
+                screen: "MerchantAnalytics",
+                action: period === "current" ? "load_daily_series" : "load_previous_series",
+              });
               return null;
             });
-      const [data, series] = await Promise.all([
+      const [data, series, before] = await Promise.all([
         merchant.getAnalytics(activeOutletId, range),
-        seriesRequest,
+        seriesRequest("current"),
+        seriesRequest("previous"),
       ]);
       if (requestId !== latestRequestId.current) return;
       setAnalytics(data);
       setDailySeries(series);
+      setPreviousSeries(before);
     } catch (e) {
       if (requestId !== latestRequestId.current) return;
       reportError(e, { screen: "MerchantAnalytics", action: "load_analytics" });
@@ -165,7 +181,7 @@ export function MerchantAnalyticsScreen() {
         <EmptyState
           title="Failed to load analytics"
           body="Your analytics data is unavailable at the moment."
-          icon={<X size={40} color={palette.error} />}
+          icon={<AppSymbol name="xmark" fallback={X} size={40} color={palette.error} />}
           errorMessage={error}
           sendErrorContext="Merchant analytics"
           ctaLabel="Retry"
@@ -179,7 +195,7 @@ export function MerchantAnalyticsScreen() {
   if (!analytics) {
     return (
       <Screen title={SCREEN_TITLE} showBack={false}>
-        <View style={{ padding: spacing[4], gap: spacing[4] }}>
+        <View style={{ gap: spacing[4] }}>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <Skeleton height={32} width={80} borderRadius={radii.pill} />
             <Skeleton height={32} width={80} borderRadius={radii.pill} />
@@ -223,7 +239,7 @@ export function MerchantAnalyticsScreen() {
     <Screen title={SCREEN_TITLE} showBack={false} scroll={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}
+        contentContainerStyle={{ paddingBottom: spacing[12], gap: spacing[6] }}
       >
         {/* Range Selector */}
         <FilterChipRail
@@ -253,13 +269,15 @@ export function MerchantAnalyticsScreen() {
                 analytics.profileVisits,
                 analytics.previousPeriodComparison.profileVisits,
               )}
-              icon={<Users size={16} color={palette.orange} />}
+              icon={<AppSymbol name="person.2" fallback={Users} size={16} color={palette.orange} />}
             />
             <MetricCard
               label="Menu views"
               value={formatCount(analytics.menuViews)}
               trend={formatDelta(analytics.menuViews, analytics.previousPeriodComparison.menuViews)}
-              icon={<BarChart3 size={16} color={palette.info} />}
+              icon={
+                <AppSymbol name="chart.bar" fallback={BarChart3} size={16} color={palette.info} />
+              }
             />
             <MetricCard
               label="Avg rating"
@@ -270,13 +288,29 @@ export function MerchantAnalyticsScreen() {
                 analytics.reviewCount,
                 analytics.previousPeriodComparison.reviewCount,
               )}
-              icon={<Star size={16} color={palette.amber} />}
+              trendInStars
+              icon={
+                <AppSymbol
+                  name="star.fill"
+                  fallback={Star}
+                  filled
+                  size={16}
+                  color={palette.amber}
+                />
+              }
             />
             <MetricCard
               label="Saves"
               value={formatCount(analytics.saves)}
               trend={formatSaveRate(analytics.saves, analytics.profileVisits)}
-              icon={<TrendingUp size={16} color={palette.success} />}
+              icon={
+                <AppSymbol
+                  name="chart.line.uptrend.xyaxis"
+                  fallback={TrendingUp}
+                  size={16}
+                  color={palette.success}
+                />
+              }
             />
           </View>
 
@@ -285,13 +319,18 @@ export function MerchantAnalyticsScreen() {
             <View style={cardStyle}>
               <View style={cardHeaderStyle}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                  <TrendingUp size={20} color={palette.orange} />
+                  <AppSymbol
+                    name="chart.line.uptrend.xyaxis"
+                    fallback={TrendingUp}
+                    size={20}
+                    color={palette.orange}
+                  />
                   <AppText variant="bodyBold" accessibilityRole="header">
                     Profile visits by day
                   </AppText>
                 </View>
               </View>
-              <DailyBarChart series={dailySeries} />
+              <DailyBarChart series={dailySeries} previous={previousSeries} />
             </View>
           ) : range === "today" ? (
             <AppText variant="bodySmall" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
@@ -303,7 +342,12 @@ export function MerchantAnalyticsScreen() {
           <View style={cardStyle}>
             <View style={cardHeaderStyle}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <BarChart3 size={20} color={palette.ratingStar} />
+                <AppSymbol
+                  name="chart.bar"
+                  fallback={BarChart3}
+                  size={20}
+                  color={palette.ratingStar}
+                />
                 <AppText variant="bodyBold" accessibilityRole="header">
                   How diners found you
                 </AppText>
@@ -367,7 +411,7 @@ export function MerchantAnalyticsScreen() {
           <View style={cardStyle}>
             <View style={cardHeaderStyle}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Flame size={20} color={palette.orange} />
+                <AppSymbol name="flame" fallback={Flame} size={20} color={palette.orange} />
                 <AppText variant="bodyBold" accessibilityRole="header">
                   Top performing dishes
                 </AppText>
@@ -405,7 +449,13 @@ export function MerchantAnalyticsScreen() {
           <View style={cardStyle}>
             <View style={cardHeaderStyle}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Star size={20} color={palette.amber} />
+                <AppSymbol
+                  name="star.fill"
+                  fallback={Star}
+                  filled
+                  size={20}
+                  color={palette.amber}
+                />
                 <AppText variant="bodyBold" accessibilityRole="header">
                   Customer taste profile
                 </AppText>
@@ -452,7 +502,7 @@ export function MerchantAnalyticsScreen() {
           <View style={cardStyle}>
             <View style={cardHeaderStyle}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <Clock size={20} color={palette.info} />
+                <AppSymbol name="clock" fallback={Clock} size={20} color={palette.info} />
                 <AppText variant="bodyBold" accessibilityRole="header">
                   Peak discovery hours
                 </AppText>
@@ -466,28 +516,7 @@ export function MerchantAnalyticsScreen() {
             <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[4] }}>
               When customers are viewing your stall (Singapore time)
             </AppText>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {analytics.peakDiscoveryHours.length === 0 ? (
-                <AppText variant="bodySmall" tone="muted">
-                  No peak-hour data yet.
-                </AppText>
-              ) : null}
-              {analytics.peakDiscoveryHours.map((hour) => (
-                <View
-                  key={hour}
-                  style={{
-                    backgroundColor: palette.info + "20",
-                    paddingHorizontal: spacing[3],
-                    paddingVertical: spacing[2],
-                    borderRadius: componentRadii.button,
-                  }}
-                >
-                  <AppText variant="bodySmallBold" style={{ color: palette.info }}>
-                    {formatPeakHour(hour)}
-                  </AppText>
-                </View>
-              ))}
-            </View>
+            <PeakHoursChart peakHours={analytics.peakDiscoveryHours} />
             {expanded === "hours"
               ? detailText(
                   "Busiest hours first. Each hour counts stall, menu and dish views that started in it.",
@@ -504,14 +533,20 @@ function MetricCard({
   label,
   value,
   trend,
+  trendInStars = false,
   icon,
 }: {
   label: string;
   value: string;
   trend: string;
+  /** The trend is a change in stars: the star symbol follows the number. */
+  trendInStars?: boolean;
   icon: React.ReactNode;
 }) {
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
+  const up = trend.startsWith("+");
+  const down = trend.startsWith("-");
+  const trendColor = up ? palette.success : down ? palette.error : palette.textMuted;
   return (
     <View
       style={[
@@ -536,21 +571,26 @@ function MetricCard({
           {icon}
         </View>
         <View style={{ alignItems: "flex-end", gap: spacing[1] }}>
-          <AppText
-            variant="micro"
-            accessibilityLabel={describeTrend(trend)}
-            style={{
-              color: trend.startsWith("+")
-                ? palette.success
-                : trend.startsWith("-")
-                  ? palette.error
-                  : palette.textMuted,
-              fontWeight: "700",
-            }}
+          <View
+            accessible
+            accessibilityLabel={describeTrend(trend, trendInStars)}
+            style={{ flexDirection: "row", alignItems: "center", gap: 3 }}
           >
-            {trend.startsWith("+") ? "▲ " : trend.startsWith("-") ? "▼ " : ""}
-            {trend}
-          </AppText>
+            {up || down ? (
+              <AppSymbol
+                name={up ? "arrowtriangle.up.fill" : "arrowtriangle.down.fill"}
+                fallback={up ? ArrowUpRight : ArrowDownRight}
+                size={10}
+                color={trendColor}
+              />
+            ) : null}
+            <AppText variant="micro" style={{ color: trendColor, fontWeight: "700" }}>
+              {trend}
+            </AppText>
+            {trendInStars && /^[+-]?\d/.test(trend) ? (
+              <AppSymbol name="star.fill" fallback={Star} filled size={10} color={trendColor} />
+            ) : null}
+          </View>
         </View>
       </View>
       <View style={{ marginTop: spacing[3] }}>

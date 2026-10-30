@@ -56,7 +56,7 @@ export function MerchantSettingsScreen() {
       // email alerts and the weekly email are not offered. The weekly numbers live on
       // Performance.
       // Every read is optional: a failure of any of them must not replace Settings, which holds
-      // the "Switch to Customer Mode" and sign-out exits.
+      // the "Switch to customer mode" and sign-out exits.
       const [notes, prefs] = await Promise.all([
         merchant.getMerchantNotifications(account.id).catch(reportAndUse("load_notifications", [])),
         merchant.getNotificationPreferences(account.id).catch(reportAndUse("load_prefs", null)),
@@ -112,7 +112,7 @@ export function MerchantSettingsScreen() {
 
   const handleSwitchToCustomerMode = () => {
     showAlert(
-      "Switch to Customer Mode",
+      "Switch to customer mode",
       "You will leave Merchant Centre and return to the customer app.",
       [
         { text: "Cancel", style: "cancel" },
@@ -254,7 +254,7 @@ export function MerchantSettingsScreen() {
 
         {/* A mode switch, not a destructive action: neutral icon and border. */}
         <Button
-          label="Switch to Customer Mode"
+          label="Switch to customer mode"
           variant="secondary"
           leftIcon={<ArrowLeftRight size={18} color={palette.textSecondary} />}
           onPress={handleSwitchToCustomerMode}

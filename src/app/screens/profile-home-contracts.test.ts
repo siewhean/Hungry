@@ -139,7 +139,7 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
     "src/app/screens/merchant/MerchantSettingsScreen.tsx",
   ]) {
     const merchantSource = read(file);
-    assert.match(merchantSource, /Switch to Customer Mode/);
+    assert.match(merchantSource, /Switch to customer mode/);
     assert.doesNotMatch(merchantSource, /clearMerchant/);
   }
 });
