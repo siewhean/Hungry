@@ -477,7 +477,7 @@ test("MERCH-V3: switching chips does not count as another inbox view", async () 
   stubInbox([review(1)]);
   const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
   await view.press(view.findByText("Unreplied"));
-  await view.press(view.findByText("4–5★"));
+  await view.press(view.findByText("4–5"));
   const viewed = getTrackedAnalyticsEvents().filter(
     (e) => e.event === "merchant_customer_inbox_viewed",
   );

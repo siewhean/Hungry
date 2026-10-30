@@ -75,6 +75,16 @@ test("R4-3: insights come from one facts call plus the analytics, not one read p
   assert.equal(byPrefix("hours-missing")?.actionTarget, "BusinessProfileEditor");
 });
 
+test("R5-1: hours kept only as text turn the tip into set-hours-for-each-day", async () => {
+  setUp({ operating_hours: "7:00 AM – 3:00 PM" }, [20]);
+  const insights = await service.merchant.getAIInsights(OUTLET);
+  assert.equal(
+    insights.find((insight) => insight.id.startsWith("hours-text-only"))?.title,
+    "Set hours for each day",
+  );
+  assert.ok(!insights.some((insight) => insight.id.startsWith("hours-missing")));
+});
+
 test("R4-3: a busiest discovery hour outside the opening hours is called out", async () => {
   setUp({ opening_schedule: { weekly: { mon: [{ open: "08:00", close: "15:00" }] } } }, [20]);
   const insights = await service.merchant.getAIInsights(OUTLET);

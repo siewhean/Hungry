@@ -1451,8 +1451,15 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
-    /** Visits and actions per Singapore day for the Performance chart, oldest first. */
-    getDailySeries(outletId: string, dateRange: "7d" | "30d"): Promise<MerchantDailyPoint[]>;
+    /**
+     * Visits and actions per Singapore day for the Performance chart, oldest first. `previous`
+     * is the same number of days just before the range, for the chart's comparison bars.
+     */
+    getDailySeries(
+      outletId: string,
+      dateRange: "7d" | "30d",
+      period?: "current" | "previous",
+    ): Promise<MerchantDailyPoint[]>;
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
