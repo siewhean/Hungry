@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 85.9,
+    "lines": 86,
     "branches": 85.5,
-    "functions": 82.1
+    "functions": 82.4
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -239,7 +239,7 @@
     "src/store/useStallFollowStore.ts": 81.1,
     "src/store/useStallInteractionStore.ts": 99.6,
     "src/store/useStallSubmissionStore.ts": 81.6,
-    "src/store/useUIStore.ts": 94.9,
+    "src/store/useUIStore.ts": 99.5,
     "src/store/useWheelStore.ts": 81.5,
     "src/theme/tokens.ts": 99.5,
     "src/types/domain.ts": 100,
