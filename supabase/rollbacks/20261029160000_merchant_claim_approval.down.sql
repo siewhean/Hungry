@@ -4,5 +4,6 @@
 -- 'converted' stay converted.
 
 drop function if exists public.approve_merchant_claim(uuid);
+drop function if exists app_private.approve_merchant_claim(uuid);
 
 notify pgrst, 'reload schema';

@@ -155,6 +155,10 @@ begin
      or has_function_privilege('authenticated', 'public.approve_merchant_claim(uuid)', 'execute') then
     raise exception 'approve_merchant_claim must be service_role only';
   end if;
+  if has_function_privilege('anon', 'app_private.approve_merchant_claim(uuid)', 'execute')
+     or has_function_privilege('authenticated', 'app_private.approve_merchant_claim(uuid)', 'execute') then
+    raise exception 'app_private.approve_merchant_claim must be service_role only';
+  end if;
   if not has_function_privilege('service_role', 'public.approve_merchant_claim(uuid)', 'execute') then
     raise exception 'the console (service role) cannot call approve_merchant_claim';
   end if;

@@ -16,14 +16,16 @@
 --     emails the claimant once, on the first approval only.
 -- Approving again returns the same account and outlet. A stall that already has an outlet under
 -- another account is refused with a clear message.
--- SECURITY INVOKER and service_role only: it is not reachable by the app or by guests.
+-- service_role only: it is not reachable by the app or by guests. The body is SECURITY DEFINER in
+-- app_private (it reads auth.users, which the service role cannot read directly) behind a SECURITY
+-- INVOKER public wrapper, like get_merchant_daily_series.
 -- Rollback: supabase/rollbacks/20261029160000_merchant_claim_approval.down.sql.
 
-create or replace function public.approve_merchant_claim(p_claim_id uuid)
+create or replace function app_private.approve_merchant_claim(p_claim_id uuid)
 returns jsonb
 language plpgsql
-security invoker
-set search_path = public
+security definer
+set search_path = public, app_private
 as $$
 declare
   v_claim public.merchant_claim_interests%rowtype;
@@ -153,7 +155,19 @@ begin
 end;
 $$;
 
+create or replace function public.approve_merchant_claim(p_claim_id uuid)
+returns jsonb
+language sql
+security invoker
+set search_path = public, app_private
+as $$
+  select app_private.approve_merchant_claim(p_claim_id);
+$$;
+
+revoke all on function app_private.approve_merchant_claim(uuid) from public, anon, authenticated;
 revoke all on function public.approve_merchant_claim(uuid) from public, anon, authenticated;
+grant usage on schema app_private to service_role;
+grant execute on function app_private.approve_merchant_claim(uuid) to service_role;
 grant execute on function public.approve_merchant_claim(uuid) to service_role;
 
 notify pgrst, 'reload schema';
