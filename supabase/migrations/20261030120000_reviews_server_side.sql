@@ -132,6 +132,50 @@ grant execute on function public.submit_review(jsonb, jsonb) to authenticated, s
 -- 3. Feed page and search ---------------------------------------------------------------------
 -- The body behind get_review_feed_page and search_reviews. SECURITY INVOKER and STABLE: the
 -- caller's row-level security decides which reviews, dishes and photos they see.
+-- Which of these reviews the signed-in viewer marked helpful. review_helpful_votes is readable by
+-- signed-in users only (own rows), and the feed is open to guests, so the feed asks this definer
+-- helper instead of reading the table: a guest gets an empty list, a signed-in viewer gets only
+-- their own votes.
+-- The author's own hidden/removed state, for the feed. A guest has no own reviews, so the answer is
+-- empty; this is a definer function so the feed can ask without a guest holding the grant that
+-- public.get_my_review_moderation_states withholds.
+create or replace function app_private.viewer_review_moderation_states(p_review_ids uuid[])
+returns table (review_id uuid, state text)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select rms.review_id, rms.state
+  from public.review_moderation_states rms
+  join public.reviews r on r.id = rms.review_id
+  where auth.uid() is not null
+    and r.user_id = auth.uid()
+    and rms.review_id = any (p_review_ids)
+    and rms.state in ('hidden', 'removed');
+$$;
+
+revoke all on function app_private.viewer_review_moderation_states(uuid[]) from public;
+grant execute on function app_private.viewer_review_moderation_states(uuid[])
+  to anon, authenticated, service_role;
+
+create or replace function app_private.viewer_helpful_review_ids(p_review_ids uuid[])
+returns uuid[]
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select coalesce(array_agg(hv.review_id), '{}'::uuid[])
+  from public.review_helpful_votes hv
+  where auth.uid() is not null
+    and hv.user_id = auth.uid()
+    and hv.review_id = any (p_review_ids);
+$$;
+
+revoke all on function app_private.viewer_helpful_review_ids(uuid[]) from public;
+grant execute on function app_private.viewer_helpful_review_ids(uuid[]) to anon, authenticated, service_role;
+
 create or replace function app_private.review_feed_page(
   p_limit integer default 50,
   p_before timestamptz default null,
@@ -198,9 +242,12 @@ begin
   ),
   own as (
     select o.review_id, o.state
-    from public.get_my_review_moderation_states(
+    from app_private.viewer_review_moderation_states(
       (select array_agg(p.id) from page p where p.user_id = auth.uid())
     ) o
+  ),
+  voted as (
+    select app_private.viewer_helpful_review_ids((select array_agg(p.id) from page p)) as ids
   ),
   entries as (
     select
@@ -225,10 +272,7 @@ begin
         'dish_name', d.name,
         'venue_name', coalesce(v.name, ''),
         'photos', coalesce(ph.photos, '[]'::jsonb),
-        'viewer_found_helpful', exists (
-          select 1 from public.review_helpful_votes hv
-          where hv.review_id = p.id and hv.user_id = auth.uid()
-        ),
+        'viewer_found_helpful', p.id = any (coalesce((select vt.ids from voted vt), '{}'::uuid[])),
         'moderation_state', o.state
       ) as j
     from page p

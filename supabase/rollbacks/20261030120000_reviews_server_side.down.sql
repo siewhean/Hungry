@@ -23,6 +23,8 @@ alter table public.dish_taste_ratings
 drop function if exists public.search_reviews(text, timestamptz, uuid, integer, boolean);
 drop function if exists public.get_review_feed_page(integer, timestamptz, uuid, timestamptz, text, text[], boolean);
 drop function if exists app_private.review_feed_page(integer, timestamptz, uuid, timestamptz, text, text[], boolean, text);
+drop function if exists app_private.viewer_helpful_review_ids(uuid[]);
+drop function if exists app_private.viewer_review_moderation_states(uuid[]);
 drop function if exists public.submit_review(jsonb, jsonb);
 
 drop index if exists public.idx_reviews_tags;

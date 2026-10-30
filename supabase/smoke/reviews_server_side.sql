@@ -15,8 +15,8 @@ values ('smoke-rv-building', 'Smoke RV Building', 'hawker_centre', 1.2803, 103.8
 insert into venues (id, building_id, name, floor)
 values ('smoke-rv-venue', 'smoke-rv-building', 'Smoke RV Laksa Stall', '1');
 
-insert into dishes (id, venue_id, building_id, name, price)
-values ('smoke-rv-dish', 'smoke-rv-venue', 'smoke-rv-building', 'Smoke RV Curry Laksa', 5.5);
+insert into dishes (id, venue_id, building_id, name, price, menu_approved_for_display, menu_rights_status)
+values ('smoke-rv-dish', 'smoke-rv-venue', 'smoke-rv-building', 'Smoke RV Curry Laksa', 5.5, true, 'operator_owned');
 
 insert into user_profiles (id, display_name)
 values
