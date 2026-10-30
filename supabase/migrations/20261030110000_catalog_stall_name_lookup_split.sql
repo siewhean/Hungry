@@ -1,12 +1,15 @@
 -- smoke: supabase/smoke/catalog_stall_search_candidates.sql
 -- Faster stall name lookup (round-four Search). 20261030100000 fixed "stalls: rice" (336 to 202 ms on
--- prod) but "stalls: chicken rice" stayed at p95 449 ms. Prod's per-stage timing showed the stall name
--- lookup alone takes 125-138 ms per word: the lookup asked "name ILIKE the word OR name is fuzzily
--- close to the word" in one condition, so the index returned candidates for both halves and the
--- fuzzy test was re-run on every candidate row. Now the ILIKE half and the fuzzy half are separate
--- lookups, each with its own index scan; the stalls found are the same (a union of the same sets).
--- Nothing else changes: same signature, SECURITY DEFINER, search_path, grants, scoring, filters,
--- order, cursor and result.
+-- prod) but "stalls: chicken rice" stayed at p95 449 ms. EXPLAIN ANALYZE on prod showed why: for the
+-- name lookup Postgres read all 29k stalls of the release through the (release, quality, name) index
+-- and ran the fuzzy test (<%, about 11 us a row) on each, instead of using the trigram index:
+-- 148 ms for "chicken". Trying it on prod: with index-only scans switched off the trigram index is used
+-- and the lookup takes 4.5 ms (ILIKE half) + 8.4 ms (fuzzy half). Kept as one OR condition it still
+-- took 375 ms, so the two halves are also separate lookups here (a union of the same sets).
+-- So this changes two things in public.catalog_raw_venues_page and nothing else: the function sets
+-- enable_indexonlyscan = off for its own duration, and each word's name and building lookups are one
+-- ILIKE select and one fuzzy select. Same signature, SECURITY DEFINER, search_path, grants, scoring,
+-- filters, order, cursor and result.
 -- Rollback: supabase/rollbacks/20261030110000_catalog_stall_name_lookup_split.down.sql.
 
 create or replace function public.catalog_raw_venues_page(
@@ -14,7 +17,7 @@ create or replace function public.catalog_raw_venues_page(
   p_cuisine_tags text[] default '{}', p_dietary_flags text[] default '{}', p_max_price numeric default null, p_open_only boolean default false,
   p_sort text default 'quality', p_cursor text default null, p_release_id uuid default null, p_limit integer default 24,
   p_building_types text[] default '{}', p_food_keywords text[] default '{}', p_building_id text default null
-) returns jsonb language plpgsql security definer set search_path = public, extensions set plan_cache_mode = force_custom_plan as $$
+) returns jsonb language plpgsql security definer set search_path = public, extensions set plan_cache_mode = force_custom_plan set enable_indexonlyscan = off as $$
 declare
   v_release uuid; v_limit integer := least(greatest(coalesce(p_limit, 24), 1), 50); v_items jsonb; v_next text; v_fingerprint text; v_cursor jsonb;
   v_match_count integer;
