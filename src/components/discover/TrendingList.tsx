@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { ChevronRight, Star } from "lucide-react-native";
+import { ChevronRight, Star, Utensils } from "lucide-react-native";
 
 import { AccessibleImage, AppText } from "@/components/ui";
 import type { Bite } from "@/lib/services/types";
@@ -18,6 +19,40 @@ const MAX_ROWS = 5;
 function distanceLabel(meters: number | undefined): string | undefined {
   if (meters === undefined || !Number.isFinite(meters) || meters <= 0) return undefined;
   return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
+}
+
+/** The row photo; a missing or broken photo shows the same dish icon as the card rails. */
+function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: string }) {
+  const { componentRadii, palette } = useHungryTheme();
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const showPhoto = Boolean(photoUrl) && photoUrl !== failedUrl;
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.bgSoft,
+        borderRadius: componentRadii.card,
+        height: 72,
+        justifyContent: "center",
+        overflow: "hidden",
+        width: 72,
+      }}
+    >
+      {showPhoto ? (
+        <AccessibleImage
+          source={{ uri: photoUrl }}
+          decorative
+          contentFit="cover"
+          onError={() => setFailedUrl(photoUrl)}
+          style={{ height: "100%", width: "100%" }}
+        />
+      ) : (
+        <View accessibilityRole="image" accessibilityLabel={`${dishName} photo unavailable`}>
+          <Utensils color={palette.textMuted} size={24} />
+        </View>
+      )}
+    </View>
+  );
 }
 
 /** Trending dishes as rich rows: photo, name, stall and unit, rating, price and distance. */
@@ -62,24 +97,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
               padding: spacing[3],
             }}
           >
-            <View
-              style={{
-                backgroundColor: palette.bgSoft,
-                borderRadius: componentRadii.card,
-                height: 72,
-                overflow: "hidden",
-                width: 72,
-              }}
-            >
-              {bite.photoUrl ? (
-                <AccessibleImage
-                  source={{ uri: bite.photoUrl }}
-                  decorative
-                  contentFit="cover"
-                  style={{ height: "100%", width: "100%" }}
-                />
-              ) : null}
-            </View>
+            <TrendingThumb photoUrl={bite.photoUrl} dishName={bite.dishName} />
             <View style={{ flex: 1, gap: 2 }}>
               <AppText variant="bodyBold" numberOfLines={1}>
                 {bite.dishName}

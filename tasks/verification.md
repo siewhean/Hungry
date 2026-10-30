@@ -1529,6 +1529,12 @@ Use the smallest check that matches the change risk.
 - typecheck clean; DiscoverEntryScreen render tests 26/26 (5 audit repros now green), full test:render 654 pass, npm test 2245 pass, test:coverage OK (lines 84.3%); lint 0 errors.
 - Not walked on a device or the web build in this step; no migration, endpoint or query added.
 
+### HOME-R4 phase 2, 2026-10-29
+
+- typecheck clean; DiscoverEntryScreen render tests 38/38 (R4-B2 plus H4-1/2/3/4 and the palate-read failure), components.render 40/40 (TrendingList icon fallback, MenuLessStallGroup), homeRanking unit tests 5/5, full test:render 668 pass, npm test pass, test:coverage OK (lines 84.3%); lint 0 errors.
+- One new batched read (`dish_taste_vectors ... in(dish_ids)`, a single query per feed page, no N+1); no migration, no new endpoint, so rate limits and races are unaffected. A failed read keeps feed order (console.warn, like the neighbouring loaders).
+- Not walked on a device or the web build in this step.
+
 ### UI-EIGHT review search, maps and images, 2026-10-29
 - typecheck clean; npm test 2244 pass / 0 fail; test:render 643 / 0 fail; test:coverage OK (stallLocation.ts 94.4 to 96.4, baseline updated); lint 0 errors (57 warnings, unchanged); format clean on touched code; check:rate-limits and check:n-plus-one OK.
 - Playwright screenshots of the mock web build at 390x844 (not a device): review picker search now fills the row beside Close (before: a 25 px pill under a full-width Close), tab bar shows Write like the other tabs, Home shows the Singapore header with "Turn on location" and stall rows with building + unit. Dish and stall photos, the logo circle and the Google Maps landing were not seen: mock images are remote and the mock stall has no building.

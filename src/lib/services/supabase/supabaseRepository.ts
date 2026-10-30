@@ -482,7 +482,11 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
   };
 }
 
-function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undefined {
+function mapDiscoveryFeedDish(
+  row: Row,
+  venue: VenueSummary,
+  taste?: Pick<DishPresentation, "tasteVector" | "tasteConfidence">,
+): DishDetail | undefined {
   const dishId = toString(row.top_dish_id);
   const dishName = toString(row.top_dish_name);
   if (!dishId || !dishName) return undefined;
@@ -515,7 +519,11 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
     },
     venue,
     // Discover's Halal and Dietary Needs chips read these flags on the stall's top dish.
-    { gallery, dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[] },
+    {
+      gallery,
+      dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[],
+      ...taste,
+    },
   );
 }
 
@@ -1062,6 +1070,39 @@ export async function searchDishesViaRpc(
   }));
 }
 
+// Loaded on first use: Sentry is a native module that plain service tests never need.
+function reportDiscoveryTasteError(error: unknown): void {
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action: "discovery_feed_taste_vectors" });
+  } catch {
+    // Reporting must never break the feed.
+  }
+}
+
+/** Taste vectors for these dishes in one read. Empty when the read fails: Home then keeps feed order. */
+async function loadDishTasteByDishId(
+  dishIds: string[],
+): Promise<Map<string, Pick<DishPresentation, "tasteVector" | "tasteConfidence">>> {
+  const client = getSupabaseClient();
+  if (!client || dishIds.length === 0) return new Map();
+  const { data, error } = await client
+    .from("dish_taste_vectors")
+    .select("*")
+    .in("dish_id", dishIds);
+  if (error || !Array.isArray(data)) {
+    console.warn("Supabase discovery taste vectors read failed");
+    reportDiscoveryTasteError(error ?? new Error("dish_taste_vectors returned no rows array"));
+    return new Map();
+  }
+  return new Map(
+    [...buildDishPresentationMap([], data as unknown as Row[], [], [])].map(
+      ([dishId, { tasteVector, tasteConfidence }]) => [dishId, { tasteVector, tasteConfidence }],
+    ),
+  );
+}
+
 /**
  * Dietary flag slugs for a set of dishes in two batched reads (the link rows for these ids, and
  * the small flag list). Undefined when either read fails, so the caller keeps what it had.
@@ -1116,22 +1157,26 @@ export async function listDiscoveryFeedByLocationViaRpc(
   // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
   // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
   // the column is missing, this page's top-dish flags come from one batched read.
-  if (rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row)) {
-    const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
-    const flagsByDishId = await loadDishDietaryFlagsByDishId(dishIds);
-    if (flagsByDishId) {
-      rows = rows.map((row) => ({
-        ...row,
-        top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
-      }));
-    }
+  // The feed has no taste columns either; Home ranks "Dishes near you" by palate, so this
+  // page's vectors come from one batched read, alongside the flags read.
+  const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
+  const needsDietaryFlags = rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row);
+  const [flagsByDishId, tasteByDishId] = await Promise.all([
+    needsDietaryFlags ? loadDishDietaryFlagsByDishId(dishIds) : undefined,
+    loadDishTasteByDishId(dishIds),
+  ]);
+  if (flagsByDishId) {
+    rows = rows.map((row) => ({
+      ...row,
+      top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
+    }));
   }
 
   const venues = rows.map(mapDiscoveryFeedVenue);
   const results = rows
     .map((row, index) => {
       const venue = venues[index];
-      const dish = mapDiscoveryFeedDish(row, venue);
+      const dish = mapDiscoveryFeedDish(row, venue, tasteByDishId.get(toString(row.top_dish_id)));
       return dish
         ? {
             dish,

@@ -2,13 +2,14 @@
 // person can press. Run with `npm run test:render`.
 
 import assert from "node:assert/strict";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { Animated, Text, View } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
 import { DiscoverModeTabs } from "@/components/discover/DiscoverModeTabs";
 import { ForYouCard } from "@/components/discover/ForYouCard";
+import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
@@ -899,6 +900,76 @@ test("TrendingList shows rich rows, opens one, and hides when there are none", a
     createElement(TrendingList, { title: "Trending near you", bites: [], onOpen: () => undefined }),
   );
   assert.doesNotMatch(view.text(), /Trending near you/);
+});
+
+test("TrendingList shows the dish icon when a row has no photo or its photo fails", async () => {
+  const bite = (photoUrl: string) =>
+    ({
+      id: "b1",
+      dishId: "d1",
+      dishName: "Laksa",
+      venueName: "Sungei Road",
+      photoUrl,
+      rating: 0,
+      price: 5,
+    }) as unknown as Bite;
+  const noPhoto = await render(
+    createElement(TrendingList, { title: "Most reviewed", bites: [bite("")], onOpen: () => {} }),
+  );
+  assert.ok(noPhoto.findByLabel("Laksa photo unavailable"), "no photo shows the icon");
+  await cleanup();
+
+  const withPhoto = await render(
+    createElement(TrendingList, {
+      title: "Most reviewed",
+      bites: [bite("https://cdn.example.sg/laksa.jpg")],
+      onOpen: () => {},
+    }),
+  );
+  assert.equal(withPhoto.findByLabel("Laksa photo unavailable"), null);
+  const image = withPhoto.container.querySelector("[data-stub='expo-image.Image']");
+  assert.ok(image, "the photo is on screen");
+  // The image stub draws nothing, so the load error is raised through the prop it was given.
+  const fiberKey = Object.keys(image).find((key) => key.startsWith("__reactFiber$"))!;
+  let fiber = (image as unknown as Record<string, unknown>)[fiberKey] as {
+    memoizedProps?: { onError?: () => void };
+    return: unknown;
+  } | null;
+  while (fiber && !fiber.memoizedProps?.onError) fiber = fiber.return as typeof fiber;
+  assert.ok(fiber?.memoizedProps?.onError, "the photo reports load errors");
+  await act(async () => fiber?.memoizedProps?.onError?.());
+  assert.ok(withPhoto.findByLabel("Laksa photo unavailable"), "a broken photo falls back");
+});
+
+test("MenuLessStallGroup counts the stalls, opens on press and names itself for screen readers", async () => {
+  const toggled: boolean[] = [];
+  const stalls = [
+    { id: "s1", name: "Ah Seng" },
+    { id: "s2", name: "Bee Hoon King" },
+  ];
+  const view = await render(
+    createElement(MenuLessStallGroup, {
+      stalls,
+      expanded: false,
+      onToggle: () => toggled.push(true),
+    }),
+  );
+  assert.match(view.text(), /More stalls nearby · menus coming/);
+  assert.match(view.text(), /2 stalls/);
+  await view.press(view.findByLabel("More stalls nearby, menus coming. 2 stalls"));
+  assert.deepEqual(toggled, [true]);
+  await view.rerender(
+    createElement(MenuLessStallGroup, {
+      stalls: stalls.slice(0, 1),
+      expanded: true,
+      onToggle: () => {},
+    }),
+  );
+  assert.ok(view.findByLabel("More stalls nearby, menus coming. 1 stall"), "singular for one");
+  await view.rerender(
+    createElement(MenuLessStallGroup, { stalls: [], expanded: false, onToggle: () => {} }),
+  );
+  assert.doesNotMatch(view.text(), /More stalls nearby/);
 });
 
 test("AchievementsSection shows levels, progress and a completed goal", async () => {

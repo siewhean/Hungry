@@ -45,6 +45,7 @@ export type AnalyticsEventName =
   | "dietary_chip_tapped"
   | "discover_chip_tapped"
   | "home_filters_cleared"
+  | "home_cold_start_group_opened"
   | "discover_see_all_tapped"
   | "map_pin_tapped"
   | "map_opened"

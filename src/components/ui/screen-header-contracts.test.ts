@@ -370,7 +370,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const quickBiteCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.quickBites\)\.slice\(0, 6\)/,
+    /const quickBitePool = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.quickBites\)/,
   );
   assert.match(discover, /const discoverRailCardWidth = screenWidth \* 0\.55/);
   assert.match(discover, /const discoverRailImageHeight = 130/);
@@ -394,20 +394,26 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /height: 150/);
   assert.match(
     discover,
-    /const unfilteredTrendingCards = useMemo\([\s\S]*discoverBiteCollections\.trending\.slice\(0, 6\)[\s\S]*const trendingCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.trending\)\.slice\(0, 6\)/,
+    /const unfilteredTrendingCards = useMemo\([\s\S]*discoverBiteCollections\.trending\.slice\(0, 6\)/,
   );
   assert.match(
     discover,
-    /const unfilteredEditorChoiceCards = useMemo\([\s\S]*discoverBiteCollections\.editorChoice\.slice\(0, 6\)[\s\S]*const editorChoiceCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.editorChoice\)\.slice\(0, 6\)/,
+    /const unfilteredEditorChoiceCards = useMemo\([\s\S]*discoverBiteCollections\.editorChoice\.slice\(0, 6\)/,
   );
   assert.match(
     discover,
-    /const unfilteredBudgetCards = useMemo\([\s\S]*discoverBiteCollections\.budget\.slice\(0, 6\)[\s\S]*const budgetCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.budget\)\.slice\(0, 6\)/,
+    /const unfilteredBudgetCards = useMemo\([\s\S]*discoverBiteCollections\.budget\.slice\(0, 6\)/,
   );
   assert.match(
     discover,
-    /const unfilteredLateNightCards = useMemo\([\s\S]*discoverBiteCollections\.lateNight\.slice\(0, 5\)[\s\S]*const lateNightCards = useMemo\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.lateNight\)\.slice\(0, 5\)/,
+    /const unfilteredLateNightCards = useMemo\([\s\S]*discoverBiteCollections\.lateNight\.slice\(0, 5\)/,
   );
+  // A chip filters each full pool before the rails are cut, and a dish keeps to one rail.
+  assert.match(
+    discover,
+    /const \[trendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards\] = useMemo\([\s\S]*pickRailsWithoutRepeats\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.trending\)[\s\S]*tasteOrdered\.bites[\s\S]*filterDiscoverBites\(discoverBiteCollections\.editorChoice\)[\s\S]*filterDiscoverBites\(discoverBiteCollections\.budget\)[\s\S]*filterDiscoverBites\(discoverBiteCollections\.lateNight\)/,
+  );
+  assert.match(discover, /: "Hawker classics"/);
   assert.match(discover, /const areaStallCards = useMemo/);
   assert.match(discover, /onPress=\{\(\) => onSeeAll\(rail\)\}/);
   assert.match(discover, /onSeeAll: openDiscoverCollection/);
@@ -552,7 +558,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onSelect=\{toggleDiscoverChip\}/);
   assert.match(
     discover,
-    /<AppText variant="h2" style=\{\{ color: themeTints\.text \}\}>\s*Hawker classics\s*<\/AppText>/,
+    /<AppText variant="h2" style=\{\{ color: themeTints\.text \}\}>\s*\{popularFoodTitle\}\s*<\/AppText>/,
   );
   assert.doesNotMatch(discover, /<DecideForMeCard compact \/>/);
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
@@ -585,7 +591,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /numberOfLines=\{2\}/);
   assert.doesNotMatch(discover, /height: 72,[\s\S]{0,40}width: decisionCardWidth/);
   assert.doesNotMatch(discover, /height: 52/);
-  assert.match(discover, /Trending \$\{trendingAreaPhrase\}/);
+  assert.match(discover, /Most reviewed \$\{trendingAreaPhrase\}/);
   assert.match(discover, /Stalls \$\{discoverAreaPhrase\}/);
   assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
   assert.match(discover, /const DISCOVER_ISLAND_RADIUS_METERS = 30_000/);

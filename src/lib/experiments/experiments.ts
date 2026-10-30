@@ -512,6 +512,41 @@ export const EXPERIMENTS = {
       "merchant_customer_inbox_viewed",
     ],
   },
+  /**
+   * "Dishes near you" in the diner's palate order with a reason line (taste), or in photo and
+   * feed order (control). Read in DiscoverHomeScreen only while Home is focused, the rail has
+   * six or more dishes and the diner has a palate, so an empty rail or a diner with nothing to
+   * rank by never dilutes the result. Read it only in areas with menus. Draft until launch:
+   * the fallback is the new taste order.
+   */
+  home_taste_rank_v1: {
+    variants: ["control", "taste"],
+    fallback: "taste",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Ranking Dishes near you by the diner's palate, with a reason, gets more dish opens per Home view than photo or distance order.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["dish_viewed", "decide_for_me_triggered"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Stalls whose menus are not in yet: folded into one "More stalls nearby" row (grouped) or
+   * listed flat with "Menu coming soon" on each (control). Read in DiscoverHomeScreen while
+   * Home is focused and the nearby list holds at least one stall without a menu. Draft until
+   * launch: the fallback is the grouped list.
+   */
+  home_cold_start_v1: {
+    variants: ["control", "grouped"],
+    fallback: "grouped",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Folding menu-less stalls under the stalls that have menus raises the share of stall opens that reach a menu.",
+    primaryMetric: "stall_viewed",
+    guardrailMetrics: ["discover_card_opened", "home_cold_start_group_opened"],
+    minSamplePerArm: 1600,
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;
