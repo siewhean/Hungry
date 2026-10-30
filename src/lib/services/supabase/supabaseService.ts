@@ -2313,7 +2313,9 @@ async function getLiveTasteRecommendations(
     // The fallback (popular dishes) hides the failure from users, so it must reach Sentry;
     // a rate-limit refusal is expected under load and is not reported.
     if (error.code !== "rate_limited") reportTasteRecommendationsError(error);
-    return undefined;
+    // Onboarding is the only caller: it shows its own error state with Retry, which a silent
+    // empty slate would hide as "no dishes match your taste".
+    throw new Error(error.message);
   }
   if (!Array.isArray(data)) return undefined;
 
@@ -4475,8 +4477,12 @@ export const supabaseService: HungryService = {
       }
     },
 
-    async listPopularNearby(lat, lng) {
-      return (await listPopularNearbyViaRpc(lat, lng)) ?? supabaseRepository.listPopularNearby();
+    async listPopularNearby(lat, lng, options) {
+      const rows = await listPopularNearbyViaRpc(lat, lng);
+      if (rows) return rows;
+      // Onboarding has no cached catalog: falling back would start the full catalog download.
+      if (options?.noCatalogFallback) throw new Error("Popular dishes could not be loaded");
+      return supabaseRepository.listPopularNearby();
     },
 
     async listDiscoveryFeedByLocation(request) {

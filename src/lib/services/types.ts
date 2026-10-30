@@ -1023,7 +1023,15 @@ export interface HungryService {
      * caller uses listDishesByVenue.
      */
     listDishesByVenuePage?(venueId: string, cursor?: VenueMenuCursor): Promise<VenueMenuPage>;
-    listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
+    /**
+     * `noCatalogFallback` makes a failed server read throw instead of falling back to the cached
+     * catalog, whose download is large (onboarding has none cached and shows a Retry instead).
+     */
+    listPopularNearby(
+      lat?: number,
+      lng?: number,
+      options?: { noCatalogFallback?: boolean },
+    ): Promise<DishDetail[]>;
     listDiscoveryFeedByLocation(
       request: DiscoveryLocationFeedRequest,
     ): Promise<DiscoveryLocationFeed | undefined>;

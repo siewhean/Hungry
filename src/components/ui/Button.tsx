@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -9,13 +9,18 @@ import {
   type ViewStyle,
   type PressableProps,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import * as Haptics from "@/lib/haptics";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { usePressScale } from "@/lib/motion/uiMotion";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "glass";
 type ButtonSize = "sm" | "md" | "lg";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface ButtonProps extends Omit<PressableProps, "style"> {
   label: string;
@@ -51,6 +56,7 @@ export function Button({
   leftIcon,
   rightIcon,
   onPressIn,
+  onPressOut,
   accessibilityLabel,
   accessibilityState,
   ...props
@@ -58,6 +64,8 @@ export function Button({
   const { componentCornerCurve, componentRadii, componentSizes, opacity, palette, spacing } =
     useHungryTheme();
   const isDisabled = disabled || loading;
+  const [pressed, setPressed] = useState(false);
+  const press = usePressScale(useReduceMotion());
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
     primary: {
@@ -121,7 +129,7 @@ export function Button({
   }
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{
@@ -132,11 +140,18 @@ export function Button({
       disabled={isDisabled}
       onPressIn={(event) => {
         if (!isDisabled) {
+          setPressed(true);
+          press.onPressIn();
           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPressIn?.(event);
         }
       }}
-      style={({ pressed }) => [
+      onPressOut={(event) => {
+        setPressed(false);
+        press.onPressOut();
+        onPressOut?.(event);
+      }}
+      style={[
         styles.base,
         variantStyle[variant],
         sizeStyle[size],
@@ -145,12 +160,12 @@ export function Button({
           borderCurve: componentCornerCurve.borderCurve,
           opacity: isDisabled ? opacity.disabled : 1,
           width: fullWidth ? "100%" : undefined,
-          transform: [{ translateY: pressed ? 1 : 0 }],
         },
         pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "glass" ? { backgroundColor: palette.surfaceTranslucent } : null,
         style,
+        press.animatedStyle,
       ]}
       {...props}
     >
@@ -191,7 +206,7 @@ export function Button({
           {rightIcon}
         </View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

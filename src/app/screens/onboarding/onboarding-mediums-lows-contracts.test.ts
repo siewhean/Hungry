@@ -229,10 +229,10 @@ test("L8: back buttons are 44 points and area rows at least 48", () => {
 test("L9: choices are radios in a group, headings are headers, the illustration is decorative", () => {
   // The picker is a search box with result rows now, not a radio list of areas.
   assert.match(picker(), /accessibilityLabel=\{`Choose \$\{result\.title\}`\}/);
-  assert.match(location(), /<AppText variant="h2" accessibilityRole="header"/);
+  assert.match(location(), /<OnboardingHeader/);
   assert.match(location(), /<AccessibleImage[\s\S]*?decorative/);
   assert.doesNotMatch(location(), /Location permission illustration/);
-  assert.match(quiz(), /<AppText variant="h2" accessibilityRole="header"/);
+  assert.match(quiz(), /<OnboardingHeader title=\{headingText\}/);
 });
 
 test("L10: OnboardingAuth field errors use the shared Input error props", () => {

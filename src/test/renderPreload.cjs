@@ -118,7 +118,15 @@ function reanimatedOverrides() {
   };
   const known = {
     ...Animated,
-    useSharedValue: (value) => ({ value }),
+    useSharedValue: (value) => ({
+      value,
+      get() {
+        return this.value;
+      },
+      set(next) {
+        this.value = typeof next === "function" ? next(this.value) : next;
+      },
+    }),
     useAnimatedStyle: () => ({}),
     useAnimatedProps: () => ({}),
     useDerivedValue: (fn) => {
@@ -306,6 +314,7 @@ const STUBS = [
   [/^@expo-google-fonts\//, { useFonts: () => [true, null] }],
   [/^react-native-svg$/, {}],
   [/^lucide-react-native$/, {}],
+  [/^expo-symbols$/, {}],
   [/^@expo\/vector-icons/, {}],
   [
     /^expo-image$/,
@@ -321,7 +330,6 @@ const STUBS = [
     },
   ],
   [/^expo-linear-gradient$/, {}],
-  [/^expo-symbols$/, {}],
   [/^expo-blur$/, {}],
   [
     /^expo-haptics$/,
