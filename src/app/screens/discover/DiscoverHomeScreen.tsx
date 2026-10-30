@@ -25,7 +25,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
   ChevronRight,
-  Compass,
+  Drumstick,
+  Moon,
+  Salad,
   Search,
   SearchX,
   Shuffle,
@@ -33,6 +35,7 @@ import {
   Flame,
   Dices,
   Users,
+  Tag,
   Utensils,
 } from "lucide-react-native";
 import {
@@ -40,6 +43,7 @@ import {
   useIsFocused,
   useNavigation,
   useRoute,
+  useScrollToTop,
   type CompositeNavigationProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -76,6 +80,12 @@ import {
 import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
+import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
+import {
+  compareHomeStalls,
+  getStallRowOpenLabel,
+  isStallClosed,
+} from "@/features/discover/homeStalls";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import {
@@ -111,7 +121,7 @@ import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
-import { getSingaporeHour, getVenueOpenState } from "@/utils/operatingHours";
+import { getSingaporeHour } from "@/utils/operatingHours";
 
 type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
 
@@ -122,10 +132,9 @@ const INTENT_CHIPS: readonly {
   { id: "spicy", label: "Spicy" },
   { id: "halal", label: "Halal" },
   { id: "late", label: "Late night" },
-  { id: "cheap", label: "Value" },
+  { id: "cheap", label: "Under S$5" },
 ] as const;
 
-const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag[] = ["halal", "vegetarian", "pork_free"];
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
 const DISCOVER_STALL_SHOW_MORE_COUNT = 20;
 
@@ -180,14 +189,6 @@ const STALL_SHOWCASE_FALLBACK_IMAGES = [
   POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
   POPULAR_BAK_CHOR_MEE_GRAPHIC,
 ] as const;
-
-/** "Open · Closes 9pm" / "Closed · Opens 5pm" for stall rows; nothing when hours are unknown. */
-function getStallRowOpenLabel(venue: Pick<VenueSummary, "operatingHours" | "isOpen">) {
-  const state = getVenueOpenState(venue.operatingHours, venue.isOpen);
-  if (state.status === "unknown") return undefined;
-  const status = state.status === "open" ? "Open" : "Closed";
-  return state.detail && state.detail !== "Closed today" ? `${status} · ${state.detail}` : status;
-}
 
 function buildStallShowcaseCardsFromVenues(
   venues: VenueSummary[],
@@ -684,44 +685,10 @@ function DiscoverStallListLoadingSkeleton({ rowCount = 3 }: { rowCount?: number 
   );
 }
 
-function FilteredResultsEmptyState({
-  preserveHeight,
-  minHeight,
-}: {
-  preserveHeight?: boolean;
-  minHeight?: number;
-}) {
-  const { palette } = useHungryTheme();
-  return (
-    <View
-      style={
-        preserveHeight && minHeight
-          ? {
-              alignItems: "center",
-              minHeight,
-              height: minHeight,
-              justifyContent: "center",
-              paddingTop: 0,
-              paddingBottom: 0,
-              overflow: "hidden",
-            }
-          : undefined
-      }
-    >
-      <EmptyState
-        title="No matching results"
-        body="Try removing a filter."
-        icon={<SearchX color={palette.textSecondary} size={28} />}
-      />
-    </View>
-  );
-}
-
 type DiscoverRailLayout = {
   cardWidth: number;
   contentGap: number;
   imageHeight: number;
-  reservedHeight: number;
   screenWidth: number;
 };
 
@@ -863,7 +830,6 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
   canSeeAll,
   cards,
   getCardLabel,
-  isFiltering,
   isLoading,
   isVisible,
   layout,
@@ -882,7 +848,6 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
   canSeeAll: boolean;
   cards: Bite[];
   getCardLabel: (bite: Bite) => string;
-  isFiltering: boolean;
   isLoading: boolean;
   /** Home is on screen (not a tab warm-up), so an impression is real. */
   isVisible: boolean;
@@ -902,8 +867,13 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
   const scrollStyle = useMemo(() => ({ width: layout.screenWidth }), [layout.screenWidth]);
 
   // Once per visit, when the rail first shows dishes on screen (not on every filter change).
+  // Leaving Home ends the visit, so coming back counts again.
   useEffect(() => {
-    if (!isVisible || isLoading || cards.length === 0 || impressionSentRef.current) return;
+    if (!isVisible) {
+      impressionSentRef.current = false;
+      return;
+    }
+    if (isLoading || cards.length === 0 || impressionSentRef.current) return;
     impressionSentRef.current = true;
     trackAnalyticsEvent("discover_rail_impression", {
       surface: "home",
@@ -1009,8 +979,6 @@ const DiscoverBiteRail = memo(function DiscoverBiteRail({
             />
           ))}
         </ScrollView>
-      ) : isFiltering ? (
-        <FilteredResultsEmptyState preserveHeight minHeight={layout.reservedHeight} />
       ) : null}
     </View>
   );
@@ -1246,21 +1214,6 @@ function VerticalStallShowcaseSection({
   );
 }
 
-function HalalLogoIcon({ color }: { color: string }) {
-  return (
-    <AppText
-      variant="micro"
-      style={{
-        color,
-        fontWeight: "800",
-        includeFontPadding: false,
-      }}
-    >
-      حلال
-    </AppText>
-  );
-}
-
 export type DiscoverHomeScreenProps = {
   /**
    * Called when the live feed read fails (or only the saved cache answered). The Supabase entry
@@ -1284,6 +1237,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const [discoverLoadError, setDiscoverLoadError] = useState(false);
   const [discoverReloadKey, setDiscoverReloadKey] = useState(0);
   const [isDiscoverRefreshing, setIsDiscoverRefreshing] = useState(false);
+  // The area the cards on screen were read for: a reload of the same area keeps them.
+  const [loadedDiscoverFeedKey, setLoadedDiscoverFeedKey] = useState<string | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     componentSizes,
@@ -1314,14 +1271,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     76,
     decisionCardWidth - decisionCardPadding * 2 - decisionCardIconSize - decisionCardInnerGap,
   );
-  const popularFoodLabelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
-  const popularFoodButtonHeight = 72 + spacing[1.5] + popularFoodLabelLineHeight * 2;
-  const discoverRailReservedHeight =
-    discoverRailImageHeight +
-    spacing[6] +
-    typography.bodyBold.lineHeight +
-    typography.micro.lineHeight +
-    typography.price.lineHeight;
   const bottomTabVisibleHeight = componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]);
   const fallbackDiscoverViewportHeight = Math.max(0, screenHeight - insets.top);
   const effectiveDiscoverViewportHeight = discoverViewportHeight || fallbackDiscoverViewportHeight;
@@ -1395,8 +1344,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   );
   const dietaryAutoOnRef = useRef(profile.dietaryPreferences.length > 0);
   useEffect(() => {
+    if (profile.dietaryPreferences.length === 0) {
+      // No needs left (cleared in Settings): the chip filters nothing, and the next save
+      // switches it on again.
+      dietaryAutoOnRef.current = false;
+      setActiveDiscoverChipIds((ids) =>
+        ids.includes("dietary") ? ids.filter((id) => id !== "dietary") : ids,
+      );
+      return;
+    }
     // The profile can finish loading after the first render; switch it on once, never again.
-    if (dietaryAutoOnRef.current || profile.dietaryPreferences.length === 0) return;
+    if (dietaryAutoOnRef.current) return;
     dietaryAutoOnRef.current = true;
     setActiveDiscoverChipIds((ids) => (ids.includes("dietary") ? ids : [...ids, "dietary"]));
   }, [profile.dietaryPreferences.length]);
@@ -1568,6 +1526,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       : null,
   );
   const currentPlaceId = currentPlace?.id;
+  const discoverFeedKey = [
+    discoverAreaRequest ?? "",
+    discoverGeoCellLatitude,
+    discoverGeoCellLongitude,
+    discoverRadiusMeters ?? "",
+    currentPlaceId ?? "",
+  ].join("|");
   // The area follows the phone: a mall or hawker centre when inside one, else the nearest area,
   // and "Singapore" while location is off.
   const discoverHeaderLabel =
@@ -1626,6 +1591,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       );
       if (discoveryFeedResult.status === "fulfilled") {
         setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
+        setLoadedDiscoverFeedKey(discoverFeedKey);
       } else {
         reportError(discoveryFeedResult.reason, { surface: "discover_home_feed" });
         setDiscoverLoadError(true);
@@ -1639,6 +1605,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     };
   }, [
     discoverAreaRequest,
+    discoverFeedKey,
     discoverRadiusMeters,
     discoverGeoCellLatitude,
     discoverGeoCellLongitude,
@@ -1675,15 +1642,20 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     }, []),
   );
   const sortedChips = useMemo(() => {
-    const baseChips = [{ id: "dietary" as const, label: "Dietary needs" }, ...INTENT_CHIPS];
+    // The first chip names the diner's saved needs; a saved halal need already is the Halal chip.
+    const intentChips = profile.dietaryPreferences.includes("halal")
+      ? INTENT_CHIPS.filter((chip) => chip.id !== "halal")
+      : INTENT_CHIPS;
+    const baseChips = [
+      { id: "dietary" as const, label: getDietaryChipLabel(profile.dietaryPreferences) },
+      ...intentChips,
+    ];
     // "Late night" only shows from 21:00 to 03:59, and then leads the row.
     if (isLateNightHour(currentHour)) {
       return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
     return baseChips.filter((chip) => chip.id !== "late");
-  }, [currentHour]);
-
-  // Tab press-to-top behavior intentionally disabled for bottom navigation.
+  }, [currentHour, profile.dietaryPreferences]);
 
   const areaVenues = useMemo(() => {
     if (isSupabaseDataSource) {
@@ -1727,13 +1699,22 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [allDiscoverVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
   const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
   const isLateNightMakanVisible = isLateNightHour(currentHour);
-  const discoverDietaryFlags = useMemo(
-    () =>
-      profile.dietaryPreferences.length ? profile.dietaryPreferences : DISCOVER_DIETARY_FALLBACKS,
-    [profile.dietaryPreferences],
-  );
   const toggleDiscoverChip = useCallback(
     (chipId: DiscoverChipId) => {
+      if (chipId === "dietary" && profile.dietaryPreferences.length === 0) {
+        // Nothing to filter by yet: the chip is the way to set dietary needs.
+        trackAnalyticsEvent("discover_chip_tapped", {
+          surface: "home",
+          chip: chipId,
+          selected: false,
+          opened_settings: true,
+        });
+        navigation.navigate("OnboardingStack", {
+          screen: "TasteQuiz",
+          params: { mode: "profile", initialPhase: "dietary", source: "home" },
+        });
+        return;
+      }
       const wasActive = activeDiscoverChipIds.includes(chipId);
       const nextChipIds = wasActive
         ? activeDiscoverChipIds.filter((value) => value !== chipId)
@@ -1761,7 +1742,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
       setActiveDiscoverChipIds(nextChipIds);
     },
-    [activeDiscoverChipIds, recordTasteInteraction],
+    [activeDiscoverChipIds, navigation, profile.dietaryPreferences.length, recordTasteInteraction],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {
@@ -1790,10 +1771,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       return Array.from(deferredDiscoverChipSet).every((chipId) => {
         if (chipId === "dietary") {
           if (!dish) return false;
-          // Saved needs must all hold; without saved needs, any common diet flag counts.
-          return profile.dietaryPreferences.length
-            ? discoverDietaryFlags.every((flag) => dish.dietaryFlags.includes(flag))
-            : discoverDietaryFlags.some((flag) => dish.dietaryFlags.includes(flag));
+          // Saved needs must all hold.
+          return profile.dietaryPreferences.every((flag) => dish.dietaryFlags.includes(flag));
         }
         if (chipId === "halal") {
           // Structured flag only: text matching let "non-halal" through.
@@ -1809,17 +1788,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           return isLateNightDish(dish, getVenueHours(dish?.venueId));
         }
         if (chipId === "cheap") {
-          return Boolean(dish && dish.price < 8);
+          return Boolean(dish && dish.price > 0 && dish.price < HOME_CHEAP_PRICE_LIMIT);
         }
         return true;
       });
     },
-    [
-      deferredDiscoverChipSet,
-      discoverDietaryFlags,
-      getVenueHours,
-      profile.dietaryPreferences.length,
-    ],
+    [deferredDiscoverChipSet, getVenueHours, profile.dietaryPreferences],
   );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
   const discoverBaseBites = useMemo(() => {
@@ -1891,36 +1865,66 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       ),
     [getBiteDish, matchesDiscoverChipSelection],
   );
+  // A chip filters the whole nearby pool first; only then do the cards get cut to the rail size.
   const quickBiteCards = useMemo(
     () =>
       isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredQuickBiteCards)
+        ? filterDiscoverBites(discoverBiteCollections.quickBites).slice(0, 6)
         : unfilteredQuickBiteCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredQuickBiteCards],
+    [
+      discoverBiteCollections.quickBites,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      unfilteredQuickBiteCards,
+    ],
   );
   const trendingCards = useMemo(
     () =>
-      isDiscoverFiltering ? filterDiscoverBites(unfilteredTrendingCards) : unfilteredTrendingCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredTrendingCards],
+      isDiscoverFiltering
+        ? filterDiscoverBites(discoverBiteCollections.trending).slice(0, 6)
+        : unfilteredTrendingCards,
+    [
+      discoverBiteCollections.trending,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      unfilteredTrendingCards,
+    ],
   );
   const editorChoiceCards = useMemo(
     () =>
       isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredEditorChoiceCards)
+        ? filterDiscoverBites(discoverBiteCollections.editorChoice).slice(0, 6)
         : unfilteredEditorChoiceCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredEditorChoiceCards],
+    [
+      discoverBiteCollections.editorChoice,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      unfilteredEditorChoiceCards,
+    ],
   );
   const budgetCards = useMemo(
     () =>
-      isDiscoverFiltering ? filterDiscoverBites(unfilteredBudgetCards) : unfilteredBudgetCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredBudgetCards],
+      isDiscoverFiltering
+        ? filterDiscoverBites(discoverBiteCollections.budget).slice(0, 6)
+        : unfilteredBudgetCards,
+    [
+      discoverBiteCollections.budget,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      unfilteredBudgetCards,
+    ],
   );
   const lateNightCards = useMemo(
     () =>
       isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredLateNightCards)
+        ? filterDiscoverBites(discoverBiteCollections.lateNight).slice(0, 5)
         : unfilteredLateNightCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredLateNightCards],
+    [
+      discoverBiteCollections.lateNight,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      unfilteredLateNightCards,
+    ],
   );
   // Live builds read the names of saved and reviewed dishes in one batched call (at most 200).
   const familiarDishIdsKey = [
@@ -2015,16 +2019,22 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems.length === 0;
   const showPopularFoodSkeleton = useDelayedLoadingSkeleton(isWaitingForPopularFoodStyles);
   const showPopularFoodFilterSkeleton = isPopularFoodFilterPending;
-  const showInitialDiscoverSkeleton = isSupabaseDataSource && isSupabaseDiscoveryFeedLoading;
+  // Skeletons cover the first read and a new area. A pull-to-refresh of the same area keeps the
+  // cards on screen until the new ones land.
+  const showInitialDiscoverSkeleton =
+    isSupabaseDataSource &&
+    isSupabaseDiscoveryFeedLoading &&
+    (supabaseDiscoveryFeed === null || loadedDiscoverFeedKey !== discoverFeedKey);
   const shouldShowPopularFoodSkeleton =
     showPopularFoodSkeleton || showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
   const showDiscoverFilterRailSkeleton =
     showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
-  // Empty rails collapse instead of each showing its own "nothing found" block; a filter
-  // that matches nothing still shows the filtered empty state. Horizontal rails need a few
-  // dishes to look like a rail, so they wait for MIN_DISCOVER_RAIL_ITEMS.
+  // Empty rails collapse instead of each showing its own "nothing found" block; a filter that
+  // matches nothing shows one page-level empty state instead. Horizontal rails need a few
+  // dishes to look like a rail, so they wait for MIN_DISCOVER_RAIL_ITEMS (one dish is enough
+  // once a filter has narrowed them).
   const shouldRenderDiscoverRail = (count: number, minItems = 1) =>
-    showDiscoverFilterRailSkeleton || count >= minItems || isDiscoverFiltering;
+    showDiscoverFilterRailSkeleton || count >= (isDiscoverFiltering ? 1 : minItems);
   const unfilteredAreaStallCards = useMemo(() => {
     if (isSupabaseDataSource) {
       const dishesByVenueId = new Map(
@@ -2082,7 +2092,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     const nearestChainCards = dedupeNearestVenueCandidates(
       filteredCards,
       (card) => card.venue,
-      (card) => card.topDish?.distanceMeters,
+      (card) => card.venue.distanceMeters ?? card.topDish?.distanceMeters,
     );
 
     // Stalls in the viewer's own building lead; the rest of the area follows once they run out.
@@ -2091,11 +2101,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     return [...nearestChainCards].sort((a, b) => {
       const placeOrder = Number(isInCurrentPlace(b)) - Number(isInCurrentPlace(a));
       if (placeOrder !== 0) return placeOrder;
-      const bScore = (b.topDish?.rating ?? 0) * 100 + (b.topDish?.reviewCount ?? 0);
-      const aScore = (a.topDish?.rating ?? 0) * 100 + (a.topDish?.reviewCount ?? 0);
-      return bScore - aScore;
+      // Open first, then nearest; late at night the closed stalls follow the open ones.
+      return compareHomeStalls(a, b);
     });
-  }, [currentPlaceId, isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredAreaStallCards]);
+    // currentHour re-sorts when Home comes back into focus: open stalls change with the clock.
+  }, [
+    currentHour,
+    currentPlaceId,
+    isDiscoverFiltering,
+    matchesDiscoverChipSelection,
+    unfilteredAreaStallCards,
+  ]);
   const areaStallCards = useMemo(
     () => allAreaStallCards.slice(0, visibleAreaStallCount),
     [allAreaStallCards, visibleAreaStallCount],
@@ -2151,7 +2167,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [isLiveFeedUnavailable, onLiveFeedUnavailable]);
   // Content a diner can act on is on screen (not the first skeleton or an error).
   const hasDiscoverContent = isSupabaseDataSource
-    ? !isSupabaseDiscoveryFeedLoading &&
+    ? !showInitialDiscoverSkeleton &&
       supabaseDiscoveryFeed !== null &&
       !isLiveFeedUnavailable &&
       supabaseFeedVenues.length > 0
@@ -2169,8 +2185,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const areaStallImpressionSentRef = useRef(false);
   const areaStallCount = areaStallCards.length;
   useEffect(() => {
+    if (!isFocused) {
+      areaStallImpressionSentRef.current = false;
+      return;
+    }
     if (
-      !isFocused ||
       showDiscoverFilterRailSkeleton ||
       areaStallCount === 0 ||
       areaStallImpressionSentRef.current
@@ -2203,26 +2222,28 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       : discoverAreaPhrase;
   // Inside a mall: "For you" ranks its dishes by the diner's palate, "What's here" lists its stalls.
   const inMallMode = isUserMode && Boolean(currentPlace);
-  const forYouPicks = useMemo(
-    () =>
-      inMallMode && discoverMode === "forYou"
-        ? rankForYou(areaDishPool, {
-            tasteVector: profile.tasteVector,
-            dietaryFlags: profile.dietaryPreferences,
-            maxDishBudget: profile.maxDishBudget,
-            preferBuildingId: currentPlaceId,
-          })
-        : [],
-    [
-      areaDishPool,
-      currentPlaceId,
-      discoverMode,
-      inMallMode,
-      profile.dietaryPreferences,
-      profile.maxDishBudget,
-      profile.tasteVector,
-    ],
-  );
+  const forYouPicks = useMemo(() => {
+    if (!inMallMode || discoverMode !== "forYou") return [];
+    const picks = rankForYou(areaDishPool, {
+      tasteVector: profile.tasteVector,
+      dietaryFlags: profile.dietaryPreferences,
+      maxDishBudget: profile.maxDishBudget,
+      preferBuildingId: currentPlaceId,
+    });
+    return isDiscoverFiltering
+      ? picks.filter((pick) => matchesDiscoverChipSelection(pick.dish))
+      : picks;
+  }, [
+    areaDishPool,
+    currentPlaceId,
+    discoverMode,
+    inMallMode,
+    isDiscoverFiltering,
+    matchesDiscoverChipSelection,
+    profile.dietaryPreferences,
+    profile.maxDishBudget,
+    profile.tasteVector,
+  ]);
   const hereStalls = useMemo<HereStall[]>(() => {
     if (!inMallMode || discoverMode !== "here") return [];
     const dishesByVenueId = new Map<string, DishDetail[]>();
@@ -2237,8 +2258,51 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         venue: card.venue,
         topDish: card.topDish,
         dishes: dishesByVenueId.get(card.venue.id) ?? (card.topDish ? [card.topDish] : []),
-      }));
-  }, [areaDishPool, currentPlaceId, discoverMode, inMallMode, unfilteredAreaStallCards]);
+      }))
+      .flatMap((stall) => {
+        if (!isDiscoverFiltering) return [stall];
+        // A stall stays when one of its dishes passes the chips, and lists only those.
+        const dishes = stall.dishes.filter((dish) =>
+          matchesDiscoverChipSelection(dish, [stall.venue.name]),
+        );
+        return dishes.length ? [{ ...stall, dishes }] : [];
+      });
+  }, [
+    areaDishPool,
+    currentPlaceId,
+    discoverMode,
+    inMallMode,
+    isDiscoverFiltering,
+    matchesDiscoverChipSelection,
+    unfilteredAreaStallCards,
+  ]);
+  const clearDiscoverFilters = useCallback(() => {
+    trackAnalyticsEvent("home_filters_cleared", {
+      surface: "home",
+      chips: activeDiscoverChipIds.join(","),
+    });
+    setActiveDiscoverChipIds([]);
+  }, [activeDiscoverChipIds]);
+  // Filters that leave nothing anywhere on the page get one explanation and one way out,
+  // not an empty block per section.
+  const isDietaryOnlyFilter =
+    deferredDiscoverChipIds.length === 1 && deferredDiscoverChipIds[0] === "dietary";
+  const filteredEmptyBody = isDietaryOnlyFilter
+    ? `Nothing nearby is confirmed ${getDietaryChipLabel(profile.dietaryPreferences)} yet. More menus are on the way.`
+    : "Try removing a filter.";
+  const filteredEmptyCtaLabel = isDietaryOnlyFilter ? "Show all dishes" : "Clear filters";
+  const isFilteredPageEmpty =
+    isDiscoverFiltering &&
+    !inMallMode &&
+    !showDiscoverFilterRailSkeleton &&
+    popularFoodStyleItems.length === 0 &&
+    trendingCards.length === 0 &&
+    quickBiteCards.length === 0 &&
+    editorChoiceCards.length === 0 &&
+    budgetCards.length === 0 &&
+    (!isLateNightMakanVisible || lateNightCards.length === 0) &&
+    areaStallCards.length === 0 &&
+    stallShowcaseCards.length === 0;
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     trackAnalyticsEvent("decide_for_me_triggered", {
@@ -2428,20 +2492,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       cardWidth: discoverRailCardWidth,
       contentGap: discoverContentGap,
       imageHeight: discoverRailImageHeight,
-      reservedHeight: discoverRailReservedHeight,
       screenWidth,
     }),
-    [
-      discoverContentGap,
-      discoverRailCardWidth,
-      discoverRailImageHeight,
-      discoverRailReservedHeight,
-      screenWidth,
-    ],
+    [discoverContentGap, discoverRailCardWidth, discoverRailImageHeight, screenWidth],
   );
   const discoverRailProps = {
     canSeeAll: canOpenDiscoverCollection,
-    isFiltering: isDiscoverFiltering,
     isLoading: showDiscoverFilterRailSkeleton,
     isVisible: isFocused,
     layout: discoverRailLayout,
@@ -2454,6 +2510,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
@@ -2625,15 +2682,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           onSwipeLockChange={setTabSwipeLocked}
           renderLeftIcon={(chip, isActive) =>
             chip.id === "dietary" ? (
-              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+              <Salad size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "spicy" ? (
               <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "halal" ? (
-              <HalalLogoIcon color={isActive ? palette.orange : themeTints.secondaryText} />
+              // A neutral icon until the MUIS display decision: the Arabic mark read as a certificate.
+              <Drumstick size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "late" ? (
-              <Compass size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+              <Moon size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : (
-              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+              <Tag size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             )
           }
         />
@@ -2648,6 +2706,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
             }
             onOpenSaved={() => navigation.navigate("Favourites")}
+          />
+        ) : null}
+
+        {isFilteredPageEmpty ? (
+          <EmptyState
+            title="No matching results"
+            body={filteredEmptyBody}
+            icon={<SearchX color={palette.textSecondary} size={28} />}
+            ctaLabel={filteredEmptyCtaLabel}
+            onPress={clearDiscoverFilters}
           />
         ) : null}
 
@@ -2684,8 +2752,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   />
                 ))}
               </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={popularFoodButtonHeight} />
             ) : null}
           </View>
         )}
@@ -2832,9 +2898,20 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <EmptyState
                   title="Nothing to suggest yet"
                   body="Try What's here, or adjust your dietary needs."
+                  {...(isDiscoverFiltering
+                    ? { ctaLabel: "Clear filters", onPress: clearDiscoverFilters }
+                    : {})}
                 />
               )}
             </View>
+          ) : isDiscoverFiltering && hereStalls.length === 0 ? (
+            <EmptyState
+              title="No matching results"
+              body="No stalls here match your filters."
+              icon={<SearchX color={palette.textSecondary} size={28} />}
+              ctaLabel="Clear filters"
+              onPress={clearDiscoverFilters}
+            />
           ) : (
             <WhatsHerePanel
               placeName={currentPlace.name}
@@ -2859,7 +2936,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           <>
             <TrendingList
               title={`Trending ${trendingAreaPhrase}`}
-              bites={trendingListBites}
+              bites={showInitialDiscoverSkeleton ? [] : trendingListBites}
               onOpen={(bite) => {
                 trackAnalyticsEvent("discover_card_opened", {
                   surface: "home",
@@ -3140,31 +3217,58 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                               alignItems: "center",
                               borderWidth: themeTints.isDark ? 0 : 1,
                               borderColor: palette.border,
+                              // Closed stalls are dimmed, not hidden: they still open.
+                              opacity: isStallClosed(venue) ? 0.7 : 1,
                             },
                           ]}
                         >
                           <DiscoverStallThumbnail venue={venue} />
                           <View style={{ flex: 1, gap: 2 }}>
-                            <AppText
-                              variant="bodySmall"
-                              style={{ fontWeight: "800", color: themeTints.text }}
-                              numberOfLines={1}
+                            <View
+                              style={{
+                                alignItems: "center",
+                                flexDirection: "row",
+                                gap: spacing[2],
+                              }}
                             >
-                              {venue.name}
-                            </AppText>
+                              <AppText
+                                variant="bodySmall"
+                                style={{ fontWeight: "800", color: themeTints.text, flexShrink: 1 }}
+                                numberOfLines={1}
+                              >
+                                {venue.name}
+                              </AppText>
+                              {topDish && topDish.reviewCount > 0 ? (
+                                <View
+                                  accessibilityLabel={`Rated ${topDish.rating.toFixed(1)}`}
+                                  style={{
+                                    alignItems: "center",
+                                    backgroundColor: palette.bgSoft,
+                                    borderRadius: radii.pill,
+                                    flexDirection: "row",
+                                    flexShrink: 0,
+                                    gap: 2,
+                                    paddingHorizontal: spacing[2],
+                                    paddingVertical: 2,
+                                  }}
+                                >
+                                  <Star
+                                    color={palette.starStroke}
+                                    size={11}
+                                    fill={palette.starFill}
+                                  />
+                                  <AppText variant="micro" style={{ color: themeTints.text }}>
+                                    {topDish.rating.toFixed(1)}
+                                  </AppText>
+                                </View>
+                              ) : null}
+                            </View>
                             <AppText
                               variant="micro"
                               style={{ color: themeTints.secondaryText }}
                               numberOfLines={1}
                             >
-                              {[
-                                getStallRowOpenLabel(venue),
-                                topDish && topDish.reviewCount > 0
-                                  ? `★ ${topDish.rating.toFixed(1)}`
-                                  : undefined,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
+                              {[getStallRowOpenLabel(venue)].filter(Boolean).join(" · ")}
                             </AppText>
                             {/* Where to walk to: the building and unit get a line of their own so
                                 the building is never the part that is cut off. */}
@@ -3191,11 +3295,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                         </Pressable>
                       </Fragment>
                     ))
-                  ) : isDiscoverFiltering ? (
-                    <FilteredResultsEmptyState
-                      preserveHeight
-                      minHeight={discoverRailReservedHeight}
-                    />
                   ) : null}
                   {hasMoreAreaStalls ? (
                     <Pressable

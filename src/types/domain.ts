@@ -169,6 +169,8 @@ export interface VenueSummary {
   /** The stall's own map pin (a merchant-set pin, or the stored venue coordinate). */
   latitude?: number;
   longitude?: number;
+  /** Metres from the search point; set only on stalls read from the discovery feed. */
+  distanceMeters?: number;
 }
 
 export type UserStallSubmissionStatus =

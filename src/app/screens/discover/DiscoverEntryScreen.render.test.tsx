@@ -4,7 +4,7 @@
 // get_discovery_feed_by_location returns. Run with `node scripts/test-render.mjs <file>`.
 import assert from "node:assert/strict";
 import test, { afterEach, before, beforeEach } from "node:test";
-import { createElement } from "react";
+import { act, createElement } from "react";
 
 import { installFakeSupabase } from "@/test/supabase/appClient";
 
@@ -393,4 +393,331 @@ test("HOME-X7: QuickBites on Supabase lists the live feed only and never reads t
   assert.match(view.text(), /Chicken Rice/);
   assert.equal(fake.callsTo("get_discovery_feed_by_location").length, 1);
   assert.deepEqual(fullTableReads(), []);
+});
+
+// ---- Round four, phase 1 (home-plan.md): filters, stall rows, refresh, tab press, impressions.
+
+/** Prod-shaped row: the stall has no menu yet (26 of 29,611 prod venues have dishes). */
+function coldRow(index: number, overrides: Record<string, unknown> = {}) {
+  return feedRow(index, {
+    top_dish_id: null,
+    top_dish_name: null,
+    top_dish_image: null,
+    top_dish_rating: null,
+    top_dish_review_count: 0,
+    top_dish_price: null,
+    operating_hours: null,
+    ...overrides,
+  });
+}
+
+/** A navigation whose focus, blur and tab-press events the test fires itself. */
+function eventfulNavigation() {
+  const listeners = new Map<string, Set<(event: unknown) => void>>();
+  let focused = true;
+  const navigation = Object.assign(m.renderKit.createFakeNavigation(), {
+    isFocused: () => focused,
+    addListener: (type: string, listener: (event: unknown) => void) => {
+      const set = listeners.get(type) ?? new Set();
+      set.add(listener);
+      listeners.set(type, set);
+      return () => set.delete(listener);
+    },
+    getState: () => ({
+      index: 0,
+      key: "tabs",
+      routeNames: ["Test"],
+      routes: [{ key: "test-route", name: "Test" }],
+      stale: false as const,
+      type: "tab",
+    }),
+  });
+  const emit = (type: string, event: unknown = { defaultPrevented: false }) => {
+    for (const listener of [...(listeners.get(type) ?? [])]) listener(event);
+  };
+  return {
+    navigation,
+    setFocused: async (next: boolean) => {
+      focused = next;
+      await act(async () => emit(next ? "focus" : "blur"));
+    },
+    pressTab: async () => {
+      await act(async () => emit("tabPress"));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    },
+  };
+}
+
+/** Calls the ScrollView's onRefresh, the way a pull on a phone would. */
+async function pullToRefresh(host: Element) {
+  const fiberKey = Object.keys(host).find((key) => key.startsWith("__reactFiber$"))!;
+  let fiber = (host as unknown as Record<string, unknown>)[fiberKey] as {
+    memoizedProps?: { refreshControl?: { props: { onRefresh: () => void } } };
+    return: unknown;
+  } | null;
+  while (fiber) {
+    const refreshControl = fiber.memoizedProps?.refreshControl;
+    if (refreshControl) {
+      await act(async () => refreshControl.props.onRefresh());
+      return;
+    }
+    fiber = fiber.return as typeof fiber;
+  }
+  throw new Error("Home has no refreshControl");
+}
+
+test("R4-B1: a chip filters the whole nearby pool, not just the first 6 cards", async () => {
+  const rows = Array.from({ length: 10 }, (_, i) => feedRow(i + 1, { top_dish_review_count: 12 }));
+  serveLiveFeed(rows);
+  // Only the 9th stall's dish is halal: it is past the 6-card slice of "Dishes near you".
+  fake.tables.dish_dietary_flags = () => ({
+    data: [{ dish_id: "dish-9", dietary_flag_id: HALAL_FLAG_ID }],
+    error: null,
+  });
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Dish 9/, "the halal dish nearby should show under Halal");
+});
+
+test("R4-B3: a stall that closed earlier today reads 'Closed', not 'Closed · Closed for today'", async () => {
+  serveLiveFeed([feedRow(1, { operating_hours: "Mon-Sun 00:00-00:01" }), feedRow(2), feedRow(3)]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.doesNotMatch(view.text(), /Closed · Closed for today/);
+  assert.match(view.text(), /Closed/);
+});
+
+test("R4-B4: stalls nearby are ordered nearest first when nobody has rated them", async () => {
+  serveLiveFeed([
+    coldRow(1, { distance_meters: 900, venue_name: "Zeta Far Stall" }),
+    coldRow(2, { distance_meters: 50, venue_name: "Alpha Close Stall" }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(
+    text.indexOf("Alpha Close Stall") < text.indexOf("Zeta Far Stall"),
+    "nearest stall should come first",
+  );
+});
+
+test("H4-6: open stalls come before closed ones even when the closed one is nearer, and closed rows are dimmed", async () => {
+  serveLiveFeed([
+    coldRow(1, { distance_meters: 50, venue_name: "Near Closed Stall", is_open: false }),
+    coldRow(2, {
+      distance_meters: 900,
+      venue_name: "Far Open Stall",
+      operating_hours: "Mon-Sun 24 hours",
+    }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Far Open Stall") < text.indexOf("Near Closed Stall"));
+  const closedRow = view.findByLabel("Open Near Closed Stall details") as HTMLElement;
+  assert.equal(closedRow.style.opacity, "0.7");
+});
+
+test("H4-16: a stall's rating sits in its own pill, apart from the open state", async () => {
+  serveLiveFeed([feedRow(1, { operating_hours: "Mon-Sun 24 hours" }), feedRow(2), feedRow(3)]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByLabel("Rated 4.5"), "a rating pill is on the stall row");
+  assert.doesNotMatch(view.text(), /Open · Open 24 hours ·\s*★/);
+});
+
+test("R4-B5: 'No matching results' is one page-level state with a one-tap way to clear the filters", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Spicy"));
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  const matches = view.text().match(/No matching results/g) ?? [];
+  assert.equal(matches.length, 1, "one empty state for the page, not one per section");
+  const clear = view.findByLabel(/Clear (all )?filters/);
+  assert.ok(clear, "a Clear filters button should be offered");
+  await view.press(clear);
+  assert.doesNotMatch(view.text(), /No matching results/);
+  assert.match(view.text(), /Dishes near you/);
+  const cleared = m.analytics
+    .getTrackedAnalyticsEvents()
+    .filter((event) => event.event === "home_filters_cleared");
+  assert.equal(cleared.length, 1);
+});
+
+test("H4-8: rails the filter empties collapse instead of each showing an empty block", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  // One halal dish nearby: its rail and stall stay; nothing else shows "No matching results".
+  assert.doesNotMatch(view.text(), /No matching results/);
+  assert.match(view.text(), /Nasi Padang/);
+});
+
+test("H4-9: the Value chip is 'Under S$5' and keeps dishes under 5 dollars", async () => {
+  serveLiveFeed([
+    feedRow(1, { top_dish_price: 4, top_dish_name: "Cheap Noodles" }),
+    feedRow(2, { top_dish_price: 4.5, top_dish_name: "Cheap Rice" }),
+    feedRow(3, { top_dish_price: 4.8, top_dish_name: "Cheap Soup" }),
+    feedRow(4, { top_dish_price: 7, top_dish_name: "Pricey Plate" }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(view.findByLabel("Value"), null);
+  await view.press(view.findByLabel("Under S$5"));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Cheap Noodles/);
+  assert.doesNotMatch(view.text(), /Pricey Plate/);
+});
+
+test("H4-12: the Halal chip uses no Arabic mark that could read as a certificate", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByLabel("Halal"));
+  assert.doesNotMatch(view.html(), /حلال/);
+});
+
+test("H4-10: with no saved needs the Dietary needs chip opens the dietary settings", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Dietary needs"));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: [
+      "OnboardingStack",
+      { screen: "TasteQuiz", params: { mode: "profile", initialPhase: "dietary", source: "home" } },
+    ],
+  });
+  // It did not switch a filter on behind the diner's back.
+  assert.doesNotMatch(view.text(), /No matching results/);
+});
+
+test("H4-10: saved needs name the chip, and a sparse feed explains itself instead of leaving Home empty", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: ["halal", "vegetarian", "vegan"] },
+  }));
+  serveLiveFeed();
+  // Nothing nearby carries a dietary flag yet.
+  fake.tables.dish_dietary_flags = () => ({ data: [], error: null });
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByLabel("Halal · Vegetarian +1"), "the chip names the saved needs");
+  assert.match(view.text(), /No matching results/);
+  assert.match(view.text(), /Nothing nearby is confirmed Halal · Vegetarian \+1 yet/);
+  const showAll = view.findByLabel("Show all dishes");
+  assert.ok(showAll, "the way out is on screen");
+  await view.press(showAll);
+  assert.match(view.text(), /Dishes near you/);
+});
+
+test("H4-10: clearing every saved need in Settings switches the dietary filter off", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: ["halal"] },
+  }));
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.doesNotMatch(view.text(), /Chicken Rice/, "halal only while the need is saved");
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: [] },
+  }));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Chicken Rice/);
+});
+
+test("H4-11: in a mall the chips filter 'For you' and 'What's here' too", async () => {
+  serveLiveFeed();
+  setLocation({ permission: "granted" });
+  const service = m.provider.getCatalogRawService() as unknown as Record<string, unknown>;
+  service.listPlaces = async () => [
+    {
+      id: "building-1",
+      name: "Maxwell Food Centre",
+      venueCount: 4,
+      latitude: DEFAULT_LOCATION.latitude,
+      longitude: DEFAULT_LOCATION.longitude,
+    },
+  ];
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /For you at Maxwell Food Centre/);
+  assert.match(view.text(), /Chicken Rice/);
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Nasi Padang/);
+  assert.doesNotMatch(view.text(), /Chicken Rice/, "For you drops dishes the chip rules out");
+  await view.press(view.findByLabel(/What's here/));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Hajjah Mariam/);
+  assert.doesNotMatch(view.text(), /Tian Tian/, "What's here lists only stalls with a halal dish");
+});
+
+test("H4-22: pulling to refresh keeps the cards on screen until the new ones land", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Hajjah Mariam/);
+  let release: () => void = () => undefined;
+  fake.rpc.get_discovery_feed_by_location = () =>
+    new Promise((resolve) => {
+      release = () =>
+        resolve({
+          data: [feedRow(1, { venue_name: "Fresh Stall", top_dish_name: "Fresh Dish" })],
+          error: null,
+        });
+    });
+  await pullToRefresh(view.findByText("Hawker classics")!);
+  await view.settle();
+  assert.match(view.text(), /Hajjah Mariam/, "the old cards stay during the refresh");
+  assert.match(view.text(), /Dishes near you/);
+  release();
+  await view.settle();
+  assert.match(view.text(), /Fresh Stall/);
+  assert.doesNotMatch(view.text(), /Hajjah Mariam/);
+});
+
+test("H4-22: a different area still shows the loading skeleton, not the old area's cards", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Hajjah Mariam/);
+  fake.rpc.get_discovery_feed_by_location = () => new Promise(() => undefined);
+  await act(async () => {
+    setLocation({
+      permission: "granted",
+      currentLocation: { latitude: 1.35, longitude: 103.95 },
+    });
+  });
+  await view.settle();
+  assert.doesNotMatch(view.text(), /Hajjah Mariam/);
+});
+
+test("H4-23: pressing the Home tab scrolls the page back to the top", async () => {
+  serveLiveFeed();
+  const scrolls: unknown[] = [];
+  const events = eventfulNavigation();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen), {
+    navigation: events.navigation,
+  });
+  for (const element of Array.from(document.body.querySelectorAll("*"))) {
+    const node = element as unknown as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(node, "scrollTo")) {
+      node.scrollTo = (options: unknown) => scrolls.push(options);
+    }
+  }
+  await events.pressTab();
+  assert.ok(
+    scrolls.some((options) => (options as { y?: number })?.y === 0),
+    "tabPress calls scrollTo({ y: 0 })",
+  );
+  assert.ok(view.findByText("Dishes near you"));
+});
+
+test("H4-25: a rail counts one impression per visit, so leaving Home and coming back counts again", async () => {
+  serveLiveFeed();
+  const events = eventfulNavigation();
+  await m.renderKit.render(createElement(m.DiscoverEntryScreen), { navigation: events.navigation });
+  const impressions = () =>
+    m.analytics
+      .getTrackedAnalyticsEvents()
+      .filter((event) => event.event === "discover_rail_impression");
+  const railImpressions = () =>
+    impressions().filter((event) => event.properties?.rail === "quickBites");
+  assert.equal(railImpressions().length, 1);
+  await events.setFocused(false);
+  await events.setFocused(true);
+  assert.equal(railImpressions().length, 2);
+  assert.equal(impressions().filter((event) => event.properties?.rail === "area_stalls").length, 2);
 });
