@@ -31,6 +31,10 @@ import {
   InlineBanner,
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { useUIStore } from "@/store/useUIStore";
+import { ClosurePanel, type ClosureChoice } from "@/components/merchant/ClosurePanel";
+import { getClosureLabel } from "@/features/merchant/closure";
+import { formatCount } from "@/features/merchant/performanceFormat";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { OutletSwitcher } from "@/components/merchant/OutletSwitcher";
 import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
@@ -320,6 +324,10 @@ export function MerchantDashboardScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const showToast = useUIStore((state) => state.showToast);
+  const updateOutletProfile = useMerchantStore((state) => state.updateOutletProfile);
+  const [isClosurePanelOpen, setIsClosurePanelOpen] = useState(false);
+  const [isSavingClosure, setIsSavingClosure] = useState(false);
   // Only the newest request may write state: a slow "30 Days" reply must not overwrite "Today".
   const latestRequestId = useRef(0);
   const prefetchMerchantRoute = useCallback(
@@ -328,6 +336,36 @@ export function MerchantDashboardScreen() {
       preloadRoute(navigation, routeName);
     },
     [activeOutlet?.id, activeOutlet?.merchantAccountId, navigation],
+  );
+
+  // "Pause store": a closure replaces any free-text closure, and reopening clears both.
+  const saveClosure = useCallback(
+    async (choice: ClosureChoice) => {
+      if (!activeOutlet) return;
+      setIsSavingClosure(true);
+      try {
+        const updated = await getHungryService().merchant.updateBusinessProfile(activeOutlet.id, {
+          closedUntil: choice.kind === "open" ? null : choice.closedUntil,
+          temporaryClosure: "",
+        });
+        updateOutletProfile(activeOutlet.id, updated);
+        trackMerchantEvent("merchant_closure_set", activeOutlet.id, { kind: choice.kind });
+        showToast({
+          message:
+            choice.kind === "open"
+              ? "You are open again. Diners see your normal hours."
+              : `Done. Diners see "${getClosureLabel(choice.closedUntil) ?? "Closed"}".`,
+          tone: "success",
+        });
+        setIsClosurePanelOpen(false);
+      } catch (e) {
+        reportError(e, { screen: "MerchantDashboard", action: "set_closure" });
+        showToast({ message: "Couldn't update your status. Try again.", tone: "error" });
+      } finally {
+        setIsSavingClosure(false);
+      }
+    },
+    [activeOutlet, showToast, updateOutletProfile],
   );
 
   const activeOutletId = activeOutlet?.id;
@@ -457,7 +495,7 @@ export function MerchantDashboardScreen() {
 
   // One headline number, named the same as on Performance: profile visits.
   const views = analytics ? (
-    analytics.profileVisits.toLocaleString()
+    formatCount(analytics.profileVisits)
   ) : (
     <Skeleton height={24} width={80} borderRadius={radii.sm} />
   );
@@ -483,7 +521,8 @@ export function MerchantDashboardScreen() {
   );
   const outletName = activeOutlet?.name?.trim() || "Your stall";
   const outletStatus = getMerchantOutletStatus(activeOutlet);
-  const outletStatusLabel = getMerchantOutletStatusLabel(outletStatus);
+  const statusText =
+    getClosureLabel(activeOutlet?.closedUntil) ?? getMerchantOutletStatusLabel(outletStatus);
   const statusColor =
     outletStatus === "open" || outletStatus === "live"
       ? palette.success
@@ -533,7 +572,11 @@ export function MerchantDashboardScreen() {
           </View>
         </View>
 
-        <View
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isClosurePanelOpen }}
+          accessibilityLabel={`Stall status: ${statusText}. ${isClosurePanelOpen ? "Hide" : "Change"} status`}
+          onPress={() => setIsClosurePanelOpen((open) => !open)}
           style={{
             alignSelf: "flex-start",
             backgroundColor: statusBg,
@@ -543,13 +586,22 @@ export function MerchantDashboardScreen() {
             flexDirection: "row",
             alignItems: "center",
             gap: spacing[1.5],
+            minHeight: 44,
           }}
         >
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
           <AppText variant="bodySmallBold" style={{ color: statusColor }}>
-            {outletStatusLabel}
+            {statusText}
           </AppText>
-        </View>
+          <ChevronRight
+            color={statusColor}
+            size={16}
+            style={{ transform: [{ rotate: isClosurePanelOpen ? "-90deg" : "90deg" }] }}
+          />
+        </Pressable>
+        {isClosurePanelOpen && activeOutlet ? (
+          <ClosurePanel outlet={activeOutlet} isSaving={isSavingClosure} onChoose={saveClosure} />
+        ) : null}
 
         {/* Date Range Selector */}
         <FilterChipRail

@@ -11,6 +11,7 @@ import { clearExperimentOverrides, setExperimentOverride } from "@/lib/experimen
 import {
   decideInitialRadiusMeters,
   formatOpenLabel,
+  getVenueOpenStateNow,
   isVenueOpenNow,
   keepScoreOrder,
   minutesUntilOpening,
@@ -60,6 +61,37 @@ test("Decide for Me skips a stall that closed hours ago", () => {
   );
   assert.equal(result.onlyClosed, false);
   assert.equal(result.openStateByVenueId.get(supper.id)?.status, "open");
+});
+
+test("MERCH-R4 a paused stall is closed now whatever its hours say, and opens again after the date", () => {
+  const supper = venue("paused-supper", "Mon-Sun 6pm-11:30pm");
+  // Closed today (until the end of Tuesday in Singapore): the hours say open, the pause wins.
+  const closedToday: VenueSummary = { ...supper, closedUntil: "2026-10-20T16:00:00.000Z" };
+  assert.deepEqual(getVenueOpenStateNow(closedToday, TEN_PM_SGT), {
+    status: "closed",
+    detail: "Closed today",
+  });
+  assert.equal(isVenueOpenNow(closedToday, TEN_PM_SGT), false);
+  const untilDate: VenueSummary = { ...supper, closedUntil: "2026-10-24T16:00:00.000Z" };
+  assert.equal(getVenueOpenStateNow(untilDate, TEN_PM_SGT).detail, "Reopens 25 Oct");
+  // Once the date has passed the stall is open as its hours say.
+  const expired: VenueSummary = { ...supper, closedUntil: "2026-10-20T13:00:00.000Z" };
+  assert.equal(getVenueOpenStateNow(expired, TEN_PM_SGT).status, "open");
+
+  const open = venue("open-supper", "Mon-Sun 6pm-11:30pm");
+  const result = preferOpenStalls(
+    [dish("paused-dish", supper.id), dish("open-dish", open.id)],
+    new Map([
+      [supper.id, closedToday],
+      [open.id, open],
+    ]),
+    TEN_PM_SGT,
+  );
+  assert.deepEqual(
+    result.candidates.map((candidate) => candidate.id),
+    ["open-dish"],
+    "Decide for Me never sends a diner to a paused stall while another is open",
+  );
 });
 
 test("Decide for Me keeps stalls with unknown hours after open ones", () => {

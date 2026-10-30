@@ -15,6 +15,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import {
   AppText,
   Button,
+  ChipGroup,
   IconButton,
   FilterChipRail,
   Input,
@@ -29,6 +30,14 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { reportError } from "@/lib/monitoring/reportError";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
+import {
+  REPLY_SUGGESTION_LABELS,
+  buildReplySuggestion,
+  canFillReplySuggestion,
+  orderReplySuggestionKinds,
+  type ReplySuggestionKind,
+} from "@/features/merchant/replySuggestions";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
@@ -37,6 +46,8 @@ type InboxFilter = InteractionType | "all" | "unreplied";
 
 /** Reviews loaded per page; "Load more" fetches the next older page. */
 const INBOX_PAGE_SIZE = 30;
+/** A quoted review longer than this gets a More / Less toggle in the reply composer. */
+const REVIEW_QUOTE_EXPAND_FROM = 160;
 
 // The inbox is fed by reviews only; comments and mentions are not collected yet.
 const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
@@ -636,8 +647,18 @@ function ReplyComposer({
   const [text, setText] = useState(initialText);
   const nearReplyLimit = text.length >= MERCHANT_REPLY_MAX_LENGTH * 0.9;
   const [isSending, setIsSending] = useState(false);
+  // Exposure is the composer opening on a review with no reply yet: the only place chips show.
+  const suggestionsVariant = useExperimentVariant("merchant_reply_suggestions_v1", {
+    enabled: !interaction.reply,
+  });
+  const showSuggestions = !interaction.reply && suggestionsVariant === "chips";
+  const [suggestion, setSuggestion] = useState<{
+    kind: ReplySuggestionKind;
+    text: string;
+  } | null>(null);
   // Its own dialog: the composer is a Modal, and a dialog from the screen would sit behind it.
   const { showAlert, dialog } = useMerchantDialog();
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   // A tap on the backdrop or the Android back button must not throw away a typed reply.
   const requestClose = () => {
@@ -662,6 +683,13 @@ function ReplyComposer({
         useMerchantStore.getState().activeOutletId ?? undefined,
         { interaction_type: interaction.type },
       );
+      if (suggestion) {
+        trackMerchantEvent(
+          "merchant_reply_suggestion_used",
+          useMerchantStore.getState().activeOutletId ?? undefined,
+          { kind: suggestion.kind, edited: text !== suggestion.text },
+        );
+      }
       onSent(text);
     } catch (e) {
       reportError(e, { screen: "CustomerInbox", action: "send_reply" });
@@ -713,6 +741,79 @@ function ReplyComposer({
               onPress={requestClose}
             />
           </View>
+
+          {/* The review being answered stays in view while typing. */}
+          <View
+            accessible
+            accessibilityLabel={`Review by ${interaction.authorName}${
+              interaction.rating ? `, ${interaction.rating} out of 5` : ""
+            }: ${interaction.text}`}
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: componentRadii.card,
+              gap: spacing[1],
+              marginBottom: spacing[3],
+              padding: spacing[3],
+            }}
+          >
+            {typeof interaction.rating === "number" && interaction.rating > 0 ? (
+              <View style={{ flexDirection: "row", gap: 2 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={12}
+                    color={star <= interaction.rating! ? palette.starStroke : palette.border}
+                    fill={star <= interaction.rating! ? palette.starFill : "transparent"}
+                  />
+                ))}
+              </View>
+            ) : null}
+            <AppText variant="bodySmall" numberOfLines={reviewExpanded ? undefined : 4}>
+              {interaction.text}
+            </AppText>
+            {interaction.text.length > REVIEW_QUOTE_EXPAND_FROM ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  reviewExpanded ? "Show less of the review" : "Show the full review"
+                }
+                hitSlop={8}
+                onPress={() => setReviewExpanded((open) => !open)}
+              >
+                <AppText variant="bodySmall" tone="secondary">
+                  {reviewExpanded ? "Less" : "More"}
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {showSuggestions ? (
+            <View style={{ marginBottom: spacing[3] }}>
+              <ChipGroup
+                options={orderReplySuggestionKinds(interaction.rating).map((kind) => ({
+                  id: kind,
+                  label: REPLY_SUGGESTION_LABELS[kind],
+                }))}
+                selectedIds={suggestion ? [suggestion.kind] : []}
+                onSelect={(kind) => {
+                  const next = buildReplySuggestion(kind, interaction.authorName);
+                  const fill = () => {
+                    setText(next);
+                    setSuggestion({ kind, text: next });
+                  };
+                  // Words the merchant typed are never replaced without asking.
+                  if (canFillReplySuggestion(text, suggestion?.text ?? null)) {
+                    fill();
+                    return;
+                  }
+                  showAlert("Replace your reply?", "The suggestion will replace what you typed.", [
+                    { text: "Keep mine", style: "cancel" },
+                    { text: "Replace", onPress: fill },
+                  ]);
+                }}
+              />
+            </View>
+          ) : null}
 
           <Input
             accessibilityLabel="Your public reply"

@@ -13,6 +13,7 @@ import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { registerForStallAlerts } from "@/lib/notifications/push";
 import type { MerchantNotification, MerchantWeeklySummary } from "@/types/domain";
 import { WEB_LINKS } from "@/constants/links";
+import { formatCount } from "@/features/merchant/performanceFormat";
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import {
   formatAverageRating,
@@ -220,7 +221,7 @@ export function MerchantSettingsScreen() {
             {weeklySummary ? (
               <View style={{ gap: spacing[1] }}>
                 <AppText variant="bodyBold">
-                  {weeklySummary.totalViews.toLocaleString()} views in the last 7 days
+                  {formatCount(weeklySummary.totalViews)} views in the last 7 days
                 </AppText>
                 <AppText variant="bodySmall" tone="muted">
                   {formatReviewCountLabel(weeklySummary.newReviews, "in the last 7 days", {

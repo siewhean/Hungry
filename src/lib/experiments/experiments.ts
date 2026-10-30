@@ -564,6 +564,26 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["discover_search_opened", "decide_for_me_triggered"],
     minSamplePerArm: 1600,
   },
+  /**
+   * Reply composer: three tone chips (Thank, Apologise, Invite back) that fill an editable
+   * starting reply, against the empty composer. Read in ReplyComposer when it opens on a review
+   * that has no reply yet. Draft until the Merchant Centre ships to production.
+   */
+  merchant_reply_suggestions_v1: {
+    variants: ["control", "chips"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Suggested starting replies raise how many reviews get a reply and shorten the time to reply, as Google Business Profile's suggested replies do.",
+    primaryMetric: "merchant_customer_reply_sent",
+    guardrailMetrics: [
+      "merchant_customer_reply_removed",
+      "merchant_reply_suggestion_used",
+      "merchant_customer_interaction_reported",
+    ],
+    minSamplePerArm: 400,
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

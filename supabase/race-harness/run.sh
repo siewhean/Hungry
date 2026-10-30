@@ -82,6 +82,23 @@ awk '/^create or replace function app_private.set_profile_favourite_dishes/{p=1}
   | PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -v ON_ERROR_STOP=1 -d after >/dev/null \
   || { echo "could not load set_profile_favourite_dishes" >&2; exit 2; }
 
+# Featured dish cap (20261029150000): the trigger function against stand-in columns and helpers.
+"${PSQL[@]}" -d after -v ON_ERROR_STOP=1 <<'SQL' >/dev/null || exit 2
+alter table dishes add column availability_flags text[], add column archived_at timestamptz;
+grant select, insert, update on dishes to authenticated;
+create function public.merchant_normalize_availability_flag(f text) returns text language sql immutable as $$ select lower(trim(f)) $$;
+create function public.app_is_current_user_ops_admin() returns boolean language sql stable as $$ select false $$;
+SQL
+awk '/^create or replace function app_private.enforce_merchant_dish_featured_cap/{p=1} p{print} p&&/^\$\$;/{exit}' \
+  "$HERE/../migrations/20261029150000_merchant_closed_until_and_daily_series.sql" \
+  | PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -v ON_ERROR_STOP=1 -d after >/dev/null \
+  || { echo "could not load enforce_merchant_dish_featured_cap" >&2; exit 2; }
+"${PSQL[@]}" -d after -v ON_ERROR_STOP=1 <<'SQL' >/dev/null || exit 2
+create trigger trg_enforce_merchant_dish_featured_cap
+before insert or update of availability_flags, archived_at, venue_id on dishes
+for each row execute function app_private.enforce_merchant_dish_featured_cap();
+SQL
+
 U1=00000000-0000-0000-0000-000000000001
 U2=00000000-0000-0000-0000-000000000002
 U3=00000000-0000-0000-0000-000000000003
@@ -187,6 +204,13 @@ run_scenarios() {
     val "truncate user_favourite_dishes, profile_favourite_dishes; insert into user_favourite_dishes values ('$U1','d1'),('$U1','d2');" >/dev/null
     race T12 $U1 $U1 "select app_private.set_profile_favourite_dishes(array['d1','d2']);" "select app_private.set_profile_favourite_dishes(array['d2','d1']);"
     record T12_pins "$(val "select string_agg(dish_id, ',' order by position) from profile_favourite_dishes")"
+
+    reset
+    val "insert into dishes(id, venue_id, availability_flags) values ('f1','vf',array['featured']),('f2','vf',array['featured']),('f3','vf','{}'),('f4','vf','{}');" >/dev/null
+    race T13 $U1 $U2 \
+      "set local role authenticated; update dishes set availability_flags = array['featured'] where id = 'f3';" \
+      "set local role authenticated; update dishes set availability_flags = array['featured'] where id = 'f4';"
+    record T13_featured "$(val "select count(*) from dishes where venue_id = 'vf' and availability_flags @> array['featured']")"
   fi
 }
 
@@ -216,7 +240,9 @@ T11_errors=0
 T11_bumps=2
 T11_confidence=0.9
 T12_errors=0
-T12_pins=d2,d1"
+T12_pins=d2,d1
+T13_errors=1
+T13_featured=3"
 
 DESC="T1 two saves with the same expected version (second must be rejected)
 T2 two likes at once (like_count)
@@ -229,7 +255,8 @@ T8 double tap on delete account
 T9 two list items added at once (positions)
 T10 mark_conversation_read from two tabs
 T11 two OCR confidence bumps at once
-T12 two pinned-favourites saves at once (primary key / unique violation, final list)"
+T12 two pinned-favourites saves at once (primary key / unique violation, final list)
+T13 two merchants feature the 3rd and 4th dish of one stall at once (one refused, 3 featured)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -253,7 +280,7 @@ if [ -n "$missing" ]; then echo "  FAIL  no result recorded for: $missing"; fail
 "${PSQL[@]}" -d postgres -c "create database down template after" >/dev/null
 PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -d down -v ON_ERROR_STOP=1 \
   -f "$HERE/../rollbacks/${MIGRATION%.sql}.down.sql" >/dev/null || { echo "  FAIL  down migration failed to apply"; fail=1; }
-bodies() { "${PSQL[@]}" -d "$1" -c "select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')=' || md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','app_private') and p.proname not in ('mark_conversation_read','bump_dish_draft_confidence','enforce_popular_visitor_pin_limit','set_profile_favourite_dishes') order by 1"; }
+bodies() { "${PSQL[@]}" -d "$1" -c "select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')=' || md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','app_private') and p.proname not in ('mark_conversation_read','bump_dish_draft_confidence','enforce_popular_visitor_pin_limit','set_profile_favourite_dishes','enforce_merchant_dish_featured_cap','merchant_normalize_availability_flag','app_is_current_user_ops_admin') order by 1"; }
 if diff <(bodies before) <(bodies down) >/dev/null; then
   echo "  ok    down migration restores every function body"
 else

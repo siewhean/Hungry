@@ -133,7 +133,7 @@ test("merchant profile edits validate fields and propagate to user-side venue re
     [
       /validateMerchantProfileUpdates\(updates\)/,
       /syncMerchantOutletToUserCatalog\(outlet\)/,
-      /closureNotice: outlet\.temporaryClosure/,
+      /closureNotice: getEffectiveClosure\(outlet\)/,
       /deliveryLinks: outlet\.deliveryLinks/,
     ],
     "mock merchant profile propagation",

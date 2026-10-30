@@ -20,6 +20,7 @@ import { validateDisplayName } from "@/features/profile/profileName";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { buildMerchantInsights, buildWeeklySummaryInsight } from "@/features/merchant/insightRules";
+import { getClosureLabel, singaporeDateOnly } from "@/features/merchant/closure";
 import { isSoldOut as hasSoldOutFlag } from "@/features/merchant/menuSections";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
@@ -80,6 +81,7 @@ import type {
   MoodSearchIntent,
   CustomerInteraction,
   MerchantInsightFacts,
+  MerchantOutlet,
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
@@ -930,6 +932,22 @@ function getMerchantPromotionOutletDishIds(outletId: string): string[] {
   return Array.from(new Set([...menu.map((dish) => dish.id), ...outlet.signatureDishIds]));
 }
 
+/** Splits a whole number by weights so the parts always add up to the total. */
+function distributeAcrossDays(total: number, weights: readonly number[]): number[] {
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  const parts = weights.map((weight) => Math.floor((total * weight) / weightSum));
+  let remainder = total - parts.reduce((sum, part) => sum + part, 0);
+  for (let index = 0; remainder > 0; index = (index + 1) % parts.length, remainder -= 1) {
+    parts[index] += 1;
+  }
+  return parts;
+}
+
+/** What diners are told about a closure: an active "closed until" date wins over the free text. */
+function getEffectiveClosure(outlet: MerchantOutlet): string | undefined {
+  return getClosureLabel(outlet.closedUntil) ?? (outlet.temporaryClosure || undefined);
+}
+
 function syncMerchantOutletToUserCatalog(
   outlet: ReturnType<typeof getMerchantOutlet>,
 ): VenueSummary {
@@ -944,12 +962,13 @@ function syncMerchantOutletToUserCatalog(
     name: outlet.name,
     unitNumber: isHomeBased ? "" : (outlet.unitNumber ?? ""),
     floor: isHomeBased ? "" : (outlet.floor ?? ""),
-    isOpen: outlet.isLive && !outlet.temporaryClosure,
+    isOpen: outlet.isLive && !getEffectiveClosure(outlet),
     liveCrowd: "medium",
     topDishId,
     operatingHours: outlet.operatingHours,
     openingSchedule: outlet.openingSchedule,
-    closureNotice: outlet.temporaryClosure,
+    closureNotice: getEffectiveClosure(outlet),
+    closedUntil: outlet.closedUntil ?? undefined,
     deliveryLinks: outlet.deliveryLinks,
     verificationStatus: outlet.verification.status,
   };
@@ -1936,7 +1955,7 @@ export const hungryService: HungryService = {
         cuisineCategories: [...outlet.cuisineCategories],
         profilePhotoUrl: isVerified ? outlet.profilePhotoUrl : undefined,
         coverPhotoUrl: isVerified ? outlet.coverPhotoUrl : undefined,
-        temporaryClosure: outlet.temporaryClosure,
+        temporaryClosure: getEffectiveClosure(outlet),
         isVerified,
       } satisfies PublicMerchantProfile);
     },
@@ -3677,6 +3696,34 @@ export const hungryService: HungryService = {
     async getAnalytics(outletId, dateRange) {
       getMerchantOutlet(outletId);
       return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
+    },
+
+    async getDailySeries(outletId, dateRange) {
+      getMerchantOutlet(outletId);
+      const analytics = buildMockMerchantAnalytics(outletId, dateRange);
+      const days = dateRange === "7d" ? 7 : 30;
+      const dates = Array.from({ length: days }, (_, index) =>
+        singaporeDateOnly(new Date(), index - (days - 1)),
+      );
+      // A fixed wobble splits each total across the days, and the days add up to the total.
+      const weights = dates.map((_, index) => 1 + ((index * 7) % 5));
+      const [visits, menu, dishViews, directions, saves] = [
+        analytics.profileVisits,
+        analytics.menuViews,
+        analytics.dishViews,
+        analytics.directionTaps,
+        analytics.saves,
+      ].map((total) => distributeAcrossDays(total, weights));
+      return resolve(
+        dates.map((date, index) => ({
+          date,
+          profileVisits: visits[index],
+          menuViews: menu[index],
+          dishViews: dishViews[index],
+          directionTaps: directions[index],
+          saves: saves[index],
+        })),
+      );
     },
 
     async getDashboardSummary(outletId) {

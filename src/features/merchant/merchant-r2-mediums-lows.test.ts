@@ -185,7 +185,7 @@ test("dish saves reload one venue, lists are paged (M14, M15)", () => {
     read("src/lib/services/supabase/supabaseRepository.ts"),
     /export async function refreshSupabaseRepositoryVenueDishes/,
   );
-  assert.match(read("src/app/screens/merchant/MerchantMenuScreen.tsx"), /<FlatList/);
+  assert.match(read("src/app/screens/merchant/MerchantMenuScreen.tsx"), /<SectionList/);
   assert.match(read("src/app/screens/merchant/CustomerInboxScreen.tsx"), /INBOX_PAGE_SIZE/);
   assert.match(read("src/app/screens/merchant/FeaturedVisitorsScreen.tsx"), /CANDIDATE_PAGE_SIZE/);
 });

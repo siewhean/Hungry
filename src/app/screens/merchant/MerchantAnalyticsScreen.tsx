@@ -16,17 +16,19 @@ import {
   formatReviewCountLabel,
 } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
-import type { MerchantAnalytics } from "@/types/domain";
+import { DailyBarChart } from "@/components/merchant/DailyBarChart";
+import { formatCount, formatShare } from "@/features/merchant/performanceFormat";
+import type { MerchantAnalytics, MerchantDailyPoint } from "@/types/domain";
 
 type AnalyticsRange = "today" | "7d" | "30d";
-type DetailKey = "visits" | "menu" | "rating" | "saves" | "funnel" | "dishes" | "tags" | "hours";
+type DetailKey = "funnel" | "hours";
 
 const SCREEN_TITLE = "Performance";
 
 const ANALYTICS_RANGE_OPTIONS: { id: AnalyticsRange; label: string }[] = [
   { id: "today", label: "Today" },
-  { id: "7d", label: "7 Days" },
-  { id: "30d", label: "30 Days" },
+  { id: "7d", label: "7 days" },
+  { id: "30d", label: "30 days" },
 ];
 
 function formatDelta(current: number, previous: number) {
@@ -86,6 +88,7 @@ export function MerchantAnalyticsScreen() {
   const activeOutletId = activeOutlet?.id;
 
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
+  const [dailySeries, setDailySeries] = useState<MerchantDailyPoint[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [range, setRange] = useState<AnalyticsRange>("7d");
   const [error, setError] = useState<string | null>(null);
@@ -107,9 +110,22 @@ export function MerchantAnalyticsScreen() {
       return;
     }
     try {
-      const data = await getHungryService().merchant.getAnalytics(activeOutletId, range);
+      const merchant = getHungryService().merchant;
+      // The chart is a bonus: if it cannot load, the numbers still show.
+      const seriesRequest =
+        range === "today"
+          ? Promise.resolve(null)
+          : merchant.getDailySeries(activeOutletId, range).catch((e) => {
+              reportError(e, { screen: "MerchantAnalytics", action: "load_daily_series" });
+              return null;
+            });
+      const [data, series] = await Promise.all([
+        merchant.getAnalytics(activeOutletId, range),
+        seriesRequest,
+      ]);
       if (requestId !== latestRequestId.current) return;
       setAnalytics(data);
+      setDailySeries(series);
     } catch (e) {
       if (requestId !== latestRequestId.current) return;
       reportError(e, { screen: "MerchantAnalytics", action: "load_analytics" });
@@ -128,8 +144,8 @@ export function MerchantAnalyticsScreen() {
 
   const toggleDetail = (key: DetailKey) => setExpanded((current) => (current === key ? null : key));
 
-  // Profile visit -> menu view -> dish view -> directions is a funnel, not shares of one total:
-  // each bar is sized against the largest step and labelled with its own count.
+  // These are four separate counts, not steps of one funnel (a diner can open the menu or a dish
+  // many times in one visit): each bar is sized against the largest count and labelled with its own.
   const discoveryFunnel = useMemo(() => {
     if (!analytics) return [];
     const steps = [
@@ -231,24 +247,18 @@ export function MerchantAnalyticsScreen() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
             <MetricCard
               label="Profile visits"
-              value={analytics.profileVisits.toString()}
+              value={formatCount(analytics.profileVisits)}
               trend={formatDelta(
                 analytics.profileVisits,
                 analytics.previousPeriodComparison.profileVisits,
               )}
               icon={<Users size={16} color={palette.orange} />}
-              expanded={expanded === "visits"}
-              onSeeMore={() => toggleDetail("visits")}
-              detail={`${analytics.profileVisits} profile visits, ${analytics.menuViews} menu views and ${analytics.dishViews} dish views.`}
             />
             <MetricCard
               label="Menu views"
-              value={analytics.menuViews.toString()}
+              value={formatCount(analytics.menuViews)}
               trend={formatDelta(analytics.menuViews, analytics.previousPeriodComparison.menuViews)}
               icon={<BarChart3 size={16} color={palette.info} />}
-              expanded={expanded === "menu"}
-              onSeeMore={() => toggleDetail("menu")}
-              detail={`Top dish: ${analytics.topDishes[0]?.name ?? "no dish data yet"}.`}
             />
             <MetricCard
               label="Avg rating"
@@ -260,33 +270,46 @@ export function MerchantAnalyticsScreen() {
                 analytics.previousPeriodComparison.reviewCount,
               )}
               icon={<Star size={16} color={palette.amber} />}
-              expanded={expanded === "rating"}
-              onSeeMore={() => toggleDetail("rating")}
-              detail={`${formatReviewCountLabel(analytics.reviewCount, "in this range")} (${analytics.previousPeriodComparison.reviewCount} the period before).`}
             />
             <MetricCard
               label="Saves"
-              value={analytics.saves.toString()}
+              value={formatCount(analytics.saves)}
               trend={formatSaveRate(analytics.saves, analytics.profileVisits)}
               icon={<TrendingUp size={16} color={palette.success} />}
-              expanded={expanded === "saves"}
-              onSeeMore={() => toggleDetail("saves")}
-              detail={`${analytics.saves} saves and ${analytics.shares} shares.`}
             />
           </View>
 
-          {/* Discovery Funnel */}
+          {/* Daily trend */}
+          {dailySeries ? (
+            <View style={cardStyle}>
+              <View style={cardHeaderStyle}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <TrendingUp size={20} color={palette.orange} />
+                  <AppText variant="bodyBold" accessibilityRole="header">
+                    Profile visits by day
+                  </AppText>
+                </View>
+              </View>
+              <DailyBarChart series={dailySeries} />
+            </View>
+          ) : range === "today" ? (
+            <AppText variant="bodySmall" tone="muted" style={{ paddingHorizontal: spacing[1] }}>
+              Choose 7 days or 30 days to see visits day by day.
+            </AppText>
+          ) : null}
+
+          {/* How diners found you */}
           <View style={cardStyle}>
             <View style={cardHeaderStyle}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <BarChart3 size={20} color={palette.ratingStar} />
                 <AppText variant="bodyBold" accessibilityRole="header">
-                  Discovery funnel
+                  How diners found you
                 </AppText>
               </View>
               <SeeMoreButton
                 expanded={expanded === "funnel"}
-                label="Discovery funnel"
+                label="How diners found you"
                 onPress={() => toggleDetail("funnel")}
               />
             </View>
@@ -296,7 +319,7 @@ export function MerchantAnalyticsScreen() {
                 <View
                   key={step.label}
                   accessible
-                  accessibilityLabel={`${step.label}: ${step.value}`}
+                  accessibilityLabel={`${step.label}: ${formatCount(step.value)}`}
                   style={{ gap: spacing[1] }}
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -304,7 +327,7 @@ export function MerchantAnalyticsScreen() {
                       {step.label}
                     </AppText>
                     <AppText variant="micro" style={{ fontWeight: "700" }}>
-                      {step.value}
+                      {formatCount(step.value)}
                     </AppText>
                   </View>
                   <View
@@ -329,7 +352,11 @@ export function MerchantAnalyticsScreen() {
             {expanded === "funnel"
               ? detailText(
                   analytics.profileVisits > 0
-                    ? `${Math.round((analytics.menuViews / analytics.profileVisits) * 100)}% of profile visits opened your menu; ${analytics.directionTaps} asked for directions.`
+                    ? `Each bar is its own count, compared with the biggest one. ${
+                        formatShare(analytics.menuViews, analytics.profileVisits)
+                          ? `Menu views were ${formatShare(analytics.menuViews, analytics.profileVisits)} of profile visits; `
+                          : ""
+                      }${formatCount(analytics.directionTaps)} ${analytics.directionTaps === 1 ? "tap" : "taps"} for directions.`
                     : "No profile visits in this range yet.",
                 )
               : null}
@@ -344,11 +371,6 @@ export function MerchantAnalyticsScreen() {
                   Top performing dishes
                 </AppText>
               </View>
-              <SeeMoreButton
-                expanded={expanded === "dishes"}
-                label="Top performing dishes"
-                onPress={() => toggleDetail("dishes")}
-              />
             </View>
             <View style={{ gap: spacing[3] }}>
               {analytics.topDishes.length === 0 ? (
@@ -356,27 +378,25 @@ export function MerchantAnalyticsScreen() {
                   No dish-level view data yet.
                 </AppText>
               ) : null}
-              {(expanded === "dishes" ? analytics.topDishes : analytics.topDishes.slice(0, 3)).map(
-                (dish, idx) => (
-                  <View
-                    key={dish.dishId}
-                    style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}
-                  >
-                    <AppText variant="bodyBold" style={{ width: 20, color: palette.textMuted }}>
-                      {idx + 1}
-                    </AppText>
-                    <View style={{ flex: 1 }}>
-                      <AppText variant="bodyBold">{dish.name}</AppText>
-                    </View>
-                    <View style={{ alignItems: "flex-end" }}>
-                      <AppText variant="bodySmallBold">{dish.views} views</AppText>
-                      <AppText variant="micro" tone="muted">
-                        {dish.saves} saves
-                      </AppText>
-                    </View>
+              {analytics.topDishes.map((dish, idx) => (
+                <View
+                  key={dish.dishId}
+                  style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}
+                >
+                  <AppText variant="bodyBold" style={{ width: 20, color: palette.textMuted }}>
+                    {idx + 1}
+                  </AppText>
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="bodyBold">{dish.name}</AppText>
                   </View>
-                ),
-              )}
+                  <View style={{ alignItems: "flex-end" }}>
+                    <AppText variant="bodySmallBold">{formatCount(dish.views)} views</AppText>
+                    <AppText variant="micro" tone="muted">
+                      {formatCount(dish.saves)} saves
+                    </AppText>
+                  </View>
+                </View>
+              ))}
             </View>
           </View>
 
@@ -389,11 +409,6 @@ export function MerchantAnalyticsScreen() {
                   Customer taste profile
                 </AppText>
               </View>
-              <SeeMoreButton
-                expanded={expanded === "tags"}
-                label="Customer taste profile"
-                onPress={() => toggleDetail("tags")}
-              />
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
               {analytics.customerTasteTags.length === 0 ? (
@@ -430,11 +445,6 @@ export function MerchantAnalyticsScreen() {
                 </View>
               ))}
             </View>
-            {expanded === "tags"
-              ? detailText(
-                  "Tags come from diners' reviews and from the dishes they viewed in this range.",
-                )
-              : null}
           </View>
 
           {/* Peak Discovery Hours */}
@@ -494,17 +504,11 @@ function MetricCard({
   value,
   trend,
   icon,
-  detail,
-  expanded,
-  onSeeMore,
 }: {
   label: string;
   value: string;
   trend: string;
   icon: React.ReactNode;
-  detail: string;
-  expanded: boolean;
-  onSeeMore: () => void;
 }) {
   const { componentRadii, palette, spacing, shadows } = useHungryTheme();
   return (
@@ -546,7 +550,6 @@ function MetricCard({
             {trend.startsWith("+") ? "▲ " : trend.startsWith("-") ? "▼ " : ""}
             {trend}
           </AppText>
-          <SeeMoreButton expanded={expanded} label={label} onPress={onSeeMore} />
         </View>
       </View>
       <View style={{ marginTop: spacing[3] }}>
@@ -556,11 +559,6 @@ function MetricCard({
         <AppText variant="micro" tone="muted" style={{ marginTop: 2, fontWeight: "700" }}>
           {label}
         </AppText>
-        {expanded ? (
-          <AppText variant="micro" tone="muted" style={{ marginTop: spacing[2] }}>
-            {detail}
-          </AppText>
-        ) : null}
       </View>
     </View>
   );
