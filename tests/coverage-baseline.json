@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 84.8,
+    "lines": 85,
     "branches": 85.5,
-    "functions": 81.1
+    "functions": 81.3
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -88,6 +88,7 @@
     "src/features/location/singaporeAreaMap.ts": 98.6,
     "src/features/merchant/allergenKeywords.ts": 95,
     "src/features/merchant/customerPromotions.ts": 100,
+    "src/features/merchant/insightRules.ts": 97.2,
     "src/features/merchant/menuSections.ts": 100,
     "src/features/merchant/merchantDeepLinks.ts": 100,
     "src/features/merchant/merchantGuards.ts": 92.3,
@@ -193,7 +194,7 @@
     "src/lib/services/supabase/mediaUpload.ts": 66.9,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/supabaseRepository.ts": 67.4,
-    "src/lib/services/supabase/supabaseService.ts": 54.8,
+    "src/lib/services/supabase/supabaseService.ts": 55.3,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
     "src/store/persistStorage.ts": 66.5,

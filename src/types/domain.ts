@@ -803,6 +803,21 @@ export interface MerchantAnalytics {
   };
 }
 
+/** What get_merchant_insight_facts returns: the counts the Insights rules read, from one call. */
+export interface MerchantInsightFacts {
+  dishCount: number;
+  dishesWithoutPhoto: number;
+  /** Dishes marked sold out right now (no history is stored). */
+  soldOutCount: number;
+  soldOutNames: string[];
+  unrepliedReviews: number;
+  oldestUnrepliedAt?: string;
+  reviewsLast7Days: number;
+  ratingLast7Days?: number;
+  reviewsPrevious7Days: number;
+  ratingPrevious7Days?: number;
+}
+
 /** Counts behind the merchant dashboard's action cards, from one call. */
 export interface MerchantDashboardSummary {
   menuCount: number;
@@ -1125,6 +1140,7 @@ export interface AIBusinessInsight {
     | "demand_insight"
     | "promotion_tip"
     | "photo_enhancement"
+    | "review_attention"
     | "weekly_summary";
   title: string;
   body: string;
