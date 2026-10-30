@@ -99,6 +99,12 @@ before insert or update of availability_flags, archived_at, venue_id on dishes
 for each row execute function app_private.enforce_merchant_dish_featured_cap();
 SQL
 
+# Review publishing (20261030120000): only submit_review is loaded, against stand-in tables.
+awk '/^create or replace function public.submit_review/{p=1} p{print} p&&/^\$\$;/{exit}' \
+  "$HERE/../migrations/20261030120000_reviews_server_side.sql" \
+  | PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -v ON_ERROR_STOP=1 -d after >/dev/null \
+  || { echo "could not load submit_review" >&2; exit 2; }
+
 U1=00000000-0000-0000-0000-000000000001
 U2=00000000-0000-0000-0000-000000000002
 U3=00000000-0000-0000-0000-000000000003
@@ -211,6 +217,14 @@ run_scenarios() {
       "set local role authenticated; update dishes set availability_flags = array['featured'] where id = 'f3';" \
       "set local role authenticated; update dishes set availability_flags = array['featured'] where id = 'f4';"
     record T13_featured "$(val "select count(*) from dishes where venue_id = 'vf' and availability_flags @> array['featured']")"
+
+    reset
+    val "insert into dishes(id) values ('d1');" >/dev/null
+    race T14 $U1 $U1 \
+      "select public.submit_review('{\"id\":\"88888888-0000-0000-0000-000000000001\",\"dish_id\":\"d1\",\"rating\":4}'::jsonb, '[{\"storage_path\":\"$U1/r/photo-0-a.jpg\"}]'::jsonb);" \
+      "select public.submit_review('{\"id\":\"88888888-0000-0000-0000-000000000001\",\"dish_id\":\"d1\",\"rating\":4}'::jsonb, '[{\"storage_path\":\"$U1/r/photo-0-b.jpg\"}]'::jsonb);"
+    record T14_reviews "$(val 'select count(*) from reviews')"
+    record T14_photos "$(val 'select count(*) from review_photos')"
   fi
 }
 
@@ -242,7 +256,10 @@ T11_confidence=0.9
 T12_errors=0
 T12_pins=d2,d1
 T13_errors=1
-T13_featured=3"
+T13_featured=3
+T14_errors=0
+T14_reviews=1
+T14_photos=1"
 
 DESC="T1 two saves with the same expected version (second must be rejected)
 T2 two likes at once (like_count)
@@ -256,7 +273,8 @@ T9 two list items added at once (positions)
 T10 mark_conversation_read from two tabs
 T11 two OCR confidence bumps at once
 T12 two pinned-favourites saves at once (primary key / unique violation, final list)
-T13 two merchants feature the 3rd and 4th dish of one stall at once (one refused, 3 featured)"
+T13 two merchants feature the 3rd and 4th dish of one stall at once (one refused, 3 featured)
+T14 two submit_review calls with one review id (one review, photos attached once)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -280,7 +298,7 @@ if [ -n "$missing" ]; then echo "  FAIL  no result recorded for: $missing"; fail
 "${PSQL[@]}" -d postgres -c "create database down template after" >/dev/null
 PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -d down -v ON_ERROR_STOP=1 \
   -f "$HERE/../rollbacks/${MIGRATION%.sql}.down.sql" >/dev/null || { echo "  FAIL  down migration failed to apply"; fail=1; }
-bodies() { "${PSQL[@]}" -d "$1" -c "select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')=' || md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','app_private') and p.proname not in ('mark_conversation_read','bump_dish_draft_confidence','enforce_popular_visitor_pin_limit','set_profile_favourite_dishes','enforce_merchant_dish_featured_cap','merchant_normalize_availability_flag','app_is_current_user_ops_admin') order by 1"; }
+bodies() { "${PSQL[@]}" -d "$1" -c "select n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')=' || md5(p.prosrc) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('public','app_private') and p.proname not in ('mark_conversation_read','bump_dish_draft_confidence','enforce_popular_visitor_pin_limit','set_profile_favourite_dishes','enforce_merchant_dish_featured_cap','merchant_normalize_availability_flag','app_is_current_user_ops_admin','submit_review') order by 1"; }
 if diff <(bodies before) <(bodies down) >/dev/null; then
   echo "  ok    down migration restores every function body"
 else

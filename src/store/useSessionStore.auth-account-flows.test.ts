@@ -1,3 +1,7 @@
+import {
+  isReviewDeletedForSession,
+  markReviewDeletedForSession,
+} from "@/features/review/reviewExplore";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -33,9 +37,13 @@ test.afterEach(resetSession);
 test("every sign-out path clears account-scoped search history and review drafts", () => {
   useSearchStore.getState().rememberSearch("laksa");
   useReviewDraftStore.getState().setText("Great broth");
+  markReviewDeletedForSession("deleted-review");
   assert.ok(useSearchStore.getState().recentSearches.length > 0);
 
   useSessionStore.getState().signOut();
+
+  // REV-25: a review the last account deleted does not stay hidden for the next one.
+  assert.equal(isReviewDeletedForSession("deleted-review"), false);
 
   assert.equal(useSessionStore.getState().isAuthenticated, false);
   assert.deepEqual(useSearchStore.getState().recentSearches, []);

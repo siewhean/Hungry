@@ -286,6 +286,11 @@ export interface Review {
   tags: string[];
   wouldRecommend: boolean;
   photos: string[];
+  /**
+   * Small copies of `photos`, the same order (grid tiles). An entry is empty when that photo has
+   * none (reviews posted before thumbnails), so use `photos[i]` then.
+   */
+  photoThumbnails?: string[];
   /** Public reply from the stall owner, if they answered this review. */
   merchantReply?: {
     text: string;

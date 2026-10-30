@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
-import { CheckCircle2, Sparkles, X } from "lucide-react-native";
+import { CheckCircle2 } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 
 import { AppText, Badge, Button, Card } from "@/components/ui";
@@ -22,6 +22,10 @@ export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSucces
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const payload = useUIStore((state) => state.reviewSuccess);
   const hideReviewSuccess = useUIStore((state) => state.hideReviewSuccess);
+
+  const canViewReview = Boolean(
+    payload?.reviewId && onOpenReview && getServiceProvider().mode !== "mock",
+  );
 
   useEffect(() => {
     if (payload) {
@@ -65,26 +69,26 @@ export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSucces
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h3">Review posted</AppText>
                 <AppText tone="secondary">
-                  Your review is live on {payload?.dishName ?? "this dish"}
+                  Thanks for sharing. It is now on {payload?.dishName ?? "this dish"}
                   {payload?.venueName ? ` · ${payload.venueName}` : ""}
                 </AppText>
               </View>
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Close review success"
+              accessibilityLabel="Done"
               accessibilityHint="Dismisses the review confirmation"
               onPress={hideReviewSuccess}
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: componentRadii.iconButton,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: palette.bgMuted,
+                minHeight: 44,
+                minWidth: 44,
               }}
             >
-              <X color={palette.text} size={18} />
+              <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+                Done
+              </AppText>
             </Pressable>
           </View>
 
@@ -99,16 +103,9 @@ export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSucces
             ) : null}
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <Sparkles color={palette.orange} size={16} />
-            <AppText variant="bodySmall" tone="secondary">
-              {"It's also in your review history."}
-            </AppText>
-          </View>
-
           {payload?.reviewId ? (
             <Button
-              label="Share your review"
+              label="Share"
               onPress={() => {
                 const reviewId = payload.reviewId;
                 if (!reviewId) return;
@@ -126,9 +123,9 @@ export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSucces
               }}
             />
           ) : null}
-          {payload?.reviewId && onOpenReview && getServiceProvider().mode !== "mock" ? (
+          {canViewReview && payload?.reviewId && onOpenReview ? (
             <Button
-              label="View your review"
+              label="View review"
               variant="secondary"
               onPress={() => {
                 const reviewId = payload.reviewId;
@@ -137,15 +134,17 @@ export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSucces
               }}
             />
           ) : null}
-          <Button
-            label="Open review history"
-            variant={payload?.reviewId ? "secondary" : "primary"}
-            onPress={() => {
-              hideReviewSuccess();
-              onOpenHistory();
-            }}
-          />
-          <Button label="Keep exploring" variant="secondary" onPress={hideReviewSuccess} />
+          {canViewReview ? null : (
+            // Without a review page (mock data) the history is the one place to see it.
+            <Button
+              label="Open review history"
+              variant="secondary"
+              onPress={() => {
+                hideReviewSuccess();
+                onOpenHistory();
+              }}
+            />
+          )}
         </Card>
       </View>
     </Modal>

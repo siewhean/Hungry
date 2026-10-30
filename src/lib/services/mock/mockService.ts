@@ -18,6 +18,7 @@ import {
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { validateDisplayName } from "@/features/profile/profileName";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
+import { REVIEW_SEARCH_MIN_LENGTH, reviewMatchesQuery } from "@/features/review/reviewSearch";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
 import { buildMerchantInsights, buildWeeklySummaryInsight } from "@/features/merchant/insightRules";
 import { getClosureLabel, singaporeDateOnly } from "@/features/merchant/closure";
@@ -2145,6 +2146,26 @@ export const hungryService: HungryService = {
     async listRecentReviewsPage(options) {
       const limit = mockReviewPageLimit(options);
       const matching = listMockRecentReviews(options);
+      const entries = matching.slice(0, limit);
+      const last = entries[entries.length - 1];
+      return resolve({
+        entries,
+        hasMore: matching.length > limit,
+        nextCursor: last ? { before: last.review.createdAt, beforeId: last.review.id } : undefined,
+      });
+    },
+
+    async searchReviewsPage(options) {
+      const limit = mockReviewPageLimit(options);
+      const query = options.query.trim();
+      const matching =
+        query.length < REVIEW_SEARCH_MIN_LENGTH
+          ? []
+          : listMockRecentReviews({
+              before: options.before,
+              beforeId: options.beforeId,
+              withPhotos: options.withPhotos ?? true,
+            }).filter((entry) => reviewMatchesQuery(entry, query));
       const entries = matching.slice(0, limit);
       const last = entries[entries.length - 1];
       return resolve({

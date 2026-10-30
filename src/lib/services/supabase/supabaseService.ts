@@ -66,6 +66,7 @@ import {
 } from "@/features/merchant/insightRules";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { normalizeReviewPatch, normalizeReviewTags } from "@/features/review/reviewEdit";
+import { REVIEW_SEARCH_MIN_LENGTH, reviewMatchesQuery } from "@/features/review/reviewSearch";
 import type {
   Bite,
   BiteDraft,
@@ -1048,6 +1049,13 @@ function toAppSessionFromAuthSession(
 
 /** Review photos uploaded at once; more in flight starves slow mobile links. */
 const REVIEW_PHOTO_UPLOAD_CONCURRENCY = 3;
+/** Longest edge of the grid thumbnail uploaded next to each review photo. */
+const REVIEW_THUMBNAIL_EDGE_PX = 480;
+
+/** Every storage object (photo and thumbnail) in a list of uploaded review photo rows. */
+function uploadedObjectPaths(rows: (Row | undefined)[]): (string | undefined)[] {
+  return rows.flatMap((row) => (row ? [asString(row.storage_path), asString(row.thumb_path)] : []));
+}
 
 /** Best-effort removal of objects this client just uploaded; a failure is left to the orphan purge. */
 async function removeUploadedObjects(
@@ -1095,10 +1103,26 @@ async function uploadReviewPhotos(
         path,
         uri,
       });
+      // A small copy for the grid tiles. Best effort: without it the tile loads the full photo.
+      let thumbPath: string | undefined;
+      try {
+        thumbPath = (
+          await uploadImageFromUri({
+            client,
+            bucket: "review-media",
+            path: `${userId}/${reviewId}/photo-${index}-${attempt}.thumb.${extension}`,
+            uri,
+            maxEdgePx: REVIEW_THUMBNAIL_EDGE_PX,
+          })
+        ).path;
+      } catch {
+        thumbPath = undefined;
+      }
       uploaded[jobIndex] = {
         url: asset.path,
         storage_bucket: "review-media",
         storage_path: asset.path,
+        thumb_path: thumbPath,
       };
     }
   };
@@ -1108,11 +1132,7 @@ async function uploadReviewPhotos(
     );
   } catch (error) {
     // One photo failed: the ones already uploaded would never be attached to a review.
-    await removeUploadedObjects(
-      client,
-      "review-media",
-      uploaded.map((row) => (row ? asString(row.storage_path) : undefined)),
-    );
+    await removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploaded));
     throw error;
   }
   // Keep the picked order for sort_order.
@@ -1124,6 +1144,26 @@ export const DELETED_ACCOUNT_REVIEW_TEXT = "[deleted]";
 
 function isDeletedAccountReviewRow(row: Row): boolean {
   return !asString(row.user_id) && asString(row.text) === DELETED_ACCOUNT_REVIEW_TEXT;
+}
+
+/**
+ * Signed URLs for review-media paths in one request. A URL already signed for a path is reused,
+ * so refetching a feed does not re-download its images.
+ */
+async function signReviewMediaPaths(
+  client: SupabaseClient,
+  paths: (string | undefined)[],
+): Promise<Map<string, string>> {
+  const wanted = Array.from(new Set(paths.filter((path): path is string => Boolean(path))));
+  const unsignedPaths = wanted.filter((path) => !cachedSignedMediaUrl("review-media", path));
+  const freshlySigned = await createSignedStorageUrls(client, "review-media", unsignedPaths);
+  freshlySigned.forEach((url, path) => rememberSignedMediaUrl("review-media", path, url));
+  const signedUrlByPath = new Map<string, string>();
+  for (const path of wanted) {
+    const url = cachedSignedMediaUrl("review-media", path);
+    if (url) signedUrlByPath.set(path, url);
+  }
+  return signedUrlByPath;
 }
 
 /** Exported for tests. Batches photo and author lookups for one page of review rows. */
@@ -1154,22 +1194,14 @@ export async function mapSupabaseReviewRows(
     if (Array.isArray(photoRows)) {
       // One signing request for the whole page instead of one per photo, and a URL already
       // signed for a path is reused so refetching the feed does not re-download its images.
-      const reviewMediaPaths = (photoRows as Row[])
-        .filter(
-          (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
-        )
-        .map((photoRow) => asString(photoRow.storage_path))
-        .filter((path): path is string => Boolean(path));
-      const unsignedPaths = reviewMediaPaths.filter(
-        (path) => !cachedSignedMediaUrl("review-media", path),
+      const signedUrlByPath = await signReviewMediaPaths(
+        client,
+        (photoRows as Row[])
+          .filter(
+            (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
+          )
+          .map((photoRow) => asString(photoRow.storage_path)),
       );
-      const freshlySigned = await createSignedStorageUrls(client, "review-media", unsignedPaths);
-      freshlySigned.forEach((url, path) => rememberSignedMediaUrl("review-media", path, url));
-      const signedUrlByPath = new Map<string, string>();
-      for (const path of reviewMediaPaths) {
-        const url = cachedSignedMediaUrl("review-media", path);
-        if (url) signedUrlByPath.set(path, url);
-      }
       for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
         if (!reviewId) continue;
@@ -1353,7 +1385,214 @@ async function buildRecentReviewEntries(
   });
 }
 
+/**
+ * Publishes a review by writing the tables directly (a backend without submit_review). Not one
+ * transaction: the review row can exist for a moment without its photos.
+ */
+async function submitReviewWithoutRpc(
+  client: SupabaseClient,
+  userId: string,
+  reviewRow: Row,
+  uploadedPhotos: Row[],
+): Promise<void> {
+  const reviewId = asString(reviewRow.id) ?? "";
+  const discardUploadedPhotos = () =>
+    removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
+
+  const { data: existing, error: existingError } = await client
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existingError) {
+    await discardUploadedPhotos();
+    throw existingError;
+  }
+  const isResumedSubmission = Boolean(asString(existing?.id));
+
+  try {
+    if (isResumedSubmission) {
+      // Keep any edits made between attempts.
+      const { error: updateError } = await client
+        .from("reviews")
+        .update({
+          rating: reviewRow.rating,
+          text: reviewRow.text,
+          tags: reviewRow.tags,
+          would_recommend: reviewRow.would_recommend,
+        })
+        .eq("id", reviewId)
+        .eq("user_id", userId);
+      if (updateError) throw updateError;
+    } else {
+      const { error } = await client.from("reviews").insert(reviewRow);
+      // 23505: a parallel attempt already created this review; carry on and
+      // attach the photos to it.
+      if (error && error.code !== "23505") throw error;
+    }
+  } catch (error) {
+    await discardUploadedPhotos();
+    throw error;
+  }
+
+  if (isResumedSubmission) {
+    const { count, error: photoCountError } = await client
+      .from("review_photos")
+      .select("id", { count: "exact", head: true })
+      .eq("review_id", reviewId);
+    if (photoCountError) throw photoCountError;
+    if ((count ?? 0) > 0) {
+      await discardUploadedPhotos();
+      return;
+    }
+  }
+
+  if (uploadedPhotos.length > 0) {
+    const { error: photoInsertError } = await client.from("review_photos").insert(
+      uploadedPhotos.map((photo, index) => ({
+        review_id: reviewId,
+        url: photo.url,
+        storage_bucket: photo.storage_bucket,
+        storage_path: photo.storage_path,
+        thumb_path: photo.thumb_path ?? null,
+        sort_order: index,
+      })),
+    );
+    if (photoInsertError) {
+      await discardUploadedPhotos();
+      // The review itself is saved; only the photos are missing. A retry
+      // with the same clientReviewId attaches them.
+      throw Object.assign(new Error("Review saved, but its photos were not attached."), {
+        code: REVIEW_PHOTOS_NOT_ATTACHED,
+        cause: photoInsertError,
+      });
+    }
+  }
+}
+
+/** A page returned by get_review_feed_page / search_reviews, turned into feed entries. */
+async function mapReviewFeedRpcPage(
+  client: SupabaseClient,
+  data: unknown,
+  options: { withPhotos?: boolean },
+): Promise<RecentReviewFeedPage> {
+  const payload = (data && typeof data === "object" ? data : {}) as Row;
+  const rows = (Array.isArray(payload.entries) ? payload.entries : []) as Row[];
+  const photoRowsOf = (row: Row): Row[] => (Array.isArray(row.photos) ? (row.photos as Row[]) : []);
+
+  // One signing request for the whole page, thumbnails and full photos together.
+  const pathsToSign: (string | undefined)[] = [];
+  for (const row of rows) {
+    if (isDeletedAccountReviewRow(row)) continue;
+    for (const photo of photoRowsOf(row)) {
+      if ((asString(photo.storage_bucket) || "review-media") !== "review-media") continue;
+      pathsToSign.push(asString(photo.storage_path), asString(photo.thumb_path));
+    }
+  }
+  const signedUrlByPath = await signReviewMediaPaths(client, pathsToSign);
+
+  const entries = rows.flatMap((row): RecentReviewFeedEntry[] => {
+    const id = asString(row.id);
+    const dishId = asString(row.dish_id);
+    if (!id || !dishId) return [];
+    const userId = asString(row.user_id);
+    const fromDeletedAccount = isDeletedAccountReviewRow(row);
+    const photos: string[] = [];
+    const photoThumbnails: string[] = [];
+    if (!fromDeletedAccount) {
+      for (const photo of photoRowsOf(row)) {
+        const bucket = asString(photo.storage_bucket) || "review-media";
+        const path = asString(photo.storage_path);
+        const legacyUrl = asString(photo.url);
+        const thumbPath = asString(photo.thumb_path);
+        const displayUrl =
+          path && bucket === "review-media" ? (signedUrlByPath.get(path) ?? legacyUrl) : legacyUrl;
+        if (!displayUrl) continue;
+        photos.push(displayUrl);
+        photoThumbnails.push((thumbPath && signedUrlByPath.get(thumbPath)) || "");
+      }
+    }
+    const replyText = asString(row.merchant_reply_text);
+    const moderationState = asString(row.moderation_state);
+    const venueId = asString(row.venue_id) ?? "";
+    return [
+      {
+        review: {
+          id,
+          dishId,
+          venueId: asString(row.venue_id),
+          authorId: userId,
+          authorName: fromDeletedAccount
+            ? "Deleted account"
+            : (asString(row.author_name) ?? "Hungry User"),
+          authorAvatarUrl: asString(row.author_avatar_url),
+          rating: asNumber(row.rating) ?? 0,
+          createdAt: asString(row.created_at) ?? new Date().toISOString(),
+          text: fromDeletedAccount ? "" : (asString(row.text) ?? ""),
+          tags: fromDeletedAccount ? [] : asStringArray(row.tags),
+          wouldRecommend: asBoolean(row.would_recommend) ?? true,
+          photos,
+          photoThumbnails: photoThumbnails.some(Boolean) ? photoThumbnails : undefined,
+          helpfulCount: asNumber(row.helpful_count),
+          editedAt: asString(row.edited_at),
+          merchantReply: replyText
+            ? {
+                text: replyText,
+                repliedAt: asString(row.merchant_replied_at) ?? asString(row.created_at) ?? "",
+              }
+            : undefined,
+          viewerFoundHelpful: asBoolean(row.viewer_found_helpful) ?? false,
+          moderationState:
+            moderationState === "hidden" || moderationState === "removed"
+              ? moderationState
+              : undefined,
+        },
+        dishId,
+        dishName: asString(row.dish_name) ?? "Dish",
+        venueId,
+        venueName: asString(row.venue_name) ?? "",
+      },
+    ];
+  });
+
+  const cursor = (payload.next_cursor ?? null) as Row | null;
+  const before = cursor ? asString(cursor.before) : undefined;
+  const beforeId = cursor ? asString(cursor.before_id) : undefined;
+  return {
+    // A deleted account's review keeps its photo rows but is shown without photos: leave it off
+    // the photo grid instead of a blank tile.
+    entries: options.withPhotos
+      ? entries.filter((entry) => entry.review.photos.length > 0)
+      : entries,
+    hasMore: asBoolean(payload.has_more) ?? false,
+    nextCursor: before && beforeId ? { before, beforeId } : undefined,
+  };
+}
+
 async function fetchRecentReviewsPage(
+  options: ListRecentReviewsOptions | undefined,
+): Promise<RecentReviewFeedPage> {
+  const client = requireSupabaseClient();
+  const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+  if (options?.dishIds && options.dishIds.length === 0) return { entries: [], hasMore: false };
+  // One call returns the page with dish, stall, author, photo paths and the viewer's own state.
+  const { data, error } = await client.rpc("get_review_feed_page", {
+    p_limit: limit,
+    p_before: options?.before,
+    p_before_id: options?.before ? options.beforeId : undefined,
+    p_after: options?.after,
+    p_venue_id: options?.venueId,
+    p_dish_ids: options?.dishIds,
+    p_with_photos: options?.withPhotos ?? false,
+  });
+  // A backend that has not shipped the function yet is read table by table, as before.
+  if (isMissingBackendObjectError(error)) return fetchRecentReviewsPageWithoutRpc(options);
+  if (error) throw error;
+  return mapReviewFeedRpcPage(client, data, { withPhotos: options?.withPhotos });
+}
+
+async function fetchRecentReviewsPageWithoutRpc(
   options: ListRecentReviewsOptions | undefined,
 ): Promise<RecentReviewFeedPage> {
   const client = requireSupabaseClient();
@@ -4356,85 +4595,45 @@ export const supabaseService: HungryService = {
         would_recommend: draft.wouldRecommend ?? true,
       };
 
-      const { data: existing, error: existingError } = await client
-        .from("reviews")
-        .select("id")
-        .eq("id", reviewId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (existingError) throw existingError;
-      const isResumedSubmission = Boolean(asString(existing?.id));
-
-      let needsPhotos = draft.photos.length > 0;
-      if (isResumedSubmission && needsPhotos) {
-        const { count, error: photoCountError } = await client
-          .from("review_photos")
-          .select("id", { count: "exact", head: true })
-          .eq("review_id", reviewId);
-        if (photoCountError) throw photoCountError;
-        needsPhotos = (count ?? 0) === 0;
-      }
-
       // Upload before the review exists: reviews are public as soon as they are
       // inserted, so a failed upload must not leave a live, photo-less review.
-      const uploadedPhotos = needsPhotos
-        ? await uploadReviewPhotos(client, userId, reviewId, draft.photos)
-        : [];
+      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
 
       // A retry uploads under new object names, so photos from a failed attempt would be
       // left behind: remove them (best effort; the orphan purge catches any that remain).
       const discardUploadedPhotos = () =>
-        removeUploadedObjects(
-          client,
-          "review-media",
-          uploadedPhotos.map((photo) => asString(photo.storage_path)),
-        );
+        removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
 
-      try {
-        if (isResumedSubmission) {
-          // Keep any edits made between attempts.
-          const { error: updateError } = await client
-            .from("reviews")
-            .update({
-              rating: reviewRow.rating,
-              text: reviewRow.text,
-              tags: reviewRow.tags,
-              would_recommend: reviewRow.would_recommend,
-            })
-            .eq("id", reviewId)
-            .eq("user_id", userId);
-          if (updateError) throw updateError;
-        } else {
-          const { error } = await client.from("reviews").insert(reviewRow);
-          // 23505: a parallel attempt already created this review; carry on and
-          // attach the photos to it.
-          if (error && error.code !== "23505") throw error;
-        }
-      } catch (error) {
+      // One transaction: the review and its photo rows go in together, or neither does. The
+      // server refuses a review with no photo and resumes the same review on a retry.
+      const { data, error } = await client.rpc("submit_review", {
+        p_review: {
+          id: reviewId,
+          dish_id: reviewRow.dish_id,
+          venue_id: reviewRow.venue_id,
+          rating: reviewRow.rating,
+          text: reviewRow.text,
+          tags: reviewRow.tags,
+          would_recommend: reviewRow.would_recommend,
+        },
+        p_photos: uploadedPhotos.map((photo) => ({
+          storage_path: photo.storage_path,
+          thumb_path: photo.thumb_path ?? null,
+        })),
+      });
+      if (isMissingBackendObjectError(error)) {
+        // A backend that has not shipped submit_review yet: write the tables, as before.
+        await submitReviewWithoutRpc(client, userId, reviewRow, uploadedPhotos);
+        return;
+      }
+      if (error) {
         await discardUploadedPhotos();
         throw error;
       }
-
-      if (uploadedPhotos.length > 0) {
-        const { error: photoInsertError } = await client.from("review_photos").insert(
-          uploadedPhotos.map((photo, index) => ({
-            review_id: reviewId,
-            url: photo.url,
-            storage_bucket: photo.storage_bucket,
-            storage_path: photo.storage_path,
-            sort_order: index,
-          })),
-        );
-        if (photoInsertError) {
-          await discardUploadedPhotos();
-          // The review itself is saved; only the photos are missing. A retry
-          // with the same clientReviewId attaches them.
-          throw Object.assign(new Error("Review saved, but its photos were not attached."), {
-            code: REVIEW_PHOTOS_NOT_ATTACHED,
-            cause: photoInsertError,
-          });
-        }
-      }
+      // The review already had its photos (a retry whose first answer was lost): the files just
+      // uploaded are not used.
+      const photosAdded = asNumber((data as Row | null)?.photos_added) ?? uploadedPhotos.length;
+      if (photosAdded === 0) await discardUploadedPhotos();
     },
 
     async listRecentReviews(options) {
@@ -4443,6 +4642,36 @@ export const supabaseService: HungryService = {
 
     async listRecentReviewsPage(options) {
       return fetchRecentReviewsPage(options);
+    },
+
+    async searchReviewsPage(options) {
+      const client = requireSupabaseClient();
+      const query = options.query.trim();
+      if (query.length < REVIEW_SEARCH_MIN_LENGTH) return { entries: [], hasMore: false };
+      const limit = Math.min(Math.max(Math.floor(options.limit ?? 50), 1), 100);
+      const withPhotos = options.withPhotos ?? true;
+      const { data, error } = await client.rpc("search_reviews", {
+        p_query: query,
+        p_before: options.before,
+        p_before_id: options.before ? options.beforeId : undefined,
+        p_limit: limit,
+        p_with_photos: withPhotos,
+      });
+      if (isMissingBackendObjectError(error)) {
+        // No search function yet: look through the newest reviews, as the grid did before.
+        const page = await fetchRecentReviewsPageWithoutRpc({
+          limit: 100,
+          withPhotos,
+          before: options.before,
+          beforeId: options.beforeId,
+        });
+        return {
+          ...page,
+          entries: page.entries.filter((entry) => reviewMatchesQuery(entry, query)),
+        };
+      }
+      if (error) throw error;
+      return mapReviewFeedRpcPage(client, data, { withPhotos });
     },
 
     async getReviewById(reviewId) {

@@ -120,9 +120,9 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   );
   assert.match(reviews, /navigation\.setOptions\(\{ swipeEnabled: !isLocked \}\)/);
   assert.match(reviews, /function ReviewSearchQuerySummary/);
-  assert.match(reviews, /<ReviewSearchQuerySummary query=\{searchQuery\} \/>/);
-  assert.match(reviews, /\{trimmedQuery\}/);
-  assert.match(reviewSearchSummary, /Showing results for/);
+  assert.match(reviews, /<ReviewSearchQuerySummary\s+query=\{searchQuery\}/);
+  // The line under the chips counts what matched (the query itself is in the search field).
+  assert.match(reviewSearchSummary, /results/);
   assert.doesNotMatch(reviewSearchSummary, /Searching for|backgroundColor|borderRadius/);
   assert.doesNotMatch(reviews, /showSearch|setShowSearch/);
   assert.match(profileShell, /useSafeAreaInsets/);
