@@ -18,6 +18,15 @@ export function isSoldOut(flags: readonly string[] | undefined): boolean {
   return hasAvailabilityFlag(flags, "sold_out");
 }
 
+export function isFeatured(flags: readonly string[] | undefined): boolean {
+  return hasAvailabilityFlag(flags, "featured");
+}
+
+/** A featured dish a diner can order now: sold-out dishes lose their place at the top. */
+export function isStallsPick(flags: readonly string[] | undefined): boolean {
+  return isFeatured(flags) && !isSoldOut(flags);
+}
+
 export function isSectionFlag(flag: string): boolean {
   return flag.toLowerCase().startsWith(SECTION_PREFIX);
 }

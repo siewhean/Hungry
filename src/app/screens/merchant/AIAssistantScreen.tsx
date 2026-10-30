@@ -123,6 +123,12 @@ export function AIAssistantScreen() {
       case "Analytics":
         navigation.navigate("Analytics");
         break;
+      case "CustomerInbox":
+        navigation.navigate("CustomerInbox", { filter: "all" });
+        break;
+      case "CustomerInboxUnreplied":
+        navigation.navigate("CustomerInbox", { filter: "unreplied" });
+        break;
       default:
         navigation.navigate("Dashboard");
     }
@@ -139,7 +145,9 @@ export function AIAssistantScreen() {
       case "promotion_tip":
         return <Sparkles size={20} color={palette.orange} />;
       case "menu_cleanup":
-        return <MessageSquare size={20} color={palette.error} />;
+        return <AlertCircle size={20} color={palette.error} />;
+      case "review_attention":
+        return <MessageSquare size={20} color={palette.orange} />;
       default:
         return <Sparkles size={20} color={palette.orange} />;
     }
@@ -201,7 +209,7 @@ export function AIAssistantScreen() {
           </View>
         )}
 
-        {/* Generated suggestions are not available yet, so the section only appears when there are some. */}
+        {/* Rule-based tips from the stall's own data; the card below says so when there are none. */}
         {insights.length > 0 ? (
           <View style={{ gap: spacing[4] }}>
             <AppText variant="h3" style={{ fontWeight: "bold", paddingHorizontal: spacing[1] }}>
@@ -288,6 +296,22 @@ export function AIAssistantScreen() {
                 </View>
               ))}
             </View>
+          </View>
+        ) : !isLoading ? (
+          <View
+            style={{
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: 1,
+              padding: spacing[4],
+            }}
+          >
+            <AppText variant="bodyBold">Nothing needs your attention</AppText>
+            <AppText variant="bodySmall" tone="muted" style={{ marginTop: spacing[1] }}>
+              Your reviews are answered, your dishes have photos and your hours are set. New tips
+              appear here as your stall changes.
+            </AppText>
           </View>
         ) : null}
 

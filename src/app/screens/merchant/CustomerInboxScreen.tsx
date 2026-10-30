@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { View, StyleSheet, Pressable, KeyboardAvoidingView, Modal, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  RefreshControl,
+} from "react-native";
 import { MessageSquare, Star, Send, MoreVertical, CheckCircle2, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -53,6 +61,11 @@ const REPORT_REASONS = [
   "Not about this stall",
 ];
 
+/** Id plus reply state of each review: equal signatures mean the loaded page is current. */
+function inboxSignature(items: readonly CustomerInteraction[]): string {
+  return items.map((item) => `${item.id}:${item.reply?.repliedAt ?? ""}`).join("|");
+}
+
 export function CustomerInboxScreen() {
   const { palette, radii, spacing } = useHungryTheme();
   const activeOutlet = useMerchantStore(getActiveOutlet);
@@ -75,6 +88,11 @@ export function CustomerInboxScreen() {
   // "Unreplied" asks the server for unreplied reviews. Filtering one loaded page could say
   // "All caught up" while older reviews still wait for a reply.
   const unrepliedOnly = filter === "unreplied";
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const interactionsRef = useRef(interactions);
+  useEffect(() => {
+    interactionsRef.current = interactions;
+  }, [interactions]);
 
   // A Dashboard link can ask for a filter while the screen is already open. The tab stays
   // mounted, so the param is cleared once applied: the same link tapped again (after the
@@ -122,13 +140,55 @@ export function CustomerInboxScreen() {
     void fetchInteractions();
   }, [fetchInteractions]);
 
+  // The tab stays mounted, so coming back to it (or pulling down) re-reads the newest page
+  // without the loading state. Loaded older pages stay unless the newest page changed (R4-7).
+  const refreshInbox = useCallback(async () => {
+    if (!activeOutletId) return;
+    const loadId = latestLoadId.current;
+    try {
+      const data = await getHungryService().merchant.getInbox(activeOutletId, {
+        type: "review",
+        limit: INBOX_PAGE_SIZE,
+        unrepliedOnly,
+      });
+      if (loadId !== latestLoadId.current) return;
+      const current = interactionsRef.current;
+      if (inboxSignature(current.slice(0, data.length)) !== inboxSignature(data)) {
+        setInteractions(data);
+        setHasMore(data.length >= INBOX_PAGE_SIZE);
+      }
+      setError(null);
+    } catch (e) {
+      // The visible list is still right; say nothing on a quiet refocus.
+      reportError(e, { screen: "CustomerInbox", action: "refresh_inbox" });
+    }
+  }, [activeOutletId, unrepliedOnly]);
+
+  // Read by the focus event, so a chip change is neither another inbox view nor a refetch.
+  const refreshInboxRef = useRef(refreshInbox);
+  useEffect(() => {
+    refreshInboxRef.current = refreshInbox;
+  }, [refreshInbox]);
+  const hasFocusedOnce = useRef(false);
   useFocusEffect(
     useCallback(() => {
       trackMerchantEvent("merchant_customer_inbox_viewed", activeOutletId, {
         filter: filterRef.current,
       });
+      // The first focus is the mount load above.
+      if (hasFocusedOnce.current) void refreshInboxRef.current();
+      hasFocusedOnce.current = true;
     }, [activeOutletId]),
   );
+
+  const handlePullToRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshInbox();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshInbox]);
 
   // Opened from a Dashboard review card: start the reply to that review once it has loaded,
   // then clear the param so a later Reply on the same review opens the composer again.
@@ -248,7 +308,16 @@ export function CustomerInboxScreen() {
   );
 
   return (
-    <Screen title="Customer inbox">
+    <Screen
+      title="Customer inbox"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={() => void handlePullToRefresh()}
+          tintColor={palette.orange}
+        />
+      }
+    >
       <View style={{ gap: spacing[4], width: "100%" }}>
         {/* Filters */}
         <FilterChipRail
