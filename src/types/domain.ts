@@ -156,6 +156,8 @@ export interface VenueSummary {
   /** Weekly + special hours a verified merchant set; wins over operatingHours for "Open now". */
   openingSchedule?: OpeningSchedule;
   closureNotice?: string;
+  /** The merchant paused the stall until this instant (ISO); ignored once it has passed. */
+  closedUntil?: string;
   /** How many diners saved this stall. Undefined when the count is not available. */
   savedCount?: number;
   deliveryLinks: DeliveryLink[];
@@ -706,6 +708,8 @@ export interface MerchantOutlet {
   operatingHours: string;
   openingSchedule?: OpeningSchedule;
   temporaryClosure?: string;
+  /** The stall is closed until this instant (ISO); ignored once it has passed. null clears it. */
+  closedUntil?: string | null;
   profilePhotoUrl?: string;
   coverPhotoUrl?: string;
   galleryUrls: string[];
@@ -801,6 +805,17 @@ export interface MerchantAnalytics {
     reviewCount: number;
     averageRating: number;
   };
+}
+
+/** One Singapore day of the Performance chart (get_merchant_daily_series). */
+export interface MerchantDailyPoint {
+  /** "YYYY-MM-DD", Singapore date. */
+  date: string;
+  profileVisits: number;
+  menuViews: number;
+  dishViews: number;
+  directionTaps: number;
+  saves: number;
 }
 
 /** What get_merchant_insight_facts returns: the counts the Insights rules read, from one call. */

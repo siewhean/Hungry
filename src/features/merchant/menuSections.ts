@@ -55,3 +55,42 @@ export function listMenuSections(flagLists: readonly (readonly string[] | undefi
   });
   return Array.from(seen.values());
 }
+
+export interface DishSectionGroup<T> {
+  /** null when no dish on the menu has a section: the list shows no headers. */
+  title: string | null;
+  data: T[];
+}
+
+/**
+ * Groups dishes by menu section, sections A to Z and unsectioned dishes last under "Other".
+ * Order inside a section is kept. A menu with no sections at all is one untitled group.
+ */
+export function groupDishesBySection<T extends { availabilityFlags?: string[] }>(
+  dishes: readonly T[],
+): DishSectionGroup<T>[] {
+  if (dishes.length === 0) return [];
+  const bySection = new Map<string, T[]>();
+  const unsectioned: T[] = [];
+  dishes.forEach((dish) => {
+    const section = getDishSection(dish.availabilityFlags);
+    if (!section) {
+      unsectioned.push(dish);
+      return;
+    }
+    const key = section.toLowerCase();
+    const existing = bySection.get(key);
+    if (existing) existing.push(dish);
+    else bySection.set(key, [dish]);
+  });
+  if (bySection.size === 0) return [{ title: null, data: unsectioned }];
+  const titles = new Map<string, string>();
+  dishes.forEach((dish) => {
+    const section = getDishSection(dish.availabilityFlags);
+    if (section && !titles.has(section.toLowerCase())) titles.set(section.toLowerCase(), section);
+  });
+  const groups = Array.from(bySection.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, data]) => ({ title: titles.get(key) ?? key, data }));
+  return unsectioned.length > 0 ? [...groups, { title: "Other", data: unsectioned }] : groups;
+}

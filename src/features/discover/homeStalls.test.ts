@@ -82,3 +82,27 @@ test("a stall without a distance sorts after one with a distance", () => {
     ["known", "unknown"],
   );
 });
+
+// ─── Merchant round four: a paused stall is closed on Home too ──────────────
+
+test("a paused stall reads Closed on Home even when its hours say open", () => {
+  const reopens = new Date(Date.now() + 3 * 86_400_000).toISOString();
+  const paused = venue({ closedUntil: reopens });
+  assert.match(getStallRowOpenLabel(paused) ?? "", /^Closed · Reopens /);
+  assert.equal(isStallClosed(paused), true);
+  assert.equal(isStallClosed(venue()), false);
+});
+
+test("a closure that has passed no longer closes the stall", () => {
+  const past = new Date(Date.now() - 60_000).toISOString();
+  assert.equal(isStallClosed(venue({ closedUntil: past })), false);
+  assert.equal(getStallRowOpenLabel(venue({ closedUntil: past })), "Open · Open 24 hours");
+});
+
+test("a paused stall sorts below open stalls", () => {
+  const reopens = new Date(Date.now() + 3 * 86_400_000).toISOString();
+  const open = { venue: venue({ id: "open" }), topDish: dish(3, 1, 900) };
+  const paused = { venue: venue({ id: "paused", closedUntil: reopens }), topDish: dish(5, 99, 10) };
+  assert.ok(compareHomeStalls(open, paused) < 0);
+  assert.ok(compareHomeStalls(paused, open) > 0);
+});

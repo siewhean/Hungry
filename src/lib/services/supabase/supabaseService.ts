@@ -28,6 +28,7 @@ import {
   getSavedDishCardsViaRpc,
   getVenueByIdViaRpc,
   invalidateVenueDetail,
+  getVenueClosuresViaRpc,
   getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
@@ -57,6 +58,7 @@ import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { singaporeDateOnly, startOfSingaporeDate } from "@/features/merchant/closure";
 import {
   buildMerchantInsights,
   buildWeeklySummaryInsight,
@@ -2646,13 +2648,11 @@ function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): s
     singaporeNow.setUTCHours(0, 0, 0, 0);
     return new Date(singaporeNow.getTime() - singaporeOffsetMs).toISOString();
   }
-  if (dateRange === "7d") {
-    now.setDate(now.getDate() - 7);
-    return now.toISOString();
-  }
-  if (dateRange === "30d") {
-    now.setDate(now.getDate() - 30);
-    return now.toISOString();
+  // 7 and 30 days are whole Singapore calendar days ending today, so the Performance totals and
+  // the daily chart cover exactly the same days.
+  if (dateRange === "7d" || dateRange === "30d") {
+    const firstDay = startOfSingaporeDate(singaporeDateOnly(now, dateRange === "7d" ? -6 : -29));
+    return firstDay ? firstDay.toISOString() : null;
   }
   return null;
 }
@@ -2967,6 +2967,7 @@ async function toMerchantOutlet(
     cuisineCategories: asStringArray(row.cuisine_categories),
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
     temporaryClosure: asString(row.temporary_closure),
+    closedUntil: asString(row.closed_until),
     profilePhotoUrl: asString(row.profile_photo_url),
     coverPhotoUrl: asString(row.cover_photo_url),
     // The outlet has no gallery of its own; its profile and cover photos are the gallery.
@@ -3427,7 +3428,7 @@ async function saveMerchantDish(
     dietaryFlags: DietaryFlag[] | undefined;
     tasteVector: TasteVector | undefined;
   },
-): Promise<Row> {
+): Promise<void> {
   const venueId = asString(outlet.venue_id) ?? "";
   const dishFields: Row = { ...fields };
   delete dishFields.id;
@@ -3444,14 +3445,25 @@ async function saveMerchantDish(
     p_taste_vector: toTasteVectorJson(children.tasteVector),
   });
   if (error) throw error;
-  const { data, error: readError } = await client
-    .from("dishes")
-    .select("*")
-    .eq("id", dishId)
-    .eq("venue_id", venueId)
-    .single();
-  if (readError) throw readError;
-  return data as Row;
+}
+
+/**
+ * Reads back what a save wrote: the dish row, its presentation and the venue are independent
+ * reads, and the diner cache refresh needs none of them, so they run together (R4-17).
+ */
+async function readSavedMerchantDish(
+  client: SupabaseClient,
+  venueId: string,
+  dishId: string,
+): Promise<DishDetail> {
+  const [dishResult, , presentationByDishId, venue] = await Promise.all([
+    client.from("dishes").select("*").eq("id", dishId).eq("venue_id", venueId).single(),
+    refreshSupabaseRepositoryVenueDishes(venueId),
+    fetchDishPresentationMap(client, [dishId]),
+    fetchVenueRow(client, venueId),
+  ]);
+  if (dishResult.error) throw dishResult.error;
+  return mapSupabaseDish(dishResult.data as Row, venue, presentationByDishId.get(dishId));
 }
 
 async function setMerchantDishFlag(
@@ -4272,7 +4284,15 @@ export const supabaseService: HungryService = {
         const fetched = await getVenuesByIdsViaRpc(missing);
         fetched?.forEach((venue) => cached.set(venue.id, venue));
       }
-      return unique.flatMap((id) => cached.get(id) ?? []);
+      const venues = unique.flatMap((id) => cached.get(id) ?? []);
+      // A paused stall must not count as open now (Decide for me, the map, the wheel). One
+      // batched read; when it fails the stalls keep their stored state.
+      const closures = await getVenueClosuresViaRpc(venues.map((venue) => venue.id));
+      if (!closures || closures.size === 0) return venues;
+      return venues.map((venue) => {
+        const closedUntil = closures.get(venue.id);
+        return closedUntil ? { ...venue, closedUntil } : venue;
+      });
     },
 
     async getItemDetails({ dishIds, stallIds }) {
@@ -6838,6 +6858,45 @@ export const supabaseService: HungryService = {
       return toClaimStatus(asString((data as Row).status) ?? null);
     },
 
+    async getMyMerchantClaims() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("merchant_claim_interests")
+        .select("id,venue_id,status,created_at")
+        .eq("claimed_by", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const claims = Array.isArray(data) ? (data as Row[]) : [];
+      if (claims.length === 0) return [];
+      // One read for every stall name, never one per claim.
+      const venueIds = Array.from(new Set(claims.map((row) => asString(row.venue_id) ?? "")));
+      const { data: venueRows, error: venueError } = await client
+        .from("venues")
+        .select("id,name")
+        .in("id", venueIds);
+      if (venueError) throw venueError;
+      const names = new Map(
+        (Array.isArray(venueRows) ? (venueRows as Row[]) : []).map((row) => [
+          asString(row.id) ?? "",
+          asString(row.name) ?? "",
+        ]),
+      );
+      return claims.map((row) => {
+        const venueId = asString(row.venue_id) ?? "";
+        const status = toClaimStatus(asString(row.status) ?? null);
+        return {
+          claimId: asString(row.id) ?? "",
+          venueId,
+          venueName: names.get(venueId) || "Your stall",
+          status: status === "none" ? ("submitted" as const) : status,
+          submittedAt: asString(row.created_at) ?? new Date().toISOString(),
+        };
+      });
+    },
+
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
       const { data, error } = await client.functions.invoke("ops-dishes-draft", {
@@ -7024,6 +7083,7 @@ export const supabaseService: HungryService = {
       if (normalized.temporaryClosure !== undefined) {
         payload.temporary_closure = normalized.temporaryClosure || null;
       }
+      if (normalized.closedUntil !== undefined) payload.closed_until = normalized.closedUntil;
       if (normalized.contactPhone !== undefined) payload.contact_phone = normalized.contactPhone;
       if (normalized.contactEmail !== undefined) payload.contact_email = normalized.contactEmail;
       if (normalized.cuisineCategories !== undefined) {
@@ -7112,18 +7172,12 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? dish.imageUrl,
         gallery: galleryUrls ?? dish.gallery,
       });
-      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+      await saveMerchantDish(client, outlet, dishId, payload, {
         galleryUrls,
         dietaryFlags: dish.dietaryFlags,
         tasteVector: dish.tasteVector,
       });
-      await refreshSupabaseRepositoryVenueDishes(asString(outlet.venue_id) ?? "");
-      const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
-      return mapSupabaseDish(
-        row,
-        await fetchVenueRow(client, asString(outlet.venue_id) ?? ""),
-        presentationByDishId.get(dishId),
-      );
+      return readSavedMerchantDish(client, asString(outlet.venue_id) ?? "", dishId);
     },
 
     async editDish(outletId, dishId, updates) {
@@ -7136,18 +7190,12 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? updates.imageUrl,
         gallery: galleryUrls ?? updates.gallery,
       });
-      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+      await saveMerchantDish(client, outlet, dishId, payload, {
         galleryUrls,
         dietaryFlags: updates.dietaryFlags,
         tasteVector: updates.tasteVector,
       });
-      await refreshSupabaseRepositoryVenueDishes(venueId);
-      const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
-      return mapSupabaseDish(
-        row,
-        await fetchVenueRow(client, venueId),
-        presentationByDishId.get(dishId),
-      );
+      return readSavedMerchantDish(client, venueId, dishId);
     },
 
     async deleteDish(outletId, dishId) {
@@ -7782,6 +7830,25 @@ export const supabaseService: HungryService = {
       });
       if (error) throw error;
       return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
+    },
+
+    async getDailySeries(outletId, dateRange) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const { data, error } = await client.rpc("get_merchant_daily_series", {
+        p_outlet_id: asString(outlet.id) ?? outletId,
+        p_since: getMerchantAnalyticsSince(dateRange),
+        p_until: null,
+      });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
+        date: asString(row.date) ?? "",
+        profileVisits: asNumber(row.profileVisits) ?? 0,
+        menuViews: asNumber(row.menuViews) ?? 0,
+        dishViews: asNumber(row.dishViews) ?? 0,
+        directionTaps: asNumber(row.directionTaps) ?? 0,
+        saves: asNumber(row.saves) ?? 0,
+      }));
     },
 
     async getDashboardSummary(outletId) {

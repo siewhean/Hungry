@@ -22,6 +22,7 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantDailyPoint,
   MerchantDashboardSummary,
   MerchantNotification,
   MerchantNotificationPreferences,
@@ -782,6 +783,15 @@ export interface MerchantClaimSubmissionResult {
 /** Where the signed-in user's claim for a stall stands, in diner-facing terms. */
 export type MerchantClaimStatus = "none" | "submitted" | "in_review" | "approved" | "rejected";
 
+/** One of the signed-in user's own stall claims, for the Merchant Centre gate. */
+export interface MerchantClaimSummary {
+  claimId: string;
+  venueId: string;
+  venueName: string;
+  status: Exclude<MerchantClaimStatus, "none">;
+  submittedAt: string;
+}
+
 export interface DraftDishRow {
   id: string;
   venueId: string;
@@ -1427,6 +1437,8 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    /** Visits and actions per Singapore day for the Performance chart, oldest first. */
+    getDailySeries(outletId: string, dateRange: "7d" | "30d"): Promise<MerchantDailyPoint[]>;
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
@@ -1471,6 +1483,8 @@ export interface HungryService {
     ): Promise<MerchantClaimSubmissionResult>;
     /** The caller's own claim for this stall ("none" when there is no claim or no session). */
     getMerchantClaimStatus(venueId: string): Promise<MerchantClaimStatus>;
+    /** The caller's own claims, newest first, with the stall names. Empty when signed out. */
+    getMyMerchantClaims(): Promise<MerchantClaimSummary[]>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,

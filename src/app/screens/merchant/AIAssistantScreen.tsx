@@ -105,7 +105,9 @@ export function AIAssistantScreen() {
           dismissedInsightsKey(outletId),
           JSON.stringify(Array.from(new Set([...ids, id])).slice(-100)),
         ),
-      ).catch(() => undefined),
+      ).catch((e) => {
+        reportError(e, { screen: "AIAssistant", action: "save_dismissed_insight" });
+      }),
     );
   };
 

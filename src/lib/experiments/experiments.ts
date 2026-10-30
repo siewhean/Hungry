@@ -581,6 +581,58 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["discover_search_opened", "decide_for_me_triggered"],
     minSamplePerArm: 1600,
   },
+  /**
+   * Reply composer: three tone chips (Thank, Apologise, Invite back) that fill an editable
+   * starting reply, against the empty composer. Read in ReplyComposer when it opens on a review
+   * that has no reply yet. Draft until the Merchant Centre ships to production.
+   */
+  merchant_reply_suggestions_v1: {
+    variants: ["control", "chips"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Suggested starting replies raise how many reviews get a reply and shorten the time to reply, as Google Business Profile's suggested replies do.",
+    primaryMetric: "merchant_customer_reply_sent",
+    guardrailMetrics: [
+      "merchant_customer_reply_removed",
+      "merchant_reply_suggestion_used",
+      "merchant_customer_interaction_reported",
+    ],
+    minSamplePerArm: 400,
+  },
+  /**
+   * A "Get your stall ready" checklist on the Verification Centre for an unverified outlet
+   * (verify, five dishes, hours, a photo), against the plain verification landing. Read in
+   * VerificationCentreScreen only while the outlet is not verified. Draft until the Merchant
+   * Centre ships to production.
+   */
+  merchant_setup_checklist_v1: {
+    variants: ["control", "checklist"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "A progress checklist gets more new merchants to submit their licence for verification than the verification landing alone, as Shopify's setup guide does for new sellers.",
+    primaryMetric: "merchant_verification_submitted",
+    guardrailMetrics: ["merchant_dish_created", "merchant_mode_opened"],
+    minSamplePerArm: 400,
+  },
+  /**
+   * The numbers range Home opens on: Today (control) against 7 days, which Performance already
+   * uses. Today is often zero early in the day. Read in MerchantDashboardScreen only until the
+   * merchant picks a range. Draft until the Merchant Centre ships to production.
+   */
+  merchant_home_default_range_v1: {
+    variants: ["control", "seven_days"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Opening Home on the last 7 days instead of Today shows merchants real numbers early in the day, so more of them come back to Home on a later day, as Google Business Profile's 28-day default does.",
+    primaryMetric: "merchant_dashboard_viewed",
+    guardrailMetrics: ["merchant_analytics_range_changed", "merchant_customer_inbox_viewed"],
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

@@ -1172,7 +1172,13 @@ export async function listDiscoveryFeedByLocationViaRpc(
     }));
   }
 
-  const venues = rows.map(mapDiscoveryFeedVenue);
+  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
+  // their stored state.
+  const closures = await getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id)));
+  const venues = rows.map(mapDiscoveryFeedVenue).map((venue) => {
+    const closedUntil = closures?.get(venue.id);
+    return closedUntil ? { ...venue, closedUntil } : venue;
+  });
   const results = rows
     .map((row, index) => {
       const venue = venues[index];
@@ -1320,6 +1326,36 @@ export async function getVenuesByIdsViaRpc(
     return undefined;
   }
   return results.flatMap((rows) => (rows ?? []).map(mapRpcVenue));
+}
+
+/**
+ * Stalls a merchant has paused ("Closed today", "Reopens 3 Nov"), as venue id -> reopen instant.
+ * Up to 50 ids per get_venue_closures call. Undefined when the read fails or Supabase is not
+ * configured: callers keep the stalls as they were instead of failing the page.
+ */
+export async function getVenueClosuresViaRpc(
+  venueIds: string[],
+): Promise<Map<string, string> | undefined> {
+  const unique = [...new Set(venueIds)];
+  if (unique.length === 0) return new Map();
+  const chunks: string[][] = [];
+  for (let start = 0; start < unique.length; start += VENUE_SUMMARIES_BATCH) {
+    chunks.push(unique.slice(start, start + VENUE_SUMMARIES_BATCH));
+  }
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
+      rpcRows("get_venue_closures", { p_venue_ids: ids }),
+    ),
+  );
+  if (results.some((rows) => !rows)) return undefined;
+  const closures = new Map<string, string>();
+  for (const row of results.flatMap((rows) => rows ?? [])) {
+    const venueId = toString(row.venue_id);
+    const closedUntil = toString(row.closed_until);
+    if (venueId && closedUntil) closures.set(venueId, closedUntil);
+  }
+  return closures;
 }
 
 /** Name, photo, stall and price for many dishes and stalls in one get_item_details call. */

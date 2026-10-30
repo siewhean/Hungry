@@ -837,22 +837,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           />
         ) : undefined
       }
-      footer={
-        compact ? (
-          <View
-            style={{
-              paddingHorizontal: spacing[4],
-              paddingTop: spacing[2],
-              paddingBottom: Math.max(insets.bottom, spacing[2]),
-              borderTopWidth: 1,
-              borderTopColor: palette.border,
-              backgroundColor: palette.bg,
-            }}
-          >
-            {publishBlock}
-          </View>
-        ) : undefined
-      }
+      footer={compact ? publishBlock : undefined}
     >
       <FeedErrorBoundary
         title="Review editor failed"
