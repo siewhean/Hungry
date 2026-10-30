@@ -234,3 +234,21 @@ test("SR4 re-audit: Search home fits a 320 screen and a failed featured photo sh
   assert.match(source, /style=\{\{ minWidth: 0 \}\}/);
   assert.match(source, /fallback=\{<FeaturedDishPlaceholder \/>\}/);
 });
+
+test("SR4 timing: stall text search picks candidates from indexed lookups, one set per word", () => {
+  const sql = read("supabase/migrations/20261030100000_catalog_stall_search_candidates.sql");
+  assert.match(sql, /smoke: supabase\/smoke\/catalog_stall_search_candidates\.sql/);
+  // One set per word (stall dishes, stall name, building name), then every word must be answered.
+  for (const word of ["word1", "word2", "word3", "word4", "matching_ids"]) {
+    assert.match(sql, new RegExp(`\\), ${word} as materialized \\(`), word);
+  }
+  assert.match(sql, /c\.id in \(select id from matching_ids\)/);
+  // The old per-row test of every stall against every word is gone.
+  assert.doesNotMatch(sql, /Cheap word filter first/);
+  assert.ok(
+    existsSync(
+      path.join(root, "supabase/rollbacks/20261030100000_catalog_stall_search_candidates.down.sql"),
+    ),
+  );
+  assert.ok(existsSync(path.join(root, "supabase/smoke/catalog_stall_search_candidates.sql")));
+});
