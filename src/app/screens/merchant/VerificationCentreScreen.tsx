@@ -14,6 +14,8 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import { useHungryTheme } from "@/theme";
+import { ClaimStepper } from "@/components/merchant/ClaimStepper";
+import { SetupChecklist } from "@/components/merchant/SetupChecklist";
 import { AccessibleImage, AppText, Button, EmptyState, Screen } from "@/components/ui";
 import {
   MAX_EVIDENCE_VIDEO_SECONDS,
@@ -27,6 +29,7 @@ import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { reportError } from "@/lib/monitoring/reportError";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 
 type Props = NativeStackScreenProps<MerchantTabParamList, "VerificationCentre">;
 type EvidenceMethod = "video_walkaround" | "licence_upload";
@@ -46,6 +49,11 @@ export function VerificationCentreScreen({ navigation }: Props) {
   const [uploadError, setUploadError] = useState<string | null>(null);
   // Picking only stages the file; nothing is uploaded until the merchant reviews and submits.
   const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence | null>(null);
+
+  // The checklist test only applies while the stall is not verified: that is its first open.
+  const checklistVariant = useExperimentVariant("merchant_setup_checklist_v1", {
+    enabled: Boolean(activeOutlet) && !isVerificationCurrent(activeOutlet?.verification),
+  });
 
   if (!activeOutlet) {
     return (
@@ -159,9 +167,17 @@ export function VerificationCentreScreen({ navigation }: Props) {
               Verification pending
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              Hungry is reviewing your documents. You can keep setting up your stall and menu while
-              you wait.
+              Hungry is reviewing your documents. This usually takes a few working days. You can
+              keep setting up your stall and menu while you wait.
             </AppText>
+            <View style={{ alignSelf: "stretch", gap: spacing[2], marginTop: spacing[4] }}>
+              <Button label="Set up your menu" onPress={() => navigation.navigate("Menu")} />
+              <Button
+                label="Set up your profile"
+                variant="secondary"
+                onPress={() => navigation.navigate("Profile")}
+              />
+            </View>
           </View>
         );
       case "rejected":
@@ -309,7 +325,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
         <MethodCard
           icon={<FileText size={24} color={palette.orange} />}
           title="Document photo"
-          description="Attach a photo of your SFA licence or ACRA business profile."
+          description="Attach a photo of your NEA hawker licence, SFA food shop licence or ACRA business profile."
           onPress={() => void handlePickEvidence("licence_upload", "image")}
           isLoading={isUploadingEvidence}
         />
@@ -317,7 +333,7 @@ export function VerificationCentreScreen({ navigation }: Props) {
         <MethodCard
           icon={<Camera size={24} color={palette.orange} />}
           title="Take document photo"
-          description="Use your camera to photograph your SFA licence or ACRA business profile."
+          description="Use your camera to photograph your NEA hawker licence, SFA food shop licence or ACRA business profile."
           onPress={() => void handlePickEvidence("licence_upload", "image", "camera")}
           isLoading={isUploadingEvidence}
         />
@@ -336,7 +352,17 @@ export function VerificationCentreScreen({ navigation }: Props) {
   return (
     <Screen title="Verification Centre">
       <View style={{ gap: spacing[6], width: "100%" }}>
+        {status === "verified" && activeOutlet.isLive ? null : (
+          <ClaimStepper current={status === "verified" ? 3 : 2} />
+        )}
         {renderStatusHeader()}
+        {checklistVariant === "checklist" && status !== "verified" ? (
+          <SetupChecklist
+            outlet={activeOutlet}
+            showVerifyAction={false}
+            onAction={(action) => navigation.navigate(action === "menu" ? "Menu" : "Profile")}
+          />
+        ) : null}
         {uploadError ? (
           <AppText variant="bodySmall" style={{ color: palette.error }}>
             {uploadError}

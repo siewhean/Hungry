@@ -6629,6 +6629,45 @@ export const supabaseService: HungryService = {
       return toClaimStatus(asString((data as Row).status) ?? null);
     },
 
+    async getMyMerchantClaims() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("merchant_claim_interests")
+        .select("id,venue_id,status,created_at")
+        .eq("claimed_by", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const claims = Array.isArray(data) ? (data as Row[]) : [];
+      if (claims.length === 0) return [];
+      // One read for every stall name, never one per claim.
+      const venueIds = Array.from(new Set(claims.map((row) => asString(row.venue_id) ?? "")));
+      const { data: venueRows, error: venueError } = await client
+        .from("venues")
+        .select("id,name")
+        .in("id", venueIds);
+      if (venueError) throw venueError;
+      const names = new Map(
+        (Array.isArray(venueRows) ? (venueRows as Row[]) : []).map((row) => [
+          asString(row.id) ?? "",
+          asString(row.name) ?? "",
+        ]),
+      );
+      return claims.map((row) => {
+        const venueId = asString(row.venue_id) ?? "";
+        const status = toClaimStatus(asString(row.status) ?? null);
+        return {
+          claimId: asString(row.id) ?? "",
+          venueId,
+          venueName: names.get(venueId) || "Your stall",
+          status: status === "none" ? ("submitted" as const) : status,
+          submittedAt: asString(row.created_at) ?? new Date().toISOString(),
+        };
+      });
+    },
+
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
       const { data, error } = await client.functions.invoke("ops-dishes-draft", {
