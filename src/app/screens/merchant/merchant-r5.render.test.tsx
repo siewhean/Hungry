@@ -83,6 +83,16 @@ test("R5-2: a decorative symbol is hidden from screen readers, a meaningful one 
   assert.equal((plain as HTMLElement).style.width, "16px");
 });
 
+test("R5-2: AppSymbol also takes a named registry symbol (shared with onboarding)", async () => {
+  const view = await render(
+    createElement(AppSymbol, { name: "nearYou", color: "#000", testID: "named-symbol" }),
+  );
+  const symbol = view.findByTestId("named-symbol") as HTMLElement;
+  assert.equal(symbol.getAttribute("aria-hidden"), "true");
+  assert.equal(symbol.style.width, "22px");
+  assert.ok(symbol.querySelector('[data-stub="lucide-react-native.MapPin"]'));
+});
+
 // ─── R5-4: PressableScale ───────────────────────────────────────────────────
 
 test("R5-4: PressableScale presses like a button and does nothing when disabled", async () => {
