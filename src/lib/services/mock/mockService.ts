@@ -19,6 +19,8 @@ import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { validateDisplayName } from "@/features/profile/profileName";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { buildMerchantInsights, buildWeeklySummaryInsight } from "@/features/merchant/insightRules";
+import { isSoldOut as hasSoldOutFlag } from "@/features/merchant/menuSections";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -32,7 +34,6 @@ import {
   dishes,
   guestProfile,
   merchantAccount,
-  merchantAIInsights,
   merchantAnalytics30d,
   merchantAnalytics7d,
   merchantAnalyticsToday,
@@ -78,6 +79,7 @@ import type {
   AIBusinessInsight,
   MoodSearchIntent,
   CustomerInteraction,
+  MerchantInsightFacts,
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
@@ -349,7 +351,6 @@ let _merchantOCRDrafts: OCRDishDraft[] = clone(merchantOCRDrafts);
 let _merchantInbox: CustomerInteraction[] = clone(merchantCustomerInteractions);
 let _merchantPromotions: MerchantPromotion[] = clone(merchantPromotions);
 let _popularVisitorPins: PopularVisitorPin[] = clone(popularVisitorPins);
-let _merchantAIInsights = clone(merchantAIInsights);
 let _merchantTeamMemberCounter = 0;
 let _merchantDishViewCounter = 0;
 let _merchantNotificationCounter = 0;
@@ -1152,16 +1153,62 @@ function getPromotionOutletVenueId(promotion: MerchantPromotion): string | undef
   return signatureDishId ? dishes.find((dish) => dish.id === signatureDishId)?.venueId : undefined;
 }
 
+/** The same rules production uses, fed from the mock menu, inbox and analytics. */
 function getAIInsightsForOutlet(
   outletId: string,
   types?: AIBusinessInsight["type"][],
 ): AIBusinessInsight[] {
-  getMerchantOutlet(outletId);
+  const outlet = getMerchantOutlet(outletId);
+  const menu = getMerchantMenu(outletId);
+  const reviews = _merchantInbox.filter(
+    (interaction) =>
+      interaction.outletId === outletId &&
+      interaction.type === "review" &&
+      !isMockInboxReviewModerationHidden(interaction),
+  );
+  const now = Date.now();
+  const inWindow = (review: CustomerInteraction, fromDays: number, toDays: number) => {
+    const age = now - new Date(review.createdAt).getTime();
+    return age >= fromDays * 86_400_000 && age < toDays * 86_400_000;
+  };
+  const average = (items: CustomerInteraction[]) => {
+    const rated = items.filter((item) => typeof item.rating === "number");
+    return rated.length
+      ? rated.reduce((sum, item) => sum + (item.rating ?? 0), 0) / rated.length
+      : undefined;
+  };
+  const lastWeek = reviews.filter((review) => inWindow(review, 0, 7));
+  const weekBefore = reviews.filter((review) => inWindow(review, 7, 14));
+  const unreplied = reviews.filter((review) => !review.reply);
+  const soldOut = menu.filter((dish) => hasSoldOutFlag(dish.availabilityFlags));
+  const analytics = buildMockMerchantAnalytics(outletId, "7d");
+  const facts: MerchantInsightFacts = {
+    dishCount: menu.length,
+    dishesWithoutPhoto: menu.filter(
+      (dish) => !dish.imageUrl?.trim() && !(dish.gallery ?? []).some((url) => url.trim()),
+    ).length,
+    soldOutCount: soldOut.length,
+    soldOutNames: soldOut.map((dish) => dish.name).slice(0, 3),
+    unrepliedReviews: unreplied.length,
+    oldestUnrepliedAt: unreplied
+      .map((review) => review.createdAt)
+      .sort()
+      .at(0),
+    reviewsLast7Days: lastWeek.length,
+    ratingLast7Days: average(lastWeek),
+    reviewsPrevious7Days: weekBefore.length,
+    ratingPrevious7Days: average(weekBefore),
+  };
   const typeSet = types ? new Set(types) : null;
-  return _merchantAIInsights
-    .filter((insight) => insight.outletId === outletId)
-    .filter((insight) => !typeSet || typeSet.has(insight.type))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [
+    buildWeeklySummaryInsight(outletId, analytics),
+    ...buildMerchantInsights({
+      outletId,
+      facts,
+      analytics,
+      openingSchedule: outlet.openingSchedule,
+    }),
+  ].filter((insight) => !typeSet || typeSet.has(insight.type));
 }
 
 function getMerchantAccountById(merchantAccountId: string): MerchantAccount {

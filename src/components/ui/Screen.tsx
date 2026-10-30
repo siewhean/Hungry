@@ -1,10 +1,11 @@
-import type { PropsWithChildren, ReactNode, RefObject } from "react";
+import type { PropsWithChildren, ReactElement, ReactNode, RefObject } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   View,
+  type RefreshControlProps,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -29,6 +30,8 @@ interface ScreenProps {
   scrollRef?: RefObject<ScrollView>;
   /** Lifts the content above the iOS keyboard (forms). Android resizes the window itself. */
   keyboardAvoiding?: boolean;
+  /** Pull-to-refresh for a scrolling screen. */
+  refreshControl?: ReactElement<RefreshControlProps>;
 }
 
 export function Screen({
@@ -45,6 +48,7 @@ export function Screen({
   fullWidth = false,
   scrollRef,
   keyboardAvoiding = false,
+  refreshControl,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
@@ -81,6 +85,7 @@ export function Screen({
       onScroll={onScroll}
       scrollEventThrottle={scrollEventThrottle}
       keyboardShouldPersistTaps="handled"
+      refreshControl={refreshControl}
     >
       <View
         style={[

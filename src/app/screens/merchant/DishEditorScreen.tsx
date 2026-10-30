@@ -485,7 +485,7 @@ export function DishEditorScreen() {
 
         <FormSwitchRow
           label="Featured dish"
-          description="Highlight at top of menu"
+          description="Shows first on your menu with a Stall's pick badge"
           value={isFeatured}
           onValueChange={setIsFeatured}
         />

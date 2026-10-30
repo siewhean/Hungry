@@ -205,7 +205,7 @@ test("Merchant screen contract: merchant route params match editable sub-screen 
   assert.match(navigationTypes, /OCRDrafts: undefined;/);
   assert.match(
     navigationTypes,
-    /CustomerInbox: \{ filter\?: "unreplied"; replyToId\?: string \} \| undefined;/,
+    /CustomerInbox: \{ filter\?: "all" \| "unreplied"; replyToId\?: string \} \| undefined;/,
   );
   assert.match(navigationTypes, /FeaturedVisitors: undefined;/);
   assert.match(navigationTypes, /PromotionList: undefined;/);
