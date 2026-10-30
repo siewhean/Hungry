@@ -1,12 +1,4 @@
-import {
-  Fragment,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -32,7 +24,6 @@ import {
   Tag,
 } from "lucide-react-native";
 import {
-  useFocusEffect,
   useIsFocused,
   useNavigation,
   useRoute,
@@ -57,15 +48,13 @@ import {
   getDiscoverBites,
   getDiscoverCardImage,
   getDishImageCandidates,
-  isLateNightDish,
   isLateNightHour,
-  searchResultToDiscoverBite,
   type DiscoverCardImageCandidate,
 } from "@/features/discover/bites";
 import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
-import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
+import { getDietaryChipLabel } from "@/features/discover/homeFilters";
 import { buildBiteLabel } from "@/features/discover/biteLabel";
 import { pickRailsWithoutRepeats, tasteOrderBites } from "@/features/discover/homeRanking";
 import {
@@ -86,31 +75,20 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
-import {
-  getNearestBuildings,
-  getNearestSingaporeArea,
-  getNearestSingaporeAreaWithin,
-} from "@/lib/geo/singaporeBuildings";
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
-import type { Bite, DiscoveryLocationFeed } from "@/lib/services/types";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import type { Bite } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useDiscoverFeed } from "@/features/discover/useDiscoverFeed";
+import { useDiscoverFilters } from "@/features/discover/useDiscoverFilters";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useCurrentPlace } from "@/features/discover/currentPlace";
-import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { decideInitialRadiusMeters } from "@/features/discovery/decideForMeCandidates";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
-import { getSingaporeHour } from "@/utils/operatingHours";
 import { DiscoverBiteRail, DiscoverRailBadge } from "@/components/discover/home/DiscoverBiteRail";
 import { DiscoverStallThumbnail } from "@/components/discover/home/DiscoverImages";
 import {
@@ -134,21 +112,8 @@ import { POPULAR_FOOD_STYLES } from "@/features/discover/popularFoodStyles";
 import {
   buildStallShowcaseCardsFromVenues,
   STALL_SHOWCASE_CARD_LIMIT,
-  type DiscoverRepositoryLookup,
   type DiscoverStallShowcaseCard,
 } from "@/features/discover/stallShowcase";
-
-type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
-
-const INTENT_CHIPS: readonly {
-  id: Exclude<DiscoverChipId, "dietary">;
-  label: string;
-}[] = [
-  { id: "spicy", label: "Spicy" },
-  { id: "halal", label: "Halal" },
-  { id: "late", label: "Late night" },
-  { id: "cheap", label: "Under S$5" },
-] as const;
 
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
 const DISCOVER_STALL_SHOW_MORE_COUNT = 20;
@@ -158,14 +123,6 @@ const MIN_DISCOVER_RAIL_ITEMS = 3;
 /** The rows TrendingList shows. */
 const TRENDING_LIST_ROWS = 5;
 const NO_BITE_REASONS: ReadonlyMap<string, string> = new Map();
-/** Stable empties so memos keyed on the feed do not rerun every render. */
-const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
-const EMPTY_FEED_RESULTS: DiscoveryLocationFeed["results"] = [];
-const DISCOVER_AREA_RADIUS_METERS = 3000;
-/** Location off: picks from the whole island, read around the built-in default point. */
-const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
-/** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
-const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
 
 type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
@@ -206,18 +163,57 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const route = useRoute();
   const isFocused = useIsFocused();
   const isTabSwipeLockedRef = useRef(false);
-  const repository = getDataRepository();
-  const isSupabaseDataSource = getServiceProvider().mode === "supabase";
-  const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
-  const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] = useState<DiscoveryLocationFeed | null>(
-    null,
-  );
-  const [isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading] = useState(false);
-  const [discoverLoadError, setDiscoverLoadError] = useState(false);
-  const [discoverReloadKey, setDiscoverReloadKey] = useState(0);
-  const [isDiscoverRefreshing, setIsDiscoverRefreshing] = useState(false);
-  // The area the cards on screen were read for: a reload of the same area keeps them.
-  const [loadedDiscoverFeedKey, setLoadedDiscoverFeedKey] = useState<string | null>(null);
+  const {
+    repository,
+    isSupabaseDataSource,
+    locationPermission,
+    supabaseFeedVenues,
+    supabaseFeedResults,
+    repositoryLookup,
+    supabaseDiscoverBites,
+    getVenueHours,
+    discoverLocationLatitude,
+    discoverLocationLongitude,
+    needsDiscoverAreaChoice,
+    areaBuildings,
+    discoverAreaName,
+    discoverLocationLabel,
+    discoverAreaPhrase,
+    hasManualAreaPick,
+    handleUseCurrentLocation,
+    currentPlaceId,
+    discoverFeedKey,
+    discoverHeaderLabel,
+    reloadDiscover,
+    areaVenues,
+    allDiscoverVenues,
+    areaDishPool,
+    supabaseDiscoverAreaCount,
+    supabaseDiscoveryFeed,
+    isSupabaseDiscoveryFeedLoading,
+    discoverLoadError,
+    isDiscoverRefreshing,
+    loadedDiscoverFeedKey,
+    currentPlace,
+  } = useDiscoverFeed();
+  const openDietarySettings = useCallback(() => {
+    navigation.navigate("OnboardingStack", {
+      screen: "TasteQuiz",
+      params: { mode: "profile", initialPhase: "dietary", source: "home" },
+    });
+  }, [navigation]);
+  const {
+    deferredDiscoverChipIds,
+    activeDiscoverChipSignature,
+    isPopularFoodFilterPending,
+    isDiscoverFiltering,
+    sortedChips,
+    toggleDiscoverChip,
+    matchesDiscoverChipSelection,
+    clearDiscoverFilters,
+    activeDiscoverChipIds,
+    currentHour,
+  } = useDiscoverFilters({ getVenueHours, onOpenDietarySettings: openDietarySettings });
   const scrollRef = useRef<ScrollView>(null);
   useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
@@ -274,14 +270,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   );
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
-  const locationPermission = useLocationStore((state) => state.permission);
-  const currentLocation = useLocationStore((state) => state.currentLocation);
-  const manualLocation = useLocationStore((state) => state.manualLocation);
-  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
-  const manualPlaceName = useLocationStore((state) => state.manualPlaceName);
-  const grantLocation = useLocationStore((state) => state.grantLocation);
-  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
-  const showToast = useUIStore((state) => state.showToast);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isUserMode = !isDeveloperMode && !isMerchantMode;
@@ -313,117 +301,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     navigation.navigate("SearchHome");
   }, [navigation]);
 
-  // Dietary Needs starts on for a diner who has set dietary needs, so nothing unsuitable shows.
-  const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>(() =>
-    profile.dietaryPreferences.length ? ["dietary"] : [],
-  );
-  const dietaryAutoOnRef = useRef(profile.dietaryPreferences.length > 0);
-  useEffect(() => {
-    if (profile.dietaryPreferences.length === 0) {
-      // No needs left (cleared in Settings): the chip filters nothing, and the next save
-      // switches it on again.
-      dietaryAutoOnRef.current = false;
-      setActiveDiscoverChipIds((ids) =>
-        ids.includes("dietary") ? ids.filter((id) => id !== "dietary") : ids,
-      );
-      return;
-    }
-    // The profile can finish loading after the first render; switch it on once, never again.
-    if (dietaryAutoOnRef.current) return;
-    dietaryAutoOnRef.current = true;
-    setActiveDiscoverChipIds((ids) => (ids.includes("dietary") ? ids : [...ids, "dietary"]));
-  }, [profile.dietaryPreferences.length]);
   const [discoverMode, setDiscoverMode] = useState<DiscoverMode>("forYou");
   const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
     DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
   );
-  const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? EMPTY_FEED_VENUES;
-  const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? EMPTY_FEED_RESULTS;
-  // Live builds look dishes and stalls up in the feed already on screen. The synchronous
-  // repository would start a full-table download (again every 45 s), miss rows past the
-  // 1,000-row cap and never re-render when it lands (HOME-X5).
-  const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
-    const dishById = new Map<string, DishDetail | undefined>();
-    const dishesByVenue = new Map<string, DishDetail[]>();
-    const venuesByBuilding = new Map<string, VenueSummary[]>();
-
-    if (isSupabaseDataSource) {
-      for (const { dish } of supabaseFeedResults) {
-        dishById.set(dish.id, dish);
-        dishesByVenue.set(dish.venueId, [...(dishesByVenue.get(dish.venueId) ?? []), dish]);
-      }
-      for (const venue of supabaseFeedVenues) {
-        venuesByBuilding.set(venue.buildingId, [
-          ...(venuesByBuilding.get(venue.buildingId) ?? []),
-          venue,
-        ]);
-      }
-      return {
-        getDishById: (dishId: string) => dishById.get(dishId),
-        listDishesByVenue: (venueId: string) => dishesByVenue.get(venueId) ?? [],
-        listVenuesByBuilding: (buildingId: string) => venuesByBuilding.get(buildingId) ?? [],
-      };
-    }
-
-    return {
-      getDishById: (dishId: string) => {
-        if (!dishById.has(dishId)) {
-          dishById.set(dishId, repository.getDishById(dishId));
-        }
-        return dishById.get(dishId);
-      },
-      listDishesByVenue: (venueId: string) => {
-        const cached = dishesByVenue.get(venueId);
-        if (cached) {
-          return cached;
-        }
-        const dishes = repository.listDishesByVenue(venueId);
-        dishesByVenue.set(venueId, dishes);
-        dishes.forEach((dish) => {
-          dishById.set(dish.id, dish);
-        });
-        return dishes;
-      },
-      listVenuesByBuilding: (buildingId: string) => {
-        const cached = venuesByBuilding.get(buildingId);
-        if (cached) {
-          return cached;
-        }
-        const venues = repository.listVenuesByBuilding(buildingId);
-        venuesByBuilding.set(buildingId, venues);
-        return venues;
-      },
-    };
-  }, [isSupabaseDataSource, repository, supabaseFeedResults, supabaseFeedVenues]);
-  const supabaseDiscoverBites = useMemo(
-    () => supabaseFeedResults.map(searchResultToDiscoverBite),
-    [supabaseFeedResults],
-  );
-  const feedVenueHoursById = useMemo(
-    () => new Map(supabaseFeedVenues.map((venue) => [venue.id, venue.operatingHours] as const)),
-    [supabaseFeedVenues],
-  );
-  // Hours for the late-night rail and chip: the live feed (live builds read nothing else),
-  // otherwise the local data.
-  const getVenueHours = useCallback(
-    (venueId?: string) =>
-      venueId
-        ? feedVenueHoursById.get(venueId) ||
-          (isSupabaseDataSource ? undefined : repository.getVenueById(venueId)?.operatingHours) ||
-          undefined
-        : undefined,
-    [feedVenueHoursById, isSupabaseDataSource, repository],
-  );
-  const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
-  const deferredDiscoverChipSet = useMemo(
-    () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
-    [deferredDiscoverChipIds],
-  );
-  const activeDiscoverChipSignature = activeDiscoverChipIds.join("|");
-  const deferredDiscoverChipSignature = deferredDiscoverChipIds.join("|");
-  // Filtering is local and instant: the skeleton only covers the deferred re-render.
-  const isPopularFoodFilterPending = activeDiscoverChipSignature !== deferredDiscoverChipSignature;
-  const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
   const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
     if (nextHeight <= 0) {
@@ -435,168 +316,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     );
   }, []);
 
-  const { coordinate: discoverCoordinate, isApproximate: isDiscoverLocationApproximate } =
-    getEffectiveLocation({
-      permission: locationPermission,
-      currentLocation,
-      manualCoordinate,
-    });
-  const discoverLocationLatitude = discoverCoordinate.latitude;
-  const discoverLocationLongitude = discoverCoordinate.longitude;
-  // GPS jitter must not refetch Discover: reads are keyed on a ~200m grid cell.
-  const discoverGeoCellLatitude =
-    Math.round(discoverLocationLatitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
-    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
-  const discoverGeoCellLongitude =
-    Math.round(discoverLocationLongitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
-    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
-  // Without a GPS fix or a manual pick the coordinate is only the built-in default,
-  // so the header asks the user to choose an area instead of asserting one.
-  const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
   const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "Pick with friends" : "Spin the wheel";
-  const areaBuildings = useMemo(
-    () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
-    [discoverLocationLatitude, discoverLocationLongitude],
-  );
-  // Only a manual area pick asks the server for that planning area. A GPS fix reads
-  // the radius around the diner, so a stall 300 m away over an area line is not dropped.
-  const discoverAreaRequest = manualLocation;
-  // The nearest named area, only when the phone is within ~5 km of one (not in Woodlands
-  // when it is overseas). Without a name the screen says "near you".
-  // With location off there is no area to name: Discover shows picks across Singapore instead.
-  const discoverAreaName = needsDiscoverAreaChoice
-    ? undefined
-    : (manualLocation ??
-      getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude));
-  const discoverLocationLabel = needsDiscoverAreaChoice
-    ? "Singapore"
-    : (discoverAreaName ?? "Near you");
-  const discoverAreaPhrase = needsDiscoverAreaChoice
-    ? "across Singapore"
-    : discoverAreaName
-      ? `in ${discoverAreaName}`
-      : "near you";
-  const discoverRadiusMeters = needsDiscoverAreaChoice
-    ? DISCOVER_ISLAND_RADIUS_METERS
-    : DISCOVER_AREA_RADIUS_METERS;
-  const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
-  const handleUseCurrentLocation = useCallback(async () => {
-    if (locationPermission === "granted") {
-      await clearManualLocation();
-      return;
-    }
-    const granted = await grantLocation({ manualLocation });
-    if (!granted) {
-      showToast({
-        message: "Location access is off. Turn it on in Settings to use your location.",
-        tone: "info",
-      });
-    }
-  }, [clearManualLocation, grantLocation, locationPermission, manualLocation, showToast]);
-  // Inside a mall, hawker centre or food court the header names it instead of the area. A real
-  // GPS fix or a searched place counts; a searched area or the default point is never "inside".
-  const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
-    (locationPermission === "granted" && !manualCoordinate) || (manualCoordinate && manualPlaceName)
-      ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
-      : null,
-  );
-  const currentPlaceId = currentPlace?.id;
-  const discoverFeedKey = [
-    discoverAreaRequest ?? "",
-    discoverGeoCellLatitude,
-    discoverGeoCellLongitude,
-    discoverRadiusMeters ?? "",
-    currentPlaceId ?? "",
-  ].join("|");
-  // The area follows the phone: a mall or hawker centre when inside one, else the nearest area,
-  // and "Singapore" while location is off.
-  const discoverHeaderLabel =
-    currentPlace?.name ??
-    manualPlaceName ??
-    discoverAreaName ??
-    (needsDiscoverAreaChoice
-      ? "Singapore"
-      : getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude));
-
   useEffect(() => {
     setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
   }, [discoverLocationLabel, activeDiscoverChipSignature]);
-
-  useEffect(() => {
-    if (!isSupabaseDataSource) {
-      setSupabaseDiscoverAreaCount(null);
-      setSupabaseDiscoveryFeed(null);
-      setIsSupabaseDiscoveryFeedLoading(false);
-      return;
-    }
-
-    let isActive = true;
-    // Keep the current feed on screen while a new area or GPS fix loads.
-    setIsSupabaseDiscoveryFeedLoading(true);
-    setDiscoverLoadError(false);
-    // The feed asks for the place's stalls first, so it waits for the place lookup (3 s at most).
-    if (isCurrentPlaceResolving) {
-      return () => {
-        isActive = false;
-      };
-    }
-    const discoveryService = getHungryService().discovery;
-    void Promise.allSettled([
-      discoveryService.countVenuesInArea(
-        discoverGeoCellLatitude,
-        discoverGeoCellLongitude,
-        discoverRadiusMeters,
-        discoverAreaRequest,
-      ),
-      discoveryService.listDiscoveryFeedByLocation({
-        areaName: discoverAreaRequest,
-        lat: discoverGeoCellLatitude,
-        lng: discoverGeoCellLongitude,
-        radiusMeters: discoverRadiusMeters,
-        limit: DISCOVER_FEED_LIMIT,
-        buildingId: currentPlaceId,
-      }),
-    ]).then(([venueCountResult, discoveryFeedResult]) => {
-      if (!isActive) return;
-      // A failed count never throws away a good feed.
-      setSupabaseDiscoverAreaCount(
-        venueCountResult.status === "fulfilled" && typeof venueCountResult.value === "number"
-          ? venueCountResult.value
-          : null,
-      );
-      if (discoveryFeedResult.status === "fulfilled") {
-        setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
-        setLoadedDiscoverFeedKey(discoverFeedKey);
-      } else {
-        reportError(discoveryFeedResult.reason, { surface: "discover_home_feed" });
-        setDiscoverLoadError(true);
-      }
-      setIsSupabaseDiscoveryFeedLoading(false);
-      setIsDiscoverRefreshing(false);
-    });
-
-    return () => {
-      isActive = false;
-    };
-  }, [
-    discoverAreaRequest,
-    discoverFeedKey,
-    discoverRadiusMeters,
-    discoverGeoCellLatitude,
-    discoverGeoCellLongitude,
-    discoverReloadKey,
-    isSupabaseDataSource,
-    isCurrentPlaceResolving,
-    currentPlaceId,
-  ]);
-
-  const reloadDiscover = useCallback(async () => {
-    setIsDiscoverRefreshing(true);
-    setDiscoverReloadKey((key) => key + 1);
-    if (!isSupabaseDataSource) {
-      setIsDiscoverRefreshing(false);
-    }
-  }, [isSupabaseDataSource]);
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -609,167 +332,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     };
   }, [palette, colorScheme]);
 
-  // One Singapore-time hour for the chip order and the late-night rail, refreshed on focus.
-  const [currentHour, setCurrentHour] = useState(() => getSingaporeHour());
-  useFocusEffect(
-    useCallback(() => {
-      setCurrentHour(getSingaporeHour());
-    }, []),
-  );
-  const sortedChips = useMemo(() => {
-    // The first chip names the diner's saved needs; a saved halal need already is the Halal chip.
-    const intentChips = profile.dietaryPreferences.includes("halal")
-      ? INTENT_CHIPS.filter((chip) => chip.id !== "halal")
-      : INTENT_CHIPS;
-    const baseChips = [
-      { id: "dietary" as const, label: getDietaryChipLabel(profile.dietaryPreferences) },
-      ...intentChips,
-    ];
-    // "Late night" only shows from 21:00 to 03:59, and then leads the row.
-    if (isLateNightHour(currentHour)) {
-      return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
-    }
-    return baseChips.filter((chip) => chip.id !== "late");
-  }, [currentHour, profile.dietaryPreferences]);
-
-  const areaVenues = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
-      return Array.from(uniqueVenues.values());
-    }
-    const scopedVenues = areaBuildings.flatMap((building) =>
-      repositoryLookup.listVenuesByBuilding(building.id),
-    );
-    const uniqueVenues = new Map(scopedVenues.map((venue) => [venue.id, venue]));
-    return Array.from(uniqueVenues.values());
-  }, [areaBuildings, isSupabaseDataSource, repositoryLookup, supabaseFeedVenues]);
-  const areaDishes = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueDishes = new Map(
-        supabaseFeedResults.map((result) => [result.dish.id, result.dish]),
-      );
-      return Array.from(uniqueDishes.values());
-    }
-    return areaVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
-  }, [areaVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
-  const allDiscoverVenues = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
-      return Array.from(uniqueVenues.values());
-    }
-    const discoveredVenues = repository
-      .listBuildings()
-      .flatMap((building) => repositoryLookup.listVenuesByBuilding(building.id));
-    const uniqueVenues = new Map(discoveredVenues.map((venue) => [venue.id, venue]));
-    return Array.from(uniqueVenues.values());
-  }, [isSupabaseDataSource, repository, repositoryLookup, supabaseFeedVenues]);
-  const allDiscoverDishes = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueDishes = new Map(
-        supabaseFeedResults.map((result) => [result.dish.id, result.dish]),
-      );
-      return Array.from(uniqueDishes.values());
-    }
-    return allDiscoverVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
-  }, [allDiscoverVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
-  const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
   const isLateNightMakanVisible = isLateNightHour(currentHour);
-  const toggleDiscoverChip = useCallback(
-    (chipId: DiscoverChipId) => {
-      if (chipId === "dietary" && profile.dietaryPreferences.length === 0) {
-        // Nothing to filter by yet: the chip is the way to set dietary needs.
-        trackAnalyticsEvent("discover_chip_tapped", {
-          surface: "home",
-          chip: chipId,
-          selected: false,
-          opened_settings: true,
-        });
-        navigation.navigate("OnboardingStack", {
-          screen: "TasteQuiz",
-          params: { mode: "profile", initialPhase: "dietary", source: "home" },
-        });
-        return;
-      }
-      const wasActive = activeDiscoverChipIds.includes(chipId);
-      const nextChipIds = wasActive
-        ? activeDiscoverChipIds.filter((value) => value !== chipId)
-        : [...activeDiscoverChipIds, chipId];
-
-      trackAnalyticsEvent("discover_chip_tapped", {
-        surface: "home",
-        chip: chipId,
-        selected: !wasActive,
-      });
-
-      if (!wasActive && chipId !== "dietary") {
-        scheduleIdleWork(
-          () => {
-            recordTasteInteraction({
-              type: "search_query",
-              surface: "discover",
-              query: chipId,
-              chipId,
-            });
-          },
-          { timeout: 500, fallbackDelayMs: 80 },
-        );
-      }
-
-      setActiveDiscoverChipIds(nextChipIds);
-    },
-    [activeDiscoverChipIds, navigation, profile.dietaryPreferences.length, recordTasteInteraction],
-  );
-  const matchesDiscoverChipSelection = useCallback(
-    (dish?: DishDetail, textParts: string[] = []) => {
-      if (!deferredDiscoverChipSet.size) {
-        return true;
-      }
-      let cachedHaystack: string | null = null;
-      const getLateNightHaystack = () => {
-        if (cachedHaystack !== null) {
-          return cachedHaystack;
-        }
-
-        cachedHaystack = [
-          dish?.name,
-          dish?.venueName,
-          dish?.tasteTags.join(" "),
-          dish?.priceRange,
-          ...textParts,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return cachedHaystack;
-      };
-
-      return Array.from(deferredDiscoverChipSet).every((chipId) => {
-        if (chipId === "dietary") {
-          if (!dish) return false;
-          // Saved needs must all hold.
-          return profile.dietaryPreferences.every((flag) => dish.dietaryFlags.includes(flag));
-        }
-        if (chipId === "halal") {
-          // Structured flag only: text matching let "non-halal" through.
-          return Boolean(dish?.dietaryFlags.includes("halal"));
-        }
-        if (chipId === "spicy") {
-          return (
-            Boolean(dish && dish.tasteVector.spicy >= 6) || getLateNightHaystack().includes("spicy")
-          );
-        }
-        if (chipId === "late") {
-          // Same rule as the late-night rail: the stall's hours run past 22:00.
-          return isLateNightDish(dish, getVenueHours(dish?.venueId));
-        }
-        if (chipId === "cheap") {
-          return Boolean(dish && dish.price > 0 && dish.price < HOME_CHEAP_PRICE_LIMIT);
-        }
-        return true;
-      });
-    },
-    [deferredDiscoverChipSet, getVenueHours, profile.dietaryPreferences],
-  );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
   const discoverBaseBites = useMemo(() => {
     if (isSupabaseDataSource) {
@@ -1428,13 +991,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       <ChevronRight color={palette.textMuted} size={20} />
     </Pressable>
   );
-  const clearDiscoverFilters = useCallback(() => {
-    trackAnalyticsEvent("home_filters_cleared", {
-      surface: "home",
-      chips: activeDiscoverChipIds.join(","),
-    });
-    setActiveDiscoverChipIds([]);
-  }, [activeDiscoverChipIds]);
   // Filters that leave nothing anywhere on the page get one explanation and one way out,
   // not an empty block per section.
   const isDietaryOnlyFilter =

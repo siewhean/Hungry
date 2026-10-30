@@ -19,6 +19,8 @@ export function readHomeSource(): string {
     ...readdirSync(path.join(repoRoot, sectionDir)).map((name) => `${sectionDir}/${name}`),
     "src/features/discover/popularFoodStyles.ts",
     "src/features/discover/stallShowcase.ts",
+    "src/features/discover/useDiscoverFeed.ts",
+    "src/features/discover/useDiscoverFilters.ts",
   ]
     .map(readRepoFile)
     .join("\n");

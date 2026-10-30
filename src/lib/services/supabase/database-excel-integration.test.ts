@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
+import { readHomeSource } from "@/test/sourceContracts";
+
 const migrationSql = readFileSync(
   resolve(
     process.cwd(),
@@ -51,10 +53,7 @@ const serviceSource = readFileSync(
   resolve(process.cwd(), "src/lib/services/supabase/supabaseService.ts"),
   "utf8",
 );
-const discoverSource = readFileSync(
-  resolve(process.cwd(), "src/app/screens/discover/DiscoverHomeScreen.tsx"),
-  "utf8",
-);
+const discoverSource = readHomeSource();
 const quickBitesSource = readFileSync(
   resolve(process.cwd(), "src/app/screens/discover/QuickBitesScreen.tsx"),
   "utf8",
