@@ -1,0 +1,14 @@
+{
+  "version": "20261029170000",
+  "name": "20261029170000_merchant_text_filter",
+  "result": "pass",
+  "rehearsed_at": "2026-10-30T11:29:57Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "582ae576675abc96327b7b921f67bad5b5993b5c",
+  "up_sha256": "e4e9e5ad33dc87734c54e5b45f15ba419be95803528f4234a4f106e2fb61b406",
+  "down_sha256": "10a765ca89ec99018d5216255c50cf1e2989aa35b4e290b5d023b6fee16a7ddd",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/merchant_text_filter.sql"]
+}
