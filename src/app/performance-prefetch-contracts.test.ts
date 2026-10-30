@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { readHomeSource } from "@/test/sourceContracts";
 
 function read(pathFromRepoRoot: string): string {
   return readFileSync(resolve(process.cwd(), pathFromRepoRoot), "utf8");
@@ -93,7 +94,7 @@ test("startup defers profile, mock data, and native analytics module loading", (
 test("home, discover, and quick bites avoid duplicate render-time data work", () => {
   const homeFeed = read("src/features/home/feed.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
 
   assert.match(homeFeed, /export interface HomeFeedBundle/);
@@ -143,7 +144,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 test("prefetch layer warms images, data, and route modules without blocking navigation", () => {
   const prefetch = read("src/features/navigation/prefetch.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");

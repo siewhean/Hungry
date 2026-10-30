@@ -525,7 +525,7 @@ export const EXPERIMENTS = {
     status: "draft",
     surface: "home",
     hypothesis:
-      "Ranking Dishes near you by the diner's palate, with a reason, gets more dish opens per Home view than photo or distance order.",
+      "A palate-ranked Dishes near you rail with a reason, leading the page, gets more dish opens per Home view than the rail in distance order, below Most reviewed.",
     primaryMetric: "discover_card_opened",
     guardrailMetrics: ["dish_viewed", "decide_for_me_triggered"],
     minSamplePerArm: 1600,

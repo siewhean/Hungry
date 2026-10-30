@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { readHomeSource } from "@/test/sourceContracts";
 
 const root = process.cwd();
 
@@ -73,7 +74,7 @@ test("Screen header contract: shared app headers use one fixed title treatment",
 });
 
 test("Screen header contract: live Discover, Review, and New Post headers use AppHeader", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const reviews = read("src/app/screens/review/ReviewFeedScreen.tsx");
@@ -131,25 +132,25 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
 });
 
 test("Discover V1 contract: situation intents live in their matching sections", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const discoverSources = readFilesUnder("src/app/screens/discover");
 
   assert.match(discover, /const POPULAR_FOOD_STYLES: readonly PopularFoodStyle\[\] = \[/);
   assert.match(
     discover,
-    /const POPULAR_LAKSA_GRAPHIC = require\("\.\.\/\.\.\/\.\.\/assets\/discover\/popular-laksa-topdown\.png"\)/,
+    /const POPULAR_LAKSA_GRAPHIC = require\("\.\.\/\.\.\/assets\/discover\/popular-laksa-topdown\.png"\)/,
   );
   assert.match(
     discover,
-    /const POPULAR_CHICKEN_RICE_GRAPHIC = require\("\.\.\/\.\.\/\.\.\/assets\/discover\/popular-chicken-rice-topdown\.png"\)/,
+    /const POPULAR_CHICKEN_RICE_GRAPHIC = require\("\.\.\/\.\.\/assets\/discover\/popular-chicken-rice-topdown\.png"\)/,
   );
   assert.match(
     discover,
-    /const POPULAR_CHAR_KWAY_TEOW_GRAPHIC = require\("\.\.\/\.\.\/\.\.\/assets\/discover\/popular-char-kway-teow-topdown\.png"\)/,
+    /const POPULAR_CHAR_KWAY_TEOW_GRAPHIC = require\("\.\.\/\.\.\/assets\/discover\/popular-char-kway-teow-topdown\.png"\)/,
   );
   assert.match(
     discover,
-    /const POPULAR_BAK_CHOR_MEE_GRAPHIC = require\("\.\.\/\.\.\/\.\.\/assets\/discover\/popular-bak-chor-mee-topdown\.png"\)/,
+    /const POPULAR_BAK_CHOR_MEE_GRAPHIC = require\("\.\.\/\.\.\/assets\/discover\/popular-bak-chor-mee-topdown\.png"\)/,
   );
   assert.match(discover, /function FoodStyleButton/);
   assert.match(discover, /const openSearchHome = useCallback\(\(\) => \{/);
@@ -676,7 +677,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
 });
 
 test("Discover V1 contract: browse cards open the image-feed browse mode", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const navigationTypes = read("src/app/navigation/navigationTypes.ts");
   const searchResults = read("src/app/screens/search/SearchResultsScreen.tsx");
   // The two big photo tiles are gone: trending dishes lead, and the full lists are two compact links.
@@ -821,7 +822,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
 });
 
 test("Discover collapses empty rails and offers pull-to-refresh plus one error state", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
 
   assert.doesNotMatch(discover, /NoFoodSectionEmptyState/);
   assert.doesNotMatch(discover, /Try again later\./);
@@ -845,7 +846,7 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
 });
 
 test("Home search bar fills the row, shortens its phrases on narrow phones and idles off screen", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   assert.match(discover, /isActive=\{isFocused\}/);
   assert.match(discover, /isNarrow=\{screenWidth < NARROW_SEARCH_WIDTH\}/);
   assert.match(discover, /enabled: isActive,/);

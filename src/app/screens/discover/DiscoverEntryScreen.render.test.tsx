@@ -210,7 +210,7 @@ test("Supabase builds show the redesigned Home from the live feed, with no full-
 
   assert.match(view.text(), /You are at/);
   assert.match(view.text(), /Hawker classics/);
-  assert.match(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Dishes across Singapore/);
   assert.match(view.text(), /Hajjah Mariam/);
   assert.match(view.text(), /Chicken Rice/);
   assert.equal(view.findByTestId("catalog-discover-root"), null, "not the offline Home");
@@ -230,12 +230,13 @@ test("dish cards open the redesigned dish page and stall rows the stall page, wi
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  // The small feed shows this dish in Most reviewed and again in Dishes near you: press the rail card.
+  // The small feed shows this dish in Dishes across Singapore (first, for a diner with a palate)
+  // and again in Most reviewed: press the rail card.
   const dishCards = view.container.querySelectorAll<HTMLElement>(
     '[aria-label^="Chicken Rice, Tian Tian, S$7.00"]',
   );
   assert.equal(dishCards.length, 2);
-  await view.press(dishCards[1]);
+  await view.press(dishCards[0]);
   assert.deepEqual(view.navigation.calls.at(-1)?.args, [
     "DishDetail",
     { dishId: "dish-2", source: "home" },
@@ -391,8 +392,8 @@ test("release-01 core-only builds have no QuickBites route, so rail titles are n
   (m.FEATURE_FLAGS as { release01CoreOnly: boolean }).release01CoreOnly = true;
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.match(view.text(), /Dishes near you/);
-  assert.equal(view.findByLabel("See all dishes near you"), null);
+  assert.match(view.text(), /Dishes across Singapore/);
+  assert.equal(view.findByLabel("See all dishes across Singapore"), null);
 });
 
 test("HOME-X7: QuickBites on Supabase lists the live feed only and never reads the local tables", async () => {
@@ -480,7 +481,7 @@ async function pullToRefresh(host: Element) {
 test("R4-B1: a chip filters the whole nearby pool, not just the first 6 cards", async () => {
   const rows = Array.from({ length: 10 }, (_, i) => feedRow(i + 1, { top_dish_review_count: 12 }));
   serveLiveFeed(rows);
-  // Only the 9th stall's dish is halal: it is past the 6-card slice of "Dishes near you".
+  // Only the 9th stall's dish is halal: it is past the 6-card slice of "Dishes across Singapore".
   fake.tables.dish_dietary_flags = () => ({
     data: [{ dish_id: "dish-9", dietary_flag_id: HALAL_FLAG_ID }],
     error: null,
@@ -546,7 +547,7 @@ test("R4-B5: 'No matching results' is one page-level state with a one-tap way to
   assert.ok(clear, "a Clear filters button should be offered");
   await view.press(clear);
   assert.doesNotMatch(view.text(), /No matching results/);
-  assert.match(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Dishes across Singapore/);
   const cleared = m.analytics
     .getTrackedAnalyticsEvents()
     .filter((event) => event.event === "home_filters_cleared");
@@ -615,7 +616,7 @@ test("H4-10: saved needs name the chip, and a sparse feed explains itself instea
   assert.ok(showAll, "the way out is on screen");
   await view.press(showAll);
   assert.match(view.text(), /Stalls (in|across) /, "the stall list is back");
-  assert.match(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Dishes across Singapore/);
 });
 
 test("H4-10: clearing every saved need in Settings switches the dietary filter off", async () => {
@@ -674,7 +675,7 @@ test("H4-22: pulling to refresh keeps the cards on screen until the new ones lan
   await pullToRefresh(view.findByText("Hawker classics")!);
   await view.settle();
   assert.match(view.text(), /Hajjah Mariam/, "the old cards stay during the refresh");
-  assert.match(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Dishes across Singapore/);
   release();
   await view.settle();
   assert.match(view.text(), /Fresh Stall/);
@@ -714,7 +715,7 @@ test("H4-23: pressing the Home tab scrolls the page back to the top", async () =
     scrolls.some((options) => (options as { y?: number })?.y === 0),
     "tabPress calls scrollTo({ y: 0 })",
   );
-  assert.ok(view.findByText("Dishes near you"));
+  assert.ok(view.findByText("Dishes across Singapore"));
 });
 
 test("H4-25: a rail counts one impression per visit, so leaving Home and coming back counts again", async () => {
@@ -834,7 +835,7 @@ test("H4-4: a dish shows in the first rail it qualifies for, not in every rail",
   assert.equal(new Set(shown).size, shown.length, `repeated dishes: ${shown.join(",")}`);
 });
 
-test("H4-2: with a palate, Dishes near you follows it and says why", async () => {
+test("H4-2: with a palate, Dishes across Singapore follows it and says why", async () => {
   const rows = Array.from({ length: 8 }, (_, i) =>
     feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null, top_dish_price: 9 + i }),
   );
@@ -857,7 +858,7 @@ test("H4-2: with a palate, Dishes near you follows it and says why", async () =>
   serveLiveFeed(rows);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
-  const rail = text.slice(text.indexOf("Dishes near you"));
+  const rail = text.slice(text.indexOf("Dishes across Singapore"));
   assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"), "the spicy dish leads the rail");
   assert.match(rail, /Spicy, the way you like it/);
   assert.equal(
@@ -929,7 +930,7 @@ test("H4-2: if the palate read fails, Home still shows the feed in its own order
   console.warn = () => undefined;
   try {
     const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-    assert.match(view.text(), /Dishes near you/);
+    assert.match(view.text(), /Dishes across Singapore/);
     assert.match(view.text(), /Dish 1/);
   } finally {
     console.warn = warn;
@@ -951,7 +952,7 @@ test("H4-2: ranking never hides dishes; with the Dietary chip off a halal diner 
   await view.press(view.findByLabel("Halal"));
   await m.renderKit.settle();
   const text = view.text();
-  const rail = text.slice(text.indexOf("Dishes near you"));
+  const rail = text.slice(text.indexOf("Dishes across Singapore"));
   assert.match(rail, /Dish 7/);
   assert.match(rail, /Dish 2/, "turning the chip off brings every dish back, in palate order");
   assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"));
@@ -963,9 +964,60 @@ test("H4-14: with dishes to show, the classics sit below the first dish section"
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
+  assert.ok(text.indexOf("Dishes across Singapore") > 0);
+  assert.ok(
+    text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"),
+    "dishes come first",
+  );
+  assert.ok(
+    text.indexOf("Decide for me") < text.indexOf("Dishes across Singapore"),
+    "Decide stays on top",
+  );
+});
+
+test("P3-2: a diner with a palate gets Dishes near you, then the classics, then Most reviewed", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  const personal = text.indexOf("Dishes across Singapore");
+  const classics = text.indexOf("Hawker classics");
+  const reviewed = text.indexOf("Most reviewed");
+  assert.ok(personal > 0 && classics > 0 && reviewed > 0);
+  assert.ok(
+    personal < classics && classics < reviewed,
+    "palate rail, classics, then Most reviewed",
+  );
+});
+
+test("P3-2: a diner without a palate keeps Most reviewed first", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
   assert.ok(text.indexOf("Most reviewed") > 0);
-  assert.ok(text.indexOf("Most reviewed") < text.indexOf("Hawker classics"), "dishes come first");
-  assert.ok(text.indexOf("Decide for me") < text.indexOf("Most reviewed"), "Decide stays on top");
+  assert.ok(text.indexOf("Most reviewed") < text.indexOf("Hawker classics"));
+  assert.ok(text.indexOf("Hawker classics") < text.indexOf("Dishes across Singapore"));
+});
+
+test("P3-1: with location on the rail says Dishes near you; with it off, across Singapore", async () => {
+  setLocation({ permission: "granted", currentLocation: { latitude: 1.35, longitude: 103.95 } });
+  serveLiveFeed();
+  const on = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(on.text(), /Dishes near you/);
+  assert.doesNotMatch(on.text(), /Dishes across Singapore/);
+  assert.ok(on.findByLabel("See all dishes near you"));
+  await on.unmount();
+
+  setLocation();
+  serveLiveFeed();
+  const off = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(off.text(), /Dishes across Singapore/);
+  assert.doesNotMatch(off.text(), /Dishes near you/);
 });
 
 test("H4-14: the control arm keeps the classics above the dishes", async () => {
@@ -983,12 +1035,12 @@ test("H4-14: with no dishes at all the classics stay where they are", async () =
   assert.ok(text.indexOf("Popular dishes in Singapore") < text.indexOf("Decide for me"));
 });
 
-test("H4-14: with reviews missing, the classics move under Dishes near you", async () => {
+test("H4-14: with reviews missing, the classics move under Dishes across Singapore", async () => {
   serveLiveFeed(Array.from({ length: 8 }, (_, i) => feedRow(i + 1, { top_dish_review_count: 0 })));
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   assert.doesNotMatch(text, /Most reviewed/);
-  assert.ok(text.indexOf("Dishes near you") < text.indexOf("Hawker classics"));
+  assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
 });
 
 test("H4-18: All stalls and All dishes close the page instead of splitting it", async () => {
@@ -1045,6 +1097,6 @@ test("H4-14: a diner with a saved dietary need still gets dishes above the class
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   assert.match(text, /Nasi Padang/, "the halal dish is on the page");
-  assert.ok(text.indexOf("Most reviewed") > 0);
-  assert.ok(text.indexOf("Most reviewed") < text.indexOf("Hawker classics"));
+  assert.ok(text.indexOf("Dishes across Singapore") > 0);
+  assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
 });

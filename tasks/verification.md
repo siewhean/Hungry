@@ -1574,3 +1574,11 @@ Use the smallest check that matches the change risk.
 - Seen while walking, not fixed here: the launcher's "Home" button opens the archived Feed tab, whose text wraps one letter per line at 390 wide.
 - No migration, endpoint or query added.
 
+### HOME-R4 phase 4, 2026-10-30
+
+- Split only, then two small audit extras. DiscoverHomeScreen.tsx now holds layout and ranking; the search placeholder, images, loading skeletons, popular-food buttons, dish rail and stall grid live in src/components/discover/home/, the popular-food list and stall showcase builder in src/features/discover/, and Home's data and chips in useDiscoverFeed and useDiscoverFilters. The 48 Home render tests passed unchanged after the split (before the extras).
+- Source contracts now read Home through readHomeSource() (src/test/sourceContracts.ts) so they do not care which file a piece lives in; new tests: homeSections.render.test.tsx (8) and useDiscoverHome.render.test.tsx (6).
+- Extras (audit P3-2, P3-1): a diner with a palate gets "Dishes near you", then the classics, then "Most reviewed" (others keep Most reviewed first); while location is off the rail reads "Dishes across Singapore". DiscoverEntryScreen render 51/51 with three new cases.
+- npm test, npm run test:render, typecheck, lint (0 errors), check:n-plus-one, audit:races, check:rate-limits and test:coverage OK; browser walk tests/e2e/home.spec.ts 4/4 (390 and 320, light and dark).
+- No migration, endpoint or query added.
+
