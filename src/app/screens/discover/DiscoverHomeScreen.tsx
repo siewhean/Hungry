@@ -1230,12 +1230,31 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const aboveFoldVariant = useExperimentVariant("home_above_fold_v1", {
     enabled: isFocused && hasDiscoverContent && hasFirstDishSection,
   });
+  // A diner with a palate sees the palate-ranked "Dishes near you" first, then the classics, then
+  // "Most reviewed"; everyone else keeps "Most reviewed" first.
+  const showNearYouRail = shouldRenderDiscoverRail(quickBiteCards.length, MIN_DISCOVER_RAIL_ITEMS);
+  const personalFirst = !inMallMode && rankByTaste && showNearYouRail;
   const classicsSlot =
     aboveFoldVariant === "compact" && hasFirstDishSection
-      ? trendingCards.length > 0
+      ? trendingCards.length > 0 && !personalFirst
         ? "afterTrending"
         : "afterNearYou"
       : "top";
+  const nearYouRail = showNearYouRail ? (
+    <DiscoverBiteRail
+      {...discoverRailProps}
+      rail="quickBites"
+      title={needsDiscoverAreaChoice ? "Dishes across Singapore" : "Dishes near you"}
+      seeAllLabel={
+        needsDiscoverAreaChoice ? "See all dishes across Singapore" : "See all dishes near you"
+      }
+      cards={quickBiteCards}
+      reasons={tasteOrdered.reasons}
+      variant="rating"
+      buttonId="quick_bite_card"
+      getCardLabel={getBiteLabel}
+    />
+  ) : null;
   const classicsSection = inMallMode ? null : (
     <View style={{ gap: discoverContentGap }}>
       <AppText variant="h2" style={{ color: themeTints.text }}>
@@ -1665,6 +1684,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           )
         ) : (
           <>
+            {personalFirst ? nearYouRail : null}
+            {personalFirst && classicsSlot === "afterNearYou" ? classicsSection : null}
             <TrendingList
               title={`Most reviewed ${trendingAreaPhrase}`}
               bites={showInitialDiscoverSkeleton ? [] : trendingListBites}
@@ -1745,20 +1766,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             </View>
 
             {/* Rails: each is the same memoised rail over its own collection. */}
-            {shouldRenderDiscoverRail(quickBiteCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
-              <DiscoverBiteRail
-                {...discoverRailProps}
-                rail="quickBites"
-                title="Dishes near you"
-                seeAllLabel="See all dishes near you"
-                cards={quickBiteCards}
-                reasons={tasteOrdered.reasons}
-                variant="rating"
-                buttonId="quick_bite_card"
-                getCardLabel={getBiteLabel}
-              />
-            ) : null}
-            {classicsSlot === "afterNearYou" ? classicsSection : null}
+            {personalFirst ? null : nearYouRail}
+            {!personalFirst && classicsSlot === "afterNearYou" ? classicsSection : null}
 
             {shouldRenderDiscoverRail(editorChoiceCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
