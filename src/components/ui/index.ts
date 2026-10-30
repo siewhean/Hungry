@@ -29,3 +29,4 @@ export * from "./SelectField";
 export * from "./Skeleton";
 export * from "./StatusChip";
 export * from "./StickyBottomBar";
+export * from "./AppSymbol";

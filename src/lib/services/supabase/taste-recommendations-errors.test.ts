@@ -43,13 +43,21 @@ const slate = () =>
     limit: 4,
   });
 
-test("a failed taste recommendations call is reported", async () => {
+test("a failed taste recommendations call is reported and thrown, not hidden as an empty slate", async () => {
   fake.rpc.get_taste_recommendations = () => ({
     error: { message: "column does not exist", code: "42703" },
   });
-  await slate().catch(() => undefined);
+  await assert.rejects(slate(), /column does not exist/);
   assert.equal(fake.callsTo("get_taste_recommendations").length, 1);
   assert.equal(captured.length, 1);
+});
+
+test("a failed popular read throws when the caller refuses the catalog fallback", async () => {
+  fake.rpc.search_dishes = () => ({ error: { message: "network down", code: "08006" } });
+  await assert.rejects(
+    service.discovery.listPopularNearby(undefined, undefined, { noCatalogFallback: true }),
+    /Popular dishes could not be loaded/,
+  );
 });
 
 test("a rate-limited taste recommendations call is not reported", async () => {

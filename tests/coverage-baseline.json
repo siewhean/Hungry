@@ -2,7 +2,7 @@
   "global": {
     "lines": 85.9,
     "branches": 85.5,
-    "functions": 81.9
+    "functions": 82
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -12,6 +12,7 @@
     "src/app/screens/auth/authErrors.ts": 100,
     "src/app/screens/auth/authProviders.ts": 100,
     "src/app/screens/detail/stallNavigation.ts": 100,
+    "src/app/screens/onboarding/cuisineFallback.ts": 100,
     "src/app/screens/onboarding/dietaryOptions.ts": 100,
     "src/app/screens/onboarding/fillResultPicks.ts": 98.3,
     "src/app/screens/onboarding/layoutConstants.ts": 100,
@@ -56,7 +57,7 @@
     "src/features/detail/dishPrefill.ts": 100,
     "src/features/detail/dishPrice.ts": 100,
     "src/features/detail/dishReviewSummary.ts": 100,
-    "src/features/detail/dishSources.ts": 97.3,
+    "src/features/detail/dishSources.ts": 97.4,
     "src/features/detail/dishTasteSummary.ts": 100,
     "src/features/detail/menuCategory.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
@@ -208,7 +209,7 @@
     "src/lib/services/supabase/client.ts": 97.1,
     "src/lib/services/supabase/mediaUpload.ts": 66.9,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
-    "src/lib/services/supabase/supabaseRepository.ts": 73,
+    "src/lib/services/supabase/supabaseRepository.ts": 73.4,
     "src/lib/services/supabase/supabaseService.ts": 58.6,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,

@@ -83,7 +83,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.match(location, /<OnboardingProgress step="location" \/>/);
   assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
   assert.match(quiz, /<OnboardingProgress\s+step="taste"/);
-  assert.match(quiz, /Question \$\{step \+ 1\} of \$\{totalSteps\}/);
+  assert.match(quiz, /Question \$\{step \+ 1\} of \$\{questionCount\}/);
   // The shared bar counts the account step (5 of 5); the account screen draws it once the
   // shared sign-up form lands with the auth build.
   assert.match(progress, /"account"/);

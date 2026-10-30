@@ -57,6 +57,7 @@ import { AuthTermsNotice } from "../auth/AuthTermsNotice";
 import { AUTH_COPY, getProviderErrorMessage, type AuthProvider } from "../auth/authCopy";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
+import { OnboardingHeader } from "./OnboardingHeader";
 import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 
@@ -391,18 +392,14 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
 
           {/* Header */}
           <View style={{ marginBottom: spacing[6] }}>
-            <AppText
-              variant="display"
-              accessibilityRole="header"
-              style={{ marginBottom: spacing[1] }}
-            >
-              {"Save your\ntaste profile"}
-            </AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              {framing === "test"
-                ? "Create an account to keep your taste profile and the dishes picked for you."
-                : "Create an account to keep your preferences and discover more."}
-            </AppText>
+            <OnboardingHeader
+              title="Save your taste profile"
+              subtitle={
+                framing === "test"
+                  ? "Create an account to keep your taste profile and the dishes picked for you."
+                  : "Create an account to keep your preferences and discover more."
+              }
+            />
           </View>
 
           {/* Tab switcher */}
