@@ -260,13 +260,19 @@ test("SR4 timing: stall name lookup uses the trigram index (index-only scans off
   assert.match(sql, /set enable_indexonlyscan = off as \$\$/);
   for (const k of [1, 2, 3, 4]) {
     for (const column of ["name", "building_name"]) {
-      assert.match(sql, new RegExp(`c\\.${column} ilike any\\(v_pat${k}\\)\\n`), `${column} ilike ${k}`);
+      assert.match(
+        sql,
+        new RegExp(`c\\.${column} ilike any\\(v_pat${k}\\)\\n`),
+        `${column} ilike ${k}`,
+      );
       assert.match(sql, new RegExp(`v_tok${k} <% c\\.${column}\\n`), `${column} fuzzy ${k}`);
     }
   }
   // The two halves are never one OR condition again.
   assert.doesNotMatch(sql, /ilike any\(v_pat\d\) or v_tok\d <% c\.(name|building_name)\)/);
   assert.ok(
-    existsSync(path.join(root, "supabase/rollbacks/20261030110000_catalog_stall_name_lookup_split.down.sql")),
+    existsSync(
+      path.join(root, "supabase/rollbacks/20261030110000_catalog_stall_name_lookup_split.down.sql"),
+    ),
   );
 });
