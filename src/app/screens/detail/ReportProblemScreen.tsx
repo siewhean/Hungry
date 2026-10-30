@@ -75,7 +75,7 @@ export function ReportProblemScreen({ navigation, route }: Props) {
       if (previous === "StallDetail" || previous === "DishDetail") {
         navigation.goBack();
       } else if (dishId) {
-        navigation.replace("DishDetail", { dishId });
+        navigation.replace("DishDetail", { dishId, source: "report_problem" });
       } else {
         navigation.replace("StallDetail", { venueId });
       }

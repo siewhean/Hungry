@@ -222,7 +222,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     if (!dishId) return undefined;
     return isCatalogDeepLinkMode()
       ? createStateOverHome("CatalogRawDetail", { kind: "dish", id: dishId })
-      : createStateOverHome("DishDetail", { dishId });
+      : createStateOverHome("DishDetail", { dishId, source: "deep_link" });
   }
   if (parts[0] === "venue" || parts[0] === "stall") {
     const venueId = decodePathSegment(parts[1]);
@@ -347,18 +347,22 @@ function signedOutState(
 /**
  * Removes `email` from a URL's query string. Login, Forgot password and the verify screen carry
  * the address as a param so the next screen can fill it in, and on web React Navigation would
- * write it into the address bar, history and any shared or logged URL.
+ * write it into the address bar, history and any shared or logged URL. The dish page's
+ * in-app params go too: `prefill` (an object, which would read `prefill=[object Object]`) and,
+ * on a /dish/ path, `source` (reload and shared links say `deep_link` instead).
  */
 export function stripEmailQuery(path: string): string {
   const queryStart = path.indexOf("?");
   if (queryStart < 0) return path;
   const hashStart = path.indexOf("#", queryStart);
   const query = path.slice(queryStart + 1, hashStart < 0 ? undefined : hashStart);
+  const dropped = new Set(["email", "prefill"]);
+  if (/^\/?dish\//.test(path)) dropped.add("source");
   const kept = query.split("&").filter((pair) => {
     if (!pair) return false;
     const key = pair.split("=")[0];
     try {
-      return decodeURIComponent(key).toLowerCase() !== "email";
+      return !dropped.has(decodeURIComponent(key).toLowerCase());
     } catch {
       return true;
     }

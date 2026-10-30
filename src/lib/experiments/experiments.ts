@@ -82,11 +82,13 @@ export const EXPERIMENTS = {
    * the bar's call to action reading "Rate it" (toast_cta). Read in TriedFollowUp, which mounts
    * only after a Tried mark succeeds for a signed-in diner who has not reviewed the dish.
    * Analyse as a funnel from dish_marked_tried to review_submitted on the same dish_id in 24 h.
+   * Draft until the PostHog flag exists (round-four DISH4-2: none did, so it only ever served
+   * control). Sample: 10% of Tried marks become reviews; 14% is the lift worth acting on.
    */
   dish_tried_prompt_v1: {
     variants: ["control", "toast_cta"],
     fallback: "control",
-    status: "running",
+    status: "draft",
     surface: "dish",
     hypothesis:
       "A popup straight after Tried interrupts diners and teaches them to dismiss it; a quieter Rate it button converts more Tried marks into published reviews.",
@@ -94,9 +96,45 @@ export const EXPERIMENTS = {
     guardrailMetrics: [
       "review_abandoned",
       "review_started",
+      "tried_prompt_dismissed",
       "dish_unfavourited",
       "review_cta_tapped",
     ],
+    minSamplePerArm: 1040,
+  },
+  /**
+   * The histogram and "People mention" words above a dish's reviews (summary) or only the
+   * "118 ratings · 1 written review" line (control). The count line is a bug fix and ships to
+   * everyone; only the breakdown is tested. Exposure fires when a dish with 3+ written reviews
+   * shows the block. 2% of dish views end in a save; 2.5% is the lift worth acting on.
+   * Draft until the PostHog flag exists; the fallback is the breakdown.
+   */
+  dish_review_summary_v1: {
+    variants: ["control", "summary"],
+    fallback: "summary",
+    status: "draft",
+    surface: "dish",
+    hypothesis:
+      "A star histogram and the words diners use most help a visitor decide, so more of them save the dish than with the count line alone.",
+    primaryMetric: "dish_favourited",
+    guardrailMetrics: ["review_helpful_toggled", "delivery_link_tapped", "review_cta_tapped"],
+    minSamplePerArm: 12500,
+  },
+  /**
+   * The taste chart with what diners rated drawn over the catalog estimate (diners) or the
+   * estimate alone (control). Exposure fires only on a dish where 3+ diners rated an axis.
+   * Draft until the PostHog flag exists; the fallback shows diner ratings.
+   */
+  dish_taste_diners_v1: {
+    variants: ["control", "diners"],
+    fallback: "diners",
+    status: "draft",
+    surface: "dish",
+    hypothesis:
+      "Seeing what real diners rated, not a catalog guess, makes the taste chart trusted, so more diners mark the dish Tried and write a review.",
+    primaryMetric: "dish_marked_tried",
+    guardrailMetrics: ["review_submitted", "dish_favourited"],
+    minSamplePerArm: 12500,
   },
   /**
    * The last onboarding step for a signed-out user. Exposure fires on the result screen

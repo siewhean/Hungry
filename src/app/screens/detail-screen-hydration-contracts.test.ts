@@ -12,7 +12,7 @@ test("detail screens hydrate specific Supabase records before showing not-found 
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
 
   assert.match(dishDetailV2, /discovery\.getDish\(dishId\)/);
-  assert.match(dishDetailV2, /discovery\.getVenue\(dish\.venueId\)/);
+  assert.match(dishDetailV2, /discovery\.getVenue\(readVenueId\)/);
   assert.match(dishDetailV2, /accessibilityLabel=\{`Open \$\{venueName\} stall details`\}/);
   assert.match(dishDetailV2, /openStallFromDish\(navigation, dish\.venueId\)/);
   assert.match(dishDetailV2, /!dish && !hasLoadedDishDetail/);

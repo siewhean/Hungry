@@ -747,7 +747,7 @@ export function ReviewFeedScreen() {
       });
       // Mock reviews live on their dish; live reviews open on their own page.
       if (serviceProviderMode === "mock") {
-        navigation.navigate("DishDetail", { dishId: item.dishId });
+        navigation.navigate("DishDetail", { dishId: item.dishId, source: "review_feed" });
         return;
       }
       navigation.navigate("ReviewDetail", { reviewId: item.review.id });

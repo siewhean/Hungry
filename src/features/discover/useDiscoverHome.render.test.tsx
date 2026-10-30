@@ -108,7 +108,8 @@ test("the chip row leads with the dietary chip and always has the intent chips",
   useProfileStore.getState().setDietaryPreferences([]);
   const { filters } = await mountFilters();
   const ids = filters().sortedChips.map((chip) => chip.id);
-  assert.equal(ids[0], "dietary");
+  // From 21:00 to 03:59 in Singapore "Late night" leads the row, so the clock must not fail this.
+  assert.equal(ids.filter((id) => id !== "late")[0], "dietary");
   for (const id of ["spicy", "halal", "cheap"]) assert.ok(ids.includes(id as never), id);
 });
 

@@ -106,6 +106,7 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type SearchResultsRoute = RouteProp<RootStackParamList, "SearchResults">;
@@ -1055,6 +1056,7 @@ function RawCatalogBrowseGrid({
         navigation.navigate("DishDetail", {
           dishId: item.id,
           source: "search",
+          prefill: dishPrefillFrom(item),
           catalogFallback: { releaseId },
         });
       } else if (openedMode === "stalls" && !releaseId?.startsWith("excel-fallback")) {

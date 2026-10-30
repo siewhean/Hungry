@@ -592,7 +592,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
       completeOnboarding(false);
     }
 
-    navigation.navigate("DishDetail", { dishId: dish.id });
+    navigation.navigate("DishDetail", { dishId: dish.id, source: "developer" });
   };
 
   return (

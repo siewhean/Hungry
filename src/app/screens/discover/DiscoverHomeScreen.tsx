@@ -89,6 +89,7 @@ import { decideInitialRadiusMeters } from "@/features/discovery/decideForMeCandi
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { DiscoverBiteRail, DiscoverRailBadge } from "@/components/discover/home/DiscoverBiteRail";
 import { DiscoverStallThumbnail } from "@/components/discover/home/DiscoverImages";
 import {
@@ -1641,7 +1642,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     key={pick.dish.id}
                     pick={pick}
                     onPressIn={() => prefetchDishDetail(pick.dish.id, repository)}
-                    onPress={() => navigation.navigate("DishDetail", { dishId: pick.dish.id })}
+                    onPress={() =>
+                      navigation.navigate("DishDetail", {
+                        dishId: pick.dish.id,
+                        source: "home_pick",
+                        prefill: dishPrefillFrom(pick.dish),
+                      })
+                    }
                   />
                 ))
               ) : (

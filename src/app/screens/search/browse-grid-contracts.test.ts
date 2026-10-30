@@ -73,7 +73,7 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   );
   assert.match(
     quickBites,
-    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
+    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
   );
 
   assert.match(stallDetail, /getStallDishPhotos/);
@@ -87,6 +87,6 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(stallDetail, /<StallMenuDishCard/);
   assert.match(
     stallDetail,
-    /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id, source: "stall_menu" \}\)/,
+    /navigation\.navigate\("DishDetail", \{\s*dishId: activeDish\.id,\s*source: "stall_menu"/,
   );
 });

@@ -84,10 +84,15 @@ test("detail-M10/L1/L19: reviews can be reported, blocked and open their author"
   assert.match(readRepoFile("src/components/review/index.ts"), /ReviewReaderActions/);
   // The stall page's review card is its own component.
   const stallReviewCard = readRepoFile("src/components/stall/StallReviewCard.tsx");
-  for (const source of [stall + stallReviewCard, dish]) {
+  const dishReviewCard = readRepoFile("src/components/dish/DishReviewCard.tsx");
+  const dishReviewActions = readRepoFile("src/features/detail/useDishReviewActions.ts");
+  for (const source of [stall + stallReviewCard, dishReviewCard + dishReviewActions]) {
     assert.match(source, /<ReviewReaderActions/);
     assert.match(source, /navigation\.navigate\("UserProfile"/);
   }
+  // A visible "..." opens the same report and block sheet on both pages, not only a long-press.
+  assert.match(stallReviewCard, /<ReviewMoreButton/);
+  assert.match(dishReviewCard, /<ReviewMoreButton/);
   assert.match(
     readRepoFile("src/components/stall/PopularVisitorsSection.tsx"),
     /Picked by the owner/,

@@ -21,6 +21,7 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import type { Story, StallPost, DishDetail } from "@/types/domain";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type SocialGridRouteProp = RouteProp<ProfileStackParamList, "SocialGrid">;
 
@@ -192,7 +193,11 @@ export function SocialGridScreen() {
             if (!storiesEnabled) return;
             navigation.navigate("StoryViewer", { initialStoryId: (item as Story).id });
           } else if (isDish) {
-            navigation.navigate("DishDetail", { dishId: (item as DishDetail).id });
+            navigation.navigate("DishDetail", {
+              dishId: (item as DishDetail).id,
+              source: "social_grid",
+              prefill: dishPrefillFrom(item as DishDetail),
+            });
           } else {
             navigation.navigate("SocialPostDetail", {
               postId: (item as StallPost).id,

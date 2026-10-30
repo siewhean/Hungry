@@ -41,6 +41,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { CatalogDiagnosticsModal } from "./CatalogDiagnosticsModal";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
@@ -183,6 +184,7 @@ function RawDishCard({
         navigation.navigate("DishDetail", {
           dishId: item.id,
           source: "home",
+          prefill: dishPrefillFrom(item),
           catalogFallback: { releaseId },
         });
       }}
@@ -934,7 +936,9 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
           <WelcomeBackCard
             horizontalPadding={0}
             visible={isFocused}
-            onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+            onOpenDish={(dishId) =>
+              navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
+            }
             onOpenSaved={() => navigation.navigate("Favourites")}
           />
         ) : null}

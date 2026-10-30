@@ -340,7 +340,8 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         authorId: post.authorId?.trim(),
       }),
     openDish: () => {
-      if (primaryDish) navigation.navigate("DishDetail", { dishId: primaryDish.id });
+      if (primaryDish)
+        navigation.navigate("DishDetail", { dishId: primaryDish.id, source: "activity_post" });
       else if (post.venueId) navigation.navigate("StallDetail", { venueId: post.venueId });
     },
     openVenue: () => {

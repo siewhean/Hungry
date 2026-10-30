@@ -34,6 +34,8 @@ export function Avatar({ uri, name, size = 40, variant = "circle" }: AvatarProps
   useEffect(() => setLoadFailed(false), [uri]);
 
   const borderRadius = variant === "circle" ? size / 2 : radii.md;
+  // Without a photo a named person gets their initials: the Hungry logo reads as an official account.
+  const hasName = name.trim().length > 0;
 
   return (
     <View
@@ -50,7 +52,7 @@ export function Avatar({ uri, name, size = 40, variant = "circle" }: AvatarProps
         },
       ]}
     >
-      {uri && loadFailed ? (
+      {(uri && loadFailed) || (!uri && hasName) ? (
         <AppText
           variant="bodyBold"
           numberOfLines={1}

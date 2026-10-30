@@ -8,7 +8,7 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallCard = dish.indexOf("stall details`}");
   const orderOn = dish.search(/Order on\s*<\/AppText>/);
-  const radar = dish.indexOf("<TasteRadarChart");
+  const radar = dish.indexOf("<DishTasteCard");
   assert.ok(stallCard > 0 && orderOn > stallCard && radar > orderOn);
   // No rating before the dish is tried; marking it tried opens an optional rate + taste popup.
   assert.doesNotMatch(dish, /Rate this dish/);
@@ -16,7 +16,7 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   const followUp = read("src/features/detail/TriedFollowUp.tsx");
   assert.match(dish, /"Marked as tried\."[\s\S]*?setTriedFollowUpPending\(true\)/);
   assert.match(followUp, /<StarRating value=\{rating\} editable onChange=\{setRating\}/);
-  assert.match(followUp, /How did it taste\?[\s\S]*?<ChipGroup/);
+  assert.match(followUp, /How did it taste\?[\s\S]*?<TasteRatingInput/);
   assert.match(followUp, /label="Not now"/);
   // Not tried: grey circle, no tick. Tried: orange tick.
   assert.match(
@@ -25,8 +25,10 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   );
   assert.doesNotMatch(dish, /dish\.tasteTags/);
   assert.match(dish, /<DietaryFlagChips flags=\{dish\.dietaryFlags\}/);
-  // The review's stars and its like share the card's last line.
-  assert.match(dish, /<ReviewReaderActions\s+key=\{review\.id\}\s+rating=\{review\.rating\}/);
+  // The review's stars sit under the author; the like and the "..." share the card's actions.
+  const reviewCard = read("src/components/dish/DishReviewCard.tsx");
+  assert.match(reviewCard, /<ReviewStars/);
+  assert.match(reviewCard, /<ReviewReaderActions/);
 });
 
 test("radar: reviews in grey, how it tastes to the diner in orange on top", () => {

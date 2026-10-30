@@ -293,16 +293,31 @@ test("cards open the real dish and stall pages and are tracked", async () => {
   await view.press(laksa);
   assert.deepEqual(navigation.calls.at(-1)?.args, [
     "DishDetail",
-    { dishId: "dish-1", source: "home", catalogFallback: { releaseId: "release-1" } },
+    {
+      dishId: "dish-1",
+      source: "home",
+      prefill: {
+        name: "Laksa",
+        price: 4.5,
+        venueId: "venue-1",
+        venueName: "Sungei Road Laksa",
+      },
+      catalogFallback: { releaseId: "release-1" },
+    },
   ]);
 
   // Unverified catalog dishes open the dish page too; it shows the catalog record if the dish
   // page can't load (see DishDetailScreenV2.render.test.tsx).
   await view.press(view.findByLabel(/^Otah,/));
-  assert.deepEqual(navigation.calls.at(-1)?.args, [
-    "DishDetail",
-    { dishId: "dish-2", source: "home", catalogFallback: { releaseId: "release-1" } },
-  ]);
+  const [otahScreen, otahParams] = navigation.calls.at(-1)?.args as [
+    string,
+    { dishId: string; source: string; prefill?: { name: string }; catalogFallback?: unknown },
+  ];
+  assert.equal(otahScreen, "DishDetail");
+  assert.equal(otahParams.dishId, "dish-2");
+  assert.equal(otahParams.source, "home");
+  assert.equal(otahParams.prefill?.name, "Otah");
+  assert.deepEqual(otahParams.catalogFallback, { releaseId: "release-1" });
 
   await view.press(view.findByLabel(/^Sungei Road Laksa, Laksa/));
   assert.deepEqual(navigation.calls.at(-1)?.args, ["StallDetail", { venueId: "venue-1" }]);

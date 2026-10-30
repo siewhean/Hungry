@@ -169,7 +169,7 @@ export function CollectionsScreen({ navigation }: Props) {
     if (food.itemType === "stall" && food.stallId) {
       rootNavigation.navigate("StallDetail", { venueId: food.stallId });
     } else if (food.dishId) {
-      rootNavigation.navigate("DishDetail", { dishId: food.dishId });
+      rootNavigation.navigate("DishDetail", { dishId: food.dishId, source: "collection" });
     }
   };
 

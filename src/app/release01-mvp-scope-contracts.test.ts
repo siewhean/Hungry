@@ -107,7 +107,7 @@ test("R01-WRITE-01: favourite toasts follow the write result, never an optimisti
   // Saved opens the redesigned dish page and removes with the write result, never a guess.
   assert.match(
     favourites,
-    /rootNavigation\.navigate\("DishDetail", \{ dishId: dish\.id, source: "saved" \}\)/,
+    /rootNavigation\.navigate\("DishDetail", \{\s*dishId: dish\.id,\s*source: "saved"/,
   );
   assert.match(favourites, /toggleFavourite\(input, \{ surface: "saved" \}\)/);
   assert.match(favourites, /result\.status === "failed"[\s\S]*?tone: "error"/);

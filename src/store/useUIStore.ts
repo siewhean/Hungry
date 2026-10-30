@@ -96,6 +96,17 @@ interface UIState {
   safetyMenu: SafetyMenu | null;
   openSafetyMenu: (menu: SafetyMenu) => void;
   closeSafetyMenu: () => void;
+  /**
+   * While set, the app-wide "+N Food Cred" pill waits and counts the points it was handed,
+   * so a popup that follows the award (the "you tried it" popup) can show them itself.
+   */
+  credHold: { points: number } | null;
+  holdCredToast: () => void;
+  addHeldCredPoints: (points: number) => void;
+  /** Ends the hold; `show` replays the held points as the pill (nothing used them). */
+  releaseCredToast: (show: boolean) => void;
+  /** A replay of held points for the pill to show; set by `releaseCredToast(true)`. */
+  credReplay: { id: number; points: number } | null;
 }
 
 export const useUIStore = create<UIState>()(
@@ -150,6 +161,25 @@ export const useUIStore = create<UIState>()(
       safetyMenu: null,
       openSafetyMenu: (safetyMenu) => set({ safetyMenu }),
       closeSafetyMenu: () => set({ safetyMenu: null }),
+      credHold: null,
+      credReplay: null,
+      holdCredToast: () => set({ credHold: { points: 0 } }),
+      addHeldCredPoints: (points) =>
+        set((state) =>
+          state.credHold ? { credHold: { points: state.credHold.points + points } } : state,
+        ),
+      releaseCredToast: (show) =>
+        set((state) => {
+          const held = state.credHold;
+          if (!held) return state;
+          if (show && held.points > 0) {
+            return {
+              credHold: null,
+              credReplay: { id: (state.credReplay?.id ?? 0) + 1, points: held.points },
+            };
+          }
+          return { credHold: null };
+        }),
     }),
     {
       name: "hungry-ui-v1",

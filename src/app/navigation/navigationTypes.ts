@@ -1,5 +1,7 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { DecideAnswers } from "@/features/discovery/decideQuiz";
+import type { DishPrefill } from "@/features/detail/dishPrefill";
+import type { DishDetailSource } from "@/features/detail/dishSources";
 
 export type AuthStackParamList = {
   /**
@@ -167,10 +169,14 @@ export type RootStackParamList = {
   DishDetail: {
     dishId?: string;
     id?: string;
-    source?: string;
+    source?: DishDetailSource;
+    /** What the card already knows: the page paints it at once and starts the stall reads. */
+    prefill?: DishPrefill;
     /** Opened from a catalog card: a dish page that can't be found shows the catalog record. */
     catalogFallback?: { releaseId?: string };
   };
+  /** Every written review of one dish, paged, with sort and a photo filter. */
+  DishReviews: { dishId: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
   SearchResults:

@@ -441,7 +441,7 @@ export function QuickBitesScreen() {
 
   const openBite = useCallback(
     (activeItem: QuickBiteGridItem) =>
-      navigation.navigate("DishDetail", { dishId: activeItem.dishId }),
+      navigation.navigate("DishDetail", { dishId: activeItem.dishId, source: "quick_bites" }),
     [navigation],
   );
   // Visibility comes in through extraData, so a viewability change does not rebuild

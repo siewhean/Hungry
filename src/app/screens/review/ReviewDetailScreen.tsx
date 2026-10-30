@@ -407,7 +407,9 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
         )}
         <Button
           label={`See ${entry.dishName}`}
-          onPress={() => navigation.navigate("DishDetail", { dishId: entry.dishId })}
+          onPress={() =>
+            navigation.navigate("DishDetail", { dishId: entry.dishId, source: "review_detail" })
+          }
         />
         {review.moderationState ? null : (
           <Button

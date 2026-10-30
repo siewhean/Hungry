@@ -53,6 +53,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ReportProblem",
   "MerchantClaimExplainer",
   "DishDetail",
+  "DishReviews",
   "CatalogRawDetail",
   "SearchHome",
   "SearchResults",
@@ -252,6 +253,10 @@ const loadDishDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/DishDetailScreenV2") as typeof import("@/app/screens/detail/DishDetailScreenV2")
   ).DishDetailScreenV2;
+const loadDishReviewsScreen = () =>
+  (
+    require("@/app/screens/detail/DishReviewsScreen") as typeof import("@/app/screens/detail/DishReviewsScreen")
+  ).DishReviewsScreen;
 const loadCatalogRawDetailScreen = () =>
   (
     require("@/app/screens/catalog/CatalogRawDetailScreen") as typeof import("@/app/screens/catalog/CatalogRawDetailScreen")
@@ -801,6 +806,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {/* Reviewer profiles stay reachable from reviews and follower lists. */}
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
+          <RootStack.Screen getComponent={loadDishReviewsScreen} name="DishReviews" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
           <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />

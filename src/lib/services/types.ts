@@ -13,6 +13,7 @@ import type {
   ChecklistItem,
   CustomerInteraction,
   DishDetail,
+  DishTasteRatingSummary,
   DietaryFlag,
   PushPreferences,
   LifecycleSnapshot,
@@ -962,6 +963,11 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    /**
+     * Diner taste ratings for a dish, averaged per axis (get_dish_taste_rating_summary). Only
+     * axes with 3+ raters are returned; {} while no axis has enough. Throws on a failed read.
+     */
+    getDishTasteRatingSummary(dishId: string): Promise<DishTasteRatingSummary>;
     /** Name, photo, stall and price for a set of dishes and stalls in one call. */
     getItemDetails(input: {
       dishIds: string[];

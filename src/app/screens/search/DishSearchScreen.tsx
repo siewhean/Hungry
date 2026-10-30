@@ -50,6 +50,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { SearchCategory } from "@/types/domain";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 // The paged catalog request maps only these categories into a cuisine filter,
 // so other chips would do nothing.
@@ -820,6 +821,7 @@ export function DishSearchScreen() {
                   navigation.navigate("DishDetail", {
                     dishId: dish.id,
                     source: "search_featured",
+                    prefill: dishPrefillFrom(dish),
                     catalogFallback: { releaseId: featured.releaseId },
                   });
                 }}

@@ -182,7 +182,7 @@ test("L1: each question lists its dishes mild to strong, so the example matches 
 test("L2: opening a dish from the result screen completes onboarding after navigating", () => {
   assert.match(
     result(),
-    /\.navigate\("DishDetail", \{\s*dishId: dish\.id,?\s*\}\);[\s\S]*completeOnboarding\(hasSkippedTasteQuiz\);/,
+    /\.navigate\("DishDetail", \{\s*dishId: dish\.id,[\s\S]*?\}\);[\s\S]*completeOnboarding\(hasSkippedTasteQuiz\);/,
   );
 });
 

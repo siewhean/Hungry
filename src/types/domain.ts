@@ -9,6 +9,12 @@ export interface TasteVector {
   aromatic: number;
 }
 
+/**
+ * What diners who rated a dish's taste say, per axis (0-10 standard levels). An axis appears
+ * only once at least three diners rated it, so a single opinion is never shown as the dish.
+ */
+export type DishTasteRatingSummary = Partial<Record<TasteKey, { average: number; raters: number }>>;
+
 // ─── Extended AI Taste Model ─────────────────────────────────────────────────
 
 /** Oral processing style — which mechanical texture satisfies the user most */
