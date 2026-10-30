@@ -41,6 +41,7 @@ import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import { lookupPostalCode, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
+import { isBlockedTextError } from "@/features/merchant/featuredDishes";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   formatScheduleText,
@@ -376,7 +377,10 @@ export function BusinessProfileEditorScreen() {
         [{ text: "OK", onPress: () => navigation.goBack() }],
       );
     } catch (error) {
-      reportError(error, { screen: "BusinessProfileEditor", action: "save_profile" });
+      // A refused blocked word is the merchant's text, shown back to them, not a failure to report.
+      if (!isBlockedTextError(error)) {
+        reportError(error, { screen: "BusinessProfileEditor", action: "save_profile" });
+      }
       showAlert(
         "Couldn't save profile",
         error instanceof Error ? error.message : "Something went wrong. Please try again.",

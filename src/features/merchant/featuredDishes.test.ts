@@ -5,6 +5,7 @@ import { dishes } from "@/lib/services/mock/data";
 import {
   MAX_FEATURED_DISHES,
   countFeaturedDishes,
+  isBlockedTextError,
   isFeaturedLimitError,
 } from "@/features/merchant/featuredDishes";
 
@@ -30,4 +31,15 @@ test("only the database's check violation counts as the featured limit", () => {
   assert.equal(isFeaturedLimitError({ code: "42501" }), false);
   assert.equal(isFeaturedLimitError(new Error("network")), false);
   assert.equal(isFeaturedLimitError(null), false);
+});
+
+test("a blocked-word refusal is told apart from the featured limit", () => {
+  const blocked = { code: "23514", hint: "merchant_text_blocked_term" };
+  const limit = { code: "23514", message: "You can feature up to 3 dishes." };
+  assert.equal(isBlockedTextError(blocked), true);
+  assert.equal(isFeaturedLimitError(blocked), false);
+  assert.equal(isFeaturedLimitError(limit), true);
+  assert.equal(isBlockedTextError(limit), false);
+  assert.equal(isBlockedTextError(null), false);
+  assert.equal(isBlockedTextError(new Error("x")), false);
 });
