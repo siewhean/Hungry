@@ -395,6 +395,23 @@ export const EXPERIMENTS = {
       "review_started",
     ],
   },
+  /**
+   * Review editor with Cancel and Publish in the header, a sticky Publish bar and the optional
+   * parts (taste tags, how it tasted, recommend) under one fold (control keeps today's layout).
+   * Draft: no PostHog flag yet, so every user gets control. Exposed in ReviewScreen once a dish
+   * is chosen. Analyse review_submitted per review_started (about 1,100 per arm).
+   */
+  review_editor_compact_v1: {
+    variants: ["control", "compact"],
+    fallback: "control",
+    status: "draft",
+    surface: "reviews",
+    hypothesis:
+      "Keeping dish, photo, stars and text above the fold with Publish always in reach lets more people who start a review finish it.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: ["review_abandoned", "review_started", "review_submit_failed"],
+    minSamplePerArm: 1100,
+  },
   /** "Write your first review" card under the stats on your own profile, when you have none. */
   profile_first_review_nudge_v1: {
     variants: ["control", "test"],

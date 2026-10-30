@@ -14,7 +14,7 @@ import type {
 } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Search, MapPin, ChevronRight, Check, Music } from "lucide-react-native";
+import { Search, Utensils, ChevronRight, ChevronDown, Check, Music } from "lucide-react-native";
 
 import {
   AccessibleImage,
@@ -33,6 +33,7 @@ import { TRENDING_MUSIC } from "@/features/review/musicData";
 import { REVIEW_EDITOR_TAGS, REVIEW_MAX_TAGS, TASTE_DIMENSIONS } from "@/constants/taste";
 import { perceivedTasteLevel, standardTasteRating } from "@/features/detail/perceivedTaste";
 import { reportError } from "@/lib/monitoring/reportError";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -41,9 +42,15 @@ import { describePublishError, isExpectedPublishError } from "@/features/review/
 import { normalizeReviewTags } from "@/features/review/reviewEdit";
 import {
   buildDishPickerRows,
-  formatPickerDistance,
+  groupPickerRows,
+  pickerRowSubtitle,
   type PickerRow,
 } from "@/features/review/dishPicker";
+import {
+  PICKER_MIN_QUERY_LENGTH,
+  PICKER_SEARCH_DEBOUNCE_MS,
+  searchServerPickerRows,
+} from "@/features/review/dishPickerSearch";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -62,6 +69,8 @@ import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/
 import type { DishDetail, TasteKey } from "@/types/domain";
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
+
+type PickerListItem = { type: "header"; title: string } | { type: "row"; row: PickerRow };
 
 // Music is never saved and video is never uploaded with a review, so the editor hides both
 // (Reels and Music) in every build until they ship.
@@ -101,6 +110,10 @@ export function ReviewScreen({ navigation, route }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [pickerVenueId, setPickerVenueId] = useState<string | null>(null);
   const [remoteDish, setRemoteDish] = useState<DishDetail | undefined>(undefined);
+  // Server results for the query that has stopped changing; null = use the cached catalog.
+  const [serverRows, setServerRows] = useState<{ query: string; rows: PickerRow[] } | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const completedFieldsRef = useRef<Set<string>>(new Set());
   const scrollRef = useRef<ScrollView>(null) as RefObject<ScrollView>;
   const sectionYRef = useRef<Partial<Record<ReviewRequiredField, number>>>({});
 
@@ -115,6 +128,35 @@ export function ReviewScreen({ navigation, route }: Props) {
       (remoteDish?.id === selectedDishId ? remoteDish : undefined)
     );
   }, [repository, selectedDishId, remoteDish]);
+  // Compact editor test: exposed only once a dish is chosen (the editor is then really in use).
+  const compact =
+    useExperimentVariant("review_editor_compact_v1", { enabled: Boolean(selectedDish) }) ===
+    "compact";
+  // Each main field is reported once, the first time it is filled, so drop-off can be placed.
+  const filledFields = {
+    dish: Boolean(selectedDish),
+    photo: draft.photos.length > 0,
+    rating: draft.rating > 0,
+    text: draft.text.trim().length > 0,
+    tags: draft.selectedTags.length > 0,
+  };
+  const filledKey = Object.entries(filledFields)
+    .filter(([, done]) => done)
+    .map(([field]) => field)
+    .join(",");
+  useEffect(() => {
+    if (!draftHydrated || !filledKey) return;
+    for (const field of filledKey.split(",") as (keyof typeof filledFields)[]) {
+      if (completedFieldsRef.current.has(field)) continue;
+      completedFieldsRef.current.add(field);
+      trackAnalyticsEvent("review_editor_field_completed", {
+        field,
+        dish_id: selectedDishId,
+        variant: compact ? "compact" : "control",
+      });
+    }
+  }, [draftHydrated, filledKey, selectedDishId, compact]);
+
   // Optional "How did it taste?": what the reviewer felt, per taste, on the 0-10 scale.
   // Saved with the draft and kept per dish, so picking another dish starts blank.
   const feltTasteState = useReviewDraftStore((state) => state.feltTaste);
@@ -141,27 +183,12 @@ export function ReviewScreen({ navigation, route }: Props) {
     [repository, draft.selectedVenueId, selectedDish?.venueId],
   );
 
-  const allVenues = useMemo(
-    () =>
-      repository
-        .listBuildings()
-        .flatMap((building) => repository.listVenuesByBuilding(building.id)),
-    [repository],
-  );
-  const allPickerDishes = useMemo(
-    () =>
-      allVenues.flatMap((venue) =>
-        repository.listDishesByVenue(venue.id).map((dish) => ({
-          id: dish.id,
-          name: dish.name,
-          venueId: venue.id,
-          venueName: venue.name,
-        })),
-      ),
-    [allVenues, repository],
-  );
   const buildingCoordinates = useMemo(
     () => new Map(repository.listBuildings().map((building) => [building.id, building.coordinate])),
+    [repository],
+  );
+  const buildingNames = useMemo(
+    () => new Map(repository.listBuildings().map((building) => [building.id, building.name])),
     [repository],
   );
   const permission = useLocationStore((state) => state.permission);
@@ -176,17 +203,82 @@ export function ReviewScreen({ navigation, route }: Props) {
     // The built-in default is not "you": no nearby ordering from it.
     return isApproximate ? undefined : coordinate;
   }, [permission, currentLocation, manualCoordinate]);
-  const pickerRows = useMemo(
+  // The cached catalog is flattened only while the picker is open, and is the fallback when the
+  // server search fails or the search is too short to send.
+  const localPickerRows = useMemo(() => {
+    if (!isSearching) return [];
+    const venues = repository.listBuildings().flatMap((building) =>
+      repository.listVenuesByBuilding(building.id).map((venue) => ({
+        id: venue.id,
+        name: venue.name,
+        unitNumber: venue.unitNumber,
+        buildingId: venue.buildingId,
+        buildingName: building.name,
+        imageUrl: venue.logoUrl ?? venue.imageUrl,
+      })),
+    );
+    const dishes = venues.flatMap((venue) =>
+      repository.listDishesByVenue(venue.id).map((dish) => ({
+        id: dish.id,
+        name: dish.name,
+        venueId: venue.id,
+        venueName: venue.name,
+        buildingName: venue.buildingName,
+        imageUrl: dish.imageUrl,
+      })),
+    );
+    return buildDishPickerRows({
+      venues,
+      dishes,
+      query,
+      origin: pickerOrigin,
+      buildingCoordinates,
+    });
+  }, [isSearching, repository, query, pickerOrigin, buildingCoordinates]);
+  const trimmedQuery = query.trim();
+  const pickerRows =
+    serverRows && serverRows.query === trimmedQuery ? serverRows.rows : localPickerRows;
+  const pickerSections = useMemo(
+    () => groupPickerRows(pickerRows, trimmedQuery),
+    [pickerRows, trimmedQuery],
+  );
+
+  const pickerListItems = useMemo<PickerListItem[]>(
     () =>
-      buildDishPickerRows({
-        venues: allVenues,
-        dishes: allPickerDishes,
-        query,
+      pickerSections.flatMap((section) => [
+        ...(section.title ? [{ type: "header" as const, title: section.title }] : []),
+        ...section.rows.map((row) => ({ type: "row" as const, row })),
+      ]),
+    [pickerSections],
+  );
+
+  // Debounced server search: the catalog has tens of thousands of stalls, so only a paused,
+  // long-enough query is sent and only one request is ever kept.
+  useEffect(() => {
+    // Rows for an older query are ignored (pickerRows checks the query), so nothing to clear.
+    if (!isSearching || pickerVenueId || trimmedQuery.length < PICKER_MIN_QUERY_LENGTH) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      searchServerPickerRows({
+        query: trimmedQuery,
         origin: pickerOrigin,
         buildingCoordinates,
-      }),
-    [allVenues, allPickerDishes, query, pickerOrigin, buildingCoordinates],
-  );
+        buildingNames,
+      })
+        .then((rows) => {
+          if (active) setServerRows({ query: trimmedQuery, rows });
+        })
+        .catch((error: unknown) => {
+          // The cached catalog still answers; the failure is still tracked.
+          reportError(error, { screen: "ReviewScreen", action: "picker_search" });
+          if (active) setServerRows(null);
+        });
+    }, PICKER_SEARCH_DEBOUNCE_MS);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [isSearching, pickerVenueId, trimmedQuery, pickerOrigin, buildingCoordinates, buildingNames]);
 
   // The route says what to review. A saved draft for something else never
   // silently wins (or is silently wiped): ask when it has content.
@@ -299,22 +391,27 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   const chooseDish = (venueId: string, dishId: string) => {
     const switchingDish = Boolean(draft.selectedDishId) && draft.selectedDishId !== dishId;
-    if (!switchingDish || !reviewDraftHasContent(draft)) {
+    const hasContent = reviewDraftHasContent(draft) || Object.keys(feltTaste).length > 0;
+    if (!switchingDish || !hasContent) {
       selectDish(venueId, dishId);
       closePicker();
       return;
     }
-    Alert.alert("Change dish?", "Switching dish clears the rating, text and photos you added.", [
-      { text: "Keep current dish", style: "cancel" },
-      {
-        text: "Change dish",
-        style: "destructive",
-        onPress: () => {
-          selectDish(venueId, dishId);
-          closePicker();
+    Alert.alert(
+      "Change dish?",
+      "Switching dish clears the rating, text, photos, tags and taste answers you added.",
+      [
+        { text: "Keep current dish", style: "cancel" },
+        {
+          text: "Change dish",
+          style: "destructive",
+          onPress: () => {
+            selectDish(venueId, dishId);
+            closePicker();
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const handleSubmit = async () => {
@@ -454,6 +551,256 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   const missingField = firstMissingReviewField(draft, Boolean(selectedDish));
   const publishBlockedReason = missingField?.message ?? null;
+  const optionalCount =
+    draft.selectedTags.length +
+    (typeof draft.recommend === "boolean" ? 1 : 0) +
+    Object.keys(feltTaste).length;
+
+  // Leaves the editor stack (the draft is kept), as Publish does after a success.
+  const cancelEditor = () => {
+    const parentNavigation = navigation.getParent();
+    if (parentNavigation?.canGoBack()) {
+      parentNavigation.goBack();
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      rootNavigation.navigate("MainTabs", { screen: "Review" });
+    }
+  };
+
+  const dishSection = (
+    <View style={{ gap: spacing[3] }} onLayout={rememberSectionY("dish")}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+        <Utensils size={18} color={palette.orange} />
+        <AppText variant="h3">What did you eat?</AppText>
+      </View>
+
+      {selectedDish ? (
+        <Card
+          style={{
+            padding: spacing[3],
+            backgroundColor: palette.bgSoft,
+            borderColor: palette.orange,
+          }}
+        >
+          <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
+            <AccessibleImage
+              source={{ uri: selectedDish.imageUrl }}
+              style={{ width: 60, height: 60, borderRadius: radii.md }}
+              accessibilityLabel={`${selectedDish.name} photo`}
+            />
+            <View style={{ flex: 1 }}>
+              <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                {selectedVenue?.name ?? selectedDish.venueName}
+              </AppText>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Change dish"
+              onPress={openPicker}
+              style={{
+                minHeight: 44,
+                minWidth: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+                Change
+              </AppText>
+            </Pressable>
+          </View>
+        </Card>
+      ) : (
+        <Button
+          label="Select stall & dish"
+          variant="secondary"
+          onPress={openPicker}
+          leftIcon={<Search size={18} color={palette.text} />}
+        />
+      )}
+    </View>
+  );
+
+  // Photo: required (sh, STITCH-BUILD-03), so it comes right after the dish.
+  const photoSection = (
+    <View onLayout={rememberSectionY("photo")}>
+      <MediaPicker
+        title="Photo (required)"
+        photos={draft.photos}
+        videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
+        onAddPhoto={addPhoto}
+        onRemovePhoto={removePhoto}
+        onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
+      />
+    </View>
+  );
+
+  const ratingSection = (
+    <View style={{ gap: spacing[2] }} onLayout={rememberSectionY("rating")}>
+      <AppText variant="h3">Overall rating</AppText>
+      <StarRating value={draft.rating} onChange={setRating} editable showDescriptor centered />
+    </View>
+  );
+
+  const textSection = (
+    <View style={{ gap: spacing[3] }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <AppText variant="h3">Your review</AppText>
+        <AppText variant="micro" tone="muted">
+          {draft.text.length}/{REVIEW_TEXT_MAX_LENGTH}
+        </AppText>
+      </View>
+      <Input
+        placeholder="What made this dish special?"
+        accessibilityLabel="Your review"
+        multiline
+        numberOfLines={4}
+        maxLength={REVIEW_TEXT_MAX_LENGTH}
+        value={draft.text}
+        onChangeText={setText}
+        style={{ minHeight: 100 }}
+      />
+    </View>
+  );
+
+  // Music Picker (Navigation Button)
+  const musicSection = reviewMusicEnabled ? (
+    <View style={{ gap: spacing[3] }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+        <Music size={18} color={palette.orange} />
+        <AppText variant="h3">Music</AppText>
+      </View>
+
+      {draft.musicId ? (
+        <Card
+          style={{
+            padding: spacing[3],
+            backgroundColor: palette.orangeLight,
+            borderColor: palette.orange,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <AppText variant="bodyBold">
+                {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ?? "Selected Track"}
+              </AppText>
+              <AppText variant="micro" tone="secondary">
+                {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
+              </AppText>
+            </View>
+            <Button
+              label="Change"
+              variant="ghost"
+              size="sm"
+              onPress={() => navigation.navigate("MusicSelection" as any)}
+            />
+          </View>
+        </Card>
+      ) : (
+        <Button
+          label="Add music"
+          variant="secondary"
+          onPress={() => navigation.navigate("MusicSelection" as any)}
+          leftIcon={<Music size={18} color={palette.text} />}
+        />
+      )}
+    </View>
+  ) : null;
+
+  // Every reviewer can tag taste; the tags feed dish taste profiles.
+  const tagsSection = (
+    <View style={{ gap: spacing[3] }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <AppText variant="h3">Taste tags</AppText>
+        <AppText variant="micro" tone="muted">
+          Up to {REVIEW_MAX_TAGS} · {draft.selectedTags.length}/{REVIEW_MAX_TAGS}
+        </AppText>
+      </View>
+      <ChipGroup
+        options={REVIEW_EDITOR_TAGS.map((tag) => ({ id: tag, label: tag }))}
+        selectedIds={draft.selectedTags}
+        onSelect={toggleTag}
+      />
+    </View>
+  );
+
+  // Optional: how strong each taste felt. Saved as the dish's standard levels.
+  const tasteSection = selectedDish ? (
+    <View style={{ gap: spacing[2] }}>
+      <View style={{ gap: spacing[1] }}>
+        <AppText variant="h3">How did it taste?</AppText>
+        <AppText variant="bodySmall" tone="secondary">
+          Optional. Dashed rings are our guess for your palate; tap what you tasted.
+        </AppText>
+      </View>
+      <TasteRatingInput
+        values={feltTaste}
+        suggestions={tasteSuggestions}
+        onChange={(key, value) => {
+          if (selectedDishId) setFeltTaste(selectedDishId, key, value);
+        }}
+      />
+    </View>
+  ) : null;
+
+  // Recommend: unanswered until the reviewer picks one.
+  const recommendSection = (
+    <View style={{ gap: spacing[3] }}>
+      <AppText variant="h3">Would you recommend it?</AppText>
+      <View style={{ flexDirection: "row", gap: spacing[3] }}>
+        <Button
+          label="Yes"
+          variant={draft.recommend === true ? "primary" : "secondary"}
+          accessibilityState={{ selected: draft.recommend === true }}
+          onPress={() => setRecommend(true)}
+          style={{ flex: 1 }}
+        />
+        <Button
+          label="No"
+          variant={draft.recommend === false ? "primary" : "secondary"}
+          accessibilityState={{ selected: draft.recommend === false }}
+          onPress={() => setRecommend(false)}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </View>
+  );
+
+  const publishBlock = (
+    <View style={{ gap: spacing[2] }}>
+      <Button
+        label="Publish review"
+        onPress={handleSubmit}
+        loading={isSubmitting}
+        disabled={Boolean(publishBlockedReason)}
+      />
+      {missingField ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint="Scrolls to the missing field"
+          onPress={() => scrollToSection(missingField.field)}
+          style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
+        >
+          <AppText
+            variant="bodySmall"
+            tone="secondary"
+            accessibilityLiveRegion="polite"
+            style={{ textAlign: "center", textDecorationLine: "underline" }}
+          >
+            {missingField.message}
+          </AppText>
+        </Pressable>
+      ) : null}
+    </View>
+  );
 
   return (
     <Screen
@@ -462,227 +809,100 @@ export function ReviewScreen({ navigation, route }: Props) {
       subtitle="Share what you ate"
       scroll
       scrollRef={scrollRef}
+      headerLeft={
+        compact ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
+            accessibilityHint="Closes the editor and keeps your draft"
+            onPress={cancelEditor}
+            style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}
+          >
+            <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+              Cancel
+            </AppText>
+          </Pressable>
+        ) : undefined
+      }
+      headerRight={
+        compact ? (
+          <Button
+            label="Publish"
+            size="sm"
+            fullWidth={false}
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            disabled={Boolean(publishBlockedReason)}
+            accessibilityHint={publishBlockedReason ?? "Posts your review"}
+          />
+        ) : undefined
+      }
+      footer={
+        compact ? (
+          <View
+            style={{
+              paddingHorizontal: spacing[4],
+              paddingTop: spacing[2],
+              paddingBottom: Math.max(insets.bottom, spacing[2]),
+              borderTopWidth: 1,
+              borderTopColor: palette.border,
+              backgroundColor: palette.bg,
+            }}
+          >
+            {publishBlock}
+          </View>
+        ) : undefined
+      }
     >
       <FeedErrorBoundary
         title="Review editor failed"
         body="We hit a snag loading the editor. Please try again."
       >
-        <View style={{ gap: spacing[6], paddingBottom: spacing[20] }}>
-          {/* 1. Dish */}
-          <View style={{ gap: spacing[3] }} onLayout={rememberSectionY("dish")}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-              <MapPin size={18} color={palette.orange} />
-              <AppText variant="h3">What did you eat?</AppText>
-            </View>
-
-            {selectedDish ? (
-              <Card
-                style={{
-                  padding: spacing[3],
-                  backgroundColor: palette.bgSoft,
-                  borderColor: palette.orange,
-                }}
-              >
-                <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-                  <AccessibleImage
-                    source={{ uri: selectedDish.imageUrl }}
-                    style={{ width: 60, height: 60, borderRadius: radii.md }}
-                    accessibilityLabel={`${selectedDish.name} photo`}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
-                    <AppText variant="bodySmall" tone="secondary">
-                      {selectedVenue?.name ?? selectedDish.venueName}
-                    </AppText>
-                  </View>
-                  <Button label="Change" variant="ghost" fullWidth={false} onPress={openPicker} />
-                </View>
-              </Card>
-            ) : (
-              <Button
-                label="Select stall & dish"
-                variant="secondary"
-                onPress={openPicker}
-                leftIcon={<Search size={18} color={palette.text} />}
-              />
-            )}
-          </View>
-
-          {/* 2. Photo: required (sh, STITCH-BUILD-03), so it comes right after the dish. */}
-          <View onLayout={rememberSectionY("photo")}>
-            <MediaPicker
-              title="Photo (required)"
-              photos={draft.photos}
-              videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
-              onAddPhoto={addPhoto}
-              onRemovePhoto={removePhoto}
-              onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
-            />
-          </View>
-
-          {/* 3. Rating */}
-          <View style={{ gap: spacing[2] }} onLayout={rememberSectionY("rating")}>
-            <AppText variant="h3">Overall rating</AppText>
-            <StarRating
-              value={draft.rating}
-              onChange={setRating}
-              editable
-              showDescriptor
-              centered
-            />
-          </View>
-
-          {/* 4. Review text */}
-          <View style={{ gap: spacing[3] }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <AppText variant="h3">Your review</AppText>
-              <AppText variant="micro" tone="muted">
-                {draft.text.length}/{REVIEW_TEXT_MAX_LENGTH}
-              </AppText>
-            </View>
-            <Input
-              placeholder="What made this dish special?"
-              accessibilityLabel="Your review"
-              multiline
-              numberOfLines={4}
-              maxLength={REVIEW_TEXT_MAX_LENGTH}
-              value={draft.text}
-              onChangeText={setText}
-              style={{ minHeight: 100 }}
-            />
-          </View>
-
-          {/* Music Picker (Navigation Button) */}
-          {reviewMusicEnabled ? (
-            <View style={{ gap: spacing[3] }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <Music size={18} color={palette.orange} />
-                <AppText variant="h3">Music</AppText>
-              </View>
-
-              {draft.musicId ? (
-                <Card
-                  style={{
-                    padding: spacing[3],
-                    backgroundColor: palette.orangeLight,
-                    borderColor: palette.orange,
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <AppText variant="bodyBold">
-                        {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.title ??
-                          "Selected Track"}
-                      </AppText>
-                      <AppText variant="micro" tone="secondary">
-                        {TRENDING_MUSIC.find((m) => m.id === draft.musicId)?.artist ?? "Artist"}
-                      </AppText>
-                    </View>
-                    <Button
-                      label="Change"
-                      variant="ghost"
-                      size="sm"
-                      onPress={() => navigation.navigate("MusicSelection" as any)}
-                    />
-                  </View>
-                </Card>
-              ) : (
-                <Button
-                  label="Add music"
-                  variant="secondary"
-                  onPress={() => navigation.navigate("MusicSelection" as any)}
-                  leftIcon={<Music size={18} color={palette.text} />}
-                />
-              )}
-            </View>
-          ) : null}
-
-          {/* Every reviewer can tag taste; the tags feed dish taste profiles. */}
-          <View style={{ gap: spacing[3] }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <AppText variant="h3">Taste tags</AppText>
-              <AppText variant="micro" tone="muted">
-                Up to {REVIEW_MAX_TAGS} · {draft.selectedTags.length}/{REVIEW_MAX_TAGS}
-              </AppText>
-            </View>
-            <ChipGroup
-              options={REVIEW_EDITOR_TAGS.map((tag) => ({ id: tag, label: tag }))}
-              selectedIds={draft.selectedTags}
-              onSelect={toggleTag}
-            />
-          </View>
-
-          {/* Optional: how strong each taste felt. Saved as the dish's standard levels. */}
-          {selectedDish ? (
-            <View style={{ gap: spacing[2] }}>
-              <View style={{ gap: spacing[1] }}>
-                <AppText variant="h3">How did it taste?</AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  Optional. Dashed rings are our guess for your palate; tap what you tasted.
-                </AppText>
-              </View>
-              <TasteRatingInput
-                values={feltTaste}
-                suggestions={tasteSuggestions}
-                onChange={(key, value) => {
-                  if (selectedDishId) setFeltTaste(selectedDishId, key, value);
-                }}
-              />
-            </View>
-          ) : null}
-
-          {/* 5. Recommend: unanswered until the reviewer picks one. */}
-          <View style={{ gap: spacing[3] }}>
-            <AppText variant="h3">Would you recommend it?</AppText>
-            <View style={{ flexDirection: "row", gap: spacing[3] }}>
-              <Button
-                label="Yes"
-                variant={draft.recommend === true ? "primary" : "secondary"}
-                accessibilityState={{ selected: draft.recommend === true }}
-                onPress={() => setRecommend(true)}
-                style={{ flex: 1 }}
-              />
-              <Button
-                label="No"
-                variant={draft.recommend === false ? "primary" : "secondary"}
-                accessibilityState={{ selected: draft.recommend === false }}
-                onPress={() => setRecommend(false)}
-                style={{ flex: 1 }}
-              />
-            </View>
-          </View>
-
-          <View style={{ gap: spacing[2] }}>
-            <Button
-              label="Publish review"
-              onPress={handleSubmit}
-              loading={isSubmitting}
-              disabled={Boolean(publishBlockedReason)}
-            />
-            {missingField ? (
+        <View style={{ gap: spacing[6], paddingBottom: compact ? spacing[8] : spacing[20] }}>
+          {dishSection}
+          {photoSection}
+          {ratingSection}
+          {textSection}
+          {musicSection}
+          {compact ? (
+            <View style={{ gap: spacing[4] }}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityHint="Scrolls to the missing field"
-                onPress={() => scrollToSection(missingField.field)}
-                style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
+                accessibilityState={{ expanded: detailOpen }}
+                accessibilityLabel="Add more detail (optional)"
+                onPress={() => setDetailOpen((open) => !open)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  minHeight: 44,
+                }}
               >
-                <AppText
-                  variant="bodySmall"
-                  tone="secondary"
-                  accessibilityLiveRegion="polite"
-                  style={{ textAlign: "center", textDecorationLine: "underline" }}
-                >
-                  {missingField.message}
+                <AppText variant="h3">
+                  Add more detail (optional){optionalCount > 0 ? ` · ${optionalCount}` : ""}
                 </AppText>
+                <ChevronDown
+                  size={20}
+                  color={palette.textMuted}
+                  style={{ transform: [{ rotate: detailOpen ? "180deg" : "0deg" }] }}
+                />
               </Pressable>
-            ) : null}
-          </View>
+              {detailOpen ? (
+                <View style={{ gap: spacing[6] }}>
+                  {tagsSection}
+                  {tasteSection}
+                  {recommendSection}
+                </View>
+              ) : null}
+            </View>
+          ) : (
+            <>
+              {tagsSection}
+              {tasteSection}
+              {recommendSection}
+              {publishBlock}
+            </>
+          )}
         </View>
       </FeedErrorBoundary>
 
@@ -785,26 +1005,36 @@ export function ReviewScreen({ navigation, route }: Props) {
             />
           ) : (
             <FlatList
-              data={pickerRows}
-              keyExtractor={(row) => row.key}
+              data={pickerListItems}
+              keyExtractor={(item) =>
+                item.type === "header" ? `header:${item.title}` : item.row.key
+              }
               keyboardShouldPersistTaps="handled"
               ListEmptyComponent={
                 <AppText tone="secondary">
-                  {query.trim()
-                    ? `No dishes or stalls match "${query.trim()}".`
+                  {trimmedQuery
+                    ? `No dishes or stalls match "${trimmedQuery}".`
                     : "No stalls to show yet."}
                 </AppText>
               }
-              renderItem={({ item }: { item: PickerRow }) => {
-                const distance =
-                  item.distanceMeters === undefined
-                    ? ""
-                    : ` · ${formatPickerDistance(item.distanceMeters)}`;
+              renderItem={({ item: entry }: { item: PickerListItem }) => {
+                if (entry.type === "header") {
+                  return (
+                    <AppText
+                      variant="bodySmallBold"
+                      tone="secondary"
+                      accessibilityRole="header"
+                      style={{ paddingTop: spacing[3], paddingBottom: spacing[1] }}
+                    >
+                      {entry.title}
+                    </AppText>
+                  );
+                }
+                const item = entry.row;
                 const isDish = item.kind === "dish";
                 const title = isDish ? item.dish.name : item.venue.name;
-                const subtitle = isDish
-                  ? `${item.dish.venueName}${distance}`
-                  : `${item.venue.unitNumber}${distance}`;
+                const subtitle = pickerRowSubtitle(item);
+                const thumbnail = isDish ? item.dish.imageUrl : item.venue.imageUrl;
                 return (
                   <Pressable
                     accessibilityRole="button"
@@ -827,15 +1057,37 @@ export function ReviewScreen({ navigation, route }: Props) {
                     <View
                       style={{
                         flexDirection: "row",
-                        justifyContent: "space-between",
                         alignItems: "center",
+                        gap: spacing[3],
                       }}
                     >
+                      {thumbnail ? (
+                        <AccessibleImage
+                          decorative
+                          source={{ uri: thumbnail }}
+                          style={{ width: 40, height: 40, borderRadius: radii.md }}
+                        />
+                      ) : (
+                        <View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: radii.md,
+                            backgroundColor: palette.bgSoft,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Utensils size={18} color={palette.textMuted} />
+                        </View>
+                      )}
                       <View style={{ flex: 1 }}>
                         <AppText style={{ fontWeight: "600" }}>{title}</AppText>
-                        <AppText variant="bodySmall" tone="secondary">
-                          {subtitle}
-                        </AppText>
+                        {subtitle ? (
+                          <AppText variant="bodySmall" tone="secondary">
+                            {subtitle}
+                          </AppText>
+                        ) : null}
                       </View>
                       {isDish ? null : <ChevronRight size={18} color={palette.textMuted} />}
                     </View>

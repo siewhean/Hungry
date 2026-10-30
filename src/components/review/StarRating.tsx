@@ -95,7 +95,7 @@ export function StarRating({
             style={styles.hitArea}
           >
             <Star
-              size={24}
+              size={STAR_ICON_SIZE}
               color={active ? palette.starStroke : palette.textMuted}
               fill={active ? palette.starFill : "transparent"}
             />
@@ -121,6 +121,9 @@ export function StarRating({
     </View>
   );
 }
+
+/** Star icon size; each star's tap area is at least 44pt wide and tall, plus 8pt of slop. */
+const STAR_ICON_SIZE = 28;
 
 const styles = StyleSheet.create({
   row: {

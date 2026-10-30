@@ -18,6 +18,10 @@ interface ScreenProps {
   title?: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  /** Replaces the back button (e.g. a Cancel text button on a modal editor). */
+  headerLeft?: ReactNode;
+  /** Pinned under the scrolling content, above the keyboard (e.g. a sticky Publish bar). */
+  footer?: ReactNode;
   showBack?: boolean;
   /** Replaces the header back button's goBack (e.g. to confirm discarding unsaved changes). */
   onBackPress?: () => void;
@@ -36,6 +40,8 @@ export function Screen({
   title,
   subtitle,
   headerRight,
+  headerLeft,
+  footer,
   showBack = true,
   onBackPress,
   headerGap,
@@ -53,18 +59,19 @@ export function Screen({
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
   const header =
-    title || headerRight ? (
+    title || headerRight || headerLeft ? (
       <AppHeader
         title={title}
         subtitle={subtitle}
         showBack={showBack}
         onBackPress={onBackPress}
+        left={headerLeft}
         right={headerRight}
         horizontalPadding={fullWidth ? semanticSpacing.screenEdge : 0}
       />
     ) : null;
 
-  const body = scroll ? (
+  const content = scroll ? (
     <ScrollView
       style={styles.flex}
       ref={scrollRef}
@@ -116,6 +123,15 @@ export function Screen({
         {children}
       </View>
     </View>
+  );
+
+  const body = footer ? (
+    <>
+      {content}
+      {footer}
+    </>
+  ) : (
+    content
   );
 
   return (

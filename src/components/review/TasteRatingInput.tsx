@@ -52,6 +52,10 @@ export function TasteRatingInput({ values, suggestions, onChange }: Props) {
               key={step.value}
               variant="micro"
               tone="muted"
+              // One line at any width: "Medium" used to wrap to "Mediu / m" on a 390pt phone.
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
               style={{ flex: 1, minWidth: STEP_MIN_WIDTH, textAlign: "center" }}
             >
               {step.label}

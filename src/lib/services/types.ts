@@ -646,6 +646,18 @@ export interface ListRecentReviewsOptions {
   withPhotos?: boolean;
 }
 
+/** Search over every review (not only the loaded page): dish, stall, text or taste tag. */
+export interface SearchReviewsOptions {
+  query: string;
+  /** Page size (defaults to 50). */
+  limit?: number;
+  /** Keyset cursor from the previous page's `nextCursor`. */
+  before?: string;
+  beforeId?: string;
+  /** Only reviews with a photo (the Reviews grid). Defaults to true. */
+  withPhotos?: boolean;
+}
+
 export interface SubmitMenuPhotoInput {
   venueId: string;
   photoUri: string;
@@ -1028,6 +1040,8 @@ export interface HungryService {
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
     /** The same feed as listRecentReviews, with paging state that survives dropped rows. */
     listRecentReviewsPage(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedPage>;
+    /** The same page shape for a text search over all reviews, newest first. */
+    searchReviewsPage(options: SearchReviewsOptions): Promise<RecentReviewFeedPage>;
     /** One review with its dish and stall names (the shared review page); null when not visible. */
     getReviewById(reviewId: string): Promise<RecentReviewFeedEntry | null>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */

@@ -13,12 +13,17 @@ export function createInitialReviewDraft(): ReviewDraft {
   };
 }
 
-/** True when the draft holds anything worth asking about, with or without a dish. */
+/**
+ * True when the draft holds anything worth asking about, with or without a dish: a rating, text,
+ * a photo, a picked tag or a Yes/No on recommending.
+ */
 export function reviewDraftHasContent(draft: ReviewDraft): boolean {
   return (
     draft.rating > 0 ||
     draft.text.trim().length > 0 ||
     draft.photos.length > 0 ||
+    draft.selectedTags.length > 0 ||
+    typeof draft.recommend === "boolean" ||
     Boolean(draft.videoUri)
   );
 }

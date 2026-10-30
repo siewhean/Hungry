@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { FlatList, Modal, Pressable, View, useWindowDimensions } from "react-native";
+import { FlatList, Modal, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { X } from "lucide-react-native";
 
@@ -8,6 +8,8 @@ import { AccessibleImage, AppText } from "../ui";
 
 /** Photos sit on black in both themes. */
 const VIEWER_BACKGROUND = "#000000";
+/** How far a pinch can enlarge a photo. */
+const PHOTO_MAX_ZOOM = 4;
 
 type ReviewPhotoViewerProps = {
   /** Photos of one review. Mount the viewer to open it and unmount it on close. */
@@ -78,12 +80,30 @@ export function ReviewPhotoViewer({
             setIndex(Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1)))
           }
           renderItem={({ item, index: photoIndex }) => (
-            <AccessibleImage
-              source={{ uri: item }}
-              accessibilityLabel={`${label}, photo ${photoIndex + 1} of ${photos.length}`}
+            // Pinch to zoom: the ScrollView's own zoom (iOS). Android shows the photo fitted.
+            <ScrollView
+              testID={`review-photo-zoom-${photoIndex}`}
+              maximumZoomScale={PHOTO_MAX_ZOOM}
+              minimumZoomScale={1}
+              bouncesZoom
+              centerContent
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
               style={{ width, height: height * 0.8 }}
-              contentFit="contain"
-            />
+              contentContainerStyle={{
+                alignItems: "center",
+                height: height * 0.8,
+                justifyContent: "center",
+                width,
+              }}
+            >
+              <AccessibleImage
+                source={{ uri: item }}
+                accessibilityLabel={`${label}, photo ${photoIndex + 1} of ${photos.length}`}
+                style={{ width, height: height * 0.8 }}
+                contentFit="contain"
+              />
+            </ScrollView>
           )}
         />
       </SafeAreaView>

@@ -173,9 +173,9 @@ test("L1/L9/L10: cards take primitives and 44pt targets, with no Helpful vote", 
 
 test("L8: the success modal offers to share the new review", () => {
   const modal = read("src/app/screens/review/ReviewSuccessModal.tsx");
-  assert.match(modal, /label="Share your review"/);
+  assert.match(modal, /label="Share"/);
   assert.match(modal, /webShareUrl\("review", reviewId\)/);
-  assert.match(modal, /Your review is live on/);
+  assert.match(modal, /It is now on/);
   assert.doesNotMatch(modal, /Profile updated/);
   const editor = read("src/app/screens/review/ReviewScreen.tsx");
   assert.match(editor, /reviewId,\s*dishId: selectedDish\.id/);
