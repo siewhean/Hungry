@@ -9,6 +9,7 @@ import { act } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { MerchantTabs } from "@/app/navigation/MerchantTabs";
+import { MerchantDashboardScreen } from "@/app/screens/merchant/MerchantDashboardScreen";
 import { VerificationCentreScreen } from "@/app/screens/merchant/VerificationCentreScreen";
 import {
   EXPERIMENTS,
@@ -86,7 +87,7 @@ test("R4-1: a signed-in login with no merchant account sees its claim and where 
   assert.match(view.text(), /Your claims/);
   assert.match(view.text(), /Tian Tian Chicken Rice/);
   assert.ok(view.findByLabel("Step 1 of 4: Claim sent"));
-  assert.match(view.text(), /usually replies within 2 working days/);
+  assert.match(view.text(), /usually replies within a few working days/);
   assert.match(view.text(), /Find your stall/);
   assert.equal(view.findByText("Open Merchant Centre"), null, "nothing to open yet");
 });
@@ -197,7 +198,7 @@ test("R4-10 / R4-9: while Hungry reviews, the page gives the usual wait and jump
   const view = await renderScreen(VerificationCentreScreen as never, {
     name: "VerificationCentre",
   });
-  assert.match(view.text(), /usually takes 2 working days/);
+  assert.match(view.text(), /usually takes a few working days/);
   assert.ok(view.findByLabel("Step 3 of 4: Verified"));
   await view.press(view.findByText("Set up your menu"));
   await view.press(view.findByText("Set up your profile"));
@@ -285,4 +286,38 @@ test("R4-9: the control arm and verified stalls never see the checklist", async 
 
 beforeEach(() => {
   useSessionStore.getState().setReturnRoute(undefined);
+});
+
+// ─── P3-1: "You're approved" on Home ────────────────────────────────────────
+
+test("P3-1: Home tells a newly approved merchant once, and the note stays closed", async () => {
+  await enterScenario("merchant");
+  stub("supply", "getMyMerchantClaims", async () => [claim("approved")]);
+  const view = await renderScreen(MerchantDashboardScreen as never, { name: "Dashboard" });
+  await view.settle();
+  assert.match(view.text(), /You.re approved/);
+  assert.match(view.text(), /Tian Tian Chicken Rice is yours on Hungry/);
+
+  await view.press(view.findByText("Got it"));
+  await view.settle();
+  assert.doesNotMatch(view.text(), /You.re approved/);
+  assert.deepEqual(useMerchantStore.getState().dismissedApprovalClaimIds, ["claim-approved"]);
+});
+
+test("P3-1: Home stays quiet for a claim that is not approved or already closed", async () => {
+  await enterScenario("merchant");
+  stub("supply", "getMyMerchantClaims", async () => [claim("in_review")]);
+  const view = await renderScreen(MerchantDashboardScreen as never, { name: "Dashboard" });
+  await view.settle();
+  assert.doesNotMatch(view.text(), /You.re approved/);
+});
+
+test("P3-1: a claims read that fails does not break Home", async () => {
+  await enterScenario("merchant");
+  stub("supply", "getMyMerchantClaims", async () => {
+    throw new Error("offline");
+  });
+  const view = await renderScreen(MerchantDashboardScreen as never, { name: "Dashboard" });
+  await view.settle();
+  assert.doesNotMatch(view.text(), /You.re approved/);
 });

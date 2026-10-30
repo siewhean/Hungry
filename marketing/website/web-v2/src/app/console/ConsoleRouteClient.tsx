@@ -256,7 +256,13 @@ export default function ConsoleRouteClient({ initialSection }: { initialSection:
         method: "POST",
       });
       if (!response.ok) throw new Error(await readApiError(response, "Unable to update this claim."));
+      const payload = (await response.json().catch(() => null)) as {
+        result?: { alreadyApproved?: boolean; emailSent?: boolean };
+      } | null;
       await loadDataset();
+      if (action === "approve" && payload?.result?.alreadyApproved !== true && payload?.result?.emailSent === false) {
+        setError(`${stall} is approved, but the approval email did not send. Tell the claimant yourself.`);
+      }
     } catch (claimError) {
       setError(claimError instanceof Error ? claimError.message : "Unable to update this claim.");
     } finally {

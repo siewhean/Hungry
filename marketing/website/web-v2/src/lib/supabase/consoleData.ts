@@ -6,6 +6,7 @@ import {
   type ConsoleRouteStatus,
 } from "@/lib/console/routeRegistry";
 import { redactEmail } from "@/lib/console/redaction";
+import { sendMerchantApprovalEmail } from "@/lib/email/merchantApprovalEmail";
 import {
   getSupabaseConfigStatus,
   getUserFromAccessToken,
@@ -345,10 +346,14 @@ async function getMerchantApplicationRecords() {
 
 export type MerchantClaimAction = "approve" | "reject" | "contacted";
 
+/** A claim could not be changed because it is already approved (the route answers 409). */
+export class MerchantClaimConflictError extends Error {}
+
 /**
  * Ops decide a claim by hand. Approving runs approve_merchant_claim, which creates the merchant
- * account, owner role and outlet in one transaction (and is safe to repeat). The other actions
- * only move the status, and never touch a claim that is already approved.
+ * account, owner role and outlet in one transaction (and is safe to repeat), then emails the
+ * claimant once. The other actions only move the status, and never touch a claim that is
+ * already approved.
  */
 export async function reviewMerchantClaim(
   actor: ConsoleActor,
@@ -361,23 +366,39 @@ export async function reviewMerchantClaim(
       method: "POST",
       serviceRole: true,
     });
+    const { email, venueName, ...approval } =
+      data && typeof data === "object" ? (data as Record<string, unknown>) : ({} as Record<string, unknown>);
+    // The claimant's email goes to the claimant only: it stays out of the audit log and the reply.
     await recordConsoleAuditEvent(actor, {
       action: "merchant_claim_approved",
-      metadata: data && typeof data === "object" ? (data as Record<string, unknown>) : {},
+      metadata: approval,
       targetId: claimId,
       targetType: "merchant_claim",
     });
-    return data;
+    const alreadyApproved = approval.alreadyApproved === true;
+    const emailSent =
+      !alreadyApproved &&
+      typeof email === "string" &&
+      (await sendMerchantApprovalEmail({
+        stallName: typeof venueName === "string" ? venueName : undefined,
+        to: email,
+      }));
+    return { ...approval, emailSent };
   }
 
   const status = action === "reject" ? "rejected" : "contacted";
-  await supabaseFetchOnDemand<unknown>("rest/v1/merchant_claim_interests", {
+  const { data: changed } = await supabaseFetchOnDemand<unknown[]>("rest/v1/merchant_claim_interests", {
     body: { status, status_updated_at: new Date().toISOString() },
     method: "PATCH",
-    params: { id: eq(claimId), status: "neq.converted" },
-    prefer: "return=minimal",
+    params: { id: eq(claimId), select: "id", status: "neq.converted" },
+    prefer: "return=representation",
     serviceRole: true,
   });
+  if (!Array.isArray(changed) || changed.length === 0) {
+    throw new MerchantClaimConflictError(
+      "This claim is already approved or no longer exists, so it was not changed.",
+    );
+  }
   await recordConsoleAuditEvent(actor, {
     action: `merchant_claim_${status}`,
     metadata: { status },

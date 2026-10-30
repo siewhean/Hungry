@@ -12,7 +12,7 @@ import { useHungryTheme } from "@/theme";
 function describe(claim: MerchantClaimSummary): string {
   switch (claim.status) {
     case "submitted":
-      return "We have your claim. Hungry usually replies within 2 working days.";
+      return "We have your claim. Hungry usually replies within a few working days.";
     case "in_review":
       return "Hungry is checking your claim. We may email you for more details.";
     case "approved":

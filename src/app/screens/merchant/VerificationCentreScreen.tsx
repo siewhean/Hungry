@@ -167,8 +167,8 @@ export function VerificationCentreScreen({ navigation }: Props) {
               Verification pending
             </AppText>
             <AppText style={{ color: palette.text, marginTop: spacing[1], textAlign: "center" }}>
-              Hungry is reviewing your documents. This usually takes 2 working days. You can keep
-              setting up your stall and menu while you wait.
+              Hungry is reviewing your documents. This usually takes a few working days. You can
+              keep setting up your stall and menu while you wait.
             </AppText>
             <View style={{ alignSelf: "stretch", gap: spacing[2], marginTop: spacing[4] }}>
               <Button label="Set up your menu" onPress={() => navigation.navigate("Menu")} />

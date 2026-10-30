@@ -37,6 +37,8 @@ interface MerchantState {
    * merchant account; "restore": open the Merchant Centre; "none": open customer mode.
    */
   merchantModeRestore: MerchantModeRestore;
+  /** Approved claims whose "You're approved" note the merchant has already closed. */
+  dismissedApprovalClaimIds: string[];
 }
 
 export type MerchantModeRestore = "checking" | "restore" | "none";
@@ -53,6 +55,7 @@ interface MerchantActions {
   resolveMerchantModeRestore: (hasMerchantAccount: boolean) => void;
   /** Launch did not go through the restore route (deep link, onboarding): forget the remembered mode. */
   dismissMerchantModeRestore: () => void;
+  dismissApprovalNotice: (claimId: string) => void;
   clearMerchant: () => void;
 }
 
@@ -74,6 +77,7 @@ const INITIAL_STATE: MerchantState = {
   analyticsCache: null,
   notificationPreferences: DEFAULT_NOTIFICATION_PREFS,
   developerMerchantMode: false,
+  dismissedApprovalClaimIds: [],
   merchantModeActive: false,
   merchantModeRestore: "none",
 };
@@ -174,6 +178,13 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
           state.merchantModeRestore === "none" ? state : { merchantModeRestore: "none" },
         ),
 
+      dismissApprovalNotice: (claimId) =>
+        set((state) =>
+          state.dismissedApprovalClaimIds.includes(claimId)
+            ? state
+            : { dismissedApprovalClaimIds: [...state.dismissedApprovalClaimIds, claimId] },
+        ),
+
       clearMerchant: () => {
         if (!useMerchantStore.persist.hasHydrated()) clearedBeforeHydration = true;
         set(INITIAL_STATE);
@@ -188,6 +199,7 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
         account: toPersistedAccount(state.account),
         activeOutletId: state.activeOutletId,
         notificationPreferences: state.notificationPreferences,
+        dismissedApprovalClaimIds: state.dismissedApprovalClaimIds,
         // Keep remembering Merchant mode until the launch route has opened the Merchant Centre.
         merchantModeActive: state.merchantModeActive || state.merchantModeRestore === "restore",
       }),

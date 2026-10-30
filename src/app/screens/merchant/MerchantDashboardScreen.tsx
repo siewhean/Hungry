@@ -32,6 +32,7 @@ import {
 } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
+import { ApprovalNotice } from "@/components/merchant/ApprovalNotice";
 import { ClosurePanel, type ClosureChoice } from "@/components/merchant/ClosurePanel";
 import { getClosureLabel } from "@/features/merchant/closure";
 import { formatCount } from "@/features/merchant/performanceFormat";
@@ -556,6 +557,7 @@ export function MerchantDashboardScreen() {
         {error ? (
           <InlineBanner tone="error" message={`Couldn't refresh the dashboard. ${error}`} />
         ) : null}
+        <ApprovalNotice />
         {/* Header */}
         <View
           style={{

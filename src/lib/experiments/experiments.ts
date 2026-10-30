@@ -596,9 +596,10 @@ export const EXPERIMENTS = {
     status: "draft",
     surface: "merchant",
     hypothesis:
-      "A progress checklist gets more new merchants to a verified stall with at least five dishes than the verification landing alone, as Shopify's setup guide does for new sellers.",
+      "A progress checklist gets more new merchants to submit their licence for verification than the verification landing alone, as Shopify's setup guide does for new sellers.",
     primaryMetric: "merchant_verification_submitted",
     guardrailMetrics: ["merchant_dish_created", "merchant_mode_opened"],
+    minSamplePerArm: 400,
   },
 } as const satisfies Record<string, ExperimentDefinition>;
 

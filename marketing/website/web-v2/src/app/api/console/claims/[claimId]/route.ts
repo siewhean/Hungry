@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { clientRequestKey, jsonError, requireRateLimit } from "@/lib/security/api";
 import { getStringField, readJsonObject, validationErrorResponse } from "@/lib/security/validation";
-import { reviewMerchantClaim, type MerchantClaimAction } from "@/lib/supabase/consoleData";
+import {
+  MerchantClaimConflictError,
+  reviewMerchantClaim,
+  type MerchantClaimAction,
+} from "@/lib/supabase/consoleData";
 import {
   isConsoleAuthResponse,
   requireConsoleApiAccess,
@@ -49,6 +53,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   } catch (error) {
     const validationResponse = validationErrorResponse(error);
     if (validationResponse) return validationResponse;
+    if (error instanceof MerchantClaimConflictError) return jsonError(error.message, 409);
 
     // The database explains why a claim cannot be approved (already owned, rejected, no email).
     const message =

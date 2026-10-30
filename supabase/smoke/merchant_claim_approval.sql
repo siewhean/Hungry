@@ -37,7 +37,9 @@ values
   ('00000000-0000-0073-c000-000000000003', 'smoke-mca-venue-2', 'smoke-mca-building',
    '00000000-0000-0073-b000-000000000001', null, null, 'new'),
   ('00000000-0000-0073-c000-000000000004', 'smoke-mca-venue-3', 'smoke-mca-building',
-   '00000000-0000-0073-b000-000000000002', null, null, 'rejected');
+   '00000000-0000-0073-b000-000000000002', null, null, 'rejected'),
+  ('00000000-0000-0073-c000-000000000005', 'smoke-mca-venue', 'smoke-mca-building',
+   '00000000-0000-0073-b000-000000000001', 'Uncle Tan again', 'tan@example.test', 'new');
 
 select set_config('request.jwt.claim.role', 'service_role', true);
 set local role service_role;
@@ -51,6 +53,18 @@ begin
   v_first := public.approve_merchant_claim('00000000-0000-0073-c000-000000000001');
   if (v_first->>'created')::boolean is not true then
     raise exception 'the first approval should create the outlet: %', v_first;
+  end if;
+  if (v_first->>'alreadyApproved')::boolean is not false or v_first->>'email' <> 'tan@example.test' then
+    raise exception 'the first approval should report a fresh approval and the claimant email: %', v_first;
+  end if;
+  if (v_first->>'rejectedOthers')::int <> 1 then
+    raise exception 'exactly the rival claim should be rejected: %', v_first;
+  end if;
+  if (select status from merchant_claim_interests where id = '00000000-0000-0073-c000-000000000002') <> 'rejected' then
+    raise exception 'the rival claim should be rejected once the stall is approved';
+  end if;
+  if (select status from merchant_claim_interests where id = '00000000-0000-0073-c000-000000000005') <> 'converted' then
+    raise exception 'the claimant duplicate claim should be approved with the first';
   end if;
 
   if not exists (
@@ -90,6 +104,9 @@ begin
 
   -- Approving again changes nothing.
   v_again := public.approve_merchant_claim('00000000-0000-0073-c000-000000000001');
+  if (v_again->>'alreadyApproved')::boolean is not true then
+    raise exception 'a second approval should be flagged as already approved: %', v_again;
+  end if;
   if (v_again->>'created')::boolean is not false
      or v_again->>'outletId' <> v_first->>'outletId'
      or v_again->>'merchantAccountId' <> v_first->>'merchantAccountId' then
@@ -109,8 +126,11 @@ begin
   end if;
 
   -- Someone else's claim on a stall that already has an owner is refused.
+  insert into merchant_claim_interests (id, venue_id, building_id, claimed_by, status)
+  values ('00000000-0000-0073-c000-000000000006', 'smoke-mca-venue', 'smoke-mca-building',
+          '00000000-0000-0073-b000-000000000002', 'new');
   begin
-    perform public.approve_merchant_claim('00000000-0000-0073-c000-000000000002');
+    perform public.approve_merchant_claim('00000000-0000-0073-c000-000000000006');
     raise exception 'a rival claim on an owned stall was approved';
   exception when unique_violation then
     null;

@@ -10,7 +10,10 @@
 --   - creates the claimant's merchant account (or reuses it) and an owner role,
 --   - creates the outlet linked to the venue, not live and not verified (the licence check in
 --     the Merchant Centre still decides that),
---   - marks the claim 'converted', which the stall page already shows as "Approved".
+--   - marks the claim 'converted', which the stall page already shows as "Approved",
+--   - rejects the stall's other open claims (they could never succeed and would stay pending),
+--   - returns the claimant's email, the stall name and whether the claim was already approved, so the console
+--     emails the claimant once, on the first approval only.
 -- Approving again returns the same account and outlet. A stall that already has an outlet under
 -- another account is refused with a clear message.
 -- SECURITY INVOKER and service_role only: it is not reachable by the app or by guests.
@@ -30,6 +33,8 @@ declare
   v_account_id uuid;
   v_outlet_id uuid;
   v_created boolean := false;
+  v_was_approved boolean;
+  v_rejected integer := 0;
 begin
   select * into v_claim
   from public.merchant_claim_interests c
@@ -45,6 +50,8 @@ begin
   if v_claim.status = 'rejected' then
     raise exception 'this claim was rejected' using errcode = '22023';
   end if;
+
+  v_was_approved := v_claim.status = 'converted';
 
   -- One approval per stall at a time.
   perform pg_advisory_xact_lock(hashtextextended('merchant_claim_venue:' || v_claim.venue_id, 0));
@@ -123,12 +130,33 @@ begin
   set status = 'converted', status_updated_at = now()
   where id = v_claim.id;
 
+  -- The claimant's own duplicate claims on this stall are approved with it; other people's open
+  -- claims can no longer succeed.
+  update public.merchant_claim_interests
+  set status = 'converted', status_updated_at = now()
+  where venue_id = v_claim.venue_id
+    and id <> v_claim.id
+    and status in ('new', 'contacted', 'qualified')
+    and claimed_by = v_claim.claimed_by;
+
+  update public.merchant_claim_interests
+  set status = 'rejected', status_updated_at = now()
+  where venue_id = v_claim.venue_id
+    and id <> v_claim.id
+    and status in ('new', 'contacted', 'qualified')
+    and claimed_by is distinct from v_claim.claimed_by;
+  get diagnostics v_rejected = row_count;
+
   return jsonb_build_object(
     'claimId', v_claim.id,
     'merchantAccountId', v_account_id,
     'outletId', v_outlet_id,
     'venueId', v_claim.venue_id,
-    'created', v_created
+    'venueName', v_venue.name,
+    'created', v_created,
+    'alreadyApproved', v_was_approved,
+    'rejectedOthers', v_rejected,
+    'email', v_email
   );
 end;
 $$;

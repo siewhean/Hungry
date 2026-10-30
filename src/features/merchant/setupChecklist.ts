@@ -39,7 +39,7 @@ export function buildSetupChecklist(
       detail: verified
         ? "Verified"
         : submitted
-          ? "Sent. Hungry is reviewing it, usually within 2 working days."
+          ? "Sent. Hungry is reviewing it, usually within a few working days."
           : "Send a licence photo or a video walkaround.",
       done: verified || submitted,
       action: "verification",
