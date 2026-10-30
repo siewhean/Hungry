@@ -467,8 +467,8 @@ test("R4-ONB-7: the helper line keeps its place before and after the first answe
   const after = view.findByText(/^Picked: /);
   assert.ok(after, "and still there after");
   assert.equal(before!.parentElement, after!.parentElement, "in the same place in the layout");
-  // Two lines are reserved, so the tiles sit at the same height on every question.
-  assert.equal(before!.style.minHeight, "36px");
+  // A line is always reserved, so the tiles sit at the same height on every question.
+  assert.equal(before!.style.minHeight, "18px");
 });
 
 test("R4-ONB-5: the next question slides in by itself after an answer", async () => {

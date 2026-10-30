@@ -451,15 +451,11 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       {/* One heading per screen: the question itself. */}
       <OnboardingHeader title={headingText} />
       {inDietaryStep ? null : (
-        // Always on screen and always two lines tall, so the options sit at the same height on
-        // every question (the hint wraps on a narrow phone, the "Picked" line does not).
-        <AppText
-          variant="micro"
-          tone="muted"
-          style={{ minHeight: typography.micro.lineHeight * 2 }}
-        >
+        // Always on screen and always a line tall, so the options sit at the same height on
+        // every question (both texts fit one line on the smallest phone).
+        <AppText variant="micro" tone="muted" style={{ minHeight: typography.micro.lineHeight }}>
           {selectedIndex < 0
-            ? "Tap one to answer, or go Next to leave this one out."
+            ? "Tap one to answer, or go Next to skip."
             : `Picked: ${labels[selectedIndex]}`}
         </AppText>
       )}
