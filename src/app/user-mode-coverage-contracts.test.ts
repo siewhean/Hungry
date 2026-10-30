@@ -5,6 +5,7 @@ import {
   assertRepoFileExists,
   assertSourceExcludes,
   assertSourceIncludes,
+  readHomeSource,
   readRepoFile,
   segmentBetween,
 } from "@/test/sourceContracts";
@@ -191,7 +192,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
 });
 
 test("discover routes diners to details, opens the map from a toggle, and search grids open catalog records", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const quickBites = readRepoFile("src/app/screens/discover/QuickBitesScreen.tsx");
   const searchResults = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
   const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
@@ -252,10 +253,10 @@ test("discover routes diners to details, opens the map from a toggle, and search
 test("dish and stall details expose correct detail surfaces without user-mode map/cart regressions", () => {
   const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const userModeStallPress = segmentBetween(
     discover,
-    "if (isUserMode) {",
+    'buttonId: "vertical_stall_showcase_card"',
     'navigation.navigate("MapZoomedIn"',
   );
 
