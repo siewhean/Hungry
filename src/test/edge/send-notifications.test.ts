@@ -182,6 +182,19 @@ const SKIPS: [string, Scenario, string][] = [
     "opted_out",
   ],
   [
+    "a weekly picks push for a user with no saved preferences (weekly picks default off)",
+    { jobs: [job({ category: "weekly_picks", dish_id: null })], prefs: [] },
+    "opted_out",
+  ],
+  [
+    "a weekly picks push for a user who turned it off",
+    {
+      jobs: [job({ category: "weekly_picks", dish_id: null })],
+      prefs: [{ user_id: "u1", weekly_picks: false }],
+    },
+    "opted_out",
+  ],
+  [
     "a social job when social activity is off",
     {
       jobs: [job({ category: "social_like_digest", dish_id: null })],

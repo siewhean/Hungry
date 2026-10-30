@@ -131,3 +131,13 @@ test("wheel solo spin ships everywhere; wheel parties and Crave stay out of prod
     assert.equal(flags.craveEnabled, true);
   }
 });
+
+test("AI search (typed text sent to Anthropic) is off in every environment until a build opts in", () => {
+  for (const appEnv of ["development", "staging", "production"] as const) {
+    assert.equal(resolveFeatureFlags(appEnv, "production", {}).aiSearchEnabled, false);
+  }
+  const optedIn = resolveFeatureFlags("production", "production", {
+    EXPO_PUBLIC_ENABLE_AI_SEARCH: "1",
+  });
+  assert.equal(optedIn.aiSearchEnabled, true);
+});

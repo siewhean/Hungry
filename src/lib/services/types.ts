@@ -15,6 +15,7 @@ import type {
   DishDetail,
   DishTasteRatingSummary,
   DietaryFlag,
+  PrivacyConsents,
   PushPreferences,
   LifecycleSnapshot,
   WelcomeBackDish,
@@ -1132,6 +1133,14 @@ export interface HungryService {
     /** Unbinds this device's registered push token from the signed-in user. Call before sign-out. */
     unregisterPushToken(): Promise<void>;
     markOpened(notificationId: string): Promise<void>;
+  };
+
+  // Consents saved on the account (analytics, AI search)
+  privacy: {
+    /** Nothing answered yet when nobody is signed in. */
+    getConsents(): Promise<PrivacyConsents>;
+    /** Saves only the consents named; the others are left as they are. Throws when it cannot save. */
+    saveConsents(updates: Partial<PrivacyConsents>): Promise<void>;
   };
 
   // Lifecycle (new, current, at risk, dormant, ...)

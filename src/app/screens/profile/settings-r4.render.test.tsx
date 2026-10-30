@@ -8,6 +8,7 @@ import { Alert, Dimensions } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { SettingsScreen } from "@/app/screens/profile/SettingsScreen";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { AccountDeletionDialog } from "@/components/settings/AccountDeletionDialog";
 import { SettingsProfileCard } from "@/components/settings/SettingsProfileCard";
 import {
@@ -19,11 +20,12 @@ import {
 import { applyAnalyticsPreference } from "@/lib/analytics/preference";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { hungryPersistStorage } from "@/store/persistStorage";
+import { useConsentStore } from "@/store/useConsentStore";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { cleanup, render, renderScreen } from "@/test/render";
+import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
 const restores: (() => void)[] = [];
@@ -339,7 +341,7 @@ const SECTION_TITLES = [
   "Your taste",
   "Privacy & data",
   "Account & security",
-  "Display & accessibility",
+  "On this phone",
   "Help & legal",
 ];
 
@@ -430,4 +432,178 @@ test("SET4-10: Change password has one show/hide control, not one per field", as
     fields.every((field) => field.type === "text"),
     "one tap reveals all three fields",
   );
+});
+
+test("the password-change follow-up is an in-app dialog; Not now and the backdrop both leave the form", async () => {
+  const { ChangePasswordScreen } =
+    require("@/app/screens/profile/ChangePasswordScreen") as typeof import("@/app/screens/profile/ChangePasswordScreen");
+  const alertTitles: string[] = [];
+  Alert.alert = ((title: string) => alertTitles.push(title)) as typeof Alert.alert;
+  stub(getHungryService().auth, "changePassword", async () => undefined);
+  const others: unknown[] = [];
+  stub(getHungryService().auth, "signOut", (async (options?: unknown) => {
+    others.push(options);
+  }) as never);
+
+  const fillAndSubmit = async () => {
+    const navigation = createFakeNavigation();
+    const view = await renderScreen(ChangePasswordScreen as never, {
+      name: "ChangePassword",
+      navigation,
+    });
+    const inputs = Array.from(document.querySelectorAll("input")) as HTMLInputElement[];
+    await view.type(inputs[0]!, "OldPassw0rd!");
+    await view.type(inputs[1]!, "NewPassw0rd!x");
+    await view.type(inputs[2]!, "NewPassw0rd!x");
+    await view.press(view.findByText("Update password"));
+    await view.settle();
+    return { view, navigation };
+  };
+
+  let { view, navigation } = await fillAndSubmit();
+  assert.ok(view.findByText("Sign out other devices?"), "asked in the interface");
+  assert.deepEqual(alertTitles, [], "no system alert");
+  await view.press(view.findByText("Not now"));
+  assert.equal(navigation.calls.filter((call) => call.method === "goBack").length, 1);
+  assert.deepEqual(others, []);
+  await view.unmount();
+
+  ({ view, navigation } = await fillAndSubmit());
+  await view.press(view.findByText("Sign out other devices"));
+  await view.settle();
+  assert.deepEqual(others, [{ scope: "others" }]);
+  assert.equal(navigation.calls.filter((call) => call.method === "goBack").length, 1);
+});
+
+// --- Round five: Apple conventions ---------------------------------------------------------
+
+test("R5: Settings has no app Theme or Reduce motion row (iOS owns both), and no emoji", async () => {
+  const view = await settingsScreen();
+  for (const label of ["Theme", "Reduce motion", "Display & accessibility"]) {
+    assert.equal(view.findByText(label), null, `${label} is gone`);
+  }
+  assert.ok(view.findByText("On this phone"));
+  assert.ok(view.findByLabel("Haptic feedback"));
+  assert.doesNotMatch(view.text(), /\p{Emoji_Presentation}/u);
+});
+
+/** The disclosure arrow (a lucide icon off iOS). */
+const ARROW = '[data-stub$=".ChevronRight"]';
+
+test("R5: Delete account is a red text row at the end of Account & security, not a filled button", async () => {
+  const view = await settingsScreen();
+  const row = view.findByLabel("Delete account");
+  assert.ok(row, "the row is there");
+  assert.equal(row.querySelector(ARROW), null, "it acts in place");
+  const text = view.text();
+  assert.ok(text.indexOf("Sign out of all devices") < text.indexOf("Delete account"));
+  assert.ok(text.indexOf("Delete account") < text.indexOf("On this phone"));
+  assert.match(row.innerHTML, /rgb\(205, 3, 2\)/, "red text and symbol");
+  assert.doesNotMatch(row.getAttribute("style") ?? "", /background-color: rgb\(205, 3, 2\)/);
+
+  await view.press(row);
+  assert.ok(view.findByText("Download my data first"), "still one tap to the same dialog");
+});
+
+test("R5: in-place actions have no disclosure arrow; rows that open another screen keep it", async () => {
+  const view = await settingsScreen();
+  for (const label of [
+    "Clear local cache",
+    "Sign out of all devices",
+    "Reset selected location",
+    "Contact us",
+    "Sign out",
+  ]) {
+    const row = view.findByLabel(label);
+    assert.ok(row, label);
+    assert.equal(row.querySelector(ARROW), null, `${label} has no arrow`);
+  }
+  assert.ok(
+    view.findByLabel("Profile visibility")?.querySelector(ARROW),
+    "Profile visibility keeps it",
+  );
+});
+
+test("R5: section headers are small secondary text, and a folded section's summary sits under its title", async () => {
+  const view = await settingsScreen();
+  const header = view.findByText("Privacy & data");
+  assert.ok(header);
+  assert.doesNotMatch(header.getAttribute("style") ?? "", /font-size: 24px/, "not a 24 px heading");
+
+  const title = view.findByText("Your taste");
+  const summary = view.findByText(/dietary/);
+  assert.ok(title && summary, "the folded section shows its title and its summary");
+  // One column inside the fold button (the summary no longer wraps beside the title).
+  assert.ok(title.parentElement === summary.parentElement, "title and summary share a column");
+  assert.ok(title.compareDocumentPosition(summary) & 4, "the summary comes after the title");
+});
+
+test("R5: the analytics switch saves the choice on the account", async () => {
+  const view = await settingsScreen();
+  await view.press(view.findByLabel("Share usage analytics"));
+  await view.settle();
+  assert.equal((await getHungryService().privacy.getConsents()).analytics, false);
+  assert.equal(useConsentStore.getState().analyticsAsked, true);
+  await view.press(view.findByLabel("Share usage analytics"));
+  await view.settle();
+  assert.equal((await getHungryService().privacy.getConsents()).analytics, true);
+});
+
+test("R5: the AI search switch is hidden until AI search ships, then saves before it moves", async () => {
+  let view = await settingsScreen();
+  assert.equal(
+    view.findByLabel("AI search"),
+    null,
+    "no switch for a feature that is not in the app",
+  );
+  await view.unmount();
+
+  stub(FEATURE_FLAGS as { aiSearchEnabled: boolean }, "aiSearchEnabled", true);
+  view = await settingsScreen();
+  const row = view.findByLabel("AI search");
+  assert.ok(row);
+  assert.match(view.text(), /send the words you type in search to Anthropic/);
+  assert.match(view.text(), /name and account details are not sent/);
+
+  await view.press(row);
+  await view.settle();
+  assert.equal(useConsentStore.getState().aiSearchAllowed, true);
+  assert.equal((await getHungryService().privacy.getConsents()).aiSearch, true);
+
+  stub(getHungryService().privacy, "saveConsents", async () => {
+    throw new Error("offline");
+  });
+  const reports = captureReports();
+  await view.press(view.findByLabel("AI search"));
+  await view.settle();
+  assert.equal(useConsentStore.getState().aiSearchAllowed, true, "the switch did not move");
+  assert.equal(useUIStore.getState().toast?.tone, "error");
+  assert.ok(reports.some((report) => report.area === "settings_ai_search_consent"));
+});
+
+test("R5: turning an alert on while the phone blocks notifications explains it in the interface, not an alert", async () => {
+  const notifications = require("expo-notifications") as {
+    getPermissionsAsync: () => Promise<{ granted: boolean; status: string }>;
+    requestPermissionsAsync: () => Promise<{ granted: boolean; status: string }>;
+  };
+  const alertTitles: string[] = [];
+  Alert.alert = ((title: string) => alertTitles.push(title)) as typeof Alert.alert;
+  stub(notifications, "getPermissionsAsync", async () => ({
+    granted: false,
+    status: "undetermined",
+  }));
+  stub(notifications, "requestPermissionsAsync", async () => ({
+    granted: false,
+    status: "denied",
+  }));
+  const { StallAlertsSettings } =
+    require("@/components/settings/StallAlertsSettings") as typeof import("@/components/settings/StallAlertsSettings");
+  const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+  assert.doesNotMatch(view.text(), /Notifications are off for Hungry/);
+
+  await view.press(view.findByLabel("Menu changes at followed stalls"));
+  await view.settle();
+  assert.match(view.text(), /Notifications are off for Hungry/);
+  assert.match(useUIStore.getState().toast?.message ?? "", /Allow notifications for Hungry/);
+  assert.deepEqual(alertTitles, []);
 });

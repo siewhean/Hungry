@@ -125,7 +125,7 @@ import type {
   LifecycleSnapshot,
   WelcomeBackDish,
 } from "@/types/domain";
-import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
+import { DEFAULT_PUSH_PREFERENCES, type PrivacyConsents } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
   runRecommendationPipeline,
@@ -340,6 +340,7 @@ const _submittedClientReviewIds = new Set<string>();
 const _helpfulReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
+let _privacyConsents: PrivacyConsents = { analytics: null, aiSearch: false };
 /** Singapore dates the mock user opened the app (record_app_open). */
 const _activityDates = new Set<string>();
 let _isAuthenticated = false;
@@ -2401,6 +2402,19 @@ export const hungryService: HungryService = {
   },
 
   // ── Push notifications ──────────────────────────────────────────────────────
+
+  privacy: {
+    async getConsents() {
+      return resolve({ ..._privacyConsents });
+    },
+
+    async saveConsents(updates) {
+      // Like the real service, only the consents named are changed.
+      if (updates.analytics !== undefined) _privacyConsents.analytics = updates.analytics;
+      if (updates.aiSearch !== undefined) _privacyConsents.aiSearch = updates.aiSearch;
+      return resolve(undefined);
+    },
+  },
 
   push: {
     async getPreferences() {

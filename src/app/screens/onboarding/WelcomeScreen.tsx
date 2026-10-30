@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import Animated from "react-native-reanimated";
 import type { NavigationProp } from "@react-navigation/native";
@@ -10,8 +10,10 @@ import { AccessibleImage, AppSymbol, AppText, Button, type AppSymbolName } from 
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { clearPendingDishSave } from "@/features/auth/pendingDishSave";
+import { AnalyticsConsentDialog } from "@/features/privacy/AnalyticsConsentDialog";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useRiseIn } from "@/lib/motion/uiMotion";
+import { useConsentStore } from "@/store/useConsentStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import { trackOnboardingStepViewed } from "./OnboardingProgress";
@@ -41,10 +43,21 @@ export function WelcomeScreen({ navigation }: Props) {
     trackOnboardingStepViewed("welcome");
   }, []);
 
-  const handleStart = () => {
+  const [consentVisible, setConsentVisible] = useState(false);
+
+  const goToLocation = () => {
     setReturningAccountIntent(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     navigation.navigate("LocationPermission");
+  };
+
+  // The one-time analytics question comes before the first step; either answer continues.
+  const handleStart = () => {
+    if (useConsentStore.getState().analyticsAsked) {
+      goToLocation();
+      return;
+    }
+    setConsentVisible(true);
   };
 
   const handleExistingAccountSignIn = () => {
@@ -124,6 +137,14 @@ export function WelcomeScreen({ navigation }: Props) {
           </View>
         </Animated.View>
       </ScrollView>
+
+      <AnalyticsConsentDialog
+        visible={consentVisible}
+        onAnswered={() => {
+          setConsentVisible(false);
+          goToLocation();
+        }}
+      />
 
       {/* CTA: visible and tappable immediately. */}
       <View style={{ paddingBottom: insets.bottom + 24, paddingHorizontal: 28, paddingTop: 16 }}>

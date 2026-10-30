@@ -50,6 +50,9 @@ export function resolveFeatureFlags(
   const hungryWheelEnabled = surface("EXPO_PUBLIC_ENABLE_WHEEL", true);
   // Crave is only reachable from merchant mode today, so keep it out of production.
   const craveEnabled = surface("EXPO_PUBLIC_ENABLE_CRAVE", nonProductionSurfaceEnabled);
+  // Mood search (typed text sent to Anthropic) is not in the search screen yet. Off hides its
+  // "AI search" switch in Settings; the build that wires mood search turns it on.
+  const aiSearchEnabled = surface("EXPO_PUBLIC_ENABLE_AI_SEARCH", false);
 
   return {
     appEnv,
@@ -63,6 +66,7 @@ export function resolveFeatureFlags(
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,
+    aiSearchEnabled,
     wheelPartyEnabled: hungryWheelEnabled && nonProductionSurfaceEnabled,
     // Favourites are MVP scope: on in every environment. Writes are authenticated
     // and surface server success/failure.

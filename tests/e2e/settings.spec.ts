@@ -54,7 +54,7 @@ test.describe("settings page walk", () => {
       for (const title of [
         "Privacy & data",
         "Account & security",
-        "Display & accessibility",
+        "On this phone",
         "Help & legal",
       ]) {
         await expect(page.getByRole("heading", { name: title })).toBeVisible();
@@ -71,12 +71,10 @@ test.describe("settings page walk", () => {
     await expect(page.getByLabel(/Display name|Name/i).first()).toBeVisible();
   });
 
-  test("Theme opens a sheet that changes the theme", async ({ page }) => {
+  test("there is no app Theme or Reduce motion row (iOS owns both)", async ({ page }) => {
     await openSettings(page, 390);
-    await page.getByRole("button", { name: "Theme" }).click();
-    await expect(page.getByRole("radiogroup")).toBeVisible();
-    await page.getByRole("radio", { name: "Dark" }).click();
-    await expect(page.getByRole("button", { name: "Theme" })).toContainText("Dark");
+    await expect(page.getByRole("button", { name: "Theme" })).toHaveCount(0);
+    await expect(page.getByRole("switch", { name: "Reduce motion" })).toHaveCount(0);
   });
 
   test("Profile visibility saves from its sheet", async ({ page }) => {
@@ -88,7 +86,7 @@ test.describe("settings page walk", () => {
 
   test("switches flip when tapped", async ({ page }) => {
     await openSettings(page, 390);
-    for (const name of ["Share usage analytics", "Allow search history", "Reduce motion"]) {
+    for (const name of ["Share usage analytics", "Allow search history", "Haptic feedback"]) {
       const row = page.getByRole("switch", { name });
       const before = await row.getAttribute("aria-checked");
       await row.click();

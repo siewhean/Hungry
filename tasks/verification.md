@@ -1622,3 +1622,10 @@ Use the smallest check that matches the change risk.
 - New tests: reviewsServerSide.behaviour (12), dishPicker/dishPickerSearch/reviewSearch unit tests, 8 render tests in reviews.render.test.tsx (REV-5, 10, 11, 13, 21), tests/e2e/reviews.spec.ts (editor picker and publish-with-photo pass in Chromium; the only failures here were the sandbox blocking remote dish images).
 - check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file `supabase/rehearsals/20261030120000.json` (sh runs `bash scripts/db/rehearse-pr.sh claude/project-thread-ojl079 20261030120000`).
 - Not changed: photo stays required, taste ratings still collected; no PostHog flag created.
+
+### SETTINGS-R5, 2026-10-30
+
+- Local Postgres 16 stand-in: migration 20261030130000, its down file (archives consents first) and the smoke `supabase/smoke/consents_and_weekly_picks_off.sql` pass; up, down, up again round-trips.
+- npm test 2491 pass, npm run test:render 933 pass, typecheck, lint (0 errors), check:rate-limits, audit:races, check:n-plus-one, check:edge-functions and test:coverage OK (baseline updated for the two new modules).
+- New tests: privacy-consents.behaviour (5), features/privacy consent.test (9) and consent.render (6), mood-search consent cases (3), send-notifications weekly picks skips (2), eight R5 cases in settings-r4.render.test.tsx. tests/e2e/settings.spec.ts edited for the removed Theme row and renamed section; not run here.
+- audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file `supabase/rehearsals/20261030130000.json` (sh runs `bash scripts/db/rehearse-pr.sh claude/project-thread-coxv1k 20261030130000`).

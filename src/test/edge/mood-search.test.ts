@@ -49,6 +49,9 @@ interface Options {
   gemini?: Gemini;
   ipAllowed?: boolean | null;
   userAllowed?: boolean | null;
+  /** The saved "AI search" consent; allowed unless a test says otherwise. */
+  consent?: boolean | null;
+  consentError?: boolean;
   headers?: Record<string, string>;
   delays?: number[];
   env?: Record<string, string>;
@@ -66,6 +69,15 @@ async function load(options: Options = {}) {
     }
     return { data: null };
   };
+  supabase.tables.privacy_settings = () =>
+    options.consentError
+      ? { error: { message: "down" } }
+      : {
+          data:
+            options.consent === null
+              ? null
+              : { ai_search_consent: "consent" in options ? options.consent : true },
+        };
   supabase.rpc.reserve_mood_search_slot = () =>
     options.slotError
       ? { error: { message: "down" } }
@@ -116,6 +128,32 @@ test("mood-search reads the user from the caller's own token, not the service ro
     Authorization: "Bearer user-jwt",
   });
   assert.ok(supabase.clientsCreated.some((client) => client.key === "service-role"));
+});
+
+test("mood-search sends nothing to the AI provider until the person has allowed AI search", async () => {
+  for (const consent of [false, null]) {
+    const { handler, gemini, supabase } = await load({ consent });
+    const response = await handler(search("spicy noodles"));
+    assert.deepEqual(
+      [response.status, (await json(response)).error],
+      [403, "ai_search_consent_required"],
+    );
+    assert.equal(gemini.calls.length, 0);
+    assert.equal(supabase.callsTo("reserve_mood_search_slot").length, 0);
+    assert.equal(supabase.queriesOn("mood_search_queries").length, 0);
+  }
+
+  const lookup = await load({ consentError: true });
+  const failed = await lookup.handler(search("spicy noodles"));
+  assert.deepEqual([failed.status, (await json(failed)).error], [500, "consent_lookup_failed"]);
+  assert.equal(lookup.gemini.calls.length, 0);
+});
+
+test("mood-search reads the consent of the signed-in user", async () => {
+  const { handler, supabase } = await load({ user: "u9" });
+  await handler(search("spicy noodles"));
+  const lookup = supabase.queriesOn("privacy_settings")[0];
+  assert.deepEqual(lookup.ops.find(([op]) => op === "eq")?.[1], ["user_id", "u9"]);
 });
 
 test("mood-search rejects a search that is too short once normalised", async () => {
