@@ -77,6 +77,7 @@ import {
   type DiscoverCardImageCandidate,
   type DiscoverCollection,
 } from "@/features/discover/bites";
+import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
 import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
@@ -178,6 +179,8 @@ const DISCOVER_TEXT_LINK_HIT_SLOP = { top: 16, bottom: 16, left: 12, right: 12 }
 const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
 const EMPTY_FEED_RESULTS: DiscoveryLocationFeed["results"] = [];
 const DISCOVER_AREA_RADIUS_METERS = 3000;
+/** Location off: picks from the whole island, read around the built-in default point. */
+const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
 /** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
 const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
 const STALL_SHOWCASE_FALLBACK_IMAGES = [
@@ -428,15 +431,7 @@ function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
 }
 
 function DiscoverStallThumbnail({ venue }: { venue: VenueSummary }) {
-  return (
-    <StallLogoMark
-      borderWidth={2}
-      imageSize={48}
-      logoUrl={venue.logoUrl}
-      name={venue.name}
-      size={56}
-    />
-  );
+  return <StallLogoMark borderWidth={2} logoUrl={venue.logoUrl} name={venue.name} size={56} />;
 }
 
 type RootNavigation = CompositeNavigationProp<
@@ -1170,10 +1165,11 @@ function VerticalStallShowcaseSection({
                         <AppText
                           variant="micro"
                           numberOfLines={1}
-                          style={{ color: palette.textSecondary, flexShrink: 0 }}
+                          style={{ color: palette.textSecondary, flexShrink: 1, maxWidth: "55%" }}
                         >
-                          {card.venue.planningArea ? `${card.venue.planningArea} · ` : ""}
-                          {card.venue.unitNumber}
+                          {[stallBuildingLabel(card.venue), card.venue.unitNumber]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </AppText>
                       </View>
                       <ChevronRight color={palette.textMuted} size={16} />
@@ -1492,15 +1488,23 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const discoverAreaRequest = manualLocation;
   // The nearest named area, only when the phone is within ~5 km of one (not in Woodlands
   // when it is overseas). Without a name the screen says "near you".
-  const discoverAreaName =
-    manualLocation ??
-    getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude);
-  const discoverLocationLabel = discoverAreaName ?? "Near you";
-  const discoverAreaPhrase = discoverAreaName ? `in ${discoverAreaName}` : "near you";
+  // With location off there is no area to name: Discover shows picks across Singapore instead.
+  const discoverAreaName = needsDiscoverAreaChoice
+    ? undefined
+    : (manualLocation ??
+      getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude));
+  const discoverLocationLabel = needsDiscoverAreaChoice
+    ? "Singapore"
+    : (discoverAreaName ?? "Near you");
+  const discoverAreaPhrase = needsDiscoverAreaChoice
+    ? "across Singapore"
+    : discoverAreaName
+      ? `in ${discoverAreaName}`
+      : "near you";
+  const discoverRadiusMeters = needsDiscoverAreaChoice
+    ? DISCOVER_ISLAND_RADIUS_METERS
+    : DISCOVER_AREA_RADIUS_METERS;
   const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
-  const handleChangeArea = useCallback(() => {
-    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
-  }, [navigation]);
   const handleUseCurrentLocation = useCallback(async () => {
     if (locationPermission === "granted") {
       await clearManualLocation();
@@ -1526,15 +1530,18 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     discoverAreaRequest ?? "",
     discoverGeoCellLatitude,
     discoverGeoCellLongitude,
+    discoverRadiusMeters ?? "",
     currentPlaceId ?? "",
   ].join("|");
-  // Always an area (never just "Singapore"): without a GPS fix or a searched area it is the
-  // area Discover is showing, and one tap opens the area search to change it.
+  // The area follows the phone: a mall or hawker centre when inside one, else the nearest area,
+  // and "Singapore" while location is off.
   const discoverHeaderLabel =
     currentPlace?.name ??
     manualPlaceName ??
     discoverAreaName ??
-    getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude);
+    (needsDiscoverAreaChoice
+      ? "Singapore"
+      : getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude));
 
   useEffect(() => {
     setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
@@ -1563,14 +1570,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       discoveryService.countVenuesInArea(
         discoverGeoCellLatitude,
         discoverGeoCellLongitude,
-        DISCOVER_AREA_RADIUS_METERS,
+        discoverRadiusMeters,
         discoverAreaRequest,
       ),
       discoveryService.listDiscoveryFeedByLocation({
         areaName: discoverAreaRequest,
         lat: discoverGeoCellLatitude,
         lng: discoverGeoCellLongitude,
-        radiusMeters: DISCOVER_AREA_RADIUS_METERS,
+        radiusMeters: discoverRadiusMeters,
         limit: DISCOVER_FEED_LIMIT,
         buildingId: currentPlaceId,
       }),
@@ -1599,6 +1606,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [
     discoverAreaRequest,
     discoverFeedKey,
+    discoverRadiusMeters,
     discoverGeoCellLatitude,
     discoverGeoCellLongitude,
     discoverReloadKey,
@@ -2521,7 +2529,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           />
         }
       >
-        {/* Where the diner is: one sentence, always one tap from the area picker. */}
+        {/* Where the diner is: it follows the phone's location, so there is no area to pick. */}
         <View style={{ paddingTop: spacing[1] }}>
           <View
             style={{
@@ -2531,17 +2539,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               gap: spacing[2],
             }}
           >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                needsDiscoverAreaChoice
-                  ? `You are at ${discoverHeaderLabel}. Location is off, choose your area`
-                  : `You are at ${discoverHeaderLabel}. Search for another area`
-              }
-              accessibilityHint="Search for an area, mall, hawker centre or food court"
-              hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-              onPress={handleChangeArea}
-              style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.7 : 1 })}
+            <View
+              accessible
+              accessibilityLabel={`You are at ${discoverHeaderLabel}`}
+              style={{ flex: 1 }}
             >
               <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
                 You are at
@@ -2549,14 +2550,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               <AppText variant="h2" style={{ color: themeTints.text }} numberOfLines={1}>
                 {discoverHeaderLabel}
               </AppText>
-              {/* Owner decision (2026-10-23): the header always names an area. Without a GPS fix
-                  or a pick that area is only the default point, so say so (HOME-17). */}
-              {needsDiscoverAreaChoice ? (
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                  Location is off. Tap to choose your area.
-                </AppText>
-              ) : null}
-            </Pressable>
+            </View>
             {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
             {FEATURE_FLAGS.mapEnabled ? (
               <DiscoverViewToggle
@@ -2566,6 +2560,23 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               />
             ) : null}
           </View>
+          {needsDiscoverAreaChoice ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Turn on location"
+              accessibilityHint="Shows stalls near you instead of picks across Singapore"
+              hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+              onPress={() => void handleUseCurrentLocation()}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, paddingVertical: spacing[1] })}
+            >
+              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                Location is off, so these are picks across Singapore.{" "}
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                  Turn on location
+                </AppText>
+              </AppText>
+            </Pressable>
+          ) : null}
           {
             needsDiscoverAreaChoice ? null : isFeedFallbackEmpty ||
               discoverAreaCountLabel === null ? (
@@ -3155,7 +3166,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   {showDiscoverFilterRailSkeleton ? (
                     <DiscoverStallListLoadingSkeleton />
                   ) : areaStallCards.length ? (
-                    areaStallCards.map(({ venue, topDish }, stallIndex) => (
+                    areaStallCards.map(({ building, venue, topDish }, stallIndex) => (
                       <Fragment key={venue.id}>
                         {currentPlace &&
                         placeStallCardCount > 0 &&
@@ -3257,7 +3268,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                               style={{ color: themeTints.secondaryText }}
                               numberOfLines={1}
                             >
-                              {[getStallRowOpenLabel(venue), venue.planningArea, venue.unitNumber]
+                              {[getStallRowOpenLabel(venue)].filter(Boolean).join(" · ")}
+                            </AppText>
+                            {/* Where to walk to: the building and unit get a line of their own so
+                                the building is never the part that is cut off. */}
+                            <AppText
+                              variant="micro"
+                              style={{ color: themeTints.secondaryText }}
+                              numberOfLines={1}
+                            >
+                              {[stallBuildingLabel(venue, building), venue.unitNumber]
                                 .filter(Boolean)
                                 .join(" · ")}
                             </AppText>

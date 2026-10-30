@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 84.3,
-    "branches": 85.3,
-    "functions": 80.3
+    "lines": 84.4,
+    "branches": 85.4,
+    "functions": 80.4
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -54,10 +54,14 @@
     "src/features/detail/dishFreshness.ts": 100,
     "src/features/detail/dishPage.ts": 100,
     "src/features/detail/dishPrice.ts": 100,
+    "src/features/detail/menuCategory.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
+    "src/features/detail/scrollToSection.ts": 100,
     "src/features/detail/similarDishes.ts": 86.7,
-    "src/features/detail/stallLocation.ts": 94.4,
+    "src/features/detail/stallDisplayName.ts": 97.2,
+    "src/features/detail/stallLocation.ts": 96.4,
     "src/features/detail/stallOpenState.ts": 100,
+    "src/features/detail/stallVisited.ts": 92.6,
     "src/features/detail/tasteMatch.ts": 100,
     "src/features/discover/areaCount.ts": 100,
     "src/features/discover/bites.ts": 64.5,
@@ -90,7 +94,7 @@
     "src/features/merchantClaim/submitClaimFromStall.ts": 91.4,
     "src/features/passport/weeklyGoal.ts": 100,
     "src/features/post/composerOptions.ts": 100,
-    "src/features/post/publishing.ts": 98.3,
+    "src/features/post/publishing.ts": 98.4,
     "src/features/post/useComposerStore.ts": 76.6,
     "src/features/profile/exportFile.ts": 84,
     "src/features/profile/exportMyData.ts": 93.3,
@@ -213,8 +217,8 @@
     "src/store/useWheelStore.ts": 81.5,
     "src/theme/tokens.ts": 99.5,
     "src/types/domain.ts": 100,
-    "src/utils/openingSchedule.ts": 93.4,
-    "src/utils/operatingHours.ts": 95.8,
+    "src/utils/openingSchedule.ts": 94.5,
+    "src/utils/operatingHours.ts": 97,
     "src/utils/stallStatus.ts": 84.1
   }
 }

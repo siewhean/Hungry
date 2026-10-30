@@ -26,7 +26,10 @@ function dish(rating: number, reviewCount: number, distanceMeters = 0): DishDeta
 }
 
 test("a closed stall reads just 'Closed', never 'Closed · Closed for today'", () => {
-  assert.equal(getStallRowOpenLabel(venue({ operatingHours: "Mon-Sun 00:00-00:01" })), "Closed");
+  // Closed all day: the detail depends on the clock ("Opens 12am tomorrow" or none), never a repeat.
+  const label = getStallRowOpenLabel(venue({ operatingHours: "Mon-Sun 00:00-00:01" }));
+  assert.match(label ?? "", /^Closed/);
+  assert.doesNotMatch(label ?? "", /Closed · Closed/);
   assert.equal(getStallRowOpenLabel(venue({ isOpen: false })), "Closed");
 });
 

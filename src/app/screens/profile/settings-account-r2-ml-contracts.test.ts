@@ -369,7 +369,8 @@ test("secondary controls meet 44pt and labels are consistent (L9, L11)", () => {
   // Tapping a result saves it: there is no separate Save button.
   assert.doesNotMatch(picker, /"Save location"/);
   const screen = settings();
-  assert.match(screen, /locationPermission === "granted" \? "Use GPS" : "Not set"/);
+  // The area follows the phone, so Settings has no row that opens the area search.
+  assert.doesNotMatch(screen, /label="Location"|ManualLocationPicker/);
   assert.match(screen, /label="Change password"/);
 });
 

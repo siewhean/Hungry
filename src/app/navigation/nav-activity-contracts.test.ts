@@ -19,7 +19,7 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   // the round middle button writes a review.
   assert.match(
     tabs,
-    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   assert.match(
     tabs,
@@ -32,12 +32,10 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
     /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
-  // The write button is a plain outline glyph: no orange disc, orange only while pressed.
+  // The write button looks like every other tab: same glyph size, slot and colours, and a label.
   assert.doesNotMatch(tabItem, /backgroundColor: palette\.orange/);
-  assert.match(
-    tabItem,
-    /<Icon[\s\S]*color=\{createAction \? \(pressed \? palette\.orange : palette\.text\) : iconColor\}/,
-  );
+  assert.match(tabItem, /<Icon color=\{iconColor\} size=\{componentSizes\.bottomTabIcon\} \/>/);
+  assert.doesNotMatch(tabItem, /bottomTabCreateButton|bottomTabIcon \+/);
   // Selected tabs use an orange outline icon, never a filled one.
   assert.match(tabItem, /focused \? palette\.orange : palette\.textMuted/);
   assert.doesNotMatch(tabItem, /fill=/);
@@ -54,11 +52,11 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   );
   assert.match(
     tabItem,
-    /\{showLabel && !createAction \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,
+    /\{showLabel \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,
   );
   assert.match(
     tabItem,
-    /height: createAction\s*\? componentSizes\.bottomTabCreateButton\s*: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
+    /height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
   );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);

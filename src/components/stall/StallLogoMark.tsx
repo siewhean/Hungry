@@ -9,7 +9,6 @@ interface StallLogoMarkProps {
   logoUrl?: string;
   name: string;
   size?: number;
-  imageSize?: number;
   borderWidth?: number;
   style?: StyleProp<ViewStyle>;
 }
@@ -18,7 +17,6 @@ export function StallLogoMark({
   logoUrl,
   name,
   size = 64,
-  imageSize,
   borderWidth = 3,
   style,
 }: StallLogoMarkProps) {
@@ -27,7 +25,8 @@ export function StallLogoMark({
   const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
   const signature = candidates.join("\u001f");
   const activeLogoUrl = candidates.find((candidate) => !failedUrls.includes(candidate));
-  const resolvedImageSize = imageSize ?? Math.max(1, size - borderWidth * 4);
+  // The logo fills the whole ring interior, so no circle background shows around it.
+  const imageSize = Math.max(1, size - borderWidth * 2);
 
   useEffect(() => {
     setFailedUrls([]);
@@ -41,7 +40,7 @@ export function StallLogoMark({
       style={[
         {
           alignItems: "center",
-          backgroundColor: palette.surfaceRaised,
+          backgroundColor: activeLogoUrl ? "transparent" : palette.surfaceRaised,
           borderColor: palette.orange,
           borderRadius: radii.pill,
           borderWidth,
@@ -58,7 +57,7 @@ export function StallLogoMark({
           key={activeLogoUrl}
           source={{ uri: activeLogoUrl }}
           accessibilityLabel={`${name} stall logo`}
-          contentFit="contain"
+          contentFit="cover"
           cachePolicy="memory-disk"
           transition={120}
           onError={() => {
@@ -66,7 +65,7 @@ export function StallLogoMark({
               current.includes(activeLogoUrl) ? current : [...current, activeLogoUrl],
             );
           }}
-          style={{ height: resolvedImageSize, width: resolvedImageSize }}
+          style={{ height: imageSize, width: imageSize }}
         />
       ) : (
         <AppText

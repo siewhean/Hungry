@@ -42,6 +42,7 @@ import { LocationGate } from "@/components/discover/LocationGate";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useSearchStore } from "@/store/useSearchStore";
+import { useUIStore } from "@/store/useUIStore";
 import { getVenueOpenStateNow } from "@/features/discovery/decideForMeCandidates";
 import { isMapEdgeBackSwipe } from "@/features/discovery/mapEdgeBack";
 import {
@@ -177,6 +178,7 @@ export function HomeMapScreen() {
   const gpsLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const locationPermission = useLocationStore((state) => state.permission);
+  const showToast = useUIStore((state) => state.showToast);
   const grantLocation = useLocationStore((state) => state.grantLocation);
   // Same effective location as Discover: a manual pick wins over GPS.
   const { coordinate: currentLocation, isApproximate: isLocationApproximate } =
@@ -912,10 +914,14 @@ export function HomeMapScreen() {
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               if (isLocationApproximate) {
-                // Ask for the device location; only when that is refused offer a place search.
+                // Ask for the device location; the map follows the phone, so a refusal just says so.
                 void grantLocation().then((granted) => {
                   if (!granted) {
-                    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
+                    showToast({
+                      message:
+                        "Location access is off. Turn it on in Settings to use your location.",
+                      tone: "info",
+                    });
                   }
                 });
                 return;

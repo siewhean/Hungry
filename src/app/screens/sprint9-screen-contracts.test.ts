@@ -213,7 +213,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
 });
 
 test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const stallDetail = read("src/components/stall/StallMenuDish.tsx");
 
   assert.match(
     stallDetail,
@@ -634,11 +634,11 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
 });
 
-test("search home hands every query to the paged results and keeps a see-all action", () => {
+test("search home hands every query to the paged results; Search “text” is the first row", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
 
   assert.doesNotMatch(search, /getSearchResultsAsync|inlineResults/);
-  assert.match(search, /"See all results"/);
+  assert.match(search, /Search “\$\{trimmedSearchText\}”/);
   assert.match(
     search,
     /navigation\.navigate\("SearchResults", \{[\s\S]*?initialQuery: trimmedQuery \|\| undefined,/,

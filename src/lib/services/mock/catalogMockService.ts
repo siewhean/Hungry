@@ -321,14 +321,23 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
         kind: CatalogSuggestion["kind"],
         label: string | undefined,
         placeId?: string,
+        venue?: { id: string; subtitle?: string },
       ) => {
         if (!label) return;
         const key = `${kind}:${label}`;
         const current = counts.get(key);
-        if (current) current.weight += 1;
-        else
+        if (current) {
+          current.weight += 1;
+          // A name shared by several stalls (a chain) opens a search, not one stall.
+          delete current.suggestion.venueId;
+          delete current.suggestion.subtitle;
+        } else
           counts.set(key, {
-            suggestion: placeId ? { kind, label, placeId } : { kind, label },
+            suggestion: placeId
+              ? { kind, label, placeId }
+              : venue
+                ? { kind, label, venueId: venue.id, subtitle: venue.subtitle }
+                : { kind, label },
             weight: 1,
           });
       };
@@ -337,7 +346,10 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
         if ((stallsPerBuilding.get(entry.building.id) ?? 0) >= CATALOG_PLACE_MIN_STALLS) {
           add("place", entry.building.name, entry.building.id);
         }
-        add("stall", entry.venue.name);
+        add("stall", entry.venue.name, undefined, {
+          id: entry.venue.id,
+          subtitle: entry.building.name,
+        });
         for (const dish of entry.dishes) add("food_type", dish.foodTypeTag);
       }
       const kindRank = { food_type: 0, place: 1, stall: 2 } as const;
