@@ -447,7 +447,7 @@ export function createRootLinking(
         ...(FEATURE_FLAGS.hungryWheelEnabled
           ? {
               WheelStack: {
-                path: "join/:code",
+                path: "join/:code?",
                 screens: { WheelHome: "" },
               },
             }

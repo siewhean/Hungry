@@ -1,6 +1,7 @@
 import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { filterSafeDishes } from "@/lib/ai/dietaryGate";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
+import { getClosureLabel, isClosureActive } from "@/features/merchant/closure";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 import { getSingaporeMinutes, getVenueOpenState, type OpenState } from "@/utils/operatingHours";
 import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
@@ -79,6 +80,10 @@ export function keepScoreOrder(
  * listed hours. Used by Decide for Me and the zoomed-in map so they agree.
  */
 export function getVenueOpenStateNow(venue: VenueSummary, now: Date = new Date()): OpenState {
+  // A merchant's "Closed today" / "Reopens 3 Nov" beats the schedule and the stored flag.
+  if (isClosureActive(venue.closedUntil, now)) {
+    return { status: "closed", detail: getClosureLabel(venue.closedUntil, now) };
+  }
   return hasWeeklyHours(venue.openingSchedule)
     ? getScheduleOpenState(venue.openingSchedule, venue.isOpen, now)
     : getVenueOpenState(venue.operatingHours, venue.isOpen, now);

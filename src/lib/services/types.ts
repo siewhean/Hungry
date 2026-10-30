@@ -23,6 +23,7 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantDailyPoint,
   MerchantDashboardSummary,
   MerchantNotification,
   MerchantNotificationPreferences,
@@ -647,6 +648,18 @@ export interface ListRecentReviewsOptions {
   withPhotos?: boolean;
 }
 
+/** Search over every review (not only the loaded page): dish, stall, text or taste tag. */
+export interface SearchReviewsOptions {
+  query: string;
+  /** Page size (defaults to 50). */
+  limit?: number;
+  /** Keyset cursor from the previous page's `nextCursor`. */
+  before?: string;
+  beforeId?: string;
+  /** Only reviews with a photo (the Reviews grid). Defaults to true. */
+  withPhotos?: boolean;
+}
+
 export interface SubmitMenuPhotoInput {
   venueId: string;
   photoUri: string;
@@ -770,6 +783,15 @@ export interface MerchantClaimSubmissionResult {
 
 /** Where the signed-in user's claim for a stall stands, in diner-facing terms. */
 export type MerchantClaimStatus = "none" | "submitted" | "in_review" | "approved" | "rejected";
+
+/** One of the signed-in user's own stall claims, for the Merchant Centre gate. */
+export interface MerchantClaimSummary {
+  claimId: string;
+  venueId: string;
+  venueName: string;
+  status: Exclude<MerchantClaimStatus, "none">;
+  submittedAt: string;
+}
 
 export interface DraftDishRow {
   id: string;
@@ -1034,6 +1056,8 @@ export interface HungryService {
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
     /** The same feed as listRecentReviews, with paging state that survives dropped rows. */
     listRecentReviewsPage(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedPage>;
+    /** The same page shape for a text search over all reviews, newest first. */
+    searchReviewsPage(options: SearchReviewsOptions): Promise<RecentReviewFeedPage>;
     /** One review with its dish and stall names (the shared review page); null when not visible. */
     getReviewById(reviewId: string): Promise<RecentReviewFeedEntry | null>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
@@ -1419,6 +1443,8 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    /** Visits and actions per Singapore day for the Performance chart, oldest first. */
+    getDailySeries(outletId: string, dateRange: "7d" | "30d"): Promise<MerchantDailyPoint[]>;
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
@@ -1463,6 +1489,8 @@ export interface HungryService {
     ): Promise<MerchantClaimSubmissionResult>;
     /** The caller's own claim for this stall ("none" when there is no claim or no session). */
     getMerchantClaimStatus(venueId: string): Promise<MerchantClaimStatus>;
+    /** The caller's own claims, newest first, with the stall names. Empty when signed out. */
+    getMyMerchantClaims(): Promise<MerchantClaimSummary[]>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,

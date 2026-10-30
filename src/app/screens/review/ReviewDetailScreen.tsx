@@ -3,10 +3,18 @@
  * One review on its own page: what a shared review link (usehungry.com/review/:id) opens.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { MoreHorizontal } from "lucide-react-native";
+import { ChevronRight, MoreHorizontal } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -40,6 +48,83 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ReviewDetail">;
+
+/** Photo shape on the review page: 4 wide to 5 tall, the way the grid sells it. */
+const HERO_ASPECT_RATIO = 4 / 5;
+
+/**
+ * The review's photos at full width, one at a time with dots under them. A tap opens the
+ * full-screen viewer on that photo.
+ */
+function ReviewPhotoHero({
+  photos,
+  onOpen,
+}: {
+  photos: string[];
+  onOpen: (index: number) => void;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  // The page's own width once laid out; until then a width that fits a phone's screen padding.
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const [index, setIndex] = useState(0);
+  const width = measuredWidth ?? Math.max(windowWidth - spacing[4] * 2, 1);
+  const height = Math.round(width / HERO_ASPECT_RATIO);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.width);
+    if (next > 0 && next !== measuredWidth) setMeasuredWidth(next);
+  };
+  const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setIndex(Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1)));
+  };
+
+  return (
+    <View testID="review-photo-hero" onLayout={handleLayout} style={{ gap: spacing[2] }}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScrollEnd}
+        style={{ borderRadius: radii.md, height, width: "100%" }}
+      >
+        {photos.map((uri, photoIndex) => (
+          <Pressable
+            key={`${photoIndex}:${uri}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Open photo ${photoIndex + 1} of ${photos.length}`}
+            onPress={() => onOpen(photoIndex)}
+          >
+            <AccessibleImage
+              source={{ uri }}
+              decorative
+              style={{ backgroundColor: palette.bgSoft, height, width }}
+              contentFit="cover"
+            />
+          </Pressable>
+        ))}
+      </ScrollView>
+      {photos.length > 1 ? (
+        <View
+          accessibilityLabel={`Photo ${Math.min(index + 1, photos.length)} of ${photos.length}`}
+          style={{ flexDirection: "row", gap: spacing[1.5], justifyContent: "center" }}
+        >
+          {photos.map((uri, dotIndex) => (
+            <View
+              key={`${dotIndex}:${uri}`}
+              style={{
+                backgroundColor: dotIndex === index ? palette.orange : palette.border,
+                borderRadius: radii.pill,
+                height: 6,
+                width: 6,
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
 
 export function ReviewDetailScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -205,6 +290,10 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           />
         ) : null}
 
+        {review.photos.length > 0 ? (
+          <ReviewPhotoHero photos={review.photos} onOpen={setViewerIndex} />
+        ) : null}
+
         <Pressable
           accessibilityRole={review.authorId && !isOwn ? "button" : undefined}
           accessibilityLabel={`${review.authorName}${review.authorId && !isOwn ? ", open profile" : ""}`}
@@ -244,26 +333,24 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           onRemoved={refreshSafety}
         />
 
-        {review.photos.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              {review.photos.map((uri, index) => (
-                <Pressable
-                  key={`${index}:${uri}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open photo ${index + 1} of ${review.photos.length}`}
-                  onPress={() => setViewerIndex(index)}
-                >
-                  <AccessibleImage
-                    source={{ uri }}
-                    decorative
-                    style={{ borderRadius: radii.md, height: 180, width: 180 }}
-                    contentFit="cover"
-                  />
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
+        {entry.venueId ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${entry.venueName || "the stall"}`}
+            onPress={() => navigation.navigate("StallDetail", { id: entry.venueId })}
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              gap: spacing[1],
+              minHeight: 44,
+            }}
+          >
+            <AppText variant="bodySmallBold" style={{ flexShrink: 1 }} numberOfLines={1}>
+              {entry.dishName}
+              {entry.venueName ? ` at ${entry.venueName}` : ""}
+            </AppText>
+            <ChevronRight color={palette.textMuted} size={16} />
+          </Pressable>
         ) : null}
 
         <AppText variant="body">{review.text}</AppText>
@@ -306,6 +393,18 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
+        {isOwn ? null : (
+          <Button
+            label="I had this too"
+            variant="secondary"
+            onPress={() =>
+              navigation.navigate("ReviewStack", {
+                screen: "ReviewMain",
+                params: { dishId: entry.dishId, venueId: entry.venueId || undefined },
+              })
+            }
+          />
+        )}
         <Button
           label={`See ${entry.dishName}`}
           onPress={() =>

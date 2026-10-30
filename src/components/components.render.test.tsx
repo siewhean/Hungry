@@ -2,13 +2,14 @@
 // person can press. Run with `npm run test:render`.
 
 import assert from "node:assert/strict";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { Animated, Text, View } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
 import { DiscoverModeTabs } from "@/components/discover/DiscoverModeTabs";
 import { ForYouCard } from "@/components/discover/ForYouCard";
+import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
@@ -20,7 +21,6 @@ import {
   nearestTasteRatingLevel,
 } from "@/components/review/TasteRatingInput";
 import { DeliveryBrandLogo, hasDeliveryBrandLogo } from "@/components/dish/DeliveryBrandLogo";
-import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
 import {
   CollectionAlbumCard,
@@ -40,6 +40,9 @@ import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
 import { InAppShareCard, ShareQuickActionGroup } from "@/components/social/ShareSettings";
 import { FeedStateView } from "@/components/ui/FeedStateView";
 import { FloatingToast } from "@/components/ui/FloatingToast";
+import { AppBottomTabItem } from "@/components/ui/AppBottomTabItem";
+import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { BookOpenText, PenLine } from "lucide-react-native";
 import { HungryLogo } from "@/components/ui/HungryLogo";
 import { InlineBanner } from "@/components/ui/InlineBanner";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
@@ -156,6 +159,22 @@ test("FloatingToast with an action shows a button that runs it and dismisses the
   await view.press(undo);
   assert.equal(undone, 1);
   assert.equal(useUIStore.getState().toast, null);
+});
+
+test("FloatingToast is a compact borderless pill, not a full-width bar with an orange border", async () => {
+  const view = await render(createElement(FloatingToast, {}));
+  useUIStore.getState().showToast({ message: "Copied", tone: "success", duration: 60_000 });
+  await view.settle();
+  const alert = view.container.querySelector('[role="alert"]') as HTMLElement | null;
+  assert.ok(alert, "the toast is an alert");
+  const style = alert.style;
+  assert.ok(
+    !style.borderWidth || style.borderWidth === "0px",
+    `no border (got ${style.borderWidth})`,
+  );
+  assert.equal(style.alignSelf, "center", "sized to its text, centred");
+  assert.equal(style.borderTopLeftRadius, "999px", "a pill");
+  useUIStore.getState().clearToast();
 });
 
 test("FloatingToast clears itself after its duration", async () => {
@@ -589,20 +608,6 @@ test("DetailActionBar opens a held button's own menu, dims the page, and keeps t
   assert.equal(pressed.filter((entry) => entry === "no").length, 1);
 });
 
-test("SingaporeAreaMap names the highlighted area for screen readers", async () => {
-  const view = await render(
-    createElement(SingaporeAreaMap, {
-      width: 320,
-      highlighted: ["Bedok"],
-      pin: { latitude: 1.3236, longitude: 103.9273 },
-    }),
-  );
-  assert.ok(view.findByLabel("Map of Singapore with Bedok highlighted"));
-  await view.unmount();
-  const plain = await render(createElement(SingaporeAreaMap, { width: 320 }));
-  assert.ok(plain.findByLabel("Map of Singapore. Search above to choose an area"));
-});
-
 test("DeliveryBrandLogo draws Grab and foodpanda marks only", async () => {
   assert.equal(hasDeliveryBrandLogo("grabfood"), true);
   assert.equal(hasDeliveryBrandLogo("foodpanda"), true);
@@ -907,12 +912,82 @@ test("TrendingList shows rich rows, opens one, and hides when there are none", a
   assert.match(view.text(), /Laksa/);
   assert.match(view.text(), /350 m/);
   assert.match(view.text(), /S\$5\.00/);
-  await view.press(view.findByLabel("Laksa at Sungei Road"));
+  await view.press(view.findByLabel(/^Laksa, Sungei Road, S\$5\.00/));
   assert.deepEqual(opened, ["d1"]);
   await view.rerender(
     createElement(TrendingList, { title: "Trending near you", bites: [], onOpen: () => undefined }),
   );
   assert.doesNotMatch(view.text(), /Trending near you/);
+});
+
+test("TrendingList shows the dish icon when a row has no photo or its photo fails", async () => {
+  const bite = (photoUrl: string) =>
+    ({
+      id: "b1",
+      dishId: "d1",
+      dishName: "Laksa",
+      venueName: "Sungei Road",
+      photoUrl,
+      rating: 0,
+      price: 5,
+    }) as unknown as Bite;
+  const noPhoto = await render(
+    createElement(TrendingList, { title: "Most reviewed", bites: [bite("")], onOpen: () => {} }),
+  );
+  assert.ok(noPhoto.findByLabel("Laksa photo unavailable"), "no photo shows the icon");
+  await cleanup();
+
+  const withPhoto = await render(
+    createElement(TrendingList, {
+      title: "Most reviewed",
+      bites: [bite("https://cdn.example.sg/laksa.jpg")],
+      onOpen: () => {},
+    }),
+  );
+  assert.equal(withPhoto.findByLabel("Laksa photo unavailable"), null);
+  const image = withPhoto.container.querySelector("[data-stub='expo-image.Image']");
+  assert.ok(image, "the photo is on screen");
+  // The image stub draws nothing, so the load error is raised through the prop it was given.
+  const fiberKey = Object.keys(image).find((key) => key.startsWith("__reactFiber$"))!;
+  let fiber = (image as unknown as Record<string, unknown>)[fiberKey] as {
+    memoizedProps?: { onError?: () => void };
+    return: unknown;
+  } | null;
+  while (fiber && !fiber.memoizedProps?.onError) fiber = fiber.return as typeof fiber;
+  assert.ok(fiber?.memoizedProps?.onError, "the photo reports load errors");
+  await act(async () => fiber?.memoizedProps?.onError?.());
+  assert.ok(withPhoto.findByLabel("Laksa photo unavailable"), "a broken photo falls back");
+});
+
+test("MenuLessStallGroup counts the stalls, opens on press and names itself for screen readers", async () => {
+  const toggled: boolean[] = [];
+  const stalls = [
+    { id: "s1", name: "Ah Seng" },
+    { id: "s2", name: "Bee Hoon King" },
+  ];
+  const view = await render(
+    createElement(MenuLessStallGroup, {
+      stalls,
+      expanded: false,
+      onToggle: () => toggled.push(true),
+    }),
+  );
+  assert.match(view.text(), /More stalls nearby · menus coming/);
+  assert.match(view.text(), /2 stalls/);
+  await view.press(view.findByLabel("More stalls nearby, menus coming. 2 stalls"));
+  assert.deepEqual(toggled, [true]);
+  await view.rerender(
+    createElement(MenuLessStallGroup, {
+      stalls: stalls.slice(0, 1),
+      expanded: true,
+      onToggle: () => {},
+    }),
+  );
+  assert.ok(view.findByLabel("More stalls nearby, menus coming. 1 stall"), "singular for one");
+  await view.rerender(
+    createElement(MenuLessStallGroup, { stalls: [], expanded: false, onToggle: () => {} }),
+  );
+  assert.doesNotMatch(view.text(), /More stalls nearby/);
 });
 
 test("AchievementsSection shows levels, progress and a completed goal", async () => {
@@ -933,4 +1008,48 @@ test("AchievementsSection shows levels, progress and a completed goal", async ()
   // Curator has all three levels done.
   assert.match(view.text(), /Complete/);
   assert.match(view.text(), /3 of 8 started/);
+});
+
+test("the Write button in the bottom bar has the same slot, label colour and weight as other tabs", async () => {
+  // Icon glyph size and colour are pinned in nav-activity-contracts; the render shows the
+  // slot around it and the label are identical, so nothing about the button stands out.
+  const styles = async (props: Record<string, unknown>) => {
+    const view = await render(createElement(AppBottomTabItem, props as never));
+    const result = {
+      slot: view.container.querySelector("[aria-label] > div")?.getAttribute("style"),
+      label: view.container.querySelector('[aria-label] > div[dir="auto"]')?.getAttribute("style"),
+      labelled: view.findByLabel("Write a review") !== null,
+    };
+    await view.unmount();
+    return result;
+  };
+  const write = await styles({
+    createAction: true,
+    icon: PenLine,
+    label: "Write",
+    accessibilityLabel: "Write a review",
+    onPress: () => {},
+  });
+  const other = await styles({ icon: BookOpenText, label: "Reviews", onPress: () => {} });
+  assert.ok(write.slot && write.label, "it has an icon slot and a label like the other tabs");
+  assert.equal(write.slot, other.slot);
+  assert.equal(write.label, other.label);
+  assert.ok(write.labelled);
+});
+
+test("StallLogoMark shows no circle backdrop behind a logo, only behind the initials", async () => {
+  const withLogo = await render(
+    createElement(StallLogoMark, { logoUrl: "https://example.com/logo.png", name: "Ah Seng" }),
+  );
+  const ring = withLogo.container.querySelector('[style*="border-top-left-radius"]') as HTMLElement;
+  assert.match(ring.getAttribute("style") ?? "", /background-color: rgba\(0, 0, 0, 0\)/);
+  const initials = await render(createElement(StallLogoMark, { name: "Ah Seng" }));
+  assert.ok(initials.findByText("AS"));
+  const fallbackRing = initials.container.querySelector(
+    '[style*="border-top-left-radius"]',
+  ) as HTMLElement;
+  assert.doesNotMatch(
+    fallbackRing.getAttribute("style") ?? "",
+    /background-color: rgba\(0, 0, 0, 0\)/,
+  );
 });

@@ -118,6 +118,16 @@ assertContains(
   "requireConsoleMutationProtection(request)",
   "Console mutation origin contract failed",
 );
+assertContains(
+  "src/app/api/console/claims/[claimId]/route.ts",
+  "requireConsoleMutationProtection(request)",
+  "Console claim mutation origin contract failed",
+);
+assertContains(
+  "src/app/api/console/claims/[claimId]/route.ts",
+  'requireConsoleRole(auth, "ops")',
+  "Console claim ops-role contract failed",
+);
 assertContains("src/app/api/waitlist/route.ts", "await requireRateLimit(request", "Waitlist rate-limit contract failed");
 assertContains("src/app/api/waitlist/route.ts", "requireJsonRequest(request)", "Waitlist JSON content-type contract failed");
 assertContains("src/app/api/waitlist/route.ts", "Enter your business name.", "Waitlist merchant business-name validation contract failed");

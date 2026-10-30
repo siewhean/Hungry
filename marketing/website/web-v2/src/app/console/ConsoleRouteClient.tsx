@@ -34,18 +34,30 @@ async function readApiError(response: Response, fallback: string) {
   return data?.error ?? data?.message ?? fallback;
 }
 
+type ClaimAction = "approve" | "reject" | "contacted";
+
+const OPEN_CLAIM_STATUSES = new Set(["new", "contacted", "qualified"]);
+
 function RecordCard({
   canAdmin,
+  canMutate,
+  onClaimAction,
   onTeamPatch,
   record,
   section,
 }: {
   canAdmin: boolean;
+  canMutate: boolean;
+  onClaimAction: (claimId: string, action: ClaimAction, stall: string) => void;
   onTeamPatch: (memberId: string, input: { role?: ConsoleRole; status?: "active" | "suspended" }) => void;
   record: ConsoleRecord;
   section: string;
 }) {
   const entries = metadataEntries(record);
+  const isOpenClaim =
+    section === "merchant-applications" &&
+    record.metadata?.kind === "claim" &&
+    OPEN_CLAIM_STATUSES.has(record.status ?? "");
 
   return (
     <article className={styles.routeRecordCard}>
@@ -72,6 +84,34 @@ function RecordCard({
         <span>{recordDate(record)}</span>
         <code>{record.id}</code>
       </div>
+
+      {isOpenClaim && canMutate ? (
+        <div className={styles.routeInlineActions}>
+          <button
+            className={styles.routeSecondaryButton}
+            onClick={() => onClaimAction(record.id, "approve", record.title)}
+            type="button"
+          >
+            Approve and create account
+          </button>
+          {record.status === "new" ? (
+            <button
+              className={styles.routeSecondaryButton}
+              onClick={() => onClaimAction(record.id, "contacted", record.title)}
+              type="button"
+            >
+              Mark contacted
+            </button>
+          ) : null}
+          <button
+            className={styles.routeDangerButton}
+            onClick={() => onClaimAction(record.id, "reject", record.title)}
+            type="button"
+          >
+            Reject
+          </button>
+        </div>
+      ) : null}
 
       {section === "team" && canAdmin ? (
         <div className={styles.routeInlineActions}>
@@ -190,6 +230,41 @@ export default function ConsoleRouteClient({ initialSection }: { initialSection:
       await loadDataset();
     } catch (patchError) {
       setError(patchError instanceof Error ? patchError.message : "Unable to update team member.");
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const handleClaimAction = async (claimId: string, action: ClaimAction, stall: string) => {
+    const question =
+      action === "approve"
+        ? `Approve the claim for ${stall}? This creates the claimant's merchant account and outlet.`
+        : action === "reject"
+          ? `Reject the claim for ${stall}?`
+          : "";
+    if (question && !confirm(question)) return;
+    setMutating(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/console/claims/${encodeURIComponent(claimId)}`, {
+        body: JSON.stringify({ action }),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "x-hungry-csrf": "same-origin",
+        },
+        method: "POST",
+      });
+      if (!response.ok) throw new Error(await readApiError(response, "Unable to update this claim."));
+      const payload = (await response.json().catch(() => null)) as {
+        result?: { alreadyApproved?: boolean; emailSent?: boolean };
+      } | null;
+      await loadDataset();
+      if (action === "approve" && payload?.result?.alreadyApproved !== true && payload?.result?.emailSent === false) {
+        setError(`${stall} is approved, but the approval email did not send. Tell the claimant yourself.`);
+      }
+    } catch (claimError) {
+      setError(claimError instanceof Error ? claimError.message : "Unable to update this claim.");
     } finally {
       setMutating(false);
     }
@@ -337,7 +412,9 @@ export default function ConsoleRouteClient({ initialSection }: { initialSection:
               {dataset.records.map((record) => (
                 <RecordCard
                   canAdmin={Boolean(canAdmin)}
+                  canMutate={canMutate}
                   key={`${record.id}-${record.title}`}
+                  onClaimAction={handleClaimAction}
                   onTeamPatch={handleTeamPatch}
                   record={record}
                   section={initialSection}

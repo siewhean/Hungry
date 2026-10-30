@@ -182,6 +182,10 @@ function clearAccountScopedStores(): void {
   const { useReviewDraftStore } =
     require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
   useReviewDraftStore.getState().resetDraft();
+  // Reviews this account deleted are hidden from the grid for the session: not for the next one.
+  const { clearDeletedReviewsForSession } =
+    require("@/features/review/reviewExplore") as typeof import("@/features/review/reviewExplore");
+  clearDeletedReviewsForSession();
   // Gamification and submissions skip reloading once isLoaded is set: reset them per account.
   const { useFoodCredStore } = require("./useFoodCredStore") as typeof import("./useFoodCredStore");
   const { useMissionStore } = require("./useMissionStore") as typeof import("./useMissionStore");

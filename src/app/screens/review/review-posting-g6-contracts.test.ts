@@ -10,6 +10,7 @@ import {
 } from "@/features/review/reviewModeration";
 import { webShareUrl } from "@/constants/links";
 import { hungryService } from "@/lib/services/mock/mockService";
+import { readHomeSource } from "@/test/sourceContracts";
 
 const root = process.cwd();
 const read = (file: string) => readFileSync(path.join(root, file), "utf8");
@@ -142,7 +143,7 @@ test("M9/M10/M11: write button, every photo, tappable reviewer", () => {
   // Round 6: writing starts from the centre tab button; the grid marks multi-photo reviews
   // and each review's page shows every photo and links to the reviewer.
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  assert.match(tabs, /isCreateAction: true, icon: PenLine, label: "Write a review"/);
+  assert.match(tabs, /isCreateAction: true, icon: PenLine, label: "Write"/);
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   assert.match(feed, /photoCount > 1 \? \([\s\S]*?<Images/);
   const detail = read("src/app/screens/review/ReviewDetailScreen.tsx");
@@ -172,9 +173,9 @@ test("L1/L9/L10: cards take primitives and 44pt targets, with no Helpful vote", 
 
 test("L8: the success modal offers to share the new review", () => {
   const modal = read("src/app/screens/review/ReviewSuccessModal.tsx");
-  assert.match(modal, /label="Share your review"/);
+  assert.match(modal, /label="Share"/);
   assert.match(modal, /webShareUrl\("review", reviewId\)/);
-  assert.match(modal, /Your review is live on/);
+  assert.match(modal, /It is now on/);
   assert.doesNotMatch(modal, /Profile updated/);
   const editor = read("src/app/screens/review/ReviewScreen.tsx");
   assert.match(editor, /reviewId,\s*dishId: selectedDish\.id/);
@@ -207,7 +208,7 @@ test("L14: /post opens the composer, with /order kept as an alias", () => {
 });
 
 test("M4: a photo post without a rating shows no star", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   assert.match(discover, /bite\.cravingCount > 0 && bite\.rating > 0/);
   const publishing = read("src/features/post/publishing.ts");
   assert.match(publishing, /state\.rating > 0 \? state\.rating : 0/);

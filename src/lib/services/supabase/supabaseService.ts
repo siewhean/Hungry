@@ -24,8 +24,11 @@ import {
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
   getItemDetailsViaRpc,
+  getInlineMerchantReads,
   getSavedDishCardsViaRpc,
   getVenueByIdViaRpc,
+  invalidateVenueDetail,
+  getVenueClosuresViaRpc,
   getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
@@ -55,8 +58,15 @@ import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import { REVIEW_PHOTOS_NOT_ATTACHED, createClientReviewId } from "@/features/review/reviewDraft";
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { singaporeDateOnly, startOfSingaporeDate } from "@/features/merchant/closure";
+import {
+  buildMerchantInsights,
+  buildWeeklySummaryInsight,
+  parseMerchantInsightFacts,
+} from "@/features/merchant/insightRules";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { normalizeReviewPatch, normalizeReviewTags } from "@/features/review/reviewEdit";
+import { REVIEW_SEARCH_MIN_LENGTH, reviewMatchesQuery } from "@/features/review/reviewSearch";
 import type {
   Bite,
   BiteDraft,
@@ -84,6 +94,7 @@ import type {
   ListRecentReviewsOptions,
   RecentReviewFeedEntry,
   RecentReviewFeedPage,
+  MerchantClaimStatus,
 } from "@/lib/services/types";
 import type {
   AIBusinessInsight,
@@ -1040,6 +1051,13 @@ function toAppSessionFromAuthSession(
 
 /** Review photos uploaded at once; more in flight starves slow mobile links. */
 const REVIEW_PHOTO_UPLOAD_CONCURRENCY = 3;
+/** Longest edge of the grid thumbnail uploaded next to each review photo. */
+const REVIEW_THUMBNAIL_EDGE_PX = 480;
+
+/** Every storage object (photo and thumbnail) in a list of uploaded review photo rows. */
+function uploadedObjectPaths(rows: (Row | undefined)[]): (string | undefined)[] {
+  return rows.flatMap((row) => (row ? [asString(row.storage_path), asString(row.thumb_path)] : []));
+}
 
 /** Best-effort removal of objects this client just uploaded; a failure is left to the orphan purge. */
 async function removeUploadedObjects(
@@ -1087,10 +1105,26 @@ async function uploadReviewPhotos(
         path,
         uri,
       });
+      // A small copy for the grid tiles. Best effort: without it the tile loads the full photo.
+      let thumbPath: string | undefined;
+      try {
+        thumbPath = (
+          await uploadImageFromUri({
+            client,
+            bucket: "review-media",
+            path: `${userId}/${reviewId}/photo-${index}-${attempt}.thumb.${extension}`,
+            uri,
+            maxEdgePx: REVIEW_THUMBNAIL_EDGE_PX,
+          })
+        ).path;
+      } catch {
+        thumbPath = undefined;
+      }
       uploaded[jobIndex] = {
         url: asset.path,
         storage_bucket: "review-media",
         storage_path: asset.path,
+        thumb_path: thumbPath,
       };
     }
   };
@@ -1100,11 +1134,7 @@ async function uploadReviewPhotos(
     );
   } catch (error) {
     // One photo failed: the ones already uploaded would never be attached to a review.
-    await removeUploadedObjects(
-      client,
-      "review-media",
-      uploaded.map((row) => (row ? asString(row.storage_path) : undefined)),
-    );
+    await removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploaded));
     throw error;
   }
   // Keep the picked order for sort_order.
@@ -1116,6 +1146,26 @@ export const DELETED_ACCOUNT_REVIEW_TEXT = "[deleted]";
 
 function isDeletedAccountReviewRow(row: Row): boolean {
   return !asString(row.user_id) && asString(row.text) === DELETED_ACCOUNT_REVIEW_TEXT;
+}
+
+/**
+ * Signed URLs for review-media paths in one request. A URL already signed for a path is reused,
+ * so refetching a feed does not re-download its images.
+ */
+async function signReviewMediaPaths(
+  client: SupabaseClient,
+  paths: (string | undefined)[],
+): Promise<Map<string, string>> {
+  const wanted = Array.from(new Set(paths.filter((path): path is string => Boolean(path))));
+  const unsignedPaths = wanted.filter((path) => !cachedSignedMediaUrl("review-media", path));
+  const freshlySigned = await createSignedStorageUrls(client, "review-media", unsignedPaths);
+  freshlySigned.forEach((url, path) => rememberSignedMediaUrl("review-media", path, url));
+  const signedUrlByPath = new Map<string, string>();
+  for (const path of wanted) {
+    const url = cachedSignedMediaUrl("review-media", path);
+    if (url) signedUrlByPath.set(path, url);
+  }
+  return signedUrlByPath;
 }
 
 /** Exported for tests. Batches photo and author lookups for one page of review rows. */
@@ -1146,22 +1196,14 @@ export async function mapSupabaseReviewRows(
     if (Array.isArray(photoRows)) {
       // One signing request for the whole page instead of one per photo, and a URL already
       // signed for a path is reused so refetching the feed does not re-download its images.
-      const reviewMediaPaths = (photoRows as Row[])
-        .filter(
-          (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
-        )
-        .map((photoRow) => asString(photoRow.storage_path))
-        .filter((path): path is string => Boolean(path));
-      const unsignedPaths = reviewMediaPaths.filter(
-        (path) => !cachedSignedMediaUrl("review-media", path),
+      const signedUrlByPath = await signReviewMediaPaths(
+        client,
+        (photoRows as Row[])
+          .filter(
+            (photoRow) => (asString(photoRow.storage_bucket) || "review-media") === "review-media",
+          )
+          .map((photoRow) => asString(photoRow.storage_path)),
       );
-      const freshlySigned = await createSignedStorageUrls(client, "review-media", unsignedPaths);
-      freshlySigned.forEach((url, path) => rememberSignedMediaUrl("review-media", path, url));
-      const signedUrlByPath = new Map<string, string>();
-      for (const path of reviewMediaPaths) {
-        const url = cachedSignedMediaUrl("review-media", path);
-        if (url) signedUrlByPath.set(path, url);
-      }
       for (const photoRow of photoRows as Row[]) {
         const reviewId = asString(photoRow.review_id);
         if (!reviewId) continue;
@@ -1345,7 +1387,214 @@ async function buildRecentReviewEntries(
   });
 }
 
+/**
+ * Publishes a review by writing the tables directly (a backend without submit_review). Not one
+ * transaction: the review row can exist for a moment without its photos.
+ */
+async function submitReviewWithoutRpc(
+  client: SupabaseClient,
+  userId: string,
+  reviewRow: Row,
+  uploadedPhotos: Row[],
+): Promise<void> {
+  const reviewId = asString(reviewRow.id) ?? "";
+  const discardUploadedPhotos = () =>
+    removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
+
+  const { data: existing, error: existingError } = await client
+    .from("reviews")
+    .select("id")
+    .eq("id", reviewId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existingError) {
+    await discardUploadedPhotos();
+    throw existingError;
+  }
+  const isResumedSubmission = Boolean(asString(existing?.id));
+
+  try {
+    if (isResumedSubmission) {
+      // Keep any edits made between attempts.
+      const { error: updateError } = await client
+        .from("reviews")
+        .update({
+          rating: reviewRow.rating,
+          text: reviewRow.text,
+          tags: reviewRow.tags,
+          would_recommend: reviewRow.would_recommend,
+        })
+        .eq("id", reviewId)
+        .eq("user_id", userId);
+      if (updateError) throw updateError;
+    } else {
+      const { error } = await client.from("reviews").insert(reviewRow);
+      // 23505: a parallel attempt already created this review; carry on and
+      // attach the photos to it.
+      if (error && error.code !== "23505") throw error;
+    }
+  } catch (error) {
+    await discardUploadedPhotos();
+    throw error;
+  }
+
+  if (isResumedSubmission) {
+    const { count, error: photoCountError } = await client
+      .from("review_photos")
+      .select("id", { count: "exact", head: true })
+      .eq("review_id", reviewId);
+    if (photoCountError) throw photoCountError;
+    if ((count ?? 0) > 0) {
+      await discardUploadedPhotos();
+      return;
+    }
+  }
+
+  if (uploadedPhotos.length > 0) {
+    const { error: photoInsertError } = await client.from("review_photos").insert(
+      uploadedPhotos.map((photo, index) => ({
+        review_id: reviewId,
+        url: photo.url,
+        storage_bucket: photo.storage_bucket,
+        storage_path: photo.storage_path,
+        thumb_path: photo.thumb_path ?? null,
+        sort_order: index,
+      })),
+    );
+    if (photoInsertError) {
+      await discardUploadedPhotos();
+      // The review itself is saved; only the photos are missing. A retry
+      // with the same clientReviewId attaches them.
+      throw Object.assign(new Error("Review saved, but its photos were not attached."), {
+        code: REVIEW_PHOTOS_NOT_ATTACHED,
+        cause: photoInsertError,
+      });
+    }
+  }
+}
+
+/** A page returned by get_review_feed_page / search_reviews, turned into feed entries. */
+async function mapReviewFeedRpcPage(
+  client: SupabaseClient,
+  data: unknown,
+  options: { withPhotos?: boolean },
+): Promise<RecentReviewFeedPage> {
+  const payload = (data && typeof data === "object" ? data : {}) as Row;
+  const rows = (Array.isArray(payload.entries) ? payload.entries : []) as Row[];
+  const photoRowsOf = (row: Row): Row[] => (Array.isArray(row.photos) ? (row.photos as Row[]) : []);
+
+  // One signing request for the whole page, thumbnails and full photos together.
+  const pathsToSign: (string | undefined)[] = [];
+  for (const row of rows) {
+    if (isDeletedAccountReviewRow(row)) continue;
+    for (const photo of photoRowsOf(row)) {
+      if ((asString(photo.storage_bucket) || "review-media") !== "review-media") continue;
+      pathsToSign.push(asString(photo.storage_path), asString(photo.thumb_path));
+    }
+  }
+  const signedUrlByPath = await signReviewMediaPaths(client, pathsToSign);
+
+  const entries = rows.flatMap((row): RecentReviewFeedEntry[] => {
+    const id = asString(row.id);
+    const dishId = asString(row.dish_id);
+    if (!id || !dishId) return [];
+    const userId = asString(row.user_id);
+    const fromDeletedAccount = isDeletedAccountReviewRow(row);
+    const photos: string[] = [];
+    const photoThumbnails: string[] = [];
+    if (!fromDeletedAccount) {
+      for (const photo of photoRowsOf(row)) {
+        const bucket = asString(photo.storage_bucket) || "review-media";
+        const path = asString(photo.storage_path);
+        const legacyUrl = asString(photo.url);
+        const thumbPath = asString(photo.thumb_path);
+        const displayUrl =
+          path && bucket === "review-media" ? (signedUrlByPath.get(path) ?? legacyUrl) : legacyUrl;
+        if (!displayUrl) continue;
+        photos.push(displayUrl);
+        photoThumbnails.push((thumbPath && signedUrlByPath.get(thumbPath)) || "");
+      }
+    }
+    const replyText = asString(row.merchant_reply_text);
+    const moderationState = asString(row.moderation_state);
+    const venueId = asString(row.venue_id) ?? "";
+    return [
+      {
+        review: {
+          id,
+          dishId,
+          venueId: asString(row.venue_id),
+          authorId: userId,
+          authorName: fromDeletedAccount
+            ? "Deleted account"
+            : (asString(row.author_name) ?? "Hungry User"),
+          authorAvatarUrl: asString(row.author_avatar_url),
+          rating: asNumber(row.rating) ?? 0,
+          createdAt: asString(row.created_at) ?? new Date().toISOString(),
+          text: fromDeletedAccount ? "" : (asString(row.text) ?? ""),
+          tags: fromDeletedAccount ? [] : asStringArray(row.tags),
+          wouldRecommend: asBoolean(row.would_recommend) ?? true,
+          photos,
+          photoThumbnails: photoThumbnails.some(Boolean) ? photoThumbnails : undefined,
+          helpfulCount: asNumber(row.helpful_count),
+          editedAt: asString(row.edited_at),
+          merchantReply: replyText
+            ? {
+                text: replyText,
+                repliedAt: asString(row.merchant_replied_at) ?? asString(row.created_at) ?? "",
+              }
+            : undefined,
+          viewerFoundHelpful: asBoolean(row.viewer_found_helpful) ?? false,
+          moderationState:
+            moderationState === "hidden" || moderationState === "removed"
+              ? moderationState
+              : undefined,
+        },
+        dishId,
+        dishName: asString(row.dish_name) ?? "Dish",
+        venueId,
+        venueName: asString(row.venue_name) ?? "",
+      },
+    ];
+  });
+
+  const cursor = (payload.next_cursor ?? null) as Row | null;
+  const before = cursor ? asString(cursor.before) : undefined;
+  const beforeId = cursor ? asString(cursor.before_id) : undefined;
+  return {
+    // A deleted account's review keeps its photo rows but is shown without photos: leave it off
+    // the photo grid instead of a blank tile.
+    entries: options.withPhotos
+      ? entries.filter((entry) => entry.review.photos.length > 0)
+      : entries,
+    hasMore: asBoolean(payload.has_more) ?? false,
+    nextCursor: before && beforeId ? { before, beforeId } : undefined,
+  };
+}
+
 async function fetchRecentReviewsPage(
+  options: ListRecentReviewsOptions | undefined,
+): Promise<RecentReviewFeedPage> {
+  const client = requireSupabaseClient();
+  const limit = Math.min(Math.max(Math.floor(options?.limit ?? 50), 1), 100);
+  if (options?.dishIds && options.dishIds.length === 0) return { entries: [], hasMore: false };
+  // One call returns the page with dish, stall, author, photo paths and the viewer's own state.
+  const { data, error } = await client.rpc("get_review_feed_page", {
+    p_limit: limit,
+    p_before: options?.before,
+    p_before_id: options?.before ? options.beforeId : undefined,
+    p_after: options?.after,
+    p_venue_id: options?.venueId,
+    p_dish_ids: options?.dishIds,
+    p_with_photos: options?.withPhotos ?? false,
+  });
+  // A backend that has not shipped the function yet is read table by table, as before.
+  if (isMissingBackendObjectError(error)) return fetchRecentReviewsPageWithoutRpc(options);
+  if (error) throw error;
+  return mapReviewFeedRpcPage(client, data, { withPhotos: options?.withPhotos });
+}
+
+async function fetchRecentReviewsPageWithoutRpc(
   options: ListRecentReviewsOptions | undefined,
 ): Promise<RecentReviewFeedPage> {
   const client = requireSupabaseClient();
@@ -2401,13 +2650,11 @@ function getMerchantAnalyticsSince(dateRange: MerchantAnalytics["dateRange"]): s
     singaporeNow.setUTCHours(0, 0, 0, 0);
     return new Date(singaporeNow.getTime() - singaporeOffsetMs).toISOString();
   }
-  if (dateRange === "7d") {
-    now.setDate(now.getDate() - 7);
-    return now.toISOString();
-  }
-  if (dateRange === "30d") {
-    now.setDate(now.getDate() - 30);
-    return now.toISOString();
+  // 7 and 30 days are whole Singapore calendar days ending today, so the Performance totals and
+  // the daily chart cover exactly the same days.
+  if (dateRange === "7d" || dateRange === "30d") {
+    const firstDay = startOfSingaporeDate(singaporeDateOnly(now, dateRange === "7d" ? -6 : -29));
+    return firstDay ? firstDay.toISOString() : null;
   }
   return null;
 }
@@ -2722,6 +2969,7 @@ async function toMerchantOutlet(
     cuisineCategories: asStringArray(row.cuisine_categories),
     operatingHours: asString(row.operating_hours) ?? venue?.operatingHours ?? "",
     temporaryClosure: asString(row.temporary_closure),
+    closedUntil: asString(row.closed_until),
     profilePhotoUrl: asString(row.profile_photo_url),
     coverPhotoUrl: asString(row.cover_photo_url),
     // The outlet has no gallery of its own; its profile and cover photos are the gallery.
@@ -3182,7 +3430,7 @@ async function saveMerchantDish(
     dietaryFlags: DietaryFlag[] | undefined;
     tasteVector: TasteVector | undefined;
   },
-): Promise<Row> {
+): Promise<void> {
   const venueId = asString(outlet.venue_id) ?? "";
   const dishFields: Row = { ...fields };
   delete dishFields.id;
@@ -3199,14 +3447,25 @@ async function saveMerchantDish(
     p_taste_vector: toTasteVectorJson(children.tasteVector),
   });
   if (error) throw error;
-  const { data, error: readError } = await client
-    .from("dishes")
-    .select("*")
-    .eq("id", dishId)
-    .eq("venue_id", venueId)
-    .single();
-  if (readError) throw readError;
-  return data as Row;
+}
+
+/**
+ * Reads back what a save wrote: the dish row, its presentation and the venue are independent
+ * reads, and the diner cache refresh needs none of them, so they run together (R4-17).
+ */
+async function readSavedMerchantDish(
+  client: SupabaseClient,
+  venueId: string,
+  dishId: string,
+): Promise<DishDetail> {
+  const [dishResult, , presentationByDishId, venue] = await Promise.all([
+    client.from("dishes").select("*").eq("id", dishId).eq("venue_id", venueId).single(),
+    refreshSupabaseRepositoryVenueDishes(venueId),
+    fetchDishPresentationMap(client, [dishId]),
+    fetchVenueRow(client, venueId),
+  ]);
+  if (dishResult.error) throw dishResult.error;
+  return mapSupabaseDish(dishResult.data as Row, venue, presentationByDishId.get(dishId));
 }
 
 async function setMerchantDishFlag(
@@ -3234,6 +3493,38 @@ function buildPromotionAnalytics(
     return { impressions: 0, clicks: 0, saves: 0, profileVisits: 0, dishViews: 0 };
   }
   return { impressions: 0, clicks: 0, saves: 0, profileVisits: 0, dishViews: 0 };
+}
+
+/** Ops moves a claim new -> contacted -> qualified -> converted (or rejected). */
+function toClaimStatus(status: string | null): MerchantClaimStatus {
+  switch (status) {
+    case "new":
+      return "submitted";
+    case "contacted":
+    case "qualified":
+      return "in_review";
+    case "converted":
+      return "approved";
+    case "rejected":
+      return "rejected";
+    default:
+      return "none";
+  }
+}
+
+function mapPublicMerchantProfile(row: Row): PublicMerchantProfile {
+  return {
+    outletId: asString(row.outlet_id) ?? "",
+    description: asString(row.description),
+    contactPhone: asString(row.contact_phone),
+    contactEmail: asString(row.contact_email),
+    socialLinks: toSocialLinks(row.social_links),
+    cuisineCategories: asStringArray(row.cuisine_categories),
+    profilePhotoUrl: asString(row.profile_photo_url),
+    coverPhotoUrl: asString(row.cover_photo_url),
+    temporaryClosure: asString(row.temporary_closure),
+    isVerified: asBoolean(row.is_verified) ?? false,
+  } satisfies PublicMerchantProfile;
 }
 
 function mapPromotion(row: Row): MerchantPromotion {
@@ -3995,7 +4286,15 @@ export const supabaseService: HungryService = {
         const fetched = await getVenuesByIdsViaRpc(missing);
         fetched?.forEach((venue) => cached.set(venue.id, venue));
       }
-      return unique.flatMap((id) => cached.get(id) ?? []);
+      const venues = unique.flatMap((id) => cached.get(id) ?? []);
+      // A paused stall must not count as open now (Decide for me, the map, the wheel). One
+      // batched read; when it fails the stalls keep their stored state.
+      const closures = await getVenueClosuresViaRpc(venues.map((venue) => venue.id));
+      if (!closures || closures.size === 0) return venues;
+      return venues.map((venue) => {
+        const closedUntil = closures.get(venue.id);
+        return closedUntil ? { ...venue, closedUntil } : venue;
+      });
     },
 
     async getItemDetails({ dishIds, stallIds }) {
@@ -4063,6 +4362,11 @@ export const supabaseService: HungryService = {
     async listActivePromotionsForTarget(input) {
       const client = getSupabaseClient();
       if (!client) return [];
+      // The stall page's list came back with the stall; a dish page asks for its own target.
+      if (!input.dishId) {
+        const inline = await getInlineMerchantReads(input.venueId);
+        if (inline) return inline.promotions.map(mapPromotion);
+      }
       const { data, error } = await client.rpc("list_customer_active_promotions", {
         p_venue_id: input.venueId,
         p_dish_id: input.dishId ?? null,
@@ -4075,25 +4379,15 @@ export const supabaseService: HungryService = {
     async getPublicMerchantProfile(venueId) {
       const client = getSupabaseClient();
       if (!client || !venueId) return undefined;
+      const inline = await getInlineMerchantReads(venueId);
+      if (inline) return inline.profile ? mapPublicMerchantProfile(inline.profile) : undefined;
       const { data, error } = await client.rpc("get_public_merchant_profile", {
         p_venue_id: venueId,
       });
       // Thrown, not swallowed: a lost temporary closure must reach Sentry.
       if (error) throw error;
       const row = (Array.isArray(data) ? (data as Row[]) : [])[0];
-      if (!row) return undefined;
-      return {
-        outletId: asString(row.outlet_id) ?? "",
-        description: asString(row.description),
-        contactPhone: asString(row.contact_phone),
-        contactEmail: asString(row.contact_email),
-        socialLinks: toSocialLinks(row.social_links),
-        cuisineCategories: asStringArray(row.cuisine_categories),
-        profilePhotoUrl: asString(row.profile_photo_url),
-        coverPhotoUrl: asString(row.cover_photo_url),
-        temporaryClosure: asString(row.temporary_closure),
-        isVerified: asBoolean(row.is_verified) ?? false,
-      } satisfies PublicMerchantProfile;
+      return row ? mapPublicMerchantProfile(row) : undefined;
     },
 
     async getVenueOpeningSchedule(venueId) {
@@ -4328,85 +4622,45 @@ export const supabaseService: HungryService = {
         would_recommend: draft.wouldRecommend ?? true,
       };
 
-      const { data: existing, error: existingError } = await client
-        .from("reviews")
-        .select("id")
-        .eq("id", reviewId)
-        .eq("user_id", userId)
-        .maybeSingle();
-      if (existingError) throw existingError;
-      const isResumedSubmission = Boolean(asString(existing?.id));
-
-      let needsPhotos = draft.photos.length > 0;
-      if (isResumedSubmission && needsPhotos) {
-        const { count, error: photoCountError } = await client
-          .from("review_photos")
-          .select("id", { count: "exact", head: true })
-          .eq("review_id", reviewId);
-        if (photoCountError) throw photoCountError;
-        needsPhotos = (count ?? 0) === 0;
-      }
-
       // Upload before the review exists: reviews are public as soon as they are
       // inserted, so a failed upload must not leave a live, photo-less review.
-      const uploadedPhotos = needsPhotos
-        ? await uploadReviewPhotos(client, userId, reviewId, draft.photos)
-        : [];
+      const uploadedPhotos = await uploadReviewPhotos(client, userId, reviewId, draft.photos);
 
       // A retry uploads under new object names, so photos from a failed attempt would be
       // left behind: remove them (best effort; the orphan purge catches any that remain).
       const discardUploadedPhotos = () =>
-        removeUploadedObjects(
-          client,
-          "review-media",
-          uploadedPhotos.map((photo) => asString(photo.storage_path)),
-        );
+        removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
 
-      try {
-        if (isResumedSubmission) {
-          // Keep any edits made between attempts.
-          const { error: updateError } = await client
-            .from("reviews")
-            .update({
-              rating: reviewRow.rating,
-              text: reviewRow.text,
-              tags: reviewRow.tags,
-              would_recommend: reviewRow.would_recommend,
-            })
-            .eq("id", reviewId)
-            .eq("user_id", userId);
-          if (updateError) throw updateError;
-        } else {
-          const { error } = await client.from("reviews").insert(reviewRow);
-          // 23505: a parallel attempt already created this review; carry on and
-          // attach the photos to it.
-          if (error && error.code !== "23505") throw error;
-        }
-      } catch (error) {
+      // One transaction: the review and its photo rows go in together, or neither does. The
+      // server refuses a review with no photo and resumes the same review on a retry.
+      const { data, error } = await client.rpc("submit_review", {
+        p_review: {
+          id: reviewId,
+          dish_id: reviewRow.dish_id,
+          venue_id: reviewRow.venue_id,
+          rating: reviewRow.rating,
+          text: reviewRow.text,
+          tags: reviewRow.tags,
+          would_recommend: reviewRow.would_recommend,
+        },
+        p_photos: uploadedPhotos.map((photo) => ({
+          storage_path: photo.storage_path,
+          thumb_path: photo.thumb_path ?? null,
+        })),
+      });
+      if (isMissingBackendObjectError(error)) {
+        // A backend that has not shipped submit_review yet: write the tables, as before.
+        await submitReviewWithoutRpc(client, userId, reviewRow, uploadedPhotos);
+        return;
+      }
+      if (error) {
         await discardUploadedPhotos();
         throw error;
       }
-
-      if (uploadedPhotos.length > 0) {
-        const { error: photoInsertError } = await client.from("review_photos").insert(
-          uploadedPhotos.map((photo, index) => ({
-            review_id: reviewId,
-            url: photo.url,
-            storage_bucket: photo.storage_bucket,
-            storage_path: photo.storage_path,
-            sort_order: index,
-          })),
-        );
-        if (photoInsertError) {
-          await discardUploadedPhotos();
-          // The review itself is saved; only the photos are missing. A retry
-          // with the same clientReviewId attaches them.
-          throw Object.assign(new Error("Review saved, but its photos were not attached."), {
-            code: REVIEW_PHOTOS_NOT_ATTACHED,
-            cause: photoInsertError,
-          });
-        }
-      }
+      // The review already had its photos (a retry whose first answer was lost): the files just
+      // uploaded are not used.
+      const photosAdded = asNumber((data as Row | null)?.photos_added) ?? uploadedPhotos.length;
+      if (photosAdded === 0) await discardUploadedPhotos();
     },
 
     async listRecentReviews(options) {
@@ -4415,6 +4669,36 @@ export const supabaseService: HungryService = {
 
     async listRecentReviewsPage(options) {
       return fetchRecentReviewsPage(options);
+    },
+
+    async searchReviewsPage(options) {
+      const client = requireSupabaseClient();
+      const query = options.query.trim();
+      if (query.length < REVIEW_SEARCH_MIN_LENGTH) return { entries: [], hasMore: false };
+      const limit = Math.min(Math.max(Math.floor(options.limit ?? 50), 1), 100);
+      const withPhotos = options.withPhotos ?? true;
+      const { data, error } = await client.rpc("search_reviews", {
+        p_query: query,
+        p_before: options.before,
+        p_before_id: options.before ? options.beforeId : undefined,
+        p_limit: limit,
+        p_with_photos: withPhotos,
+      });
+      if (isMissingBackendObjectError(error)) {
+        // No search function yet: look through the newest reviews, as the grid did before.
+        const page = await fetchRecentReviewsPageWithoutRpc({
+          limit: 100,
+          withPhotos,
+          before: options.before,
+          beforeId: options.beforeId,
+        });
+        return {
+          ...page,
+          entries: page.entries.filter((entry) => reviewMatchesQuery(entry, query)),
+        };
+      }
+      if (error) throw error;
+      return mapReviewFeedRpcPage(client, data, { withPhotos });
     },
 
     async getReviewById(reviewId) {
@@ -6576,6 +6860,8 @@ export const supabaseService: HungryService = {
       if (rpcError) {
         throw rpcError;
       }
+      // The reused stall read says "no claim": the next read of this stall must be fresh.
+      invalidateVenueDetail(input.venueId);
 
       return {
         claimId: claimId ? String(claimId) : null,
@@ -6584,6 +6870,8 @@ export const supabaseService: HungryService = {
     },
 
     async getMerchantClaimStatus(venueId) {
+      const inline = await getInlineMerchantReads(venueId);
+      if (inline) return toClaimStatus(inline.claimStatus);
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) return "none";
@@ -6594,20 +6882,46 @@ export const supabaseService: HungryService = {
         .eq("claimed_by", userId)
         .maybeSingle();
       if (error || !data) return "none";
-      // Ops moves a claim new -> contacted -> qualified -> converted (or rejected).
-      switch (asString((data as Row).status)) {
-        case "new":
-          return "submitted";
-        case "contacted":
-        case "qualified":
-          return "in_review";
-        case "converted":
-          return "approved";
-        case "rejected":
-          return "rejected";
-        default:
-          return "none";
-      }
+      return toClaimStatus(asString((data as Row).status) ?? null);
+    },
+
+    async getMyMerchantClaims() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return [];
+      const { data, error } = await client
+        .from("merchant_claim_interests")
+        .select("id,venue_id,status,created_at")
+        .eq("claimed_by", userId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      const claims = Array.isArray(data) ? (data as Row[]) : [];
+      if (claims.length === 0) return [];
+      // One read for every stall name, never one per claim.
+      const venueIds = Array.from(new Set(claims.map((row) => asString(row.venue_id) ?? "")));
+      const { data: venueRows, error: venueError } = await client
+        .from("venues")
+        .select("id,name")
+        .in("id", venueIds);
+      if (venueError) throw venueError;
+      const names = new Map(
+        (Array.isArray(venueRows) ? (venueRows as Row[]) : []).map((row) => [
+          asString(row.id) ?? "",
+          asString(row.name) ?? "",
+        ]),
+      );
+      return claims.map((row) => {
+        const venueId = asString(row.venue_id) ?? "";
+        const status = toClaimStatus(asString(row.status) ?? null);
+        return {
+          claimId: asString(row.id) ?? "",
+          venueId,
+          venueName: names.get(venueId) || "Your stall",
+          status: status === "none" ? ("submitted" as const) : status,
+          submittedAt: asString(row.created_at) ?? new Date().toISOString(),
+        };
+      });
     },
 
     async listDraftDishesQueue(venueId) {
@@ -6796,6 +7110,7 @@ export const supabaseService: HungryService = {
       if (normalized.temporaryClosure !== undefined) {
         payload.temporary_closure = normalized.temporaryClosure || null;
       }
+      if (normalized.closedUntil !== undefined) payload.closed_until = normalized.closedUntil;
       if (normalized.contactPhone !== undefined) payload.contact_phone = normalized.contactPhone;
       if (normalized.contactEmail !== undefined) payload.contact_email = normalized.contactEmail;
       if (normalized.cuisineCategories !== undefined) {
@@ -6884,18 +7199,12 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? dish.imageUrl,
         gallery: galleryUrls ?? dish.gallery,
       });
-      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+      await saveMerchantDish(client, outlet, dishId, payload, {
         galleryUrls,
         dietaryFlags: dish.dietaryFlags,
         tasteVector: dish.tasteVector,
       });
-      await refreshSupabaseRepositoryVenueDishes(asString(outlet.venue_id) ?? "");
-      const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
-      return mapSupabaseDish(
-        row,
-        await fetchVenueRow(client, asString(outlet.venue_id) ?? ""),
-        presentationByDishId.get(dishId),
-      );
+      return readSavedMerchantDish(client, asString(outlet.venue_id) ?? "", dishId);
     },
 
     async editDish(outletId, dishId, updates) {
@@ -6908,18 +7217,12 @@ export const supabaseService: HungryService = {
         imageUrl: galleryUrls?.[0] ?? updates.imageUrl,
         gallery: galleryUrls ?? updates.gallery,
       });
-      const row = await saveMerchantDish(client, outlet, dishId, payload, {
+      await saveMerchantDish(client, outlet, dishId, payload, {
         galleryUrls,
         dietaryFlags: updates.dietaryFlags,
         tasteVector: updates.tasteVector,
       });
-      await refreshSupabaseRepositoryVenueDishes(venueId);
-      const presentationByDishId = await fetchDishPresentationMap(client, [dishId]);
-      return mapSupabaseDish(
-        row,
-        await fetchVenueRow(client, venueId),
-        presentationByDishId.get(dishId),
-      );
+      return readSavedMerchantDish(client, venueId, dishId);
     },
 
     async deleteDish(outletId, dishId) {
@@ -7556,6 +7859,25 @@ export const supabaseService: HungryService = {
       return mapMerchantAnalyticsPayload(data, resolvedOutletId, dateRange);
     },
 
+    async getDailySeries(outletId, dateRange) {
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const { data, error } = await client.rpc("get_merchant_daily_series", {
+        p_outlet_id: asString(outlet.id) ?? outletId,
+        p_since: getMerchantAnalyticsSince(dateRange),
+        p_until: null,
+      });
+      if (error) throw error;
+      return (Array.isArray(data) ? (data as Row[]) : []).map((row) => ({
+        date: asString(row.date) ?? "",
+        profileVisits: asNumber(row.profileVisits) ?? 0,
+        menuViews: asNumber(row.menuViews) ?? 0,
+        dishViews: asNumber(row.dishViews) ?? 0,
+        directionTaps: asNumber(row.directionTaps) ?? 0,
+        saves: asNumber(row.saves) ?? 0,
+      }));
+    },
+
     async getDashboardSummary(outletId) {
       const client = requireSupabaseClient();
       const outlet = await getMerchantOutletRow(client, outletId);
@@ -7641,19 +7963,27 @@ export const supabaseService: HungryService = {
     },
 
     async getAIInsights(outletId) {
-      const analytics = await this.getAnalytics(outletId, "7d");
+      const client = requireSupabaseClient();
+      const outlet = await getMerchantOutletRow(client, outletId);
+      const resolvedOutletId = asString(outlet.id) ?? outletId;
+      // The counts come from one RPC and the analytics from another: two reads, not one per rule.
+      const [factsResult, analytics] = await Promise.all([
+        client.rpc("get_merchant_insight_facts", { p_outlet_id: resolvedOutletId }),
+        this.getAnalytics(resolvedOutletId, "7d"),
+      ]);
+      // An app build can run before the migration that adds the facts RPC (42883 / PGRST202):
+      // the tips that come from the analytics and the hours still show, the rest wait for it.
+      const factsMissing =
+        factsResult.error?.code === "42883" || factsResult.error?.code === "PGRST202";
+      if (factsResult.error && !factsMissing) throw factsResult.error;
       return [
-        {
-          id: `weekly-${outletId}`,
-          outletId,
-          type: "weekly_summary",
-          title: "Last 7 days",
-          body: `${analytics.reviewCount} customer ${analytics.reviewCount === 1 ? "review" : "reviews"} in the last 7 days.`,
-          actionLabel: "Open analytics",
-          actionTarget: "Analytics",
-          createdAt: new Date().toISOString(),
-          isDismissed: false,
-        },
+        buildWeeklySummaryInsight(resolvedOutletId, analytics),
+        ...buildMerchantInsights({
+          outletId: resolvedOutletId,
+          facts: parseMerchantInsightFacts(factsMissing ? null : factsResult.data),
+          analytics,
+          openingSchedule: toOpeningSchedule(outlet.opening_schedule),
+        }),
       ] satisfies AIBusinessInsight[];
     },
 

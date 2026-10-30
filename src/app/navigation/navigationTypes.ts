@@ -54,7 +54,7 @@ export type OnboardingStackParamList = {
         mode?: "onboarding" | "profile";
         initialPhase?: "taste" | "dietary" | "budget"; // "budget": dietary step, scrolled to the budget
         /** The page the edit was opened from, for the preference events' surface. */
-        source?: "settings";
+        source?: "settings" | "home";
       }
     | undefined;
   DietaryPreferences:
@@ -137,11 +137,12 @@ export type MerchantTabParamList = {
   // Extended sections
   VerificationCentre: undefined;
   HomeBasedVerification: undefined;
-  BusinessProfileEditor: undefined;
+  /** `section` scrolls the long form to that part when it opens. */
+  BusinessProfileEditor: { section?: "location" | "hours" | "contact" } | undefined;
   DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
   /** `filter` opens a filtered list; `replyToId` opens the reply composer for that review. */
-  CustomerInbox: { filter?: "unreplied"; replyToId?: string } | undefined;
+  CustomerInbox: { filter?: "all" | "unreplied"; replyToId?: string } | undefined;
   FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;

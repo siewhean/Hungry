@@ -20,6 +20,7 @@ import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
+import { formatPromotionRange } from "@/features/merchant/dateRange";
 import type { MerchantPromotion, PromotionStatus } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -252,8 +253,7 @@ export function PromotionListScreen() {
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Calendar size={14} color={palette.textSecondary} />
                       <AppText variant="micro" tone="muted">
-                        {new Date(promo.startDate).toLocaleDateString()} -{" "}
-                        {new Date(promo.endDate).toLocaleDateString()}
+                        {formatPromotionRange(promo.startDate, promo.endDate)}
                       </AppText>
                     </View>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>

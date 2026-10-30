@@ -233,6 +233,24 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["dish_viewed", "review_started", "search_query", "search_zero_results"],
   },
   /**
+   * Search results: "halal laksa under $5" is read as the Halal and Under S$5 filters plus the
+   * text "laksa" (test) or sent as plain text (control). Read in the results grid only for a
+   * query of 2+ words that the parser changes. Draft until the PostHog flag exists; the
+   * fallback is the parsed reading, which ships to everyone first. A chip the user removes
+   * (search_parse_removed) means the reading was wrong.
+   */
+  search_query_parsing_v1: {
+    variants: ["control", "parsed"],
+    fallback: "parsed",
+    status: "draft",
+    surface: "search",
+    hypothesis:
+      "Reading diet and price words in a typed search as filters gives fewer zero-result searches and more result opens for multi-word queries than sending every word as text.",
+    primaryMetric: "search_result_opened",
+    guardrailMetrics: ["search_zero_results", "search_parse_removed", "search_query"],
+    minSamplePerArm: 1300,
+  },
+  /**
    * Stall page sticky bar: the orange button is Directions and Review becomes an icon.
    * Read in StallInteractionBar only when the bar has both Directions and Review.
    */
@@ -415,6 +433,23 @@ export const EXPERIMENTS = {
       "review_started",
     ],
   },
+  /**
+   * Review editor with Cancel and Publish in the header, a sticky Publish bar and the optional
+   * parts (taste tags, how it tasted, recommend) under one fold (control keeps today's layout).
+   * Draft: no PostHog flag yet, so every user gets control. Exposed in ReviewScreen once a dish
+   * is chosen. Analyse review_submitted per review_started (about 1,100 per arm).
+   */
+  review_editor_compact_v1: {
+    variants: ["control", "compact"],
+    fallback: "control",
+    status: "draft",
+    surface: "reviews",
+    hypothesis:
+      "Keeping dish, photo, stars and text above the fold with Publish always in reach lets more people who start a review finish it.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: ["review_abandoned", "review_started", "review_submit_failed"],
+    minSamplePerArm: 1100,
+  },
   /** "Write your first review" card under the stats on your own profile, when you have none. */
   profile_first_review_nudge_v1: {
     variants: ["control", "test"],
@@ -531,6 +566,110 @@ export const EXPERIMENTS = {
       "merchant_customer_reply_removed",
       "merchant_customer_inbox_viewed",
     ],
+  },
+  /**
+   * "Dishes near you" in the diner's palate order with a reason line (taste), or in photo and
+   * feed order (control). Read in DiscoverHomeScreen only while Home is focused, the rail has
+   * six or more dishes and the diner has a palate, so an empty rail or a diner with nothing to
+   * rank by never dilutes the result. Read it only in areas with menus. Draft until launch:
+   * the fallback is the new taste order.
+   */
+  home_taste_rank_v1: {
+    variants: ["control", "taste"],
+    fallback: "taste",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "A palate-ranked Dishes near you rail with a reason, leading the page, gets more dish opens per Home view than the rail in distance order, below Most reviewed.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["dish_viewed", "decide_for_me_triggered"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Stalls whose menus are not in yet: folded into one "More stalls nearby" row (grouped) or
+   * listed flat with "Menu coming soon" on each (control). Read in DiscoverHomeScreen while
+   * Home is focused and the nearby list holds at least one stall without a menu. Draft until
+   * launch: the fallback is the grouped list.
+   */
+  home_cold_start_v1: {
+    variants: ["control", "grouped"],
+    fallback: "grouped",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Folding menu-less stalls under the stalls that have menus raises the share of stall opens that reach a menu.",
+    primaryMetric: "stall_viewed",
+    guardrailMetrics: ["discover_card_opened", "home_cold_start_group_opened"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Where the Hawker classics tiles sit on Home: below the first dish section ("compact", so a
+   * dish is on the first screen) or above it ("control"). Read in DiscoverHomeScreen only while
+   * Home is focused with content and a dish section to put them under, so a cold-start Home
+   * (no dishes) never counts. Draft until launch: the fallback is the compact layout.
+   */
+  home_above_fold_v1: {
+    variants: ["control", "compact"],
+    fallback: "compact",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Putting dishes above the classics tiles raises the share of Home visits that open a dish or stall within 60 seconds.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["discover_search_opened", "decide_for_me_triggered"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Reply composer: three tone chips (Thank, Apologise, Invite back) that fill an editable
+   * starting reply, against the empty composer. Read in ReplyComposer when it opens on a review
+   * that has no reply yet. Draft until the Merchant Centre ships to production.
+   */
+  merchant_reply_suggestions_v1: {
+    variants: ["control", "chips"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Suggested starting replies raise how many reviews get a reply and shorten the time to reply, as Google Business Profile's suggested replies do.",
+    primaryMetric: "merchant_customer_reply_sent",
+    guardrailMetrics: [
+      "merchant_customer_reply_removed",
+      "merchant_reply_suggestion_used",
+      "merchant_customer_interaction_reported",
+    ],
+    minSamplePerArm: 400,
+  },
+  /**
+   * A "Get your stall ready" checklist on the Verification Centre for an unverified outlet
+   * (verify, five dishes, hours, a photo), against the plain verification landing. Read in
+   * VerificationCentreScreen only while the outlet is not verified. Draft until the Merchant
+   * Centre ships to production.
+   */
+  merchant_setup_checklist_v1: {
+    variants: ["control", "checklist"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "A progress checklist gets more new merchants to submit their licence for verification than the verification landing alone, as Shopify's setup guide does for new sellers.",
+    primaryMetric: "merchant_verification_submitted",
+    guardrailMetrics: ["merchant_dish_created", "merchant_mode_opened"],
+    minSamplePerArm: 400,
+  },
+  /**
+   * The numbers range Home opens on: Today (control) against 7 days, which Performance already
+   * uses. Today is often zero early in the day. Read in MerchantDashboardScreen only until the
+   * merchant picks a range. Draft until the Merchant Centre ships to production.
+   */
+  merchant_home_default_range_v1: {
+    variants: ["control", "seven_days"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Opening Home on the last 7 days instead of Today shows merchants real numbers early in the day, so more of them come back to Home on a later day, as Google Business Profile's 28-day default does.",
+    primaryMetric: "merchant_dashboard_viewed",
+    guardrailMetrics: ["merchant_analytics_range_changed", "merchant_customer_inbox_viewed"],
   },
 } as const satisfies Record<string, ExperimentDefinition>;
 

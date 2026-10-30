@@ -78,15 +78,12 @@ test("stall page: description only, hours on one row, website, filter beside the
   assert.ok(card > 0 && orderOn > card && menu > orderOn);
 });
 
-test("area search: animated placeholder and a map you can tap and zoom", () => {
+test("area search: animated placeholder and a results list with no map", () => {
   const picker = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   assert.match(picker, /placeholder=\{movingPlaceholder\}/);
-  assert.match(picker, /onAreaPress=\{/);
-  assert.match(picker, /onPlacePress=\{/);
-  assert.match(picker, /listPlaces\(\{ coordinate: center, radiusMeters, limit: 20 \}\)/);
-  // The map fills the space between the search bar and the button; the options float above it.
-  assert.match(picker, /width=\{mapBox\.width\}\s+height=\{mapBox\.height\}/);
-  assert.match(picker, /\{optionsOpen \? \(\s+<View[\s\S]*?position: "absolute"/);
+  // The Singapore map is gone: the area follows the phone, the search is for people without it.
+  assert.doesNotMatch(picker, /SingaporeAreaMap|onAreaPress|onPlacePress|mapBox|optionsOpen/);
+  assert.match(picker, /<ScrollView[\s\S]*?title="Use my current location"/);
   assert.match(picker, /<Button label="Set as my location" disabled=\{!selected\}/);
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   assert.match(search, /enableMovingPlaceholder\s+movingPlaceholderPhrases=/);

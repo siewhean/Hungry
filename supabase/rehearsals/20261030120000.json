@@ -1,0 +1,14 @@
+{
+  "version": "20261030120000",
+  "name": "20261030120000_reviews_server_side",
+  "result": "pass",
+  "rehearsed_at": "2026-10-30T12:39:36Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "0185069fae24e779bc9450af3452bb0fb8da71b2",
+  "up_sha256": "923008648065d7ba8e11c17eb12c027ada27b68322fdd8debd06ef0f6e10e5d2",
+  "down_sha256": "cbe1a76ff4ec790f491e6ec70caa83e5751e908bb2f56b171e920fb87c7a2e25",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/reviews_server_side.sql"]
+}

@@ -362,7 +362,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "VerificationCentreScreen",
     file: "src/app/screens/merchant/VerificationCentreScreen.tsx",
     scenario: "merchant",
-    expect: /Verification Centre/,
+    expect: /Verification centre/,
   },
   {
     name: "FoodOpennessScreen",

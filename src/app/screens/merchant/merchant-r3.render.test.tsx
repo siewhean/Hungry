@@ -359,6 +359,7 @@ test("MERCH-11/4: Publish twice in one frame creates one promotion; a past end d
   const view = await renderScreen(PromotionBuilderScreen as never, { name: "PromotionBuilder" });
   await view.type(view.findByLabel("Promotion title *"), "Lunch deal");
   await view.type(view.findByLabel("Description *"), "Free drink with any noodle");
+  await view.press(view.findByText("New item"));
 
   const publish = view.findByText("Publish now")!;
   await act(async () => {
@@ -372,6 +373,7 @@ test("MERCH-11/4: Publish twice in one frame creates one promotion; a past end d
   const again = await renderScreen(PromotionBuilderScreen as never, { name: "PromotionBuilder" });
   await again.type(again.findByLabel("Promotion title *"), "Old deal");
   await again.type(again.findByLabel("Description *"), "Already over");
+  await again.press(again.findByText("New item"));
   await again.type(again.findByLabel("Start date"), "2020-01-01");
   await again.type(again.findByLabel("End date"), "2020-01-02");
   await again.press(again.findByText("Publish now"));
@@ -475,7 +477,7 @@ test("MERCH-V3: switching chips does not count as another inbox view", async () 
   stubInbox([review(1)]);
   const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
   await view.press(view.findByText("Unreplied"));
-  await view.press(view.findByText("Reviews"));
+  await view.press(view.findByText("4–5★"));
   const viewed = getTrackedAnalyticsEvents().filter(
     (e) => e.event === "merchant_customer_inbox_viewed",
   );
@@ -518,17 +520,17 @@ test("MERCH-V6: the reply counter is a live region only near the limit", async (
   assert.equal(counter()?.getAttribute("aria-label"), "50 characters left");
 });
 
-test("MERCH-V4: no reviews this week with older unreplied ones does not say 'No reviews yet'", async () => {
+test("MERCH-V4: Settings no longer carries the weekly numbers (they live on Performance)", async () => {
   const merchant = getHungryService().merchant;
+  let weeklyReads = 0;
   const real = merchant.getWeeklySummaryStats.bind(merchant);
-  stub("getWeeklySummaryStats", async (id) => ({
-    ...(await real(id)),
-    newReviews: 0,
-    unrepliedReviews: 120,
-  }));
+  stub("getWeeklySummaryStats", async (id) => {
+    weeklyReads += 1;
+    return real(id);
+  });
   const view = await renderScreen(MerchantSettingsScreen as never, { name: "MerchantSettings" });
-  assert.match(view.text(), /No reviews in the last 7 days · 120 unreplied/);
-  assert.doesNotMatch(view.text(), /No reviews yet/);
+  assert.equal(weeklyReads, 0);
+  assert.doesNotMatch(view.text(), /views in the last 7 days|Weekly numbers will appear/);
 });
 
 test("MERCH-V5: a failed merchant account sync reaches error reporting", async () => {

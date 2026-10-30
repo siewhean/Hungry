@@ -478,10 +478,15 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     imageUrl: toString(row.venue_image_url) || toString(row.building_image_url) || undefined,
     logoUrl: toString(row.venue_logo_url, toString(row.logo_url)) || undefined,
     buildingName: toString(row.building_name) || undefined,
+    distanceMeters: row.distance_meters == null ? undefined : toNumber(row.distance_meters),
   };
 }
 
-function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undefined {
+function mapDiscoveryFeedDish(
+  row: Row,
+  venue: VenueSummary,
+  taste?: Pick<DishPresentation, "tasteVector" | "tasteConfidence">,
+): DishDetail | undefined {
   const dishId = toString(row.top_dish_id);
   const dishName = toString(row.top_dish_name);
   if (!dishId || !dishName) return undefined;
@@ -514,7 +519,11 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
     },
     venue,
     // Discover's Halal and Dietary Needs chips read these flags on the stall's top dish.
-    { gallery, dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[] },
+    {
+      gallery,
+      dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[],
+      ...taste,
+    },
   );
 }
 
@@ -1061,6 +1070,39 @@ export async function searchDishesViaRpc(
   }));
 }
 
+// Loaded on first use: Sentry is a native module that plain service tests never need.
+function reportDiscoveryTasteError(error: unknown): void {
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action: "discovery_feed_taste_vectors" });
+  } catch {
+    // Reporting must never break the feed.
+  }
+}
+
+/** Taste vectors for these dishes in one read. Empty when the read fails: Home then keeps feed order. */
+async function loadDishTasteByDishId(
+  dishIds: string[],
+): Promise<Map<string, Pick<DishPresentation, "tasteVector" | "tasteConfidence">>> {
+  const client = getSupabaseClient();
+  if (!client || dishIds.length === 0) return new Map();
+  const { data, error } = await client
+    .from("dish_taste_vectors")
+    .select("*")
+    .in("dish_id", dishIds);
+  if (error || !Array.isArray(data)) {
+    console.warn("Supabase discovery taste vectors read failed");
+    reportDiscoveryTasteError(error ?? new Error("dish_taste_vectors returned no rows array"));
+    return new Map();
+  }
+  return new Map(
+    [...buildDishPresentationMap([], data as unknown as Row[], [], [])].map(
+      ([dishId, { tasteVector, tasteConfidence }]) => [dishId, { tasteVector, tasteConfidence }],
+    ),
+  );
+}
+
 /**
  * Dietary flag slugs for a set of dishes in two batched reads (the link rows for these ids, and
  * the small flag list). Undefined when either read fails, so the caller keeps what it had.
@@ -1115,22 +1157,32 @@ export async function listDiscoveryFeedByLocationViaRpc(
   // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
   // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
   // the column is missing, this page's top-dish flags come from one batched read.
-  if (rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row)) {
-    const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
-    const flagsByDishId = await loadDishDietaryFlagsByDishId(dishIds);
-    if (flagsByDishId) {
-      rows = rows.map((row) => ({
-        ...row,
-        top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
-      }));
-    }
+  // The feed has no taste columns either; Home ranks "Dishes near you" by palate, so this
+  // page's vectors come from one batched read, alongside the flags read.
+  const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
+  const needsDietaryFlags = rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row);
+  const [flagsByDishId, tasteByDishId] = await Promise.all([
+    needsDietaryFlags ? loadDishDietaryFlagsByDishId(dishIds) : undefined,
+    loadDishTasteByDishId(dishIds),
+  ]);
+  if (flagsByDishId) {
+    rows = rows.map((row) => ({
+      ...row,
+      top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
+    }));
   }
 
-  const venues = rows.map(mapDiscoveryFeedVenue);
+  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
+  // their stored state.
+  const closures = await getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id)));
+  const venues = rows.map(mapDiscoveryFeedVenue).map((venue) => {
+    const closedUntil = closures?.get(venue.id);
+    return closedUntil ? { ...venue, closedUntil } : venue;
+  });
   const results = rows
     .map((row, index) => {
       const venue = venues[index];
-      const dish = mapDiscoveryFeedDish(row, venue);
+      const dish = mapDiscoveryFeedDish(row, venue, tasteByDishId.get(toString(row.top_dish_id)));
       return dish
         ? {
             dish,
@@ -1192,6 +1244,40 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
   return rows;
 }
 
+/** Forgets the reused get_venue_detail result, so the next read of that stall is fresh. */
+export function invalidateVenueDetail(venueId: string): void {
+  venueDetailRequests.delete(venueId);
+}
+
+/**
+ * The merchant reads get_venue_detail returns with the stall (profile, promotions, own claim
+ * status), when that call is already in flight or fresh for this stall. Undefined means "ask the
+ * separate RPCs": no detail call was made (a dish page asking about its stall), the call failed,
+ * or the database predates the columns. Never starts a get_venue_detail call of its own: it embeds
+ * a 50-dish page.
+ */
+export async function getInlineMerchantReads(venueId: string): Promise<
+  | {
+      profile: Row | null;
+      promotions: Row[];
+      claimStatus: string | null;
+    }
+  | undefined
+> {
+  const cached = venueDetailRequests.get(venueId);
+  if (!cached || Date.now() - cached.at >= VENUE_DETAIL_REUSE_MS) return undefined;
+  const row = (await cached.rows)?.[0];
+  if (!row || !("merchant_profile" in row)) return undefined;
+  const profile = row.merchant_profile;
+  const promotions = row.active_promotions;
+  const claimStatus = row.claim_status;
+  return {
+    profile: profile && typeof profile === "object" ? (profile as Row) : null,
+    promotions: Array.isArray(promotions) ? (promotions as Row[]) : [],
+    claimStatus: typeof claimStatus === "string" ? claimStatus : null,
+  };
+}
+
 /** Throws when the configured get_venue_detail RPC failed (offline, timeout). */
 async function getVenueDetailRowsOrThrow(venueId: string): Promise<Row[] | undefined> {
   const rows = await getVenueDetailRows(venueId);
@@ -1240,6 +1326,36 @@ export async function getVenuesByIdsViaRpc(
     return undefined;
   }
   return results.flatMap((rows) => (rows ?? []).map(mapRpcVenue));
+}
+
+/**
+ * Stalls a merchant has paused ("Closed today", "Reopens 3 Nov"), as venue id -> reopen instant.
+ * Up to 50 ids per get_venue_closures call. Undefined when the read fails or Supabase is not
+ * configured: callers keep the stalls as they were instead of failing the page.
+ */
+export async function getVenueClosuresViaRpc(
+  venueIds: string[],
+): Promise<Map<string, string> | undefined> {
+  const unique = [...new Set(venueIds)];
+  if (unique.length === 0) return new Map();
+  const chunks: string[][] = [];
+  for (let start = 0; start < unique.length; start += VENUE_SUMMARIES_BATCH) {
+    chunks.push(unique.slice(start, start + VENUE_SUMMARIES_BATCH));
+  }
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
+      rpcRows("get_venue_closures", { p_venue_ids: ids }),
+    ),
+  );
+  if (results.some((rows) => !rows)) return undefined;
+  const closures = new Map<string, string>();
+  for (const row of results.flatMap((rows) => rows ?? [])) {
+    const venueId = toString(row.venue_id);
+    const closedUntil = toString(row.closed_until);
+    if (venueId && closedUntil) closures.set(venueId, closedUntil);
+  }
+  return closures;
 }
 
 /** Name, photo, stall and price for many dishes and stalls in one get_item_details call. */

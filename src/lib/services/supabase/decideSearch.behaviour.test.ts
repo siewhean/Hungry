@@ -116,6 +116,34 @@ test("getVenuesByIds reads 120 uncached stalls in three batches of 50 and return
   );
 });
 
+test("MERCH-R4 getVenuesByIds marks a paused stall in one batched closure read", async () => {
+  fake.rpc.get_venue_summaries = (args) => ({
+    data: (args.p_venue_ids as string[]).map((id) => ({ venue_id: id, name: id })),
+  });
+  fake.rpc.get_venue_closures = () => ({
+    data: [{ venue_id: "v-paused", closed_until: "2026-11-03T16:00:00+00:00" }],
+  });
+  const venues = await service.discovery.getVenuesByIds(["v-paused", "v-open"]);
+  assert.equal(
+    venues.find((venue) => venue.id === "v-paused")?.closedUntil,
+    "2026-11-03T16:00:00+00:00",
+  );
+  assert.equal(venues.find((venue) => venue.id === "v-open")?.closedUntil, undefined);
+  assert.equal(fake.callsTo("get_venue_closures").length, 1, "one call for the whole set");
+});
+
+test("MERCH-R4 getVenuesByIds still returns the stalls when the closure read fails", async () => {
+  fake.rpc.get_venue_summaries = (args) => ({
+    data: (args.p_venue_ids as string[]).map((id) => ({ venue_id: id, name: id })),
+  });
+  fake.rpc.get_venue_closures = () => ({ error: { message: "network down" } });
+  const venues = await service.discovery.getVenuesByIds(["v-keep-1", "v-keep-2"]);
+  assert.deepEqual(
+    venues.map((venue) => venue.id),
+    ["v-keep-1", "v-keep-2"],
+  );
+});
+
 test("getVenuesByIds rejects when any one of the batches fails (MD-B9)", async () => {
   let call = 0;
   fake.rpc.get_venue_summaries = (args) => {
