@@ -547,6 +547,23 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["discover_card_opened", "home_cold_start_group_opened"],
     minSamplePerArm: 1600,
   },
+  /**
+   * Where the Hawker classics tiles sit on Home: below the first dish section ("compact", so a
+   * dish is on the first screen) or above it ("control"). Read in DiscoverHomeScreen only while
+   * Home is focused with content and a dish section to put them under, so a cold-start Home
+   * (no dishes) never counts. Draft until launch: the fallback is the compact layout.
+   */
+  home_above_fold_v1: {
+    variants: ["control", "compact"],
+    fallback: "compact",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Putting dishes above the classics tiles raises the share of Home visits that open a dish or stall within 60 seconds.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["discover_search_opened", "decide_for_me_triggered"],
+    minSamplePerArm: 1600,
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;

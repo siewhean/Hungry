@@ -3,6 +3,7 @@ import { Pressable, View } from "react-native";
 import { ChevronRight, Star, Utensils } from "lucide-react-native";
 
 import { AccessibleImage, AppText } from "@/components/ui";
+import { buildBiteLabel, formatBiteDistance } from "@/features/discover/biteLabel";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
@@ -15,11 +16,6 @@ interface TrendingListProps {
 }
 
 const MAX_ROWS = 5;
-
-function distanceLabel(meters: number | undefined): string | undefined {
-  if (meters === undefined || !Number.isFinite(meters) || meters <= 0) return undefined;
-  return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
-}
 
 /** The row photo; a missing or broken photo shows the same dish icon as the card rails. */
 function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: string }) {
@@ -78,12 +74,12 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
         <AppText variant="h2">{title}</AppText>
       )}
       {bites.slice(0, MAX_ROWS).map((bite) => {
-        const distance = distanceLabel(bite.distanceMeters);
+        const distance = formatBiteDistance(bite.distanceMeters);
         return (
           <Pressable
             key={bite.id}
             accessibilityRole="button"
-            accessibilityLabel={`${bite.dishName} at ${bite.venueName}`}
+            accessibilityLabel={buildBiteLabel(bite)}
             onPress={() => onOpen(bite)}
             onPressIn={() => onPrefetch?.(bite)}
             style={{
@@ -119,7 +115,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
                   </AppText>
                 ) : null}
                 {bite.price > 0 ? (
-                  <AppText variant="bodySmallBold" style={{ color: palette.text }}>
+                  <AppText variant="price" style={{ color: palette.text }}>
                     S${bite.price.toFixed(2)}
                   </AppText>
                 ) : null}

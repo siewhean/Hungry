@@ -230,7 +230,12 @@ test("dish cards open the redesigned dish page and stall rows the stall page, wi
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  await view.press(view.findByLabel("Dish near you: Chicken Rice at Tian Tian"));
+  // The small feed shows this dish in Most reviewed and again in Dishes near you: press the rail card.
+  const dishCards = view.container.querySelectorAll<HTMLElement>(
+    '[aria-label^="Chicken Rice, Tian Tian, S$7.00"]',
+  );
+  assert.equal(dishCards.length, 2);
+  await view.press(dishCards[1]);
   assert.deepEqual(view.navigation.calls.at(-1)?.args, [
     "DishDetail",
     { dishId: "dish-2", source: "home" },
@@ -950,4 +955,96 @@ test("H4-2: ranking never hides dishes; with the Dietary chip off a halal diner 
   assert.match(rail, /Dish 7/);
   assert.match(rail, /Dish 2/, "turning the chip off brings every dish back, in palate order");
   assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"));
+});
+
+// ---- Round four, phase 3 (home-plan.md): food above the fold, one label, one footer.
+
+test("H4-14: with dishes to show, the classics sit below the first dish section", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Most reviewed") > 0);
+  assert.ok(text.indexOf("Most reviewed") < text.indexOf("Hawker classics"), "dishes come first");
+  assert.ok(text.indexOf("Decide for me") < text.indexOf("Most reviewed"), "Decide stays on top");
+});
+
+test("H4-14: the control arm keeps the classics above the dishes", async () => {
+  m.experiments.setExperimentOverride("home_above_fold_v1", "control");
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Hawker classics") < text.indexOf("Most reviewed"));
+});
+
+test("H4-14: with no dishes at all the classics stay where they are", async () => {
+  serveLiveFeed(Array.from({ length: 6 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Popular dishes in Singapore") < text.indexOf("Decide for me"));
+});
+
+test("H4-14: with reviews missing, the classics move under Dishes near you", async () => {
+  serveLiveFeed(Array.from({ length: 8 }, (_, i) => feedRow(i + 1, { top_dish_review_count: 0 })));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.doesNotMatch(text, /Most reviewed/);
+  assert.ok(text.indexOf("Dishes near you") < text.indexOf("Hawker classics"));
+});
+
+test("H4-18: All stalls and All dishes close the page instead of splitting it", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Stalls ") < text.indexOf("All stalls"), "after the stall list");
+  assert.ok(text.lastIndexOf("Zhen Zhen") < text.indexOf("All dishes"));
+  await view.press(view.findByLabel("Browse stalls and restaurants"));
+  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["BrowseStalls"]);
+  await view.press(view.findByLabel("Browse dishes"));
+  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["BrowseDishes"]);
+});
+
+test("H4-27: a dish card and a Most reviewed row read the same", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const labels = [
+    ...view.container.querySelectorAll<HTMLElement>('[aria-label^="Chicken Rice, Tian Tian"]'),
+  ].map((element) => element.getAttribute("aria-label"));
+  assert.equal(labels.length, 2);
+  assert.equal(labels[0], labels[1]);
+  assert.match(labels[0] ?? "", /^Chicken Rice, Tian Tian, S\$7\.00, rated 4\.5 from 12 reviews/);
+});
+
+test("home_viewed: one event per visit, once there is content", async () => {
+  serveLiveFeed();
+  const events = eventfulNavigation();
+  await m.renderKit.render(createElement(m.DiscoverEntryScreen), { navigation: events.navigation });
+  const viewed = () =>
+    m.analytics.getTrackedAnalyticsEvents().filter((event) => event.event === "home_viewed");
+  assert.equal(viewed().length, 1);
+  assert.equal(viewed()[0]?.properties?.has_dishes, true);
+  await events.setFocused(false);
+  await events.setFocused(true);
+  assert.equal(viewed().length, 2);
+});
+
+test("home_viewed: a cold start says it had no dishes", async () => {
+  serveLiveFeed(Array.from({ length: 4 }, (_, i) => coldRow(i + 1)));
+  await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const viewed = m.analytics
+    .getTrackedAnalyticsEvents()
+    .filter((event) => event.event === "home_viewed");
+  assert.equal(viewed.length, 1);
+  assert.equal(viewed[0]?.properties?.has_dishes, false);
+});
+
+test("H4-14: a diner with a saved dietary need still gets dishes above the classics", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: ["halal"] },
+  }));
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.match(text, /Nasi Padang/, "the halal dish is on the page");
+  assert.ok(text.indexOf("Most reviewed") > 0);
+  assert.ok(text.indexOf("Most reviewed") < text.indexOf("Hawker classics"));
 });
