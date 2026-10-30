@@ -103,19 +103,25 @@ export function MerchantProfileScreen() {
     .filter(Boolean)
     .join(" ");
   // `||` after trimming: an empty phone must fall through to the email, then to the fallback.
+  // Contact details are never cached, so before the account sync lands they are unknown, not empty.
+  const contactKnown = useMerchantStore((state) => state.accountSyncedAt !== null);
   const outletContact =
-    activeOutlet?.contactPhone?.trim() || activeOutlet?.contactEmail?.trim() || "No contact added";
+    activeOutlet?.contactPhone?.trim() ||
+    activeOutlet?.contactEmail?.trim() ||
+    (contactKnown ? "No contact added" : "Loading…");
   const isVerified = isVerificationCurrent(activeOutlet?.verification);
   const verificationInfo = getVerificationStatusInfo(activeOutlet?.verification);
   const verificationLabel = verificationInfo.profileLabel;
   const verificationColor = isVerified ? palette.success : palette.warningText;
   const openMerchantRoute = (route: string) => navigation.navigate(route as any);
+  const openEditorSection = (section: "location" | "hours" | "contact") =>
+    navigation.navigate("BusinessProfileEditor" as any, { section } as any);
   const prefetchRoute = (route: string) =>
     prefetchMerchantTab(route, activeOutlet?.id, account?.id);
 
   if (!activeOutlet) {
     return (
-      <Screen title="Stall profile" subtitle="Manage your stall information">
+      <Screen title="Stall profile" subtitle="Manage your stall information" showBack={false}>
         <EmptyState
           title="No merchant outlet yet"
           body="No merchant outlet is linked to this account yet."
@@ -129,7 +135,7 @@ export function MerchantProfileScreen() {
   }
 
   return (
-    <Screen title="Stall profile" subtitle="Manage your stall information">
+    <Screen title="Stall profile" subtitle="Manage your stall information" showBack={false}>
       <View style={{ paddingBottom: spacing[12], width: "100%" }}>
         {/* Stall Identity */}
         <View style={{ alignItems: "center", marginVertical: spacing[6] }}>
@@ -150,19 +156,19 @@ export function MerchantProfileScreen() {
             icon={MapPin}
             label="Location"
             value={outletLocation || "Location not set"}
-            onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
+            onPress={() => openEditorSection("location")}
           />
           <ProfileItem
             icon={Clock}
             label="Operating hours"
             value={activeOutlet.operatingHours || "Hours not set"}
-            onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
+            onPress={() => openEditorSection("hours")}
           />
           <ProfileItem
             icon={Phone}
             label="Contact"
             value={outletContact}
-            onPress={() => navigation.navigate("BusinessProfileEditor" as any)}
+            onPress={() => openEditorSection("contact")}
           />
         </Section>
 
@@ -180,27 +186,6 @@ export function MerchantProfileScreen() {
             value={verificationInfo.nextStep || verificationInfo.label}
             onPressIn={() => prefetchRoute("VerificationCentre")}
             onPress={() => openMerchantRoute("VerificationCentre")}
-          />
-          <ProfileItem
-            icon={Megaphone}
-            label="Promotions"
-            value="Create and manage offers"
-            onPressIn={() => prefetchRoute("PromotionList")}
-            onPress={() => openMerchantRoute("PromotionList")}
-          />
-          <ProfileItem
-            icon={Users}
-            label="Featured visitors"
-            value="Pin diners on your stall page"
-            onPressIn={() => prefetchRoute("FeaturedVisitors")}
-            onPress={() => openMerchantRoute("FeaturedVisitors")}
-          />
-          <ProfileItem
-            icon={Settings}
-            label="Settings"
-            value="Alerts and support"
-            onPressIn={() => prefetchRoute("MerchantSettings")}
-            onPress={() => openMerchantRoute("MerchantSettings")}
           />
         </Section>
 

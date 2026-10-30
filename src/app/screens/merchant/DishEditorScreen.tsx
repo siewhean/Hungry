@@ -30,6 +30,7 @@ import { ALLERGEN_CHECK_DISCLAIMER } from "@/features/merchant/allergenKeywords"
 import { createMerchantDishId, trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { isLockedLiveDish, isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
+import { isBlockedTextError } from "@/features/merchant/featuredDishes";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
@@ -259,7 +260,8 @@ export function DishEditorScreen() {
         );
       }
     } catch (e) {
-      reportError(e, { screen: "DishEditor", action: "save_dish" });
+      // A refused blocked word is the merchant's text, shown back to them, not a failure to report.
+      if (!isBlockedTextError(e)) reportError(e, { screen: "DishEditor", action: "save_dish" });
       showAlert("Could not save dish", errorMessage(e, "Please try again."));
     } finally {
       setIsSaving(false);
@@ -304,6 +306,7 @@ export function DishEditorScreen() {
     try {
       allergens = await getHungryService().merchant.suggestAllergens(ingredientList);
     } catch (e) {
+      reportError(e, { screen: "DishEditor", action: "suggest_allergens" });
       showAlert("Check unavailable", errorMessage(e, "Please try again."));
       return;
     }
@@ -349,7 +352,7 @@ export function DishEditorScreen() {
 
   if (error) {
     return (
-      <Screen title="Error">
+      <Screen title="Dish">
         <EmptyState
           title="Failed to load dish"
           body="Your dish details could not be loaded."

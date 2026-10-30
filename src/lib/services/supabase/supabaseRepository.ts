@@ -1172,7 +1172,13 @@ export async function listDiscoveryFeedByLocationViaRpc(
     }));
   }
 
-  const venues = rows.map(mapDiscoveryFeedVenue);
+  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
+  // their stored state.
+  const closures = await getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id)));
+  const venues = rows.map(mapDiscoveryFeedVenue).map((venue) => {
+    const closedUntil = closures?.get(venue.id);
+    return closedUntil ? { ...venue, closedUntil } : venue;
+  });
   const results = rows
     .map((row, index) => {
       const venue = venues[index];

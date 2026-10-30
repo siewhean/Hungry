@@ -283,3 +283,40 @@ test("R4-17: if the saved dish cannot be read back, the edit reports it", async 
     /row not visible/,
   );
 });
+
+// ─── Home feed: a paused stall carries its closure ──────────────────────────
+
+test("R4-4: the Home feed marks a paused stall with its closure in one batched read", async () => {
+  const closedUntil = new Date(Date.now() + 2 * 86_400_000).toISOString();
+  fake.rpc.get_discovery_feed_by_location = () => ({
+    data: [
+      { venue_id: "venue-open", building_id: "b1", venue_name: "Open Stall", is_open: true },
+      { venue_id: "venue-paused", building_id: "b1", venue_name: "Paused Stall", is_open: true },
+    ],
+    error: null,
+  });
+  fake.rpc.get_venue_closures = () => ({
+    data: [{ venue_id: "venue-paused", closed_until: closedUntil }],
+    error: null,
+  });
+  const feed = await service.discovery.listDiscoveryFeedByLocation({ areaName: "Tampines" });
+  const byId = new Map((feed?.venues ?? []).map((venue) => [venue.id, venue]));
+  assert.equal(byId.get("venue-paused")?.closedUntil, closedUntil);
+  assert.equal(byId.get("venue-open")?.closedUntil, undefined);
+  assert.equal(
+    fake.callsTo("get_venue_closures").length,
+    1,
+    "one call for the whole page, never one per stall",
+  );
+});
+
+test("R4-4: a failed closure read leaves the Home feed as it was", async () => {
+  fake.rpc.get_discovery_feed_by_location = () => ({
+    data: [{ venue_id: "venue-1", building_id: "b1", venue_name: "Stall", is_open: true }],
+    error: null,
+  });
+  fake.rpc.get_venue_closures = () => ({ data: null, error: { message: "rate limited" } });
+  const feed = await service.discovery.listDiscoveryFeedByLocation({ areaName: "Tampines" });
+  assert.equal(feed?.venues.length, 1);
+  assert.equal(feed?.venues[0].closedUntil, undefined);
+});

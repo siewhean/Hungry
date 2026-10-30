@@ -90,7 +90,8 @@ export function MerchantAnalyticsScreen() {
   const [analytics, setAnalytics] = useState<MerchantAnalytics | null>(null);
   const [dailySeries, setDailySeries] = useState<MerchantDailyPoint[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [range, setRange] = useState<AnalyticsRange>("7d");
+  const range: AnalyticsRange = useMerchantStore((state) => state.analyticsRange) ?? "7d";
+  const setRange = useMerchantStore((state) => state.setAnalyticsRange);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<DetailKey | null>(null);
   // Only the newest request may write state: a slow earlier range must not overwrite this one.
@@ -160,7 +161,7 @@ export function MerchantAnalyticsScreen() {
 
   if (error) {
     return (
-      <Screen title={SCREEN_TITLE}>
+      <Screen title={SCREEN_TITLE} showBack={false}>
         <EmptyState
           title="Failed to load analytics"
           body="Your analytics data is unavailable at the moment."
@@ -177,7 +178,7 @@ export function MerchantAnalyticsScreen() {
   // Skeleton only on the first load; a range change keeps the last numbers on screen.
   if (!analytics) {
     return (
-      <Screen title={SCREEN_TITLE}>
+      <Screen title={SCREEN_TITLE} showBack={false}>
         <View style={{ padding: spacing[4], gap: spacing[4] }}>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             <Skeleton height={32} width={80} borderRadius={radii.pill} />
@@ -219,7 +220,7 @@ export function MerchantAnalyticsScreen() {
   );
 
   return (
-    <Screen title={SCREEN_TITLE} scroll={false}>
+    <Screen title={SCREEN_TITLE} showBack={false} scroll={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: spacing[4], gap: spacing[6] }}

@@ -22,6 +22,11 @@ interface MerchantState {
   activeOutletId: string | null;
   /** Cached analytics for the active outlet */
   analyticsCache: MerchantAnalytics | null;
+  /**
+   * The numbers range the merchant picked on Home or Performance, so both show the same one.
+   * Null until they pick; each screen then uses its own default. Not persisted.
+   */
+  analyticsRange: MerchantAnalyticsRange | null;
   /** Notification preferences */
   notificationPreferences: MerchantNotificationPreferences;
   /** Dev-only bypass used by the launcher to open merchant tools without the sign-in gate */
@@ -42,6 +47,7 @@ interface MerchantState {
 }
 
 export type MerchantModeRestore = "checking" | "restore" | "none";
+export type MerchantAnalyticsRange = "today" | "7d" | "30d";
 
 interface MerchantActions {
   setAccount: (account: MerchantAccount | null) => void;
@@ -49,6 +55,7 @@ interface MerchantActions {
   setVerificationStatus: (outletId: string, status: VerificationStatus) => void;
   updateOutletProfile: (outletId: string, updates: Partial<MerchantOutlet>) => void;
   setAnalyticsCache: (analytics: MerchantAnalytics | null) => void;
+  setAnalyticsRange: (range: MerchantAnalyticsRange) => void;
   setNotificationPreferences: (prefs: Partial<MerchantNotificationPreferences>) => void;
   setDeveloperMerchantMode: (enabled: boolean) => void;
   setMerchantModeActive: (active: boolean) => void;
@@ -75,6 +82,7 @@ const INITIAL_STATE: MerchantState = {
   accountSyncedAt: null,
   activeOutletId: null,
   analyticsCache: null,
+  analyticsRange: null,
   notificationPreferences: DEFAULT_NOTIFICATION_PREFS,
   developerMerchantMode: false,
   dismissedApprovalClaimIds: [],
@@ -151,6 +159,7 @@ export const useMerchantStore = create<MerchantState & MerchantActions>()(
         }),
 
       setAnalyticsCache: (analytics) => set({ analyticsCache: analytics }),
+      setAnalyticsRange: (range) => set({ analyticsRange: range }),
 
       setNotificationPreferences: (prefs) =>
         set((state) => ({

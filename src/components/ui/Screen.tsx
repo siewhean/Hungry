@@ -27,11 +27,13 @@ interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   fullWidth?: boolean;
-  scrollRef?: RefObject<ScrollView>;
+  scrollRef?: RefObject<ScrollView | null>;
   /** Lifts the content above the iOS keyboard (forms). Android resizes the window itself. */
   keyboardAvoiding?: boolean;
   /** Pull-to-refresh for a scrolling screen. */
   refreshControl?: ReactElement<RefreshControlProps>;
+  /** Pinned below the scrolling content (e.g. a form's Save button). */
+  footer?: ReactNode;
 }
 
 export function Screen({
@@ -49,6 +51,7 @@ export function Screen({
   scrollRef,
   keyboardAvoiding = false,
   refreshControl,
+  footer,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
@@ -123,6 +126,22 @@ export function Screen({
     </View>
   );
 
+  const pinnedFooter = footer ? (
+    <View
+      style={{
+        borderTopWidth: 1,
+        borderTopColor: palette.border,
+        backgroundColor: palette.bg,
+        paddingTop: spacing[3],
+        paddingBottom: Math.max(insets.bottom, spacing[3]),
+        paddingHorizontal: semanticSpacing.screenEdge,
+        alignItems: "center",
+      }}
+    >
+      <View style={styles.inner}>{footer}</View>
+    </View>
+  ) : null;
+
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: palette.bg }, style]}
@@ -134,9 +153,13 @@ export function Screen({
           style={styles.flex}
         >
           {body}
+          {pinnedFooter}
         </KeyboardAvoidingView>
       ) : (
-        body
+        <>
+          {body}
+          {pinnedFooter}
+        </>
       )}
     </SafeAreaView>
   );
