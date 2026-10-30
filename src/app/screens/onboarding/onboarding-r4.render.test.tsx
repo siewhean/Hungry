@@ -286,7 +286,7 @@ test("R4-ONB-1: the preview sheet shows nothing without a dish and states the pr
 test("R4-ONB-1: a photo that fails to load shows the shared no-photo tile", async () => {
   const dish = {
     id: "dish-x",
-    name: "Laksa",
+    name: "Hokkien Mee",
     imageUrl: "https://example.sg/laksa.jpg",
     tasteTags: [],
   } as unknown as DishDetail;
@@ -300,7 +300,7 @@ test("R4-ONB-1: a photo that fails to load shows the shared no-photo tile", asyn
   await act(async () => {
     image!.__triggerError!();
   });
-  assert.ok(view.findByLabel("Laksa, no photo yet"));
+  assert.ok(view.findByLabel("Hokkien Mee, no photo yet"));
 });
 
 test("R4-ONB-1: a dish with no photo at all shows the no-photo tile at once", async () => {
@@ -387,7 +387,7 @@ test("R4-ONB-2: the account step reports onboarding_step_viewed as step 5", asyn
 
 test("R4-ONB-8: the quiz fills the Taste segment of the shared bar, one question at a time", async () => {
   const { view } = await renderQuiz();
-  assert.equal(progressLabel(), "Step 2 of 5 · Question 1 of 7");
+  assert.equal(progressLabel(), "Step 2 of 5 · Question 1 of 6");
   const fill = () =>
     (view.findByTestId("onboarding-progress-segment-2")!.firstElementChild as HTMLElement).style
       .width;
@@ -402,7 +402,7 @@ test("R4-ONB-8: the quiz fills the Taste segment of the shared bar, one question
   await view.press(view.findByText("Next"));
   await wait(60);
   await view.settle();
-  assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 7");
+  assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 6");
   assert.equal(fill(), "29%");
 });
 
@@ -425,7 +425,7 @@ test("R4-ONB-8: a retake from Profile has no onboarding bar", async () => {
   await enterScenario("user");
   const { view } = await renderQuiz({ mode: "profile" });
   assert.equal(document.querySelector('[role="progressbar"]'), null);
-  assert.ok(view.findByText("Question 1 of 7"));
+  assert.ok(view.findByText("Question 1 of 6"));
 });
 
 // ─── The quiz (R4-ONB-5, 6, 7) ─────────────────────────────────────────────────────────────────
@@ -467,7 +467,8 @@ test("R4-ONB-7: the helper line keeps its place before and after the first answe
   const after = view.findByText(/^Picked: /);
   assert.ok(after, "and still there after");
   assert.equal(before!.parentElement, after!.parentElement, "in the same place in the layout");
-  assert.equal(before!.style.minHeight, "18px");
+  // Two lines are reserved, so the tiles sit at the same height on every question.
+  assert.equal(before!.style.minHeight, "36px");
 });
 
 test("R4-ONB-5: the next question slides in by itself after an answer", async () => {
@@ -478,7 +479,7 @@ test("R4-ONB-5: the next question slides in by itself after an answer", async ()
   await wait(1400);
   await view.settle();
   assert.ok(view.findByText("How spicy do you usually go?"));
-  assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 7");
+  assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 6");
 });
 
 test("N1: each answer is a full-width row whose label is never cut short", async () => {
@@ -573,18 +574,18 @@ test("N4: the diet step saves the drafted taste answers and leaves the vector al
 test("R4-ONB-5: every taste question but the last moves on by itself after an answer", async () => {
   useUIStore.setState({ reducedMotionEnabled: false });
   const { view } = await renderQuiz();
-  // Six taste questions, then the diet step is the seventh of the counter's seven.
+  // Six taste questions; the diet step is not counted as a question.
   for (let question = 1; question <= 5; question += 1) {
-    assert.match(progressLabel() ?? "", new RegExp(`Question ${question} of 7`));
+    assert.match(progressLabel() ?? "", new RegExp(`Question ${question} of 6`));
     await view.press(view.findByTestId("taste-tile-1"));
     await wait(1400);
     await view.settle();
   }
-  assert.match(progressLabel() ?? "", /Question 6 of 7/);
+  assert.match(progressLabel() ?? "", /Question 6 of 6/);
   await view.press(view.findByTestId("taste-tile-1"));
   await wait(1400);
   await view.settle();
-  assert.match(progressLabel() ?? "", /Question 6 of 7/, "the last taste question waits for Next");
+  assert.match(progressLabel() ?? "", /Question 6 of 6/, "the last taste question waits for Next");
 });
 
 test("R4-ONB-5: with a screen reader on the quiz waits for Next instead of moving on by itself", async () => {
@@ -653,7 +654,7 @@ test("experiment onboarding_quiz_layout_v1 and _length_v1: exposed in onboarding
 test("experiment onboarding_quiz_length_v1: the test arm asks the three questions that matter most", async () => {
   setExperimentOverride("onboarding_quiz_length_v1", "test");
   const { view, navigation } = await renderQuiz();
-  assert.equal(progressLabel(), "Step 2 of 5 · Question 1 of 4");
+  assert.equal(progressLabel(), "Step 2 of 5 · Question 1 of 3");
   assert.ok(view.findByText("How spicy do you usually go?"));
   await view.press(view.findByText("Next"));
   await wait(60);
@@ -669,7 +670,7 @@ test("experiment onboarding_quiz_length_v1: the test arm asks the three question
 test("experiment onboarding_quiz_length_v1: the control arm asks all six", async () => {
   setExperimentOverride("onboarding_quiz_length_v1", "control");
   await renderQuiz();
-  assert.equal(progressLabel(), "Step 2 of 5 · Question 1 of 7");
+  assert.equal(progressLabel(), "Step 2 of 5 · Question 1 of 6");
 });
 
 test("R4-ONB-17: the quiz has one Back (the header arrow), not an arrow and a button", async () => {
@@ -689,7 +690,7 @@ test("R4-ONB-3: the quiz reopens on the question the user was on, with the answe
   });
   const { view } = await renderQuiz();
   assert.ok(view.findByText("How spicy do you usually go?"));
-  assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 7");
+  assert.equal(progressLabel(), "Step 2 of 5 · Question 2 of 6");
   await view.press(view.findByLabel("Back"));
   await wait(60);
   await view.settle();

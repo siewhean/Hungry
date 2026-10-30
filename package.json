@@ -151,6 +151,7 @@
     "expo-notifications": "~57.0.24",
     "expo-secure-store": "~57.0.4",
     "expo-status-bar": "~57.0.1",
+    "expo-symbols": "~57.0.3",
     "expo-updates": "~57.0.26",
     "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",

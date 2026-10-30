@@ -7,9 +7,9 @@ import { expect, test } from "./fixtures";
 // an SVG (R4-ONB-12) or a React warning on these screens would surface.
 
 const SINGAPORE = { latitude: 1.2806, longitude: 103.8505 };
-// Six taste questions; the diet step is the seventh of the counter's seven.
+// Six taste questions; the diet step is not counted as a question.
 const TASTE_QUESTIONS = 6;
-const COUNTED_QUESTIONS = 7;
+const COUNTED_QUESTIONS = 6;
 
 test.use({ geolocation: SINGAPORE, permissions: ["geolocation"] });
 
@@ -63,7 +63,7 @@ test("the quiz, the diet step and the result run in one bar, with the picked til
   await expect(page.getByTestId("taste-tile-2")).toBeVisible();
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
   await page.getByTestId("taste-tile-1").click();
-  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 6/);
 
   // The rest of the questions: one h2 each, and the progress label never changes shape.
   for (let question = 2; question <= TASTE_QUESTIONS; question += 1) {
@@ -106,7 +106,7 @@ test("closing the app mid-quiz reopens the same question with the answers kept",
 }) => {
   await startOnboarding(page);
   await page.getByTestId("taste-tile-2").click();
-  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 6/);
 
   await page.reload();
   await expect(progressLabel(page)).toHaveAttribute("aria-label", /Step 2 of 5/, {
@@ -245,7 +245,7 @@ test("a tap moves to the next question with a short crossfade, never a blank scr
   });
   const startedAt = Date.now();
   await page.getByTestId("taste-tile-1").click();
-  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 6/);
   expect(Date.now() - startedAt).toBeLessThan(1500);
   const fade = await page.evaluate(
     () => (window as unknown as { __fade: { dimMs: number } }).__fade,

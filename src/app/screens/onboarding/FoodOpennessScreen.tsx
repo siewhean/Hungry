@@ -11,6 +11,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { FoodOpenness } from "@/types/domain";
+import { OnboardingHeader } from "./OnboardingHeader";
 import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
@@ -88,14 +89,10 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
 
       <ScrollView contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[3] }}>
         {isSettings ? null : <OnboardingProgress step="openness" />}
-        <View style={{ gap: spacing[2] }}>
-          <AppText variant="h2" accessibilityRole="header">
-            How open are you to trying new food?
-          </AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            We use this to balance dishes you know with new ones. You can change it in Settings.
-          </AppText>
-        </View>
+        <OnboardingHeader
+          title="How open are you to trying new food?"
+          subtitle="We use this to balance dishes you know with new ones. You can change it in Settings."
+        />
 
         <View accessibilityRole="radiogroup" style={{ gap: spacing[2] }}>
           {FOOD_OPENNESS_OPTIONS.map((option) => {

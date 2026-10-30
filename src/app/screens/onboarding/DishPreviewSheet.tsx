@@ -77,7 +77,9 @@ export function DishPreviewSheet({
                   gap: spacing[2],
                 }}
               >
-                <AppText variant="price">{formatDishPrice(dish)}</AppText>
+                <AppText variant="bodyBold" style={{ fontVariant: ["tabular-nums"] }}>
+                  {formatDishPrice(dish)}
+                </AppText>
                 {distanceLabel ? (
                   <AppText variant="bodySmall" tone="secondary">
                     {distanceLabel}
