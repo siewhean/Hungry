@@ -1,11 +1,11 @@
--- Down for 20261030110000_reviews_server_side.
+-- Down for 20261030120000_reviews_server_side.
 -- The thumbnail paths are copied to rollback_archive before the column is dropped. Reviews and
 -- photos themselves are untouched. Taste ratings go back to "keep the rating when its review is
 -- deleted" (the review link is set to null).
 -- expect-row-loss: app_private.request_rate_rules
 create schema if not exists rollback_archive;
-drop table if exists rollback_archive.review_photos_thumb_20261030110000;
-create table rollback_archive.review_photos_thumb_20261030110000 as
+drop table if exists rollback_archive.review_photos_thumb_20261030120000;
+create table rollback_archive.review_photos_thumb_20261030120000 as
   select id, review_id, thumb_path from public.review_photos where thumb_path is not null;
 
 delete from app_private.request_rate_rules

@@ -1,4 +1,4 @@
--- Smoke checks for 20261030110000_reviews_server_side.sql.
+-- Smoke checks for 20261030120000_reviews_server_side.sql.
 -- submit_review refuses a review with no photo and rolls the review back with it, keeps the photo
 -- thumbnail path, resumes the same review on a retry (one review, one set of photos), and refuses a
 -- photo path under another user. get_review_feed_page and search_reviews return the dish, stall,

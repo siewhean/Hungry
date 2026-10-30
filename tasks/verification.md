@@ -1613,5 +1613,5 @@ Use the smallest check that matches the change risk.
 
 - Local Postgres 16: migration, down file and smoke (`supabase/smoke/reviews_server_side.sql`) pass; race harness T13 passes and fails without the advisory lock.
 - New tests: reviewsServerSide.behaviour (12), dishPicker/dishPickerSearch/reviewSearch unit tests, 8 render tests in reviews.render.test.tsx (REV-5, 10, 11, 13, 21), tests/e2e/reviews.spec.ts (editor picker and publish-with-photo pass in Chromium; the only failures here were the sandbox blocking remote dish images).
-- check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file `supabase/rehearsals/20261030110000.json` (sh runs `bash scripts/db/rehearse-pr.sh claude/project-thread-ojl079 20261030110000`).
+- check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file `supabase/rehearsals/20261030120000.json` (sh runs `bash scripts/db/rehearse-pr.sh claude/project-thread-ojl079 20261030120000`).
 - Not changed: photo stays required, taste ratings still collected; no PostHog flag created.

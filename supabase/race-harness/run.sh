@@ -82,9 +82,9 @@ awk '/^create or replace function app_private.set_profile_favourite_dishes/{p=1}
   | PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -v ON_ERROR_STOP=1 -d after >/dev/null \
   || { echo "could not load set_profile_favourite_dishes" >&2; exit 2; }
 
-# Review publishing (20261030110000): only submit_review is loaded, against stand-in tables.
+# Review publishing (20261030120000): only submit_review is loaded, against stand-in tables.
 awk '/^create or replace function public.submit_review/{p=1} p{print} p&&/^\$\$;/{exit}' \
-  "$HERE/../migrations/20261030110000_reviews_server_side.sql" \
+  "$HERE/../migrations/20261030120000_reviews_server_side.sql" \
   | PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -v ON_ERROR_STOP=1 -d after >/dev/null \
   || { echo "could not load submit_review" >&2; exit 2; }
 

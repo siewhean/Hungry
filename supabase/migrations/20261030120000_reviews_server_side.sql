@@ -22,7 +22,7 @@
 -- 6. Rate rules for the three new endpoints.
 -- The old table-insert publish path is left in place so older app builds keep working; closing it
 -- is a follow-up once those builds are gone.
--- Rollback: supabase/rollbacks/20261030110000_reviews_server_side.down.sql.
+-- Rollback: supabase/rollbacks/20261030120000_reviews_server_side.down.sql.
 
 -- 2. Thumbnail path ----------------------------------------------------------------------------
 alter table public.review_photos add column if not exists thumb_path text;
