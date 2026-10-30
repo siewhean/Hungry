@@ -5,7 +5,9 @@ import { readFileSync } from "node:fs";
 import test, { afterEach } from "node:test";
 
 import {
+  buildClaimNotApprovedEmail,
   buildMerchantApprovalEmail,
+  sendClaimNotApprovedEmail,
   sendMerchantApprovalEmail,
 } from "../../../marketing/website/web-v2/src/lib/email/merchantApprovalEmail";
 
@@ -94,7 +96,7 @@ test("console review: email once on a first approval, kept out of the audit log;
   );
   assert.match(data, /metadata: approval,/);
   assert.match(data, /!alreadyApproved &&/, "a repeat approval does not email again");
-  assert.match(data, /return \{ \.\.\.approval, emailSent \}/);
+  assert.match(data, /return \{ \.\.\.approval, emailSent, rivalEmailsSent/);
   assert.match(data, /prefer: "return=representation"/);
   assert.match(data, /throw new MerchantClaimConflictError/);
   assert.match(
@@ -112,4 +114,53 @@ test("approve_merchant_claim rejects the stall's other open claims and returns w
   assert.match(sql, /'rejectedOthers', v_rejected/);
   assert.match(sql, /'email', v_email/);
   assert.match(sql, /'venueName', v_venue\.name/);
+});
+
+test("the not-approved email says why, invites proof and escapes the stall name", () => {
+  const { html, subject, text } = buildClaimNotApprovedEmail({ stallName: "Ah <i>Seng</i>" });
+  assert.equal(subject, "About your Hungry stall claim");
+  assert.match(text, /Another claim for Ah <i>Seng<\/i> was approved first/);
+  assert.match(text, /reply to this email/);
+  assert.doesNotMatch(html, /<i>Seng<\/i>/);
+  assert.match(buildClaimNotApprovedEmail({}).text, /for this stall was approved first/);
+});
+
+test("the not-approved email is sent through Resend and fails soft", async () => {
+  configureEmail();
+  const bodies: Record<string, unknown>[] = [];
+  globalThis.fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+    bodies.push(JSON.parse(String(init?.body)));
+    return new Response("{}", { status: 200 });
+  }) as typeof fetch;
+  assert.equal(
+    await sendClaimNotApprovedEmail({ stallName: "Ah Seng", to: "rival@example.test" }),
+    true,
+  );
+  assert.deepEqual(bodies[0].to, ["rival@example.test"]);
+  assert.equal(bodies[0].subject, "About your Hungry stall claim");
+
+  const errors = console.error;
+  console.error = () => undefined;
+  try {
+    globalThis.fetch = (async () => new Response("no", { status: 500 })) as typeof fetch;
+    assert.equal(await sendClaimNotApprovedEmail({ to: "rival@example.test" }), false);
+  } finally {
+    console.error = errors;
+  }
+});
+
+test("console review tells the rejected rival claimants once, from one read of the stall's claims", () => {
+  const data = read("marketing/website/web-v2/src/lib/supabase/consoleData.ts");
+  assert.match(
+    data,
+    /status: "in\.\(new,contacted,qualified\)"/,
+    "open rival claims are read before the approval",
+  );
+  assert.match(data, /const rivalsToTell = alreadyApproved \? \[\] : await rejectedRivals/);
+  assert.match(
+    data,
+    /status: eq\("rejected"\)/,
+    "only claims the approval really rejected are emailed",
+  );
+  assert.match(data, /return \{ \.\.\.approval, emailSent, rivalEmailsSent, rivalsRejected/);
 });

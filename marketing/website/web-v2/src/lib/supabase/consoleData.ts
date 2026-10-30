@@ -6,7 +6,7 @@ import {
   type ConsoleRouteStatus,
 } from "@/lib/console/routeRegistry";
 import { redactEmail } from "@/lib/console/redaction";
-import { sendMerchantApprovalEmail } from "@/lib/email/merchantApprovalEmail";
+import { sendClaimNotApprovedEmail, sendMerchantApprovalEmail } from "@/lib/email/merchantApprovalEmail";
 import {
   getSupabaseConfigStatus,
   getUserFromAccessToken,
@@ -344,6 +344,21 @@ async function getMerchantApplicationRecords() {
   };
 }
 
+/** Emails (where the claim has one) of the open claims the approval just rejected. */
+async function rejectedRivals(rivals: Row[]): Promise<string[]> {
+  const ids = rivals.map((row) => row.id).filter((id): id is string => typeof id === "string");
+  if (ids.length === 0) return [];
+  const { data } = await supabaseFetchOnDemand<Row[]>("rest/v1/merchant_claim_interests", {
+    params: { id: `in.(${ids.join(",")})`, select: "id", status: eq("rejected") },
+    serviceRole: true,
+  });
+  const rejected = new Set((data ?? []).map((row) => row.id));
+  return rivals
+    .filter((row) => rejected.has(row.id))
+    .map((row) => (typeof row.contact_email === "string" ? row.contact_email.trim() : ""))
+    .filter(Boolean);
+}
+
 export type MerchantClaimAction = "approve" | "reject" | "contacted";
 
 /** A claim could not be changed because it is already approved (the route answers 409). */
@@ -361,6 +376,25 @@ export async function reviewMerchantClaim(
   action: MerchantClaimAction,
 ) {
   if (action === "approve") {
+    // Other people's open claims on this stall are rejected by the approval. Note them first so
+    // each can be told (two reads for the whole stall, not one per claimant).
+    const { data: thisClaim } = await supabaseFetchOnDemand<Row[]>("rest/v1/merchant_claim_interests", {
+      params: { id: eq(claimId), select: "venue_id" },
+      serviceRole: true,
+    });
+    const venueId = typeof thisClaim?.[0]?.venue_id === "string" ? thisClaim[0].venue_id : undefined;
+    const { data: rivals } = venueId
+      ? await supabaseFetchOnDemand<Row[]>("rest/v1/merchant_claim_interests", {
+          params: {
+            id: `neq.${claimId}`,
+            select: "id,contact_email",
+            status: "in.(new,contacted,qualified)",
+            venue_id: eq(venueId),
+          },
+          serviceRole: true,
+        })
+      : { data: [] as Row[] };
+
     const { data } = await supabaseFetchOnDemand<unknown>("rest/v1/rpc/approve_merchant_claim", {
       body: { p_claim_id: claimId },
       method: "POST",
@@ -383,7 +417,15 @@ export async function reviewMerchantClaim(
         stallName: typeof venueName === "string" ? venueName : undefined,
         to: email,
       }));
-    return { ...approval, emailSent };
+    const rivalsToTell = alreadyApproved ? [] : await rejectedRivals(rivals ?? []);
+    const rivalEmailsSent = (
+      await Promise.all(
+        rivalsToTell.map((to) =>
+          sendClaimNotApprovedEmail({ stallName: typeof venueName === "string" ? venueName : undefined, to }),
+        ),
+      )
+    ).filter(Boolean).length;
+    return { ...approval, emailSent, rivalEmailsSent, rivalsRejected: rivalsToTell.length };
   }
 
   const status = action === "reject" ? "rejected" : "contacted";
