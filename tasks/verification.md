@@ -1566,3 +1566,11 @@ Use the smallest check that matches the change risk.
 - Checks: npm test 2262 (three contracts updated: initialQueryRecordedRef compare, getHungryService and Heart allowed on the results screen), npm run test:render 674/0, typecheck clean, eslint 0 errors, check:n-plus-one, audit:races, check:rate-limits and test:coverage OK. Coverage baseline file not touched (CI value rule).
 - Waiting on other threads: SR4-14 (#153), SR4-16 (mood thread), DISH-X1..X3 (#154).
 - PR E browser walk: tests/e2e/search.spec.ts, 36 steps (Search home, typeahead, results, heart, Filters sheet, sort, Stalls tab, stall and dish open and back, Halal count, recents, empty results) at 390 and 320 wide, light and dark. 4/4 pass on desktop Chromium against the mock build once remote images resolve (this box blocks external hosts, so the run stubbed them; CI has network). The walk found two web-only defects, both fixed here: the heart was a button inside the card button (invalid HTML, hydration warning), and the sort options did not expose aria-checked.
+
+### HOME-R4 phase 3, 2026-10-30
+
+- typecheck clean; DiscoverEntryScreen render 49/49 (food above the fold with and without a saved dietary need, control arm, cold start, one label, footer links, home_viewed), components.render, biteLabel unit tests; full test:render, npm test and test:coverage OK; lint 0 errors.
+- New browser spec tests/e2e/home.spec.ts: 4/4 pass on mock web (390 and 320 wide, light and dark): the page does not scroll sideways, the search bar fills the row, a dish is above the fold, and Decide for me, Search, a dish row, a chip, a classics tile, All stalls and All dishes each land where they should, with no page error. Looked at screenshots at 390 and 320: dishes are on the first screen.
+- Seen while walking, not fixed here: the launcher's "Home" button opens the archived Feed tab, whose text wraps one letter per line at 390 wide.
+- No migration, endpoint or query added.
+

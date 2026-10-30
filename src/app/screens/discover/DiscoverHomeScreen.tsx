@@ -82,6 +82,7 @@ import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
 import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
+import { buildBiteLabel } from "@/features/discover/biteLabel";
 import { pickRailsWithoutRepeats, tasteOrderBites } from "@/features/discover/homeRanking";
 import {
   compareHomeStalls,
@@ -331,15 +332,32 @@ const DISCOVER_SEARCH_PLACEHOLDER_PHRASES = [
   "What's near you?",
 ] as const;
 
-function DiscoverSearchPlaceholder() {
+/** Phone widths under this get phrases short enough to fit beside the search icon. */
+const NARROW_SEARCH_WIDTH = 360;
+const NARROW_SEARCH_PLACEHOLDER_PHRASES = [
+  "Dishes or stalls…",
+  "Try laksa nearby",
+  "Search mee pok",
+  "What's near you?",
+] as const;
+
+/** The animation runs only while Home is on screen: off-screen it would re-render for nothing. */
+function DiscoverSearchPlaceholder({
+  isActive,
+  isNarrow,
+}: {
+  isActive: boolean;
+  isNarrow: boolean;
+}) {
   const { palette, typography } = useHungryTheme();
   const movingSearchPlaceholder = useMovingSearchPlaceholder({
-    phrases: DISCOVER_SEARCH_PLACEHOLDER_PHRASES,
-    tickMs: 55,
-    revealStepMs: 55,
+    phrases: isNarrow ? NARROW_SEARCH_PLACEHOLDER_PHRASES : DISCOVER_SEARCH_PLACEHOLDER_PHRASES,
+    enabled: isActive,
+    tickMs: 88,
+    revealStepMs: 88,
     deleteStepMs: 55,
-    pauseMs: 950,
-    totalCycleMs: 6200,
+    pauseMs: 1_600,
+    totalCycleMs: 7_200,
   });
 
   return (
@@ -701,13 +719,6 @@ type DiscoverRailLayout = {
 };
 
 type DiscoverBiteCardVariant = "rating" | "topRated" | "price";
-
-const getQuickBiteLabel = (bite: Bite) => `Dish near you: ${bite.dishName} at ${bite.venueName}`;
-const getMostReviewedLabel = (bite: Bite) => `Open ${bite.dishName} at ${bite.venueName}`;
-const getTopRatedLabel = (bite: Bite) => `Top rated: ${bite.dishName} at ${bite.venueName}`;
-const getBudgetLabel = (bite: Bite) =>
-  `Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`;
-const getLateNightLabel = (bite: Bite) => `Late night eats: ${bite.dishName} at ${bite.venueName}`;
 
 function DiscoverRailBadge({ label, tone }: { label: string; tone: "accent" | "success" }) {
   const { colorScheme, palette, radii, spacing } = useHungryTheme();
@@ -1348,10 +1359,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[4] * 2, 240),
-    [screenWidth, spacing],
-  );
   const searchIconSize = 52;
   const openSearchHome = useCallback(() => {
     trackAnalyticsEvent("discover_search_opened", { surface: "home" });
@@ -2254,6 +2261,25 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         : trendingCards,
     [needsDiscoverAreaChoice, trendingCards],
   );
+  // One home_viewed per visit, once there is content to look at: the denominator the Home
+  // experiments divide by.
+  const homeViewedSentRef = useRef(false);
+  const hasAnyDish = trendingCards.length + quickBiteCards.length > 0;
+  useEffect(() => {
+    if (!isFocused) {
+      homeViewedSentRef.current = false;
+      return;
+    }
+    if (!hasDiscoverContent || showDiscoverFilterRailSkeleton || homeViewedSentRef.current) return;
+    homeViewedSentRef.current = true;
+    trackAnalyticsEvent("home_viewed", {
+      surface: "home",
+      has_dishes: hasAnyDish,
+      stalls: areaStallCards.length,
+    });
+    // areaStallCards.length is the first-paint count; later reveals do not start a new visit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasAnyDish, hasDiscoverContent, isFocused, showDiscoverFilterRailSkeleton]);
   const areaStallImpressionSentRef = useRef(false);
   const areaStallCount = areaStallCards.length;
   useEffect(() => {
@@ -2675,6 +2701,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     }),
     [discoverContentGap, discoverRailCardWidth, discoverRailImageHeight, screenWidth],
   );
+  // Distances measured from the built-in default point would be made up, so they stay unspoken.
+  const getBiteLabel = useCallback(
+    (bite: Bite) =>
+      buildBiteLabel(needsDiscoverAreaChoice ? { ...bite, distanceMeters: undefined } : bite),
+    [needsDiscoverAreaChoice],
+  );
   const discoverRailProps = {
     canSeeAll: canOpenDiscoverCollection,
     isLoading: showDiscoverFilterRailSkeleton,
@@ -2685,6 +2717,55 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     onPrefetchCollection: prefetchBiteCollectionRoute,
     onSeeAll: openDiscoverCollection,
   };
+
+  // Popular food style buttons. With dishes to show, the compact layout moves them below the
+  // first dish section so food is on the first screen (home_above_fold_v1).
+  const hasFirstDishSection =
+    !inMallMode &&
+    (trendingCards.length > 0 ||
+      quickBiteCards.length >= (isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS));
+  const aboveFoldVariant = useExperimentVariant("home_above_fold_v1", {
+    enabled: isFocused && hasDiscoverContent && hasFirstDishSection,
+  });
+  const classicsSlot =
+    aboveFoldVariant === "compact" && hasFirstDishSection
+      ? trendingCards.length > 0
+        ? "afterTrending"
+        : "afterNearYou"
+      : "top";
+  const classicsSection = inMallMode ? null : (
+    <View style={{ gap: discoverContentGap }}>
+      <AppText variant="h2" style={{ color: themeTints.text }}>
+        {popularFoodTitle}
+      </AppText>
+      {shouldShowPopularFoodSkeleton ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={edgeToEdgeHorizontalScrollStyle}
+          contentContainerStyle={{ gap: spacing[2] }}
+        >
+          <PopularFoodStyleSkeleton />
+        </ScrollView>
+      ) : popularFoodStyleItems.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={edgeToEdgeHorizontalScrollStyle}
+          contentContainerStyle={{ gap: spacing[2] }}
+        >
+          {popularFoodStyleItems.map((item) => (
+            <PopularFoodStyleItem
+              key={item.id}
+              item={item}
+              onPrefetch={prefetchFoodStyle}
+              onPress={handleFoodStylePress}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+    </View>
+  );
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
@@ -2764,9 +2845,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               ) : null
             ) : discoverAreaCountLabel !== "0" ? (
               <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                {`${discoverAreaCountLabel} places to eat ${
-                  discoverAreaName ? "in this area" : "near you"
-                }`}
+                {`${discoverAreaCountLabel} stalls ${discoverAreaName ? "in this area" : "near you"}`}
               </AppText>
             ) : null /* 0 in-area venues: the page shows city-wide fallbacks, so "0 places" misleads. */
           }
@@ -2785,14 +2864,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         </View>
 
         {/* Search Bar Entry */}
-        <View style={{ alignItems: "flex-end" }}>
+        <View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Search dishes, stalls, or hawker centres"
             onPressIn={() => preloadRoute(navigation, "SearchHome")}
             onPress={openSearchHome}
             style={{
-              width: searchBarWidth,
+              alignSelf: "stretch",
               borderRadius: componentRadii.search,
               backgroundColor: themeTints.cardBg,
               borderWidth: themeTints.isDark ? 0 : 1,
@@ -2805,7 +2884,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             }}
           >
             <View style={{ flex: 1 }}>
-              <DiscoverSearchPlaceholder />
+              <DiscoverSearchPlaceholder
+                isActive={isFocused}
+                isNarrow={screenWidth < NARROW_SEARCH_WIDTH}
+              />
             </View>
             <View
               style={{
@@ -2900,40 +2982,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
         {inMallMode ? <DiscoverModeTabs value={discoverMode} onChange={setDiscoverMode} /> : null}
 
-        {/* Popular food style buttons */}
-        {inMallMode ? null : (
-          <View style={{ gap: discoverContentGap }}>
-            <AppText variant="h2" style={{ color: themeTints.text }}>
-              {popularFoodTitle}
-            </AppText>
-            {shouldShowPopularFoodSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[2] }}
-              >
-                <PopularFoodStyleSkeleton />
-              </ScrollView>
-            ) : popularFoodStyleItems.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[2] }}
-              >
-                {popularFoodStyleItems.map((item) => (
-                  <PopularFoodStyleItem
-                    key={item.id}
-                    item={item}
-                    onPrefetch={prefetchFoodStyle}
-                    onPress={handleFoodStylePress}
-                  />
-                ))}
-              </ScrollView>
-            ) : null}
-          </View>
-        )}
+        {classicsSlot === "top" ? classicsSection : null}
 
         {/* Decision action chips */}
         <View style={{ flexDirection: "row", gap: decisionCardGap }}>
@@ -3133,54 +3182,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 canOpenDiscoverCollection ? () => openDiscoverCollection("trending") : undefined
               }
             />
-            {/* The full lists stay one tap away now that the two big tiles are gone. */}
-            <View style={{ flexDirection: "row", gap: discoverContentGap }}>
-              {(
-                [
-                  {
-                    label: "All stalls",
-                    a11y: "Browse stalls and restaurants",
-                    route: "BrowseStalls",
-                  },
-                  { label: "All dishes", a11y: "Browse dishes", route: "BrowseDishes" },
-                ] as const
-              ).map((item) => (
-                <Pressable
-                  key={item.route}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.a11y}
-                  onPressIn={() => {
-                    if (item.route === "BrowseStalls") {
-                      areaVenues
-                        .slice(0, 5)
-                        .forEach((venue) => prefetchStallDetail(venue.id, repository));
-                      preloadRoute(navigation, "BrowseStalls");
-                    } else {
-                      areaDishPool
-                        .slice(0, 6)
-                        .forEach((dish) => prefetchDishDetail(dish.id, repository));
-                    }
-                  }}
-                  onPress={() => {
-                    if (item.route === "BrowseStalls") navigation.navigate("BrowseStalls");
-                    else navigation.navigate("BrowseDishes");
-                  }}
-                  style={{
-                    alignItems: "center",
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.button,
-                    borderWidth: 1,
-                    flex: 1,
-                    justifyContent: "center",
-                    minHeight: 48,
-                  }}
-                >
-                  <AppText variant="bodyBold" style={{ color: themeTints.text }}>
-                    {item.label}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
+            {classicsSlot === "afterTrending" ? classicsSection : null}
           </>
         )}
 
@@ -3250,9 +3252,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 reasons={tasteOrdered.reasons}
                 variant="rating"
                 buttonId="quick_bite_card"
-                getCardLabel={getQuickBiteLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
+            {classicsSlot === "afterNearYou" ? classicsSection : null}
 
             {shouldRenderDiscoverRail(editorChoiceCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
@@ -3264,7 +3267,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 cards={editorChoiceCards}
                 variant="topRated"
                 buttonId="editor_choice_bite_card"
-                getCardLabel={getTopRatedLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
 
@@ -3278,7 +3281,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 cards={budgetCards}
                 variant="price"
                 buttonId="budget_bite_card"
-                getCardLabel={getBudgetLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
 
@@ -3292,7 +3295,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 cards={lateNightCards}
                 variant="price"
                 buttonId="late_night_bite_card"
-                getCardLabel={getLateNightLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
 
@@ -3429,6 +3432,54 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 onPrefetchCard={prefetchStallShowcaseCard}
               />
             ) : null}
+            {/* The full lists stay one tap away, at the end of the page rather than between sections. */}
+            <View style={{ flexDirection: "row", gap: discoverContentGap }}>
+              {(
+                [
+                  {
+                    label: "All stalls",
+                    a11y: "Browse stalls and restaurants",
+                    route: "BrowseStalls",
+                  },
+                  { label: "All dishes", a11y: "Browse dishes", route: "BrowseDishes" },
+                ] as const
+              ).map((item) => (
+                <Pressable
+                  key={item.route}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.a11y}
+                  onPressIn={() => {
+                    if (item.route === "BrowseStalls") {
+                      areaVenues
+                        .slice(0, 5)
+                        .forEach((venue) => prefetchStallDetail(venue.id, repository));
+                      preloadRoute(navigation, "BrowseStalls");
+                    } else {
+                      areaDishPool
+                        .slice(0, 6)
+                        .forEach((dish) => prefetchDishDetail(dish.id, repository));
+                    }
+                  }}
+                  onPress={() => {
+                    if (item.route === "BrowseStalls") navigation.navigate("BrowseStalls");
+                    else navigation.navigate("BrowseDishes");
+                  }}
+                  style={{
+                    alignItems: "center",
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.button,
+                    borderWidth: 1,
+                    flex: 1,
+                    justifyContent: "center",
+                    minHeight: 48,
+                  }}
+                >
+                  <AppText variant="bodyBold" style={{ color: themeTints.text }}>
+                    {item.label}
+                  </AppText>
+                </Pressable>
+              ))}
+            </View>
           </>
         )}
       </ScrollView>

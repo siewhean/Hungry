@@ -894,7 +894,7 @@ test("TrendingList shows rich rows, opens one, and hides when there are none", a
   assert.match(view.text(), /Laksa/);
   assert.match(view.text(), /350 m/);
   assert.match(view.text(), /S\$5\.00/);
-  await view.press(view.findByLabel("Laksa at Sungei Road"));
+  await view.press(view.findByLabel(/^Laksa, Sungei Road, S\$5\.00/));
   assert.deepEqual(opened, ["d1"]);
   await view.rerender(
     createElement(TrendingList, { title: "Trending near you", bites: [], onOpen: () => undefined }),

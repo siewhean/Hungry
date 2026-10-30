@@ -493,7 +493,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /rememberSearch/);
   assert.match(discover, /source: "discover_chip"/);
   assert.match(discover, /navigation\.navigate\("SearchResults", \{/);
-  assert.match(discover, /places to eat \$\{/);
+  assert.match(discover, /stalls \$\{discoverAreaName/);
   assert.match(
     discover,
     /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
@@ -842,4 +842,13 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
     discover,
     /\{discoverLoadError \|\| isFeedFallbackEmpty \? \(\s*<EmptyState[\s\S]*ctaLabel="Try again"[\s\S]*reloadDiscover\(\)/,
   );
+});
+
+test("Home search bar fills the row, shortens its phrases on narrow phones and idles off screen", () => {
+  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  assert.match(discover, /isActive=\{isFocused\}/);
+  assert.match(discover, /isNarrow=\{screenWidth < NARROW_SEARCH_WIDTH\}/);
+  assert.match(discover, /enabled: isActive,/);
+  assert.match(discover, /alignSelf: "stretch",/);
+  assert.doesNotMatch(discover, /searchBarWidth/);
 });
