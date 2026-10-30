@@ -76,13 +76,17 @@ export function formatCatalogDistance(meters: number) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
 }
 
+/** Location off: picks from the whole island, read around the built-in default point. */
+const ISLAND_RADIUS_METERS = 30_000;
+
 function requestForFilter(
   filter: CatalogFilter,
   coordinate: { latitude: number; longitude: number },
+  islandWide: boolean,
 ): CatalogPageRequest {
   return {
     coordinate,
-    radiusMeters: 3_000,
+    radiusMeters: islandWide ? ISLAND_RADIUS_METERS : 3_000,
     limit: 24,
     sort: "nearby",
     dietaryFlags: filter === "halal" ? ["halal"] : [],
@@ -395,9 +399,15 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
   const cell = roundToGeocell(effectiveCoordinate);
   const cellLatitude = cell.latitude;
   const cellLongitude = cell.longitude;
+  const needsAreaChoice = isApproximate && !manualLocation;
   const request = useMemo(
-    () => requestForFilter(filter, { latitude: cellLatitude, longitude: cellLongitude }),
-    [cellLatitude, cellLongitude, filter],
+    () =>
+      requestForFilter(
+        filter,
+        { latitude: cellLatitude, longitude: cellLongitude },
+        needsAreaChoice,
+      ),
+    [cellLatitude, cellLongitude, filter, needsAreaChoice],
   );
   // Which filter and area the cards on screen were loaded for. The last good page stays only
   // for a refresh or Retry of the same request; a new filter or area never shows old cards.
@@ -405,15 +415,19 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const contentIsCurrent = loadedKey === requestKey;
   const isOfflineCatalog = Boolean(releaseId?.startsWith("excel-fallback"));
-  const needsAreaChoice = isApproximate && !manualLocation;
   // Distances from the built-in default point would be made up, so they are hidden.
   const showDistance = !needsAreaChoice;
-  // Owner decision (round 3): Home always names an area, in orange, under a small "You are at".
+  // Home names where the phone is, in orange, under a small "You are at"; "Singapore" while
+  // location is off.
   const areaLabel =
     manualPlaceName ??
     manualLocation ??
-    getNearestSingaporeAreaWithin(effectiveCoordinate.latitude, effectiveCoordinate.longitude) ??
-    getNearestSingaporeArea(effectiveCoordinate.latitude, effectiveCoordinate.longitude);
+    (needsAreaChoice
+      ? "Singapore"
+      : (getNearestSingaporeAreaWithin(
+          effectiveCoordinate.latitude,
+          effectiveCoordinate.longitude,
+        ) ?? getNearestSingaporeArea(effectiveCoordinate.latitude, effectiveCoordinate.longitude)));
   const hasManualPick = Boolean(manualLocation || manualCoordinate);
 
   const refreshDiagnosticEvents = useCallback(() => {
@@ -554,10 +568,6 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
     filterTouchedRef.current = true;
     setFilter(next);
   }, []);
-
-  const handleChangeArea = useCallback(() => {
-    navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" });
-  }, [navigation]);
 
   const handleUseCurrentLocation = useCallback(async () => {
     if (permission === "granted") {
@@ -760,20 +770,14 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
         style={{ backgroundColor: palette.bg }}
         testID="catalog-discover-screen"
       >
-        {/* Where the diner is: always one tap from the area picker. */}
+        {/* Where the diner is: it follows the phone's location, so there is no area to pick. */}
         <View
           style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
         >
           <View style={{ flex: 1, gap: spacing[1] }}>
-            <Pressable
-              accessibilityHint="Search for an area, mall, hawker centre or food court"
-              accessibilityLabel={
-                needsAreaChoice
-                  ? `You are at ${areaLabel}. Location is off, choose your area`
-                  : `You are at ${areaLabel}. Change area`
-              }
-              accessibilityRole="button"
-              onPress={handleChangeArea}
+            <View
+              accessible
+              accessibilityLabel={`You are at ${areaLabel}`}
               style={{ minHeight: 44, justifyContent: "center" }}
               testID="catalog-discover-area"
             >
@@ -783,12 +787,23 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
               <AppText numberOfLines={1} style={{ color: palette.orangeText }} variant="h2">
                 {areaLabel}
               </AppText>
-              {needsAreaChoice ? (
+            </View>
+            {needsAreaChoice ? (
+              <Pressable
+                accessibilityHint="Shows stalls near you instead of picks across Singapore"
+                accessibilityLabel="Turn on location"
+                accessibilityRole="button"
+                onPress={() => void handleUseCurrentLocation()}
+                style={{ justifyContent: "center", minHeight: 44 }}
+              >
                 <AppText tone="secondary" variant="micro">
-                  Location is off. Tap to choose your area.
+                  Location is off, so these are picks across Singapore.{" "}
+                  <AppText style={{ color: palette.orangeText, fontWeight: "700" }} variant="micro">
+                    Turn on location
+                  </AppText>
                 </AppText>
-              ) : null}
-            </Pressable>
+              </Pressable>
+            ) : null}
             {hasManualPick ? (
               <Pressable
                 accessibilityLabel="Use current location"

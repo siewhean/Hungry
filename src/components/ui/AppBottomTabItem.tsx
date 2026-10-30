@@ -53,41 +53,32 @@ export function AppBottomTabItem({
       accessibilityState={createAction ? {} : { selected: focused }}
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      {({ pressed }) => (
-        <>
-          <View
-            style={{
-              alignItems: "center",
-              height: createAction
-                ? componentSizes.bottomTabCreateButton
-                : componentSizes.bottomTabIconSlotHeight,
-              justifyContent: "center",
-              width: componentSizes.bottomTabIconSlotWidth,
-            }}
-          >
-            {/* Outline glyph only: the write button turns orange while it is pressed. */}
-            <Icon
-              color={createAction ? (pressed ? palette.orange : palette.text) : iconColor}
-              size={createAction ? componentSizes.bottomTabIcon + 4 : componentSizes.bottomTabIcon}
-            />
-          </View>
-          {showLabel && !createAction ? (
-            <AppText
-              variant="micro"
-              numberOfLines={1}
-              maxFontSizeMultiplier={fontScaling.tabLabelMaxMultiplier}
-              style={{
-                color: resolvedColor,
-                fontSize: componentSizes.bottomTabLabelFontSize,
-                fontWeight: focused ? "800" : "700",
-                lineHeight: componentSizes.bottomTabLabelLineHeight,
-              }}
-            >
-              {label}
-            </AppText>
-          ) : null}
-        </>
-      )}
+      <View
+        style={{
+          alignItems: "center",
+          height: componentSizes.bottomTabIconSlotHeight,
+          justifyContent: "center",
+          width: componentSizes.bottomTabIconSlotWidth,
+        }}
+      >
+        {/* The write button is an ordinary tab glyph: same size, slot and colours as the rest. */}
+        <Icon color={iconColor} size={componentSizes.bottomTabIcon} />
+      </View>
+      {showLabel ? (
+        <AppText
+          variant="micro"
+          numberOfLines={1}
+          maxFontSizeMultiplier={fontScaling.tabLabelMaxMultiplier}
+          style={{
+            color: resolvedColor,
+            fontSize: componentSizes.bottomTabLabelFontSize,
+            fontWeight: focused ? "800" : "700",
+            lineHeight: componentSizes.bottomTabLabelLineHeight,
+          }}
+        >
+          {label}
+        </AppText>
+      ) : null}
     </Pressable>
   );
 }

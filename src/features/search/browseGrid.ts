@@ -28,6 +28,7 @@ export {
   BROWSE_FILTER_IDS,
   BUDGET_FILTER,
   BUDGET_MAX_PRICE,
+  CUISINE_FILTERS,
   isBrowseFilterId,
   parseFilterIds,
   toggleFilterId,
@@ -81,6 +82,11 @@ export function isTooShortQuery(query: string): boolean {
   return query.length > 0 && query.length < CATALOG_QUERY_MIN_CHARS;
 }
 
+/** ~100 m buckets, so a GPS refresh that barely moves does not reset the list. */
+export function roundCoordinate(value: number) {
+  return Math.round(value * 1000) / 1000;
+}
+
 interface BrowseRequestInput {
   query: string;
   filters: readonly BrowseFilterId[];
@@ -90,11 +96,25 @@ interface BrowseRequestInput {
   releaseId?: string;
   /** A mall, hawker centre or food court: lists its whole building, however far away. */
   buildingId?: string;
+  /** Typed filters ("halal laksa under $5"): dietary flags and a price cap on top of the chips. */
+  parsed?: { dietary: readonly string[]; maxPrice?: number };
+  /** Food types picked from the release's most common ones; with the Noodles and Rice chips, any may match. */
+  foodTypes?: readonly string[];
 }
 
 export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageRequest {
   const query = input.query.trim();
-  const keywords = input.filters.flatMap((id) => FOOD_KEYWORDS[id] ?? []);
+  const keywords = [
+    ...input.filters.flatMap((id) => FOOD_KEYWORDS[id] ?? []),
+    ...(input.foodTypes ?? []),
+  ];
+  const dietaryFlags = new Set<string>(input.parsed?.dietary ?? []);
+  if (input.filters.includes("Halal")) dietaryFlags.add("halal");
+  // The Under S$6 chip and a typed cap both apply: the lower one wins.
+  const caps = [
+    input.filters.includes(BUDGET_FILTER) ? BUDGET_MAX_PRICE : undefined,
+    input.parsed?.maxPrice,
+  ].filter((cap): cap is number => cap !== undefined);
   return {
     query: query || undefined,
     coordinate: input.coordinate,
@@ -104,12 +124,12 @@ export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageReques
     releaseId: input.cursor ? input.releaseId : undefined,
     limit: 24,
     sort: effectiveSort(input.sort, Boolean(query), Boolean(input.buildingId)),
-    dietaryFlags: input.filters.includes("Halal") ? ["halal"] : [],
+    dietaryFlags: [...dietaryFlags],
     cuisineTags: input.filters
       .filter((id) => CUISINE_FILTERS.has(id))
       .map((id) => id.toLowerCase()),
     foodKeywords: keywords,
-    maxPrice: input.filters.includes(BUDGET_FILTER) ? BUDGET_MAX_PRICE : undefined,
+    maxPrice: caps.length ? Math.min(...caps) : undefined,
   };
 }
 
@@ -183,6 +203,7 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
     stall.name,
     stall.buildingName,
     topDishRating ? `top dish ${topDishRating}` : undefined,
+    stallCardDetail(stall),
     stall.menuCount > 0
       ? `${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`
       : undefined,
@@ -193,6 +214,24 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
   ]
     .filter(Boolean)
     .join(", ");
+}
+
+/**
+ * The stall card's price line: the best dish for the typed query ("Signature Laksa · S$6.00"), else
+ * the typical price of its mains ("Mains around S$5.00"). Drinks and sides do not count towards it.
+ */
+export function stallCardDetail(stall: CatalogRawVenueCard): string | undefined {
+  if (stall.matchedDish) {
+    const price = priceLabel(stall.matchedDish.price);
+    return price ? `${stall.matchedDish.name} · ${price}` : stall.matchedDish.name;
+  }
+  const mains = priceLabel(stall.mainPrice);
+  return mains ? `Mains around ${mains}` : undefined;
+}
+
+/** The stall card's photo: its own, else the dish that matched the query, else its top dish. */
+export function stallCardImage(stall: CatalogRawVenueCard): string | undefined {
+  return stall.imageUrl ?? stall.matchedDish?.imageUrl ?? stall.representativeDish?.imageUrl;
 }
 
 /** The card's second line: "Stall · Hawker centre" for dishes, the hawker centre for stalls. */
@@ -219,10 +258,13 @@ export function describeResultsSummary(input: {
   count: number;
   mode: BrowseMode;
   hasQuery: boolean;
+  /** The text searched for, echoed back: "1 dish for “laksa”". */
+  query?: string;
   placeName?: string;
   widened: boolean;
 }): string {
-  const count = describeMatchCount(input.count, input.mode);
+  const found = describeMatchCount(input.count, input.mode);
+  const count = input.hasQuery && input.query ? `${found} for “${input.query}”` : found;
   if (input.placeName !== undefined) return `${count} at ${input.placeName}`;
   if (input.hasQuery) return count;
   return `${count}${input.widened ? " in Singapore" : " within 3 km"}`;

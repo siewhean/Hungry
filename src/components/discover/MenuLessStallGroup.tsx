@@ -44,7 +44,6 @@ export function MenuLessStallGroup({ stalls, expanded, onToggle }: MenuLessStall
           <StallLogoMark
             key={stall.id}
             borderWidth={1}
-            imageSize={LOGO_SIZE - 4}
             logoUrl={stall.logoUrl}
             name={stall.name}
             size={LOGO_SIZE}

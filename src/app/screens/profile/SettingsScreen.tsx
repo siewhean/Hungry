@@ -799,19 +799,6 @@ export function SettingsScreen() {
           onToggle={handleSearchHistoryToggle}
           isLast={false}
         />
-        <SettingsRow
-          {...neutralRow}
-          label="Location"
-          icon={<MapPin size={20} color={iconColor} />}
-          onPress={() =>
-            rootNavigation.navigate("OnboardingStack", {
-              screen: "ManualLocationPicker",
-              params: { mode: "settings" },
-            })
-          }
-          value={location || (locationPermission === "granted" ? "Use GPS" : "Not set")}
-          isLast={false}
-        />
         {isNative ? (
           <SettingsRow
             {...neutralRow}

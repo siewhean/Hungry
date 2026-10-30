@@ -227,6 +227,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
   assertSourceIncludes(
     searchResults,
     [
+      /navigation\.navigate\("StallDetail", \{ venueId: item\.id \}\)/,
       /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",/,
       /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/,
       /type: "search_query"/,
@@ -276,7 +277,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
       /<AppText variant="bodyBold">Address<\/AppText>/,
-      /\{stallAddress\}/,
+      /\{shortStallAddress \|\| stallAddress\}/,
       /Loading stall/,
       /<AppText variant="h2">Menu<\/AppText>/,
       /const \[visibleMenuItemCount, setVisibleMenuItemCount\] = useState\(INITIAL_MENU_ITEM_COUNT\)/,
@@ -288,7 +289,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /filteredMenuDishes\.slice\(0, visibleMenuItemCount\)/,
       /setVisibleMenuItemCount\(\(current\) =>[\s\S]*MENU_ITEM_BATCH_SIZE[\s\S]*filteredMenuDishes\.length/,
       /<MenuFilterDropdown/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id, source: "stall_menu" \}\)/,
       /StallInteractionBar/,
       /ReviewShareSheet/,
     ],

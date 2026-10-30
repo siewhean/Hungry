@@ -21,7 +21,7 @@ export type HoursRow = {
 
 export type OpenState = {
   status: "open" | "closed" | "unknown";
-  /** "Closes 9pm", "Opens 5pm", "Closed today", or undefined. */
+  /** "Closes 9pm", "Opens 5pm", "Opens 10am tomorrow", "Opens 10am Thu", "Closed today", or undefined. */
   detail?: string;
 };
 
@@ -232,6 +232,28 @@ export function runsPastHour(raw: string | undefined, hour: number): boolean | u
   return ranges.some(([start, end]) => start === end || end < start || end >= hour * 60);
 }
 
+/**
+ * "Opens 10am tomorrow" / "Opens 10am Thu" / "Opens 10am next Mon": when the stall next
+ * opens, `daysAhead` days from today (1 to 7).
+ */
+export function formatNextOpening(startMinutes: number, daysAhead: number, day: DayName): string {
+  const when = daysAhead === 1 ? "tomorrow" : daysAhead >= 7 ? `next ${day}` : day;
+  return `Opens ${formatClockMinutes(startMinutes)} ${when}`;
+}
+
+/** The first opening in the seven days after `day`, from the listed hours; undefined when none. */
+function findNextListedOpening(rows: HoursRow[], day: DayName): string | undefined {
+  const startIndex = DAY_ORDER.indexOf(day);
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const nextDay = DAY_ORDER[(startIndex + offset) % 7];
+    const hours = getHoursForDay(rows, nextDay);
+    if (!hours || hours.closed) continue;
+    const first = [...hours.ranges].sort((left, right) => left[0] - right[0])[0];
+    if (first) return formatNextOpening(first[0], offset, nextDay);
+  }
+  return undefined;
+}
+
 function isWithin(minutes: number, [start, end]: MinuteRange) {
   if (start === end) return true;
   if (end < start) return minutes >= start || minutes < end;
@@ -260,7 +282,9 @@ export function getVenueOpenState(
   if (overnight) return { status: "open", detail: `Closes ${formatClockMinutes(overnight[1])}` };
 
   const today = getHoursForDay(rows, day);
-  if (!today || today.closed) return { status: "closed", detail: "Closed today" };
+  if (!today || today.closed) {
+    return { status: "closed", detail: findNextListedOpening(rows, day) ?? "Closed today" };
+  }
   if (today.ranges.length === 0) return { status: "unknown" };
 
   const current = today.ranges.find(
@@ -276,7 +300,7 @@ export function getVenueOpenState(
     .sort((left, right) => left[0] - right[0])[0];
   return next
     ? { status: "closed", detail: `Opens ${formatClockMinutes(next[0])}` }
-    : { status: "closed", detail: "Closed for today" };
+    : { status: "closed", detail: findNextListedOpening(rows, day) ?? "Closed for today" };
 }
 
 function formatDayList(days: DayName[]): string {

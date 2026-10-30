@@ -111,8 +111,13 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /const isRefreshing = isLoading && items\.length > 0/);
   assert.match(grid, /opacity: isRefreshing \? 0\.45 : 1/);
   assert.match(grid, /listRef\.current\?\.scrollToOffset\(\{ offset: 0, animated: false \}\)/);
-  // M3: chips combine, with a sort sheet and a count line.
-  assert.match(grid, /selectedIds=\{filters\.length \? filters : \[BROWSE_ALL_FILTER\]\}/);
+  // M3: chips combine (in the Filters sheet, where the selected ones also show in the header),
+  // with a sort sheet and a count line.
+  assert.match(
+    grid,
+    /selectedIds=\{filters\.length \? filters : foodTypes\.length \? \[\] : \[BROWSE_ALL_FILTER\]\}/,
+  );
+  assert.match(grid, /accessibilityLabel=\{`Remove \$\{filter\} filter`\}/);
   assert.match(grid, /accessibilityLabel=\{`Sort by, \$\{sortLabel\}`\}/);
   assert.match(grid, /describeResultsSummary\(\{\s*count: matchCount,\s*mode,/);
   // M5/M6: card line, rating pill, full spoken label, result announcement.
@@ -136,9 +141,9 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /minHeight: 48/);
   assert.doesNotMatch(grid, /height: 48/);
   assert.match(grid, /maxLength=\{CATALOG_QUERY_MAX_CHARS\}/);
-  // L10: the location-off note opens the area picker.
-  assert.match(grid, /screen: "ManualLocationPicker"/);
-  assert.match(grid, /Choose your area/);
+  // L10: the location-off note offers to turn location on (there is no area picker).
+  assert.doesNotMatch(grid, /ManualLocationPicker/);
+  assert.match(grid, /Turn on location/);
   // L12: one stable press handler; the live query is read from a ref when a card is tapped.
   assert.match(grid, /onOpen=\{handleOpen\}/);
   assert.match(grid, /queryRef\.current \|\| undefined/);
@@ -151,7 +156,7 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /not all MUIS-certified/);
   // L5: the search can be shared.
   assert.match(grid, /accessibilityLabel="Share this search"/);
-  assert.match(grid, /buildSearchShareUrl\(\{ query, filters, mode, place, sort \}\)/);
+  assert.match(grid, /buildSearchShareUrl\(\{ query: typedQuery, filters, mode, place, sort \}\)/);
 });
 
 test("M8: one search event for guests and members; zero results only for submitted queries", () => {
@@ -191,9 +196,10 @@ test("L6/L7: recents come from submitted queries, and a Discover chip logs only 
   assert.match(home, /accessibilityLabel=\{`Remove \$\{query\} from recent searches`\}/);
 });
 
-test("L9: Search home names the browse action", () => {
-  assert.match(read("src/app/screens/search/DishSearchScreen.tsx"), /"Browse dishes near you"/);
-  assert.doesNotMatch(read("src/app/screens/search/DishSearchScreen.tsx"), /View search results/);
+test("L9/SR4-22: Search home has one browse-near-me action, the Near me chip", () => {
+  const home = read("src/app/screens/search/DishSearchScreen.tsx");
+  assert.match(home, /label: "Near me"/);
+  assert.doesNotMatch(home, /Browse dishes near you|View search results/);
 });
 
 test("L3: dead search state is removed and the persisted version bumped", () => {
@@ -219,4 +225,12 @@ test("L11: the results and browse routes use the default push", () => {
 test("L1: the search sanitiser no longer deletes SQL words", () => {
   const source = read("src/lib/security/inputSanitization.ts");
   assert.doesNotMatch(source, /SQL_META_REGEX/);
+});
+
+test("SR4 re-audit: Search home fits a 320 screen and a failed featured photo shows a tile", () => {
+  const source = read("src/app/screens/search/DishSearchScreen.tsx");
+  // A web <input> keeps its default width unless it may shrink; at 320 it pushed the page 21pt sideways.
+  assert.match(source, /<View style=\{\{ flex: 1, minWidth: 0 \}\}>\s*<Input/);
+  assert.match(source, /style=\{\{ minWidth: 0 \}\}/);
+  assert.match(source, /fallback=\{<FeaturedDishPlaceholder \/>\}/);
 });
