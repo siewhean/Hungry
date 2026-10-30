@@ -23,6 +23,7 @@ export const DISH_DETAIL_SOURCES = [
   "saved",
   "search",
   "search_featured",
+  "search_typeahead",
   "similar_nearby",
   "social_grid",
   "social_post",
