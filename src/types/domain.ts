@@ -156,6 +156,8 @@ export interface VenueSummary {
   /** Weekly + special hours a verified merchant set; wins over operatingHours for "Open now". */
   openingSchedule?: OpeningSchedule;
   closureNotice?: string;
+  /** The merchant paused the stall until this instant (ISO); ignored once it has passed. */
+  closedUntil?: string;
   /** How many diners saved this stall. Undefined when the count is not available. */
   savedCount?: number;
   deliveryLinks: DeliveryLink[];

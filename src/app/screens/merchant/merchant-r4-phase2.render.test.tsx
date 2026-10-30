@@ -476,3 +476,110 @@ test("R4-21: editing an existing reply shows no chips", async () => {
   await view.press(view.findByText("Edit reply"));
   assert.equal(view.findByText("Apologise"), null);
 });
+
+test("P2-4: a chip fills an empty box but asks before it replaces what the merchant typed", async () => {
+  runExperiment();
+  fakeFlags({ merchant_reply_suggestions_v1: "chips" });
+  const view = await openComposer();
+  const field = () => document.querySelector("textarea") as HTMLTextAreaElement;
+
+  await view.type(view.findByLabel("Your public reply"), "Sorry about the soup, Mei.");
+  await view.press(view.findByText("Thank"));
+  assert.match(view.text(), /Replace your reply\?/);
+  assert.equal(field().value, "Sorry about the soup, Mei.", "nothing is replaced yet");
+
+  await view.press(view.findByText("Keep mine"));
+  assert.equal(field().value, "Sorry about the soup, Mei.");
+
+  await view.press(view.findByText("Thank"));
+  await view.press(view.findByText("Replace"));
+  assert.match(field().value, /^Hi Mei, thank you for the kind words/);
+
+  // The box still holds exactly the last suggestion, so the next chip fills it without asking.
+  await view.press(view.findByText("Apologise"));
+  assert.doesNotMatch(view.text(), /Replace your reply\?/);
+  assert.match(field().value, /^Hi Mei, we're sorry/);
+});
+
+test("P2-4: Apologise comes first on a 3-star or lower review", async () => {
+  runExperiment();
+  fakeFlags({ merchant_reply_suggestions_v1: "chips" });
+  const view = await openComposer();
+  const text = view.text();
+  assert.ok(text.indexOf("Apologise") < text.indexOf("Thank"));
+});
+
+test("P2-4: Thank comes first on a 4-star or higher review", async () => {
+  runExperiment();
+  fakeFlags({ merchant_reply_suggestions_v1: "chips" });
+  stub("getInbox", async () => [{ ...review(2, "Lovely laksa."), rating: 5 }]);
+  const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
+  await view.press(view.findByText("Reply"));
+  const text = view.text();
+  assert.ok(text.indexOf("Thank") < text.indexOf("Apologise"));
+});
+
+test("P2-9: a long quoted review can be expanded and folded again", async () => {
+  fakeFlags({ merchant_reply_suggestions_v1: "control" });
+  const long = `${"The soup was cold when it reached me and the noodles were soft. ".repeat(4)}End.`;
+  stub("getInbox", async () => [review(1, long)]);
+  const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
+  await view.press(view.findByText("Reply"));
+  await view.press(view.findByLabel("Show the full review"));
+  assert.ok(view.findByLabel("Show less of the review"));
+  assert.ok(view.findByText("Less"));
+  await view.press(view.findByLabel("Show less of the review"));
+  assert.ok(view.findByText("More"));
+});
+
+test("P2-9: a short quoted review has nothing to expand", async () => {
+  fakeFlags({ merchant_reply_suggestions_v1: "control" });
+  stub("getInbox", async () => [review(3, "Cold soup.")]);
+  const view = await renderScreen(CustomerInboxScreen as never, { name: "CustomerInbox" });
+  await view.press(view.findByText("Reply"));
+  assert.equal(view.findByLabel("Show the full review"), null);
+});
+
+test("P2-5: a fourth featured dish is answered with '3 of 3 featured', not sent and not reported", async () => {
+  const base = await baseDish();
+  stub("getMenu", async () => [
+    dish(base, "d0", "Aaa Fourth"),
+    dish(base, "d1", "Laksa", { availabilityFlags: ["featured"] }),
+    dish(base, "d2", "Mee Siam", { availabilityFlags: ["featured"] }),
+    dish(base, "d3", "Teh", { availabilityFlags: ["featured"] }),
+  ]);
+  const toggles: unknown[][] = [];
+  stub("toggleFeatured", async (...args) => {
+    toggles.push(args);
+    return true;
+  });
+  const { view } = await renderMenu();
+  await view.press(document.querySelector('[aria-label="Dish options"]') as HTMLElement);
+  assert.ok(view.findByText("Feature dish (3 of 3 featured)"));
+  await view.press(view.findByText("Feature dish (3 of 3 featured)"));
+  assert.match(view.text(), /You can feature up to 3 dishes/);
+  assert.equal(toggles.length, 0, "the limit is explained before anything is sent");
+});
+
+test("P2-5: a limit refusal from the server is explained, not reported as a failure", async () => {
+  const base = await baseDish();
+  stub("getMenu", async () => [dish(base, "d0", "Aaa Fourth")]);
+  stub("toggleFeatured", async () => {
+    throw Object.assign(new Error("You can feature up to 3 dishes."), { code: "23514" });
+  });
+  // reportError logs "[reportError]" in development builds, which is what the tests run as.
+  const reported: unknown[][] = [];
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") reported.push(args);
+  };
+  restores.push(() => {
+    console.error = originalError;
+  });
+  const { view } = await renderMenu();
+  await view.press(document.querySelector('[aria-label="Dish options"]') as HTMLElement);
+  await view.press(view.findByText("Feature dish (0 of 3 featured)"));
+  await view.settle();
+  assert.match(view.text(), /You can feature up to 3 dishes/);
+  assert.equal(reported.length, 0, "an expected refusal is not an error report");
+});

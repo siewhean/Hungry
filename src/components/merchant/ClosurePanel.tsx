@@ -18,8 +18,8 @@ export type ClosureChoice =
   | { kind: "until"; closedUntil: string };
 
 /**
- * The "pause store" control: open as usual, closed today, or closed until a date. The parent saves
- * the choice (and says so to the merchant); this only builds it.
+ * The "pause store" control: open as usual, closed today, or closed until a reopen date. The
+ * parent saves the choice (and says so to the merchant); this only builds it.
  */
 export function ClosurePanel({
   outlet,
@@ -81,7 +81,7 @@ export function ClosurePanel({
         }
       />
       <PromotionDateField
-        label="Closed until"
+        label="Reopen on"
         value={date}
         onChange={(value) => {
           setDate(value);

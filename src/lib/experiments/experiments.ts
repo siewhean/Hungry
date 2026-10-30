@@ -582,6 +582,7 @@ export const EXPERIMENTS = {
       "merchant_reply_suggestion_used",
       "merchant_customer_interaction_reported",
     ],
+    minSamplePerArm: 400,
   },
 } as const satisfies Record<string, ExperimentDefinition>;
 

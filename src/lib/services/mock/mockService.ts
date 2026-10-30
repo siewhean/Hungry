@@ -968,6 +968,7 @@ function syncMerchantOutletToUserCatalog(
     operatingHours: outlet.operatingHours,
     openingSchedule: outlet.openingSchedule,
     closureNotice: getEffectiveClosure(outlet),
+    closedUntil: outlet.closedUntil ?? undefined,
     deliveryLinks: outlet.deliveryLinks,
     verificationStatus: outlet.verification.status,
   };

@@ -41,9 +41,9 @@ test("a closure is active until its instant passes", () => {
   assert.equal(isClosureActive("not a date", NOW), false);
 });
 
-test("the label is Closed today, Closed until <date>, or nothing once it has passed", () => {
+test("the label is Closed today, Reopens <date>, or nothing once it has passed", () => {
   assert.equal(getClosureLabel("2026-10-29T16:00:00.000Z", NOW), "Closed today");
-  assert.equal(getClosureLabel("2026-11-02T16:00:00.000Z", NOW), "Closed until 3 Nov");
+  assert.equal(getClosureLabel("2026-11-02T16:00:00.000Z", NOW), "Reopens 3 Nov");
   assert.equal(getClosureLabel("2026-10-28T16:00:00.000Z", NOW), undefined);
   assert.equal(getClosureLabel(undefined, NOW), undefined);
 });

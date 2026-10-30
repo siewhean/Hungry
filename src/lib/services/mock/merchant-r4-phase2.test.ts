@@ -58,9 +58,14 @@ test("R4-4: a closure the merchant sets reaches the diner's stall profile, and r
 
   await merchant.updateBusinessProfile(OUTLET, { closedUntil: until, temporaryClosure: "" });
   const closed = await hungryService.discovery.getPublicMerchantProfile(venueId);
-  assert.match(closed?.temporaryClosure ?? "", /^Closed until \d{1,2} \w{3}$/);
+  assert.match(closed?.temporaryClosure ?? "", /^Reopens \d{1,2} \w{3}$/);
+  // Decide for me and the map read the stall through getVenuesByIds: the pause is on it too.
+  const [pausedVenue] = await hungryService.discovery.getVenuesByIds([venueId]);
+  assert.equal(pausedVenue?.closedUntil, until);
 
   await merchant.updateBusinessProfile(OUTLET, { closedUntil: null });
   const reopened = await hungryService.discovery.getPublicMerchantProfile(venueId);
   assert.equal(reopened?.temporaryClosure, undefined);
+  const [reopenedVenue] = await hungryService.discovery.getVenuesByIds([venueId]);
+  assert.equal(reopenedVenue?.closedUntil, undefined);
 });

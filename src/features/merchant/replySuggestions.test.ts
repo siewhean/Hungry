@@ -6,6 +6,8 @@ import {
   REPLY_SUGGESTION_KINDS,
   REPLY_SUGGESTION_LABELS,
   buildReplySuggestion,
+  canFillReplySuggestion,
+  orderReplySuggestionKinds,
 } from "@/features/merchant/replySuggestions";
 
 test("each suggestion greets the reviewer by first name and fits the reply limit", () => {
@@ -38,4 +40,20 @@ test("suggestions never promise refunds or offers", () => {
       /refund|free|discount|voucher|compensat/i,
     );
   }
+});
+
+test("Apologise leads on a 3-star or lower review; Thank leads on 4 stars, 5 stars or no rating", () => {
+  assert.deepEqual(orderReplySuggestionKinds(1), ["apologise", "thank", "invite_back"]);
+  assert.deepEqual(orderReplySuggestionKinds(3), ["apologise", "thank", "invite_back"]);
+  for (const rating of [4, 5, undefined, 0]) {
+    assert.deepEqual(orderReplySuggestionKinds(rating), ["thank", "apologise", "invite_back"]);
+  }
+});
+
+test("a chip fills an empty box or the last suggestion, never the merchant's own words", () => {
+  assert.equal(canFillReplySuggestion("", null), true);
+  assert.equal(canFillReplySuggestion("   ", null), true);
+  assert.equal(canFillReplySuggestion("Hi Mei, thank you", "Hi Mei, thank you"), true);
+  assert.equal(canFillReplySuggestion("Hi Mei, thank you!", "Hi Mei, thank you"), false);
+  assert.equal(canFillReplySuggestion("Sorry about that", null), false);
 });

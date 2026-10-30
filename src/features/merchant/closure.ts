@@ -1,4 +1,4 @@
-// A stall's structured temporary closure ("Closed today", "Closed until 3 Nov"), stored as
+// A stall's structured temporary closure ("Closed today", "Reopens 3 Nov"), stored as
 // merchant_outlets.closed_until. Singapore has no daylight saving, so a day is a fixed +8 hours.
 // The wording matches get_public_merchant_profile() so the merchant and the diner read the same.
 
@@ -36,7 +36,7 @@ export function isClosureActive(closedUntil: string | null | undefined, now: Dat
   return Number.isFinite(until) && until > now.getTime();
 }
 
-/** "Closed today", "Closed until 3 Nov", or undefined when there is no active closure. */
+/** "Closed today", "Reopens 3 Nov" (the stored date is when the stall opens again), or undefined when there is no active closure. */
 export function getClosureLabel(
   closedUntil: string | null | undefined,
   now: Date = new Date(),
@@ -46,10 +46,10 @@ export function getClosureLabel(
   if (until.getTime() <= endOfSingaporeDay(now).getTime()) return "Closed today";
   const day = new Date(until.getTime() + SGT_OFFSET_MS);
   const month = day.toLocaleString("en-GB", { month: "short", timeZone: "UTC" });
-  return `Closed until ${day.getUTCDate()} ${month}`;
+  return `Reopens ${day.getUTCDate()} ${month}`;
 }
 
-/** The merchant's "Closed until a date" choice; a message when the date cannot be used. */
+/** The merchant's "Reopen on a date" choice; a message when the date cannot be used. */
 export function resolveClosedUntil(
   dateOnly: string,
   now: Date = new Date(),

@@ -31,9 +31,10 @@ import { reportError } from "@/lib/monitoring/reportError";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import {
-  REPLY_SUGGESTION_KINDS,
   REPLY_SUGGESTION_LABELS,
   buildReplySuggestion,
+  canFillReplySuggestion,
+  orderReplySuggestionKinds,
   type ReplySuggestionKind,
 } from "@/features/merchant/replySuggestions";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
@@ -45,6 +46,8 @@ type InboxFilter = InteractionType | "all" | "unreplied";
 
 /** Reviews loaded per page; "Load more" fetches the next older page. */
 const INBOX_PAGE_SIZE = 30;
+/** A quoted review longer than this gets a More / Less toggle in the reply composer. */
+const REVIEW_QUOTE_EXPAND_FROM = 160;
 
 // The inbox is fed by reviews only; comments and mentions are not collected yet.
 const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
@@ -655,6 +658,7 @@ function ReplyComposer({
   } | null>(null);
   // Its own dialog: the composer is a Modal, and a dialog from the screen would sit behind it.
   const { showAlert, dialog } = useMerchantDialog();
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   // A tap on the backdrop or the Android back button must not throw away a typed reply.
   const requestClose = () => {
@@ -764,23 +768,48 @@ function ReplyComposer({
                 ))}
               </View>
             ) : null}
-            <AppText variant="bodySmall" numberOfLines={2}>
+            <AppText variant="bodySmall" numberOfLines={reviewExpanded ? undefined : 4}>
               {interaction.text}
             </AppText>
+            {interaction.text.length > REVIEW_QUOTE_EXPAND_FROM ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  reviewExpanded ? "Show less of the review" : "Show the full review"
+                }
+                hitSlop={8}
+                onPress={() => setReviewExpanded((open) => !open)}
+              >
+                <AppText variant="bodySmall" tone="secondary">
+                  {reviewExpanded ? "Less" : "More"}
+                </AppText>
+              </Pressable>
+            ) : null}
           </View>
 
           {showSuggestions ? (
             <View style={{ marginBottom: spacing[3] }}>
               <ChipGroup
-                options={REPLY_SUGGESTION_KINDS.map((kind) => ({
+                options={orderReplySuggestionKinds(interaction.rating).map((kind) => ({
                   id: kind,
                   label: REPLY_SUGGESTION_LABELS[kind],
                 }))}
                 selectedIds={suggestion ? [suggestion.kind] : []}
                 onSelect={(kind) => {
                   const next = buildReplySuggestion(kind, interaction.authorName);
-                  setText(next);
-                  setSuggestion({ kind, text: next });
+                  const fill = () => {
+                    setText(next);
+                    setSuggestion({ kind, text: next });
+                  };
+                  // Words the merchant typed are never replaced without asking.
+                  if (canFillReplySuggestion(text, suggestion?.text ?? null)) {
+                    fill();
+                    return;
+                  }
+                  showAlert("Replace your reply?", "The suggestion will replace what you typed.", [
+                    { text: "Keep mine", style: "cancel" },
+                    { text: "Replace", onPress: fill },
+                  ]);
                 }}
               />
             </View>

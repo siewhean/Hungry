@@ -28,6 +28,7 @@ import {
   getSavedDishCardsViaRpc,
   getVenueByIdViaRpc,
   invalidateVenueDetail,
+  getVenueClosuresViaRpc,
   getVenuesByIdsViaRpc,
   listBuildingsViaRpc,
   listDiscoveryFeedByLocationViaRpc,
@@ -4044,7 +4045,15 @@ export const supabaseService: HungryService = {
         const fetched = await getVenuesByIdsViaRpc(missing);
         fetched?.forEach((venue) => cached.set(venue.id, venue));
       }
-      return unique.flatMap((id) => cached.get(id) ?? []);
+      const venues = unique.flatMap((id) => cached.get(id) ?? []);
+      // A paused stall must not count as open now (Decide for me, the map, the wheel). One
+      // batched read; when it fails the stalls keep their stored state.
+      const closures = await getVenueClosuresViaRpc(venues.map((venue) => venue.id));
+      if (!closures || closures.size === 0) return venues;
+      return venues.map((venue) => {
+        const closedUntil = closures.get(venue.id);
+        return closedUntil ? { ...venue, closedUntil } : venue;
+      });
     },
 
     async getItemDetails({ dishIds, stallIds }) {

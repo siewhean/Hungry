@@ -354,7 +354,7 @@ export function MerchantAnalyticsScreen() {
                   analytics.profileVisits > 0
                     ? `Each bar is its own count, compared with the biggest one. ${
                         formatShare(analytics.menuViews, analytics.profileVisits)
-                          ? `${formatShare(analytics.menuViews, analytics.profileVisits)} as many menu views as profile visits; `
+                          ? `Menu views were ${formatShare(analytics.menuViews, analytics.profileVisits)} of profile visits; `
                           : ""
                       }${formatCount(analytics.directionTaps)} ${analytics.directionTaps === 1 ? "tap" : "taps"} for directions.`
                     : "No profile visits in this range yet.",

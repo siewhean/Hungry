@@ -1,9 +1,14 @@
 -- Undo 20261029150000_merchant_closed_until_and_daily_series: the public merchant profile reads
 -- only the free-text closure again, the daily series function and its rate rule are removed,
--- the three-featured-dishes cap trigger is removed and closed_until is dropped. A closed_until a
+-- the three-featured-dishes cap trigger, the closed_until 60-day limit and get_venue_closures
+-- are removed and closed_until is dropped. A closed_until a
 -- merchant set (a "closed today" or "closed until" they have not yet reopened from) is lost; the
 -- table is copied to rollback_archive first.
 -- expect-row-loss: app_private.request_rate_rules
+
+drop trigger if exists trg_enforce_merchant_closed_until_limit on public.merchant_outlets;
+drop function if exists app_private.enforce_merchant_closed_until_limit();
+drop function if exists public.get_venue_closures(text[]);
 
 drop trigger if exists trg_enforce_merchant_dish_featured_cap on public.dishes;
 drop function if exists app_private.enforce_merchant_dish_featured_cap();
@@ -58,7 +63,8 @@ grant execute on function public.get_public_merchant_profile(text) to anon, auth
 drop function if exists public.get_merchant_daily_series(uuid, timestamptz, timestamptz);
 drop function if exists app_private.get_merchant_daily_series(uuid, timestamptz, timestamptz);
 
-delete from app_private.request_rate_rules where route = 'rpc/get_merchant_daily_series';
+delete from app_private.request_rate_rules
+where route in ('rpc/get_merchant_daily_series', 'rpc/get_venue_closures');
 
 alter table public.merchant_outlets drop column if exists closed_until;
 

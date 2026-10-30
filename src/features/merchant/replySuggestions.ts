@@ -14,6 +14,20 @@ export const REPLY_SUGGESTION_KINDS: readonly ReplySuggestionKind[] = [
   "invite_back",
 ];
 
+/** Apologise leads on a 3-star or lower review; Thank leads otherwise (and when there is no rating). */
+export function orderReplySuggestionKinds(rating: number | undefined): ReplySuggestionKind[] {
+  const low = typeof rating === "number" && rating > 0 && rating <= 3;
+  return low ? ["apologise", "thank", "invite_back"] : [...REPLY_SUGGESTION_KINDS];
+}
+
+/**
+ * True when a chip may fill the reply box without asking: it is empty, or still holds exactly the
+ * last suggestion. Anything the merchant typed or changed is theirs.
+ */
+export function canFillReplySuggestion(current: string, lastSuggestion: string | null): boolean {
+  return current.trim() === "" || (lastSuggestion !== null && current === lastSuggestion);
+}
+
 /** The reviewer's first name for a greeting, or nothing when the name is missing or generic. */
 function greetingName(authorName: string | undefined): string | null {
   const first = authorName?.trim().split(/\s+/)[0] ?? "";

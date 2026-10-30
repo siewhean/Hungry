@@ -1,8 +1,10 @@
 -- Smoke checks for 20261029150000_merchant_closed_until_and_daily_series.sql.
--- A stall with closed_until in the future reads as "Closed today" / "Closed until <date>" on the
+-- A stall with closed_until in the future reads as "Closed today" / "Reopens <date>" on the
 -- public merchant profile (guests included) and as its free-text closure once the date passes;
 -- the daily series is zero-filled per Singapore day, team-only, capped at 31 days, and not
--- callable by guests; a stall can feature at most three dishes. Runs in a transaction and rolls back. Brings its own building.
+-- callable by guests; a stall can feature at most three dishes; get_venue_closures lists the
+-- stalls with an active closure (guests included); a closure more than 60 days ahead is refused.
+-- Runs in a transaction and rolls back. Brings its own building.
 --   owner:    00000000-0000-0072-b000-000000000001
 --   stranger: 00000000-0000-0072-b000-000000000002
 --   account:  00000000-0000-0072-a000-000000000001
@@ -82,11 +84,15 @@ set local role anon;
 
 do $$
 declare
-  v_expected text := 'Closed until ' || to_char(date_trunc('day', now() at time zone 'Asia/Singapore') + interval '5 days', 'FMDD Mon');
+  v_expected text := 'Reopens ' || to_char(date_trunc('day', now() at time zone 'Asia/Singapore') + interval '5 days', 'FMDD Mon');
 begin
   if (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue')) is distinct from v_expected then
     raise exception 'expected %, got %', v_expected,
       (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue'));
+  end if;
+  -- The batched closure read agrees (and ignores stalls that are not paused).
+  if (select count(*) from public.get_venue_closures(array['smoke-cu-venue', 'smoke-cu-not-a-venue'])) <> 1 then
+    raise exception 'get_venue_closures should list the paused stall only';
   end if;
 end $$;
 
@@ -103,6 +109,9 @@ do $$
 begin
   if (select temporary_closure from public.get_public_merchant_profile('smoke-cu-venue')) is distinct from 'Renovating' then
     raise exception 'an expired closed_until should fall back to the free-text closure';
+  end if;
+  if exists (select 1 from public.get_venue_closures(array['smoke-cu-venue'])) then
+    raise exception 'an expired closed_until must not count as a closure';
   end if;
 end $$;
 
@@ -165,6 +174,37 @@ begin
   end if;
   if not exists (select 1 from app_private.request_rate_rules where route = 'rpc/get_merchant_daily_series') then
     raise exception 'the daily series rate rule is missing';
+  end if;
+end $$;
+
+-- 2b. A closure more than 60 days ahead is refused for the merchant; 5 days ahead is fine.
+select set_config('request.jwt.claim.sub', '00000000-0000-0072-b000-000000000001', true);
+set local role authenticated;
+
+do $$
+begin
+  update merchant_outlets
+  set closed_until = now() + interval '5 days'
+  where id = '00000000-0000-0072-d000-000000000001';
+  begin
+    update merchant_outlets
+    set closed_until = now() + interval '90 days'
+    where id = '00000000-0000-0072-d000-000000000001';
+    raise exception 'a 90 day closure should be refused';
+  exception when invalid_parameter_value then
+    null;
+  end;
+end $$;
+
+reset role;
+
+do $$
+begin
+  if not has_function_privilege('anon', 'public.get_venue_closures(text[])', 'execute') then
+    raise exception 'anon should be able to execute get_venue_closures';
+  end if;
+  if not exists (select 1 from app_private.request_rate_rules where route = 'rpc/get_venue_closures') then
+    raise exception 'the get_venue_closures rate rule is missing';
   end if;
 end $$;
 

@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 85.4,
+    "lines": 85.5,
     "branches": 85.5,
-    "functions": 81
+    "functions": 81.3
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -90,6 +90,7 @@
     "src/features/merchant/closure.ts": 100,
     "src/features/merchant/customerPromotions.ts": 100,
     "src/features/merchant/dishPrice.ts": 100,
+    "src/features/merchant/featuredDishes.ts": 100,
     "src/features/merchant/insightRules.ts": 97.2,
     "src/features/merchant/menuSections.ts": 100,
     "src/features/merchant/merchantDeepLinks.ts": 100,
@@ -152,7 +153,7 @@
     "src/lib/analytics/preference.ts": 100,
     "src/lib/analytics/privacy.ts": 94.7,
     "src/lib/date/formatTimeAgo.ts": 95.8,
-    "src/lib/experiments/experiments.ts": 96.2,
+    "src/lib/experiments/experiments.ts": 96.6,
     "src/lib/geo/distance.ts": 100,
     "src/lib/geo/floorPlans.ts": 99.6,
     "src/lib/geo/floorPlanSources.ts": 100,
@@ -195,8 +196,8 @@
     "src/lib/services/supabase/client.ts": 97.1,
     "src/lib/services/supabase/mediaUpload.ts": 65.4,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
-    "src/lib/services/supabase/supabaseRepository.ts": 70,
-    "src/lib/services/supabase/supabaseService.ts": 56.6,
+    "src/lib/services/supabase/supabaseRepository.ts": 70.3,
+    "src/lib/services/supabase/supabaseService.ts": 56.9,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
     "src/store/persistStorage.ts": 66.5,

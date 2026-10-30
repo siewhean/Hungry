@@ -43,6 +43,11 @@ import {
   hasAvailabilityFlag,
 } from "@/features/merchant/menuSections";
 import { formatDishPrice, parseDishPrice } from "@/features/merchant/dishPrice";
+import {
+  MAX_FEATURED_DISHES,
+  countFeaturedDishes,
+  isFeaturedLimitError,
+} from "@/features/merchant/featuredDishes";
 import { isLockedLiveDish, isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
@@ -272,11 +277,22 @@ export function MerchantMenuScreen() {
     }
   };
 
+  const showFeaturedLimit = () =>
+    showAlert(
+      `${MAX_FEATURED_DISHES} of ${MAX_FEATURED_DISHES} featured`,
+      "You can feature up to 3 dishes. Remove Featured from another dish first.",
+    );
+
   const handleToggleFeatured = async (dish: DishDetail) => {
     if (!activeOutlet || featuredInFlight.current.has(dish.id)) return;
     featuredInFlight.current.add(dish.id);
     // The explicit target state: a retried or repeated request cannot toggle it back.
     const nextFeatured = !hasAvailabilityFlag(dish.availabilityFlags, "featured");
+    if (nextFeatured && countFeaturedDishes(menu) >= MAX_FEATURED_DISHES) {
+      featuredInFlight.current.delete(dish.id);
+      showFeaturedLimit();
+      return;
+    }
     try {
       const featured = await getHungryService().merchant.toggleFeatured(
         activeOutlet.id,
@@ -300,8 +316,13 @@ export function MerchantMenuScreen() {
         ),
       );
     } catch (e) {
-      reportError(e, { screen: "MerchantMenu", action: "toggle_featured" });
-      showError(showAlert, "Could not update featured dish", e);
+      // A fourth featured dish refused by the database is an answer, not a failure to report.
+      if (isFeaturedLimitError(e)) {
+        showFeaturedLimit();
+      } else {
+        reportError(e, { screen: "MerchantMenu", action: "toggle_featured" });
+        showError(showAlert, "Could not update featured dish", e);
+      }
     } finally {
       featuredInFlight.current.delete(dish.id);
     }
@@ -397,8 +418,8 @@ export function MerchantMenuScreen() {
                 },
                 {
                   text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "featured")
-                    ? "Remove from featured"
-                    : "Feature dish",
+                    ? `Remove from featured (${countFeaturedDishes(menu)} of ${MAX_FEATURED_DISHES})`
+                    : `Feature dish (${countFeaturedDishes(menu)} of ${MAX_FEATURED_DISHES} featured)`,
                   onPress: () => void handleToggleFeatured(dishDialog.dish),
                 },
               ]),

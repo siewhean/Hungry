@@ -1,8 +1,8 @@
 -- smoke: supabase/smoke/merchant_closed_until_and_daily_series.sql
 -- Merchant Centre round-four phase 2 (MERCH-R4-4, MERCH-R4-5, MERCH-21).
 --
--- 1. merchant_outlets.closed_until: a structured temporary closure ("Closed today", "Closed
---    until 3 Nov"). The stall and dish pages already read the closure through
+-- 1. merchant_outlets.closed_until: a structured temporary closure ("Closed today", "Reopens
+--    3 Nov"). The stall and dish pages already read the closure through
 --    get_public_merchant_profile().temporary_closure and treat any text as closed, so the
 --    function now turns an unexpired closed_until into that text (computed at read time: nothing
 --    has to switch the stall back on when the date passes). The free-text temporary_closure
@@ -15,6 +15,10 @@
 --    dishes), so "Stall's pick" keeps its meaning. A merchant who already has more keeps them;
 --    only featuring one more is refused. The count is taken under a per-stall advisory lock, so two
 --    staff phones featuring at the same moment cannot both pass.
+-- 4. get_venue_closures(venue ids): the stalls among up to 50 that have an active closed_until,
+--    in one call, so Decide for me, the map and the wheel stop offering a paused stall as "open
+--    now". Same outlet rule as get_public_merchant_profile (live, verified, latest edit).
+-- 5. A closure can be set at most 60 days ahead, enforced on the table (the app limits it too).
 -- Rollback: supabase/rollbacks/20261029150000_merchant_closed_until_and_daily_series.down.sql.
 
 alter table public.merchant_outlets
@@ -59,7 +63,7 @@ as $$
             when mo.closed_until <=
               ((date_trunc('day', now() at time zone 'Asia/Singapore') + interval '1 day') at time zone 'Asia/Singapore')
               then 'Closed today'
-            else 'Closed until ' || to_char(mo.closed_until at time zone 'Asia/Singapore', 'FMDD Mon')
+            else 'Reopens ' || to_char(mo.closed_until at time zone 'Asia/Singapore', 'FMDD Mon')
           end
       end,
       nullif(trim(coalesce(mo.temporary_closure, '')), '')
@@ -184,7 +188,8 @@ grant execute on function public.get_merchant_daily_series(uuid, timestamptz, ti
 
 -- Rate limit (signed-in callers only; the wrapper is VOLATILE so the limiter can count it).
 insert into app_private.request_rate_rules (route, anon_per_minute, user_per_minute, note) values
-  ('rpc/get_merchant_daily_series', null, 30, 'merchant Performance daily chart')
+  ('rpc/get_merchant_daily_series', null, 30, 'merchant Performance daily chart'),
+  ('rpc/get_venue_closures', 120, 180, 'paused-stall check for Decide for me, map and wheel')
 on conflict (route) do nothing;
 
 -- 3. Featured dish cap (3 per stall).
@@ -249,5 +254,58 @@ create trigger trg_enforce_merchant_dish_featured_cap
 before insert or update of availability_flags, archived_at, venue_id on public.dishes
 for each row
 execute function app_private.enforce_merchant_dish_featured_cap();
+
+-- 4. Active closures for a set of stalls (up to 50). VOLATILE so the rate limiter can count it.
+create or replace function public.get_venue_closures(p_venue_ids text[])
+returns table (venue_id text, closed_until timestamptz)
+language sql
+volatile
+security definer
+set search_path = public
+as $$
+  select latest.venue_id, latest.closed_until
+  from (
+    select distinct on (mo.venue_id) mo.venue_id, mo.closed_until
+    from merchant_outlets mo
+    where mo.venue_id = any(p_venue_ids[1:50])
+      and mo.is_live
+      and public.merchant_outlet_is_verified(mo.id)
+    order by mo.venue_id, mo.updated_at desc
+  ) latest
+  where latest.closed_until > now();
+$$;
+
+revoke all on function public.get_venue_closures(text[]) from public;
+grant execute on function public.get_venue_closures(text[]) to anon, authenticated;
+
+-- 5. A closure is a pause, not a profile change: at most 60 days ahead (one day of slack for
+--    clock drift between the phone and the server).
+create or replace function app_private.enforce_merchant_closed_until_limit()
+returns trigger
+language plpgsql
+security invoker
+set search_path = public, pg_catalog
+as $$
+begin
+  if current_user not in ('authenticated', 'anon') or public.app_is_current_user_ops_admin() then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' and old.closed_until is not distinct from new.closed_until then
+    return new;
+  end if;
+  if new.closed_until is not null and new.closed_until > now() + interval '61 days' then
+    raise exception 'Pick a reopen date within 60 days.' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function app_private.enforce_merchant_closed_until_limit() from public, anon, authenticated;
+
+drop trigger if exists trg_enforce_merchant_closed_until_limit on public.merchant_outlets;
+create trigger trg_enforce_merchant_closed_until_limit
+before insert or update of closed_until on public.merchant_outlets
+for each row
+execute function app_private.enforce_merchant_closed_until_limit();
 
 notify pgrst, 'reload schema';
