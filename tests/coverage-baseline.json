@@ -2,7 +2,7 @@
   "global": {
     "lines": 85.9,
     "branches": 85.5,
-    "functions": 81.9
+    "functions": 82
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -56,7 +56,7 @@
     "src/features/detail/dishPrefill.ts": 100,
     "src/features/detail/dishPrice.ts": 100,
     "src/features/detail/dishReviewSummary.ts": 100,
-    "src/features/detail/dishSources.ts": 97.3,
+    "src/features/detail/dishSources.ts": 97.4,
     "src/features/detail/dishTasteSummary.ts": 100,
     "src/features/detail/menuCategory.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
@@ -99,7 +99,7 @@
     "src/features/merchant/featuredDishes.ts": 100,
     "src/features/merchant/galleryUrls.ts": 100,
     "src/features/merchant/inboxFilters.ts": 100,
-    "src/features/merchant/insightRules.ts": 97.2,
+    "src/features/merchant/insightRules.ts": 97.4,
     "src/features/merchant/menuSections.ts": 100,
     "src/features/merchant/merchantDeepLinks.ts": 100,
     "src/features/merchant/merchantGuards.ts": 92.3,
@@ -110,6 +110,7 @@
     "src/features/merchant/promotionValidation.ts": 96.9,
     "src/features/merchant/replySuggestions.ts": 100,
     "src/features/merchant/setupChecklist.ts": 98.6,
+    "src/features/merchant/tagSuggestions.ts": 100,
     "src/features/merchant/verificationStateMachine.ts": 100,
     "src/features/merchantClaim/submitClaimFromStall.ts": 91.4,
     "src/features/passport/weeklyGoal.ts": 100,

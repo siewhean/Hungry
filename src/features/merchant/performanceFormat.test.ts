@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildDailyBars,
+  buildPeakHourStrip,
   describeDailySeries,
   formatChartDate,
   formatCount,
@@ -66,5 +67,54 @@ test("the summary names the busiest day, and says so when there are no visits", 
   assert.equal(
     describeDailySeries([point("2026-10-27", 3), point("2026-10-28", 9)]),
     "12 profile visits. Busiest day: Wed 28 Oct with 9.",
+  );
+});
+
+test("R5-7: a previous period is drawn on the same scale as this one", () => {
+  const now = [point("2026-10-27", 4), point("2026-10-28", 8)];
+  const before = [point("2026-10-20", 16), point("2026-10-21", 2)];
+  const bars = buildDailyBars(now, before);
+  assert.deepEqual(
+    bars.map((bar) => bar.ratio),
+    [0.25, 0.5],
+  );
+  assert.deepEqual(
+    bars.map((bar) => bar.previousRatio),
+    [1, 0.125],
+  );
+  assert.equal(bars[0].previousValue, 16);
+  assert.match(
+    bars[0].accessibilityLabel,
+    /Tue 27 Oct: 4 profile visits\. 16 on the same day before/,
+  );
+});
+
+test("R5-7: a previous period of a different length, or none, is ignored", () => {
+  const now = [point("2026-10-27", 4), point("2026-10-28", 8)];
+  for (const previous of [null, undefined, [point("2026-10-20", 99)]]) {
+    const bars = buildDailyBars(now, previous);
+    assert.deepEqual(
+      bars.map((bar) => bar.ratio),
+      [0.5, 1],
+    );
+    assert.equal(bars[0].previousValue, undefined);
+    assert.equal(bars[0].previousRatio, 0);
+    assert.doesNotMatch(bars[0].accessibilityLabel, /before/);
+  }
+});
+
+test("R5-7: the peak-hour strip covers 24 hours and marks the busiest in order", () => {
+  const strip = buildPeakHourStrip([13, 12, 13, 25, -1]);
+  assert.equal(strip.length, 24);
+  assert.deepEqual(
+    strip.filter((cell) => cell.isPeak).map((cell) => [cell.hour, cell.rank]),
+    [
+      [12, 2],
+      [13, 1],
+    ],
+  );
+  assert.equal(
+    buildPeakHourStrip([]).every((cell) => !cell.isPeak && cell.rank === null),
+    true,
   );
 });

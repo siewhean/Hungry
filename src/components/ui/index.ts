@@ -1,4 +1,6 @@
 export * from "./AppText";
+export * from "./AppSymbol";
+export * from "./PressableScale";
 export * from "./AppHeader";
 export * from "./AppBottomTabItem";
 export * from "./Avatar";

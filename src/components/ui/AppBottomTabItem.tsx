@@ -1,14 +1,19 @@
 import { type ComponentType } from "react";
 import { Pressable, View } from "react-native";
+import type { SFSymbol } from "expo-symbols";
 import type { LucideProps } from "lucide-react-native";
 
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "./AppSymbol";
 import { AppText } from "./AppText";
 
 interface AppBottomTabItemProps {
   label: string;
   icon: ComponentType<LucideProps>;
+  /** The SF Symbol drawn on iOS in place of `icon`; `focusedSymbol` is used while selected. */
+  symbol?: SFSymbol;
+  focusedSymbol?: SFSymbol;
   focused?: boolean;
   createAction?: boolean;
   showLabel?: boolean;
@@ -21,6 +26,8 @@ interface AppBottomTabItemProps {
 export function AppBottomTabItem({
   label,
   icon: Icon,
+  symbol,
+  focusedSymbol,
   focused = false,
   createAction = false,
   showLabel = true,
@@ -62,7 +69,16 @@ export function AppBottomTabItem({
         }}
       >
         {/* The write button is an ordinary tab glyph: same size, slot and colours as the rest. */}
-        <Icon color={iconColor} size={componentSizes.bottomTabIcon} />
+        {symbol ? (
+          <AppSymbol
+            name={focused && focusedSymbol ? focusedSymbol : symbol}
+            fallback={Icon}
+            size={componentSizes.bottomTabIcon}
+            color={iconColor}
+          />
+        ) : (
+          <Icon color={iconColor} size={componentSizes.bottomTabIcon} />
+        )}
       </View>
       {showLabel ? (
         <AppText

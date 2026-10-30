@@ -2,7 +2,7 @@ import type { CustomerInteraction } from "@/types/domain";
 
 export type RatingFilter = "rating_low" | "rating_mid" | "rating_high";
 
-/** Star bands of the inbox filter chips: 1–2★, 3★ and 4–5★. */
+/** Star bands of the inbox filter chips: 1–2 stars, 3 stars and 4–5 stars. */
 const RATING_BANDS: Record<RatingFilter, readonly [number, number]> = {
   rating_low: [1, 2],
   rating_mid: [3, 3],

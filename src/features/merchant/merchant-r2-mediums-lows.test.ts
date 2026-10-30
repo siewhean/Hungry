@@ -57,9 +57,9 @@ test("ratings read as stars and say so when there are no reviews (M11, L4)", () 
     formatReviewCountLabel(0, "in the last 7 days", { zeroLabel: "No reviews in the last 7 days" }),
     "No reviews in the last 7 days",
   );
-  assert.equal(formatRatingChange(4.5, 4.3, 5, 4), "+0.2★");
-  assert.equal(formatRatingChange(4, 4.5, 5, 4), "-0.5★");
-  assert.equal(formatRatingChange(4, 4, 5, 4), "0.0★");
+  assert.equal(formatRatingChange(4.5, 4.3, 5, 4), "+0.2");
+  assert.equal(formatRatingChange(4, 4.5, 5, 4), "-0.5");
+  assert.equal(formatRatingChange(4, 4, 5, 4), "0.0");
   assert.equal(formatRatingChange(4, 0, 5, 0), "New");
   assert.equal(formatRatingChange(0, 4, 0, 4), "No reviews yet");
   assert.doesNotMatch(formatRatingChange(4.5, 4.3, 5, 4), /%/);

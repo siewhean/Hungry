@@ -23,8 +23,10 @@ import {
 } from "lucide-react-native";
 
 import {
+  AppSymbol,
   AppText,
   Button,
+  PressableScale,
   Skeleton,
   EmptyState,
   FilterChipRail,
@@ -198,24 +200,21 @@ function ActionCard({
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${description}`}
       accessibilityHint={actionText}
       onPressIn={onPressIn}
       onPress={onPress}
-      style={({ pressed }) => [
-        {
-          backgroundColor: palette.surface,
-          borderRadius: componentRadii.button,
-          padding: spacing[4],
-          borderWidth: 1,
-          borderColor: palette.border,
-          flexDirection: "row",
-          gap: spacing[3],
-          opacity: pressed ? 0.8 : 1,
-        },
-      ]}
+      style={{
+        backgroundColor: palette.surface,
+        borderRadius: componentRadii.button,
+        padding: spacing[4],
+        borderWidth: 1,
+        borderColor: palette.border,
+        flexDirection: "row",
+        gap: spacing[3],
+      }}
     >
       <View
         style={{
@@ -240,10 +239,15 @@ function ActionCard({
           <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
             {actionText}
           </AppText>
-          <ChevronRight size={14} color={palette.orangeText} />
+          <AppSymbol
+            name="chevron.right"
+            fallback={ChevronRight}
+            size={14}
+            color={palette.orangeText}
+          />
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -265,25 +269,22 @@ function ToolTile({
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`${title}. ${description}`}
       onPressIn={onPressIn}
       onPress={onPress}
-      style={({ pressed }) => [
-        {
-          flexBasis: "47%",
-          flexGrow: 1,
-          minHeight: 88,
-          backgroundColor: palette.surface,
-          borderRadius: componentRadii.button,
-          padding: spacing[4],
-          borderWidth: 1,
-          borderColor: palette.border,
-          gap: spacing[2],
-          opacity: pressed ? 0.8 : 1,
-        },
-      ]}
+      style={{
+        flexBasis: "47%",
+        flexGrow: 1,
+        minHeight: 88,
+        backgroundColor: palette.surface,
+        borderRadius: componentRadii.button,
+        padding: spacing[4],
+        borderWidth: 1,
+        borderColor: palette.border,
+        gap: spacing[2],
+      }}
     >
       <View
         style={{
@@ -300,7 +301,7 @@ function ToolTile({
       <AppText variant="bodyBold" style={{ color: palette.text }}>
         {title}
       </AppText>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -337,9 +338,23 @@ export function MerchantInlineReplyCard({
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: spacing[2] }}>
         <AppText variant="bodySmallBold">{review.authorName}</AppText>
         {rating ? (
-          <AppText variant="bodySmall" tone="muted" accessibilityLabel={`Rated ${rating} out of 5`}>
-            {"★".repeat(rating)}
-          </AppText>
+          <View
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel={`Rated ${rating} out of 5`}
+            style={{ flexDirection: "row", gap: 2 }}
+          >
+            {[1, 2, 3, 4, 5].map((star) => (
+              <AppSymbol
+                key={star}
+                name={star <= rating ? "star.fill" : "star"}
+                fallback={Star}
+                filled={star <= rating}
+                size={14}
+                color={star <= rating ? palette.starStroke : palette.border}
+              />
+            ))}
+          </View>
         ) : null}
       </View>
       <AppText variant="bodySmall" numberOfLines={2}>
@@ -686,7 +701,7 @@ export function MerchantDashboardScreen() {
               value={views}
               subtext={viewsSubtext}
               trend={viewsDelta?.trend}
-              icon={<Users size={24} color={palette.orange} />}
+              icon={<AppSymbol name="person.2" fallback={Users} size={24} color={palette.orange} />}
               color={palette.orange}
             />
           </View>
@@ -695,7 +710,15 @@ export function MerchantDashboardScreen() {
               title="Avg rating"
               value={rating}
               subtext={ratingSubtext}
-              icon={<Star size={24} color={palette.amber} />}
+              icon={
+                <AppSymbol
+                  name="star.fill"
+                  fallback={Star}
+                  filled
+                  size={24}
+                  color={palette.amber}
+                />
+              }
               color={palette.amber}
             />
           </View>
@@ -711,7 +734,9 @@ export function MerchantDashboardScreen() {
             <ActionCard
               title="Incomplete profile"
               description={`Missing: ${profileGaps.map((gap) => gap.label).join(", ")}`}
-              icon={<Utensils size={20} color={palette.orange} />}
+              icon={
+                <AppSymbol name="fork.knife" fallback={Utensils} size={20} color={palette.orange} />
+              }
               actionText="Edit profile"
               onPressIn={() => prefetchMerchantRoute("BusinessProfileEditor")}
               onPress={() => navigation.navigate("BusinessProfileEditor")}
@@ -733,7 +758,14 @@ export function MerchantDashboardScreen() {
             <ActionCard
               title="Unreplied reviews"
               description={`${unrepliedCount} review${unrepliedCount === 1 ? "" : "s"} waiting for your response.`}
-              icon={<MessageSquare size={20} color={palette.textSecondary} />}
+              icon={
+                <AppSymbol
+                  name="bubble.left"
+                  fallback={MessageSquare}
+                  size={20}
+                  color={palette.textSecondary}
+                />
+              }
               actionText="Read reviews"
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
               onPress={() => navigation.navigate("CustomerInbox", { filter: "unreplied" })}
@@ -764,7 +796,7 @@ export function MerchantDashboardScreen() {
             Quick actions
           </AppText>
 
-          <Pressable
+          <PressableScale
             accessibilityRole="button"
             accessibilityLabel="Manage menu. Update prices or add new dishes"
             onPressIn={() => prefetchMerchantRoute("Menu")}
@@ -789,7 +821,12 @@ export function MerchantDashboardScreen() {
                 justifyContent: "center",
               }}
             >
-              <ClipboardList color={palette.white} size={28} />
+              <AppSymbol
+                name="list.bullet.clipboard"
+                fallback={ClipboardList}
+                size={28}
+                color={palette.white}
+              />
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3" style={{ color: palette.white, fontWeight: "800" }}>
@@ -799,8 +836,13 @@ export function MerchantDashboardScreen() {
                 Update prices or add new dishes
               </AppText>
             </View>
-            <ChevronRight color={palette.white} size={24} />
-          </Pressable>
+            <AppSymbol
+              name="chevron.right"
+              fallback={ChevronRight}
+              size={24}
+              color={palette.white}
+            />
+          </PressableScale>
         </View>
 
         {/* Business Tools */}
@@ -813,28 +855,39 @@ export function MerchantDashboardScreen() {
             <ToolTile
               title="Promotions"
               description="Create and manage offers for nearby customers."
-              icon={<Megaphone size={22} color={palette.orange} />}
+              icon={
+                <AppSymbol name="megaphone" fallback={Megaphone} size={22} color={palette.orange} />
+              }
               onPressIn={() => prefetchMerchantRoute("PromotionList")}
               onPress={() => navigation.navigate("PromotionList")}
             />
             <ToolTile
               title="Featured visitors"
               description="Pin popular visitor reviews to your public stall page."
-              icon={<Users size={22} color={palette.orange} />}
+              icon={<AppSymbol name="person.2" fallback={Users} size={22} color={palette.orange} />}
               onPressIn={() => prefetchMerchantRoute("FeaturedVisitors")}
               onPress={() => navigation.navigate("FeaturedVisitors")}
             />
             <ToolTile
               title="Insights"
               description="See a simple summary of your stall's recent activity."
-              icon={<Sparkles size={22} color={palette.orange} />}
+              icon={
+                <AppSymbol name="sparkles" fallback={Sparkles} size={22} color={palette.orange} />
+              }
               onPressIn={() => prefetchMerchantRoute("AIAssistant")}
               onPress={() => navigation.navigate("AIAssistant")}
             />
             <ToolTile
               title="Merchant settings"
               description="Alerts, verification and account."
-              icon={<Settings size={22} color={palette.textSecondary} />}
+              icon={
+                <AppSymbol
+                  name="gearshape"
+                  fallback={Settings}
+                  size={22}
+                  color={palette.textSecondary}
+                />
+              }
               onPressIn={() => prefetchMerchantRoute("MerchantSettings")}
               onPress={() => navigation.navigate("MerchantSettings")}
             />
@@ -846,7 +899,7 @@ export function MerchantDashboardScreen() {
           <View
             style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
           >
-            <AppText variant="h3" style={{ fontWeight: "800" }}>
+            <AppText variant="h3" style={{ fontWeight: "800", flex: 1 }}>
               Recent reviews
             </AppText>
             <Button
@@ -858,22 +911,19 @@ export function MerchantDashboardScreen() {
             />
           </View>
           {latestFeedback ? (
-            <Pressable
+            <PressableScale
               accessibilityRole="button"
               accessibilityLabel={`Latest review from ${latestFeedback.authorName}: ${latestFeedback.text}`}
               onPressIn={() => prefetchMerchantRoute("CustomerInbox")}
               onPress={() => navigation.navigate("CustomerInbox", { filter: "all" })}
-              style={({ pressed }) => [
-                {
-                  backgroundColor: palette.surface,
-                  borderRadius: componentRadii.button,
-                  padding: spacing[4],
-                  gap: spacing[4],
-                  borderWidth: 1,
-                  borderColor: palette.border,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
+              style={{
+                backgroundColor: palette.surface,
+                borderRadius: componentRadii.button,
+                padding: spacing[4],
+                gap: spacing[4],
+                borderWidth: 1,
+                borderColor: palette.border,
+              }}
             >
               <View style={{ flexDirection: "row", gap: spacing[3] }}>
                 <View
@@ -902,7 +952,7 @@ export function MerchantDashboardScreen() {
                   </AppText>
                 </View>
               </View>
-            </Pressable>
+            </PressableScale>
           ) : (
             <View
               style={{

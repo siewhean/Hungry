@@ -44,24 +44,71 @@ export interface ChartBar {
   axisLabel: string;
   /** Spoken form: "Mon 27 Oct: 12 profile visits". */
   accessibilityLabel: string;
+  /** The same day of the previous period, when the chart compares; drawn as a ghost bar. */
+  previousValue?: number;
+  /** 0 to 1 on the same scale as `ratio`; 0 when there is no previous bar. */
+  previousRatio: number;
 }
 
-export function buildDailyBars(series: readonly MerchantDailyPoint[]): ChartBar[] {
-  const max = Math.max(0, ...series.map((point) => point.profileVisits));
+/**
+ * One bar per day. With `previous` (the same number of days before the range), each bar also
+ * carries the matching day of that period, on one shared scale so the two can be compared.
+ */
+export function buildDailyBars(
+  series: readonly MerchantDailyPoint[],
+  previous?: readonly MerchantDailyPoint[] | null,
+): ChartBar[] {
+  const compared = previous && previous.length === series.length ? previous : null;
+  const max = Math.max(
+    0,
+    ...series.map((point) => point.profileVisits),
+    ...(compared?.map((point) => point.profileVisits) ?? []),
+  );
   const weekly = series.length <= 7;
   return series.map((point, index) => {
     const day = parseDay(point.date);
     const showLabel = weekly || index % 5 === 0 || index === series.length - 1;
+    const previousValue = compared?.[index].profileVisits;
+    const visits = `${formatCount(point.profileVisits)} profile ${
+      point.profileVisits === 1 ? "visit" : "visits"
+    }`;
     return {
       date: point.date,
       value: point.profileVisits,
       ratio: max > 0 ? point.profileVisits / max : 0,
       axisLabel: !day || !showLabel ? "" : weekly ? day.weekday.slice(0, 2) : String(day.day),
-      accessibilityLabel: `${formatChartDate(point.date)}: ${formatCount(point.profileVisits)} profile ${
-        point.profileVisits === 1 ? "visit" : "visits"
-      }`,
+      accessibilityLabel:
+        `${formatChartDate(point.date)}: ${visits}` +
+        (previousValue === undefined
+          ? ""
+          : `. ${formatCount(previousValue)} on the same day before`),
+      previousValue,
+      previousRatio: previousValue !== undefined && max > 0 ? previousValue / max : 0,
     };
   });
+}
+
+export interface PeakHourCell {
+  /** 0 to 23, Singapore time. */
+  hour: number;
+  isPeak: boolean;
+  /** 1 for the busiest hour; null for an hour that is not a peak. */
+  rank: number | null;
+}
+
+/** All 24 hours of the day, with the busiest hours marked. The server sends the order, not counts. */
+export function buildPeakHourStrip(peakHours: readonly number[]): PeakHourCell[] {
+  const rankOf = new Map<number, number>();
+  peakHours.forEach((hour, index) => {
+    if (Number.isInteger(hour) && hour >= 0 && hour <= 23 && !rankOf.has(hour)) {
+      rankOf.set(hour, index + 1);
+    }
+  });
+  return Array.from({ length: 24 }, (_, hour) => ({
+    hour,
+    isPeak: rankOf.has(hour),
+    rank: rankOf.get(hour) ?? null,
+  }));
 }
 
 /** One sentence for screen readers and for the card's caption. */

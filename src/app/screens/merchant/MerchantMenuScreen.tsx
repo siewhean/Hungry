@@ -8,14 +8,16 @@ import {
   Switch,
   Modal,
 } from "react-native";
-import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
+import { Camera, Info, MoreVertical, Plus, Search, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
+  PressableScale,
   Button,
   Dialog,
   IconButton,
@@ -34,6 +36,7 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
@@ -226,6 +229,7 @@ export function MerchantMenuScreen() {
   const handleToggleSoldOut = async (dish: DishDetail, soldOut?: boolean) => {
     if (!activeOutlet) return;
     const nextSoldOut = soldOut ?? !hasAvailabilityFlag(dish.availabilityFlags, "sold_out");
+    selectHaptic();
     setMenu((prev) => prev.map((d) => (d.id === dish.id ? withSoldOut(d, nextSoldOut) : d)));
     try {
       await getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id, nextSoldOut);
@@ -500,14 +504,18 @@ export function MerchantMenuScreen() {
               <View
                 accessibilityRole="text"
                 style={{
-                  backgroundColor: isVerified ? palette.successSoft : palette.bgSoft,
-                  borderColor: isVerified ? palette.success : palette.border,
+                  alignItems: "flex-start",
+                  backgroundColor: palette.infoSoft,
+                  borderColor: palette.border,
                   borderRadius: componentRadii.card,
                   borderWidth: 1,
+                  flexDirection: "row",
+                  gap: spacing[2],
                   padding: spacing[3],
                 }}
               >
-                <AppText variant="bodySmall">
+                <AppSymbol name="info.circle" fallback={Info} size={18} color={palette.info} />
+                <AppText variant="bodySmall" style={{ flex: 1 }}>
                   {isVerified
                     ? "Changes you make here show to diners straight away. Sold-out dishes come back on automatically at midnight."
                     : "Dishes you add are saved as drafts, hidden from diners until Hungry verifies your stall. Dishes diners already see can be changed once you are verified."}
@@ -623,79 +631,36 @@ export function MerchantMenuScreen() {
                   },
                 ]}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Edit ${dish.name}`}
-                  onPressIn={() => prefetchDishEditorRoute(dish)}
-                  onLongPress={() => showDishOptions(dish)}
-                  onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
-                  style={({ pressed }) => [
-                    styles.dishEditTarget,
-                    { gap: spacing[3], opacity: pressed ? 0.78 : 1 },
-                  ]}
-                >
-                  {imageUrl ? (
-                    <AccessibleImage
-                      source={{ uri: imageUrl }}
-                      style={[styles.dishImage, { borderRadius: componentRadii.card }]}
-                      decorative
-                      fallback={imageFallback}
-                    />
-                  ) : (
-                    imageFallback
-                  )}
-                  <View style={{ flex: 1, gap: spacing[0.5] }}>
-                    <AppText variant="bodyBold" numberOfLines={2}>
-                      {dish.name}
-                    </AppText>
-                    {meta ? (
-                      <AppText variant="bodySmall" tone="muted" numberOfLines={1}>
-                        {meta}
-                      </AppText>
-                    ) : null}
-                    {isSoldOut || dish.isMerchantDraft || dish.dietaryFlags.length > 0 ? (
-                      <View style={[styles.flagRow, { gap: spacing[1], marginTop: spacing[0.5] }]}>
-                        {isSoldOut ? (
-                          <View style={[pillStyle, { backgroundColor: palette.errorSoft }]}>
-                            <AppText variant="micro" tone="muted">
-                              Sold out
-                            </AppText>
-                          </View>
-                        ) : null}
-                        {dish.isMerchantDraft ? (
-                          <View style={pillStyle}>
-                            <AppText variant="micro" tone="muted">
-                              Draft
-                            </AppText>
-                          </View>
-                        ) : null}
-                        {dish.dietaryFlags.slice(0, 2).map((flag) => (
-                          <View key={flag} style={pillStyle}>
-                            <AppText variant="micro" tone="muted">
-                              {formatDietaryFlag(flag)}
-                            </AppText>
-                          </View>
-                        ))}
-                      </View>
-                    ) : null}
-                    {isLocked ? (
-                      <AppText variant="micro" tone="muted">
-                        Verify to change live dishes
-                      </AppText>
-                    ) : null}
-                  </View>
-                </Pressable>
-                <View style={{ alignItems: "flex-end", gap: spacing[1] }}>
-                  <Pressable
+                <View style={[styles.dishTopRow, { gap: spacing[2] }]}>
+                  <PressableScale
                     accessibilityRole="button"
-                    accessibilityLabel={`Change price of ${dish.name}, ${dish.priceRange}`}
-                    accessibilityState={{ disabled: isLocked }}
-                    disabled={isLocked}
-                    hitSlop={8}
-                    onPress={() => openPriceEdit(dish)}
+                    accessibilityLabel={`Edit ${dish.name}`}
+                    onPressIn={() => prefetchDishEditorRoute(dish)}
+                    onLongPress={() => showDishOptions(dish)}
+                    onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
+                    style={[styles.dishEditTarget, { gap: spacing[3] }]}
                   >
-                    <AppText variant="bodyBold">{dish.priceRange}</AppText>
-                  </Pressable>
+                    {imageUrl ? (
+                      <AccessibleImage
+                        source={{ uri: imageUrl }}
+                        style={[styles.dishImage, { borderRadius: componentRadii.card }]}
+                        decorative
+                        fallback={imageFallback}
+                      />
+                    ) : (
+                      imageFallback
+                    )}
+                    <View style={{ flex: 1, gap: spacing[0.5] }}>
+                      <AppText variant="bodyBold" numberOfLines={2}>
+                        {dish.name}
+                      </AppText>
+                      {meta ? (
+                        <AppText variant="bodySmall" tone="muted" numberOfLines={1}>
+                          {meta}
+                        </AppText>
+                      ) : null}
+                    </View>
+                  </PressableScale>
                   <Switch
                     accessibilityLabel={`${dish.name} available`}
                     accessibilityState={{ checked: !isSoldOut, disabled: isLocked }}
@@ -706,12 +671,63 @@ export function MerchantMenuScreen() {
                     thumbColor={palette.white}
                     ios_backgroundColor={palette.border}
                   />
+                  <IconButton
+                    accessibilityLabel="Dish options"
+                    icon={
+                      <AppSymbol
+                        name="ellipsis"
+                        fallback={MoreVertical}
+                        size={20}
+                        color={palette.textSecondary}
+                      />
+                    }
+                    onPress={() => showDishOptions(dish)}
+                  />
                 </View>
-                <IconButton
-                  accessibilityLabel="Dish options"
-                  icon={<MoreVertical size={20} color={palette.textSecondary} />}
-                  onPress={() => showDishOptions(dish)}
-                />
+                {/* Second line: the price and the badges sit under the name, indented past the photo. */}
+                <View
+                  style={[
+                    styles.dishSecondRow,
+                    { gap: spacing[2], paddingLeft: DISH_IMAGE_SIZE + spacing[3] },
+                  ]}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Change price of ${dish.name}, ${dish.priceRange}`}
+                    accessibilityState={{ disabled: isLocked }}
+                    disabled={isLocked}
+                    hitSlop={8}
+                    onPress={() => openPriceEdit(dish)}
+                  >
+                    <AppText variant="bodyBold">{dish.priceRange}</AppText>
+                  </Pressable>
+                  {isSoldOut ? (
+                    <View style={[pillStyle, { backgroundColor: palette.errorSoft }]}>
+                      <AppText variant="micro" tone="muted">
+                        Sold out
+                      </AppText>
+                    </View>
+                  ) : null}
+                  {dish.isMerchantDraft ? (
+                    <View style={pillStyle}>
+                      <AppText variant="micro" tone="muted">
+                        Draft
+                      </AppText>
+                    </View>
+                  ) : null}
+                  {dish.dietaryFlags.slice(0, 2).map((flag) => (
+                    <View key={flag} style={pillStyle}>
+                      <AppText variant="micro" tone="muted">
+                        {formatDietaryFlag(flag)}
+                      </AppText>
+                    </View>
+                  ))}
+                  {isLocked ? (
+                    <AppText variant="micro" tone="muted">
+                      Verify to change live dishes
+                    </AppText>
+                  ) : null}
+                </View>
               </View>
             );
           }}
@@ -844,6 +860,8 @@ export function MerchantMenuScreen() {
   );
 }
 
+const DISH_IMAGE_SIZE = 56;
+
 const styles = StyleSheet.create({
   priceBackdrop: {
     flex: 1,
@@ -852,9 +870,16 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   dishCard: {
+    borderWidth: 1,
+  },
+  dishTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
+  },
+  dishSecondRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   dishEditTarget: {
     flex: 1,
@@ -862,8 +887,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dishImage: {
-    width: 56,
-    height: 56,
+    width: DISH_IMAGE_SIZE,
+    height: DISH_IMAGE_SIZE,
   },
   dishImagePlaceholder: {
     alignItems: "center",

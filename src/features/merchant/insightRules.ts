@@ -25,6 +25,8 @@ export interface InsightInput {
     previousPeriodComparison?: Pick<MerchantAnalytics["previousPeriodComparison"], "profileVisits">;
   };
   openingSchedule?: OpeningSchedule;
+  /** The hours text diners see ("7:00 AM – 3:00 PM"), kept beside the day-by-day schedule. */
+  operatingHours?: string;
   now?: Date;
 }
 
@@ -64,7 +66,7 @@ function joinNames(names: readonly string[], total: number): string {
 }
 
 export function buildMerchantInsights(input: InsightInput): AIBusinessInsight[] {
-  const { facts, outletId, analytics, openingSchedule } = input;
+  const { facts, outletId, analytics, openingSchedule, operatingHours } = input;
   const now = input.now ?? new Date();
   const createdAt = now.toISOString();
   const insights: AIBusinessInsight[] = [];
@@ -141,13 +143,24 @@ export function buildMerchantInsights(input: InsightInput): AIBusinessInsight[] 
   }
 
   if (!hasWeeklyHours(openingSchedule)) {
-    add(
-      "hours-missing",
-      "profile_improvement",
-      "Add your opening hours",
-      "Diners cannot see when you are open, and the stall cannot show as open now.",
-      { label: "Add hours", target: "BusinessProfileEditor" },
-    );
+    // Hours typed as text still reach diners, so the stall is not told it has none.
+    if (operatingHours?.trim()) {
+      add(
+        "hours-text-only",
+        "profile_improvement",
+        "Set hours for each day",
+        `Diners see "${operatingHours.trim()}". Set the hours for each day and the stall can show as open now.`,
+        { label: "Set hours", target: "BusinessProfileEditor" },
+      );
+    } else {
+      add(
+        "hours-missing",
+        "profile_improvement",
+        "Add your opening hours",
+        "Diners cannot see when you are open, and the stall cannot show as open now.",
+        { label: "Add hours", target: "BusinessProfileEditor" },
+      );
+    }
   } else {
     const peak = analytics?.peakDiscoveryHours?.[0];
     if (peak !== undefined && !isHourCoveredBySchedule(openingSchedule, peak)) {

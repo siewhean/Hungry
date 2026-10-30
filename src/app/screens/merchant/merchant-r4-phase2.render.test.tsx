@@ -186,9 +186,16 @@ test("R4-11: a sold-out dish shows one 'Sold out' signal and the price is on the
     dish(base, "d1", "Laksa", { availabilityFlags: ["sold_out"], priceRange: "S$6.50" }),
   ]);
   const { view } = await renderMenu();
-  const row = view.findByLabel("Edit Laksa") as HTMLElement;
-  assert.equal(row.textContent?.split("Sold out").length, 2, "one pill on the row");
-  assert.match(view.text(), /S\$6\.50/);
+  // R5-5: the card is the photo and name, the switch and options on top, and the price and
+  // badges on a second line beneath.
+  const row = (view.findByLabel("Edit Laksa") as HTMLElement).parentElement?.parentElement;
+  assert.equal(row?.textContent?.split("Sold out").length, 2, "one pill on the row");
+  assert.match(row?.textContent ?? "", /S\$6\.50/);
+  assert.doesNotMatch(
+    (view.findByLabel("Edit Laksa") as HTMLElement).textContent ?? "",
+    /S\$6\.50|Sold out/,
+    "the price and badges are not squeezed beside the name",
+  );
   const name = view.findByText("Laksa");
   assert.notEqual(getComputedStyle(name as HTMLElement).textDecorationLine, "line-through");
 });

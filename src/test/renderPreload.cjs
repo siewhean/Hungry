@@ -321,6 +321,7 @@ const STUBS = [
     },
   ],
   [/^expo-linear-gradient$/, {}],
+  [/^expo-symbols$/, {}],
   [/^expo-blur$/, {}],
   [
     /^expo-haptics$/,
