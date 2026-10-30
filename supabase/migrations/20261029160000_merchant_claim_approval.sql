@@ -130,21 +130,13 @@ begin
   set status = 'converted', status_updated_at = now()
   where id = v_claim.id;
 
-  -- The claimant's own duplicate claims on this stall are approved with it; other people's open
-  -- claims can no longer succeed.
-  update public.merchant_claim_interests
-  set status = 'converted', status_updated_at = now()
-  where venue_id = v_claim.venue_id
-    and id <> v_claim.id
-    and status in ('new', 'contacted', 'qualified')
-    and claimed_by = v_claim.claimed_by;
-
+  -- Other people's open claims on this stall can no longer succeed. (One person has one claim per
+  -- stall: uniq_claim_user_venue.)
   update public.merchant_claim_interests
   set status = 'rejected', status_updated_at = now()
   where venue_id = v_claim.venue_id
     and id <> v_claim.id
-    and status in ('new', 'contacted', 'qualified')
-    and claimed_by is distinct from v_claim.claimed_by;
+    and status in ('new', 'contacted', 'qualified');
   get diagnostics v_rejected = row_count;
 
   return jsonb_build_object(

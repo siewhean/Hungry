@@ -37,9 +37,7 @@ values
   ('00000000-0000-0073-c000-000000000003', 'smoke-mca-venue-2', 'smoke-mca-building',
    '00000000-0000-0073-b000-000000000001', null, null, 'new'),
   ('00000000-0000-0073-c000-000000000004', 'smoke-mca-venue-3', 'smoke-mca-building',
-   '00000000-0000-0073-b000-000000000002', null, null, 'rejected'),
-  ('00000000-0000-0073-c000-000000000005', 'smoke-mca-venue', 'smoke-mca-building',
-   '00000000-0000-0073-b000-000000000001', 'Uncle Tan again', 'tan@example.test', 'new');
+   '00000000-0000-0073-b000-000000000002', null, null, 'rejected');
 
 select set_config('request.jwt.claim.role', 'service_role', true);
 set local role service_role;
@@ -62,9 +60,6 @@ begin
   end if;
   if (select status from merchant_claim_interests where id = '00000000-0000-0073-c000-000000000002') <> 'rejected' then
     raise exception 'the rival claim should be rejected once the stall is approved';
-  end if;
-  if (select status from merchant_claim_interests where id = '00000000-0000-0073-c000-000000000005') <> 'converted' then
-    raise exception 'the claimant duplicate claim should be approved with the first';
   end if;
 
   if not exists (
@@ -126,11 +121,9 @@ begin
   end if;
 
   -- Someone else's claim on a stall that already has an owner is refused.
-  insert into merchant_claim_interests (id, venue_id, building_id, claimed_by, status)
-  values ('00000000-0000-0073-c000-000000000006', 'smoke-mca-venue', 'smoke-mca-building',
-          '00000000-0000-0073-b000-000000000002', 'new');
+  update merchant_claim_interests set status = 'new' where id = '00000000-0000-0073-c000-000000000002';
   begin
-    perform public.approve_merchant_claim('00000000-0000-0073-c000-000000000006');
+    perform public.approve_merchant_claim('00000000-0000-0073-c000-000000000002');
     raise exception 'a rival claim on an owned stall was approved';
   exception when unique_violation then
     null;
