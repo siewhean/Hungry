@@ -1,31 +1,19 @@
-import {
-  Fragment,
-  memo,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   RefreshControl,
   ScrollView,
-  TextInput,
   View,
   useWindowDimensions,
-  type ImageSourcePropType,
-  type StyleProp,
   type LayoutChangeEvent,
-  type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
   ChevronRight,
-  Compass,
+  Drumstick,
+  Moon,
+  Salad,
   Search,
   SearchX,
   Shuffle,
@@ -33,49 +21,47 @@ import {
   Flame,
   Dices,
   Users,
-  Utensils,
+  Tag,
 } from "lucide-react-native";
 import {
-  useFocusEffect,
   useIsFocused,
   useNavigation,
   useRoute,
+  useScrollToTop,
   type CompositeNavigationProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
-import {
-  AccessibleImage,
-  AppText,
-  EmptyState,
-  FilterChipRail,
-  Screen,
-  Skeleton,
-} from "@/components/ui";
+import { AppText, EmptyState, FilterChipRail, Screen, Skeleton } from "@/components/ui";
 import { DiscoverModeTabs, type DiscoverMode } from "@/components/discover/DiscoverModeTabs";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { ForYouCard } from "@/components/discover/ForYouCard";
+import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
-import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import {
   DISCOVER_FEED_LIMIT,
   getDiscoverBiteCollections,
   getDiscoverBites,
   getDiscoverCardImage,
   getDishImageCandidates,
-  isLateNightDish,
   isLateNightHour,
-  searchResultToDiscoverBite,
   type DiscoverCardImageCandidate,
-  type DiscoverCollection,
 } from "@/features/discover/bites";
 import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
+import { getDietaryChipLabel } from "@/features/discover/homeFilters";
+import { buildBiteLabel } from "@/features/discover/biteLabel";
+import { pickRailsWithoutRepeats, tasteOrderBites } from "@/features/discover/homeRanking";
+import {
+  compareHomeStalls,
+  getStallRowOpenLabel,
+  isStallClosed,
+} from "@/features/discover/homeStalls";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
 import {
@@ -86,352 +72,57 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
-import {
-  getNearestBuildings,
-  getNearestSingaporeArea,
-  getNearestSingaporeAreaWithin,
-} from "@/lib/geo/singaporeBuildings";
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
-import type { Bite, DataRepository, DiscoveryLocationFeed } from "@/lib/services/types";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import type { Bite } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useDiscoverFeed } from "@/features/discover/useDiscoverFeed";
+import { useDiscoverFilters } from "@/features/discover/useDiscoverFilters";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
-import { useCurrentPlace } from "@/features/discover/currentPlace";
-import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useUIStore } from "@/store/useUIStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { decideInitialRadiusMeters } from "@/features/discovery/decideForMeCandidates";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
-import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { useHungryTheme } from "@/theme";
 import type { BuildingSummary, DietaryFlag, DishDetail, VenueSummary } from "@/types/domain";
-import { getSingaporeHour, getVenueOpenState } from "@/utils/operatingHours";
+import { DiscoverBiteRail, DiscoverRailBadge } from "@/components/discover/home/DiscoverBiteRail";
+import { DiscoverStallThumbnail } from "@/components/discover/home/DiscoverImages";
+import {
+  DiscoverStallListLoadingSkeleton,
+  PopularFoodStyleSkeleton,
+} from "@/components/discover/home/DiscoverLoadingSkeletons";
+import {
+  DiscoverSearchPlaceholder,
+  NARROW_SEARCH_WIDTH,
+} from "@/components/discover/home/DiscoverSearchPlaceholder";
+import {
+  DISCOVER_TEXT_LINK_HIT_SLOP,
+  type DiscoverRailLayout,
+} from "@/components/discover/home/homeLayout";
+import {
+  PopularFoodStyleItem,
+  type PopularFoodStyleItemData,
+} from "@/components/discover/home/PopularFoodStyleItem";
+import { VerticalStallShowcaseSection } from "@/components/discover/home/VerticalStallShowcaseSection";
+import { POPULAR_FOOD_STYLES } from "@/features/discover/popularFoodStyles";
+import {
+  buildStallShowcaseCardsFromVenues,
+  STALL_SHOWCASE_CARD_LIMIT,
+  type DiscoverStallShowcaseCard,
+} from "@/features/discover/stallShowcase";
 
-type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
-
-const INTENT_CHIPS: readonly {
-  id: Exclude<DiscoverChipId, "dietary">;
-  label: string;
-}[] = [
-  { id: "spicy", label: "Spicy" },
-  { id: "halal", label: "Halal" },
-  { id: "late", label: "Late night" },
-  { id: "cheap", label: "Value" },
-] as const;
-
-const DISCOVER_DIETARY_FALLBACKS: readonly DietaryFlag[] = ["halal", "vegetarian", "pork_free"];
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
 const DISCOVER_STALL_SHOW_MORE_COUNT = 20;
 
-const POPULAR_LAKSA_GRAPHIC = require("../../../assets/discover/popular-laksa-topdown.png");
-const POPULAR_CHICKEN_RICE_GRAPHIC = require("../../../assets/discover/popular-chicken-rice-topdown.png");
-const POPULAR_CHAR_KWAY_TEOW_GRAPHIC = require("../../../assets/discover/popular-char-kway-teow-topdown.png");
-const POPULAR_BAK_CHOR_MEE_GRAPHIC = require("../../../assets/discover/popular-bak-chor-mee-topdown.png");
-
-type PopularFoodStyle = {
-  id: string;
-  label: string;
-  query: string;
-  dishId?: string;
-  imageSource?: number;
-};
-
-type PopularFoodStyleItemData = PopularFoodStyle & {
-  dish: DishDetail | undefined;
-  imageSource: ImageSourcePropType;
-  imageUrl: string | undefined;
-};
-
-type DiscoverStallShowcaseCard = {
-  id: string;
-  venue: VenueSummary;
-  heroDish: DishDetail;
-  imageSource: ImageSourcePropType;
-  products: DishDetail[];
-};
-
-type DiscoverRepositoryLookup = Pick<
-  DataRepository,
-  "getDishById" | "listDishesByVenue" | "listVenuesByBuilding"
->;
-
-const STALL_SHOWCASE_CARD_LIMIT = 30;
 /** A horizontal rail with fewer dishes than this is hidden. */
 const MIN_DISCOVER_RAIL_ITEMS = 3;
-/** Widens the tappable section titles (with a chevron) to a 44pt touch target. */
-const DISCOVER_TEXT_LINK_HIT_SLOP = { top: 16, bottom: 16, left: 12, right: 12 } as const;
-/** Stable empties so memos keyed on the feed do not rerun every render. */
-const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
-const EMPTY_FEED_RESULTS: DiscoveryLocationFeed["results"] = [];
-const DISCOVER_AREA_RADIUS_METERS = 3000;
-/** Location off: picks from the whole island, read around the built-in default point. */
-const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
-/** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
-const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
-const STALL_SHOWCASE_FALLBACK_IMAGES = [
-  POPULAR_LAKSA_GRAPHIC,
-  POPULAR_CHICKEN_RICE_GRAPHIC,
-  POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-  POPULAR_BAK_CHOR_MEE_GRAPHIC,
-] as const;
-
-/** "Open · Closes 9pm" / "Closed · Opens 5pm" for stall rows; nothing when hours are unknown. */
-function getStallRowOpenLabel(venue: Pick<VenueSummary, "operatingHours" | "isOpen">) {
-  const state = getVenueOpenState(venue.operatingHours, venue.isOpen);
-  if (state.status === "unknown") return undefined;
-  const status = state.status === "open" ? "Open" : "Closed";
-  return state.detail && state.detail !== "Closed today" ? `${status} · ${state.detail}` : status;
-}
-
-function buildStallShowcaseCardsFromVenues(
-  venues: VenueSummary[],
-  repositoryLookup: Pick<DiscoverRepositoryLookup, "getDishById" | "listDishesByVenue">,
-): DiscoverStallShowcaseCard[] {
-  const uniqueVenues = Array.from(new Map(venues.map((venue) => [venue.id, venue])).values());
-
-  // One card per stall: the stall's top dish (or first listed dish) is the hero.
-  return uniqueVenues.flatMap((venue, venueIndex) => {
-    const venueDishes = repositoryLookup.listDishesByVenue(venue.id);
-    const heroDish = repositoryLookup.getDishById(venue.topDishId) ?? venueDishes[0];
-    if (!heroDish) {
-      return [];
-    }
-
-    const products = [heroDish, ...venueDishes.filter((dish) => dish.id !== heroDish.id)].slice(
-      0,
-      4,
-    );
-    const image = getDiscoverCardImage([
-      ...getDishImageCandidates(heroDish),
-      { imageUrl: venue.imageUrl, imageSourceType: "venue" },
-    ]);
-
-    return [
-      {
-        id: venue.id,
-        venue,
-        heroDish,
-        imageSource: image.imageUrl
-          ? { uri: image.imageUrl }
-          : STALL_SHOWCASE_FALLBACK_IMAGES[venueIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
-        products,
-      },
-    ];
-  });
-}
-
-const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
-  {
-    id: "laksa",
-    label: "Laksa",
-    query: "Laksa",
-    dishId: "dish-laksa",
-    imageSource: POPULAR_LAKSA_GRAPHIC,
-  },
-  {
-    id: "chicken-rice",
-    label: "Chicken Rice",
-    query: "Chicken Rice",
-    dishId: "dish-chicken-rice",
-    imageSource: POPULAR_CHICKEN_RICE_GRAPHIC,
-  },
-  {
-    id: "char-kway-teow",
-    label: "Char Kway Teow",
-    query: "Char Kway Teow",
-    imageSource: POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-  },
-  {
-    id: "bak-chor-mee",
-    label: "Bak Chor Mee",
-    query: "Bak Chor Mee",
-    imageSource: POPULAR_BAK_CHOR_MEE_GRAPHIC,
-  },
-  {
-    id: "nasi-lemak",
-    label: "Nasi Lemak",
-    query: "Nasi Lemak",
-    imageSource: require("../../../assets/onboarding/food/nasi-lemak.webp"),
-  },
-  {
-    id: "satay",
-    label: "Satay",
-    query: "Satay",
-    imageSource: require("../../../assets/onboarding/food/satay.webp"),
-  },
-  {
-    id: "roti-prata",
-    label: "Roti Prata",
-    query: "Roti Prata",
-    imageSource: require("../../../assets/onboarding/food/roti-prata.webp"),
-  },
-  {
-    id: "carrot-cake",
-    label: "Carrot Cake",
-    query: "Carrot Cake",
-    imageSource: require("../../../assets/onboarding/food/carrot-cake.webp"),
-  },
-  {
-    id: "fish-soup",
-    label: "Fish Soup",
-    query: "Fish Soup",
-    imageSource: require("../../../assets/onboarding/food/fish-soup.webp"),
-  },
-  {
-    id: "mee-siam",
-    label: "Mee Siam",
-    query: "Mee Siam",
-    imageSource: require("../../../assets/onboarding/food/mee-siam.webp"),
-  },
-  {
-    id: "yong-tau-foo",
-    label: "Yong Tau Foo",
-    query: "Yong Tau Foo",
-    imageSource: require("../../../assets/onboarding/food/yong-tau-foo.webp"),
-  },
-  {
-    id: "nasi-briyani",
-    label: "Nasi Briyani",
-    query: "Nasi Briyani",
-    imageSource: require("../../../assets/onboarding/food/nasi-briyani.webp"),
-  },
-  {
-    id: "kaya-toast",
-    label: "Kaya Toast",
-    query: "Kaya Toast",
-    imageSource: require("../../../assets/onboarding/food/kaya-toast.webp"),
-  },
-  {
-    id: "kueh-tutu",
-    label: "Kueh Tutu",
-    query: "Kueh Tutu",
-    imageSource: require("../../../assets/onboarding/food/kueh-tutu.webp"),
-  },
-] as const;
-const SEARCH_PLACEHOLDER_DEFAULT = "Dishes, stalls, or hawker centres…";
-const DISCOVER_SEARCH_PLACEHOLDER_PHRASES = [
-  SEARCH_PLACEHOLDER_DEFAULT,
-  "Try laksa nearby",
-  "Search for mee pok",
-  "What's near you?",
-] as const;
-
-function DiscoverSearchPlaceholder() {
-  const { palette, typography } = useHungryTheme();
-  const movingSearchPlaceholder = useMovingSearchPlaceholder({
-    phrases: DISCOVER_SEARCH_PLACEHOLDER_PHRASES,
-    tickMs: 55,
-    revealStepMs: 55,
-    deleteStepMs: 55,
-    pauseMs: 950,
-    totalCycleMs: 6200,
-  });
-
-  return (
-    <TextInput
-      editable={false}
-      value=""
-      placeholder={movingSearchPlaceholder}
-      placeholderTextColor={palette.textSecondary}
-      pointerEvents="none"
-      style={{
-        color: palette.text,
-        flex: 1,
-        height: 48,
-        padding: 0,
-        paddingTop: 0,
-        paddingBottom: 0,
-        includeFontPadding: false,
-        ...typography.body,
-        textAlignVertical: "center",
-      }}
-    />
-  );
-}
-
-function DiscoverDishImagePlaceholder({
-  accessibilityLabel,
-  iconSize,
-  style,
-}: {
-  accessibilityLabel: string;
-  iconSize: number;
-  style: StyleProp<ViewStyle>;
-}) {
-  const { palette } = useHungryTheme();
-
-  return (
-    <View
-      accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
-      style={[
-        {
-          alignItems: "center",
-          backgroundColor: palette.bgSoft,
-          justifyContent: "center",
-          overflow: "hidden",
-        },
-        style,
-      ]}
-    >
-      <Utensils color={palette.textMuted} size={Math.min(iconSize, 24)} />
-    </View>
-  );
-}
-
-function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
-  const imageUrls = useMemo(
-    () =>
-      [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
-        (imageUrl, index, imageUrls) =>
-          imageUrl.trim().length > 0 && imageUrls.indexOf(imageUrl) === index,
-      ),
-    [bite.mediaUrls, bite.photoUrl],
-  );
-  const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
-  const imageSignature = imageUrls.join("\u001f");
-  const activeImageUrl = imageUrls.find((imageUrl) => !failedUrls.includes(imageUrl));
-
-  useEffect(() => {
-    setFailedUrls([]);
-  }, [imageSignature]);
-
-  if (activeImageUrl) {
-    return (
-      <AccessibleImage
-        source={{ uri: activeImageUrl }}
-        style={{ height, width: "100%" }}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-        transition={120}
-        onError={() => {
-          setFailedUrls((current) =>
-            current.includes(activeImageUrl) ? current : [...current, activeImageUrl],
-          );
-        }}
-        decorative
-      />
-    );
-  }
-
-  return (
-    <DiscoverDishImagePlaceholder
-      accessibilityLabel={`${bite.dishName} photo unavailable`}
-      iconSize={36}
-      style={{ height, width: "100%" }}
-    />
-  );
-}
-
-function DiscoverStallThumbnail({ venue }: { venue: VenueSummary }) {
-  return <StallLogoMark borderWidth={2} logoUrl={venue.logoUrl} name={venue.name} size={56} />;
-}
+/** The rows TrendingList shows. */
+const TRENDING_LIST_ROWS = 5;
+const NO_BITE_REASONS: ReadonlyMap<string, string> = new Map();
 
 type RootNavigation = CompositeNavigationProp<
   MaterialTopTabNavigationProp<MainTabParamList, "Discover">,
@@ -459,808 +150,6 @@ function DiscoverSkeleton() {
   );
 }
 
-function FoodStyleButton({
-  imageSource,
-  label,
-  onPressIn,
-  onPress,
-}: {
-  imageSource: ImageSourcePropType;
-  label: string;
-  onPressIn?: () => void;
-  onPress: () => void;
-}) {
-  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
-  const bowlSize = 72;
-  const labelGap = spacing[1.5];
-  const labelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
-  const buttonHeight = bowlSize + labelGap + labelLineHeight * 2;
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Search for ${label}`}
-      onPressIn={onPressIn}
-      onPress={onPress}
-      style={{ alignItems: "center", minHeight: buttonHeight, width: 88 }}
-    >
-      <View
-        style={[
-          shadows.card,
-          {
-            width: bowlSize,
-            height: bowlSize,
-            borderRadius: radii.pill,
-            borderWidth: 1,
-            borderColor: palette.border,
-            backgroundColor: palette.surfaceRaised,
-            overflow: "hidden",
-          },
-        ]}
-      >
-        <AccessibleImage
-          source={imageSource}
-          style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-          transition={120}
-          decorative
-        />
-      </View>
-      <AppText
-        variant="bodySmallBold"
-        numberOfLines={2}
-        adjustsFontSizeToFit
-        minimumFontScale={0.84}
-        style={{
-          color: palette.text,
-          lineHeight: labelLineHeight,
-          marginTop: labelGap,
-          minHeight: labelLineHeight * 2,
-          textAlign: "center",
-        }}
-      >
-        {label}
-      </AppText>
-    </Pressable>
-  );
-}
-
-const MemoFoodStyleButton = memo(FoodStyleButton);
-
-const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
-  item,
-  onPress,
-  onPrefetch,
-}: {
-  item: PopularFoodStyleItemData;
-  onPress: (item: PopularFoodStyleItemData) => void;
-  onPrefetch: (item: PopularFoodStyleItemData) => void;
-}) {
-  const handlePressIn = useCallback(() => {
-    onPrefetch(item);
-  }, [item, onPrefetch]);
-  const handlePress = useCallback(() => {
-    onPress(item);
-  }, [item, onPress]);
-
-  return (
-    <MemoFoodStyleButton
-      imageSource={item.imageSource}
-      label={item.label}
-      onPressIn={handlePressIn}
-      onPress={handlePress}
-    />
-  );
-});
-
-function PopularFoodStyleSkeleton() {
-  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
-  const bowlSize = 72;
-  const labelGap = spacing[1.5];
-  const labelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
-  const buttonHeight = bowlSize + labelGap + labelLineHeight * 2;
-
-  return (
-    <>
-      {[0, 1, 2, 3].map((slot) => (
-        <View
-          key={`popular-food-loading-${slot}`}
-          style={{ alignItems: "center", height: buttonHeight, width: 88 }}
-        >
-          <View
-            style={[
-              shadows.card,
-              {
-                alignItems: "center",
-                backgroundColor: palette.surfaceRaised,
-                borderColor: palette.border,
-                borderRadius: radii.pill,
-                borderWidth: 1,
-                height: bowlSize,
-                justifyContent: "center",
-                width: bowlSize,
-              },
-            ]}
-          >
-            <Skeleton width={bowlSize - 10} height={bowlSize - 10} borderRadius={radii.pill} />
-          </View>
-          <View
-            style={{
-              gap: spacing[1],
-              marginTop: labelGap,
-              minHeight: labelLineHeight * 2,
-            }}
-          >
-            <Skeleton width={70} height={14} borderRadius={radii.sm} />
-            <Skeleton width={54} height={14} borderRadius={radii.sm} />
-          </View>
-        </View>
-      ))}
-    </>
-  );
-}
-
-function DiscoverFoodRailLoadingSkeleton({
-  cardWidth,
-  imageHeight,
-}: {
-  cardWidth: number;
-  imageHeight: number;
-}) {
-  const { colorScheme, componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
-  const isDark = colorScheme === "dark";
-
-  return (
-    <>
-      {[0, 1, 2].map((slot) => (
-        <View
-          key={`discover-food-rail-loading-${slot}`}
-          style={[
-            shadows.card,
-            {
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-              borderWidth: isDark ? 0 : 1,
-              overflow: "hidden",
-              width: cardWidth,
-            },
-          ]}
-        >
-          <Skeleton width="100%" height={imageHeight} borderRadius={0} />
-          <View style={{ gap: spacing[1.5], padding: spacing[3] }}>
-            <Skeleton width="82%" height={16} borderRadius={radii.sm} />
-            <Skeleton width="58%" height={12} borderRadius={radii.sm} />
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: spacing[1],
-              }}
-            >
-              <Skeleton width={54} height={16} borderRadius={radii.sm} />
-              <Skeleton width={44} height={14} borderRadius={radii.sm} />
-            </View>
-          </View>
-        </View>
-      ))}
-    </>
-  );
-}
-
-function DiscoverStallListLoadingSkeleton({ rowCount = 3 }: { rowCount?: number }) {
-  const { colorScheme, componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
-  const isDark = colorScheme === "dark";
-
-  return (
-    <>
-      {Array.from({ length: rowCount }, (_, slot) => (
-        <View
-          key={`discover-stall-list-loading-${slot}`}
-          style={[
-            shadows.card,
-            {
-              alignItems: "center",
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-              borderWidth: isDark ? 0 : 1,
-              flexDirection: "row",
-              gap: spacing[3],
-              padding: spacing[3],
-            },
-          ]}
-        >
-          <Skeleton width={56} height={56} borderRadius={radii.pill} />
-          <View style={{ flex: 1, gap: spacing[1.5] }}>
-            <Skeleton width="72%" height={16} borderRadius={radii.sm} />
-            <Skeleton width="48%" height={12} borderRadius={radii.sm} />
-          </View>
-          <Skeleton width={20} height={20} borderRadius={radii.pill} />
-        </View>
-      ))}
-    </>
-  );
-}
-
-function FilteredResultsEmptyState({
-  preserveHeight,
-  minHeight,
-}: {
-  preserveHeight?: boolean;
-  minHeight?: number;
-}) {
-  const { palette } = useHungryTheme();
-  return (
-    <View
-      style={
-        preserveHeight && minHeight
-          ? {
-              alignItems: "center",
-              minHeight,
-              height: minHeight,
-              justifyContent: "center",
-              paddingTop: 0,
-              paddingBottom: 0,
-              overflow: "hidden",
-            }
-          : undefined
-      }
-    >
-      <EmptyState
-        title="No matching results"
-        body="Try removing a filter."
-        icon={<SearchX color={palette.textSecondary} size={28} />}
-      />
-    </View>
-  );
-}
-
-type DiscoverRailLayout = {
-  cardWidth: number;
-  contentGap: number;
-  imageHeight: number;
-  reservedHeight: number;
-  screenWidth: number;
-};
-
-type DiscoverBiteCardVariant = "rating" | "topRated" | "price";
-
-const getQuickBiteLabel = (bite: Bite) => `Dish near you: ${bite.dishName} at ${bite.venueName}`;
-const getMostReviewedLabel = (bite: Bite) => `Open ${bite.dishName} at ${bite.venueName}`;
-const getTopRatedLabel = (bite: Bite) => `Top rated: ${bite.dishName} at ${bite.venueName}`;
-const getBudgetLabel = (bite: Bite) =>
-  `Budget meal: ${bite.dishName} at S$${bite.price.toFixed(2)}`;
-const getLateNightLabel = (bite: Bite) => `Late night eats: ${bite.dishName} at ${bite.venueName}`;
-
-function DiscoverRailBadge({ label, tone }: { label: string; tone: "accent" | "success" }) {
-  const { colorScheme, palette, radii, spacing } = useHungryTheme();
-  const isAccent = tone === "accent";
-  return (
-    <View
-      style={{
-        backgroundColor: isAccent ? palette.orange : palette.success,
-        borderRadius: radii.sm,
-        paddingHorizontal: spacing[2],
-        paddingVertical: spacing[0.5],
-      }}
-    >
-      <AppText
-        variant="micro"
-        style={{
-          color: isAccent
-            ? palette.textOnOrange
-            : colorScheme === "dark"
-              ? palette.textOnOrange
-              : palette.white,
-          fontWeight: "800",
-        }}
-      >
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
-/** One dish card, shared by every rail. A rating shows only when reviews stand behind it. */
-const DiscoverBiteCard = memo(function DiscoverBiteCard({
-  bite,
-  buttonId,
-  cardWidth,
-  getCardLabel,
-  imageHeight,
-  onOpen,
-  onPrefetch,
-  variant,
-}: {
-  bite: Bite;
-  buttonId: string;
-  cardWidth: number;
-  getCardLabel: (bite: Bite) => string;
-  imageHeight: number;
-  onOpen: (bite: Bite, buttonId: string) => void;
-  onPrefetch: (bite: Bite) => void;
-  variant: DiscoverBiteCardVariant;
-}) {
-  const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
-  const isDark = colorScheme === "dark";
-  const hasRating = bite.cravingCount > 0 && bite.rating > 0;
-  const handlePressIn = useCallback(() => onPrefetch(bite), [bite, onPrefetch]);
-  const handlePress = useCallback(() => onOpen(bite, buttonId), [bite, buttonId, onOpen]);
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={getCardLabel(bite)}
-      onPressIn={handlePressIn}
-      onPress={handlePress}
-      style={[
-        shadows.card,
-        {
-          backgroundColor: palette.surface,
-          borderColor: palette.border,
-          borderRadius: componentRadii.card,
-          borderWidth: isDark ? 0 : 1,
-          overflow: "hidden",
-          width: cardWidth,
-        },
-      ]}
-    >
-      <DiscoverBiteImage bite={bite} height={imageHeight} />
-      {/* Rating badge overlay: the rail is rating-based, not curated */}
-      {variant === "topRated" && hasRating ? (
-        <View
-          style={{
-            backgroundColor: palette.orange,
-            borderRadius: radii.sm,
-            left: spacing[2],
-            paddingHorizontal: spacing[2],
-            paddingVertical: spacing[0.5],
-            position: "absolute",
-            top: spacing[2],
-          }}
-        >
-          <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
-            {`★ ${bite.rating.toFixed(1)}`}
-          </AppText>
-        </View>
-      ) : null}
-      <View style={{ gap: spacing[1], padding: spacing[3] }}>
-        <AppText variant="bodySmallBold" numberOfLines={1} style={{ color: palette.text }}>
-          {bite.dishName}
-        </AppText>
-        <AppText variant="micro" style={{ color: palette.textSecondary }} numberOfLines={1}>
-          {bite.venueName}
-        </AppText>
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginTop: spacing[1],
-          }}
-        >
-          <AppText variant="price" style={{ color: palette.text }}>
-            S${bite.price.toFixed(2)}
-          </AppText>
-          {variant !== "price" && hasRating ? (
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star color={palette.starStroke} size={12} fill={palette.starFill} />
-              <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
-                {bite.rating.toFixed(1)}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </Pressable>
-  );
-});
-
-/** A titled horizontal rail of dish cards whose title opens the full list, with a loading state and a filter-empty state. */
-const DiscoverBiteRail = memo(function DiscoverBiteRail({
-  buttonId,
-  canSeeAll,
-  cards,
-  getCardLabel,
-  isFiltering,
-  isLoading,
-  isVisible,
-  layout,
-  onOpenBite,
-  onPrefetchBite,
-  onPrefetchCollection,
-  onSeeAll,
-  rail,
-  seeAllLabel,
-  title,
-  titleBadge,
-  variant,
-}: {
-  buttonId: string;
-  /** False when the full-list screen is not registered in this build (release-01 core only). */
-  canSeeAll: boolean;
-  cards: Bite[];
-  getCardLabel: (bite: Bite) => string;
-  isFiltering: boolean;
-  isLoading: boolean;
-  /** Home is on screen (not a tab warm-up), so an impression is real. */
-  isVisible: boolean;
-  layout: DiscoverRailLayout;
-  onOpenBite: (bite: Bite, buttonId: string) => void;
-  onPrefetchBite: (bite: Bite) => void;
-  onPrefetchCollection: (collection: DiscoverCollection) => void;
-  onSeeAll: (collection: DiscoverCollection) => void;
-  rail: DiscoverCollection;
-  seeAllLabel: string;
-  title: string;
-  titleBadge?: ReactNode;
-  variant: DiscoverBiteCardVariant;
-}) {
-  const { palette, spacing } = useHungryTheme();
-  const impressionSentRef = useRef(false);
-  const scrollStyle = useMemo(() => ({ width: layout.screenWidth }), [layout.screenWidth]);
-
-  // Once per visit, when the rail first shows dishes on screen (not on every filter change).
-  useEffect(() => {
-    if (!isVisible || isLoading || cards.length === 0 || impressionSentRef.current) return;
-    impressionSentRef.current = true;
-    trackAnalyticsEvent("discover_rail_impression", {
-      surface: "home",
-      rail,
-      count: cards.length,
-    });
-  }, [cards.length, isLoading, isVisible, rail]);
-  const handleOpenBite = useCallback(
-    (bite: Bite, cardButtonId: string) => {
-      trackAnalyticsEvent("discover_card_opened", {
-        surface: "home",
-        rail,
-        kind: "dish",
-        position: Math.max(
-          0,
-          cards.findIndex((card) => card.id === bite.id),
-        ),
-      });
-      onOpenBite(bite, cardButtonId);
-    },
-    [cards, onOpenBite, rail],
-  );
-  const titleRow = (
-    <>
-      <AppText variant="h2" style={{ color: palette.text, flexShrink: 1 }}>
-        {title}
-      </AppText>
-      {titleBadge}
-    </>
-  );
-
-  return (
-    <View style={{ gap: layout.contentGap }}>
-      <View
-        style={{
-          alignItems: "center",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        {canSeeAll ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={seeAllLabel}
-            hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-            onPressIn={() => onPrefetchCollection(rail)}
-            onPress={() => onSeeAll(rail)}
-            style={{
-              alignItems: "center",
-              flex: 1,
-              flexDirection: "row",
-              gap: spacing[2],
-              minHeight: 44,
-            }}
-          >
-            {titleRow}
-            <ChevronRight color={palette.textMuted} size={20} />
-          </Pressable>
-        ) : (
-          <View
-            style={{
-              alignItems: "center",
-              flex: 1,
-              flexDirection: "row",
-              gap: spacing[2],
-              minHeight: 44,
-            }}
-          >
-            {titleRow}
-          </View>
-        )}
-      </View>
-      {isLoading ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={scrollStyle}
-          contentContainerStyle={{ gap: spacing[4] }}
-        >
-          <DiscoverFoodRailLoadingSkeleton
-            cardWidth={layout.cardWidth}
-            imageHeight={layout.imageHeight}
-          />
-        </ScrollView>
-      ) : cards.length ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={scrollStyle}
-          contentContainerStyle={{ gap: spacing[4] }}
-        >
-          {cards.map((bite) => (
-            <DiscoverBiteCard
-              key={`${rail}-${bite.id}`}
-              bite={bite}
-              buttonId={buttonId}
-              cardWidth={layout.cardWidth}
-              getCardLabel={getCardLabel}
-              imageHeight={layout.imageHeight}
-              onOpen={handleOpenBite}
-              onPrefetch={onPrefetchBite}
-              variant={variant}
-            />
-          ))}
-        </ScrollView>
-      ) : isFiltering ? (
-        <FilteredResultsEmptyState preserveHeight minHeight={layout.reservedHeight} />
-      ) : null}
-    </View>
-  );
-});
-
-function VerticalStallShowcaseSection({
-  cards,
-  areaPhrase,
-  pageHeight,
-  cardWidth,
-  onOpenCard,
-  onPrefetchCard,
-}: {
-  cards: DiscoverStallShowcaseCard[];
-  areaPhrase: string;
-  pageHeight: number;
-  cardWidth: number;
-  onOpenCard: (card: DiscoverStallShowcaseCard) => void;
-  onPrefetchCard: (card: DiscoverStallShowcaseCard) => void;
-}) {
-  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
-  const visibleCards = useMemo(() => cards.slice(0, STALL_SHOWCASE_CARD_LIMIT), [cards]);
-  const columnGap = spacing[2];
-  const rowGap = spacing[1.5];
-  const columnCardWidth = (cardWidth - columnGap) / 2;
-  const headingReserveHeight = typography.h2.lineHeight + spacing[3];
-  const showcaseViewportHeight = Math.max(0, pageHeight - headingReserveHeight);
-  const availableRowHeight = (showcaseViewportHeight - rowGap * 2) / 3;
-  const maxTallCardHeight = columnCardWidth * 1.1;
-  const tallCardHeight = Math.max(0, Math.floor(Math.min(availableRowHeight, maxTallCardHeight)));
-  const compactCardDetailsHeight = typography.bodySmall.lineHeight * 2 + spacing[0.5] + spacing[1];
-  const cardImageHeight = Math.max(0, Math.floor(tallCardHeight - compactCardDetailsHeight));
-  const showcaseRows = useMemo(() => {
-    const rows: DiscoverStallShowcaseCard[][] = [];
-    for (let index = 0; index < visibleCards.length; index += 2) {
-      rows.push(visibleCards.slice(index, index + 2));
-    }
-    return rows;
-  }, [visibleCards]);
-
-  // A plain two-column grid inside the page scroll: no nested scroller or scroll locking.
-  return (
-    <View style={{ gap: spacing[2] }}>
-      <View
-        style={{
-          alignItems: "center",
-          flexDirection: "row",
-          justifyContent: "space-between",
-        }}
-      >
-        <AppText variant="h2" numberOfLines={1} style={{ color: palette.text, flex: 1 }}>
-          More {areaPhrase}
-        </AppText>
-        <AppText
-          variant="micro"
-          style={{ color: palette.textSecondary, fontWeight: "800", marginLeft: spacing[2] }}
-        >
-          {visibleCards.length} {visibleCards.length === 1 ? "stall" : "stalls"}
-        </AppText>
-      </View>
-      <View style={{ gap: rowGap, width: cardWidth }}>
-        {showcaseRows.map((rowCards, rowIndex) => (
-          <View
-            key={`stall-showcase-row-${rowIndex}`}
-            style={{
-              flexDirection: "row",
-              gap: columnGap,
-              minHeight: tallCardHeight,
-              width: cardWidth,
-            }}
-          >
-            {rowCards.map((card) => {
-              const openLabel = getStallRowOpenLabel(card.venue);
-              return (
-                <Pressable
-                  key={card.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${card.venue.name} details`}
-                  onPressIn={() => onPrefetchCard(card)}
-                  onPress={() => onOpenCard(card)}
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: componentRadii.card,
-                      borderWidth: 1,
-                      minHeight: tallCardHeight,
-                      overflow: "hidden",
-                      width: columnCardWidth,
-                    },
-                  ]}
-                >
-                  <View
-                    style={{
-                      backgroundColor: palette.surfaceRaised,
-                      height: cardImageHeight,
-                      overflow: "hidden",
-                      width: "100%",
-                    }}
-                  >
-                    <AccessibleImage
-                      source={card.imageSource}
-                      style={{ height: "100%", width: "100%" }}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      transition={120}
-                      decorative
-                    />
-                    {openLabel ? (
-                      <View
-                        style={{
-                          backgroundColor: palette.imageLabelSurface,
-                          borderColor: palette.imageLabelBorder,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          left: spacing[2],
-                          paddingHorizontal: spacing[1.5],
-                          paddingVertical: spacing[0.5],
-                          position: "absolute",
-                          top: spacing[2],
-                        }}
-                      >
-                        <AppText
-                          variant="micro"
-                          style={{ color: palette.textOnDark, fontWeight: "900" }}
-                        >
-                          {openLabel.startsWith("Open") ? "Open" : "Closed"}
-                        </AppText>
-                      </View>
-                    ) : null}
-                    {card.heroDish.reviewCount > 0 ? (
-                      <View
-                        style={{
-                          alignItems: "center",
-                          backgroundColor: palette.imageLabelSurface,
-                          borderColor: palette.imageLabelBorder,
-                          borderRadius: radii.pill,
-                          borderWidth: 1,
-                          bottom: spacing[2],
-                          flexDirection: "row",
-                          gap: spacing[0.5],
-                          paddingHorizontal: spacing[1.5],
-                          paddingVertical: spacing[0.5],
-                          position: "absolute",
-                          right: spacing[2],
-                        }}
-                      >
-                        <Star color={palette.starStroke} size={11} fill={palette.starFill} />
-                        <AppText
-                          variant="micro"
-                          style={{ color: palette.textOnDark, fontWeight: "900" }}
-                        >
-                          {card.heroDish.rating.toFixed(1)}
-                        </AppText>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View
-                    style={{
-                      flex: 1,
-                      gap: spacing[0.5],
-                      justifyContent: "center",
-                      paddingHorizontal: spacing[2],
-                      paddingVertical: spacing[0.5],
-                    }}
-                  >
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                      <View
-                        style={{
-                          alignItems: "center",
-                          flex: 1,
-                          flexDirection: "row",
-                          gap: spacing[1],
-                        }}
-                      >
-                        <AppText
-                          variant="bodySmall"
-                          numberOfLines={1}
-                          style={{ color: palette.text, flex: 1, fontWeight: "900" }}
-                        >
-                          {card.venue.name}
-                        </AppText>
-                        <AppText
-                          variant="micro"
-                          numberOfLines={1}
-                          style={{ color: palette.textSecondary, flexShrink: 1, maxWidth: "55%" }}
-                        >
-                          {[stallBuildingLabel(card.venue), card.venue.unitNumber]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </AppText>
-                      </View>
-                      <ChevronRight color={palette.textMuted} size={16} />
-                    </View>
-                    <View
-                      style={{
-                        alignItems: "center",
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <AppText
-                        variant="bodySmall"
-                        numberOfLines={1}
-                        style={{ color: palette.text, flex: 1, fontWeight: "800" }}
-                      >
-                        {card.heroDish.name}
-                      </AppText>
-                      {card.heroDish.price > 0 ? (
-                        <AppText
-                          variant="price"
-                          style={{
-                            color: palette.text,
-                            fontSize: typography.bodySmallBold.fontSize,
-                            fontWeight: "800",
-                            lineHeight: typography.bodySmallBold.lineHeight,
-                            marginLeft: spacing[1],
-                          }}
-                        >
-                          S${card.heroDish.price.toFixed(2)}
-                        </AppText>
-                      ) : null}
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function HalalLogoIcon({ color }: { color: string }) {
-  return (
-    <AppText
-      variant="micro"
-      style={{
-        color,
-        fontWeight: "800",
-        includeFontPadding: false,
-      }}
-    >
-      حلال
-    </AppText>
-  );
-}
-
 export type DiscoverHomeScreenProps = {
   /**
    * Called when the live feed read fails (or only the saved cache answered). The Supabase entry
@@ -1274,16 +163,59 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const route = useRoute();
   const isFocused = useIsFocused();
   const isTabSwipeLockedRef = useRef(false);
-  const repository = getDataRepository();
-  const isSupabaseDataSource = getServiceProvider().mode === "supabase";
-  const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
-  const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] = useState<DiscoveryLocationFeed | null>(
-    null,
-  );
-  const [isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading] = useState(false);
-  const [discoverLoadError, setDiscoverLoadError] = useState(false);
-  const [discoverReloadKey, setDiscoverReloadKey] = useState(0);
-  const [isDiscoverRefreshing, setIsDiscoverRefreshing] = useState(false);
+  const {
+    repository,
+    isSupabaseDataSource,
+    locationPermission,
+    supabaseFeedVenues,
+    supabaseFeedResults,
+    repositoryLookup,
+    supabaseDiscoverBites,
+    getVenueHours,
+    discoverLocationLatitude,
+    discoverLocationLongitude,
+    needsDiscoverAreaChoice,
+    areaBuildings,
+    discoverAreaName,
+    discoverLocationLabel,
+    discoverAreaPhrase,
+    hasManualAreaPick,
+    handleUseCurrentLocation,
+    currentPlaceId,
+    discoverFeedKey,
+    discoverHeaderLabel,
+    reloadDiscover,
+    areaVenues,
+    allDiscoverVenues,
+    areaDishPool,
+    supabaseDiscoverAreaCount,
+    supabaseDiscoveryFeed,
+    isSupabaseDiscoveryFeedLoading,
+    discoverLoadError,
+    isDiscoverRefreshing,
+    loadedDiscoverFeedKey,
+    currentPlace,
+  } = useDiscoverFeed();
+  const openDietarySettings = useCallback(() => {
+    navigation.navigate("OnboardingStack", {
+      screen: "TasteQuiz",
+      params: { mode: "profile", initialPhase: "dietary", source: "home" },
+    });
+  }, [navigation]);
+  const {
+    deferredDiscoverChipIds,
+    activeDiscoverChipSignature,
+    isPopularFoodFilterPending,
+    isDiscoverFiltering,
+    sortedChips,
+    toggleDiscoverChip,
+    matchesDiscoverChipSelection,
+    clearDiscoverFilters,
+    activeDiscoverChipIds,
+    currentHour,
+  } = useDiscoverFilters({ getVenueHours, onOpenDietarySettings: openDietarySettings });
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
     componentSizes,
@@ -1314,14 +246,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     76,
     decisionCardWidth - decisionCardPadding * 2 - decisionCardIconSize - decisionCardInnerGap,
   );
-  const popularFoodLabelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
-  const popularFoodButtonHeight = 72 + spacing[1.5] + popularFoodLabelLineHeight * 2;
-  const discoverRailReservedHeight =
-    discoverRailImageHeight +
-    spacing[6] +
-    typography.bodyBold.lineHeight +
-    typography.micro.lineHeight +
-    typography.price.lineHeight;
   const bottomTabVisibleHeight = componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]);
   const fallbackDiscoverViewportHeight = Math.max(0, screenHeight - insets.top);
   const effectiveDiscoverViewportHeight = discoverViewportHeight || fallbackDiscoverViewportHeight;
@@ -1346,14 +270,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   );
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
-  const locationPermission = useLocationStore((state) => state.permission);
-  const currentLocation = useLocationStore((state) => state.currentLocation);
-  const manualLocation = useLocationStore((state) => state.manualLocation);
-  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
-  const manualPlaceName = useLocationStore((state) => state.manualPlaceName);
-  const grantLocation = useLocationStore((state) => state.grantLocation);
-  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
-  const showToast = useUIStore((state) => state.showToast);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
   const isMerchantMode = useMerchantStore(isMerchantModeActive);
   const isUserMode = !isDeveloperMode && !isMerchantMode;
@@ -1379,118 +295,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   );
 
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
-  const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[4] * 2, 240),
-    [screenWidth, spacing],
-  );
   const searchIconSize = 52;
   const openSearchHome = useCallback(() => {
     trackAnalyticsEvent("discover_search_opened", { surface: "home" });
     navigation.navigate("SearchHome");
   }, [navigation]);
 
-  // Dietary Needs starts on for a diner who has set dietary needs, so nothing unsuitable shows.
-  const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>(() =>
-    profile.dietaryPreferences.length ? ["dietary"] : [],
-  );
-  const dietaryAutoOnRef = useRef(profile.dietaryPreferences.length > 0);
-  useEffect(() => {
-    // The profile can finish loading after the first render; switch it on once, never again.
-    if (dietaryAutoOnRef.current || profile.dietaryPreferences.length === 0) return;
-    dietaryAutoOnRef.current = true;
-    setActiveDiscoverChipIds((ids) => (ids.includes("dietary") ? ids : [...ids, "dietary"]));
-  }, [profile.dietaryPreferences.length]);
   const [discoverMode, setDiscoverMode] = useState<DiscoverMode>("forYou");
   const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
     DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
   );
-  const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? EMPTY_FEED_VENUES;
-  const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? EMPTY_FEED_RESULTS;
-  // Live builds look dishes and stalls up in the feed already on screen. The synchronous
-  // repository would start a full-table download (again every 45 s), miss rows past the
-  // 1,000-row cap and never re-render when it lands (HOME-X5).
-  const repositoryLookup = useMemo<DiscoverRepositoryLookup>(() => {
-    const dishById = new Map<string, DishDetail | undefined>();
-    const dishesByVenue = new Map<string, DishDetail[]>();
-    const venuesByBuilding = new Map<string, VenueSummary[]>();
-
-    if (isSupabaseDataSource) {
-      for (const { dish } of supabaseFeedResults) {
-        dishById.set(dish.id, dish);
-        dishesByVenue.set(dish.venueId, [...(dishesByVenue.get(dish.venueId) ?? []), dish]);
-      }
-      for (const venue of supabaseFeedVenues) {
-        venuesByBuilding.set(venue.buildingId, [
-          ...(venuesByBuilding.get(venue.buildingId) ?? []),
-          venue,
-        ]);
-      }
-      return {
-        getDishById: (dishId: string) => dishById.get(dishId),
-        listDishesByVenue: (venueId: string) => dishesByVenue.get(venueId) ?? [],
-        listVenuesByBuilding: (buildingId: string) => venuesByBuilding.get(buildingId) ?? [],
-      };
-    }
-
-    return {
-      getDishById: (dishId: string) => {
-        if (!dishById.has(dishId)) {
-          dishById.set(dishId, repository.getDishById(dishId));
-        }
-        return dishById.get(dishId);
-      },
-      listDishesByVenue: (venueId: string) => {
-        const cached = dishesByVenue.get(venueId);
-        if (cached) {
-          return cached;
-        }
-        const dishes = repository.listDishesByVenue(venueId);
-        dishesByVenue.set(venueId, dishes);
-        dishes.forEach((dish) => {
-          dishById.set(dish.id, dish);
-        });
-        return dishes;
-      },
-      listVenuesByBuilding: (buildingId: string) => {
-        const cached = venuesByBuilding.get(buildingId);
-        if (cached) {
-          return cached;
-        }
-        const venues = repository.listVenuesByBuilding(buildingId);
-        venuesByBuilding.set(buildingId, venues);
-        return venues;
-      },
-    };
-  }, [isSupabaseDataSource, repository, supabaseFeedResults, supabaseFeedVenues]);
-  const supabaseDiscoverBites = useMemo(
-    () => supabaseFeedResults.map(searchResultToDiscoverBite),
-    [supabaseFeedResults],
-  );
-  const feedVenueHoursById = useMemo(
-    () => new Map(supabaseFeedVenues.map((venue) => [venue.id, venue.operatingHours] as const)),
-    [supabaseFeedVenues],
-  );
-  // Hours for the late-night rail and chip: the live feed (live builds read nothing else),
-  // otherwise the local data.
-  const getVenueHours = useCallback(
-    (venueId?: string) =>
-      venueId
-        ? feedVenueHoursById.get(venueId) ||
-          (isSupabaseDataSource ? undefined : repository.getVenueById(venueId)?.operatingHours) ||
-          undefined
-        : undefined,
-    [feedVenueHoursById, isSupabaseDataSource, repository],
-  );
-  const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
-  const deferredDiscoverChipSet = useMemo(
-    () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
-    [deferredDiscoverChipIds],
-  );
-  const activeDiscoverChipSignature = activeDiscoverChipIds.join("|");
-  const deferredDiscoverChipSignature = deferredDiscoverChipIds.join("|");
-  // Filtering is local and instant: the skeleton only covers the deferred re-render.
-  const isPopularFoodFilterPending = activeDiscoverChipSignature !== deferredDiscoverChipSignature;
-  const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
   const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
     if (nextHeight <= 0) {
@@ -1502,159 +316,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     );
   }, []);
 
-  const { coordinate: discoverCoordinate, isApproximate: isDiscoverLocationApproximate } =
-    getEffectiveLocation({
-      permission: locationPermission,
-      currentLocation,
-      manualCoordinate,
-    });
-  const discoverLocationLatitude = discoverCoordinate.latitude;
-  const discoverLocationLongitude = discoverCoordinate.longitude;
-  // GPS jitter must not refetch Discover: reads are keyed on a ~200m grid cell.
-  const discoverGeoCellLatitude =
-    Math.round(discoverLocationLatitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
-    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
-  const discoverGeoCellLongitude =
-    Math.round(discoverLocationLongitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
-    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
-  // Without a GPS fix or a manual pick the coordinate is only the built-in default,
-  // so the header asks the user to choose an area instead of asserting one.
-  const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
   const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "Pick with friends" : "Spin the wheel";
-  const areaBuildings = useMemo(
-    () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
-    [discoverLocationLatitude, discoverLocationLongitude],
-  );
-  // Only a manual area pick asks the server for that planning area. A GPS fix reads
-  // the radius around the diner, so a stall 300 m away over an area line is not dropped.
-  const discoverAreaRequest = manualLocation;
-  // The nearest named area, only when the phone is within ~5 km of one (not in Woodlands
-  // when it is overseas). Without a name the screen says "near you".
-  // With location off there is no area to name: Discover shows picks across Singapore instead.
-  const discoverAreaName = needsDiscoverAreaChoice
-    ? undefined
-    : (manualLocation ??
-      getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude));
-  const discoverLocationLabel = needsDiscoverAreaChoice
-    ? "Singapore"
-    : (discoverAreaName ?? "Near you");
-  const discoverAreaPhrase = needsDiscoverAreaChoice
-    ? "across Singapore"
-    : discoverAreaName
-      ? `in ${discoverAreaName}`
-      : "near you";
-  const discoverRadiusMeters = needsDiscoverAreaChoice
-    ? DISCOVER_ISLAND_RADIUS_METERS
-    : DISCOVER_AREA_RADIUS_METERS;
-  const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
-  const handleUseCurrentLocation = useCallback(async () => {
-    if (locationPermission === "granted") {
-      await clearManualLocation();
-      return;
-    }
-    const granted = await grantLocation({ manualLocation });
-    if (!granted) {
-      showToast({
-        message: "Location access is off. Turn it on in Settings to use your location.",
-        tone: "info",
-      });
-    }
-  }, [clearManualLocation, grantLocation, locationPermission, manualLocation, showToast]);
-  // Inside a mall, hawker centre or food court the header names it instead of the area. A real
-  // GPS fix or a searched place counts; a searched area or the default point is never "inside".
-  const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
-    (locationPermission === "granted" && !manualCoordinate) || (manualCoordinate && manualPlaceName)
-      ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
-      : null,
-  );
-  const currentPlaceId = currentPlace?.id;
-  // The area follows the phone: a mall or hawker centre when inside one, else the nearest area,
-  // and "Singapore" while location is off.
-  const discoverHeaderLabel =
-    currentPlace?.name ??
-    manualPlaceName ??
-    discoverAreaName ??
-    (needsDiscoverAreaChoice
-      ? "Singapore"
-      : getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude));
-
   useEffect(() => {
     setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
   }, [discoverLocationLabel, activeDiscoverChipSignature]);
-
-  useEffect(() => {
-    if (!isSupabaseDataSource) {
-      setSupabaseDiscoverAreaCount(null);
-      setSupabaseDiscoveryFeed(null);
-      setIsSupabaseDiscoveryFeedLoading(false);
-      return;
-    }
-
-    let isActive = true;
-    // Keep the current feed on screen while a new area or GPS fix loads.
-    setIsSupabaseDiscoveryFeedLoading(true);
-    setDiscoverLoadError(false);
-    // The feed asks for the place's stalls first, so it waits for the place lookup (3 s at most).
-    if (isCurrentPlaceResolving) {
-      return () => {
-        isActive = false;
-      };
-    }
-    const discoveryService = getHungryService().discovery;
-    void Promise.allSettled([
-      discoveryService.countVenuesInArea(
-        discoverGeoCellLatitude,
-        discoverGeoCellLongitude,
-        discoverRadiusMeters,
-        discoverAreaRequest,
-      ),
-      discoveryService.listDiscoveryFeedByLocation({
-        areaName: discoverAreaRequest,
-        lat: discoverGeoCellLatitude,
-        lng: discoverGeoCellLongitude,
-        radiusMeters: discoverRadiusMeters,
-        limit: DISCOVER_FEED_LIMIT,
-        buildingId: currentPlaceId,
-      }),
-    ]).then(([venueCountResult, discoveryFeedResult]) => {
-      if (!isActive) return;
-      // A failed count never throws away a good feed.
-      setSupabaseDiscoverAreaCount(
-        venueCountResult.status === "fulfilled" && typeof venueCountResult.value === "number"
-          ? venueCountResult.value
-          : null,
-      );
-      if (discoveryFeedResult.status === "fulfilled") {
-        setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
-      } else {
-        reportError(discoveryFeedResult.reason, { surface: "discover_home_feed" });
-        setDiscoverLoadError(true);
-      }
-      setIsSupabaseDiscoveryFeedLoading(false);
-      setIsDiscoverRefreshing(false);
-    });
-
-    return () => {
-      isActive = false;
-    };
-  }, [
-    discoverAreaRequest,
-    discoverRadiusMeters,
-    discoverGeoCellLatitude,
-    discoverGeoCellLongitude,
-    discoverReloadKey,
-    isSupabaseDataSource,
-    isCurrentPlaceResolving,
-    currentPlaceId,
-  ]);
-
-  const reloadDiscover = useCallback(async () => {
-    setIsDiscoverRefreshing(true);
-    setDiscoverReloadKey((key) => key + 1);
-    if (!isSupabaseDataSource) {
-      setIsDiscoverRefreshing(false);
-    }
-  }, [isSupabaseDataSource]);
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -1667,160 +332,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     };
   }, [palette, colorScheme]);
 
-  // One Singapore-time hour for the chip order and the late-night rail, refreshed on focus.
-  const [currentHour, setCurrentHour] = useState(() => getSingaporeHour());
-  useFocusEffect(
-    useCallback(() => {
-      setCurrentHour(getSingaporeHour());
-    }, []),
-  );
-  const sortedChips = useMemo(() => {
-    const baseChips = [{ id: "dietary" as const, label: "Dietary needs" }, ...INTENT_CHIPS];
-    // "Late night" only shows from 21:00 to 03:59, and then leads the row.
-    if (isLateNightHour(currentHour)) {
-      return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
-    }
-    return baseChips.filter((chip) => chip.id !== "late");
-  }, [currentHour]);
-
-  // Tab press-to-top behavior intentionally disabled for bottom navigation.
-
-  const areaVenues = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
-      return Array.from(uniqueVenues.values());
-    }
-    const scopedVenues = areaBuildings.flatMap((building) =>
-      repositoryLookup.listVenuesByBuilding(building.id),
-    );
-    const uniqueVenues = new Map(scopedVenues.map((venue) => [venue.id, venue]));
-    return Array.from(uniqueVenues.values());
-  }, [areaBuildings, isSupabaseDataSource, repositoryLookup, supabaseFeedVenues]);
-  const areaDishes = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueDishes = new Map(
-        supabaseFeedResults.map((result) => [result.dish.id, result.dish]),
-      );
-      return Array.from(uniqueDishes.values());
-    }
-    return areaVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
-  }, [areaVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
-  const allDiscoverVenues = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueVenues = new Map(supabaseFeedVenues.map((venue) => [venue.id, venue]));
-      return Array.from(uniqueVenues.values());
-    }
-    const discoveredVenues = repository
-      .listBuildings()
-      .flatMap((building) => repositoryLookup.listVenuesByBuilding(building.id));
-    const uniqueVenues = new Map(discoveredVenues.map((venue) => [venue.id, venue]));
-    return Array.from(uniqueVenues.values());
-  }, [isSupabaseDataSource, repository, repositoryLookup, supabaseFeedVenues]);
-  const allDiscoverDishes = useMemo(() => {
-    if (isSupabaseDataSource) {
-      const uniqueDishes = new Map(
-        supabaseFeedResults.map((result) => [result.dish.id, result.dish]),
-      );
-      return Array.from(uniqueDishes.values());
-    }
-    return allDiscoverVenues.flatMap((venue) => repositoryLookup.listDishesByVenue(venue.id));
-  }, [allDiscoverVenues, isSupabaseDataSource, repositoryLookup, supabaseFeedResults]);
-  const areaDishPool = areaDishes.length ? areaDishes : allDiscoverDishes;
   const isLateNightMakanVisible = isLateNightHour(currentHour);
-  const discoverDietaryFlags = useMemo(
-    () =>
-      profile.dietaryPreferences.length ? profile.dietaryPreferences : DISCOVER_DIETARY_FALLBACKS,
-    [profile.dietaryPreferences],
-  );
-  const toggleDiscoverChip = useCallback(
-    (chipId: DiscoverChipId) => {
-      const wasActive = activeDiscoverChipIds.includes(chipId);
-      const nextChipIds = wasActive
-        ? activeDiscoverChipIds.filter((value) => value !== chipId)
-        : [...activeDiscoverChipIds, chipId];
-
-      trackAnalyticsEvent("discover_chip_tapped", {
-        surface: "home",
-        chip: chipId,
-        selected: !wasActive,
-      });
-
-      if (!wasActive && chipId !== "dietary") {
-        scheduleIdleWork(
-          () => {
-            recordTasteInteraction({
-              type: "search_query",
-              surface: "discover",
-              query: chipId,
-              chipId,
-            });
-          },
-          { timeout: 500, fallbackDelayMs: 80 },
-        );
-      }
-
-      setActiveDiscoverChipIds(nextChipIds);
-    },
-    [activeDiscoverChipIds, recordTasteInteraction],
-  );
-  const matchesDiscoverChipSelection = useCallback(
-    (dish?: DishDetail, textParts: string[] = []) => {
-      if (!deferredDiscoverChipSet.size) {
-        return true;
-      }
-      let cachedHaystack: string | null = null;
-      const getLateNightHaystack = () => {
-        if (cachedHaystack !== null) {
-          return cachedHaystack;
-        }
-
-        cachedHaystack = [
-          dish?.name,
-          dish?.venueName,
-          dish?.tasteTags.join(" "),
-          dish?.priceRange,
-          ...textParts,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return cachedHaystack;
-      };
-
-      return Array.from(deferredDiscoverChipSet).every((chipId) => {
-        if (chipId === "dietary") {
-          if (!dish) return false;
-          // Saved needs must all hold; without saved needs, any common diet flag counts.
-          return profile.dietaryPreferences.length
-            ? discoverDietaryFlags.every((flag) => dish.dietaryFlags.includes(flag))
-            : discoverDietaryFlags.some((flag) => dish.dietaryFlags.includes(flag));
-        }
-        if (chipId === "halal") {
-          // Structured flag only: text matching let "non-halal" through.
-          return Boolean(dish?.dietaryFlags.includes("halal"));
-        }
-        if (chipId === "spicy") {
-          return (
-            Boolean(dish && dish.tasteVector.spicy >= 6) || getLateNightHaystack().includes("spicy")
-          );
-        }
-        if (chipId === "late") {
-          // Same rule as the late-night rail: the stall's hours run past 22:00.
-          return isLateNightDish(dish, getVenueHours(dish?.venueId));
-        }
-        if (chipId === "cheap") {
-          return Boolean(dish && dish.price < 8);
-        }
-        return true;
-      });
-    },
-    [
-      deferredDiscoverChipSet,
-      discoverDietaryFlags,
-      getVenueHours,
-      profile.dietaryPreferences.length,
-    ],
-  );
   const areaVenueIds = useMemo(() => new Set(areaVenues.map((venue) => venue.id)), [areaVenues]);
   const discoverBaseBites = useMemo(() => {
     if (isSupabaseDataSource) {
@@ -1891,36 +403,81 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       ),
     [getBiteDish, matchesDiscoverChipSelection],
   );
-  const quickBiteCards = useMemo(
+  // "Dishes near you" follows the diner's palate once they have one (home_taste_rank_v1);
+  // the control arm keeps photo and feed order. The experiment is read only while Home is on
+  // screen, the rail has enough dishes to reorder and there is a palate to rank by.
+  const skippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const tasteInteractionEvents = useProfileStore((state) => state.tasteInteractionEvents);
+  const hasTasteProfile = useMemo(
+    () =>
+      hasTrustedTasteProfile(profile.tasteVector, {
+        skippedTasteQuiz,
+        signalCount: profile.recommendationSignals?.signalCount,
+        negativeSignalCount: countNegativeTasteSignals(tasteInteractionEvents),
+      }),
+    [
+      profile.recommendationSignals?.signalCount,
+      profile.tasteVector,
+      skippedTasteQuiz,
+      tasteInteractionEvents,
+    ],
+  );
+  const tasteRankVariant = useExperimentVariant("home_taste_rank_v1", {
+    enabled: isFocused && hasTasteProfile && discoverBiteCollections.quickBites.length >= 6,
+  });
+  const rankByTaste = tasteRankVariant === "taste" && hasTasteProfile;
+  // A chip filters the whole nearby pool first; only then do the cards get cut to the rail size.
+  const quickBitePool = useMemo(
     () =>
       isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredQuickBiteCards)
-        : unfilteredQuickBiteCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredQuickBiteCards],
+        ? filterDiscoverBites(discoverBiteCollections.quickBites)
+        : discoverBiteCollections.quickBites,
+    [discoverBiteCollections.quickBites, filterDiscoverBites, isDiscoverFiltering],
   );
-  const trendingCards = useMemo(
+  const tasteOrdered = useMemo(
     () =>
-      isDiscoverFiltering ? filterDiscoverBites(unfilteredTrendingCards) : unfilteredTrendingCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredTrendingCards],
+      rankByTaste
+        ? tasteOrderBites(quickBitePool, discoverDishById, {
+            tasteVector: profile.tasteVector,
+            preferBuildingId: currentPlaceId,
+          })
+        : { bites: quickBitePool, reasons: NO_BITE_REASONS },
+    [currentPlaceId, discoverDishById, profile.tasteVector, quickBitePool, rankByTaste],
   );
-  const editorChoiceCards = useMemo(
+  // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
+  const [trendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] = useMemo(
     () =>
-      isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredEditorChoiceCards)
-        : unfilteredEditorChoiceCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredEditorChoiceCards],
-  );
-  const budgetCards = useMemo(
-    () =>
-      isDiscoverFiltering ? filterDiscoverBites(unfilteredBudgetCards) : unfilteredBudgetCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredBudgetCards],
-  );
-  const lateNightCards = useMemo(
-    () =>
-      isDiscoverFiltering
-        ? filterDiscoverBites(unfilteredLateNightCards)
-        : unfilteredLateNightCards,
-    [filterDiscoverBites, isDiscoverFiltering, unfilteredLateNightCards],
+      pickRailsWithoutRepeats(
+        [
+          {
+            bites: isDiscoverFiltering
+              ? filterDiscoverBites(discoverBiteCollections.trending)
+              : discoverBiteCollections.trending,
+            max: TRENDING_LIST_ROWS,
+          },
+          { bites: tasteOrdered.bites, max: 6, keepWhenThin: true },
+          {
+            bites: isDiscoverFiltering
+              ? filterDiscoverBites(discoverBiteCollections.editorChoice)
+              : discoverBiteCollections.editorChoice,
+            max: 6,
+          },
+          {
+            bites: isDiscoverFiltering
+              ? filterDiscoverBites(discoverBiteCollections.budget)
+              : discoverBiteCollections.budget,
+            max: 6,
+          },
+          {
+            bites: isDiscoverFiltering
+              ? filterDiscoverBites(discoverBiteCollections.lateNight)
+              : discoverBiteCollections.lateNight,
+            max: 5,
+          },
+        ],
+        isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS,
+      ),
+    [discoverBiteCollections, filterDiscoverBites, isDiscoverFiltering, tasteOrdered.bites],
   );
   // Live builds read the names of saved and reviewed dishes in one batched call (at most 200).
   const familiarDishIdsKey = [
@@ -2015,16 +572,22 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems.length === 0;
   const showPopularFoodSkeleton = useDelayedLoadingSkeleton(isWaitingForPopularFoodStyles);
   const showPopularFoodFilterSkeleton = isPopularFoodFilterPending;
-  const showInitialDiscoverSkeleton = isSupabaseDataSource && isSupabaseDiscoveryFeedLoading;
+  // Skeletons cover the first read and a new area. A pull-to-refresh of the same area keeps the
+  // cards on screen until the new ones land.
+  const showInitialDiscoverSkeleton =
+    isSupabaseDataSource &&
+    isSupabaseDiscoveryFeedLoading &&
+    (supabaseDiscoveryFeed === null || loadedDiscoverFeedKey !== discoverFeedKey);
   const shouldShowPopularFoodSkeleton =
     showPopularFoodSkeleton || showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
   const showDiscoverFilterRailSkeleton =
     showPopularFoodFilterSkeleton || showInitialDiscoverSkeleton;
-  // Empty rails collapse instead of each showing its own "nothing found" block; a filter
-  // that matches nothing still shows the filtered empty state. Horizontal rails need a few
-  // dishes to look like a rail, so they wait for MIN_DISCOVER_RAIL_ITEMS.
+  // Empty rails collapse instead of each showing its own "nothing found" block; a filter that
+  // matches nothing shows one page-level empty state instead. Horizontal rails need a few
+  // dishes to look like a rail, so they wait for MIN_DISCOVER_RAIL_ITEMS (one dish is enough
+  // once a filter has narrowed them).
   const shouldRenderDiscoverRail = (count: number, minItems = 1) =>
-    showDiscoverFilterRailSkeleton || count >= minItems || isDiscoverFiltering;
+    showDiscoverFilterRailSkeleton || count >= (isDiscoverFiltering ? 1 : minItems);
   const unfilteredAreaStallCards = useMemo(() => {
     if (isSupabaseDataSource) {
       const dishesByVenueId = new Map(
@@ -2082,7 +645,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     const nearestChainCards = dedupeNearestVenueCandidates(
       filteredCards,
       (card) => card.venue,
-      (card) => card.topDish?.distanceMeters,
+      (card) => card.venue.distanceMeters ?? card.topDish?.distanceMeters,
     );
 
     // Stalls in the viewer's own building lead; the rest of the area follows once they run out.
@@ -2091,25 +654,68 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     return [...nearestChainCards].sort((a, b) => {
       const placeOrder = Number(isInCurrentPlace(b)) - Number(isInCurrentPlace(a));
       if (placeOrder !== 0) return placeOrder;
-      const bScore = (b.topDish?.rating ?? 0) * 100 + (b.topDish?.reviewCount ?? 0);
-      const aScore = (a.topDish?.rating ?? 0) * 100 + (a.topDish?.reviewCount ?? 0);
-      return bScore - aScore;
+      // Open first, then nearest; late at night the closed stalls follow the open ones.
+      return compareHomeStalls(a, b);
     });
-  }, [currentPlaceId, isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredAreaStallCards]);
-  const areaStallCards = useMemo(
-    () => allAreaStallCards.slice(0, visibleAreaStallCount),
-    [allAreaStallCards, visibleAreaStallCount],
+    // currentHour re-sorts when Home comes back into focus: open stalls change with the clock.
+  }, [
+    currentHour,
+    currentPlaceId,
+    isDiscoverFiltering,
+    matchesDiscoverChipSelection,
+    unfilteredAreaStallCards,
+  ]);
+  // Stalls whose menus are not in yet (no top dish): with some menus nearby they fold into one
+  // row under the stalls that have them; with none, the list stays flat under a single note
+  // (home_cold_start_v1; the control arm says "Menu coming soon" on every row).
+  const menuLessStallCount = allAreaStallCards.filter((card) => !card.topDish).length;
+  const coldStartVariant = useExperimentVariant("home_cold_start_v1", {
+    enabled: isFocused && menuLessStallCount > 0,
+  });
+  const isColdStartGrouped = coldStartVariant === "grouped" && menuLessStallCount > 0;
+  const foldMenuLessStalls = isColdStartGrouped && menuLessStallCount < allAreaStallCards.length;
+  const listedAreaStallCards = useMemo(
+    () =>
+      foldMenuLessStalls ? allAreaStallCards.filter((card) => card.topDish) : allAreaStallCards,
+    [allAreaStallCards, foldMenuLessStalls],
   );
-  const hasMoreAreaStalls = areaStallCards.length < allAreaStallCards.length;
+  const foldedStallCards = useMemo(
+    () => (foldMenuLessStalls ? allAreaStallCards.filter((card) => !card.topDish) : []),
+    [allAreaStallCards, foldMenuLessStalls],
+  );
+  // With fewer than a rail's worth of dishes nearby, the classics stand in for the empty
+  // rails: they open search for that dish across Singapore.
+  const popularFoodTitle =
+    coldStartVariant === "grouped" &&
+    !isDiscoverFiltering &&
+    !showInitialDiscoverSkeleton &&
+    quickBiteCards.length < MIN_DISCOVER_RAIL_ITEMS
+      ? "Popular dishes in Singapore"
+      : "Hawker classics";
+  const [isMenuLessGroupOpen, setIsMenuLessGroupOpen] = useState(false);
+  const areaStallCards = useMemo(
+    () => listedAreaStallCards.slice(0, visibleAreaStallCount),
+    [listedAreaStallCards, visibleAreaStallCount],
+  );
+  const hasMoreAreaStalls = areaStallCards.length < listedAreaStallCards.length;
   const nextAreaStallRevealCount = Math.min(
     DISCOVER_STALL_SHOW_MORE_COUNT,
-    Math.max(0, allAreaStallCards.length - areaStallCards.length),
+    Math.max(0, listedAreaStallCards.length - areaStallCards.length),
   );
   const handleShowMoreAreaStalls = useCallback(() => {
     setVisibleAreaStallCount((count) =>
-      Math.min(count + DISCOVER_STALL_SHOW_MORE_COUNT, allAreaStallCards.length),
+      Math.min(count + DISCOVER_STALL_SHOW_MORE_COUNT, listedAreaStallCards.length),
     );
-  }, [allAreaStallCards.length]);
+  }, [listedAreaStallCards.length]);
+  const handleToggleMenuLessGroup = useCallback(() => {
+    if (!isMenuLessGroupOpen) {
+      trackAnalyticsEvent("home_cold_start_group_opened", {
+        surface: "home",
+        count: foldedStallCards.length,
+      });
+    }
+    setIsMenuLessGroupOpen((open) => !open);
+  }, [foldedStallCards.length, isMenuLessGroupOpen]);
   // "More from" never repeats "Stalls in": stalls already in that list are left out.
   const listedStallIds = useMemo(
     () => new Set(unfilteredAreaStallCards.map((card) => card.venue.id)),
@@ -2151,7 +757,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [isLiveFeedUnavailable, onLiveFeedUnavailable]);
   // Content a diner can act on is on screen (not the first skeleton or an error).
   const hasDiscoverContent = isSupabaseDataSource
-    ? !isSupabaseDiscoveryFeedLoading &&
+    ? !showInitialDiscoverSkeleton &&
       supabaseDiscoveryFeed !== null &&
       !isLiveFeedUnavailable &&
       supabaseFeedVenues.length > 0
@@ -2166,11 +772,32 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         : trendingCards,
     [needsDiscoverAreaChoice, trendingCards],
   );
+  // One home_viewed per visit, once there is content to look at: the denominator the Home
+  // experiments divide by.
+  const homeViewedSentRef = useRef(false);
+  const hasAnyDish = trendingCards.length + quickBiteCards.length > 0;
+  useEffect(() => {
+    if (!isFocused) {
+      homeViewedSentRef.current = false;
+      return;
+    }
+    if (!hasDiscoverContent || showDiscoverFilterRailSkeleton || homeViewedSentRef.current) return;
+    homeViewedSentRef.current = true;
+    trackAnalyticsEvent("home_viewed", {
+      surface: "home",
+      has_dishes: hasAnyDish,
+      stalls: areaStallCards.length,
+    });
+    // areaStallCards.length is the first-paint count; later reveals do not start a new visit.
+  }, [hasAnyDish, hasDiscoverContent, isFocused, showDiscoverFilterRailSkeleton]);
   const areaStallImpressionSentRef = useRef(false);
   const areaStallCount = areaStallCards.length;
   useEffect(() => {
+    if (!isFocused) {
+      areaStallImpressionSentRef.current = false;
+      return;
+    }
     if (
-      !isFocused ||
       showDiscoverFilterRailSkeleton ||
       areaStallCount === 0 ||
       areaStallImpressionSentRef.current
@@ -2203,26 +830,28 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       : discoverAreaPhrase;
   // Inside a mall: "For you" ranks its dishes by the diner's palate, "What's here" lists its stalls.
   const inMallMode = isUserMode && Boolean(currentPlace);
-  const forYouPicks = useMemo(
-    () =>
-      inMallMode && discoverMode === "forYou"
-        ? rankForYou(areaDishPool, {
-            tasteVector: profile.tasteVector,
-            dietaryFlags: profile.dietaryPreferences,
-            maxDishBudget: profile.maxDishBudget,
-            preferBuildingId: currentPlaceId,
-          })
-        : [],
-    [
-      areaDishPool,
-      currentPlaceId,
-      discoverMode,
-      inMallMode,
-      profile.dietaryPreferences,
-      profile.maxDishBudget,
-      profile.tasteVector,
-    ],
-  );
+  const forYouPicks = useMemo(() => {
+    if (!inMallMode || discoverMode !== "forYou") return [];
+    const picks = rankForYou(areaDishPool, {
+      tasteVector: profile.tasteVector,
+      dietaryFlags: profile.dietaryPreferences,
+      maxDishBudget: profile.maxDishBudget,
+      preferBuildingId: currentPlaceId,
+    });
+    return isDiscoverFiltering
+      ? picks.filter((pick) => matchesDiscoverChipSelection(pick.dish))
+      : picks;
+  }, [
+    areaDishPool,
+    currentPlaceId,
+    discoverMode,
+    inMallMode,
+    isDiscoverFiltering,
+    matchesDiscoverChipSelection,
+    profile.dietaryPreferences,
+    profile.maxDishBudget,
+    profile.tasteVector,
+  ]);
   const hereStalls = useMemo<HereStall[]>(() => {
     if (!inMallMode || discoverMode !== "here") return [];
     const dishesByVenueId = new Map<string, DishDetail[]>();
@@ -2237,8 +866,151 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         venue: card.venue,
         topDish: card.topDish,
         dishes: dishesByVenueId.get(card.venue.id) ?? (card.topDish ? [card.topDish] : []),
-      }));
-  }, [areaDishPool, currentPlaceId, discoverMode, inMallMode, unfilteredAreaStallCards]);
+      }))
+      .flatMap((stall) => {
+        if (!isDiscoverFiltering) return [stall];
+        // A stall stays when one of its dishes passes the chips, and lists only those.
+        const dishes = stall.dishes.filter((dish) =>
+          matchesDiscoverChipSelection(dish, [stall.venue.name]),
+        );
+        return dishes.length ? [{ ...stall, dishes }] : [];
+      });
+  }, [
+    areaDishPool,
+    currentPlaceId,
+    discoverMode,
+    inMallMode,
+    isDiscoverFiltering,
+    matchesDiscoverChipSelection,
+    unfilteredAreaStallCards,
+  ]);
+  // One row of the stall list; `position` is its place in the list, for the card-opened event.
+  // One row of the stall list; `position` is its place in the list, for the card-opened event.
+  const renderAreaStallRow = (
+    { building, venue, topDish }: (typeof areaStallCards)[number],
+    position: number,
+  ) => (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${venue.name} ${isUserMode ? "details" : "in map zoomed view"}`}
+      onPressIn={() => {
+        prefetchStallDetail(venue.id, repository);
+        if (topDish?.id) {
+          prefetchDishDetail(topDish.id, repository);
+        }
+      }}
+      onPress={() => {
+        trackAnalyticsEvent("discover_card_opened", {
+          surface: "home",
+          rail: "area_stalls",
+          kind: "stall",
+          position,
+        });
+        if (isUserMode) {
+          navigation.navigate("StallDetail", { venueId: venue.id });
+          return;
+        }
+
+        navigation.navigate("MapZoomedIn", {
+          buildingId: venue.buildingId,
+        });
+      }}
+      style={[
+        shadows.card,
+        {
+          backgroundColor: themeTints.cardBg,
+          borderRadius: componentRadii.card,
+          padding: spacing[3],
+          flexDirection: "row",
+          gap: spacing[3],
+          alignItems: "center",
+          borderWidth: themeTints.isDark ? 0 : 1,
+          borderColor: palette.border,
+          // Closed stalls are dimmed, not hidden: they still open.
+          opacity: isStallClosed(venue) ? 0.7 : 1,
+        },
+      ]}
+    >
+      <DiscoverStallThumbnail venue={venue} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+          }}
+        >
+          <AppText
+            variant="bodySmall"
+            style={{ fontWeight: "800", color: themeTints.text, flexShrink: 1 }}
+            numberOfLines={1}
+          >
+            {venue.name}
+          </AppText>
+          {topDish && topDish.reviewCount > 0 ? (
+            <View
+              accessibilityLabel={`Rated ${topDish.rating.toFixed(1)}`}
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.bgSoft,
+                borderRadius: radii.pill,
+                flexDirection: "row",
+                flexShrink: 0,
+                gap: 2,
+                paddingHorizontal: spacing[2],
+                paddingVertical: 2,
+              }}
+            >
+              <Star color={palette.starStroke} size={11} fill={palette.starFill} />
+              <AppText variant="micro" style={{ color: themeTints.text }}>
+                {topDish.rating.toFixed(1)}
+              </AppText>
+            </View>
+          ) : null}
+        </View>
+        <AppText variant="micro" style={{ color: themeTints.secondaryText }} numberOfLines={1}>
+          {[getStallRowOpenLabel(venue)].filter(Boolean).join(" · ")}
+        </AppText>
+        {/* Where to walk to: the building and unit get a line of their own so
+            the building is never the part that is cut off. */}
+        <AppText variant="micro" style={{ color: themeTints.secondaryText }} numberOfLines={1}>
+          {[stallBuildingLabel(venue, building), venue.unitNumber].filter(Boolean).join(" · ")}
+        </AppText>
+        {topDish ? (
+          topDish.reviewCount === 0 ? (
+            <AppText variant="micro" tone="accent" numberOfLines={1}>
+              Be the first to review
+            </AppText>
+          ) : null
+        ) : isColdStartGrouped ? null : (
+          <AppText variant="micro" style={{ color: themeTints.secondaryText }} numberOfLines={1}>
+            Menu coming soon
+          </AppText>
+        )}
+      </View>
+      <ChevronRight color={palette.textMuted} size={20} />
+    </Pressable>
+  );
+  // Filters that leave nothing anywhere on the page get one explanation and one way out,
+  // not an empty block per section.
+  const isDietaryOnlyFilter =
+    deferredDiscoverChipIds.length === 1 && deferredDiscoverChipIds[0] === "dietary";
+  const filteredEmptyBody = isDietaryOnlyFilter
+    ? `Nothing nearby is confirmed ${getDietaryChipLabel(profile.dietaryPreferences)} yet. More menus are on the way.`
+    : "Try removing a filter.";
+  const filteredEmptyCtaLabel = isDietaryOnlyFilter ? "Show all dishes" : "Clear filters";
+  const isFilteredPageEmpty =
+    isDiscoverFiltering &&
+    !inMallMode &&
+    !showDiscoverFilterRailSkeleton &&
+    popularFoodStyleItems.length === 0 &&
+    trendingCards.length === 0 &&
+    quickBiteCards.length === 0 &&
+    editorChoiceCards.length === 0 &&
+    budgetCards.length === 0 &&
+    (!isLateNightMakanVisible || lateNightCards.length === 0) &&
+    areaStallCards.length === 0 &&
+    stallShowcaseCards.length === 0;
   const handleDecideForMe = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     trackAnalyticsEvent("decide_for_me_triggered", {
@@ -2428,20 +1200,18 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       cardWidth: discoverRailCardWidth,
       contentGap: discoverContentGap,
       imageHeight: discoverRailImageHeight,
-      reservedHeight: discoverRailReservedHeight,
       screenWidth,
     }),
-    [
-      discoverContentGap,
-      discoverRailCardWidth,
-      discoverRailImageHeight,
-      discoverRailReservedHeight,
-      screenWidth,
-    ],
+    [discoverContentGap, discoverRailCardWidth, discoverRailImageHeight, screenWidth],
+  );
+  // Distances measured from the built-in default point would be made up, so they stay unspoken.
+  const getBiteLabel = useCallback(
+    (bite: Bite) =>
+      buildBiteLabel(needsDiscoverAreaChoice ? { ...bite, distanceMeters: undefined } : bite),
+    [needsDiscoverAreaChoice],
   );
   const discoverRailProps = {
     canSeeAll: canOpenDiscoverCollection,
-    isFiltering: isDiscoverFiltering,
     isLoading: showDiscoverFilterRailSkeleton,
     isVisible: isFocused,
     layout: discoverRailLayout,
@@ -2451,9 +1221,78 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     onSeeAll: openDiscoverCollection,
   };
 
+  // Popular food style buttons. With dishes to show, the compact layout moves them below the
+  // first dish section so food is on the first screen (home_above_fold_v1).
+  const hasFirstDishSection =
+    !inMallMode &&
+    (trendingCards.length > 0 ||
+      quickBiteCards.length >= (isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS));
+  const aboveFoldVariant = useExperimentVariant("home_above_fold_v1", {
+    enabled: isFocused && hasDiscoverContent && hasFirstDishSection,
+  });
+  // A diner with a palate sees the palate-ranked "Dishes near you" first, then the classics, then
+  // "Most reviewed"; everyone else keeps "Most reviewed" first.
+  const showNearYouRail = shouldRenderDiscoverRail(quickBiteCards.length, MIN_DISCOVER_RAIL_ITEMS);
+  const personalFirst = !inMallMode && rankByTaste && showNearYouRail;
+  const classicsSlot =
+    aboveFoldVariant === "compact" && hasFirstDishSection
+      ? trendingCards.length > 0 && !personalFirst
+        ? "afterTrending"
+        : "afterNearYou"
+      : "top";
+  const nearYouRail = showNearYouRail ? (
+    <DiscoverBiteRail
+      {...discoverRailProps}
+      rail="quickBites"
+      title={needsDiscoverAreaChoice ? "Dishes across Singapore" : "Dishes near you"}
+      seeAllLabel={
+        needsDiscoverAreaChoice ? "See all dishes across Singapore" : "See all dishes near you"
+      }
+      cards={quickBiteCards}
+      reasons={tasteOrdered.reasons}
+      variant="rating"
+      buttonId="quick_bite_card"
+      getCardLabel={getBiteLabel}
+    />
+  ) : null;
+  const classicsSection = inMallMode ? null : (
+    <View style={{ gap: discoverContentGap }}>
+      <AppText variant="h2" style={{ color: themeTints.text }}>
+        {popularFoodTitle}
+      </AppText>
+      {shouldShowPopularFoodSkeleton ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={edgeToEdgeHorizontalScrollStyle}
+          contentContainerStyle={{ gap: spacing[2] }}
+        >
+          <PopularFoodStyleSkeleton />
+        </ScrollView>
+      ) : popularFoodStyleItems.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={edgeToEdgeHorizontalScrollStyle}
+          contentContainerStyle={{ gap: spacing[2] }}
+        >
+          {popularFoodStyleItems.map((item) => (
+            <PopularFoodStyleItem
+              key={item.id}
+              item={item}
+              onPrefetch={prefetchFoodStyle}
+              onPress={handleFoodStylePress}
+            />
+          ))}
+        </ScrollView>
+      ) : null}
+    </View>
+  );
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
@@ -2528,9 +1367,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               ) : null
             ) : discoverAreaCountLabel !== "0" ? (
               <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                {`${discoverAreaCountLabel} places to eat ${
-                  discoverAreaName ? "in this area" : "near you"
-                }`}
+                {`${discoverAreaCountLabel} stalls ${discoverAreaName ? "in this area" : "near you"}`}
               </AppText>
             ) : null /* 0 in-area venues: the page shows city-wide fallbacks, so "0 places" misleads. */
           }
@@ -2549,14 +1386,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         </View>
 
         {/* Search Bar Entry */}
-        <View style={{ alignItems: "flex-end" }}>
+        <View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Search dishes, stalls, or hawker centres"
             onPressIn={() => preloadRoute(navigation, "SearchHome")}
             onPress={openSearchHome}
             style={{
-              width: searchBarWidth,
+              alignSelf: "stretch",
               borderRadius: componentRadii.search,
               backgroundColor: themeTints.cardBg,
               borderWidth: themeTints.isDark ? 0 : 1,
@@ -2569,7 +1406,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             }}
           >
             <View style={{ flex: 1 }}>
-              <DiscoverSearchPlaceholder />
+              <DiscoverSearchPlaceholder
+                isActive={isFocused}
+                isNarrow={screenWidth < NARROW_SEARCH_WIDTH}
+              />
             </View>
             <View
               style={{
@@ -2625,15 +1465,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           onSwipeLockChange={setTabSwipeLocked}
           renderLeftIcon={(chip, isActive) =>
             chip.id === "dietary" ? (
-              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+              <Salad size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "spicy" ? (
               <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "halal" ? (
-              <HalalLogoIcon color={isActive ? palette.orange : themeTints.secondaryText} />
+              // A neutral icon until the MUIS display decision: the Arabic mark read as a certificate.
+              <Drumstick size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "late" ? (
-              <Compass size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+              <Moon size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : (
-              <Utensils size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+              <Tag size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             )
           }
         />
@@ -2651,44 +1492,19 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           />
         ) : null}
 
+        {isFilteredPageEmpty ? (
+          <EmptyState
+            title="No matching results"
+            body={filteredEmptyBody}
+            icon={<SearchX color={palette.textSecondary} size={28} />}
+            ctaLabel={filteredEmptyCtaLabel}
+            onPress={clearDiscoverFilters}
+          />
+        ) : null}
+
         {inMallMode ? <DiscoverModeTabs value={discoverMode} onChange={setDiscoverMode} /> : null}
 
-        {/* Popular food style buttons */}
-        {inMallMode ? null : (
-          <View style={{ gap: discoverContentGap }}>
-            <AppText variant="h2" style={{ color: themeTints.text }}>
-              Hawker classics
-            </AppText>
-            {shouldShowPopularFoodSkeleton ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[2] }}
-              >
-                <PopularFoodStyleSkeleton />
-              </ScrollView>
-            ) : popularFoodStyleItems.length ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={edgeToEdgeHorizontalScrollStyle}
-                contentContainerStyle={{ gap: spacing[2] }}
-              >
-                {popularFoodStyleItems.map((item) => (
-                  <PopularFoodStyleItem
-                    key={item.id}
-                    item={item}
-                    onPrefetch={prefetchFoodStyle}
-                    onPress={handleFoodStylePress}
-                  />
-                ))}
-              </ScrollView>
-            ) : isDiscoverFiltering ? (
-              <FilteredResultsEmptyState preserveHeight minHeight={popularFoodButtonHeight} />
-            ) : null}
-          </View>
-        )}
+        {classicsSlot === "top" ? classicsSection : null}
 
         {/* Decision action chips */}
         <View style={{ flexDirection: "row", gap: decisionCardGap }}>
@@ -2832,9 +1648,20 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <EmptyState
                   title="Nothing to suggest yet"
                   body="Try What's here, or adjust your dietary needs."
+                  {...(isDiscoverFiltering
+                    ? { ctaLabel: "Clear filters", onPress: clearDiscoverFilters }
+                    : {})}
                 />
               )}
             </View>
+          ) : isDiscoverFiltering && hereStalls.length === 0 ? (
+            <EmptyState
+              title="No matching results"
+              body="No stalls here match your filters."
+              icon={<SearchX color={palette.textSecondary} size={28} />}
+              ctaLabel="Clear filters"
+              onPress={clearDiscoverFilters}
+            />
           ) : (
             <WhatsHerePanel
               placeName={currentPlace.name}
@@ -2857,9 +1684,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           )
         ) : (
           <>
+            {personalFirst ? nearYouRail : null}
+            {personalFirst && classicsSlot === "afterNearYou" ? classicsSection : null}
             <TrendingList
-              title={`Trending ${trendingAreaPhrase}`}
-              bites={trendingListBites}
+              title={`Most reviewed ${trendingAreaPhrase}`}
+              bites={showInitialDiscoverSkeleton ? [] : trendingListBites}
               onOpen={(bite) => {
                 trackAnalyticsEvent("discover_card_opened", {
                   surface: "home",
@@ -2877,54 +1706,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 canOpenDiscoverCollection ? () => openDiscoverCollection("trending") : undefined
               }
             />
-            {/* The full lists stay one tap away now that the two big tiles are gone. */}
-            <View style={{ flexDirection: "row", gap: discoverContentGap }}>
-              {(
-                [
-                  {
-                    label: "All stalls",
-                    a11y: "Browse stalls and restaurants",
-                    route: "BrowseStalls",
-                  },
-                  { label: "All dishes", a11y: "Browse dishes", route: "BrowseDishes" },
-                ] as const
-              ).map((item) => (
-                <Pressable
-                  key={item.route}
-                  accessibilityRole="button"
-                  accessibilityLabel={item.a11y}
-                  onPressIn={() => {
-                    if (item.route === "BrowseStalls") {
-                      areaVenues
-                        .slice(0, 5)
-                        .forEach((venue) => prefetchStallDetail(venue.id, repository));
-                      preloadRoute(navigation, "BrowseStalls");
-                    } else {
-                      areaDishPool
-                        .slice(0, 6)
-                        .forEach((dish) => prefetchDishDetail(dish.id, repository));
-                    }
-                  }}
-                  onPress={() => {
-                    if (item.route === "BrowseStalls") navigation.navigate("BrowseStalls");
-                    else navigation.navigate("BrowseDishes");
-                  }}
-                  style={{
-                    alignItems: "center",
-                    borderColor: palette.border,
-                    borderRadius: componentRadii.button,
-                    borderWidth: 1,
-                    flex: 1,
-                    justifyContent: "center",
-                    minHeight: 48,
-                  }}
-                >
-                  <AppText variant="bodyBold" style={{ color: themeTints.text }}>
-                    {item.label}
-                  </AppText>
-                </Pressable>
-              ))}
-            </View>
+            {classicsSlot === "afterTrending" ? classicsSection : null}
           </>
         )}
 
@@ -2984,18 +1766,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             </View>
 
             {/* Rails: each is the same memoised rail over its own collection. */}
-            {shouldRenderDiscoverRail(quickBiteCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
-              <DiscoverBiteRail
-                {...discoverRailProps}
-                rail="quickBites"
-                title="Dishes near you"
-                seeAllLabel="See all dishes near you"
-                cards={quickBiteCards}
-                variant="rating"
-                buttonId="quick_bite_card"
-                getCardLabel={getQuickBiteLabel}
-              />
-            ) : null}
+            {personalFirst ? null : nearYouRail}
+            {!personalFirst && classicsSlot === "afterNearYou" ? classicsSection : null}
 
             {shouldRenderDiscoverRail(editorChoiceCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail
@@ -3007,7 +1779,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 cards={editorChoiceCards}
                 variant="topRated"
                 buttonId="editor_choice_bite_card"
-                getCardLabel={getTopRatedLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
 
@@ -3021,7 +1793,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 cards={budgetCards}
                 variant="price"
                 buttonId="budget_bite_card"
-                getCardLabel={getBudgetLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
 
@@ -3035,7 +1807,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 cards={lateNightCards}
                 variant="price"
                 buttonId="late_night_bite_card"
-                getCardLabel={getLateNightLabel}
+                getCardLabel={getBiteLabel}
               />
             ) : null}
 
@@ -3086,11 +1858,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   </Pressable>
                 </View>
                 <View style={{ gap: discoverContentGap }}>
+                  {isColdStartGrouped && !foldMenuLessStalls && !showDiscoverFilterRailSkeleton ? (
+                    <AppText variant="bodySmall" tone="secondary">
+                      Menus are coming to these stalls.
+                    </AppText>
+                  ) : null}
                   {showDiscoverFilterRailSkeleton ? (
                     <DiscoverStallListLoadingSkeleton />
                   ) : areaStallCards.length ? (
-                    areaStallCards.map(({ building, venue, topDish }, stallIndex) => (
-                      <Fragment key={venue.id}>
+                    areaStallCards.map((card, stallIndex) => (
+                      <Fragment key={card.venue.id}>
                         {currentPlace &&
                         placeStallCardCount > 0 &&
                         stallIndex === placeStallCardCount ? (
@@ -3102,100 +1879,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                             {`More near ${currentPlace.name}`}
                           </AppText>
                         ) : null}
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Open ${venue.name} ${
-                            isUserMode ? "details" : "in map zoomed view"
-                          }`}
-                          onPressIn={() => {
-                            prefetchStallDetail(venue.id, repository);
-                            if (topDish?.id) {
-                              prefetchDishDetail(topDish.id, repository);
-                            }
-                          }}
-                          onPress={() => {
-                            trackAnalyticsEvent("discover_card_opened", {
-                              surface: "home",
-                              rail: "area_stalls",
-                              kind: "stall",
-                              position: stallIndex,
-                            });
-                            if (isUserMode) {
-                              navigation.navigate("StallDetail", { venueId: venue.id });
-                              return;
-                            }
-
-                            navigation.navigate("MapZoomedIn", {
-                              buildingId: venue.buildingId,
-                            });
-                          }}
-                          style={[
-                            shadows.card,
-                            {
-                              backgroundColor: themeTints.cardBg,
-                              borderRadius: componentRadii.card,
-                              padding: spacing[3],
-                              flexDirection: "row",
-                              gap: spacing[3],
-                              alignItems: "center",
-                              borderWidth: themeTints.isDark ? 0 : 1,
-                              borderColor: palette.border,
-                            },
-                          ]}
-                        >
-                          <DiscoverStallThumbnail venue={venue} />
-                          <View style={{ flex: 1, gap: 2 }}>
-                            <AppText
-                              variant="bodySmall"
-                              style={{ fontWeight: "800", color: themeTints.text }}
-                              numberOfLines={1}
-                            >
-                              {venue.name}
-                            </AppText>
-                            <AppText
-                              variant="micro"
-                              style={{ color: themeTints.secondaryText }}
-                              numberOfLines={1}
-                            >
-                              {[
-                                getStallRowOpenLabel(venue),
-                                topDish && topDish.reviewCount > 0
-                                  ? `★ ${topDish.rating.toFixed(1)}`
-                                  : undefined,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </AppText>
-                            {/* Where to walk to: the building and unit get a line of their own so
-                                the building is never the part that is cut off. */}
-                            <AppText
-                              variant="micro"
-                              style={{ color: themeTints.secondaryText }}
-                              numberOfLines={1}
-                            >
-                              {[stallBuildingLabel(venue, building), venue.unitNumber]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </AppText>
-                            {topDish ? null : (
-                              <AppText
-                                variant="micro"
-                                style={{ color: themeTints.secondaryText }}
-                                numberOfLines={1}
-                              >
-                                Menu coming soon
-                              </AppText>
-                            )}
-                          </View>
-                          <ChevronRight color={palette.textMuted} size={20} />
-                        </Pressable>
+                        {renderAreaStallRow(card, stallIndex)}
                       </Fragment>
                     ))
-                  ) : isDiscoverFiltering ? (
-                    <FilteredResultsEmptyState
-                      preserveHeight
-                      minHeight={discoverRailReservedHeight}
-                    />
                   ) : null}
                   {hasMoreAreaStalls ? (
                     <Pressable
@@ -3224,6 +1910,26 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                       <ChevronRight color={palette.orange} size={18} />
                     </Pressable>
                   ) : null}
+                  {foldedStallCards.length && !showDiscoverFilterRailSkeleton ? (
+                    <>
+                      <MenuLessStallGroup
+                        stalls={foldedStallCards.map(({ venue }) => ({
+                          id: venue.id,
+                          name: venue.name,
+                          logoUrl: venue.logoUrl,
+                        }))}
+                        expanded={isMenuLessGroupOpen}
+                        onToggle={handleToggleMenuLessGroup}
+                      />
+                      {isMenuLessGroupOpen
+                        ? foldedStallCards.map((card) => (
+                            <Fragment key={card.venue.id}>
+                              {renderAreaStallRow(card, listedAreaStallCards.length)}
+                            </Fragment>
+                          ))
+                        : null}
+                    </>
+                  ) : null}
                 </View>
               </View>
             ) : null}
@@ -3238,6 +1944,54 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 onPrefetchCard={prefetchStallShowcaseCard}
               />
             ) : null}
+            {/* The full lists stay one tap away, at the end of the page rather than between sections. */}
+            <View style={{ flexDirection: "row", gap: discoverContentGap }}>
+              {(
+                [
+                  {
+                    label: "All stalls",
+                    a11y: "Browse stalls and restaurants",
+                    route: "BrowseStalls",
+                  },
+                  { label: "All dishes", a11y: "Browse dishes", route: "BrowseDishes" },
+                ] as const
+              ).map((item) => (
+                <Pressable
+                  key={item.route}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.a11y}
+                  onPressIn={() => {
+                    if (item.route === "BrowseStalls") {
+                      areaVenues
+                        .slice(0, 5)
+                        .forEach((venue) => prefetchStallDetail(venue.id, repository));
+                      preloadRoute(navigation, "BrowseStalls");
+                    } else {
+                      areaDishPool
+                        .slice(0, 6)
+                        .forEach((dish) => prefetchDishDetail(dish.id, repository));
+                    }
+                  }}
+                  onPress={() => {
+                    if (item.route === "BrowseStalls") navigation.navigate("BrowseStalls");
+                    else navigation.navigate("BrowseDishes");
+                  }}
+                  style={{
+                    alignItems: "center",
+                    borderColor: palette.border,
+                    borderRadius: componentRadii.button,
+                    borderWidth: 1,
+                    flex: 1,
+                    justifyContent: "center",
+                    minHeight: 48,
+                  }}
+                >
+                  <AppText variant="bodyBold" style={{ color: themeTints.text }}>
+                    {item.label}
+                  </AppText>
+                </Pressable>
+              ))}
+            </View>
           </>
         )}
       </ScrollView>

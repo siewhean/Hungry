@@ -10,6 +10,7 @@ import {
 } from "@/features/review/reviewModeration";
 import { webShareUrl } from "@/constants/links";
 import { hungryService } from "@/lib/services/mock/mockService";
+import { readHomeSource } from "@/test/sourceContracts";
 
 const root = process.cwd();
 const read = (file: string) => readFileSync(path.join(root, file), "utf8");
@@ -207,7 +208,7 @@ test("L14: /post opens the composer, with /order kept as an alias", () => {
 });
 
 test("M4: a photo post without a rating shows no star", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   assert.match(discover, /bite\.cravingCount > 0 && bite\.rating > 0/);
   const publishing = read("src/features/post/publishing.ts");
   assert.match(publishing, /state\.rating > 0 \? state\.rating : 0/);
