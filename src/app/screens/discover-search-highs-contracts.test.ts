@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { readRepoFile } from "@/test/sourceContracts";
+import { readHomeSource, readRepoFile } from "@/test/sourceContracts";
 
 test("Discover feed falls back to the radius search and ranks by computed distance", () => {
   const migration = readRepoFile(
@@ -24,7 +24,7 @@ test("Discover feed falls back to the radius search and ranks by computed distan
 });
 
 test("Discover follows the phone's location and offers to turn it on when it is off", () => {
-  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const screen = readHomeSource();
 
   // No OS permission prompt on mount; only the "Use current location" press asks.
   assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
@@ -48,7 +48,7 @@ test("Discover follows the phone's location and offers to turn it on when it is 
 });
 
 test("Decide for me picks and logs once, on the result screen, at the effective location", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const result = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
   const handler =
     discover.match(/const handleDecideForMe = \(\) => \{[\s\S]*?\n {2}\};/)?.[0] ?? "";
@@ -64,7 +64,7 @@ test("Decide for me picks and logs once, on the result screen, at the effective 
 });
 
 test("Discover rails no longer claim prep times or curation they do not have", () => {
-  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const screen = readHomeSource();
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
   assert.match(screen, /title=\{`Most reviewed \$\{trendingAreaPhrase\}`\}/);
@@ -72,7 +72,7 @@ test("Discover rails no longer claim prep times or curation they do not have", (
 });
 
 test("Top rated rail never falls back to trending dishes under its 4.4+ label", () => {
-  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const screen = readHomeSource();
   const editorChoice =
     screen.match(/const unfilteredEditorChoiceCards = useMemo\([\s\S]*?\n {2}\);/)?.[0] ?? "";
 
@@ -107,7 +107,7 @@ test("Home map centres on the user, wires catalog pins and keeps Mapbox attribut
 
 test("Screens with analytics mount effects are never preloaded", () => {
   const prefetch = readRepoFile("src/features/navigation/prefetch.ts");
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
 
   assert.match(
     prefetch,
@@ -214,7 +214,7 @@ test("Home map recentres only when the chosen building changes", () => {
 });
 
 test("Map is open to every diner from a List/Map toggle on Discover, guests included", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
   const toggle = readRepoFile("src/components/discover/DiscoverViewToggle.tsx");
   const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");

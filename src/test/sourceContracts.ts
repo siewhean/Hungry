@@ -1,11 +1,27 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 const repoRoot = process.cwd();
 
 export function readRepoFile(pathFromRepoRoot: string): string {
   return readFileSync(path.join(repoRoot, pathFromRepoRoot), "utf8");
+}
+
+/**
+ * The Home screen and the files it was split into (section components, hooks, showcase helpers),
+ * read as one source so a contract about Home does not care which file a piece lives in.
+ */
+export function readHomeSource(): string {
+  const sectionDir = "src/components/discover/home";
+  return [
+    "src/app/screens/discover/DiscoverHomeScreen.tsx",
+    ...readdirSync(path.join(repoRoot, sectionDir)).map((name) => `${sectionDir}/${name}`),
+    "src/features/discover/popularFoodStyles.ts",
+    "src/features/discover/stallShowcase.ts",
+  ]
+    .map(readRepoFile)
+    .join("\n");
 }
 
 export function assertRepoFileExists(pathFromRepoRoot: string): void {
