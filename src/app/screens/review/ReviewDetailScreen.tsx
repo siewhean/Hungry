@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ChevronRight, MoreHorizontal } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -24,6 +23,7 @@ import {
 } from "@/components/review";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Avatar,
   Button,
@@ -266,8 +266,22 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
     year: "numeric",
   })}${review.editedAt ? " · edited" : ""}`;
 
+  const shareReview = () =>
+    shareLink(
+      {
+        kind: "review",
+        id: review.id,
+        message: `${review.authorName} reviewed ${entry.dishName} at ${entry.venueName} on Hungry`,
+        url: webShareUrl("review", review.id),
+      },
+      "system_share",
+    ).catch((error: unknown) => {
+      reportError(error, { screen: "ReviewDetailScreen", action: "share_review" });
+      showToast({ message: "Couldn't open sharing. Try again.", tone: "warning" });
+    });
+
   const menuButton =
-    isOwn && !ownReviewEditor.enabled ? undefined : (
+    isOwn && !ownReviewEditor.enabled ? null : (
       <IconButton
         variant="ghost"
         accessibilityLabel={isOwn ? "Manage your review" : "More options"}
@@ -275,12 +289,28 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           isOwn ? "Edit or delete this review" : "Report this review or block its author"
         }
         onPress={openMenu}
-        icon={<MoreHorizontal color={palette.textSecondary} size={20} />}
+        icon={<AppSymbol name="rowActions" color={palette.textSecondary} size={20} />}
       />
     );
+  // Share sits in the top bar, next to the menu (a hidden or removed review is not shared).
+  const shareButton = review.moderationState ? null : (
+    <IconButton
+      variant="ghost"
+      accessibilityLabel="Share this review"
+      onPress={shareReview}
+      icon={<AppSymbol name="share" color={palette.textSecondary} size={20} />}
+    />
+  );
+  const headerActions =
+    shareButton || menuButton ? (
+      <View style={{ alignItems: "center", flexDirection: "row" }}>
+        {shareButton}
+        {menuButton}
+      </View>
+    ) : undefined;
 
   return (
-    <Screen title={entry.dishName} subtitle={entry.venueName} headerRight={menuButton}>
+    <Screen title="Review" headerRight={headerActions}>
       <View style={{ gap: spacing[4] }}>
         {review.moderationState ? (
           <ReviewModerationNotice
@@ -288,10 +318,6 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
             reviewId={review.id}
             dishName={entry.dishName}
           />
-        ) : null}
-
-        {review.photos.length > 0 ? (
-          <ReviewPhotoHero photos={review.photos} onOpen={setViewerIndex} />
         ) : null}
 
         <Pressable
@@ -323,6 +349,10 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           </View>
         </Pressable>
 
+        {review.photos.length > 0 ? (
+          <ReviewPhotoHero photos={review.photos} onOpen={setViewerIndex} />
+        ) : null}
+
         {/* The stars (read-only, 14pt) and, on someone else's review, the like. */}
         <ReviewReaderActions
           key={review.id}
@@ -333,25 +363,39 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           onRemoved={refreshSafety}
         />
 
-        {entry.venueId ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Open ${entry.venueName || "the stall"}`}
-            onPress={() => navigation.navigate("StallDetail", { id: entry.venueId })}
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[1],
-              minHeight: 44,
-            }}
-          >
-            <AppText variant="bodySmallBold" style={{ flexShrink: 1 }} numberOfLines={1}>
-              {entry.dishName}
-              {entry.venueName ? ` at ${entry.venueName}` : ""}
+        <View style={{ gap: spacing[1] }}>
+          <AppText variant="h3" accessibilityRole="header">
+            {entry.dishName}
+          </AppText>
+          {entry.venueId ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${entry.venueName || "the stall"}`}
+              onPress={() => navigation.navigate("StallDetail", { id: entry.venueId })}
+              style={{
+                alignItems: "center",
+                alignSelf: "flex-start",
+                flexDirection: "row",
+                gap: spacing[1],
+                minHeight: 44,
+              }}
+            >
+              <AppText
+                variant="bodySmall"
+                tone="secondary"
+                numberOfLines={1}
+                style={{ flexShrink: 1 }}
+              >
+                {entry.venueName}
+              </AppText>
+              <AppSymbol name="chevronRight" color={palette.textMuted} size={14} />
+            </Pressable>
+          ) : entry.venueName ? (
+            <AppText variant="bodySmall" tone="secondary">
+              {entry.venueName}
             </AppText>
-            <ChevronRight color={palette.textMuted} size={16} />
-          </Pressable>
-        ) : null}
+          ) : null}
+        </View>
 
         <AppText variant="body">{review.text}</AppText>
 
@@ -393,6 +437,12 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           </View>
         ) : null}
 
+        <Button
+          label="View dish"
+          onPress={() =>
+            navigation.navigate("DishDetail", { dishId: entry.dishId, source: "review_detail" })
+          }
+        />
         {isOwn ? null : (
           <Button
             label="I had this too"
@@ -401,32 +451,6 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
               navigation.navigate("ReviewStack", {
                 screen: "ReviewMain",
                 params: { dishId: entry.dishId, venueId: entry.venueId || undefined },
-              })
-            }
-          />
-        )}
-        <Button
-          label={`See ${entry.dishName}`}
-          onPress={() =>
-            navigation.navigate("DishDetail", { dishId: entry.dishId, source: "review_detail" })
-          }
-        />
-        {review.moderationState ? null : (
-          <Button
-            label="Share this review"
-            variant="secondary"
-            onPress={() =>
-              shareLink(
-                {
-                  kind: "review",
-                  id: review.id,
-                  message: `${review.authorName} reviewed ${entry.dishName} at ${entry.venueName} on Hungry`,
-                  url: webShareUrl("review", review.id),
-                },
-                "system_share",
-              ).catch((error: unknown) => {
-                reportError(error, { screen: "ReviewDetailScreen", action: "share_review" });
-                showToast({ message: "Couldn't open sharing. Try again.", tone: "warning" });
               })
             }
           />

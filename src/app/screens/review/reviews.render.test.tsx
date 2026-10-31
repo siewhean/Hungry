@@ -214,6 +214,22 @@ test("ReviewDetail: a missing review says so without blaming its author (REV-X4)
   assert.doesNotMatch(view.text(), /removed by its author/);
 });
 
+test("ReviewDetail: the dish is named once, Share is in the header and View dish is the main button (RA-3, RA-4)", async () => {
+  useLiveReviews({ getReviewById: async () => entry("r-other", "user-emma") });
+  const view = await renderScreen(ReviewDetailScreen as never, {
+    name: "ReviewDetail",
+    params: { reviewId: "r-other" },
+  });
+  const text = view.text();
+  assert.equal(text.split("Katong Laksa").length - 1, 1, "the dish name appears once");
+  assert.ok(view.findByLabel("Open Laksa Stall"), "the stall is one link line");
+  assert.ok(view.findByLabel("Share this review"), "Share is an icon button in the header");
+  assert.equal(view.findByText("Share this review"), null, "no stacked Share button");
+  assert.ok(view.findByText("View dish"));
+  assert.ok(view.findByText("I had this too"));
+  assert.equal(view.findByText("See Katong Laksa"), null);
+});
+
 // ─── Reviews grid: review_tile_labels_v1 ─────────────────────────────────────
 
 test("Reviews grid, control: photo and date only, and opening a tile sends review_opened", async () => {
@@ -448,6 +464,20 @@ test("For your taste with no match shows its own empty state and Show all review
   assert.ok(view.findByTestId("review-tile-r1"));
 });
 
+test("the empty Reviews tab invites the first review with a Write a review button (RA-2)", async () => {
+  useLiveReviews({ listRecentReviewsPage: async () => ({ entries: [], hasMore: false }) });
+  const navigation = createFakeNavigation();
+  const view = await renderScreen(ReviewFeedScreen as never, { name: "Review", navigation });
+  assert.match(view.text(), /Be the first to review a dish/);
+  assert.doesNotMatch(view.text(), /pen button/);
+  await view.press(view.findByText("Write a review"));
+  assert.equal(reviewEvents("review_empty_state_cta_pressed").length, 1);
+  assert.deepEqual(navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["ReviewStack", { screen: "ReviewMain" }],
+  });
+});
+
 test("each taste is one labelled radio group with five radios (REV-16)", async () => {
   const view = await render(
     createElement(TasteRatingInput, { values: { spicy: 2 }, onChange: () => undefined }),
@@ -637,33 +667,50 @@ test("a failed picker search falls back to the cached catalog and is reported (R
   );
 });
 
-test("compact editor: Cancel and Publish in the header, optional parts folded (REV-5)", async () => {
+test("the editor is the compact one for everyone: Cancel and one Publish in the header, optional parts folded (RA-1)", async () => {
   const { first } = twoDishes();
-  setExperimentOverride("review_editor_compact_v1", "compact");
   useReviewDraftStore.getState().selectDish(first.venueId, first.id);
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
   assert.ok(view.findByLabel("Cancel"), "Cancel sits in the header");
   const headerPublish = view.findByText("Publish")?.closest("[role=button], button");
-  const barPublish = view.findByText("Publish review")?.closest("[role=button], button");
-  assert.ok(headerPublish && barPublish, "Publish is in the header and in the sticky bar");
+  assert.ok(headerPublish, "Publish is in the header");
   assert.equal(headerPublish.getAttribute("aria-disabled"), "true", "no photo yet");
-  assert.equal(barPublish.getAttribute("aria-disabled"), "true", "same reason in the bar");
-  assert.ok(view.findByText("Add a photo of the dish to publish."));
+  assert.equal(view.findByText("Publish review"), null, "no second Publish at the bottom");
+  assert.ok(view.findByText("Add a photo of the dish to publish."), "the reason is still said");
   assert.equal(view.findByText("Taste tags"), null, "tags are folded away");
   await view.press(view.findByLabel("Add more detail (optional)"));
   assert.ok(view.findByText("Taste tags"));
   assert.ok(view.findByText("Would you recommend it?"));
 });
 
-test("control editor keeps today's layout: no header Publish, tags and recommend in the page (REV-5)", async () => {
+test("the editor reports the compact variant on every field event (RA-1)", async () => {
   const { first } = twoDishes();
   useReviewDraftStore.getState().selectDish(first.venueId, first.id);
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
-  assert.equal(view.findByLabel("Cancel"), null);
-  assert.equal(view.findByText("Publish"), null);
-  assert.ok(view.findByText("Publish review"));
-  assert.ok(view.findByText("Taste tags"));
-  assert.ok(view.findByText("Would you recommend it?"));
+  useReviewDraftStore.getState().setRating(4);
+  await view.settle();
+  const variants = reviewEvents("review_editor_field_completed").map(
+    (event) => event.properties?.variant,
+  );
+  assert.ok(variants.length > 0);
+  assert.ok(variants.every((variant) => variant === "compact"));
+});
+
+test("a dish with no photo shows a tile, not a blank gap, in the editor's dish card (RA-5)", async () => {
+  const { first } = twoDishes();
+  const repository = getDataRepository();
+  const dish = repository.getDishById(first.id);
+  assert.ok(dish);
+  const original = dish.imageUrl;
+  dish.imageUrl = "";
+  try {
+    useReviewDraftStore.getState().selectDish(first.venueId, first.id);
+    const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
+    assert.equal(view.findByLabel(`${first.name} photo`), null);
+    assert.ok(view.findByLabel("Change dish"));
+  } finally {
+    dish.imageUrl = original;
+  }
 });
 
 test("review_editor_field_completed fires once per field (REV-21)", async () => {
