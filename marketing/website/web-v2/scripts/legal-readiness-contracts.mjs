@@ -95,6 +95,14 @@ requireMarker(privacy, "Google services for maps, places, OCR, or AI-assisted ex
 requireMarker(privacy, "Precise latitude and longitude are not sent as PostHog identity properties by default", "privacy/page.tsx", "Precise coordinate analytics disclosure contract failed");
 requireMarker(privacy, "Deletion is scheduled 30 days after the request", "privacy/page.tsx", "Account deletion queue disclosure contract failed");
 requireMarker(privacy, "Personal Data Protection Act", "privacy/page.tsx", "Singapore privacy disclosure contract failed");
+requireMarker(privacy, "Anthropic", "privacy/page.tsx", "Third-party AI provider disclosure contract failed (App Store 5.1.2)");
+requireMarker(privacy, "Google Cloud Vision", "privacy/page.tsx", "Third-party AI provider disclosure contract failed (App Store 5.1.2)");
+requireMarker(privacy, "Google Gemini", "privacy/page.tsx", "Third-party AI provider disclosure contract failed (App Store 5.1.2)");
+requireMarker(privacy, "Resend", "privacy/page.tsx", "Email provider disclosure contract failed");
+requireMarker(privacy, "Mapbox", "privacy/page.tsx", "Map provider disclosure contract failed");
+requireMarker(privacy, "within 24 hours", "privacy/page.tsx", "Report response time disclosure contract failed (App Store 1.2)");
+requireMarker(terms, "no tolerance for objectionable content", "terms/page.tsx", "UGC zero-tolerance terms contract failed (App Store 1.2)");
+requireMarker(terms, "within 24 hours", "terms/page.tsx", "Report response time terms contract failed (App Store 1.2)");
 
 requireMarker(terms, "User-Generated Content", "terms/page.tsx", "UGC terms contract failed");
 requireMarker(terms, "AI, OCR, And Recommendations", "terms/page.tsx", "AI/OCR terms contract failed");

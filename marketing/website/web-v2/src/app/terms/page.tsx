@@ -12,12 +12,12 @@ const sections = [
   {
     title: "2. User-Generated Content",
     body:
-      "You are responsible for reviews, posts, comments, messages, photos, videos, profile content, reports, and other content you submit. Do not post abusive, harassing, hateful, sexually explicit, violent, illegal, deceptive, spam, infringing, or unsafe content. Hungry may hide, remove, restrict, or preserve content when needed for safety, moderation, legal, or abuse-prevention reasons.",
+      "You are responsible for reviews, posts, comments, messages, photos, videos, profile content, reports, and other content you submit. Do not post abusive, harassing, hateful, sexually explicit, violent, illegal, deceptive, spam, infringing, or unsafe content. Hungry has no tolerance for objectionable content or abusive users. Hungry may hide, remove, restrict, or preserve content, and may suspend or end accounts, when needed for safety, moderation, legal, or abuse-prevention reasons.",
   },
   {
     title: "3. Reporting, Blocking, And Moderation",
     body:
-      "Hungry provides report, hide, and block controls for community content. Reports are reviewed for safety and policy enforcement. Blocking reduces visibility between users where supported, but it may not remove already processed safety records or legal/audit records.",
+      "Hungry provides report, hide, and block controls for community content. Reports are reviewed for safety and policy enforcement, and we aim to act on each report within 24 hours. Content that breaks these terms is removed and the person who posted it can be suspended or removed. To report a problem you cannot report in the app, email usehungrysingapore@gmail.com. Blocking reduces visibility between users where supported, but it may not remove already processed safety records or legal/audit records.",
   },
   {
     title: "4. Merchant And Menu Information",
@@ -63,7 +63,7 @@ export default function TermsOfService() {
           Terms of Service
         </h1>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
-          <em>Last updated: May 18, 2026</em>
+          <em>Last updated: October 31, 2026</em>
         </p>
         <div
           style={{

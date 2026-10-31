@@ -32,6 +32,23 @@ const REMOVED_INFO_PLIST_KEYS = [
   "UIBackgroundModes",
   "CADisableMinimumFrameDurationOnPhone",
 ];
+// Capabilities a released iOS build needs: universal links for usehungry.com share links and
+// push for stall alerts. They live only in the EAS worktree because the free Personal Team that
+// signs local device builds cannot hold them; the committed entitlements file stays empty.
+const RELEASED_IOS_ENTITLEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>aps-environment</key>
+    <string>production</string>
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+      <string>applinks:usehungry.com</string>
+      <string>applinks:www.usehungry.com</string>
+    </array>
+  </dict>
+</plist>
+`;
 // @rnmapbox/maps stays linked (owner decision 2026-10-25); keep in step with app.config.js.
 const RELEASED_NATIVE_MODULES = ["expo-dev-client", "expo-audio", "expo-video"];
 
@@ -89,6 +106,11 @@ function writeReleasedInfoPlist(root) {
   writeFileSync(plistPath, contents);
 }
 
+function writeReleasedEntitlements(root) {
+  const entitlementsPath = path.join(root, "ios", "Hungry", "Hungry.entitlements");
+  writeFileSync(entitlementsPath, RELEASED_IOS_ENTITLEMENTS);
+}
+
 function writeReleasedAndroidManifest(root) {
   const manifestPath = path.join(root, "android", "app", "src", "main", "AndroidManifest.xml");
   let contents = readFileSync(manifestPath, "utf8");
@@ -110,6 +132,7 @@ function applyReleasedProfile(root, profile) {
   if (!profile.isReleased) return;
   writeReleasedPackageJson(root);
   writeReleasedInfoPlist(root);
+  writeReleasedEntitlements(root);
   writeReleasedAndroidManifest(root);
 }
 
