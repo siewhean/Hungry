@@ -27,6 +27,7 @@ export * from "./Dialog";
 export * from "./ExpandableSearchLauncher";
 export * from "./Input";
 export * from "./Screen";
+export * from "./SegmentedControl";
 export * from "./SelectField";
 export * from "./Skeleton";
 export * from "./StatusChip";

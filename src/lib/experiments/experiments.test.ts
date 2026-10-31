@@ -251,15 +251,26 @@ test("a running experiment with no PostHog flag is a rollout, not a test", () =>
     "review_tile_labels_v1",
     "profile_first_review_nudge_v1",
   ];
+  // These have a multivariate PostHog flag (created 2026-10-31), switched off until launch, so
+  // they serve their fallback until the flag is turned on: no app release needed to start them.
+  const FLAG_EXISTS_OFF_UNTIL_LAUNCH: readonly string[] = [
+    "saved_card_density_v1",
+    "saved_default_sort_v1",
+    "saved_remove_undo_v1",
+  ];
   const running = KEYS.filter(
     (key) => (EXPERIMENTS[key] as ExperimentDefinition).status === "running",
   );
   const unexpected = running.filter(
     (key) =>
-      !(EXPERIMENTS[key] as ExperimentDefinition).rollout && !RUNNING_WITHOUT_FLAG.includes(key),
+      !(EXPERIMENTS[key] as ExperimentDefinition).rollout &&
+      !RUNNING_WITHOUT_FLAG.includes(key) &&
+      !FLAG_EXISTS_OFF_UNTIL_LAUNCH.includes(key),
   );
   assert.deepEqual(unexpected, [], "new running experiments need a PostHog flag: start as draft");
-  const stale = RUNNING_WITHOUT_FLAG.filter((key) => !running.includes(key as ExperimentKey));
+  const stale = [...RUNNING_WITHOUT_FLAG, ...FLAG_EXISTS_OFF_UNTIL_LAUNCH].filter(
+    (key) => !running.includes(key as ExperimentKey),
+  );
   assert.deepEqual(stale, [], "these are no longer running: remove them from the list");
 });
 

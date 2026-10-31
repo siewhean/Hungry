@@ -7,6 +7,7 @@ import test, { afterEach, beforeEach } from "node:test";
 import { Linking } from "react-native";
 
 import { FavouritesScreen } from "@/app/screens/profile/FavouritesScreen";
+import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   clearExperimentOverrides,
@@ -78,8 +79,12 @@ function stubCards(cards: SavedDishCard[] = FIXTURES) {
   return calls;
 }
 
+const SEARCH_WAIT_MS = 320;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 beforeEach(async () => {
   await enterScenario("user");
+  useSavedViewStore.getState().reset();
   clearTrackedAnalyticsEvents();
   useLocationStore.setState({ permission: "denied", manualCoordinate: undefined });
 });
@@ -250,11 +255,14 @@ test("Nearest sorts by distance; with location off it says why and keeps the ord
   // Recent order is newest save first: Laksa was saved last.
   assert.equal(order(), "laksa-first");
 
-  await view.press(view.findByLabel("Sort by top rated"));
+  await view.press(view.findByLabel("Sort: Recent"));
+  await view.press(view.findByLabel("Top rated"));
   assert.equal(order(), "rice-first");
-  await view.press(view.findByLabel("Sort by recent"));
+  await view.press(view.findByLabel("Sort: Top rated"));
+  await view.press(view.findByLabel("Recent"));
 
-  await view.press(view.findByLabel("Sort by nearest. Turn on location to use this."));
+  await view.press(view.findByLabel("Sort: Recent"));
+  await view.press(view.findByLabel("Nearest. Turn on location to use this."));
   assert.equal(useUIStore.getState().toast?.message, "Turn on location to sort by nearest.");
   assert.equal(order(), "laksa-first");
 
@@ -263,7 +271,8 @@ test("Nearest sorts by distance; with location off it says why and keeps the ord
     currentLocation: { latitude: 1.401, longitude: 103.901 },
   });
   await view.settle();
-  await view.press(view.findByLabel("Sort by nearest"));
+  await view.press(view.findByLabel("Sort: Recent"));
+  await view.press(view.findByLabel("Nearest"));
   assert.equal(order(), "rice-first");
   assert.match(view.text(), /m away|km away/);
   assert.equal(eventsNamed("saved_sort_changed").length, 3);
@@ -301,7 +310,9 @@ test("a search with no match offers Clear search (SAVED4-17)", async () => {
   saveDishes([LAKSA.id]);
   stubCards();
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
-  await view.type(view.findByLabel("Search your saved dishes"), "pizza");
+  await view.type(view.findByLabel("Search everything you saved"), "pizza");
+  await sleep(SEARCH_WAIT_MS);
+  await view.settle();
   assert.ok(view.findByText("No matches"));
   await view.press(view.findByText("Clear search"));
   assert.ok(view.findByLabel("Open Laksa at Nam Sing"));

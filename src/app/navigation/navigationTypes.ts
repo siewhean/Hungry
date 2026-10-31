@@ -81,7 +81,8 @@ export type OnboardingStackParamList = {
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
-  Favourites: undefined;
+  /** Saved: opens on `section` (a deep link to Lists, say); else where the diner left it. */
+  Favourites: { section?: "dishes" | "stalls" | "lists" | "posts" } | undefined;
   /** One Lists area: Saved, your lists (portfolios) and checklists. */
   ListsHome: undefined;
   Collections: undefined;
@@ -243,7 +244,8 @@ export type RootStackParamList = {
       }
     | undefined;
   DeveloperLauncher: undefined;
-  Favourites: undefined;
+  /** Saved: opens on `section` (a deep link to Lists, say); else where the diner left it. */
+  Favourites: { section?: "dishes" | "stalls" | "lists" | "posts" } | undefined;
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;

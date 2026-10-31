@@ -1,19 +1,19 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import {
-  Bookmark,
-  CircleCheck,
-  MapPin,
-  Navigation,
-  PenLine,
-  Star,
-  Store,
-  Utensils,
-} from "lucide-react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 import { AccessibleImage } from "@/components/ui/AccessibleImage";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 import { AppText } from "@/components/ui/AppText";
 import { Button } from "@/components/ui/Button";
+import { PressableScale } from "@/components/ui/PressableScale";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { EASE_OUT } from "@/lib/motion/uiMotion";
 import { savedDishPlaceLine } from "@/features/saved/savedDishes";
 import type { SavedDishCard as SavedDish } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -38,17 +38,24 @@ type Props = {
   onReview: () => void;
 };
 
-/** The dish photo, or a plain placeholder when there is none or it fails to load. */
+/**
+ * The dish photo, or a placeholder tile when there is none or it fails to load: the stall's logo
+ * when it has one (so the tile says whose dish this is), else the fork-and-knife mark.
+ */
 function DishPhoto({
   uri,
+  logoUri,
   size,
 }: {
   uri?: string;
+  logoUri?: string;
   size: { width: number | "100%"; height: number };
 }) {
   const { palette } = useHungryTheme();
   const [failed, setFailed] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   if (!uri || failed) {
+    const logoSize = size.height >= 120 ? 72 : 48;
     return (
       <View
         testID="saved-dish-photo-placeholder"
@@ -59,7 +66,17 @@ function DishPhoto({
           justifyContent: "center",
         }}
       >
-        <Utensils color={palette.textMuted} size={size.height >= 120 ? 32 : 24} />
+        {logoUri && !logoFailed ? (
+          <AccessibleImage
+            source={{ uri: logoUri }}
+            decorative
+            style={{ borderRadius: logoSize / 2, height: logoSize, width: logoSize }}
+            contentFit="contain"
+            onError={() => setLogoFailed(true)}
+          />
+        ) : (
+          <AppSymbol name="noPhoto" color={palette.textMuted} size={size.height >= 120 ? 32 : 24} />
+        )}
       </View>
     );
   }
@@ -71,6 +88,35 @@ function DishPhoto({
       decorative
       onError={() => setFailed(true)}
     />
+  );
+}
+
+/** The Tried tick: it springs once when a dish becomes tried (no motion under Reduce Motion). */
+function TriedMark({ tried, size }: { tried: boolean; size: number }) {
+  const { palette } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
+  const scale = useSharedValue(1);
+  const previous = useRef(tried);
+  useEffect(() => {
+    if (tried && !previous.current && !reduceMotion) {
+      scale.set(
+        withSequence(
+          withTiming(1.3, { duration: 120, easing: EASE_OUT }),
+          withTiming(1, { duration: 160, easing: EASE_OUT }),
+        ),
+      );
+    }
+    previous.current = tried;
+  }, [reduceMotion, scale, tried]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  return (
+    <Animated.View style={style}>
+      <AppSymbol
+        name={tried ? "triedFilled" : "tried"}
+        color={tried ? palette.success : palette.textSecondary}
+        size={size}
+      />
+    </Animated.View>
   );
 }
 
@@ -118,18 +164,12 @@ export function SavedDishCard({
       {removing ? (
         <ActivityIndicator color={palette.orange} />
       ) : (
-        <Bookmark size={18} color={palette.orange} fill={palette.orange} />
+        <AppSymbol name="savedMark" color={palette.orange} size={18} />
       )}
     </Pressable>
   ) : null;
 
-  const triedIcon = (
-    <CircleCheck
-      color={tried ? palette.success : palette.textSecondary}
-      fill={tried ? palette.orangeLight : "none"}
-      size={layout === "row" ? 20 : 15}
-    />
-  );
+  const triedIcon = <TriedMark tried={tried} size={layout === "row" ? 20 : 15} />;
   const triedLabel = tried ? "Tried" : "Mark as tried";
 
   const details = (
@@ -150,7 +190,7 @@ export function SavedDishCard({
       </View>
       {stallLine ? (
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-          <Store color={palette.orange} size={15} />
+          <AppSymbol name="stall" color={palette.orange} size={15} />
           <AppText variant="bodySmall" tone="secondary" numberOfLines={1} style={{ flex: 1 }}>
             {stallLine}
           </AppText>
@@ -160,7 +200,7 @@ export function SavedDishCard({
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
           {hasRating ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star color={palette.starStroke} fill={palette.starFill} size={15} />
+              <AppSymbol name="rating" color={palette.starFill} size={15} />
               <AppText variant="bodySmallBold">{dish.rating?.toFixed(1)}</AppText>
               <AppText variant="bodySmall" tone="secondary">
                 ({dish.reviewCount})
@@ -169,7 +209,7 @@ export function SavedDishCard({
           ) : null}
           {distanceLabel ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <MapPin color={palette.textSecondary} size={15} />
+              <AppSymbol name="nearYou" color={palette.textSecondary} size={15} />
               <AppText variant="bodySmall" tone="secondary">
                 {distanceLabel}
               </AppText>
@@ -194,15 +234,15 @@ export function SavedDishCard({
           padding: spacing[2],
         }}
       >
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={openLabel}
           onPress={onOpen}
           onPressIn={onPressIn}
           style={{ borderRadius: componentRadii.card, overflow: "hidden" }}
         >
-          <DishPhoto uri={dish.imageUrl} size={{ width: 96, height: 96 }} />
-        </Pressable>
+          <DishPhoto uri={dish.imageUrl} logoUri={dish.logoUrl} size={{ width: 96, height: 96 }} />
+        </PressableScale>
         <View style={{ flex: 1, gap: spacing[1] }}>
           {details}
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
@@ -214,7 +254,7 @@ export function SavedDishCard({
                 onPress={onDirections}
                 style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
               >
-                <Navigation color={palette.orange} size={20} />
+                <AppSymbol name="directions" color={palette.orange} size={20} />
               </Pressable>
             ) : null}
             <Pressable
@@ -235,7 +275,7 @@ export function SavedDishCard({
               onPress={onReview}
               style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
             >
-              <PenLine color={palette.textSecondary} size={20} />
+              <AppSymbol name="writeReview" color={palette.textSecondary} size={20} />
             </Pressable>
             <View style={{ flex: 1 }} />
             {removeButton}
@@ -256,15 +296,19 @@ export function SavedDishCard({
       }}
     >
       <View style={{ height: 180, position: "relative" }}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={openLabel}
           onPress={onOpen}
           onPressIn={onPressIn}
           style={{ height: "100%" }}
         >
-          <DishPhoto uri={dish.imageUrl} size={{ width: "100%", height: 180 }} />
-        </Pressable>
+          <DishPhoto
+            uri={dish.imageUrl}
+            logoUri={dish.logoUrl}
+            size={{ width: "100%", height: 180 }}
+          />
+        </PressableScale>
         {removeButton ? (
           <View style={{ position: "absolute", right: spacing[2], top: spacing[2] }}>
             {removeButton}
@@ -276,7 +320,7 @@ export function SavedDishCard({
         {onDirections ? (
           <Button
             label="Get directions"
-            leftIcon={<Navigation size={18} color={palette.textOnOrange} />}
+            leftIcon={<AppSymbol name="directions" color={palette.textOnOrange} size={18} />}
             onPress={onDirections}
           />
         ) : (
@@ -300,7 +344,7 @@ export function SavedDishCard({
             variant="secondary"
             size="sm"
             fullWidth={false}
-            leftIcon={<PenLine color={palette.textSecondary} size={15} />}
+            leftIcon={<AppSymbol name="writeReview" color={palette.textSecondary} size={15} />}
             onPress={onReview}
             style={{ flex: 1 }}
           />

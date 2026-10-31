@@ -1,5 +1,5 @@
-import type { PropsWithChildren, ReactNode } from "react";
-import { View } from "react-native";
+import type { PropsWithChildren, ReactElement, ReactNode } from "react";
+import { View, type RefreshControlProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Screen } from "@/components/ui";
@@ -13,6 +13,8 @@ interface ProfileScreenShellProps {
   testID?: string;
   /** False when the body is its own virtualised list (it fills the screen under the header). */
   scroll?: boolean;
+  /** Pull-to-refresh for the page. */
+  refreshControl?: ReactElement<RefreshControlProps>;
 }
 
 export function ProfileScreenShell({
@@ -23,6 +25,7 @@ export function ProfileScreenShell({
   showBack = true,
   testID,
   scroll = true,
+  refreshControl,
 }: PropsWithChildren<ProfileScreenShellProps>) {
   const { spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
@@ -39,6 +42,7 @@ export function ProfileScreenShell({
       headerGap={spacing[3]}
       contentContainerStyle={{ paddingTop: topPadding }}
       scroll={scroll}
+      refreshControl={refreshControl}
     >
       <View testID={testID} style={[{ gap: spacing[4] }, !scroll && { flex: 1 }]}>
         {children}
