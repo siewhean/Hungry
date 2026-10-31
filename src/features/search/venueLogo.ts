@@ -36,8 +36,9 @@ export function getVenueLogoCandidates(logoUrl?: string) {
   return [...new Set(candidates)];
 }
 
-export function getVenueLogoInitials(name: string) {
-  const words = name
+export function getVenueLogoInitials(name?: string | null) {
+  // Some catalog rows reach the app without a venue name; the identity mark must still render.
+  const words = (name ?? "")
     .replace(/&/g, " ")
     .split(/\s+/)
     .map((word) => word.replace(/[^a-z0-9]/gi, ""))
