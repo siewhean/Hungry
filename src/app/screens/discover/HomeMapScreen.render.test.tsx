@@ -170,10 +170,10 @@ test("MD-M9 and M11 a card shows rating and open state, and a screen reader hear
   discovery.getVenuesByIds = (async () => [openStall]) as never;
   const view = await renderMap();
   await settleCatalogRead(view);
-  assert.match(view.text(), /★ 4\.6 \(23\) · Open · 120m · Maxwell Food Centre/);
+  assert.match(view.text(), /4\.6 \(23\) · Open · 120 m · Maxwell Food Centre/);
   assert.ok(
     view.findByLabel(
-      "Open Tian Tian Chicken Rice. Chicken Rice · S$5.50. ★ 4.6 (23) · Open · 120m · Maxwell Food Centre",
+      "Open Tian Tian Chicken Rice. Chicken Rice · S$5.50. Rated 4.6 from 23 reviews. Open · 120 m · Maxwell Food Centre",
     ),
     "the card's label carries the dish, rating and distance",
   );
@@ -188,7 +188,7 @@ test("MD-M9 a failed hours read leaves the word out and the card in place", asyn
   try {
     const view = await renderMap();
     await settleCatalogRead(view);
-    assert.match(view.text(), /120m · Maxwell Food Centre/);
+    assert.match(view.text(), /120 m · Maxwell Food Centre/);
     assert.doesNotMatch(view.text(), /Closed|· Open ·/);
   } finally {
     console.error = originalConsoleError;
@@ -204,8 +204,8 @@ test("map_card_rich_v1: the control arm shows the plain card, without rating or 
   discovery.getVenuesByIds = (async () => [openStall]) as never;
   const view = await renderMap();
   await settleCatalogRead(view);
-  assert.match(view.text(), /120m · Maxwell Food Centre/);
-  assert.doesNotMatch(view.text(), /★ 4\.6|· Open ·/);
+  assert.match(view.text(), /120 m · Maxwell Food Centre/);
+  assert.doesNotMatch(view.text(), /4\.6 \(23\)|· Open ·/);
 });
 
 test("map_default_sheet_v1: the list arm opens the map on the list", async () => {
@@ -283,4 +283,77 @@ test("MD-M11 the sheet handle can be moved without a drag", async () => {
   const handle = view.findByLabel("Places sheet");
   assert.ok(handle, "the handle is reachable");
   assert.equal(handle.getAttribute("role"), "slider");
+});
+
+test("R5-12 Open now is the first chip and keeps only the stalls whose hours say open", async () => {
+  const closedCard = { ...card, id: "venue-2", name: "Closed Kopitiam" };
+  catalog.listVenues = (async () => ({ releaseId: "r", items: [card, closedCard] })) as never;
+  discovery.getVenuesByIds = (async () => [
+    openStall,
+    { ...openStall, id: "venue-2", name: "Closed Kopitiam", isOpen: false },
+  ]) as never;
+  const view = await renderMap();
+  await settleCatalogRead(view);
+  assert.match(view.text(), /Tian Tian Chicken Rice/);
+  assert.match(view.text(), /Closed Kopitiam/);
+  assert.match(view.text(), /Open nowNear me|Open nowHawker/, "Open now leads the chip row");
+
+  await view.press(view.findByLabel("Open now"));
+  await view.settle();
+  assert.match(view.text(), /Tian Tian Chicken Rice/);
+  assert.doesNotMatch(view.text(), /Closed Kopitiam/);
+});
+
+test("R5-12 Open now says why the map is empty when nothing is open", async () => {
+  discovery.getVenuesByIds = (async () => [{ ...openStall, isOpen: false }]) as never;
+  useDiscoveryStore.setState({ mapFilters: { ...noFilters, openNow: true } });
+  const view = await renderMap();
+  await settleCatalogRead(view);
+  assert.match(view.text(), /No places here are open right now/);
+});
+
+test("R5-12 a failed hours read leaves Open now showing every stall", async () => {
+  discovery.getVenuesByIds = (async () => {
+    throw new Error("offline");
+  }) as never;
+  useDiscoveryStore.setState({ mapFilters: { ...noFilters, openNow: true } });
+  const originalConsoleError = console.error;
+  console.error = () => undefined;
+  try {
+    const view = await renderMap();
+    await settleCatalogRead(view);
+    assert.match(view.text(), /Tian Tian Chicken Rice/);
+    assert.doesNotMatch(view.text(), /No places here are open/);
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
+test("R5-1 a card with no photo shows the designed state, not 'Image unavailable'", async () => {
+  const view = await renderMap();
+  await settleCatalogRead(view);
+  assert.ok(view.findByLabel("Tian Tian Chicken Rice, no photo yet"));
+  assert.doesNotMatch(view.text(), /Image unavailable/);
+});
+
+test("R5-13 the card rating is a star symbol beside the number, not a text glyph", async () => {
+  catalog.listVenues = (async () => ({
+    releaseId: "r",
+    items: [{ ...card, qualityRating: 4.6, qualityReviewCount: 23 }],
+  })) as never;
+  discovery.getVenuesByIds = (async () => [openStall]) as never;
+  const view = await renderMap();
+  await settleCatalogRead(view);
+  assert.doesNotMatch(view.text(), /★/);
+  assert.equal(view.container.querySelectorAll('[data-stub="lucide-react-native.Star"]').length, 1);
+});
+
+test("R5-2 the sheet is a bottom sheet with detents, not a hand-rolled PanResponder", () => {
+  const src = fs.readFileSync("src/app/screens/discover/HomeMapScreen.tsx", "utf8");
+  assert.match(src, /from "@gorhom\/bottom-sheet"/);
+  assert.match(src, /snapPoints=\{snapPoints\}/);
+  assert.match(src, /animatedPosition=\{sheetPosition\}/);
+  assert.doesNotMatch(src, /Animated\.spring|Animated\.Value|useNativeDriver/);
+  // The only PanResponder left is the left-edge swipe back.
+  assert.equal(src.match(/PanResponder\.create/g)?.length, 1);
 });

@@ -94,3 +94,17 @@ test("DISH5-4: the three-taste Tried popup is a draft experiment that falls back
   assert.equal(experiment.primaryMetric, "review_submitted");
   assert.ok(experiment.minSamplePerArm && experiment.minSamplePerArm > 0);
 });
+
+test("R1/R2: the reviews summary star is the same symbol and colour as the rating at the top", () => {
+  const summary = read("src/components/dish/DishReviewSummary.tsx");
+  assert.doesNotMatch(summary, /lucide-react-native/);
+  assert.match(summary, /<RatingStarSymbol color=\{palette\.starStroke\}/);
+});
+
+test("R3: a dish with no photo gets a compact hero under the status bar", () => {
+  assert.match(screen, /COMPACT_HERO_HEIGHT = 120/);
+  assert.match(
+    screen,
+    /heroPhotos\.length > 0 \? heroPhotoHeight : insets\.top \+ COMPACT_HERO_HEIGHT/,
+  );
+});

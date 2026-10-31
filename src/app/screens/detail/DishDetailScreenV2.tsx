@@ -123,6 +123,8 @@ const DISH_REVIEW_PAGE_SIZE = 50;
 const MIN_DISPLAY_TASTE_CONFIDENCE = 0.3;
 /** Other dishes from the same stall shown under "More from this stall". */
 const MORE_FROM_STALL_COUNT = 4;
+/** The hero's height, below the status bar, for a dish with no photo. */
+const COMPACT_HERO_HEIGHT = 120;
 /** Prices read as a menu, not as code: the body font, with digits of equal width so they line up. */
 const DISH_PRICE_FONT: TextStyle = { fontFamily: "Nunito_700Bold", fontVariant: ["tabular-nums"] };
 
@@ -647,7 +649,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
   // 4:3, so a typical food photo shows whole instead of a cropped strip. The no-photo
   // placeholder keeps the same height, so the page does not jump when a photo loads.
-  const heroHeight = Math.min(width * 0.75, 420);
+  const heroPhotoHeight = Math.min(width * 0.75, 420);
+  // No photo listed (none do in production yet): a compact header under the status bar, not a
+  // 300pt empty tile. A photo that fails after the page opened keeps its height, so nothing jumps.
+  const heroHeight = heroPhotos.length > 0 ? heroPhotoHeight : insets.top + COMPACT_HERO_HEIGHT;
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [

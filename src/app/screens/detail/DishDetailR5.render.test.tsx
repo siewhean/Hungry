@@ -130,10 +130,23 @@ test("when the hero photo fails to load the page shows the no-photo tile, not a 
   assert.ok(view.findByLabel(`${dish.name} photo unavailable`));
 });
 
-test("a dish with no photo gets the same tile", async () => {
+test("a dish with no photo gets the same tile in a compact 120pt header", async () => {
   stubReviews([]);
   const { view } = await open({ imageUrl: "", gallery: [] });
-  assert.ok(view.findByTestId("dish-hero-placeholder"));
+  const tile = view.findByTestId("dish-hero-placeholder");
+  assert.ok(tile);
+  assert.match(tile.parentElement?.outerHTML ?? "", /height: 120px/);
+});
+
+test("a photo that fails after the page opened keeps the photo height, so nothing jumps", async () => {
+  stubReviews([]);
+  const { view } = await open({ imageUrl: "https://cdn.hungry.sg/dish.jpg", gallery: [] });
+  await act(async () => {
+    images(view.container)[0]?.__triggerError?.();
+  });
+  const tile = view.findByTestId("dish-hero-placeholder");
+  assert.ok(tile);
+  assert.doesNotMatch(tile.parentElement?.outerHTML ?? "", /height: 120px/);
 });
 
 // ─── DISH5-9 (owner call): the price reads as a menu price ─────────────────────────────

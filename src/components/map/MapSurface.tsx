@@ -284,6 +284,9 @@ const MapMarkerButton = memo(function MapMarkerButton({
       accessibilityRole="button"
       accessibilityLabel={marker.accessibilityLabel ?? marker.label}
       accessibilityState={{ selected }}
+      // The smallest pins (cluster of fewer than 10, an unselected stall) are 36 pt; 4 pt more on
+      // every side reaches the 44 pt minimum target.
+      hitSlop={4}
       onPress={() => onPress?.(marker.id)}
       style={style}
     >

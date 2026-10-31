@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   formatMapCardDetail,
   formatMapCardDish,
+  formatMapCardRating,
   mapCardAccessibilityLabel,
   shortOpenLabel,
 } from "./mapCardText";
@@ -43,15 +44,20 @@ test("MD-M9 the detail line carries rating, open state, distance and building", 
     distanceMeters: 450,
     buildingName: "Maxwell Food Centre",
   });
+  assert.equal(formatMapCardDetail(venue, "Open"), "Open · 450 m · Maxwell Food Centre");
+  assert.deepEqual(formatMapCardRating(venue), {
+    text: "4.6 (23)",
+    spoken: "Rated 4.6 from 23 reviews",
+  });
+  assert.equal(formatMapCardDetail(card({ distanceMeters: 1250 })), "1.3 km");
   assert.equal(
-    formatMapCardDetail(venue, "Open"),
-    "★ 4.6 (23) · Open · 450m · Maxwell Food Centre",
-  );
-  assert.equal(formatMapCardDetail(card({ distanceMeters: 1250 })), "1.3km");
-  assert.equal(
-    formatMapCardDetail(card({ qualityRating: 4.5, qualityReviewCount: 0 })),
-    "",
+    formatMapCardRating(card({ qualityRating: 4.5, qualityReviewCount: 0 })),
+    undefined,
     "a rating with no reviews behind it is not shown",
+  );
+  assert.equal(
+    formatMapCardRating(card({ qualityRating: 4.5, qualityReviewCount: 1 }))?.spoken,
+    "Rated 4.5 from 1 review",
   );
 });
 
@@ -65,8 +71,8 @@ test("MD-M9 open state is only said when the hours can be read", () => {
 test("MD-M11 a screen reader hears the stall, the dish and the detail", () => {
   const venue = card();
   assert.equal(
-    mapCardAccessibilityLabel(venue, "Laksa · S$6.00", "★ 4.6 (23) · Open · 450m"),
-    "Open Tian Tian. Laksa · S$6.00. ★ 4.6 (23) · Open · 450m",
+    mapCardAccessibilityLabel(venue, "Laksa · S$6.00", "Open · 450 m", "Rated 4.6 from 23 reviews"),
+    "Open Tian Tian. Laksa · S$6.00. Rated 4.6 from 23 reviews. Open · 450 m",
   );
   assert.equal(mapCardAccessibilityLabel(venue, undefined, ""), "Open Tian Tian");
 });

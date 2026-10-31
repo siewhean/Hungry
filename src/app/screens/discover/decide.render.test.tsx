@@ -2,6 +2,7 @@
 // Run with `node scripts/test-render.mjs src/app/screens/discover/decide.render.test.tsx`.
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test, { afterEach, beforeEach } from "node:test";
 import { act } from "react";
 import { AccessibilityInfo } from "react-native";
@@ -131,8 +132,8 @@ test("Not for me does not refetch the pool, and never offers a turned-down dish 
   await view.press(view.findByText("Another pick"));
   assert.equal(searchCalls.length, 2);
   assert.equal(searchCalls[1].radius, 2000);
-  assert.match(view.text(), /That's everything nearby/);
   assert.match(view.text(), /You've seen every match within 2\.0 km/);
+  assert.doesNotMatch(view.text(), /That's every match|That's everything nearby/, "said once");
   assert.equal(view.findByText("Chicken Rice"), null);
   assert.equal(events("decide_for_me_no_match").length, 0, "seen everything is not no-match");
 });
@@ -455,7 +456,7 @@ test("MD-D10 the end state offers Change answers and Start over", async () => {
   );
   await view.press(view.findByText("Another pick"));
   await view.settle();
-  assert.match(view.text(), /That's everything nearby/);
+  assert.match(view.text(), /You've seen every match within/);
   assert.ok(view.findByText("Change answers"), "Change answers is offered");
   await view.press(view.findByText("Start over"));
   assert.deepEqual(navigation.calls.at(-1), {
@@ -762,4 +763,65 @@ test("MAP-V5: flags that load after the quiz opens keep the four questions and e
     assert.match(view.text(), /QUESTION 1 OF 4/);
     assert.equal(exposures, 0, "nobody is counted in two_questions after seeing four questions");
   });
+});
+
+test("R5-9 the page is called Your pick, and the end state says it once", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.match(view.text(), /Your pick/);
+  assert.doesNotMatch(view.text(), /Recommended/);
+});
+
+test("R5-1 a pick with no photo shows the designed plate and a short hero", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.ok(view.findByLabel("Chicken Rice, no photo yet"));
+  const src = readFileSync("src/app/screens/discover/DecideForMeResultScreen.tsx", "utf8");
+  assert.match(src, /NO_PHOTO_HERO_HEIGHT = 120/);
+  assert.match(
+    src,
+    /dish\?\.imageUrl\s*\? screenWidth \* HERO_HEIGHT_RATIO\s*: insets\.top \+ NO_PHOTO_HERO_HEIGHT/,
+  );
+});
+
+test("R5-8 a pick that is closed until later puts Another pick first and Directions second", async () => {
+  const today = getSingaporeDay();
+  const otherDay = DAY_ORDER[(DAY_ORDER.indexOf(today) + 3) % 7];
+  serve([dish("a", "Chicken Rice")]);
+  discovery.getVenuesByIds = (async () => [
+    {
+      id: "venue-a",
+      name: "Chicken Rice Stall",
+      operatingHours: `${otherDay} 10am-11am`,
+      isOpen: false,
+    },
+  ]) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.ok(view.findByText("Directions"), "Directions is still offered");
+  assert.ok(view.findByLabel("Another pick instead of Chicken Rice"));
+  const src = readFileSync("src/app/screens/discover/DecideForMeResultScreen.tsx", "utf8");
+  assert.match(src, /label="Directions"\s+variant=\{isClosedPick \? "secondary" : "primary"\}/);
+  assert.match(src, /label="Another pick"\s+variant=\{isClosedPick \? "primary" : "secondary"\}/);
+});
+
+test("R5-10 the open answer is a row under the grid labelled Any is fine, not a tile", async () => {
+  const navigation = createFakeNavigation();
+  const view = await renderQuiz(navigation);
+  assert.ok(view.findByLabel("Any is fine"));
+  assert.equal(view.findByLabel("Decide for me"), null, "no Decide for me tile in the grid");
+  await view.press(view.findByLabel("Any is fine"));
+  assert.match(view.text(), /QUESTION 2 OF 4/);
+});
+
+test("R5-5 the Decide back button is 44 pt, and distances read '120 m away'", async () => {
+  serve([dish("a", "Chicken Rice")]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.match(view.text(), /120 m away/);
+  const src = readFileSync("src/app/screens/discover/DecideForMeResultScreen.tsx", "utf8");
+  assert.match(src, /const BACK_BUTTON_SIZE = 44;/);
+  assert.match(src, /width: BACK_BUTTON_SIZE,\s+height: BACK_BUTTON_SIZE/);
 });
