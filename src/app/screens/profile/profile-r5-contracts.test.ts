@@ -15,6 +15,7 @@ const PROFILE_FILES = [
   "src/app/screens/profile/UserProfileContent.tsx",
   "src/app/screens/profile/ProfileConnectionsScreen.tsx",
   "src/app/screens/profile/FollowRequestsScreen.tsx",
+  "src/app/screens/profile/ReleaseProfileScreen.tsx",
   "src/app/screens/profile/ReviewHistoryScreen.tsx",
   "src/app/screens/profile/EditProfileScreen.tsx",
   "src/components/profile/FavouriteDishesRow.tsx",
@@ -67,7 +68,8 @@ test("P5-3: the profile menu is a native menu, with a web dropdown only for the 
   assert.match(home, /<OverflowMenu/);
   assert.doesNotMatch(home, /<Menu color/);
   assert.match(home, /destructive: true/);
-  assert.match(read("package.json"), /"@react-native-menu\/menu"/);
+  // Pinned to an exact version: a native module should not move on a plain install.
+  assert.match(read("package.json"), /"@react-native-menu\/menu": "2\.0\.0"/);
 });
 
 test("P5-4: lists use the plain ListRow, not a card per row", () => {
@@ -146,6 +148,14 @@ test("P5-13, P5-14: the radar is the hero and the copy reads plainly", () => {
   assert.doesNotMatch(home, /You prefer mild/);
   const radar = read("src/components/profile/TasteRadar.tsx");
   assert.match(radar, /RADAR_MAX_WIDTH = 260/);
+  // Cropped to the hexagon and its labels, not a square with a band of empty space.
+  assert.match(radar, /VIEW_HEIGHT = 200/);
+  assert.doesNotMatch(radar, /viewBox="0 0 260 260"/);
+  // The title gives way to Share on a 320pt phone instead of running into it.
+  assert.match(
+    home,
+    /<AppText\s+variant=\{compactTasteHeader \? "h3" : "h2"\}\s+numberOfLines=\{1\}\s+style=\{\{ flexShrink: 1 \}\}\s+adjustsFontSizeToFit/,
+  );
   assert.match(radar, /fillOpacity=\{0\.18\}/);
   assert.match(radar, /See all six/);
   const connections = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");

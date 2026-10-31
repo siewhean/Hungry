@@ -471,7 +471,7 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     [
       /profile\.avatarUrl && !avatarFailed \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
       /avatarInitials/,
-      /<AppText variant="h2">Taste Fingerprint<\/AppText>/,
+      /<AppText[^>]*variant=\{compactTasteHeader \? "h3" : "h2"\}[^>]*numberOfLines=\{1\}[^>]*>\s*Taste Fingerprint\s*<\/AppText>/,
       /key: "reviews",/,
       /key: "saved",/,
       /<ProfileStatRow stats=\{stats\}/,

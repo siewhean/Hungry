@@ -15,6 +15,9 @@ const LABEL_RADIUS = RING + 14;
 
 /** The radar's drawn size, at most; never wider than the card. */
 const RADAR_MAX_WIDTH = 260;
+/** The viewBox is cropped to the hexagon and its labels, so no empty band sits above or below. */
+const VIEW_TOP = 32;
+const VIEW_HEIGHT = 200;
 
 /**
  * Your six tastes as a radar. Axes and chips follow TASTE_DIMENSIONS, each axis is labelled on
@@ -42,7 +45,11 @@ export function TasteRadar({ vector }: { vector: TasteVector }) {
       {/* Never wider than the card: a 320-360pt phone leaves less than the maximum. */}
       <View
         testID="profile-taste-radar"
-        style={{ aspectRatio: 1, maxWidth: RADAR_MAX_WIDTH, width: "100%" }}
+        style={{
+          aspectRatio: RADAR_MAX_WIDTH / VIEW_HEIGHT,
+          maxWidth: RADAR_MAX_WIDTH,
+          width: "100%",
+        }}
       >
         <Svg
           accessible={Platform.OS === "web" ? undefined : true}
@@ -50,7 +57,7 @@ export function TasteRadar({ vector }: { vector: TasteVector }) {
           accessibilityLabel={describeTasteVector(vector)}
           width="100%"
           height="100%"
-          viewBox="0 0 260 260"
+          viewBox={`0 ${VIEW_TOP} 260 ${VIEW_HEIGHT}`}
         >
           {[RING, RING * 0.67, RING * 0.34].map((radius) => (
             <Polygon

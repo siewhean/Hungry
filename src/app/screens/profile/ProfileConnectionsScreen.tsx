@@ -273,9 +273,11 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   }, [hasMore, isLoadingConnections, isLoadingMore, loadFailed, loadPage, loadedRowCount]);
 
   const visiblePeople = useMemo(() => {
-    if (!normalizedQuery) return people;
-    return people.filter((user) => user.name.toLowerCase().includes(normalizedQuery));
-  }, [people, normalizedQuery]);
+    // On your own lists you are not one of the people (you cannot follow yourself).
+    const others = isOwnProfile ? people.filter((user) => user.userId !== profile.id) : people;
+    if (!normalizedQuery) return others;
+    return others.filter((user) => user.name.toLowerCase().includes(normalizedQuery));
+  }, [isOwnProfile, people, normalizedQuery, profile.id]);
 
   // Find people: your own Following list also searches everyone on Hungry (server side).
   const canFindPeople = isOwnProfile && isFollowingTab;
@@ -315,8 +317,9 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   }, [canFindPeople, normalizedQuery]);
   const knownIds = useMemo(() => new Set(people.map((person) => person.userId)), [people]);
   const newPeople = useMemo(
-    () => foundPeople.filter((person) => !knownIds.has(person.userId)),
-    [foundPeople, knownIds],
+    () =>
+      foundPeople.filter((person) => !knownIds.has(person.userId) && person.userId !== profile.id),
+    [foundPeople, knownIds, profile.id],
   );
 
   const openPerson = useCallback(

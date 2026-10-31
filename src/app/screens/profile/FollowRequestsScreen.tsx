@@ -168,8 +168,6 @@ export function FollowRequestsScreen({ navigation }: Props) {
                 key={request.userId}
                 first={index === 0}
                 title={request.name}
-                subtitle="Wants to follow you"
-                subtitleLines={2}
                 accessibilityLabel={`Open ${request.name}'s profile`}
                 leading={<Avatar name={request.name} uri={request.avatarUrl} size={44} />}
                 onPress={() =>

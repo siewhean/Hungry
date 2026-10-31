@@ -588,6 +588,17 @@ test("P5-4: followers are plain rows with the Follow button and menu on the righ
   assert.ok(view.findByTestId(`person-actions-${OTHER_ID}`));
 });
 
+test("re-audit N3: your own Followers list does not list you", async () => {
+  const myId = useProfileStore.getState().profile.id;
+  stub(getHungryService().social, "listFollowers", async () => [
+    { userId: myId, displayName: "Me Myself" },
+    { userId: OTHER_ID, displayName: "Wei Ming Tan" },
+  ]);
+  const view = await renderScreen(FollowersScreen as never, { name: "Followers" });
+  assert.ok(view.findByLabel("Wei Ming Tan"));
+  assert.equal(view.findByLabel("Me Myself"), null);
+});
+
 test("P5-4: on the Following list the Follow button stays and there is no Remove menu", async () => {
   stub(getHungryService().social, "listFollowing", async () => [
     { userId: OTHER_ID, displayName: "Ahmad" },
@@ -605,7 +616,8 @@ test("P5-4: follow requests are plain rows with Confirm filled and Delete plain"
     { userId: OTHER_ID, displayName: "Ahmad", requestedAt: "2026-10-30T00:00:00Z" },
   ]);
   const view = await renderScreen(FollowRequestsScreen as never, { name: "FollowRequests" });
-  assert.ok(view.findByText("Wants to follow you"));
+  assert.ok(view.findByText("Ahmad"));
+  assert.equal(view.findByText("Wants to follow you"), null);
   assert.ok(view.findByText("Confirm"));
   assert.ok(view.findByText("Delete"));
   assert.ok(view.findByLabel("Approve follow request from Ahmad"));

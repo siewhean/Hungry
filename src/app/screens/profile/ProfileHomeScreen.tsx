@@ -6,6 +6,7 @@ import {
   RefreshControl,
   Share,
   StyleSheet,
+  useWindowDimensions,
   View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
@@ -107,6 +108,8 @@ type ProfileHomeProps = {
 /** Your own profile. Other people's profiles are UserProfileScreen / UserProfileContent. */
 export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
+  // On a 320pt phone the title steps down a size and Share shows its icon alone.
+  const compactTasteHeader = useWindowDimensions().width < 360;
   const headerActionSize = spacing[8] + spacing[2.5];
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -807,11 +810,28 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: spacing[2],
         }}
       >
-        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+        <View
+          style={{
+            alignItems: "center",
+            flex: 1,
+            flexDirection: "row",
+            gap: spacing[2],
+            minWidth: 0,
+          }}
+        >
           <AppSymbol name="tasteFingerprint" size={20} color={palette.accentText} />
-          <AppText variant="h2">Taste Fingerprint</AppText>
+          <AppText
+            variant={compactTasteHeader ? "h3" : "h2"}
+            numberOfLines={1}
+            style={{ flexShrink: 1 }}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            Taste Fingerprint
+          </AppText>
         </View>
         {hasTasteFingerprint ? (
           <Pressable
@@ -820,12 +840,21 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             accessibilityHint="Opens sharing options for your Taste Fingerprint"
             onPress={handleShareTaste}
             hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-            style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              minHeight: 44,
+              minWidth: 44,
+              justifyContent: "center",
+            }}
           >
             <AppSymbol name="send" size={16} color={palette.accentText} />
-            <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-              Share
-            </AppText>
+            {compactTasteHeader ? null : (
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                Share
+              </AppText>
+            )}
           </Pressable>
         ) : null}
       </View>
