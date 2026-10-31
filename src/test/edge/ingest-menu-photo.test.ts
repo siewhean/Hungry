@@ -37,6 +37,8 @@ interface Options {
   gemini?: unknown;
   geminiStatus?: number;
   env?: Record<string, string>;
+  /** The caller's AI-features consent row: true (default), false, or a lookup failure. */
+  consent?: boolean | "error";
 }
 
 async function load(options: Options = {}) {
@@ -52,6 +54,10 @@ async function load(options: Options = {}) {
     }
     return { data: null };
   };
+  supabase.tables.privacy_settings = () =>
+    options.consent === "error"
+      ? { data: null, error: { message: "down" } }
+      : { data: { ai_search_consent: options.consent ?? true } };
   supabase.rpc.app_can_make_user_request = () =>
     options.rateError
       ? { error: { message: "down" } }
@@ -431,5 +437,24 @@ test("ingest-menu-photo accepts only jpeg, png, heic and webp photos", async () 
   for (const imageType of ["image/gif", "application/pdf", "image/svg+xml"]) {
     const { handler } = await load({ imageType });
     assert.equal((await handler(ingest())).status, 500, imageType);
+  }
+});
+
+test("ingest-menu-photo sends no photo to Google unless the account allowed AI features", async () => {
+  for (const consent of [false, "error"] as const) {
+    const { supabase, handler, fetches } = await load({ consent });
+    const response = await handler(ingest());
+    assert.deepEqual(
+      await status(response),
+      consent === "error" ? [500, "consent_lookup_failed"] : [403, "ai_search_consent_required"],
+    );
+    assert.equal(fetches.length, 0, "nothing was fetched or sent to Google");
+    assert.equal(
+      supabase
+        .queriesOn("menu_photo_submissions")
+        .some((query) => query.ops.some(([op]) => op === "update")),
+      false,
+      "the submission was not claimed for processing",
+    );
   }
 });

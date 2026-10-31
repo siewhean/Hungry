@@ -1902,6 +1902,7 @@ export const hungryService: HungryService = {
               postalCode: venue?.postalCode,
               price: dish.price,
               imageUrl: dish.imageUrl || undefined,
+              logoUrl: venue?.logoUrl,
               rating: dish.reviewCount > 0 ? dish.rating : undefined,
               reviewCount: dish.reviewCount,
               isOpen: venue?.isOpen,

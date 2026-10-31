@@ -4,8 +4,8 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Pressable, View } from "react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { CheckmarkSymbol, PlusSymbol } from "@/components/dish/dishSymbols";
-import { AppText, BottomSheet, Button, Input } from "@/components/ui";
+import { PlusSymbol } from "@/components/dish/dishSymbols";
+import { AppSymbol, AppText, BottomSheet, Button, Input } from "@/components/ui";
 import {
   buildSaveToListOptions,
   DEFAULT_PORTFOLIO_NAME,
@@ -349,7 +349,12 @@ function SaveToListSheet({
                   </AppText>
                 ) : null}
               </View>
-              {selected ? <CheckmarkSymbol size={18} color={palette.orange} /> : null}
+              {/* An empty circle when not in the list, a filled tick when it is. */}
+              <AppSymbol
+                name={selected ? "triedFilled" : "emptyCheckbox"}
+                color={selected ? palette.orange : palette.textMuted}
+                size={22}
+              />
             </Pressable>
           );
         })}

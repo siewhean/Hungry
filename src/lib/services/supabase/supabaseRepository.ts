@@ -1460,6 +1460,7 @@ export async function getSavedDishCardsViaRpc(
         price:
           detail.price === null || detail.price === undefined ? undefined : Number(detail.price),
         imageUrl: toString(detail.image_url) || undefined,
+        logoUrl: venue?.logoUrl,
         rating: reviewCount > 0 ? toNumber(ref.rating_avg) : undefined,
         reviewCount,
         isOpen: venue?.isOpen,

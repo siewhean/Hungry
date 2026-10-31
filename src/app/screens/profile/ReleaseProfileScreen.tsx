@@ -94,8 +94,8 @@ export function ReleaseProfileScreen() {
         {FEATURE_FLAGS.favouritesEnabled ? (
           <ReleaseProfileRow
             icon={<AppSymbol name="save" color={palette.orange} size={20} />}
-            label="Saved dishes"
-            detail="Open your favourites"
+            label="Saved"
+            detail="Your dishes, stalls and lists"
             onPress={() => rootNavigation.navigate("Favourites")}
           />
         ) : null}

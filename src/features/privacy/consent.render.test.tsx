@@ -94,20 +94,21 @@ test("the signed-in prompt waits for the account check and never asks twice", as
   assert.equal((await getHungryService().privacy.getConsents()).analytics, true);
 });
 
-test("the AI search notice says what is sent to Anthropic; Allow saves it and lets the search go on", async () => {
+test("the AI notice says what is sent to Anthropic and Google; Allow saves it and lets the feature go on", async () => {
   const view = await render(createElement(Fragment, null, createElement(AiSearchConsentPrompt)));
   const ask = ensureAiSearchConsent();
   await view.settle();
-  assert.match(view.text(), /Use AI to understand your search\?/);
-  assert.match(view.text(), /sends the words you type to Anthropic/);
+  assert.match(view.text(), /Allow AI features\?/);
+  assert.match(view.text(), /words you type in search go to Anthropic/);
+  assert.match(view.text(), /menu photo you add goes to Google/);
   assert.match(view.text(), /name, email and account details are not sent/);
   assert.match(view.text(), /turn this off any time in Settings under Privacy & data/);
 
-  await view.press(view.findByText("Allow AI search"));
+  await view.press(view.findByText("Allow AI"));
   assert.equal(await ask, true);
   assert.equal(useConsentStore.getState().aiSearchAllowed, true);
   assert.equal((await getHungryService().privacy.getConsents()).aiSearch, true);
-  assert.equal(view.findByText("Allow AI search"), null, "the notice closes");
+  assert.equal(view.findByText("Allow AI"), null, "the notice closes");
 });
 
 test("Not now declines without saving anything, and a failed save does not let the search go on", async () => {
@@ -128,7 +129,7 @@ test("Not now declines without saving anything, and a failed save does not let t
   try {
     ask = ensureAiSearchConsent();
     await view.settle();
-    await view.press(view.findByText("Allow AI search"));
+    await view.press(view.findByText("Allow AI"));
     assert.equal(await ask, false);
     assert.equal(useConsentStore.getState().aiSearchAllowed, false);
     assert.equal(useUIStore.getState().toast?.tone, "error");

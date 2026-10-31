@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft } from "lucide-react-native";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioTypeSelector, PortfolioVisibilitySelector } from "@/components/portfolio";
-import { AppText, Button, Card, Input } from "@/components/ui";
+import { AppText, Button, Card, Dialog, Input } from "@/components/ui";
 import { listErrorMessage } from "@/features/checklistPortfolio/listLoadState";
 import {
   PORTFOLIO_NAME_MAX_LENGTH,
@@ -28,6 +28,7 @@ export function PortfolioCreateScreen({ navigation }: Props) {
   const [type, setType] = useState<PortfolioType>("recommendation");
   const [visibility, setVisibility] = useState<PortfolioVisibility>("private");
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const canSave = name.trim().length > 0;
 
   async function save() {
@@ -44,10 +45,8 @@ export function PortfolioCreateScreen({ navigation }: Props) {
     } catch (error) {
       reportError(error, { screen: "PortfolioCreateScreen", action: "create_list" });
       // A rate limit, being offline or a too-long title must not fail silently.
-      Alert.alert(
-        "Couldn't create the list",
-        listErrorMessage(error, "Check your connection and try again."),
-      );
+      // A Dialog, not Alert.alert: Alert is a no-op on web.
+      setSaveError(listErrorMessage(error, "Check your connection and try again."));
     } finally {
       setIsSaving(false);
     }
@@ -104,6 +103,13 @@ export function PortfolioCreateScreen({ navigation }: Props) {
       </Card>
 
       <Button label="Create list" loading={isSaving} disabled={!canSave} onPress={save} />
+      <Dialog
+        visible={saveError !== null}
+        title="Couldn't create the list"
+        message={saveError ?? ""}
+        buttons={[{ text: "OK", style: "cancel" }]}
+        onClose={() => setSaveError(null)}
+      />
     </ScrollView>
   );
 }

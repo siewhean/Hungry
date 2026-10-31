@@ -62,6 +62,7 @@ import {
 } from "@/components/review";
 import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
+import { ensureAiSearchConsent } from "@/features/privacy/consent";
 import { StallReviewCard } from "@/components/stall/StallReviewCard";
 import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
 import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
@@ -412,6 +413,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
           : await ImagePicker.launchImageLibraryAsync(pickerOptions);
       if (result.canceled || result.assets.length === 0) return;
       const asset = result.assets[0];
+      // The photo is read by Google, so ask first (App Review 5.1.2(i)). Declining still saves it.
+      const allowAiReading = await ensureAiSearchConsent();
       setIsSubmittingMenuPhoto(true);
       try {
         await getHungryService().supply.submitMenuPhoto({
@@ -419,8 +422,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
           photoUri: asset.uri,
           photoMimeType: asset.mimeType ?? undefined,
           photoFileSizeBytes: asset.fileSize ?? undefined,
+          allowAiReading,
         });
-        showToast({ message: "Thanks, we'll add the menu soon.", tone: "success" });
+        showToast({
+          message: allowAiReading
+            ? "Thanks, we'll add the menu soon."
+            : "Thanks. Your photo is saved and was not sent to Google.",
+          tone: "success",
+        });
       } catch (error) {
         reportStallError(error, "submit_menu_photo");
         showToast({
