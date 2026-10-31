@@ -12,7 +12,14 @@ import {
   type SavedMapViewPin,
   SavedViewSwitch,
 } from "@/components/saved";
-import { AccessibleImage, AppText, Button, Chip, EmptyState } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppText,
+  Button,
+  Chip,
+  EmptyState,
+  SegmentedControl,
+} from "@/components/ui";
 import { isLiveMapAvailable } from "@/components/map/mapAvailability";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -21,6 +28,7 @@ import { formatDistanceFromUser } from "@/features/detail/stallLocation";
 import { prefetchStallDetail, preloadRoute } from "@/features/navigation/prefetch";
 import { describeMissingStalls } from "@/features/profile/loadVenuesByIds";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
+import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import {
   SAVED_SECTION_LABELS,
   fitSavedPins,
@@ -33,7 +41,11 @@ import {
 import { useListCovers } from "@/features/saved/useListCovers";
 import { useSavedDishes } from "@/features/saved/useSavedDishes";
 import { useSavedSearch } from "@/features/saved/useSavedSearch";
-import { useSavedStalls, type SavedStallsState } from "@/features/saved/useSavedStalls";
+import {
+  useSavedStalls,
+  useVisitedStalls,
+  type SavedStallsState,
+} from "@/features/saved/useSavedStalls";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -99,6 +111,11 @@ export function FavouritesScreen({ navigation, route }: Props) {
     if (searching || activeSection === "stalls") setStallsWanted(true);
   }, [activeSection, searching]);
   const savedStalls = useSavedStalls(stallsWanted);
+  const stallTab = useSavedViewStore((state) => state.stallTab);
+  // Visited stalls are read only once that tab is open; its count in the control comes from ids.
+  const visitedStalls = useVisitedStalls(
+    stallsWanted && activeSection === "stalls" && stallTab === "visited",
+  );
 
   const ownerId = (isAuthenticated ? authenticatedUserId : undefined) ?? profileId;
   const portfolios = usePortfolioStore((state) => state.portfolios);
@@ -162,7 +179,10 @@ export function FavouritesScreen({ navigation, route }: Props) {
         savedDishes.reload(),
         canLoadLists ? loadPortfolioScope("mine") : Promise.resolve(),
       ]);
-      if (stallsWanted) savedStalls.retry();
+      if (stallsWanted) {
+        savedStalls.retry();
+        if (activeSection === "stalls" && stallTab === "visited") visitedStalls.retry();
+      }
     } catch (error) {
       reportError(error, { screen: "Favourites", action: "refresh" });
       showToast({ message: "Couldn't refresh. Try again.", tone: "error" });
@@ -224,6 +244,7 @@ export function FavouritesScreen({ navigation, route }: Props) {
           {activeSection === "stalls" ? (
             <SavedStallsSection
               state={savedStalls}
+              visited={visitedStalls}
               onOpenStall={(venueId) => rootNavigation.navigate("StallDetail", { venueId })}
               preload={(venueId) => {
                 prefetchStallDetail(venueId);
@@ -316,13 +337,142 @@ function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => voi
   );
 }
 
+/** Where "how far" is measured from (the device, or a place picked by hand), if either is known. */
+function useSavedStallOrigin() {
+  const permission = useLocationStore((store) => store.permission);
+  const currentLocation = useLocationStore((store) => store.currentLocation);
+  const manualCoordinate = useLocationStore((store) => store.manualCoordinate);
+  return useMemo(
+    () => getSavedOrigin({ permission, currentLocation, manualCoordinate }),
+    [currentLocation, manualCoordinate, permission],
+  );
+}
+
+/**
+ * Saved > Stalls: Saved / Visited as a segmented control, like Want to try / Tried on dishes.
+ * Saved is the list below (with the map); Visited is every stall the diner marked visited or
+ * reviewed a dish at, so there is one clear place to see the stalls they have tried.
+ */
+function SavedStallsSection({
+  state,
+  visited,
+  onOpenStall,
+  preload,
+}: {
+  state: SavedStallsState;
+  visited: SavedStallsState;
+  onOpenStall: (venueId: string) => void;
+  preload: (venueId: string) => void;
+}) {
+  const { spacing } = useHungryTheme();
+  const stallTab = useSavedViewStore((store) => store.stallTab);
+  const setStallTab = useSavedViewStore((store) => store.setStallTab);
+  const visitedCount = useVisitedStallIds({ cachedOnly: false }).length;
+  return (
+    <View style={{ gap: spacing[3] }}>
+      <SegmentedControl
+        compact
+        accessibilityLabel="Show stalls you saved or have visited"
+        value={stallTab}
+        onChange={setStallTab}
+        options={[
+          {
+            value: "saved",
+            label: state.status === "ready" ? `Saved (${state.stalls.length})` : "Saved",
+          },
+          { value: "visited", label: `Visited (${visitedCount})` },
+        ]}
+      />
+      {stallTab === "visited" ? (
+        <VisitedStallsList state={visited} onOpenStall={onOpenStall} preload={preload} />
+      ) : (
+        <SavedStallsList state={state} onOpenStall={onOpenStall} preload={preload} />
+      )}
+    </View>
+  );
+}
+
+/** Stalls you have been to, most recent first. Nothing to remove here: the row just opens it. */
+function VisitedStallsList({
+  state,
+  onOpenStall,
+  preload,
+}: {
+  state: SavedStallsState;
+  onOpenStall: (venueId: string) => void;
+  preload: (venueId: string) => void;
+}) {
+  const { spacing } = useHungryTheme();
+  const origin = useSavedStallOrigin();
+  if (state.status === "error") {
+    return (
+      <EmptyState
+        title="Couldn't load visited stalls"
+        body="Check your connection and try again."
+        ctaLabel="Retry"
+        onPress={state.retry}
+      />
+    );
+  }
+  if (state.status === "loading") return <ProfileReviewsSkeleton />;
+  const missingNote =
+    state.missingCount > 0 ? (
+      <AppText tone="secondary" variant="bodySmall">
+        {describeMissingStalls(state.missingCount)}
+      </AppText>
+    ) : null;
+  if (state.stalls.length === 0) {
+    return state.missingCount > 0 ? (
+      <EmptyState
+        title="Couldn't show your visited stalls"
+        body={describeMissingStalls(state.missingCount)}
+        ctaLabel="Retry"
+        onPress={state.retry}
+      />
+    ) : (
+      <EmptyState
+        title="No visited stalls yet"
+        body="Tap Mark visited on a stall page, or review a dish, to see the stall here."
+      />
+    );
+  }
+  return (
+    <View style={{ gap: spacing[2] }}>
+      {state.stalls.map((venue) => (
+        <SavedStallRow
+          key={venue.id}
+          venue={venue}
+          distanceLabel={
+            venue.latitude !== undefined && venue.longitude !== undefined
+              ? formatDistanceFromUser(origin, {
+                  latitude: venue.latitude,
+                  longitude: venue.longitude,
+                })
+              : undefined
+          }
+          onPressIn={() => preload(venue.id)}
+          onOpen={() => {
+            trackAnalyticsEvent("saved_item_opened", {
+              item_type: "stall",
+              venue_id: venue.id,
+              source: "visited",
+            });
+            onOpenStall(venue.id);
+          }}
+        />
+      ))}
+      {missingNote}
+    </View>
+  );
+}
+
 /**
  * Stalls you saved with Save on a stall page, newest first, as rows with the stall's logo, where
  * it is, how far and whether it is open. A List / Map switch shows them as pins; swipe a row (or
  * tap the bookmark) to remove it, with Undo. The stall rows come from `useSavedStalls` in 50-id
  * batches, so a saved stall outside the cached directory still shows.
  */
-function SavedStallsSection({
+function SavedStallsList({
   state,
   onOpenStall,
   preload,
@@ -340,13 +490,7 @@ function SavedStallsSection({
   // A remembered Map choice falls back to the list in a build that cannot draw a map.
   const mapAvailable = isLiveMapAvailable();
   const mode = mapAvailable ? requestedMode : "list";
-  const permission = useLocationStore((store) => store.permission);
-  const currentLocation = useLocationStore((store) => store.currentLocation);
-  const manualCoordinate = useLocationStore((store) => store.manualCoordinate);
-  const origin = useMemo(
-    () => getSavedOrigin({ permission, currentLocation, manualCoordinate }),
-    [currentLocation, manualCoordinate, permission],
-  );
+  const origin = useSavedStallOrigin();
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const distanceFor = (venue: VenueSummary) =>

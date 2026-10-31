@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadVenuesByIds } from "@/features/profile/loadVenuesByIds";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { reportError } from "@/lib/monitoring/reportError";
+import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import type { VenueSummary } from "@/types/domain";
@@ -23,22 +24,7 @@ export type SavedStallsState = {
  * map and the Saved search, so all three read one list.
  */
 export function useSavedStalls(enabled = true): SavedStallsState {
-  const userId = useProfileStore((state) => state.profile.id);
   const interactions = useStallInteractionStore((state) => state.interactions);
-  const isLoaded = useStallInteractionStore((state) => state.isLoaded);
-  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
-  const loadSavedStalls = useCallback(async () => {
-    if (enabled) await loadInteractions(userId);
-  }, [enabled, loadInteractions, userId]);
-  const { failed: loadFailed, retry: retryInteractions } = useRetryableLoad(
-    loadSavedStalls,
-    "saved stalls",
-  );
-  const [venues, setVenues] = useState<Map<string, VenueSummary> | null>(null);
-  const [missingCount, setMissingCount] = useState(0);
-  const [venuesFailed, setVenuesFailed] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
-
   const savedStallIds = useMemo(
     () =>
       Object.values(interactions)
@@ -47,11 +33,41 @@ export function useSavedStalls(enabled = true): SavedStallsState {
         .map((interaction) => interaction.stallId),
     [interactions],
   );
-  const savedKey = savedStallIds.join(",");
+  return useStallsByIds(savedStallIds, enabled, "saved stalls", "load_saved_stalls");
+}
+
+/**
+ * The stalls the diner has been to (marked visited, or reviewed a dish at), most recent first,
+ * read the same way as the saved ones. The ids are the Profile "Stalls" count's ids.
+ */
+export function useVisitedStalls(enabled = true): SavedStallsState {
+  const visitedStallIds = useVisitedStallIds({ cachedOnly: false });
+  return useStallsByIds(visitedStallIds, enabled, "visited stalls", "load_visited_stalls");
+}
+
+function useStallsByIds(
+  stallIds: readonly string[],
+  enabled: boolean,
+  loadLabel: string,
+  errorAction: string,
+): SavedStallsState {
+  const userId = useProfileStore((state) => state.profile.id);
+  const isLoaded = useStallInteractionStore((state) => state.isLoaded);
+  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
+  const loadForUser = useCallback(async () => {
+    if (enabled) await loadInteractions(userId);
+  }, [enabled, loadInteractions, userId]);
+  const { failed: loadFailed, retry: retryInteractions } = useRetryableLoad(loadForUser, loadLabel);
+  const [venues, setVenues] = useState<Map<string, VenueSummary> | null>(null);
+  const [missingCount, setMissingCount] = useState(0);
+  const [venuesFailed, setVenuesFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const idsKey = stallIds.join(",");
 
   useEffect(() => {
     if (!enabled || !isLoaded) return undefined;
-    const ids = savedKey ? savedKey.split(",") : [];
+    const ids = idsKey ? idsKey.split(",") : [];
     if (ids.length === 0) {
       setVenues(new Map());
       setMissingCount(0);
@@ -66,17 +82,17 @@ export function useSavedStalls(enabled = true): SavedStallsState {
         setMissingCount(result.missingCount);
       })
       .catch((error) => {
-        reportError(error, { screen: "Favourites", action: "load_saved_stalls" });
+        reportError(error, { screen: "Favourites", action: errorAction });
         if (active) setVenuesFailed(true);
       });
     return () => {
       active = false;
     };
-  }, [enabled, isLoaded, reloadKey, savedKey]);
+  }, [enabled, errorAction, idsKey, isLoaded, reloadKey]);
 
   const stalls = useMemo(
-    () => (venues ? savedStallIds.flatMap((id) => venues.get(id) ?? []) : []),
-    [savedStallIds, venues],
+    () => (venues ? stallIds.flatMap((id) => venues.get(id) ?? []) : []),
+    [stallIds, venues],
   );
 
   const retry = useCallback(() => {
