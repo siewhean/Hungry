@@ -384,7 +384,12 @@ const baseTypography = {
     fontFamily: "Nunito_500Medium",
     letterSpacing: 0.6,
   },
-  price: { fontSize: 16, lineHeight: 24, fontFamily: "DMMono_400Regular" },
+  price: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: "Nunito_600SemiBold",
+    fontVariant: ["tabular-nums"] as "tabular-nums"[],
+  },
   code: { fontSize: 14, lineHeight: 22, fontFamily: "DMMono_400Regular" },
 } as const;
 
