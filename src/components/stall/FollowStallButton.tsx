@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Linking } from "react-native";
-import { BellPlus, BellRing } from "lucide-react-native";
 
+import { FollowingSymbol, FollowSymbol } from "@/components/stall/stallSymbols";
 import { Button } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -138,9 +138,9 @@ export function FollowStallButton({
       accessibilityLabel={isFollowing ? `Unfollow ${stallName}` : `Follow ${stallName}`}
       leftIcon={
         isFollowing ? (
-          <BellRing size={18} color={palette.orange} />
+          <FollowingSymbol size={18} color={palette.orange} />
         ) : (
-          <BellPlus size={18} color={palette.text} />
+          <FollowSymbol size={18} color={palette.text} />
         )
       }
       onPress={() => void handlePress()}

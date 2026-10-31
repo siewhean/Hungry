@@ -50,6 +50,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MainTabs",
   "MerchantTabs",
   "StallDetail",
+  "StallVisited",
   "ReportProblem",
   "MerchantClaimExplainer",
   "DishDetail",
@@ -117,6 +118,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "AddStory",
   "MusicSelection",
   "MerchantClaimExplainer",
+  "StallVisited",
   "PassportScreen",
   "MissionsScreen",
   "AdminPortfolioFlags",
@@ -269,6 +271,10 @@ const loadReportProblemScreen = () =>
   (
     require("@/app/screens/detail/ReportProblemScreen") as typeof import("@/app/screens/detail/ReportProblemScreen")
   ).ReportProblemScreen;
+const loadStallVisitedScreen = () =>
+  (
+    require("@/app/screens/detail/StallVisitedScreen") as typeof import("@/app/screens/detail/StallVisitedScreen")
+  ).StallVisitedScreen;
 const loadMerchantClaimExplainerScreen = () =>
   (
     require("@/app/screens/detail/MerchantClaimExplainerScreen") as typeof import("@/app/screens/detail/MerchantClaimExplainerScreen")
@@ -809,6 +815,17 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadDishReviewsScreen} name="DishReviews" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
+          <RootStack.Screen
+            getComponent={loadStallVisitedScreen}
+            name="StallVisited"
+            options={{
+              presentation: "formSheet",
+              headerShown: false,
+              sheetAllowedDetents: [0.5, 1],
+              sheetGrabberVisible: true,
+              sheetCornerRadius: 24,
+            }}
+          />
           <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />
           {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
             <RootStack.Screen

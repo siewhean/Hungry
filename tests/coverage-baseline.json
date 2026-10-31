@@ -61,6 +61,7 @@
     "src/features/detail/dishReviewSummary.ts": 100,
     "src/features/detail/dishSources.ts": 97.4,
     "src/features/detail/dishTasteSummary.ts": 100,
+    "src/features/detail/formatSgPhone.ts": 100,
     "src/features/detail/menuCategory.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
     "src/features/detail/scrollToSection.ts": 100,

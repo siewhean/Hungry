@@ -12,14 +12,13 @@
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Bookmark,
-  CheckCircle,
-  Circle,
-  ListPlus,
-  MapPin,
-  PenLine,
-  Send,
-} from "lucide-react-native";
+  AddToListSymbol,
+  BookmarkSymbol,
+  ShareSymbol,
+  TriedOffSymbol,
+  TriedOnSymbol,
+} from "@/components/dish/dishSymbols";
+import { DirectionsSymbol, WriteReviewSymbol } from "@/components/stall/stallSymbols";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -227,7 +226,7 @@ export function StallInteractionBar({
             {
               id: "review",
               label: "Review",
-              icon: PenLine,
+              icon: WriteReviewSymbol,
               onPress: swapped.review,
               accessibilityLabel: "Write a review",
             },
@@ -237,7 +236,7 @@ export function StallInteractionBar({
               {
                 id: "directions",
                 label: "Directions",
-                icon: MapPin,
+                icon: DirectionsSymbol,
                 onPress: onDirections,
                 accessibilityLabel: "Directions to this stall",
               },
@@ -248,7 +247,7 @@ export function StallInteractionBar({
             {
               id: "share",
               label: "Share",
-              icon: Send,
+              icon: ShareSymbol,
               onPress: onShare,
               accessibilityLabel: "Share stall",
             },
@@ -260,9 +259,8 @@ export function StallInteractionBar({
               id: "tried",
               label: isTried ? "Visited" : "Mark visited",
               caption: "Visited",
-              icon: isTried ? CheckCircle : Circle,
+              icon: isTried ? TriedOnSymbol : TriedOffSymbol,
               active: isTried,
-              mutedWhenInactive: true,
               role: "checkbox" as const,
               loading: tryingInProgress || interactionLoading,
               onPress: () => void handleTried(),
@@ -273,7 +271,7 @@ export function StallInteractionBar({
       {
         id: "save",
         label: isSaved ? "Saved" : "Save",
-        icon: Bookmark,
+        icon: BookmarkSymbol,
         active: isSaved,
         fillWhenActive: true,
         loading: savingInProgress || interactionLoading,
@@ -287,13 +285,13 @@ export function StallInteractionBar({
                   id: "saved-stalls",
                   // The row toggles, so when it is saved it says what a press does.
                   label: isSaved ? "Remove from saved" : "Saved stalls",
-                  icon: Bookmark,
+                  icon: BookmarkSymbol,
                   onPress: () => void handleSave(),
                 },
                 {
                   id: "collection",
                   label: isAddingToList ? "Adding..." : "Save to a collection",
-                  icon: ListPlus,
+                  icon: AddToListSymbol,
                   onPress: onAddToList,
                 },
               ],
@@ -308,7 +306,7 @@ export function StallInteractionBar({
           swapped
             ? {
                 label: "Directions",
-                icon: MapPin,
+                icon: DirectionsSymbol,
                 onPress: swapped.directions,
                 accessibilityLabel: "Directions to this stall",
               }
@@ -336,7 +334,7 @@ export function StallInteractionBar({
           {
             id: "save",
             label: isSaved ? "Saved" : "Save",
-            icon: Bookmark,
+            icon: BookmarkSymbol,
             active: isSaved,
             onPress: handleSave,
             loading: savingInProgress || (!isLoaded && isLoadingInteractions),
@@ -345,7 +343,7 @@ export function StallInteractionBar({
     {
       id: "tried",
       label: isTried ? "Visited" : "Mark visited",
-      icon: CheckCircle,
+      icon: TriedOnSymbol,
       active: isTried,
       onPress: handleTried,
       loading: tryingInProgress || (!isLoaded && isLoadingInteractions),
@@ -355,7 +353,7 @@ export function StallInteractionBar({
           {
             id: "list",
             label: "Add to list",
-            icon: ListPlus,
+            icon: AddToListSymbol,
             active: false,
             onPress: onAddToList,
             loading: isAddingToList,
