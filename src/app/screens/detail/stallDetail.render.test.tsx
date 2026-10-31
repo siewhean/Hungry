@@ -225,7 +225,7 @@ test("STALL-12: See more reviews follows the server's hasMore, even when rows we
   assert.ok(view.findByText("See more reviews"));
 });
 
-test("STALL-X6: an empty Reviews section offers Write a review", async () => {
+test("STALL-X6 / R5-STALL-1: an empty Reviews section points at the one Write a review button, in the bar", async () => {
   override(getHungryService().reviews, "listRecentReviewsPage", async () => ({
     entries: [],
     hasMore: false,
@@ -235,8 +235,9 @@ test("STALL-X6: an empty Reviews section offers Write a review", async () => {
   const ctas = Array.from(view.container.querySelectorAll('[role="button"]')).filter(
     (node) => node.textContent?.trim() === "Write a review",
   );
-  // One in the empty state, one in the bottom bar.
-  assert.ok(ctas.length >= 2);
+  // The bottom bar's button is the page's only filled one: the empty state does not add a second.
+  assert.equal(ctas.length, 1);
+  assert.match(view.text(), /Be the first to review this stall/);
 });
 
 // Not saved in the mock account (Tian Tian and Satay Street are).
@@ -477,19 +478,22 @@ test("STALL-LOC1: a failed copy says so instead of claiming Copied", async () =>
   assert.match(useUIStore.getState().toast?.message ?? "", /Couldn't copy/);
 });
 
-test("STALL-LOC2: the address is short and opens the stall in Google Maps, not its coordinates", async () => {
+test("STALL-LOC2 / R5-STALL-6: the subtitle opens the stall in Google Maps by name, not its coordinates", async () => {
   const opened: string[] = [];
   override(Linking, "openURL", async (url: string) => {
     opened.push(url);
   });
   const view = await openStall();
-  const card = view.findByLabel(/^Open maps for /);
-  assert.ok(card, "the address card is a Maps button");
-  // Unit and building only: no postcode, and the stall name is not repeated in the address.
-  const shown = card.getAttribute("aria-label") ?? "";
+  const row = view.findByLabel(/^Directions to Tian Tian Chicken Rice, /);
+  assert.ok(row, "the subtitle is a Directions button");
+  // Centre and unit only: no postcode, and the stall name is not repeated in the subtitle.
+  const shown = (row.getAttribute("aria-label") ?? "").replace(
+    /^Directions to Tian Tian Chicken Rice, /,
+    "",
+  );
   assert.doesNotMatch(shown, /Singapore \d{6}|\d{6}/);
   assert.doesNotMatch(shown, /Tian Tian Chicken Rice/);
-  await view.press(card);
+  await view.press(row);
   assert.equal(opened.length, 1);
   const query = new URL(opened[0]).searchParams.get("query") ?? "";
   assert.match(query, /^Tian Tian Chicken Rice/, "searches by the stall name first");

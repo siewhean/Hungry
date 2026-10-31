@@ -154,6 +154,8 @@ const APP_SYMBOLS = {
   external: { ios: "arrow.up.right.square", lucide: ExternalLink },
   /** A rating star: filled, in the star colour. */
   rating: { ios: "star.fill", lucide: Star, filled: true },
+  /** A rating star not chosen: the outline. */
+  ratingEmpty: { ios: "star", lucide: Star },
   // Saved page
   /** A saved dish or stall on the Saved page: the filled bookmark (`saved` is the heart). */
   savedMark: { ios: "bookmark.fill", lucide: Bookmark, filled: true },

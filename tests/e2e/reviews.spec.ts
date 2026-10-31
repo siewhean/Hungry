@@ -63,7 +63,8 @@ test.describe("Reviews editor", () => {
       .first()
       .click();
 
-    const publish = page.getByRole("button", { name: "Publish review" });
+    // One Publish, in the header; the optional parts sit under a fold.
+    const publish = page.getByRole("button", { name: "Publish", exact: true });
     await expect(publish).toBeDisabled();
     const missing = page.getByText("Add a photo of the dish to publish.");
     await expect(missing).toBeVisible();
@@ -78,6 +79,7 @@ test.describe("Reviews editor", () => {
     await page.getByTestId("star-4").first().click();
     await expect(publish).toBeEnabled();
 
+    await page.getByRole("button", { name: "Add more detail (optional)" }).click();
     await page.getByRole("button", { name: "Yes", exact: true }).click();
     await page.getByRole("button", { name: "No", exact: true }).click();
     await page.getByLabel("Your review").fill("Rich broth and silky noodles.");

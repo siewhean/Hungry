@@ -100,7 +100,8 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.doesNotMatch(home, /homeHeaderTopOffset/);
   assert.doesNotMatch(home, /homeHeaderTitle/);
   assert.match(reviews, /const reviewHeaderTitle = "Reviews"/);
-  assert.doesNotMatch(reviews, /getNearestSingaporeArea|useLocationStore|locationLabel/);
+  // The header names no place; useLocationStore is only read for the "Near you" chip.
+  assert.doesNotMatch(reviews, /getNearestSingaporeArea|locationLabel/);
   assert.match(reviews, /<AppHeader[\s\S]*title=\{reviewHeaderTitle\}/);
   assert.match(
     reviews,

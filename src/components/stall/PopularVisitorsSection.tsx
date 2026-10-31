@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from "react-native";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { Star } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { RatingStarSymbol } from "@/components/dish/dishSymbols";
 import { AppText, Avatar, BottomSheet, Button } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useHungryTheme } from "@/theme";
@@ -172,13 +172,10 @@ export function PopularVisitorsSection({
             </View>
             <View style={{ flexDirection: "row", gap: spacing[1] }}>
               {Array.from({ length: 5 }).map((_, index) => (
-                <Star
+                <RatingStarSymbol
                   key={index}
                   size={16}
-                  color={
-                    index < Math.round(selectedPin.rating) ? palette.starStroke : palette.border
-                  }
-                  fill={index < Math.round(selectedPin.rating) ? palette.starFill : "transparent"}
+                  color={index < Math.round(selectedPin.rating) ? palette.starFill : palette.border}
                 />
               ))}
             </View>

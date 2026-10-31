@@ -43,7 +43,7 @@ test("StallHelpFillCard names only what is missing and offers one button per ask
       onWriteReview: () => asked.push("review"),
     }),
   );
-  assert.match(view.container.textContent ?? "", /No menu and reviews yet\. Know this stall\?/);
+  assert.match(view.container.textContent ?? "", /No menu or reviews yet\. Know this stall\?/);
   assert.ok(!view.container.textContent?.includes("Add opening hours"), "no hours ask when absent");
   await view.press(view.findByText("Add a menu photo"));
   await view.press(view.findByText("Write the first review"));
@@ -107,30 +107,22 @@ test("StallVisitedSheet offers dishes, writes a review without one, and skips", 
   const events: string[] = [];
   const handlers = {
     stallName: "Ah Seng",
-    onPickDish: (dish: DishDetail) => events.push(`pick:${dish.id}`),
+    onPickDish: (dish: { id: string }) => events.push(`pick:${dish.id}`),
     onWriteReview: () => events.push("write"),
     onSkip: () => events.push("skip"),
   };
-  const closed = await render(
-    createElement(StallVisitedSheet, { ...handlers, visible: false, dishes: [] }),
-  );
-  assert.ok(!closed.container.querySelector('[data-testid="stall-visited-sheet"]'));
-  await cleanup();
-
   const withDishes = await render(
     createElement(StallVisitedSheet, {
       ...handlers,
-      visible: true,
-      dishes: [dishOf({ id: "d1", name: "Laksa" })],
+      dishes: [{ id: "d1", name: "Laksa", priceLabel: "S$5.50" }],
     }),
   );
+  assert.match(withDishes.container.textContent ?? "", /S\$5\.50/);
   await withDishes.press(withDishes.findByLabel("Review Laksa"));
   await withDishes.press(withDishes.findByText("Skip"));
   await cleanup();
 
-  const empty = await render(
-    createElement(StallVisitedSheet, { ...handlers, visible: true, dishes: [] }),
-  );
+  const empty = await render(createElement(StallVisitedSheet, { ...handlers, dishes: [] }));
   await empty.press(empty.findByText("Write a review"));
   assert.deepEqual(events, ["pick:d1", "skip", "write"]);
 });
