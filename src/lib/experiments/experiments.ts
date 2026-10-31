@@ -283,12 +283,14 @@ export const EXPERIMENTS = {
   },
   /**
    * Saved > Dishes list: large photo cards (control) or compact rows, about five to a screen.
-   * Read in SavedDishes once the dish list has loaded. Draft until the PostHog flag exists.
+   * Read in SavedDishes once the dish list has loaded, and only for a list where most dishes have
+   * a photo (a list without photos is always rows). The PostHog flag exists and is off until
+   * launch, so everyone gets the fallback until it is switched on.
    */
   saved_card_density_v1: {
     variants: ["control", "compact_rows"],
     fallback: "control",
-    status: "draft",
+    status: "running",
     surface: "saved-lists",
     hypothesis:
       "Compact rows, about five to a screen, get more saved dishes opened per Saved visit than large photo cards.",
@@ -298,12 +300,12 @@ export const EXPERIMENTS = {
   },
   /**
    * The sort Saved opens on: Recent (control) or Nearest. Eligible only when the device
-   * position is known. Draft until the PostHog flag exists.
+   * position is known. The PostHog flag exists and is off until launch.
    */
   saved_default_sort_v1: {
     variants: ["control", "nearest"],
     fallback: "control",
-    status: "draft",
+    status: "running",
     surface: "saved-lists",
     hypothesis:
       "Opening Saved on the nearest dishes turns more saves into visits than opening on the newest saves.",
@@ -312,14 +314,14 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1500,
   },
   /**
-   * Removing a saved dish: a plain toast (control) or a toast with Undo for five seconds. Draft
-   * until the PostHog flag exists; the fallback is the Undo design so it ships to everyone first.
-   * Measure re-saves of the same dish_id within 10 minutes of dish_unfavourited.
+   * Removing a saved dish: a plain toast (control) or a toast with Undo for five seconds. The
+   * PostHog flag exists and is off until launch; the fallback is the Undo design, so it ships to
+   * everyone first. Measure re-saves of the same dish_id within 10 minutes of dish_unfavourited.
    */
   saved_remove_undo_v1: {
     variants: ["control", "undo_toast"],
     fallback: "undo_toast",
-    status: "draft",
+    status: "running",
     surface: "saved-lists",
     hypothesis:
       "A five-second Undo on the remove toast cuts accidental removals, measured as re-saves of the same dish soon after a remove.",

@@ -103,7 +103,7 @@ export function SavedDishesSection({
 
   // Experiments are exposed only once the variant is on screen.
   const density = useExperimentVariant("saved_card_density_v1", {
-    enabled: isReady && tabDishes.length > 0,
+    enabled: isReady && mode === "list" && savedListHasPhotos(tabDishes),
   });
   const defaultSort = useExperimentVariant("saved_default_sort_v1", {
     enabled: isReady && tabDishes.length > 0 && origin !== undefined,
