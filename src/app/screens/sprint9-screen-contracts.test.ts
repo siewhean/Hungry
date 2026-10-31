@@ -596,7 +596,8 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(read("src/components/dish/DishTasteCard.tsx"), /How it tastes to you/);
   // Owner decision (round 2): similar dishes nearby replace the hours on the dish page.
   assert.match(source, /useSimilarDishesNearby\(/);
-  assert.match(source, /More from \{venueName\}/);
+  assert.match(source, /More from this stall/);
+  assert.match(source, /\{venueName\}\s*<\/AppText>/);
   assert.match(source, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(source, /const cachedVenueDishes = useMemo/);
   // Never repeats the dish being viewed.

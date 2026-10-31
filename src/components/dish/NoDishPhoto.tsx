@@ -1,7 +1,6 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import { Utensils } from "lucide-react-native";
-
 import { useHungryTheme } from "@/theme";
+import { NoPhotoSymbol } from "./dishSymbols";
 
 interface NoDishPhotoProps {
   dishName: string;
@@ -24,7 +23,7 @@ export function NoDishPhoto({ dishName, style, iconSize = 28 }: NoDishPhotoProps
         style,
       ]}
     >
-      <Utensils color={palette.textMuted} size={Math.min(iconSize, MAX_ICON_SIZE)} />
+      <NoPhotoSymbol color={palette.textMuted} size={Math.min(iconSize, MAX_ICON_SIZE)} />
     </View>
   );
 }

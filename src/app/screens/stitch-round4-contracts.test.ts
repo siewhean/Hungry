@@ -21,7 +21,7 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   // Not tried: grey circle, no tick. Tried: orange tick.
   assert.match(
     dish,
-    /icon: isDishTried \? CheckCircle : Circle,\s+active: isDishTried,\s+mutedWhenInactive: true/,
+    /icon: isDishTried \? TriedOnSymbol : TriedOffSymbol,\s+active: isDishTried,\s+mutedWhenInactive: true/,
   );
   assert.doesNotMatch(dish, /dish\.tasteTags/);
   assert.match(dish, /<DietaryFlagChips flags=\{dish\.dietaryFlags\}/);
