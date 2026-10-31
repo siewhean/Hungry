@@ -3,7 +3,6 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useAchievementTallyStore, type TriedDishFacts } from "@/store/useAchievementTallyStore";
-import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
@@ -84,13 +83,6 @@ export function markDishTriedAfterSignIn(
   facts: TriedDishFacts,
 ): Promise<DishTriedResult> {
   return markDishTried(dish, facts);
-}
-
-// Dish likes are kept on the device per account: only ever adds.
-export function likeDishAfterSignIn(dishId: string) {
-  const userId = useProfileStore.getState().profile.id;
-  const likes = useDishLikeStore.getState();
-  if (!likes.isLiked(userId, dishId)) likes.toggleLike(userId, dishId);
 }
 
 export function likePostAfterSignIn(postId: string) {

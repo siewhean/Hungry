@@ -20,25 +20,22 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   const providerLogoSource = read("src/components/icons/brand/AuthProviderLogos.tsx");
 
   assert.match(source, /getHungryService\(\)\.auth\.signIn\(/);
-  assert.match(source, /const service = getHungryService\(\)/);
-  assert.match(source, /service\.auth\.signInWithGoogle\(/);
-  assert.match(source, /service\.auth\.signInWithApple\(/);
-  assert.match(source, /FEATURE_FLAGS\.oauthProvidersEnabled/);
+  // Provider calls live in the Login handler; the buttons come from the shared, flag-gated list.
+  assert.match(source, /auth\.signInWithGoogle\(\)/);
+  assert.match(source, /auth\.signInWithApple\(\)/);
+  assert.match(read("src/app/screens/auth/authProviders.ts"), /flags\.oauthProvidersEnabled/);
   assert.match(source, /AUTH_COPY\.login/);
-  // Google/Apple (and the "or" divider) are hidden, not shown disabled, when the flag is off;
+  // Google/Apple (and the "or" divider) are hidden, not shown disabled, when a provider is off;
   // while a request runs every auth button is disabled and the submit shows loading.
+  assert.match(source, /<AuthProviderButtons[\s\S]*disabled=\{isBusy\}/);
   assert.match(
-    source,
-    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="apple"[\s\S]*provider="google"[\s\S]*\) : null\}/,
+    read("src/app/screens/auth/AuthProviderButtons.tsx"),
+    /getEnabledAuthProviders\(\)[\s\S]*intent=\{intent\}/,
   );
   assert.match(source, /loading=\{isSubmitting\}/);
   assert.doesNotMatch(source, /disabled=\{!oauthProvidersEnabled\}/);
   assert.match(signUpSource, /AUTH_COPY\.signUp/);
-  assert.match(signUpSource, /FEATURE_FLAGS\.oauthProvidersEnabled/);
-  assert.match(
-    signUpSource,
-    /\{oauthProvidersEnabled \? \([\s\S]*<AuthProviderButton[\s\S]*disabled=\{isBusy\}[\s\S]*intent="continue"[\s\S]*provider="apple"[\s\S]*provider="google"[\s\S]*\) : null\}/,
-  );
+  assert.match(signUpSource, /<AuthProviderButtons[\s\S]*disabled=\{isBusy\}/);
   assert.match(signUpSource, /loading=\{isSubmitting\}/);
   assert.doesNotMatch(signUpSource, /disabled=\{!oauthProvidersEnabled\}/);
   // Password managers: email, current-password on Login, new-password with rules on SignUp.
@@ -54,7 +51,8 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
   assert.match(authCopySource, /getAuthProviderButtonLabel/);
   assert.doesNotMatch(authCopySource, /getAuthProviderUnavailableButtonLabel|Supabase Auth/);
   assert.match(authCopySource, /getAuthProviderUnavailableMessage/);
-  assert.match(authCopySource, /getSignUpProviderSuccessMessage/);
+  // The screen change is the confirmation of a provider sign-in: no success toast copy.
+  assert.doesNotMatch(authCopySource, /getSignUpProviderSuccessMessage/);
   assert.doesNotMatch(source, /"Welcome back\."/);
   assert.doesNotMatch(signUpSource, /"Account created\. Please verify your email\."/);
   assert.doesNotMatch(forgotPasswordSource, /"If the email exists, a reset link was sent\."/);
@@ -94,10 +92,8 @@ test("Sprint 9 screen contract: Login screen uses service auth + error boundary"
     resetPasswordSource,
     /accessibilityLabel=\{showPassword \? "Hide password" : "Show password"\}/,
   );
-  assert.match(
-    resetPasswordSource,
-    /accessibilityLabel=\{\s*showConfirmPassword\s*\?\s*"Hide confirmation password"\s*:\s*"Show confirmation password"\s*\}/,
-  );
+  // One new-password field: the show/hide control replaces a confirmation field.
+  assert.doesNotMatch(resetPasswordSource, /showConfirmPassword/);
   assert.match(emailVerificationSource, /accessibilityLabel=\{[\s\S]*Resend verification email/);
   assert.match(emailVerificationSource, /accessibilityHint="Requests a new verification email"/);
   assert.match(providerLogoSource, /export const AUTH_PROVIDER_LOGO_SIZE = 20/);
@@ -130,6 +126,8 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   const manualLocation = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   const tasteProfileResult = read("src/app/screens/onboarding/TasteProfileResultScreen.tsx");
   const tasteQuiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
+  const tiles = read("src/app/screens/onboarding/TasteOptionTiles.tsx");
+  const dietaryStep = read("src/app/screens/onboarding/DietaryStep.tsx");
 
   assert.match(locationPermission, /accessibilityLabel="Back to welcome"/);
   assert.match(locationPermission, /accessibilityHint="Returns to the welcome screen"/);
@@ -145,7 +143,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
   );
   assert.match(manualLocation, /accessibilityLabel=\{`Choose \$\{result\.title\}`\}/);
   assert.match(
-    tasteProfileResult,
+    read("src/app/screens/onboarding/ResultDishCard.tsx"),
     /accessibilityLabel=\{`\$\{isSaved \? "Unsave" : "Save"\} \$\{dish\.name\}`\}/,
   );
   assert.match(tasteProfileResult, /"Saved once you create your account at the end of setup"/);
@@ -182,8 +180,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     /dishes\.length > 0 && tasteRanked\s*\? "Picked to match your taste/,
   );
   assert.doesNotMatch(tasteProfileResult, /generated food photo/);
-  // The three cards of a question are one radio group (r2 onboarding-L9).
-  assert.match(tasteQuiz, /accessibilityRole="radiogroup"/);
+  // The three cards of a question are one radio group (r2 onboarding-L9), as tiles or carousel.
+  assert.match(tiles, /accessibilityRole="radiogroup"/);
+  assert.match(tiles, /accessibilityRole="radio"/);
+  assert.match(tiles, /aria-checked=\{isSelected\}/);
   assert.match(
     tasteQuiz,
     /accessibilityRole="radio"[\s\S]*accessibilityLabel=\{`\$\{QUESTIONS\[currentKey\]\} \$\{labels\[index\]\}`\}/,
@@ -193,11 +193,10 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
     tasteQuiz,
     /accessibilityState=\{\{ checked: isSelected, disabled: isTransitioning \}\}/,
   );
-  assert.match(
-    tasteQuiz,
-    /accessibilityRole="checkbox"[\s\S]*accessibilityLabel=\{`Dietary preference \$\{label\}`\}/,
-  );
-  assert.match(tasteQuiz, /accessibilityState=\{\{ checked: isSelected \}\}/);
+  assert.match(dietaryStep, /accessibilityRole="checkbox"/);
+  assert.match(dietaryStep, /accessibilityLabel=\{`Dietary preference \$\{option\.label\}`\}/);
+  assert.match(dietaryStep, /accessibilityState=\{\{ checked: selected \}\}/);
+  assert.match(dietaryStep, /aria-checked=\{selected\}/);
   assert.match(tasteQuiz, /const \{ fontScale, height, width \} = useWindowDimensions\(\)/);
   assert.match(
     tasteQuiz,
@@ -214,7 +213,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
 });
 
 test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const stallDetail = read("src/components/stall/StallMenuDish.tsx");
 
   assert.match(
     stallDetail,
@@ -593,10 +592,12 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
-  assert.match(source, /How it tastes to you/);
+  assert.match(source, /<DishTasteCard/);
+  assert.match(read("src/components/dish/DishTasteCard.tsx"), /How it tastes to you/);
   // Owner decision (round 2): similar dishes nearby replace the hours on the dish page.
   assert.match(source, /useSimilarDishesNearby\(/);
-  assert.match(source, /More from \{venueName\}/);
+  assert.match(source, /More from this stall/);
+  assert.match(source, /\{venueName\}\s*<\/AppText>/);
   assert.match(source, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(source, /const cachedVenueDishes = useMemo/);
   // Never repeats the dish being viewed.
@@ -631,15 +632,18 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? dishes\[0\]/);
   assert.match(launcherSource, /const openSampleDishDetail = \(\) =>/);
   assert.match(launcherSource, /completeAuth\(\);[\s\S]*completeOnboarding\(false\);/);
-  assert.match(launcherSource, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(
+    launcherSource,
+    /navigation\.navigate\("DishDetail", \{ dishId: dish\.id, source: "developer" \}\)/,
+  );
   assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
 });
 
-test("search home hands every query to the paged results and keeps a see-all action", () => {
+test("search home hands every query to the paged results; Search “text” is the first row", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
 
   assert.doesNotMatch(search, /getSearchResultsAsync|inlineResults/);
-  assert.match(search, /"See all results"/);
+  assert.match(search, /Search “\$\{trimmedSearchText\}”/);
   assert.match(
     search,
     /navigation\.navigate\("SearchResults", \{[\s\S]*?initialQuery: trimmedQuery \|\| undefined,/,

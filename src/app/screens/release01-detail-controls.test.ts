@@ -28,15 +28,13 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
 
   assert.match(dish, /const showDeferredDetailControls = !FEATURE_FLAGS\.release01CoreOnly/);
-  // Share, Tried, Save and Like are added to the bottom bar only when deferred controls are on.
+  // Tried and Save are added to the bottom bar, and Share to the header, only when deferred controls are on.
   assert.match(
     dish,
-    /const barActions: DetailAction\[\] = showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: `Share \$\{dish\.name\}`[\s\S]*?accessibilityLabel: "Tried"/,
+    /const barActions: DetailAction\[\] = showDeferredDetailControls\s*\? \[[\s\S]*?accessibilityLabel: "Tried"/,
   );
-  assert.match(
-    dish,
-    /const barActions: DetailAction\[\] = showDeferredDetailControls[\s\S]*?id: "like"/,
-  );
+  assert.match(dish, /onShare=\{showDeferredDetailControls \? openShareSheet : undefined\}/);
+  assert.doesNotMatch(dish, /id: "like"/);
   assert.match(dish, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
   assert.match(
     dish,
@@ -57,7 +55,7 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   // Reviews show whenever detail controls do; only writing one needs reviewCreationEnabled.
   assert.match(
     stall,
-    /\{showDeferredDetailControls \? \(\s*<View style=\{\{ gap: spacing\[4\] \}\}>\s*<AppText variant="h2">Reviews<\/AppText>/,
+    /\{showDeferredDetailControls && !stallIsEmpty \? \(\s*<View onLayout=\{handleReviewsSectionLayout\} style=\{\{ gap: spacing\[4\] \}\}>\s*<AppText variant="h2">Reviews<\/AppText>/,
   );
   assert.match(
     stall,
@@ -74,6 +72,14 @@ test("detail catalog images use the shared sanitizer and provide neutral unavail
   ]) {
     const source = read(file);
     assert.match(source, /sanitizeCatalogImageUrl/);
-    assert.match(source, /photo unavailable/);
+    // The stall's neutral state lives in its hero fallback component.
+    assert.match(
+      file.includes("Stall")
+        ? `${source}${read("src/components/stall/StallHeroFallback.tsx")}`
+        : file.includes("DishDetailScreenV2")
+          ? `${source}${read("src/components/dish/DishHeroPlaceholder.tsx")}`
+          : source,
+      /photo unavailable/,
+    );
   }
 });

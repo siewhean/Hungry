@@ -9,6 +9,8 @@
 
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import {
+  MOCK_WRONG_EMAIL_CODE,
+  getMockCodeSendFailure,
   getMockLoginFailure,
   getMockSignUpFailure,
   type MockAuthFailure,
@@ -16,7 +18,11 @@ import {
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import { validateDisplayName } from "@/features/profile/profileName";
 import { normalizeReviewPatch } from "@/features/review/reviewEdit";
+import { REVIEW_SEARCH_MIN_LENGTH, reviewMatchesQuery } from "@/features/review/reviewSearch";
 import { MERCHANT_DEEP_LINKS } from "@/features/merchant/merchantDeepLinks";
+import { buildMerchantInsights, buildWeeklySummaryInsight } from "@/features/merchant/insightRules";
+import { getClosureLabel, singaporeDateOnly } from "@/features/merchant/closure";
+import { isSoldOut as hasSoldOutFlag } from "@/features/merchant/menuSections";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
 import { getNearestBuildings } from "@/lib/geo/singaporeBuildings";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
@@ -30,7 +36,6 @@ import {
   dishes,
   guestProfile,
   merchantAccount,
-  merchantAIInsights,
   merchantAnalytics30d,
   merchantAnalytics7d,
   merchantAnalyticsToday,
@@ -76,6 +81,8 @@ import type {
   AIBusinessInsight,
   MoodSearchIntent,
   CustomerInteraction,
+  MerchantInsightFacts,
+  MerchantOutlet,
   DishDetail,
   DietaryFlag,
   HawkerTasteTag,
@@ -111,13 +118,14 @@ import type {
   PassportEventType,
   PassportProgressEvent,
   PassportStamp,
+  ReviewStats,
   SubmitUserStallSubmissionInput,
   UserStallSubmission,
   PushPreferences,
   LifecycleSnapshot,
   WelcomeBackDish,
 } from "@/types/domain";
-import { DEFAULT_PUSH_PREFERENCES } from "@/types/domain";
+import { DEFAULT_PUSH_PREFERENCES, type PrivacyConsents } from "@/types/domain";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
 import {
   runRecommendationPipeline,
@@ -326,16 +334,19 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Reviews the mock viewer marked helpful. */
 const _helpfulReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
 let _pushPreferences: PushPreferences = { ...DEFAULT_PUSH_PREFERENCES };
+let _privacyConsents: PrivacyConsents = { analytics: null, aiSearch: false };
 /** Singapore dates the mock user opened the app (record_app_open). */
 const _activityDates = new Set<string>();
 let _isAuthenticated = false;
 let _authProvider: "email" | "google" | "apple" = "email";
 let _pendingDeletionScheduledFor: string | undefined;
+let _pendingCodeSignIn: { email: string; displayName?: string } | undefined;
 let _pendingEmailChange: string | null = null;
 let _merchantAccount: MerchantAccount = clone(merchantAccount);
 let _merchantDishCounter = 0;
@@ -344,7 +355,6 @@ let _merchantOCRDrafts: OCRDishDraft[] = clone(merchantOCRDrafts);
 let _merchantInbox: CustomerInteraction[] = clone(merchantCustomerInteractions);
 let _merchantPromotions: MerchantPromotion[] = clone(merchantPromotions);
 let _popularVisitorPins: PopularVisitorPin[] = clone(popularVisitorPins);
-let _merchantAIInsights = clone(merchantAIInsights);
 let _merchantTeamMemberCounter = 0;
 let _merchantDishViewCounter = 0;
 let _merchantNotificationCounter = 0;
@@ -610,6 +620,8 @@ function withMockViewerReactions(bite: Bite): Bite {
   };
 }
 const _merchantClaimInterests = new Set<string>();
+/** Submission time of each mock claim, by the same key. */
+const _merchantClaimSubmittedAt = new Map<string, string>();
 const _merchantInteractionReports: {
   interactionId: string;
   reason: string;
@@ -924,6 +936,22 @@ function getMerchantPromotionOutletDishIds(outletId: string): string[] {
   return Array.from(new Set([...menu.map((dish) => dish.id), ...outlet.signatureDishIds]));
 }
 
+/** Splits a whole number by weights so the parts always add up to the total. */
+function distributeAcrossDays(total: number, weights: readonly number[]): number[] {
+  const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+  const parts = weights.map((weight) => Math.floor((total * weight) / weightSum));
+  let remainder = total - parts.reduce((sum, part) => sum + part, 0);
+  for (let index = 0; remainder > 0; index = (index + 1) % parts.length, remainder -= 1) {
+    parts[index] += 1;
+  }
+  return parts;
+}
+
+/** What diners are told about a closure: an active "closed until" date wins over the free text. */
+function getEffectiveClosure(outlet: MerchantOutlet): string | undefined {
+  return getClosureLabel(outlet.closedUntil) ?? (outlet.temporaryClosure || undefined);
+}
+
 function syncMerchantOutletToUserCatalog(
   outlet: ReturnType<typeof getMerchantOutlet>,
 ): VenueSummary {
@@ -938,12 +966,13 @@ function syncMerchantOutletToUserCatalog(
     name: outlet.name,
     unitNumber: isHomeBased ? "" : (outlet.unitNumber ?? ""),
     floor: isHomeBased ? "" : (outlet.floor ?? ""),
-    isOpen: outlet.isLive && !outlet.temporaryClosure,
+    isOpen: outlet.isLive && !getEffectiveClosure(outlet),
     liveCrowd: "medium",
     topDishId,
     operatingHours: outlet.operatingHours,
     openingSchedule: outlet.openingSchedule,
-    closureNotice: outlet.temporaryClosure,
+    closureNotice: getEffectiveClosure(outlet),
+    closedUntil: outlet.closedUntil ?? undefined,
     deliveryLinks: outlet.deliveryLinks,
     verificationStatus: outlet.verification.status,
   };
@@ -1147,16 +1176,63 @@ function getPromotionOutletVenueId(promotion: MerchantPromotion): string | undef
   return signatureDishId ? dishes.find((dish) => dish.id === signatureDishId)?.venueId : undefined;
 }
 
+/** The same rules production uses, fed from the mock menu, inbox and analytics. */
 function getAIInsightsForOutlet(
   outletId: string,
   types?: AIBusinessInsight["type"][],
 ): AIBusinessInsight[] {
-  getMerchantOutlet(outletId);
+  const outlet = getMerchantOutlet(outletId);
+  const menu = getMerchantMenu(outletId);
+  const reviews = _merchantInbox.filter(
+    (interaction) =>
+      interaction.outletId === outletId &&
+      interaction.type === "review" &&
+      !isMockInboxReviewModerationHidden(interaction),
+  );
+  const now = Date.now();
+  const inWindow = (review: CustomerInteraction, fromDays: number, toDays: number) => {
+    const age = now - new Date(review.createdAt).getTime();
+    return age >= fromDays * 86_400_000 && age < toDays * 86_400_000;
+  };
+  const average = (items: CustomerInteraction[]) => {
+    const rated = items.filter((item) => typeof item.rating === "number");
+    return rated.length
+      ? rated.reduce((sum, item) => sum + (item.rating ?? 0), 0) / rated.length
+      : undefined;
+  };
+  const lastWeek = reviews.filter((review) => inWindow(review, 0, 7));
+  const weekBefore = reviews.filter((review) => inWindow(review, 7, 14));
+  const unreplied = reviews.filter((review) => !review.reply);
+  const soldOut = menu.filter((dish) => hasSoldOutFlag(dish.availabilityFlags));
+  const analytics = buildMockMerchantAnalytics(outletId, "7d");
+  const facts: MerchantInsightFacts = {
+    dishCount: menu.length,
+    dishesWithoutPhoto: menu.filter(
+      (dish) => !dish.imageUrl?.trim() && !(dish.gallery ?? []).some((url) => url.trim()),
+    ).length,
+    soldOutCount: soldOut.length,
+    soldOutNames: soldOut.map((dish) => dish.name).slice(0, 3),
+    unrepliedReviews: unreplied.length,
+    oldestUnrepliedAt: unreplied
+      .map((review) => review.createdAt)
+      .sort()
+      .at(0),
+    reviewsLast7Days: lastWeek.length,
+    ratingLast7Days: average(lastWeek),
+    reviewsPrevious7Days: weekBefore.length,
+    ratingPrevious7Days: average(weekBefore),
+  };
   const typeSet = types ? new Set(types) : null;
-  return _merchantAIInsights
-    .filter((insight) => insight.outletId === outletId)
-    .filter((insight) => !typeSet || typeSet.has(insight.type))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return [
+    buildWeeklySummaryInsight(outletId, analytics),
+    ...buildMerchantInsights({
+      outletId,
+      facts,
+      analytics,
+      openingSchedule: outlet.openingSchedule,
+      operatingHours: outlet.operatingHours,
+    }),
+  ].filter((insight) => !typeSet || typeSet.has(insight.type));
 }
 
 function getMerchantAccountById(merchantAccountId: string): MerchantAccount {
@@ -1526,6 +1602,9 @@ function mockAuthError(failure: MockAuthFailure): Error {
       status: 0,
     });
   }
+  if (failure.reason === "over_email_send_rate_limit") {
+    return Object.assign(new Error(failure.message), { code: failure.reason, status: 429 });
+  }
   const code = failure.reason === "email_taken" ? "user_already_exists" : "invalid_credentials";
   return Object.assign(new Error(failure.message), { code });
 }
@@ -1569,11 +1648,31 @@ export const hungryService: HungryService = {
       return resolve(mockSession(_profile));
     },
 
-    async verifyEmailCode(_email, code, type) {
+    async verifyEmailCode(email, code, type) {
       if (!/^\d{8}$/.test(code.trim())) throw new Error("Invalid code");
+      if (code.trim() === MOCK_WRONG_EMAIL_CODE) {
+        throw Object.assign(new Error("Token has expired or is invalid"), { code: "otp_expired" });
+      }
       _isAuthenticated = true;
       _authProvider = "email";
+      if (type === "email") {
+        const pending = _pendingCodeSignIn;
+        _pendingCodeSignIn = undefined;
+        _profile = {
+          ...userProfile,
+          email,
+          ...(pending?.displayName ? { displayName: pending.displayName } : {}),
+        };
+        return resolve(mockSession(_profile));
+      }
       return resolve(type === "signup" ? mockSession(_profile) : null);
+    },
+
+    async signInWithEmailCode(email, options) {
+      const failure = getMockCodeSendFailure(email);
+      if (failure) throw mockAuthError(failure);
+      _pendingCodeSignIn = { email, displayName: options?.displayName?.trim() || undefined };
+      return resolve(undefined);
     },
 
     async signIn(email, password) {
@@ -1782,6 +1881,44 @@ export const hungryService: HungryService = {
       return resolve([...dishRows, ...stallRows]);
     },
 
+    async getSavedDishCards(dishIds) {
+      return resolve(
+        [...new Set(dishIds)].flatMap((id) => {
+          const dish = mockRepository.getDishById(id);
+          if (!dish) return [];
+          const venue = mockRepository.getVenueById(dish.venueId);
+          const building = mockRepository
+            .listBuildings()
+            .find((candidate) => candidate.id === dish.buildingId);
+          return [
+            {
+              id,
+              name: dish.name,
+              venueId: dish.venueId,
+              venueName: venue?.name ?? dish.venueName,
+              buildingName: venue?.buildingName ?? building?.name,
+              unitNumber: venue?.unitNumber,
+              address: venue?.address,
+              postalCode: venue?.postalCode,
+              price: dish.price,
+              imageUrl: dish.imageUrl || undefined,
+              logoUrl: venue?.logoUrl,
+              rating: dish.reviewCount > 0 ? dish.rating : undefined,
+              reviewCount: dish.reviewCount,
+              isOpen: venue?.isOpen,
+              latitude: venue?.latitude ?? building?.coordinate.latitude,
+              longitude: venue?.longitude ?? building?.coordinate.longitude,
+            },
+          ];
+        }),
+      );
+    },
+
+    async getDishTasteRatingSummary() {
+      // The mock keeps no per-diner taste ratings: the page shows its estimate only.
+      return resolve({});
+    },
+
     async getDish(id) {
       const dish = dishes.find((d) => d.id === id);
       if (!dish) return resolve(undefined);
@@ -1829,7 +1966,7 @@ export const hungryService: HungryService = {
         cuisineCategories: [...outlet.cuisineCategories],
         profilePhotoUrl: isVerified ? outlet.profilePhotoUrl : undefined,
         coverPhotoUrl: isVerified ? outlet.coverPhotoUrl : undefined,
-        temporaryClosure: outlet.temporaryClosure,
+        temporaryClosure: getEffectiveClosure(outlet),
         isVerified,
       } satisfies PublicMerchantProfile);
     },
@@ -1951,7 +2088,12 @@ export const hungryService: HungryService = {
         ? _profile.reviewedDishIds
             .map((id) => dishes.find((d) => d.id === id))
             .filter(Boolean)
-            .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+            .flatMap((d) =>
+              (d?.reviews ?? []).slice(0, 1).map((review) => ({
+                ...review,
+                dishId: review.dishId ?? d?.id,
+              })),
+            )
             .filter((review) => !isMockReviewHiddenForViewer(review))
         : dishes
             .flatMap((dish) => dish.reviews ?? [])
@@ -1965,6 +2107,24 @@ export const hungryService: HungryService = {
           .sort(compareReviewsNewestFirst)
           .slice(offset, offset + Math.max(1, Math.floor(page.limit))),
       );
+    },
+
+    async getMyReviewStats() {
+      const own = _profile.reviewedDishIds
+        .map((id) => dishes.find((d) => d.id === id))
+        .flatMap((d) => (d?.reviews ?? []).slice(0, 1))
+        .filter((review) => !isMockReviewHiddenForViewer(review));
+      const ratingCounts: ReviewStats["ratingCounts"] = [0, 0, 0, 0, 0];
+      for (const review of own) {
+        const star = Math.min(5, Math.max(1, Math.round(review.rating)));
+        ratingCounts[star - 1] += 1;
+      }
+      const total = own.reduce((sum, review) => sum + review.rating, 0);
+      return resolve({
+        reviewCount: own.length,
+        averageRating: own.length > 0 ? Math.round((total / own.length) * 10) / 10 : null,
+        ratingCounts,
+      });
     },
 
     async submitReview(draft: SubmitReviewInput) {
@@ -1994,6 +2154,26 @@ export const hungryService: HungryService = {
     async listRecentReviewsPage(options) {
       const limit = mockReviewPageLimit(options);
       const matching = listMockRecentReviews(options);
+      const entries = matching.slice(0, limit);
+      const last = entries[entries.length - 1];
+      return resolve({
+        entries,
+        hasMore: matching.length > limit,
+        nextCursor: last ? { before: last.review.createdAt, beforeId: last.review.id } : undefined,
+      });
+    },
+
+    async searchReviewsPage(options) {
+      const limit = mockReviewPageLimit(options);
+      const query = options.query.trim();
+      const matching =
+        query.length < REVIEW_SEARCH_MIN_LENGTH
+          ? []
+          : listMockRecentReviews({
+              before: options.before,
+              beforeId: options.beforeId,
+              withPhotos: options.withPhotos ?? true,
+            }).filter((entry) => reviewMatchesQuery(entry, query));
       const entries = matching.slice(0, limit);
       const last = entries[entries.length - 1];
       return resolve({
@@ -2072,6 +2252,20 @@ export const hungryService: HungryService = {
       }
       const person = findMockPerson(userId);
       return resolve({ id: userId, ...person });
+    },
+
+    async getTasteMatch(_userId: string) {
+      // Mock accounts are demo people without taste fingerprints, so there is no score to show.
+      return resolve(null);
+    },
+
+    async listFavouriteDishIds(userId: string) {
+      return resolve(userId === _profile.id ? [..._mockPinnedDishIds] : []);
+    },
+
+    async setFavouriteDishes(dishIds: string[]) {
+      _mockPinnedDishIds = [...new Set(dishIds)].slice(0, 4);
+      return resolve([..._mockPinnedDishIds]);
     },
 
     async updateMaxDishBudget(maxDishBudget: number | null) {
@@ -2210,6 +2404,19 @@ export const hungryService: HungryService = {
   },
 
   // ── Push notifications ──────────────────────────────────────────────────────
+
+  privacy: {
+    async getConsents() {
+      return resolve({ ..._privacyConsents });
+    },
+
+    async saveConsents(updates) {
+      // Like the real service, only the consents named are changed.
+      if (updates.analytics !== undefined) _privacyConsents.analytics = updates.analytics;
+      if (updates.aiSearch !== undefined) _privacyConsents.aiSearch = updates.aiSearch;
+      return resolve(undefined);
+    },
+  },
 
   push: {
     async getPreferences() {
@@ -3130,6 +3337,7 @@ export const hungryService: HungryService = {
       }
 
       _merchantClaimInterests.add(claimKey);
+      _merchantClaimSubmittedAt.set(claimKey, new Date().toISOString());
       return resolve({
         claimId: `mock-merchant-claim-${Date.now()}`,
         status: "created",
@@ -3141,6 +3349,26 @@ export const hungryService: HungryService = {
         _isAuthenticated && _merchantClaimInterests.has(`${_profile.id}:${venueId}`)
           ? ("submitted" as const)
           : ("none" as const),
+      );
+    },
+
+    async getMyMerchantClaims() {
+      if (!_isAuthenticated) return resolve([]);
+      const prefix = `${_profile.id}:`;
+      return resolve(
+        Array.from(_merchantClaimInterests)
+          .filter((key) => key.startsWith(prefix))
+          .map((key) => {
+            const venueId = key.slice(prefix.length);
+            return {
+              claimId: `mock-merchant-claim-${venueId}`,
+              venueId,
+              venueName: venues.find((venue) => venue.id === venueId)?.name ?? "Your stall",
+              status: "submitted" as const,
+              submittedAt: _merchantClaimSubmittedAt.get(key) ?? new Date().toISOString(),
+            };
+          })
+          .sort((left, right) => right.submittedAt.localeCompare(left.submittedAt)),
       );
     },
 
@@ -3533,6 +3761,45 @@ export const hungryService: HungryService = {
     async getAnalytics(outletId, dateRange) {
       getMerchantOutlet(outletId);
       return resolve(clone(buildMockMerchantAnalytics(outletId, dateRange)));
+    },
+
+    async getDailySeries(outletId, dateRange, period = "current") {
+      getMerchantOutlet(outletId);
+      const analytics = buildMockMerchantAnalytics(outletId, dateRange);
+      const days = dateRange === "7d" ? 7 : 30;
+      const previous = period === "previous";
+      const dates = Array.from({ length: days }, (_, index) =>
+        singaporeDateOnly(new Date(), index - (days - 1) - (previous ? days : 0)),
+      );
+      // A fixed wobble splits each total across the days, and the days add up to the total.
+      const weights = dates.map((_, index) => 1 + ((previous ? index * 3 + 1 : index * 7) % 5));
+      const [visits, menu, dishViews, directions, saves] = (
+        previous
+          ? [
+              analytics.previousPeriodComparison.profileVisits,
+              analytics.previousPeriodComparison.menuViews,
+              0,
+              0,
+              0,
+            ]
+          : [
+              analytics.profileVisits,
+              analytics.menuViews,
+              analytics.dishViews,
+              analytics.directionTaps,
+              analytics.saves,
+            ]
+      ).map((total) => distributeAcrossDays(total, weights));
+      return resolve(
+        dates.map((date, index) => ({
+          date,
+          profileVisits: visits[index],
+          menuViews: menu[index],
+          dishViews: dishViews[index],
+          directionTaps: directions[index],
+          saves: saves[index],
+        })),
+      );
     },
 
     async getDashboardSummary(outletId) {

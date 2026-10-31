@@ -4,7 +4,7 @@
 // get_discovery_feed_by_location returns. Run with `node scripts/test-render.mjs <file>`.
 import assert from "node:assert/strict";
 import test, { afterEach, before, beforeEach } from "node:test";
-import { createElement } from "react";
+import { act, createElement } from "react";
 
 import { installFakeSupabase } from "@/test/supabase/appClient";
 
@@ -76,6 +76,12 @@ const FEED_ROWS = [
   feedRow(4, { venue_name: "Lao Ban", top_dish_name: "Beancurd" }),
 ];
 
+/** Nine dishes: enough for "Dishes across Singapore" and "Most reviewed" to show different ones. */
+const BIG_FEED_ROWS = Array.from({ length: 9 }, (_, i) => feedRow(i + 1));
+
+/** dish_taste_vectors rows the live feed's taste read returns; empty means no palate data. */
+let tasteRows: Record<string, unknown>[] = [];
+
 function serveLiveFeed(rows: Record<string, unknown>[] = FEED_ROWS) {
   fake.rpc.get_discovery_feed_by_location = () => ({ data: rows, error: null });
   fake.rpc.count_venues_in_area = () => ({ data: rows.length, error: null });
@@ -99,6 +105,7 @@ function serveLiveFeed(rows: Record<string, unknown>[] = FEED_ROWS) {
     data: [{ id: HALAL_FLAG_ID, slug: "halal" }],
     error: null,
   });
+  fake.tables.dish_taste_vectors = () => ({ data: tasteRows, error: null });
 }
 
 /** Tables the synchronous repository downloads in full when anything reads it. */
@@ -170,6 +177,7 @@ beforeEach(async () => {
   fake.queries.length = 0;
   fake.rpc = {};
   fake.tables = {};
+  tasteRows = [];
   m.analytics.clearTrackedAnalyticsEvents();
   setLocation();
   m.useProfileStore.setState((state) => ({
@@ -194,6 +202,7 @@ afterEach(async () => {
   await m.renderKit.settle();
   (m.FEATURE_FLAGS as { release01CoreOnly: boolean }).release01CoreOnly = false;
   m.experiments.setExperimentFlagSource(undefined);
+  m.experiments.clearExperimentOverrides();
   m.experiments.resetExperimentSession();
   m.provider.setMockServiceProvider();
 });
@@ -202,9 +211,9 @@ test("Supabase builds show the redesigned Home from the live feed, with no full-
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  assert.match(view.text(), /You are at/);
+  assert.match(view.text(), /Across Singapore/);
   assert.match(view.text(), /Hawker classics/);
-  assert.match(view.text(), /Dishes near you/);
+  assert.match(view.text(), /Dishes across Singapore/);
   assert.match(view.text(), /Hajjah Mariam/);
   assert.match(view.text(), /Chicken Rice/);
   assert.equal(view.findByTestId("catalog-discover-root"), null, "not the offline Home");
@@ -224,7 +233,13 @@ test("dish cards open the redesigned dish page and stall rows the stall page, wi
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  await view.press(view.findByLabel("Dish near you: Chicken Rice at Tian Tian"));
+  // The small feed shows this dish once: in Dishes across Singapore. "Most reviewed" would only
+  // repeat it, so it steps aside (H5-2). Press the rail card.
+  const dishCards = view.container.querySelectorAll<HTMLElement>(
+    '[aria-label^="Chicken Rice, Tian Tian, S$7.00"]',
+  );
+  assert.equal(dishCards.length, 1);
+  await view.press(dishCards[0]);
   assert.deepEqual(view.navigation.calls.at(-1)?.args, [
     "DishDetail",
     { dishId: "dish-2", source: "home" },
@@ -276,11 +291,18 @@ test("a halal diner's Home shows only halal dishes, also when the profile arrive
   assert.equal(batchedFlagReads.length, 1);
 });
 
-test("without a GPS fix or a pick the header says location is off and hides made-up distances", async () => {
+test("without a GPS fix or a pick the header says Singapore, offers to turn location on and hides made-up distances", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.match(view.text(), /Location is off\. Tap to choose your area\./);
-  assert.ok(view.findByLabel(/Location is off, choose your area$/));
+  assert.match(view.text(), /^Across Singapore/);
+  assert.doesNotMatch(view.text(), /You are at/);
+  assert.match(view.text(), /Turn on location for stalls near you/);
+  assert.doesNotMatch(view.text(), /Location is off, so these are picks/);
+  assert.ok(view.findByLabel("Turn on location"));
+  assert.equal(view.findByLabel(/choose your area/i), null, "there is no area picker");
+  // Stall rows name the building the stall is in, not its planning area.
+  assert.match(view.text(), /Maxwell Food Centre/);
+  assert.doesNotMatch(view.text(), /Downtown Core/);
   assert.doesNotMatch(view.text(), /\d+ ?m away|\d\.\d ?km/);
   await m.renderKit.cleanup();
 
@@ -375,8 +397,8 @@ test("release-01 core-only builds have no QuickBites route, so rail titles are n
   (m.FEATURE_FLAGS as { release01CoreOnly: boolean }).release01CoreOnly = true;
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.match(view.text(), /Dishes near you/);
-  assert.equal(view.findByLabel("See all dishes near you"), null);
+  assert.match(view.text(), /Dishes across Singapore/);
+  assert.equal(view.findByLabel("See all dishes across Singapore"), null);
 });
 
 test("HOME-X7: QuickBites on Supabase lists the live feed only and never reads the local tables", async () => {
@@ -388,4 +410,724 @@ test("HOME-X7: QuickBites on Supabase lists the live feed only and never reads t
   assert.match(view.text(), /Chicken Rice/);
   assert.equal(fake.callsTo("get_discovery_feed_by_location").length, 1);
   assert.deepEqual(fullTableReads(), []);
+});
+
+// ---- Round four, phase 1 (home-plan.md): filters, stall rows, refresh, tab press, impressions.
+
+/** Prod-shaped row: the stall has no menu yet (26 of 29,611 prod venues have dishes). */
+function coldRow(index: number, overrides: Record<string, unknown> = {}) {
+  return feedRow(index, {
+    top_dish_id: null,
+    top_dish_name: null,
+    top_dish_image: null,
+    top_dish_rating: null,
+    top_dish_review_count: 0,
+    top_dish_price: null,
+    operating_hours: null,
+    ...overrides,
+  });
+}
+
+/** A navigation whose focus, blur and tab-press events the test fires itself. */
+function eventfulNavigation() {
+  const listeners = new Map<string, Set<(event: unknown) => void>>();
+  let focused = true;
+  const navigation = Object.assign(m.renderKit.createFakeNavigation(), {
+    isFocused: () => focused,
+    addListener: (type: string, listener: (event: unknown) => void) => {
+      const set = listeners.get(type) ?? new Set();
+      set.add(listener);
+      listeners.set(type, set);
+      return () => set.delete(listener);
+    },
+    getState: () => ({
+      index: 0,
+      key: "tabs",
+      routeNames: ["Test"],
+      routes: [{ key: "test-route", name: "Test" }],
+      stale: false as const,
+      type: "tab",
+    }),
+  });
+  const emit = (type: string, event: unknown = { defaultPrevented: false }) => {
+    for (const listener of [...(listeners.get(type) ?? [])]) listener(event);
+  };
+  return {
+    navigation,
+    setFocused: async (next: boolean) => {
+      focused = next;
+      await act(async () => emit(next ? "focus" : "blur"));
+    },
+    pressTab: async () => {
+      await act(async () => emit("tabPress"));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    },
+  };
+}
+
+/** Calls the ScrollView's onRefresh, the way a pull on a phone would. */
+async function pullToRefresh(host: Element) {
+  const fiberKey = Object.keys(host).find((key) => key.startsWith("__reactFiber$"))!;
+  let fiber = (host as unknown as Record<string, unknown>)[fiberKey] as {
+    memoizedProps?: { refreshControl?: { props: { onRefresh: () => void } } };
+    return: unknown;
+  } | null;
+  while (fiber) {
+    const refreshControl = fiber.memoizedProps?.refreshControl;
+    if (refreshControl) {
+      await act(async () => refreshControl.props.onRefresh());
+      return;
+    }
+    fiber = fiber.return as typeof fiber;
+  }
+  throw new Error("Home has no refreshControl");
+}
+
+test("R4-B1: a chip filters the whole nearby pool, not just the first 6 cards", async () => {
+  const rows = Array.from({ length: 10 }, (_, i) => feedRow(i + 1, { top_dish_review_count: 12 }));
+  serveLiveFeed(rows);
+  // Only the 9th stall's dish is halal: it is past the 6-card slice of "Dishes across Singapore".
+  fake.tables.dish_dietary_flags = () => ({
+    data: [{ dish_id: "dish-9", dietary_flag_id: HALAL_FLAG_ID }],
+    error: null,
+  });
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Dish 9/, "the halal dish nearby should show under Halal");
+});
+
+test("R4-B3: a stall that closed earlier today reads 'Closed', not 'Closed · Closed for today'", async () => {
+  serveLiveFeed([feedRow(1, { operating_hours: "Mon-Sun 00:00-00:01" }), feedRow(2), feedRow(3)]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.doesNotMatch(view.text(), /Closed · Closed for today/);
+  assert.match(view.text(), /Closed/);
+});
+
+test("R4-B4: stalls nearby are ordered nearest first when nobody has rated them", async () => {
+  serveLiveFeed([
+    coldRow(1, { distance_meters: 900, venue_name: "Zeta Far Stall" }),
+    coldRow(2, { distance_meters: 50, venue_name: "Alpha Close Stall" }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(
+    text.indexOf("Alpha Close Stall") < text.indexOf("Zeta Far Stall"),
+    "nearest stall should come first",
+  );
+});
+
+test("H4-6: open stalls come before closed ones even when the closed one is nearer, and closed rows are dimmed", async () => {
+  serveLiveFeed([
+    coldRow(1, { distance_meters: 50, venue_name: "Near Closed Stall", is_open: false }),
+    coldRow(2, {
+      distance_meters: 900,
+      venue_name: "Far Open Stall",
+      operating_hours: "Mon-Sun 24 hours",
+    }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Far Open Stall") < text.indexOf("Near Closed Stall"));
+  const closedRow = view.findByLabel("Open Near Closed Stall details") as HTMLElement;
+  assert.equal(closedRow.style.opacity, "0.7");
+});
+
+test("H4-16: a stall's rating sits in its own pill, apart from the open state", async () => {
+  serveLiveFeed([feedRow(1, { operating_hours: "Mon-Sun 24 hours" }), feedRow(2), feedRow(3)]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByLabel("Rated 4.5"), "a rating pill is on the stall row");
+  assert.doesNotMatch(view.text(), /Open · Open 24 hours ·\s*(★|Rated)/);
+});
+
+test("R4-B5: 'No matching results' is one page-level state with a one-tap way to clear the filters", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Spicy"));
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  const matches = view.text().match(/No matching results/g) ?? [];
+  assert.equal(matches.length, 1, "one empty state for the page, not one per section");
+  const clear = view.findByLabel(/Clear (all )?filters/);
+  assert.ok(clear, "a Clear filters button should be offered");
+  await view.press(clear);
+  assert.doesNotMatch(view.text(), /No matching results/);
+  assert.match(view.text(), /Dishes across Singapore/);
+  const cleared = m.analytics
+    .getTrackedAnalyticsEvents()
+    .filter((event) => event.event === "home_filters_cleared");
+  assert.equal(cleared.length, 1);
+});
+
+test("H4-8: rails the filter empties collapse instead of each showing an empty block", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  // One halal dish nearby: its rail and stall stay; nothing else shows "No matching results".
+  assert.doesNotMatch(view.text(), /No matching results/);
+  assert.match(view.text(), /Nasi Padang/);
+});
+
+test("H4-9: the Value chip is 'Under S$5' and keeps dishes under 5 dollars", async () => {
+  serveLiveFeed([
+    feedRow(1, { top_dish_price: 4, top_dish_name: "Cheap Noodles" }),
+    feedRow(2, { top_dish_price: 4.5, top_dish_name: "Cheap Rice" }),
+    feedRow(3, { top_dish_price: 4.8, top_dish_name: "Cheap Soup" }),
+    feedRow(4, { top_dish_price: 7, top_dish_name: "Pricey Plate" }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(view.findByLabel("Value"), null);
+  await view.press(view.findByLabel("Under S$5"));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Cheap Noodles/);
+  assert.doesNotMatch(view.text(), /Pricey Plate/);
+});
+
+test("H4-12: the Halal chip uses no Arabic mark that could read as a certificate", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByLabel("Halal"));
+  assert.doesNotMatch(view.html(), /حلال/);
+});
+
+test("H4-10: with no saved needs the Dietary needs chip opens the dietary settings", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.press(view.findByLabel("Dietary needs"));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: [
+      "OnboardingStack",
+      { screen: "TasteQuiz", params: { mode: "profile", initialPhase: "dietary", source: "home" } },
+    ],
+  });
+  // It did not switch a filter on behind the diner's back.
+  assert.doesNotMatch(view.text(), /No matching results/);
+});
+
+test("H4-10: saved needs name the chip, and a sparse feed explains itself instead of leaving Home empty", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: ["halal", "vegetarian", "vegan"] },
+  }));
+  serveLiveFeed();
+  // Nothing nearby carries a dietary flag yet.
+  fake.tables.dish_dietary_flags = () => ({ data: [], error: null });
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByLabel("Halal · Vegetarian +1"), "the chip names the saved needs");
+  assert.match(view.text(), /No matching results/);
+  assert.match(view.text(), /Nothing nearby is confirmed Halal · Vegetarian \+1 yet/);
+  const showAll = view.findByLabel("Show all dishes");
+  assert.ok(showAll, "the way out is on screen");
+  await view.press(showAll);
+  assert.match(view.text(), /Stalls (in|across) /, "the stall list is back");
+  assert.match(view.text(), /Dishes across Singapore/);
+});
+
+test("H4-10: clearing every saved need in Settings switches the dietary filter off", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: ["halal"] },
+  }));
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.doesNotMatch(view.text(), /Chicken Rice/, "halal only while the need is saved");
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: [] },
+  }));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Chicken Rice/);
+});
+
+test("H4-11: in a mall the chips filter 'For you' and 'What's here' too", async () => {
+  serveLiveFeed();
+  setLocation({ permission: "granted" });
+  const service = m.provider.getCatalogRawService() as unknown as Record<string, unknown>;
+  service.listPlaces = async () => [
+    {
+      id: "building-1",
+      name: "Maxwell Food Centre",
+      venueCount: 4,
+      latitude: DEFAULT_LOCATION.latitude,
+      longitude: DEFAULT_LOCATION.longitude,
+    },
+  ];
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /For you at Maxwell Food Centre/);
+  assert.match(view.text(), /Chicken Rice/);
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Nasi Padang/);
+  assert.doesNotMatch(view.text(), /Chicken Rice/, "For you drops dishes the chip rules out");
+  await view.press(view.findByLabel(/What's here/));
+  await m.renderKit.settle();
+  assert.match(view.text(), /Hajjah Mariam/);
+  assert.doesNotMatch(view.text(), /Tian Tian/, "What's here lists only stalls with a halal dish");
+});
+
+test("H4-22: pulling to refresh keeps the cards on screen until the new ones land", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Hajjah Mariam/);
+  let release: () => void = () => undefined;
+  fake.rpc.get_discovery_feed_by_location = () =>
+    new Promise((resolve) => {
+      release = () =>
+        resolve({
+          data: [feedRow(1, { venue_name: "Fresh Stall", top_dish_name: "Fresh Dish" })],
+          error: null,
+        });
+    });
+  await pullToRefresh(view.findByText("Hawker classics")!);
+  await view.settle();
+  assert.match(view.text(), /Hajjah Mariam/, "the old cards stay during the refresh");
+  assert.match(view.text(), /Dishes across Singapore/);
+  release();
+  await view.settle();
+  assert.match(view.text(), /Fresh Stall/);
+  assert.doesNotMatch(view.text(), /Hajjah Mariam/);
+});
+
+test("H4-22: a different area still shows the loading skeleton, not the old area's cards", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Hajjah Mariam/);
+  fake.rpc.get_discovery_feed_by_location = () => new Promise(() => undefined);
+  await act(async () => {
+    setLocation({
+      permission: "granted",
+      currentLocation: { latitude: 1.35, longitude: 103.95 },
+    });
+  });
+  await view.settle();
+  assert.doesNotMatch(view.text(), /Hajjah Mariam/);
+});
+
+test("H4-23: pressing the Home tab scrolls the page back to the top", async () => {
+  serveLiveFeed();
+  const scrolls: unknown[] = [];
+  const events = eventfulNavigation();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen), {
+    navigation: events.navigation,
+  });
+  for (const element of Array.from(document.body.querySelectorAll("*"))) {
+    const node = element as unknown as Record<string, unknown>;
+    if (Object.prototype.hasOwnProperty.call(node, "scrollTo")) {
+      node.scrollTo = (options: unknown) => scrolls.push(options);
+    }
+  }
+  await events.pressTab();
+  assert.ok(
+    scrolls.some((options) => (options as { y?: number })?.y === 0),
+    "tabPress calls scrollTo({ y: 0 })",
+  );
+  assert.ok(view.findByText("Dishes across Singapore"));
+});
+
+test("H4-25: a rail counts one impression per visit, so leaving Home and coming back counts again", async () => {
+  serveLiveFeed();
+  const events = eventfulNavigation();
+  await m.renderKit.render(createElement(m.DiscoverEntryScreen), { navigation: events.navigation });
+  const impressions = () =>
+    m.analytics
+      .getTrackedAnalyticsEvents()
+      .filter((event) => event.event === "discover_rail_impression");
+  const railImpressions = () =>
+    impressions().filter((event) => event.properties?.rail === "quickBites");
+  assert.equal(railImpressions().length, 1);
+  await events.setFocused(false);
+  await events.setFocused(true);
+  assert.equal(railImpressions().length, 2);
+  assert.equal(impressions().filter((event) => event.properties?.rail === "area_stalls").length, 2);
+});
+
+// ---- Round four, phase 2 (home-plan.md): cold start, palate order, one rail per dish.
+
+/** Rows for a nearby area where `menus` stalls have a menu and `bare` do not. */
+function mixedFeed(menus: number, bare: number) {
+  return [
+    ...Array.from({ length: menus }, (_, i) =>
+      feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null }),
+    ),
+    ...Array.from({ length: bare }, (_, i) =>
+      coldRow(menus + i + 1, { venue_name: `Bare Stall ${i + 1}` }),
+    ),
+  ];
+}
+
+function countOf(text: string, pattern: RegExp) {
+  return (text.match(pattern) ?? []).length;
+}
+
+test("R4-B2: with no menus nearby the stalls stay in one list under a single note", async () => {
+  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.equal(countOf(text, /Menu coming soon/g), 0, "no per-row repeat");
+  assert.equal(countOf(text, /Menus are coming to these stalls/g), 1, "one note instead");
+  assert.match(text, /Stall 1/);
+  assert.doesNotMatch(text, /More stalls nearby/, "nothing to fold under: every stall is bare");
+});
+
+test("H4-1: with no dish rails the classics stand in as 'Popular dishes in Singapore'", async () => {
+  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Popular dishes in Singapore/);
+  assert.doesNotMatch(view.text(), /Hawker classics/);
+});
+
+test("H4-1: with dishes nearby the classics keep their name", async () => {
+  serveLiveFeed(Array.from({ length: 8 }, (_, i) => feedRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Hawker classics/);
+  assert.doesNotMatch(view.text(), /Popular dishes in Singapore/);
+});
+
+test("H4-1: stalls without menus fold into one row under the stalls that have them", async () => {
+  serveLiveFeed(mixedFeed(3, 5));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const before = view.text();
+  assert.match(before, /Stall 1/);
+  assert.doesNotMatch(before, /Bare Stall 1/, "folded until the diner opens the row");
+  assert.equal(countOf(before, /Menu coming soon/g), 0);
+  const group = view.findByLabel("More stalls nearby, menus coming. 5 stalls");
+  assert.ok(group, "the folded row is on screen");
+  assert.match(before, /More stalls nearby · menus coming/);
+
+  await view.press(group);
+  const after = view.text();
+  for (let i = 1; i <= 5; i += 1) assert.match(after, new RegExp(`Bare Stall ${i}`));
+  assert.deepEqual(
+    m.analytics
+      .getTrackedAnalyticsEvents()
+      .filter((event) => event.event === "home_cold_start_group_opened")
+      .map((event) => event.properties),
+    [{ surface: "home", count: 5 }],
+  );
+});
+
+test("H4-1: a stall with a menu and no reviews asks for the first one", async () => {
+  serveLiveFeed(mixedFeed(2, 1));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(countOf(view.text(), /Be the first to review/g), 2);
+});
+
+test("H4-1: the control arm keeps 'Menu coming soon' on every bare stall", async () => {
+  m.experiments.setExperimentOverride("home_cold_start_v1", "control");
+  serveLiveFeed(mixedFeed(3, 4));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(countOf(view.text(), /Menu coming soon/g), 4);
+  assert.doesNotMatch(view.text(), /More stalls nearby/);
+  assert.doesNotMatch(view.text(), /Popular dishes in Singapore/);
+});
+
+test("H4-3: the review-count rail is called 'Most reviewed', as its See all page is", async () => {
+  serveLiveFeed(BIG_FEED_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Most reviewed (in|across) /);
+  assert.doesNotMatch(view.text(), /Trending/);
+});
+
+test("H4-4: a dish shows in the first rail it qualifies for, not in every rail", async () => {
+  // Twelve dishes, all rated 4.5 with reviews and under S$8: each qualifies for every rail.
+  serveLiveFeed(
+    Array.from({ length: 12 }, (_, i) => feedRow(i + 1, { top_dish_price: 4 + (i % 3) })),
+  );
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  const shown = [...text.matchAll(/Dish (\d+)/g)].map((match) => match[1]);
+  assert.ok(shown.length >= 11, "the first rails are full");
+  // The rails the repeats leave too thin to look like one (Top rated, Budget) are hidden.
+  assert.equal(new Set(shown).size, shown.length, `repeated dishes: ${shown.join(",")}`);
+});
+
+test("H4-2: with a palate, Dishes across Singapore follows it and says why", async () => {
+  const rows = Array.from({ length: 8 }, (_, i) =>
+    feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null, top_dish_price: 9 + i }),
+  );
+  // Dish 7 is the spiciest, dish 8 the mildest; feed order would put dish 1 first.
+  tasteRows = rows.map((row, i) => ({
+    dish_id: row.top_dish_id,
+    sweet: 5,
+    spicy: i === 6 ? 9 : i === 7 ? 1 : 5,
+    sour: 5,
+    salty: 5,
+    rich: 5,
+    aromatic: 5,
+  }));
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(rows);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  const rail = text.slice(text.indexOf("Dishes across Singapore"));
+  assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"), "the spicy dish leads the rail");
+  assert.match(rail, /Spicy, the way you like it/);
+  assert.equal(
+    fake.queries.filter((query) => query.table === "dish_taste_vectors").length,
+    1,
+    "the palate data is one batched read, not one per dish",
+  );
+});
+
+const PALATE_ROWS = Array.from({ length: 8 }, (_, i) =>
+  feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null, top_dish_price: 9 + i }),
+);
+
+function givePalate(spicyDishIndex: number) {
+  tasteRows = PALATE_ROWS.map((row, i) => ({
+    dish_id: row.top_dish_id,
+    sweet: 5,
+    spicy: i === spicyDishIndex ? 9 : 5,
+    sour: 5,
+    salty: 5,
+    rich: 5,
+    aromatic: 5,
+  }));
+}
+
+test("H4-2: a diner without a palate keeps feed order and sees no reason line", async () => {
+  givePalate(6);
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(PALATE_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.doesNotMatch(text, /the way you like it/);
+  assert.match(text, /Dish 1/);
+  assert.doesNotMatch(text, /Dish 7/, "the rail holds the first six dishes of the feed");
+});
+
+test("H4-2: the control arm keeps feed order even with a palate", async () => {
+  givePalate(6);
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  m.experiments.setExperimentOverride("home_taste_rank_v1", "control");
+  serveLiveFeed(PALATE_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.doesNotMatch(text, /the way you like it/);
+  assert.match(text, /Dish 1/);
+  assert.doesNotMatch(text, /Dish 7/, "the rail holds the first six dishes of the feed");
+});
+
+test("H4-2: if the palate read fails, Home still shows the feed in its own order", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(PALATE_ROWS);
+  fake.tables.dish_taste_vectors = () => ({ data: null, error: { message: "down" } });
+  const warn = console.warn;
+  console.warn = () => undefined;
+  try {
+    const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+    assert.match(view.text(), /Dishes across Singapore/);
+    assert.match(view.text(), /Dish 1/);
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test("H4-2: ranking never hides dishes; with the Dietary chip off a halal diner still sees every dish", async () => {
+  givePalate(6);
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      dietaryPreferences: ["halal"],
+      tasteVector: { sweet: 5, spicy: 9, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(PALATE_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.doesNotMatch(view.text(), /Dish 2/, "the Dietary chip is on: only halal dishes");
+  await view.press(view.findByLabel("Halal"));
+  await m.renderKit.settle();
+  const text = view.text();
+  const rail = text.slice(text.indexOf("Dishes across Singapore"));
+  assert.match(rail, /Dish 7/);
+  assert.match(rail, /Dish 2/, "turning the chip off brings every dish back, in palate order");
+  assert.ok(rail.indexOf("Dish 7") < rail.indexOf("Dish 1"));
+});
+
+// ---- Round four, phase 3 (home-plan.md): food above the fold, one label, one footer.
+
+test("H4-14: with dishes to show, the classics sit below the first dish section", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Dishes across Singapore") > 0);
+  assert.ok(
+    text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"),
+    "dishes come first",
+  );
+  assert.ok(
+    text.indexOf("Decide for me") < text.indexOf("Dishes across Singapore"),
+    "Decide stays on top",
+  );
+});
+
+test("P3-2: a diner with a palate gets Dishes near you, then the classics, then Most reviewed", async () => {
+  serveLiveFeed(BIG_FEED_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  const personal = text.indexOf("Dishes across Singapore");
+  const classics = text.indexOf("Hawker classics");
+  const reviewed = text.indexOf("Most reviewed");
+  assert.ok(personal > 0 && classics > 0 && reviewed > 0);
+  assert.ok(
+    personal < classics && classics < reviewed,
+    "palate rail, classics, then Most reviewed",
+  );
+});
+
+test("P3-2: a diner without a palate keeps Most reviewed first", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    },
+  }));
+  serveLiveFeed(BIG_FEED_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Most reviewed") > 0);
+  assert.ok(text.indexOf("Most reviewed") < text.indexOf("Hawker classics"));
+  assert.ok(text.indexOf("Hawker classics") < text.indexOf("Dishes across Singapore"));
+});
+
+test("P3-1: with location on the rail says Dishes near you; with it off, across Singapore", async () => {
+  setLocation({ permission: "granted", currentLocation: { latitude: 1.35, longitude: 103.95 } });
+  serveLiveFeed();
+  const on = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(on.text(), /Dishes near you/);
+  assert.doesNotMatch(on.text(), /Dishes across Singapore/);
+  assert.ok(on.findByLabel("See all dishes near you"));
+  await on.unmount();
+
+  setLocation();
+  serveLiveFeed();
+  const off = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(off.text(), /Dishes across Singapore/);
+  assert.doesNotMatch(off.text(), /Dishes near you/);
+});
+
+test("H4-14: the control arm keeps the classics above the dishes", async () => {
+  m.experiments.setExperimentOverride("home_above_fold_v1", "control");
+  serveLiveFeed(BIG_FEED_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Hawker classics") < text.indexOf("Most reviewed"));
+});
+
+test("H4-14: with no dishes at all the classics stay where they are", async () => {
+  serveLiveFeed(Array.from({ length: 6 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Popular dishes in Singapore") < text.indexOf("Decide for me"));
+});
+
+test("H4-14: with reviews missing, the classics move under Dishes across Singapore", async () => {
+  serveLiveFeed(Array.from({ length: 8 }, (_, i) => feedRow(i + 1, { top_dish_review_count: 0 })));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.doesNotMatch(text, /Most reviewed/);
+  assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
+});
+
+test("H4-18: All stalls and All dishes close the page instead of splitting it", async () => {
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.ok(text.indexOf("Stalls ") < text.indexOf("All stalls"), "after the stall list");
+  assert.ok(text.lastIndexOf("Zhen Zhen") < text.indexOf("All dishes"));
+  await view.press(view.findByLabel("Browse stalls and restaurants"));
+  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["BrowseStalls"]);
+  await view.press(view.findByLabel("Browse dishes"));
+  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["BrowseDishes"]);
+});
+
+test("H4-27: a dish card and a Most reviewed row read the same", async () => {
+  serveLiveFeed(BIG_FEED_ROWS);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  // Both rails show rated dishes; every card and row label has the same shape.
+  const labels = [
+    ...view.container.querySelectorAll<HTMLElement>('[aria-label*=", rated 4.5 from"]'),
+  ]
+    .map((element) => element.getAttribute("aria-label") ?? "")
+    .filter((label) => /^Dish \d, Stall \d, S\$/.test(label));
+  assert.ok(labels.length >= 2, "a card and a row");
+  for (const label of labels) {
+    assert.match(label, /^Dish \d, Stall \d, S\$\d+\.\d{2}, rated 4\.5 from \d+ reviews/);
+  }
+});
+
+test("H5-2: Most reviewed does not open with the dishes Dishes across Singapore already shows", async () => {
+  // Four dishes: the main rail keeps all of them, so Most reviewed would only repeat them.
+  serveLiveFeed();
+  const small = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(small.text(), /Dishes across Singapore/);
+  assert.doesNotMatch(small.text(), /Most reviewed/);
+  assert.equal(
+    small.container.querySelectorAll('[aria-label^="Chicken Rice, Tian Tian"]').length,
+    1,
+  );
+  await small.unmount();
+
+  // Nine dishes: the rails show different ones, and no dish card repeats on the page.
+  serveLiveFeed(BIG_FEED_ROWS);
+  const big = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(big.text(), /Most reviewed/);
+  const dishLabels = [...big.container.querySelectorAll<HTMLElement>('[aria-label^="Dish "]')]
+    .map((element) => element.getAttribute("aria-label")?.split(",")[0])
+    .filter((name) => name && /^Dish \d$/.test(name));
+  assert.equal(new Set(dishLabels).size, dishLabels.length, "no dish shows twice");
+});
+
+test("home_viewed: one event per visit, once there is content", async () => {
+  serveLiveFeed();
+  const events = eventfulNavigation();
+  await m.renderKit.render(createElement(m.DiscoverEntryScreen), { navigation: events.navigation });
+  const viewed = () =>
+    m.analytics.getTrackedAnalyticsEvents().filter((event) => event.event === "home_viewed");
+  assert.equal(viewed().length, 1);
+  assert.equal(viewed()[0]?.properties?.has_dishes, true);
+  await events.setFocused(false);
+  await events.setFocused(true);
+  assert.equal(viewed().length, 2);
+});
+
+test("home_viewed: a cold start says it had no dishes", async () => {
+  serveLiveFeed(Array.from({ length: 4 }, (_, i) => coldRow(i + 1)));
+  await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const viewed = m.analytics
+    .getTrackedAnalyticsEvents()
+    .filter((event) => event.event === "home_viewed");
+  assert.equal(viewed.length, 1);
+  assert.equal(viewed[0]?.properties?.has_dishes, false);
+});
+
+test("H4-14: a diner with a saved dietary need still gets dishes above the classics", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, dietaryPreferences: ["halal"] },
+  }));
+  serveLiveFeed();
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.match(text, /Nasi Padang/, "the halal dish is on the page");
+  assert.ok(text.indexOf("Dishes across Singapore") > 0);
+  assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
 });

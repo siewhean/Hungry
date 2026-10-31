@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { getPathFromState } from "@react-navigation/core";
+
 import { createRootLinking, type LinkingRoute } from "@/app/navigation/linking";
 
 const signedIn = createRootLinking("exp://127.0.0.1:8081/--/");
@@ -99,6 +101,18 @@ test("signed out, a protected link is remembered and the user resumes where Spla
     params: { screen: "OnboardingAuth" },
   });
 
+  // Welcome's "Sign in" tapped, nobody signed in yet: a link opens Login, not onboarding.
+  const signingIn = linkingFor(() => ({
+    isAuthReady: true,
+    isAuthenticated: false,
+    hasCompletedOnboarding: false,
+    returningAccountIntent: true,
+  }));
+  assert.deepEqual(signingIn.getStateFromPath("user/u1")?.routes[0], {
+    name: "AuthStack",
+    params: { screen: "Login" },
+  });
+
   const returning = linkingFor(() => ({
     isAuthReady: true,
     isAuthenticated: false,
@@ -116,6 +130,15 @@ test("signed out, a protected link is remembered and the user resumes where Spla
 
   assert.deepEqual(
     remembered.map((route) => route.name),
-    ["UserProfile", "UserProfile", "UserProfile"],
+    ["UserProfile", "UserProfile", "UserProfile", "UserProfile"],
   );
+});
+
+test("the wheel's web address without a code is /join, never /join/undefined", () => {
+  const withoutCode = { routes: [{ name: "WheelStack", params: { screen: "WheelHome" } }] };
+  assert.equal(getPathFromState(withoutCode as never, signedIn.config as never), "/join");
+  const withParams = {
+    routes: [{ name: "WheelStack", state: { routes: [{ name: "WheelHome", params: {} }] } }],
+  };
+  assert.equal(getPathFromState(withParams as never, signedIn.config as never), "/join");
 });

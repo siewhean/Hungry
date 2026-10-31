@@ -1,3 +1,7 @@
+import {
+  isReviewDeletedForSession,
+  markReviewDeletedForSession,
+} from "@/features/review/reviewExplore";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -33,9 +37,13 @@ test.afterEach(resetSession);
 test("every sign-out path clears account-scoped search history and review drafts", () => {
   useSearchStore.getState().rememberSearch("laksa");
   useReviewDraftStore.getState().setText("Great broth");
+  markReviewDeletedForSession("deleted-review");
   assert.ok(useSearchStore.getState().recentSearches.length > 0);
 
   useSessionStore.getState().signOut();
+
+  // REV-25: a review the last account deleted does not stay hidden for the next one.
+  assert.equal(isReviewDeletedForSession("deleted-review"), false);
 
   assert.equal(useSessionStore.getState().isAuthenticated, false);
   assert.deepEqual(useSearchStore.getState().recentSearches, []);
@@ -122,7 +130,7 @@ test("EditProfile does not open ResetPassword with a fake code", () => {
   assert.doesNotMatch(editProfile, /profile-settings/);
   assert.doesNotMatch(editProfile, /screen: "ResetPassword"/);
   assert.match(editProfile, /accessibilityLabel="Change profile photo"/);
-  assert.match(editProfile, /disabled=\{!isDirty \|\| Boolean\(nameError\)\}/);
+  assert.match(editProfile, /disabled=\{!isDirty \|\| Boolean\(nameError\) \|\| isSaving\}/);
 });
 
 test("account deletion purges locally, records a notice, then signs out; confirms are cross-platform", () => {
@@ -139,7 +147,8 @@ test("account deletion purges locally, records a notice, then signs out; confirm
     /Alert\.alert\(\s*"(Sign out|Delete account|Deletion request failed)"/,
   );
   assert.match(settings, /<Dialog\s+visible=\{accountDialog === "signOut"\}/);
-  assert.match(settings, /<Dialog\s+visible=\{accountDialog === "deleteAccount"\}/);
+  // The delete step is its own modal (not Alert.alert), so it also works on web.
+  assert.match(settings, /<AccountDeletionDialog\s+visible=\{accountDialog === "deleteAccount"\}/);
   const run = settings.slice(settings.indexOf("const submitDeletionCode"));
   const purgeIndex = run.indexOf("await purgePersistedAccountData()");
   const noticeIndex = run.indexOf("setAuthNotice(");

@@ -1,16 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Animated,
-  Easing,
   View,
   StyleSheet,
+  PanResponder,
   Pressable,
+  type ScrollView,
   useWindowDimensions,
 } from "react-native";
+import ReAnimated, {
+  Easing as ReEasing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { ChevronLeft, Shuffle, Heart, Navigation, Share2 } from "lucide-react-native";
+import { ChevronLeft, Heart, Share2 } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,24 +27,40 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { reportError } from "@/lib/monitoring/reportError";
+import { LocationGate } from "@/components/discover/LocationGate";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
-import { AccessibleImage, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppSymbol,
+  AppText,
+  Badge,
+  Button,
+  Card,
+  ChipGroup,
+  EmptyState,
+  Screen,
+} from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import {
   applyDecideAnswers,
-  decideAnswerMaxPrice,
+  decideServerFilters,
   describeDecideAnswers,
+  givenServerAnswers,
+  type DecideAnswers,
 } from "@/features/discovery/decideQuiz";
 import { findBuildingById } from "@/features/discovery/discovery";
 import {
-  DECIDE_INITIAL_RADIUS_METERS,
+  decideInitialRadiusMeters,
   DECIDE_RADIUS_STEPS_METERS,
+  formatOpenLabel,
+  keepScoreOrder,
   preferOpenStalls,
   rankDecideCandidates,
   type OpenAwareCandidates,
 } from "@/features/discovery/decideForMeCandidates";
-import { buildMapsSearchUrl, formatFullStallAddress } from "@/features/detail/stallLocation";
+import { buildStallMapsUrl } from "@/features/detail/stallLocation";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { shareLink } from "@/features/share/messagingShare";
 import { webShareUrl } from "@/constants/links";
@@ -110,59 +134,66 @@ function TasteMiniBar({
   );
 }
 
+/** The number is shown as it is: a pick that appears once does not need to count up to it. */
 function AnimatedMatchBadge({ percent }: { percent: number }) {
-  const { palette, radii, spacing, motion } = useHungryTheme();
-  const counter = useRef(new Animated.Value(0)).current;
+  const { palette, radii, spacing } = useHungryTheme();
   const reduceMotion = useReduceMotion();
-  const [displayValue, setDisplayValue] = useState(0);
+  // A new pick fades the badge in from 96% (a strong ease-out, 200 ms). Reduce Motion: no movement.
+  const entrance = useSharedValue(1);
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: 0.4 + 0.6 * entrance.value,
+    transform: [{ scale: 0.96 + 0.04 * entrance.value }],
+  }));
 
   useEffect(() => {
     if (reduceMotion) {
-      // Reduce Motion: show the final number without counting up.
-      setDisplayValue(percent);
+      entrance.value = 1;
       return;
     }
-    counter.setValue(0);
-    const listenerId = counter.addListener(({ value }) => {
-      setDisplayValue(Math.round(value));
-    });
-
-    Animated.timing(counter, {
-      toValue: percent,
-      duration: motion.decideForMeCounter,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    return () => {
-      counter.removeListener(listenerId);
-    };
-  }, [counter, motion.decideForMeCounter, percent, reduceMotion]);
+    entrance.value = 0;
+    entrance.value = withTiming(1, { duration: 200, easing: ReEasing.bezier(0.23, 1, 0.32, 1) });
+  }, [entrance, percent, reduceMotion]);
 
   return (
-    <View
-      style={{
-        alignItems: "center",
-        alignSelf: "flex-start",
-        backgroundColor: `${palette.orange}22`,
-        borderRadius: radii.pill,
-        flexDirection: "row",
-        gap: spacing[2],
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[4],
-      }}
+    <ReAnimated.View
+      style={[
+        {
+          alignItems: "center",
+          alignSelf: "flex-start",
+          backgroundColor: `${palette.orange}22`,
+          borderRadius: radii.pill,
+          flexDirection: "row",
+          gap: spacing[2],
+          paddingHorizontal: spacing[3],
+          paddingVertical: spacing[4],
+        },
+        entranceStyle,
+      ]}
     >
       {/* accentText, not orange: 19 px semibold orange on the tint is under 4.5:1 in light mode. */}
       <AppText variant="h3" style={{ color: palette.accentText }}>
-        {displayValue}% taste match
+        {percent}% taste match
       </AppText>
-    </View>
+    </ReAnimated.View>
   );
 }
 
+const HERO_HEIGHT_RATIO = 0.75;
+/** The hero of a pick with no photo, below the status bar. */
+const NO_PHOTO_HERO_HEIGHT = 120;
+const BACK_BUTTON_SIZE = 44;
+/** A swipe left on the photo this far (or faster) asks for another pick. */
+const SWIPE_ANOTHER_PICK_DX = -60;
 const RADIUS_STEPS_METERS = DECIDE_RADIUS_STEPS_METERS;
-const INITIAL_RADIUS_METERS = DECIDE_INITIAL_RADIUS_METERS;
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
+
+/** react-native-web drops aria-selected on buttons, so the label says which radius is on. */
+const radiusOptions = (selectedMeters: number) =>
+  RADIUS_STEPS_METERS.map((meters) => ({
+    id: String(meters),
+    label: `${meters / 1000} km`,
+    accessibilityLabel: `Search within ${meters / 1000} kilometres${meters === selectedMeters ? ", selected" : ""}`,
+  }));
 
 function nextRadius(currentRadius: number) {
   return RADIUS_STEPS_METERS.find((value) => value > currentRadius);
@@ -173,46 +204,78 @@ const DECIDE_POOL_SIZE = 50;
 /** Stalls whose hours are read for the open-now check: one get_venue_summaries call (max 50). */
 const MAX_OPEN_STATE_VENUES = 50;
 
+/** The pool the screen shows, and the radius it was found within (wider than asked if needed). */
+type LoadedCandidates = OpenAwareCandidates & { radius: number };
+
 /**
- * Picks come from the server search (search_dishes in Supabase mode), not the
- * capped local cache, then are ranked by taste and checked against opening hours.
- * The quiz's price answer is sent to the server; if nothing fits it, the search runs once
- * more without it and the screen says the price answer was left out.
+ * Picks come from the server search (search_dishes in Supabase mode), not the capped local
+ * cache, then are ranked by taste and checked against opening hours. The quiz's cuisine, staple
+ * and price answers are sent to the server. When nothing fits them all, the search widens the
+ * radius first and only then drops answers (staple, cuisine, price), so an answer is not "left
+ * out" while a match sits one step further away; the screen lists whatever was dropped.
  */
 async function loadCandidates(
   tasteVector: TasteVector,
+  hasTasteProfile: boolean,
   dietaryFlags: DietaryFlag[],
   radius: number,
   location: Coordinate,
   maxDishBudget?: number,
-  maxPrice?: number,
-): Promise<OpenAwareCandidates> {
+  answers?: DecideAnswers,
+  venueCache: Map<string, VenueSummary> = new Map(),
+): Promise<LoadedCandidates> {
   const service = getHungryService();
   // Pass the user's location so the radius is measured from them, matching the radius chip.
-  const search = (priceCeiling?: number) =>
-    service.discovery.searchDishes(
+  const search = async (
+    searchRadius: number,
+    dropped: Parameters<typeof decideServerFilters>[1],
+  ) => {
+    const { maxPrice, ...keywords } = answers ? decideServerFilters(answers, dropped) : {};
+    const results = await service.discovery.searchDishes(
       {
         query: "",
         categories: [],
         dietaryFlags,
         tasteValues: tasteVector,
-        radius,
+        radius: searchRadius,
         latitude: location.latitude,
         longitude: location.longitude,
-        maxPrice: priceCeiling,
+        maxPrice,
         limit: DECIDE_POOL_SIZE,
+        ...keywords,
       },
       tasteVector,
     );
-  let results = await search(maxPrice);
-  if (!results.length && maxPrice !== undefined) results = await search(undefined);
-  const ranked = rankDecideCandidates(
-    results.map((result) => result.dish),
-    { tasteVector, dietaryFlags, radiusMeters: radius, maxDishBudget },
-  );
+    return rankDecideCandidates(
+      results.map((result) => result.dish),
+      { tasteVector, hasTasteProfile, dietaryFlags, radiusMeters: searchRadius, maxDishBudget },
+    );
+  };
+  let usedRadius = radius;
+  let ranked = await search(radius, []);
+  const given = answers ? givenServerAnswers(answers) : [];
+  if (!ranked.length && given.length) {
+    for (const wider of RADIUS_STEPS_METERS.filter((step) => step > radius)) {
+      // n-plus-one-ok: each pass searches a wider ring and stops at the first that has a match
+      ranked = await search(wider, []);
+      if (ranked.length) {
+        usedRadius = wider;
+        break;
+      }
+    }
+    for (let count = 1; !ranked.length && count <= given.length; count += 1) {
+      // n-plus-one-ok: one more answer is dropped on each pass, at most three searches
+      ranked = await search(radius, given.slice(0, count));
+    }
+  }
   const venueIds = [...new Set(ranked.map((dish) => dish.venueId))].slice(0, MAX_OPEN_STATE_VENUES);
-  const venues = await service.discovery.getVenuesByIds(venueIds).catch(() => []);
-  return preferOpenStalls(ranked, new Map(venues.map((venue) => [venue.id, venue])));
+  // Hours are read once per visit: a wider ring or a new answer only asks for the stalls not seen.
+  const unread = venueIds.filter((id) => !venueCache.has(id));
+  if (unread.length > 0) {
+    const venues = await service.discovery.getVenuesByIds(unread).catch(() => []);
+    for (const venue of venues) venueCache.set(venue.id, venue);
+  }
+  return { ...preferOpenStalls(ranked, venueCache), radius: usedRadius };
 }
 
 /** "Malay", "Malay and Under S$5", "Malay, Noodles and Spicy". */
@@ -222,12 +285,7 @@ function joinLabels(labels: string[]) {
 }
 
 function formatDistance(distanceMeters: number) {
-  if (!Number.isFinite(distanceMeters) || distanceMeters <= 0) {
-    return undefined;
-  }
-  return distanceMeters < 1000
-    ? `${Math.round(distanceMeters)} m away`
-    : `${(distanceMeters / 1000).toFixed(1)} km away`;
+  return formatDistanceLabel(distanceMeters, { away: true });
 }
 
 const PICK_REASON_DIMS: { key: keyof TasteVector; label: string }[] = [
@@ -257,6 +315,18 @@ function buildPickReason(
     : match >= 60
       ? `A strong pick based on your ${topMatch.label.toLowerCase()} and ${sortedDims[1].label.toLowerCase()} preferences.`
       : `A nearby pick that still aligns with your strongest taste dimensions.`;
+}
+
+/** Why a backup beats (or differs from) the current pick, in the signals the diner can check. */
+function buildAlternativeReason(pick: DishDetail, current: DishDetail, matchPercent?: number) {
+  const reasons: string[] = [];
+  if (matchPercent !== undefined) reasons.push(`${matchPercent}% match`);
+  if (pick.distanceMeters > 0 && pick.distanceMeters < current.distanceMeters - 50) {
+    reasons.push("Closer");
+  }
+  if (pick.price > 0 && current.price > 0 && pick.price < current.price) reasons.push("Cheaper");
+  if (pick.reviewCount > 0 && pick.rating >= current.rating + 0.2) reasons.push("Higher rated");
+  return reasons.length ? reasons.join(" · ") : "Another good option nearby";
 }
 
 /** The next two distinct candidates after the current pick, shown as backups. */
@@ -296,14 +366,16 @@ export function DecideForMeResultScreen() {
   // Same effective location as the Discover feed: a manual pick wins over GPS.
   const { coordinate: effectiveLocation, isApproximate: isLocationApproximate } =
     getEffectiveLocation({ permission: locationPermission, currentLocation, manualCoordinate });
-  const [searchRadius, setSearchRadius] = useState(INITIAL_RADIUS_METERS);
+  const [searchRadius, setSearchRadius] = useState(() =>
+    // Read once, as the quiz does, so a flag that loads later cannot move the ring mid-visit.
+    decideInitialRadiusMeters({ expose: true }),
+  );
   const [resultIndex, setResultIndex] = useState(0);
   const route = useRoute<RouteProp<RootStackParamList, "DecideForMeResult">>();
   // Where Decide-for-me was opened from. Discover tracks `decide_for_me_triggered`
   // before navigating; every other entry point is tracked here, once per open.
   const entrySurface = route.params?.surface ?? "direct";
   const answers = route.params?.answers;
-  const maxPrice = answers ? decideAnswerMaxPrice(answers) : undefined;
 
   // The taste vector as it was when the screen opened. Every tap here records a taste signal
   // that moves the stored vector; reading it live would refetch the pool, restart the match
@@ -323,7 +395,7 @@ export function DecideForMeResultScreen() {
     if (entrySurface === "discover") return; // Discover tracks the trigger itself.
     trackAnalyticsEvent("decide_for_me_triggered", {
       surface: entrySurface,
-      radius_m: INITIAL_RADIUS_METERS,
+      radius_m: decideInitialRadiusMeters(),
     });
   }, [entrySurface]);
 
@@ -334,13 +406,28 @@ export function DecideForMeResultScreen() {
   }, [setDecideForMe]);
 
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
+  // The swipe handler is built once; it calls whatever "Another pick" does on the latest render.
+  const anotherPickRef = useRef<() => void>(() => undefined);
+  const swipeResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) =>
+        Math.abs(gesture.dx) > 16 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dx <= SWIPE_ANOTHER_PICK_DX) anotherPickRef.current();
+      },
+    }),
+  ).current;
 
   const { history: foodHistory, openness } = useFoodHistory();
   // The last finished load stays on screen while a wider radius loads.
-  const [candidatePool, setCandidatePool] = useState<OpenAwareCandidates>();
+  const [candidatePool, setCandidatePool] = useState<LoadedCandidates>();
+  // The radius the shown picks were found within: wider than asked when the answers needed it.
+  const shownRadius = candidatePool?.radius ?? searchRadius;
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
+  const venueCacheRef = useRef(new Map<string, VenueSummary>());
   // Dishes the person turned down with "Not for me" are not offered again on this visit.
   const [dismissedIds, setDismissedIds] = useState<ReadonlySet<string>>(() => new Set());
   const locationLatitude = effectiveLocation.latitude;
@@ -357,11 +444,13 @@ export function DecideForMeResultScreen() {
     setLoadFailed(false);
     loadCandidates(
       tasteVector,
+      hasTasteProfile,
       profile.dietaryPreferences,
       searchRadius,
       { latitude: locationLatitude, longitude: locationLongitude },
       profile.maxDishBudget,
-      maxPrice,
+      answers,
+      venueCacheRef.current,
     ).then(
       (pool) => {
         if (!active) return;
@@ -383,9 +472,10 @@ export function DecideForMeResultScreen() {
     isLocationApproximate,
     locationLatitude,
     locationLongitude,
-    maxPrice,
+    answers,
     profile.dietaryPreferences,
     profile.maxDishBudget,
+    hasTasteProfile,
     reloadCount,
     searchRadius,
     tasteVector,
@@ -401,13 +491,18 @@ export function DecideForMeResultScreen() {
   );
   const matchingCandidates = useMemo(
     () =>
-      // Openness sets how often a pick is a dish they know versus something new.
-      mixByFoodHistory(answerResult.dishes, {
-        history: foodHistory,
-        openness,
-        lookup: (dishId) => repository.getDishById(dishId),
-      }),
-    [answerResult, foodHistory, openness, repository],
+      // Openness sets how often a pick is a dish they know versus something new, but a dish never
+      // moves above one that matches more than a few points better: the order follows the match.
+      keepScoreOrder(
+        mixByFoodHistory(answerResult.dishes, {
+          history: foodHistory,
+          openness,
+          lookup: (dishId) => repository.getDishById(dishId),
+        }),
+        (candidate) =>
+          hasTasteProfile ? tasteMatchPercent(tasteVector, candidate.tasteVector) : 0,
+      ),
+    [answerResult, foodHistory, hasTasteProfile, openness, repository, tasteVector],
   );
   const candidates = useMemo(
     () => matchingCandidates.filter((candidate) => !dismissedIds.has(candidate.id)),
@@ -483,7 +578,12 @@ export function DecideForMeResultScreen() {
   }, [shownDishId]);
   const match = dish ? tasteMatchPercent(tasteVector, dish.tasteVector) : 0;
 
-  const HERO_HEIGHT = screenWidth * 1.1;
+  // Short enough that the dish name, price and stall sit above the fold on a 390 x 844 screen.
+  // Without a photo the hero shrinks to a slim plate under the back button, so the answer
+  // (dish, price, Directions) sits higher instead of under an empty block.
+  const HERO_HEIGHT = dish?.imageUrl
+    ? screenWidth * HERO_HEIGHT_RATIO
+    : insets.top + NO_PHOTO_HERO_HEIGHT;
 
   const heroStyle = {
     transform: [
@@ -518,21 +618,32 @@ export function DecideForMeResultScreen() {
     if (!hasNoMatch) return;
     trackAnalyticsEvent("decide_for_me_no_match", {
       surface: entrySurface,
-      radius_m: searchRadius,
+      radius_m: shownRadius,
     });
-  }, [entrySurface, hasNoMatch, searchRadius]);
+  }, [entrySurface, hasNoMatch, shownRadius]);
+
+  const pickRadius = (id: string) => {
+    const target = Number(id);
+    trackAnalyticsEvent("decide_for_me_radius_picked", {
+      surface: entrySurface,
+      from_radius_m: shownRadius,
+      to_radius_m: target,
+    });
+    if (target === searchRadius) setReloadCount((count) => count + 1);
+    setSearchRadius(target);
+  };
 
   const widenRadius = (target: number) => {
     trackAnalyticsEvent("decide_for_me_radius_expanded", {
       surface: entrySurface,
-      from_radius_m: searchRadius,
+      from_radius_m: shownRadius,
       to_radius_m: target,
     });
     setSearchRadius(target);
   };
 
   const expandRadius = () => {
-    const target = nextRadius(searchRadius);
+    const target = nextRadius(shownRadius);
     if (!target) {
       showToast({ message: "Already searching the widest radius.", tone: "info" });
       return;
@@ -540,10 +651,21 @@ export function DecideForMeResultScreen() {
     widenRadius(target);
   };
 
-  const radiusKm = (searchRadius / 1000).toFixed(1);
+  const radiusKm = (shownRadius / 1000).toFixed(1);
+
+  // A new pick starts at the top of the screen and is read out, so the change is not silent.
+  const showNewPick = (nextDish: DishDetail | undefined) => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    if (nextDish) {
+      AccessibilityInfo.announceForAccessibility(
+        `New pick: ${nextDish.name} at ${nextDish.venueName}`,
+      );
+    }
+  };
 
   const handleTryAnother = () => {
     if (!dish) return;
+    trackAnalyticsEvent("decide_reroll", { surface: entrySurface, seen: dismissedIds.size + 1 });
     recordTasteInteraction({
       type: "dismissed",
       surface: "decide",
@@ -554,7 +676,7 @@ export function DecideForMeResultScreen() {
     const remaining = candidates.filter((candidate) => candidate.id !== dish.id);
     if (!remaining.length) {
       // Every match here has been seen: look further out, or say that is everything.
-      const upcomingRadius = nextRadius(searchRadius);
+      const upcomingRadius = nextRadius(shownRadius);
       if (upcomingRadius) {
         widenRadius(upcomingRadius);
         showToast({
@@ -571,7 +693,15 @@ export function DecideForMeResultScreen() {
     const nextIndex = Math.min(resultIndex, remaining.length - 1);
     setResultIndex(nextIndex);
     setDecideForMe(remaining[nextIndex]);
+    showNewPick(remaining[nextIndex]);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  };
+
+  anotherPickRef.current = handleTryAnother;
+
+  // The quiz again from question 1; dismissed dishes stay hidden (food history keeps them 30 days).
+  const startOver = () => {
+    navigation.replace("DecideForMeQuiz", {});
   };
 
   const changeAnswers = () => {
@@ -579,20 +709,16 @@ export function DecideForMeResultScreen() {
   };
 
   if (isLocationApproximate) {
-    // Same picker Discover offers in this state.
     return (
-      <Screen title="Recommended for you" subtitle="Choose your area to get a pick near you.">
-        <EmptyState
-          title="Choose your area"
-          body="Hungry doesn't know where you are yet, so it can't pick a dish near you."
-        />
-        <Button
-          label="Choose your area"
-          onPress={() => navigation.navigate("OnboardingStack", { screen: "ManualLocationPicker" })}
+      <Screen title="Your pick">
+        <LocationGate
+          source="decide"
+          title="Where are you eating?"
+          body="Decide for me picks a dish near you, so it needs to know where you are."
         />
         <Button
           label="Back to Discover"
-          variant="secondary"
+          variant="ghost"
           onPress={() => navigation.navigate("MainTabs", { screen: "Discover" })}
         />
       </Screen>
@@ -601,7 +727,7 @@ export function DecideForMeResultScreen() {
 
   if (loadFailed) {
     return (
-      <Screen title="Recommended for you" subtitle="Couldn't load picks.">
+      <Screen title="Your pick">
         <EmptyState title="Couldn't load picks" body="Check your connection and try again." />
         <Button label="Try again" onPress={() => setReloadCount((count) => count + 1)} />
         <Button
@@ -615,7 +741,7 @@ export function DecideForMeResultScreen() {
 
   if (!dish && isLoadingCandidates) {
     return (
-      <Screen title="Recommended for you" subtitle="Finding a dish near you…">
+      <Screen title="Your pick" subtitle="Finding a dish near you…">
         <View
           accessible
           accessibilityLabel="Finding a dish near you"
@@ -629,21 +755,17 @@ export function DecideForMeResultScreen() {
   }
 
   if (!dish) {
-    const upcomingRadius = nextRadius(searchRadius);
+    const upcomingRadius = nextRadius(shownRadius);
     return (
-      <Screen
-        title="Recommended for you"
-        subtitle={
-          hasSeenEveryMatch
-            ? "That's every match nearby."
-            : "No matching dish for current filters yet."
-        }
-      >
+      <Screen title="Your pick">
+        {/* One line says it once: the header and the buttons carry the rest. */}
         <EmptyState
-          title={hasSeenEveryMatch ? "That's everything nearby" : "No match found"}
+          title={
+            hasSeenEveryMatch ? `You've seen every match within ${radiusKm} km` : "No match found"
+          }
           body={
             hasSeenEveryMatch
-              ? `You've seen every match within ${radiusKm} km.`
+              ? "Widen the radius, change your answers or start over."
               : `No dish fits your current filters within ${radiusKm} km.`
           }
         />
@@ -652,6 +774,18 @@ export function DecideForMeResultScreen() {
             label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`}
             onPress={expandRadius}
           />
+        ) : null}
+        {answers ? (
+          <Button
+            label={
+              describeDecideAnswers(answers).length ? "Change answers" : "Answer a few questions"
+            }
+            variant="secondary"
+            onPress={changeAnswers}
+          />
+        ) : null}
+        {hasSeenEveryMatch ? (
+          <Button label="Start over" variant="ghost" onPress={startOver} />
         ) : null}
         <Button
           label="Back to Discover"
@@ -667,27 +801,22 @@ export function DecideForMeResultScreen() {
     .filter(Boolean)
     .join(" · ");
   const building = findBuildingById(dish.buildingId);
-  const stallAddress = venue
-    ? formatFullStallAddress(venue, {
-        name: venue.buildingName ?? building?.name,
-        address: venue.address,
-        postalCode: venue.postalCode,
-      })
-    : "";
+  // Directions never wait on the stall read: the dish row and its building are enough.
+  const directionsUrl = buildStallMapsUrl({
+    name: venue?.name || dish.venueName,
+    buildingName: venue?.buildingName ?? building?.name,
+    address: venue?.address,
+    postalCode: venue?.postalCode,
+  });
   // Distance from the built-in default point is not distance from the user.
   const distanceLabel = isLocationApproximate ? undefined : formatDistance(dish.distanceMeters);
   const isSaved = profile.favouriteDishIds.includes(dish.id);
   // Open now in Singapore time; a closed pick says when it opens.
   const openState = candidatePool?.openStateByVenueId.get(dish.venueId);
-  const openLabel =
-    openState?.status === "open"
-      ? ["Open now", openState.detail].filter(Boolean).join(" · ")
-      : openState?.status === "closed"
-        ? ["Closed", openState.detail].filter(Boolean).join(" · ")
-        : undefined;
+  const openLabel = formatOpenLabel(openState);
+  const isClosedPick = openState?.status === "closed";
 
   const handleDirections = () => {
-    if (!stallAddress) return;
     trackAnalyticsEvent("directions_opened", {
       dish_id: dish.id,
       stall_id: dish.venueId,
@@ -699,7 +828,7 @@ export function DecideForMeResultScreen() {
       dish,
       buttonId: "directions",
     });
-    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress));
+    void openTrustedMapsUrl(directionsUrl);
   };
 
   const handleSave = () => {
@@ -734,6 +863,10 @@ export function DecideForMeResultScreen() {
     .map((chip) => chip.label);
 
   const handleOtherPick = (pick: DishDetail) => {
+    trackAnalyticsEvent("decide_other_pick", {
+      surface: entrySurface,
+      position: otherPicks.findIndex((candidate) => candidate.id === pick.id),
+    });
     recordTasteInteraction({
       type: "food_button_click",
       surface: "decide",
@@ -743,6 +876,7 @@ export function DecideForMeResultScreen() {
     const pickIndex = candidates.findIndex((candidate) => candidate.id === pick.id);
     if (pickIndex >= 0) setResultIndex(pickIndex);
     setDecideForMe(pick);
+    showNewPick(pick);
   };
 
   return (
@@ -752,18 +886,27 @@ export function DecideForMeResultScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go back"
-          hitSlop={4}
           onPress={() => navigation.goBack()}
           style={[styles.navBtn, { backgroundColor: palette.surfaceTranslucent }]}
         >
-          <ChevronLeft color={palette.text} size={24} />
+          <AppSymbol
+            name="chevron.backward"
+            fallback={ChevronLeft}
+            color={palette.text}
+            size={22}
+            weight="semibold"
+          />
         </Pressable>
-        <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>
-          Recommended
+        <AppText
+          variant="h3"
+          style={{ flex: 1, textAlign: "center", marginRight: BACK_BUTTON_SIZE }}
+        >
+          Your pick
         </AppText>
       </View>
 
       <Animated.ScrollView
+        ref={scrollRef as never}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
           useNativeDriver: true,
         })}
@@ -772,16 +915,34 @@ export function DecideForMeResultScreen() {
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
       >
         {/* Parallax Hero */}
-        <Animated.View style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}>
+        <Animated.View
+          {...swipeResponder.panHandlers}
+          style={[styles.heroContainer, { height: HERO_HEIGHT }, heroStyle]}
+        >
           {dish.imageUrl ? (
             <AccessibleImage
               source={{ uri: dish.imageUrl }}
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               accessibilityLabel={`${dish.name} photo`}
+              fallback={
+                <NoDishPhoto
+                  designed
+                  dishName={dish.name}
+                  logoUrl={venue?.logoUrl}
+                  style={StyleSheet.absoluteFill}
+                  iconSize={48}
+                />
+              }
             />
           ) : (
-            <NoDishPhoto dishName={dish.name} style={StyleSheet.absoluteFill} iconSize={56} />
+            <NoDishPhoto
+              designed
+              dishName={dish.name}
+              logoUrl={venue?.logoUrl}
+              style={StyleSheet.absoluteFill}
+              iconSize={48}
+            />
           )}
           <LinearGradient
             colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
@@ -791,6 +952,52 @@ export function DecideForMeResultScreen() {
 
         {/* Content */}
         <View style={{ paddingHorizontal: spacing[4], gap: spacing[6], marginTop: -40 }}>
+          {/* What and where come first: the name, price and stall sit above the fold. */}
+          <View style={{ gap: spacing[2] }}>
+            <AppText variant="displayBold">{dish.name}</AppText>
+            <AppText variant="h2" tone="secondary" style={{ color: palette.accentText }}>
+              {formatDishPrice(dish)}
+            </AppText>
+            {stallLine ? (
+              <AppText variant="bodyLarge" tone="secondary">
+                {stallLine}
+              </AppText>
+            ) : null}
+            {distanceLabel || updatedLabel ? (
+              <AppText variant="body" tone="muted">
+                {[distanceLabel, updatedLabel].filter(Boolean).join(" · ")}
+              </AppText>
+            ) : null}
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: spacing[2],
+              }}
+            >
+              {openLabel ? (
+                <Badge
+                  label={openLabel}
+                  tone={openState?.status === "open" ? "success" : "warning"}
+                />
+              ) : null}
+              {dish.mustOrder && <Badge label="Must order" tone="amber" />}
+            </View>
+          </View>
+
+          {candidatePool?.onlyClosed ? (
+            <Card
+              accessibilityRole="alert"
+              style={{ backgroundColor: palette.bgSoft, padding: spacing[4] }}
+              testID="decide-all-closed"
+            >
+              <AppText variant="bodySmall" tone="secondary">
+                {`Everything within ${radiusKm} km is closed right now. This one opens soonest.`}
+              </AppText>
+            </Card>
+          ) : null}
+
           {hasTasteProfile ? (
             <AnimatedMatchBadge percent={match} />
           ) : (
@@ -824,7 +1031,7 @@ export function DecideForMeResultScreen() {
                 </AppText>
               ) : null}
               <Button
-                label="Change answers"
+                label={answerChips.length ? "Change answers" : "Answer a few questions"}
                 variant="ghost"
                 fullWidth={false}
                 style={{ alignSelf: "flex-start" }}
@@ -833,41 +1040,33 @@ export function DecideForMeResultScreen() {
             </View>
           ) : null}
 
-          <View style={{ gap: spacing[2] }}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-              <Badge label={`Radius ${radiusKm} km`} tone="neutral" />
-              {isLoadingCandidates ? (
-                // A wider radius is loading; the current pick stays until it arrives.
-                <View
-                  accessible
-                  accessibilityLabel={`Looking within ${radiusKm} km`}
-                  accessibilityLiveRegion="polite"
-                  testID="decide-radius-loading"
-                >
-                  <ActivityIndicator color={palette.orange} size="small" />
-                </View>
-              ) : null}
-              {openLabel ? (
-                <Badge
-                  label={openLabel}
-                  tone={openState?.status === "open" ? "success" : "warning"}
-                />
-              ) : null}
-              {dish.mustOrder && <Badge label="Must order" tone="amber" />}
-            </View>
-            <AppText variant="displayBold">{dish.name}</AppText>
-            <AppText variant="h2" tone="secondary" style={{ color: palette.accentText }}>
-              {formatDishPrice(dish)}
+          <View
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: spacing[2],
+            }}
+          >
+            <AppText variant="bodySmall" tone="secondary">
+              Within
             </AppText>
-            {stallLine ? (
-              <AppText variant="bodyLarge" tone="secondary">
-                {stallLine}
-              </AppText>
-            ) : null}
-            {distanceLabel || updatedLabel ? (
-              <AppText variant="body" tone="muted">
-                {[distanceLabel, updatedLabel].filter(Boolean).join(" · ")}
-              </AppText>
+            <ChipGroup
+              options={radiusOptions(shownRadius)}
+              selectedId={String(shownRadius)}
+              onSelect={pickRadius}
+              style={{ flexShrink: 1, gap: spacing[1] }}
+            />
+            {isLoadingCandidates ? (
+              // A wider radius is loading; the current pick stays until it arrives.
+              <View
+                accessible
+                accessibilityLabel={`Looking within ${radiusKm} km`}
+                accessibilityLiveRegion="polite"
+                testID="decide-radius-loading"
+              >
+                <ActivityIndicator color={palette.orange} size="small" />
+              </View>
             ) : null}
           </View>
 
@@ -922,7 +1121,14 @@ export function DecideForMeResultScreen() {
             <Button
               label="Share with friends"
               variant="secondary"
-              leftIcon={<Share2 size={18} color={palette.text} />}
+              leftIcon={
+                <AppSymbol
+                  name="square.and.arrow.up"
+                  fallback={Share2}
+                  size={18}
+                  color={palette.text}
+                />
+              }
               onPress={handleShare}
             />
             <Button
@@ -938,20 +1144,15 @@ export function DecideForMeResultScreen() {
                 navigation.navigate("StallDetail", { venueId: dish.venueId });
               }}
             />
-            <Button
-              label="Not for me"
-              variant="ghost"
-              accessibilityLabel={`Not for me, show another pick instead of ${dish.name}`}
-              leftIcon={<Shuffle size={18} color={palette.text} />}
-              onPress={handleTryAnother}
-            />
           </View>
 
           {otherPicks.length ? (
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Other picks</AppText>
               {otherPicks.map((pick) => {
-                const pickMatch = tasteMatchPercent(tasteVector, pick.tasteVector);
+                const pickMatch = hasTasteProfile
+                  ? tasteMatchPercent(tasteVector, pick.tasteVector)
+                  : undefined;
                 // Same rule as the main pick: no distance from the default point.
                 const pickDistance = isLocationApproximate
                   ? undefined
@@ -960,7 +1161,7 @@ export function DecideForMeResultScreen() {
                   <Pressable
                     key={pick.id}
                     accessibilityRole="button"
-                    accessibilityLabel={`Pick ${pick.name}, ${formatDishPrice(pick)}`}
+                    accessibilityLabel={`Pick ${pick.name} at ${pick.venueName}, ${formatDishPrice(pick)}`}
                     onPress={() => handleOtherPick(pick)}
                     style={({ pressed }) => [
                       {
@@ -980,6 +1181,13 @@ export function DecideForMeResultScreen() {
                         style={{ borderRadius: radii.sm, height: 56, width: 56 }}
                         contentFit="cover"
                         decorative
+                        fallback={
+                          <NoDishPhoto
+                            dishName={pick.name}
+                            style={{ borderRadius: radii.sm, height: 56, width: 56 }}
+                            iconSize={20}
+                          />
+                        }
                       />
                     ) : (
                       <NoDishPhoto
@@ -993,10 +1201,12 @@ export function DecideForMeResultScreen() {
                         {pick.name}
                       </AppText>
                       <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                        {[formatDishPrice(pick), pickDistance].filter(Boolean).join(" · ")}
+                        {[pick.venueName, formatDishPrice(pick), pickDistance]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </AppText>
                       <AppText variant="bodySmall" tone="muted" numberOfLines={2}>
-                        {buildPickReason(tasteVector, pick, pickMatch, hasTasteProfile)}
+                        {buildAlternativeReason(pick, dish, pickMatch)}
                       </AppText>
                     </View>
                   </Pressable>
@@ -1018,33 +1228,53 @@ export function DecideForMeResultScreen() {
           },
         ]}
       >
-        {/* No ordering exists yet: the main action is getting there, plus saving for later. */}
+        {/* No ordering exists yet: the main actions are getting there or asking for another pick. */}
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
-          {stallAddress ? (
-            <Button
-              label="Directions"
-              fullWidth={false}
-              style={{ flex: 2 }}
-              leftIcon={<Navigation size={18} color={palette.white} />}
-              labelColor={palette.white}
-              onPress={handleDirections}
-            />
-          ) : null}
+          {/* A pick that is closed until later: Another pick leads, Directions waits its turn. */}
           <Button
-            label={isSaved ? "Saved" : "Save"}
-            variant="secondary"
+            label="Directions"
+            variant={isClosedPick ? "secondary" : "primary"}
             fullWidth={false}
-            style={{ flex: 1 }}
-            accessibilityLabel={isSaved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
-            leftIcon={
-              <Heart
-                size={18}
-                color={isSaved ? palette.orange : palette.text}
-                fill={isSaved ? palette.orange : "transparent"}
-              />
-            }
-            onPress={handleSave}
+            style={{ flex: 1, paddingHorizontal: spacing[2] }}
+            labelNumberOfLines={1}
+            labelColor={isClosedPick ? undefined : palette.white}
+            onPress={handleDirections}
           />
+          <Button
+            label="Another pick"
+            variant={isClosedPick ? "primary" : "secondary"}
+            fullWidth={false}
+            style={{ flex: 1, paddingHorizontal: spacing[2] }}
+            labelNumberOfLines={1}
+            labelColor={isClosedPick ? palette.white : undefined}
+            accessibilityLabel={`Another pick instead of ${dish.name}`}
+            onPress={handleTryAnother}
+          />
+          {/* Icon only, so the two actions above keep their full labels on a 390 pt screen. */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isSaved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
+            accessibilityState={{ selected: isSaved }}
+            onPress={handleSave}
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: radii.md,
+              borderWidth: 1,
+              height: 52,
+              justifyContent: "center",
+              width: 52,
+            }}
+          >
+            <AppSymbol
+              name={isSaved ? "heart.fill" : "heart"}
+              fallback={Heart}
+              filled={isSaved}
+              size={22}
+              color={isSaved ? palette.orange : palette.text}
+            />
+          </Pressable>
         </View>
       </View>
     </View>
@@ -1062,8 +1292,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   navBtn: {
-    width: 40,
-    height: 40,
+    width: BACK_BUTTON_SIZE,
+    height: BACK_BUTTON_SIZE,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",

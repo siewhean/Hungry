@@ -1,10 +1,11 @@
-import type { PropsWithChildren, ReactNode, RefObject } from "react";
+import type { PropsWithChildren, ReactElement, ReactNode, RefObject } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   View,
+  type RefreshControlProps,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -18,6 +19,8 @@ interface ScreenProps {
   title?: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  /** Replaces the back button (e.g. a Cancel text button on a modal editor). */
+  headerLeft?: ReactNode;
   showBack?: boolean;
   /** Replaces the header back button's goBack (e.g. to confirm discarding unsaved changes). */
   onBackPress?: () => void;
@@ -26,9 +29,13 @@ interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   fullWidth?: boolean;
-  scrollRef?: RefObject<ScrollView>;
+  scrollRef?: RefObject<ScrollView | null>;
   /** Lifts the content above the iOS keyboard (forms). Android resizes the window itself. */
   keyboardAvoiding?: boolean;
+  /** Pull-to-refresh for a scrolling screen. */
+  refreshControl?: ReactElement<RefreshControlProps>;
+  /** Pinned below the scrolling content (e.g. a form's Save button). */
+  footer?: ReactNode;
 }
 
 export function Screen({
@@ -36,6 +43,7 @@ export function Screen({
   title,
   subtitle,
   headerRight,
+  headerLeft,
   showBack = true,
   onBackPress,
   headerGap,
@@ -45,6 +53,8 @@ export function Screen({
   fullWidth = false,
   scrollRef,
   keyboardAvoiding = false,
+  refreshControl,
+  footer,
 }: PropsWithChildren<ScreenProps>) {
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const styles = createStyles(spacing);
@@ -53,12 +63,13 @@ export function Screen({
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
   const header =
-    title || headerRight ? (
+    title || headerRight || headerLeft ? (
       <AppHeader
         title={title}
         subtitle={subtitle}
         showBack={showBack}
         onBackPress={onBackPress}
+        left={headerLeft}
         right={headerRight}
         horizontalPadding={fullWidth ? semanticSpacing.screenEdge : 0}
       />
@@ -81,6 +92,7 @@ export function Screen({
       onScroll={onScroll}
       scrollEventThrottle={scrollEventThrottle}
       keyboardShouldPersistTaps="handled"
+      refreshControl={refreshControl}
     >
       <View
         style={[
@@ -118,6 +130,22 @@ export function Screen({
     </View>
   );
 
+  const pinnedFooter = footer ? (
+    <View
+      style={{
+        borderTopWidth: 1,
+        borderTopColor: palette.border,
+        backgroundColor: palette.bg,
+        paddingTop: spacing[3],
+        paddingBottom: Math.max(insets.bottom, spacing[3]),
+        paddingHorizontal: semanticSpacing.screenEdge,
+        alignItems: "center",
+      }}
+    >
+      <View style={styles.inner}>{footer}</View>
+    </View>
+  ) : null;
+
   return (
     <SafeAreaView
       style={[styles.safeArea, { backgroundColor: palette.bg }, style]}
@@ -129,9 +157,13 @@ export function Screen({
           style={styles.flex}
         >
           {body}
+          {pinnedFooter}
         </KeyboardAvoidingView>
       ) : (
-        body
+        <>
+          {body}
+          {pinnedFooter}
+        </>
       )}
     </SafeAreaView>
   );

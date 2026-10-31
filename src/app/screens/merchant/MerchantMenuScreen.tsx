@@ -1,20 +1,32 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { View, StyleSheet, Pressable, FlatList, RefreshControl, Switch } from "react-native";
-import { Plus, Search, MoreVertical, Camera, X } from "lucide-react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  SectionList,
+  RefreshControl,
+  Switch,
+  Modal,
+} from "react-native";
+import { Camera, Info, MoreVertical, Plus, Search, X } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
+  PressableScale,
   Button,
   Dialog,
   IconButton,
   EmptyState,
   FAB,
   FilterChipRail,
+  InlineBanner,
   InlineSearchField,
+  Input,
   Screen,
   Skeleton,
 } from "@/components/ui";
@@ -24,11 +36,22 @@ import {
   prefetchStallDetail,
   preloadRoute,
 } from "@/features/navigation/prefetch";
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import { getDishSection, hasAvailabilityFlag } from "@/features/merchant/menuSections";
-import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
+import {
+  getDishSection,
+  groupDishesBySection,
+  hasAvailabilityFlag,
+} from "@/features/merchant/menuSections";
+import { formatDishPrice, parseDishPrice } from "@/features/merchant/dishPrice";
+import {
+  MAX_FEATURED_DISHES,
+  countFeaturedDishes,
+  isFeaturedLimitError,
+} from "@/features/merchant/featuredDishes";
+import { isLockedLiveDish, isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -54,11 +77,6 @@ function showError(showAlert: ShowMerchantAlert, title: string, error: unknown) 
  */
 const MENU_PHOTO_DRAFTS_ENABLED = false;
 
-/** Until verification, only drafts can change: the database refuses edits to live dishes. */
-function isLockedLiveDish(dish: DishDetail, isVerified: boolean): boolean {
-  return !isVerified && dish.isMerchantDraft === false;
-}
-
 function withSoldOut(dish: DishDetail, soldOut: boolean): DishDetail {
   const flags = (dish.availabilityFlags || []).filter((f) => !hasAvailabilityFlag([f], "sold_out"));
   return { ...dish, availabilityFlags: soldOut ? [...flags, "sold_out"] : flags };
@@ -81,6 +99,9 @@ export function MerchantMenuScreen() {
 
   const [menu, setMenu] = useState<DishDetail[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  // Only the newest load may write: an outlet switch or a quick refocus never lets an older
+  // response land last.
+  const latestRequestId = useRef(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   // Dishes with a Featured request in flight: a second tap waits instead of flipping it back.
   const featuredInFlight = useRef(new Set<string>());
@@ -88,6 +109,9 @@ export function MerchantMenuScreen() {
   const [filter, setFilter] = useState<MenuFilter>("all");
   const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [priceEdit, setPriceEdit] = useState<{ dish: DishDetail; value: string } | null>(null);
+  const [priceError, setPriceError] = useState<string | undefined>();
+  const [isSavingPrice, setIsSavingPrice] = useState(false);
   const [dishDialog, setDishDialog] = useState<{
     dish: DishDetail;
     confirmDelete: boolean;
@@ -95,20 +119,33 @@ export function MerchantMenuScreen() {
   // Dialog closes itself after a button press; "Remove from menu" switches to the confirm step.
   const keepDishDialogOpen = useRef(false);
 
+  const activeOutletId = activeOutlet?.id;
+
+  // The previous outlet's dishes must not show under the new one while it loads.
+  useEffect(() => {
+    latestRequestId.current += 1;
+    setMenu([]);
+    setError(null);
+    setIsLoading(false);
+  }, [activeOutletId]);
+
   const loadMenu = useCallback(async () => {
-    if (!activeOutlet) return;
+    if (!activeOutletId) return;
+    const requestId = ++latestRequestId.current;
     setIsLoading(true);
     setError(null);
     try {
-      const data = await getHungryService().merchant.getMenu(activeOutlet.id);
+      const data = await getHungryService().merchant.getMenu(activeOutletId);
+      if (requestId !== latestRequestId.current) return;
       setMenu(data);
     } catch (e) {
+      if (requestId !== latestRequestId.current) return;
       reportError(e, { screen: "MerchantMenu", action: "load_menu" });
       setError(e instanceof Error ? e.message : "Unable to load dishes.");
     } finally {
-      setIsLoading(false);
+      if (requestId === latestRequestId.current) setIsLoading(false);
     }
-  }, [activeOutlet]);
+  }, [activeOutletId]);
 
   const refreshMenu = useCallback(async () => {
     setIsRefreshing(true);
@@ -151,16 +188,11 @@ export function MerchantMenuScreen() {
     } else if (filter === "sold_out") {
       result = result.filter((d) => hasAvailabilityFlag(d.availabilityFlags, "sold_out"));
     }
-    // Group by menu section (unsectioned last), keeping newest-first within a section.
-    return [...result].sort((left, right) => {
-      const leftSection = getDishSection(left.availabilityFlags);
-      const rightSection = getDishSection(right.availabilityFlags);
-      if (leftSection === rightSection) return 0;
-      if (!leftSection) return 1;
-      if (!rightSection) return -1;
-      return leftSection.localeCompare(rightSection);
-    });
+    return result;
   }, [menu, searchQuery, filter]);
+  // Sections A to Z (unsectioned last), newest first within a section; no headers when the
+  // menu has no sections.
+  const menuSections = useMemo(() => groupDishesBySection(filteredMenu), [filteredMenu]);
   const isVerified = isVerificationCurrent(activeOutlet?.verification);
 
   useEffect(() => {
@@ -197,6 +229,7 @@ export function MerchantMenuScreen() {
   const handleToggleSoldOut = async (dish: DishDetail, soldOut?: boolean) => {
     if (!activeOutlet) return;
     const nextSoldOut = soldOut ?? !hasAvailabilityFlag(dish.availabilityFlags, "sold_out");
+    selectHaptic();
     setMenu((prev) => prev.map((d) => (d.id === dish.id ? withSoldOut(d, nextSoldOut) : d)));
     try {
       await getHungryService().merchant.toggleSoldOut(activeOutlet.id, dish.id, nextSoldOut);
@@ -248,11 +281,22 @@ export function MerchantMenuScreen() {
     }
   };
 
+  const showFeaturedLimit = () =>
+    showAlert(
+      `${MAX_FEATURED_DISHES} of ${MAX_FEATURED_DISHES} featured`,
+      "You can feature up to 3 dishes. Remove Featured from another dish first.",
+    );
+
   const handleToggleFeatured = async (dish: DishDetail) => {
     if (!activeOutlet || featuredInFlight.current.has(dish.id)) return;
     featuredInFlight.current.add(dish.id);
     // The explicit target state: a retried or repeated request cannot toggle it back.
     const nextFeatured = !hasAvailabilityFlag(dish.availabilityFlags, "featured");
+    if (nextFeatured && countFeaturedDishes(menu) >= MAX_FEATURED_DISHES) {
+      featuredInFlight.current.delete(dish.id);
+      showFeaturedLimit();
+      return;
+    }
     try {
       const featured = await getHungryService().merchant.toggleFeatured(
         activeOutlet.id,
@@ -276,10 +320,57 @@ export function MerchantMenuScreen() {
         ),
       );
     } catch (e) {
-      reportError(e, { screen: "MerchantMenu", action: "toggle_featured" });
-      showError(showAlert, "Could not update featured dish", e);
+      // A fourth featured dish refused by the database is an answer, not a failure to report.
+      if (isFeaturedLimitError(e)) {
+        showFeaturedLimit();
+      } else {
+        reportError(e, { screen: "MerchantMenu", action: "toggle_featured" });
+        showError(showAlert, "Could not update featured dish", e);
+      }
     } finally {
       featuredInFlight.current.delete(dish.id);
+    }
+  };
+
+  const openPriceEdit = (dish: DishDetail) => {
+    setPriceError(undefined);
+    setPriceEdit({ dish, value: dish.price ? dish.price.toFixed(2) : "" });
+  };
+
+  const closePriceEdit = () => {
+    if (isSavingPrice) return;
+    setPriceEdit(null);
+    setPriceError(undefined);
+  };
+
+  // A price change is its own small save: no trip through the full editor.
+  const handleSavePrice = async () => {
+    if (!activeOutlet || !priceEdit || isSavingPrice) return;
+    const price = parseDishPrice(priceEdit.value);
+    if (price === null) {
+      setPriceError("Enter a price between S$0.01 and S$9,999, e.g. 5.50.");
+      return;
+    }
+    const { dish } = priceEdit;
+    setIsSavingPrice(true);
+    setPriceError(undefined);
+    try {
+      await getHungryService().merchant.editDish(activeOutlet.id, dish.id, {
+        price,
+        priceRange: formatDishPrice(price),
+      });
+      trackMerchantEvent("merchant_dish_price_changed", activeOutlet.id);
+      setMenu((prev) =>
+        prev.map((d) =>
+          d.id === dish.id ? { ...d, price, priceRange: formatDishPrice(price) } : d,
+        ),
+      );
+      setPriceEdit(null);
+    } catch (e) {
+      reportError(e, { screen: "MerchantMenu", action: "edit_price" });
+      setPriceError(e instanceof Error && e.message ? e.message : "Could not save the price.");
+    } finally {
+      setIsSavingPrice(false);
     }
   };
 
@@ -331,8 +422,8 @@ export function MerchantMenuScreen() {
                 },
                 {
                   text: hasAvailabilityFlag(dishDialog.dish.availabilityFlags, "featured")
-                    ? "Remove from featured"
-                    : "Feature dish",
+                    ? `Remove from featured (${countFeaturedDishes(menu)} of ${MAX_FEATURED_DISHES})`
+                    : `Feature dish (${countFeaturedDishes(menu)} of ${MAX_FEATURED_DISHES} featured)`,
                   onPress: () => void handleToggleFeatured(dishDialog.dish),
                 },
               ]),
@@ -356,6 +447,7 @@ export function MerchantMenuScreen() {
   return (
     <Screen
       title="Menu"
+      showBack={false}
       scroll={false}
       headerRight={
         <Button
@@ -373,10 +465,11 @@ export function MerchantMenuScreen() {
       }
     >
       <View style={{ flex: 1, width: "100%" }}>
-        <FlatList
-          data={error ? [] : filteredMenu}
+        <SectionList
+          sections={error && menu.length === 0 ? [] : menuSections}
           keyExtractor={(dish) => dish.id}
           showsVerticalScrollIndicator={false}
+          stickySectionHeadersEnabled={false}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -385,25 +478,56 @@ export function MerchantMenuScreen() {
             />
           }
           contentContainerStyle={{ paddingBottom: spacing[20] }}
-          ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
+          ItemSeparatorComponent={() => <View style={{ height: spacing[2] }} />}
+          renderSectionHeader={({ section }) =>
+            section.title ? (
+              <View
+                accessibilityRole="header"
+                style={{
+                  flexDirection: "row",
+                  alignItems: "baseline",
+                  gap: spacing[2],
+                  paddingHorizontal: spacing[1],
+                  paddingTop: spacing[4],
+                  paddingBottom: spacing[2],
+                }}
+              >
+                <AppText variant="bodyBold">{section.title}</AppText>
+                <AppText variant="bodySmall" tone="muted">
+                  {section.data.length}
+                </AppText>
+              </View>
+            ) : null
+          }
           ListHeaderComponent={
-            <View style={{ gap: spacing[4], marginBottom: spacing[4] }}>
+            <View style={{ gap: spacing[4], marginBottom: spacing[2] }}>
               <View
                 accessibilityRole="text"
                 style={{
-                  backgroundColor: isVerified ? palette.successSoft : palette.bgSoft,
-                  borderColor: isVerified ? palette.success : palette.border,
+                  alignItems: "flex-start",
+                  backgroundColor: palette.infoSoft,
+                  borderColor: palette.border,
                   borderRadius: componentRadii.card,
                   borderWidth: 1,
+                  flexDirection: "row",
+                  gap: spacing[2],
                   padding: spacing[3],
                 }}
               >
-                <AppText variant="bodySmall">
+                <AppSymbol name="info.circle" fallback={Info} size={18} color={palette.info} />
+                <AppText variant="bodySmall" style={{ flex: 1 }}>
                   {isVerified
                     ? "Changes you make here show to diners straight away. Sold-out dishes come back on automatically at midnight."
                     : "Dishes you add are saved as drafts, hidden from diners until Hungry verifies your stall. Dishes diners already see can be changed once you are verified."}
                 </AppText>
               </View>
+
+              {error && menu.length > 0 ? (
+                <InlineBanner
+                  tone="warning"
+                  message="Could not refresh your menu. Showing what we loaded earlier. Pull down to try again."
+                />
+              ) : null}
 
               <View style={{ paddingHorizontal: spacing[1] }}>
                 <InlineSearchField
@@ -438,9 +562,9 @@ export function MerchantMenuScreen() {
           ListEmptyComponent={
             isLoading ? (
               <View style={{ gap: spacing[3] }}>
-                <Skeleton height={110} borderRadius={radii.lg} />
-                <Skeleton height={110} borderRadius={radii.lg} />
-                <Skeleton height={110} borderRadius={radii.lg} />
+                <Skeleton height={80} borderRadius={radii.lg} />
+                <Skeleton height={80} borderRadius={radii.lg} />
+                <Skeleton height={80} borderRadius={radii.lg} />
               </View>
             ) : error ? (
               <EmptyState
@@ -470,8 +594,29 @@ export function MerchantMenuScreen() {
               borderRadius: radii.pill,
               borderWidth: 1,
               paddingHorizontal: spacing[2],
-              paddingVertical: spacing[1],
+              paddingVertical: spacing[0.5],
             };
+            const imageFallback = (
+              <View
+                style={[
+                  styles.dishImage,
+                  styles.dishImagePlaceholder,
+                  {
+                    backgroundColor: palette.surfaceRaised,
+                    borderRadius: componentRadii.card,
+                  },
+                ]}
+              >
+                <Camera size={20} color={palette.textMuted} />
+              </View>
+            );
+            const meta = [
+              getDishSection(dish.availabilityFlags),
+              hasAvailabilityFlag(dish.availabilityFlags, "featured") ? "Featured" : undefined,
+              dish.tasteTags.slice(0, 2).join(", "),
+            ]
+              .filter(Boolean)
+              .join(" • ");
             return (
               <View
                 key={dish.id}
@@ -481,94 +626,41 @@ export function MerchantMenuScreen() {
                     backgroundColor: palette.surface,
                     borderColor: palette.border,
                     borderRadius: componentRadii.card,
-                    padding: spacing[4],
-                    gap: spacing[3],
+                    padding: spacing[3],
+                    gap: spacing[2],
                   },
                 ]}
               >
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Edit ${dish.name}`}
-                  onPressIn={() => prefetchDishEditorRoute(dish)}
-                  onLongPress={() => showDishOptions(dish)}
-                  onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
-                  style={({ pressed }) => [
-                    styles.dishEditTarget,
-                    { gap: spacing[3], opacity: pressed ? 0.78 : 1 },
-                  ]}
-                >
-                  {imageUrl ? (
-                    <AccessibleImage
-                      source={{ uri: imageUrl }}
-                      style={[styles.dishImage, { borderRadius: componentRadii.card }]}
-                      decorative
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        styles.dishImagePlaceholder,
-                        {
-                          backgroundColor: palette.surfaceRaised,
-                          borderRadius: componentRadii.card,
-                        },
-                      ]}
-                    >
-                      <Camera size={22} color={palette.textMuted} />
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                      <AppText
-                        variant="bodyBold"
-                        style={
-                          isSoldOut
-                            ? { textDecorationLine: "line-through", color: palette.textMuted }
-                            : undefined
-                        }
-                      >
+                <View style={[styles.dishTopRow, { gap: spacing[2] }]}>
+                  <PressableScale
+                    accessibilityRole="button"
+                    accessibilityLabel={`Edit ${dish.name}`}
+                    onPressIn={() => prefetchDishEditorRoute(dish)}
+                    onLongPress={() => showDishOptions(dish)}
+                    onPress={() => navigation.navigate("DishEditor", { dishId: dish.id })}
+                    style={[styles.dishEditTarget, { gap: spacing[3] }]}
+                  >
+                    {imageUrl ? (
+                      <AccessibleImage
+                        source={{ uri: imageUrl }}
+                        style={[styles.dishImage, { borderRadius: componentRadii.card }]}
+                        decorative
+                        fallback={imageFallback}
+                      />
+                    ) : (
+                      imageFallback
+                    )}
+                    <View style={{ flex: 1, gap: spacing[0.5] }}>
+                      <AppText variant="bodyBold" numberOfLines={2}>
                         {dish.name}
                       </AppText>
-                      {isSoldOut && (
-                        <View style={[pillStyle, { backgroundColor: palette.errorSoft }]}>
-                          <AppText variant="micro" tone="muted">
-                            Sold out
-                          </AppText>
-                        </View>
-                      )}
-                      {dish.isMerchantDraft ? (
-                        <View style={pillStyle}>
-                          <AppText variant="micro" tone="muted">
-                            Draft
-                          </AppText>
-                        </View>
+                      {meta ? (
+                        <AppText variant="bodySmall" tone="muted" numberOfLines={1}>
+                          {meta}
+                        </AppText>
                       ) : null}
                     </View>
-                    <AppText variant="body" tone="muted" style={{ marginTop: 4 }}>
-                      {[
-                        dish.priceRange,
-                        getDishSection(dish.availabilityFlags),
-                        hasAvailabilityFlag(dish.availabilityFlags, "featured")
-                          ? "Featured"
-                          : undefined,
-                        dish.tasteTags.slice(0, 2).join(", "),
-                      ]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </AppText>
-                    {dish.dietaryFlags.length > 0 && (
-                      <View style={[styles.flagRow, { gap: spacing[2], marginTop: spacing[2] }]}>
-                        {dish.dietaryFlags.slice(0, 3).map((flag) => (
-                          <View key={flag} style={pillStyle}>
-                            <AppText variant="micro" tone="muted">
-                              {formatDietaryFlag(flag)}
-                            </AppText>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                </Pressable>
-                <View style={{ alignItems: "center", gap: spacing[0.5], maxWidth: 88 }}>
+                  </PressableScale>
                   <Switch
                     accessibilityLabel={`${dish.name} available`}
                     accessibilityState={{ checked: !isSoldOut, disabled: isLocked }}
@@ -579,19 +671,63 @@ export function MerchantMenuScreen() {
                     thumbColor={palette.white}
                     ios_backgroundColor={palette.border}
                   />
-                  <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
-                    {isLocked
-                      ? "Verify to change live dishes"
-                      : isSoldOut
-                        ? "Sold out"
-                        : "Available"}
-                  </AppText>
+                  <IconButton
+                    accessibilityLabel="Dish options"
+                    icon={
+                      <AppSymbol
+                        name="ellipsis"
+                        fallback={MoreVertical}
+                        size={20}
+                        color={palette.textSecondary}
+                      />
+                    }
+                    onPress={() => showDishOptions(dish)}
+                  />
                 </View>
-                <IconButton
-                  accessibilityLabel="Dish options"
-                  icon={<MoreVertical size={20} color={palette.textSecondary} />}
-                  onPress={() => showDishOptions(dish)}
-                />
+                {/* Second line: the price and the badges sit under the name, indented past the photo. */}
+                <View
+                  style={[
+                    styles.dishSecondRow,
+                    { gap: spacing[2], paddingLeft: DISH_IMAGE_SIZE + spacing[3] },
+                  ]}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Change price of ${dish.name}, ${dish.priceRange}`}
+                    accessibilityState={{ disabled: isLocked }}
+                    disabled={isLocked}
+                    hitSlop={8}
+                    onPress={() => openPriceEdit(dish)}
+                  >
+                    <AppText variant="bodyBold">{dish.priceRange}</AppText>
+                  </Pressable>
+                  {isSoldOut ? (
+                    <View style={[pillStyle, { backgroundColor: palette.errorSoft }]}>
+                      <AppText variant="micro" tone="muted">
+                        Sold out
+                      </AppText>
+                    </View>
+                  ) : null}
+                  {dish.isMerchantDraft ? (
+                    <View style={pillStyle}>
+                      <AppText variant="micro" tone="muted">
+                        Draft
+                      </AppText>
+                    </View>
+                  ) : null}
+                  {dish.dietaryFlags.slice(0, 2).map((flag) => (
+                    <View key={flag} style={pillStyle}>
+                      <AppText variant="micro" tone="muted">
+                        {formatDietaryFlag(flag)}
+                      </AppText>
+                    </View>
+                  ))}
+                  {isLocked ? (
+                    <AppText variant="micro" tone="muted">
+                      Verify to change live dishes
+                    </AppText>
+                  ) : null}
+                </View>
               </View>
             );
           }}
@@ -660,6 +796,55 @@ export function MerchantMenuScreen() {
         </FAB>
       </View>
       {dialog}
+      {priceEdit ? (
+        <Modal visible transparent animationType="fade" onRequestClose={closePriceEdit}>
+          <View style={[styles.priceBackdrop, { backgroundColor: palette.overlay }]}>
+            <View
+              accessibilityViewIsModal
+              style={{
+                backgroundColor: palette.surface,
+                borderRadius: componentRadii.card,
+                gap: spacing[3],
+                padding: spacing[4],
+                width: "100%",
+              }}
+            >
+              <AppText variant="bodyBold">Change price</AppText>
+              <AppText variant="bodySmall" tone="muted">
+                {priceEdit?.dish.name}
+              </AppText>
+              <Input
+                label="Price (S$)"
+                value={priceEdit?.value ?? ""}
+                onChangeText={(value) => {
+                  setPriceEdit((current) => (current ? { ...current, value } : current));
+                  setPriceError(undefined);
+                }}
+                keyboardType="decimal-pad"
+                errorText={priceError}
+                error={Boolean(priceError)}
+                autoFocus
+                onSubmitEditing={() => void handleSavePrice()}
+              />
+              <View style={{ flexDirection: "row", gap: spacing[2], justifyContent: "flex-end" }}>
+                <Button
+                  label="Cancel"
+                  variant="secondary"
+                  fullWidth={false}
+                  disabled={isSavingPrice}
+                  onPress={closePriceEdit}
+                />
+                <Button
+                  label={isSavingPrice ? "Saving..." : "Save price"}
+                  fullWidth={false}
+                  disabled={isSavingPrice}
+                  onPress={() => void handleSavePrice()}
+                />
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
       <Dialog
         visible={Boolean(dishDialog)}
         title={dishDialog?.confirmDelete ? "Remove from menu?" : "Dish options"}
@@ -675,11 +860,26 @@ export function MerchantMenuScreen() {
   );
 }
 
+const DISH_IMAGE_SIZE = 56;
+
 const styles = StyleSheet.create({
+  priceBackdrop: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
   dishCard: {
+    borderWidth: 1,
+  },
+  dishTopRow: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
+  },
+  dishSecondRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   dishEditTarget: {
     flex: 1,
@@ -687,12 +887,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dishImage: {
-    width: 64,
-    height: 64,
+    width: DISH_IMAGE_SIZE,
+    height: DISH_IMAGE_SIZE,
   },
   dishImagePlaceholder: {
-    width: 64,
-    height: 64,
     alignItems: "center",
     justifyContent: "center",
   },

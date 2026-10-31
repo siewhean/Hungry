@@ -1,16 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, View, StyleSheet, TouchableOpacity } from "react-native";
-import { Camera, Image as ImageIcon } from "lucide-react-native";
-import { useForm, Controller } from "react-hook-form";
-import { useNavigation } from "@react-navigation/native";
+import {
+  ActivityIndicator,
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  type LayoutChangeEvent,
+  type ScrollView,
+} from "react-native";
+import { BadgeCheck, Camera, Image as ImageIcon } from "lucide-react-native";
+import { useForm, Controller, type FieldErrors } from "react-hook-form";
+import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
+import { confirmHaptic } from "@/lib/haptics";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { MerchantImageField } from "@/components/merchant/MerchantImageField";
 import { OpeningHoursEditor } from "@/components/merchant/OpeningHoursEditor";
 import { MapSurface } from "@/components/map";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Button,
   ChipGroup,
@@ -26,11 +35,15 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import type { Coordinate, MerchantOutlet, LocationPrivacy, OpeningSchedule } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
+import { MAX_CUISINES, getCuisineChoices, toggleCuisine } from "@/features/merchant/cuisineOptions";
 import { formatBusinessType } from "@/features/merchant/merchantReadiness";
+import { nextGalleryUrls } from "@/features/merchant/galleryUrls";
+import { firstInvalidSection, type EditorSection } from "@/features/merchant/profileEditorSections";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
 import { useUnsavedChangesGuard } from "@/features/merchant/useUnsavedChangesGuard";
 import { lookupPostalCode, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
+import { isBlockedTextError } from "@/features/merchant/featuredDishes";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   formatScheduleText,
@@ -44,7 +57,7 @@ type FormData = {
   name: string;
   description: string;
   businessType: MerchantOutlet["businessType"];
-  cuisineCategories: string;
+  cuisineCategories: string[];
   unitNumber: string;
   floor: string;
   postalCode: string;
@@ -84,7 +97,7 @@ function toFormData(outlet: MerchantOutlet): FormData {
     name: outlet.name || "",
     description: outlet.description || "",
     businessType: outlet.businessType || "hawker_stall",
-    cuisineCategories: outlet.cuisineCategories?.join(", ") || "",
+    cuisineCategories: outlet.cuisineCategories ?? [],
     unitNumber: outlet.unitNumber || "",
     floor: outlet.floor || "",
     postalCode: outlet.postalCode || "",
@@ -162,6 +175,8 @@ function BusinessTypeDropdown({
 export function BusinessProfileEditorScreen() {
   const { componentRadii, palette, spacing, radii } = useHungryTheme();
   const navigation = useNavigation<NavigationProp>();
+  const openSection =
+    useRoute<RouteProp<MerchantTabParamList, "BusinessProfileEditor">>().params?.section;
   const rootNavigation = getRootNavigation(navigation as any);
   const activeOutlet = useMerchantStore(getActiveOutlet);
   const { showAlert, dialog } = useMerchantDialog();
@@ -178,6 +193,22 @@ export function BusinessProfileEditorScreen() {
   const [hoursError, setHoursError] = useState<string>();
   const [postalStatus, setPostalStatus] = useState<string>();
   const [isLookingUpPostal, setIsLookingUpPostal] = useState(false);
+  // Section tops, measured as the form lays out, so a tap on Location, Hours or Contact on the
+  // Profile tab and a failed Save can both scroll the long form to the right place.
+  const scrollRef = useRef<ScrollView>(null);
+  const formTop = useRef(0);
+  const sectionTop = useRef<Partial<Record<EditorSection, number>>>({});
+  const openedSection = useRef(false);
+  const scrollToSection = useCallback((section: EditorSection) => {
+    const top = sectionTop.current[section];
+    if (top === undefined) return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, formTop.current + top - 12), animated: true });
+  }, []);
+  const trackSection = (section: EditorSection, offset = 0) => ({
+    onLayout: (event: LayoutChangeEvent) => {
+      sectionTop.current[section] = offset + event.nativeEvent.layout.y;
+    },
+  });
 
   const {
     control,
@@ -192,7 +223,7 @@ export function BusinessProfileEditorScreen() {
       name: "",
       description: "",
       businessType: "hawker_stall",
-      cuisineCategories: "",
+      cuisineCategories: [],
       unitNumber: "",
       floor: "",
       postalCode: "",
@@ -234,6 +265,7 @@ export function BusinessProfileEditorScreen() {
       setValue("coordinate", result.coordinate, { shouldDirty: true });
       setPostalStatus("Address found. Tap the map to fine-tune the pin.");
     } catch (error) {
+      reportError(error, { screen: "BusinessProfileEditor", action: "postal_lookup" });
       setPostalStatus(error instanceof Error ? error.message : "Postal code lookup failed.");
     } finally {
       setIsLookingUpPostal(false);
@@ -279,6 +311,7 @@ export function BusinessProfileEditorScreen() {
     setHoursError(hoursProblem);
     if (hoursProblem) {
       showAlert("Check opening hours", hoursProblem);
+      scrollToSection("hours");
       return;
     }
     try {
@@ -290,17 +323,12 @@ export function BusinessProfileEditorScreen() {
             value.startsWith("file://") || value.startsWith("content://") || value.startsWith("/"),
         ),
       );
-      const galleryUrls = Array.from(
-        new Set([profilePhotoUrl, coverPhotoUrl, ...activeOutlet.galleryUrls].filter(Boolean)),
-      );
+      const galleryUrls = nextGalleryUrls(activeOutlet, { profilePhotoUrl, coverPhotoUrl });
       const updates: Partial<MerchantOutlet> = {
         name: data.name,
         description: data.description,
         businessType: data.businessType,
-        cuisineCategories: data.cuisineCategories
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        cuisineCategories: data.cuisineCategories,
         unitNumber: data.unitNumber,
         floor: data.floor,
         postalCode: data.postalCode,
@@ -341,6 +369,7 @@ export function BusinessProfileEditorScreen() {
       reset(data);
       updateOutletProfile(activeOutlet.id, updated);
       trackMerchantEvent("merchant_profile_updated", activeOutlet.id, { is_live: data.isLive });
+      confirmHaptic();
       showAlert(
         "Saved",
         !data.isLive
@@ -351,11 +380,22 @@ export function BusinessProfileEditorScreen() {
         [{ text: "OK", onPress: () => navigation.goBack() }],
       );
     } catch (error) {
-      reportError(error, { screen: "BusinessProfileEditor", action: "save_profile" });
-      showAlert("Error", error instanceof Error ? error.message : "Failed to update profile.");
+      // A refused blocked word is the merchant's text, shown back to them, not a failure to report.
+      if (!isBlockedTextError(error)) {
+        reportError(error, { screen: "BusinessProfileEditor", action: "save_profile" });
+      }
+      showAlert(
+        "Couldn't save profile",
+        error instanceof Error ? error.message : "Something went wrong. Please try again.",
+      );
     } finally {
       setIsUploadingImages(false);
     }
+  };
+
+  const onInvalid = (invalid: FieldErrors<FormData>) => {
+    const section = firstInvalidSection(Object.keys(invalid));
+    if (section) scrollToSection(section);
   };
 
   const handlePreviewAsCustomer = () => {
@@ -379,7 +419,7 @@ export function BusinessProfileEditorScreen() {
 
   if (!activeOutlet) {
     return (
-      <Screen title="Error">
+      <Screen title="Business profile">
         <EmptyState
           title="No active outlet selected"
           body="A business profile cannot be loaded until you choose a merchant outlet."
@@ -394,7 +434,17 @@ export function BusinessProfileEditorScreen() {
     <Screen
       title="Business profile"
       onBackPress={confirmLeave}
+      scrollRef={scrollRef}
       contentContainerStyle={{ paddingBottom: spacing[6] }}
+      footer={
+        <Button
+          label={isSubmitting ? "Saving..." : "Save profile"}
+          variant="primary"
+          fullWidth
+          onPress={handleSubmit(onSubmit, onInvalid)}
+          disabled={isSubmitting}
+        />
+      }
       headerRight={
         <TouchableOpacity
           onPress={handlePreviewAsCustomer}
@@ -423,7 +473,16 @@ export function BusinessProfileEditorScreen() {
         </TouchableOpacity>
       }
     >
-      <View style={{ gap: spacing[6], width: "100%" }}>
+      <View
+        style={{ gap: spacing[6], width: "100%" }}
+        onLayout={(event) => {
+          formTop.current = event.nativeEvent.layout.y;
+          if (openSection && !openedSection.current) {
+            openedSection.current = true;
+            scrollToSection(openSection);
+          }
+        }}
+      >
         {isOutletVerified && (
           <View
             style={[
@@ -436,13 +495,21 @@ export function BusinessProfileEditorScreen() {
               { backgroundColor: palette.successSoft, borderColor: palette.success },
             ]}
           >
-            <AppText variant="bodySmallBold" style={{ color: palette.success }}>
-              ✓ Verified by Hungry
-            </AppText>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1.5] }}>
+              <AppSymbol
+                name="checkmark.seal.fill"
+                fallback={BadgeCheck}
+                size={16}
+                color={palette.success}
+              />
+              <AppText variant="bodySmallBold" style={{ color: palette.success }}>
+                Verified by Hungry
+              </AppText>
+            </View>
           </View>
         )}
 
-        <View style={{ gap: spacing[4] }}>
+        <View style={{ gap: spacing[4] }} {...trackSection("basic")}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
             Basic info
           </AppText>
@@ -536,29 +603,34 @@ export function BusinessProfileEditorScreen() {
 
         <View style={{ gap: spacing[4] }}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
-            Tags & Categories
+            Cuisine
           </AppText>
 
           <View>
             <Controller
               control={control}
               name="cuisineCategories"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Cuisine categories"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                  placeholder="e.g. Chinese, Noodles (comma-separated)"
-                />
+              render={({ field: { onChange, value } }) => (
+                <View style={{ gap: spacing[2] }}>
+                  <ChipGroup
+                    options={getCuisineChoices(value).map((id) => ({ id, label: id }))}
+                    selectedIds={value}
+                    onSelect={(id) => onChange(toggleCuisine(value, id))}
+                  />
+                  <AppText variant="bodySmall" tone="muted" accessibilityLiveRegion="polite">
+                    {value.length >= MAX_CUISINES
+                      ? `${value.length} of ${MAX_CUISINES} picked. Tap one to swap it.`
+                      : `Pick up to ${MAX_CUISINES} so diners can find you by cuisine.`}
+                  </AppText>
+                </View>
               )}
             />
           </View>
         </View>
 
-        <View style={{ gap: spacing[4] }}>
+        <View style={{ gap: spacing[4] }} {...trackSection("location")}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
-            Location & Hours
+            Location and hours
           </AppText>
 
           <View style={{ flexDirection: "row", gap: spacing[3] }}>
@@ -658,20 +730,27 @@ export function BusinessProfileEditorScreen() {
             ) : null}
           </View>
 
-          <Controller
-            control={control}
-            name="openingSchedule"
-            render={({ field: { onChange, value } }) => (
-              <OpeningHoursEditor
-                value={value}
-                onChange={(next) => {
-                  setHoursError(undefined);
-                  onChange(next);
-                }}
-                error={hoursError}
-              />
-            )}
-          />
+          <View
+            onLayout={(event) => {
+              sectionTop.current.hours =
+                (sectionTop.current.location ?? 0) + event.nativeEvent.layout.y;
+            }}
+          >
+            <Controller
+              control={control}
+              name="openingSchedule"
+              render={({ field: { onChange, value } }) => (
+                <OpeningHoursEditor
+                  value={value}
+                  onChange={(next) => {
+                    setHoursError(undefined);
+                    onChange(next);
+                  }}
+                  error={hoursError}
+                />
+              )}
+            />
+          </View>
 
           <View>
             <Controller
@@ -711,7 +790,7 @@ export function BusinessProfileEditorScreen() {
           ) : null}
         </View>
 
-        <View style={{ gap: spacing[4] }}>
+        <View style={{ gap: spacing[4] }} {...trackSection("contact")}>
           <AppText variant="h3" style={{ fontWeight: "600" }}>
             Contact info
           </AppText>
@@ -810,15 +889,6 @@ export function BusinessProfileEditorScreen() {
             )}
           />
         </View>
-
-        <Button
-          label={isSubmitting ? "Saving..." : "Save profile"}
-          variant="primary"
-          fullWidth
-          onPress={handleSubmit(onSubmit)}
-          disabled={isSubmitting}
-          style={{ marginTop: spacing[4] }}
-        />
       </View>
       {dialog}
     </Screen>

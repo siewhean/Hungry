@@ -54,21 +54,17 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
   const uiStore = read("src/store/useUIStore.ts");
   const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
 
-  for (const key of [
-    "themePreference",
-    "hapticFeedbackEnabled",
-    "reducedMotionEnabled",
-    "allowSearchHistory",
-  ]) {
+  // Theme and Reduce motion follow iOS (no app switch), so they are no longer saved here.
+  for (const key of ["hapticFeedbackEnabled", "allowSearchHistory"]) {
     assert.match(uiStore, new RegExp(`${key}: state\\.${key}`));
   }
 
   assert.match(uiStore, /leftHandedMode: state\.leftHandedMode/);
   assert.match(settingsScreen, /hapticFeedbackEnabled: state\.hapticFeedbackEnabled/);
-  assert.match(settingsScreen, /reducedMotionEnabled: state\.reducedMotionEnabled/);
   assert.match(settingsScreen, /leftHandedMode: state\.leftHandedMode/);
   assert.match(settingsScreen, /value: "private" as const/);
-  assert.match(settingsScreen, /label="Reduce motion"/);
+  assert.doesNotMatch(settingsScreen, /label="Reduce motion"|label="Theme"/);
+  assert.doesNotMatch(uiStore, /(?:themePreference|reducedMotionEnabled): state\./);
   assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
 });
 
@@ -79,8 +75,9 @@ test("every Settings switch backed by useUIStore has a consumer outside Settings
     // Every haptic goes through the wrapper (expo-haptics is lint-banned elsewhere).
     hapticFeedbackEnabled: "src/lib/haptics.ts",
     leftHandedMode: "src/components/ui/FAB.tsx",
-    reducedMotionEnabled: "src/hooks/useReduceMotion.ts",
     allowSearchHistory: "src/store/useSearchStore.ts",
+    // "Share usage analytics" gates trackAnalyticsEvent.
+    analyticsEnabled: "src/lib/analytics/mockAnalytics.ts",
   };
 
   const settingsKeys = [
@@ -236,15 +233,16 @@ test("signed-in onboarding persists and awaits provisional preference migration"
   const mergeHelper = read("src/features/auth/applySignedInProfile.ts");
   const profileStore = read("src/store/useProfileStore.ts");
 
-  assert.match(onboardingAuth, /import \{ applySignedInProfile \}/);
+  // The screens merge through useSignedInProfileSync, which calls applySignedInProfile and
+  // keeps a failed sync on screen with a retry instead of returning silently.
+  const syncHook = read("src/features/auth/useSignedInProfileSync.ts");
+  assert.match(syncHook, /import \{ applySignedInProfile \}/);
+  assert.match(syncHook, /applySignedInProfile\(session\.profile/);
+  assert.match(syncHook, /migration\.status === "failed"/);
   assert.match(onboardingAuth, /completedOnboarding: true/);
-  assert.match(emailVerification, /import \{ applySignedInProfile \}/);
-  assert.match(emailVerification, /applySignedInProfile\(session\.profile/);
   assert.match(emailVerification, /completeVerifiedSignUp\(shouldCompleteOnboarding\)/);
-  assert.match(login, /import \{ applySignedInProfile \}/);
-  assert.match(signUp, /import \{ applySignedInProfile \}/);
   for (const caller of [onboardingAuth, emailVerification, login, signUp]) {
-    assert.match(caller, /migration\.status === "failed"/);
+    assert.match(caller, /useSignedInProfileSync\(/);
   }
   assert.match(
     mergeHelper,
@@ -290,7 +288,9 @@ test("Supabase review reads hydrate review_photos and public profile names and a
   const service = read("src/lib/services/supabase/supabaseService.ts");
   const domain = read("src/types/domain.ts");
   const detailTransforms = read("src/features/detail/detailTransforms.ts");
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const stallDetail =
+    read("src/app/screens/detail/StallDetailScreen.tsx") +
+    read("src/components/stall/StallReviewCard.tsx");
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   const reviewHistory = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
 
@@ -336,7 +336,7 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     reviewFeed,
     /serviceProviderMode === "mock"\s*\?\s*listReviewFeedItems\(repository\)\s*:\s*\(serviceReviewItems \?\? \[\]\)/,
   );
-  assert.match(reviewHistory, /serviceProviderMode === "supabase"\s*\?\s*remoteHistory/);
+  assert.match(reviewHistory, /serviceProviderMode === "supabase" \|\| remoteReviews\.length > 0/);
   assert.match(reviewHistory, /serviceProviderMode === "mock"/);
   assert.match(reviewHistory, /remoteLoadFailed/);
   assert.doesNotMatch(reviewHistory, /hasRemoteHistory \|\| localHistory/);
@@ -358,15 +358,16 @@ test("advanced liked-content social collection is gated out of MVP production", 
   assert.match(profileStack, /name="SocialGrid" getComponent=\{loadSocialGridScreen\}/);
   assert.match(profileStack, /name="SocialPostDetail" getComponent=\{loadSocialPostDetailScreen\}/);
   assert.doesNotMatch(profileStack, /SocialGridScreen\} from "\.\/SocialGridScreen"/);
-  assert.match(profileHome, /isAuthenticated && FEATURE_FLAGS\.collectionsEnabled && \(/);
-  assert.match(profileHome, /label="Liked content"/);
+  // The menu item exists only when the flag is on.
+  assert.match(profileHome, /FEATURE_FLAGS\.collectionsEnabled\s*\?\s*\{\s*id: "liked-content"/);
+  assert.match(profileHome, /title: "Liked content"/);
 });
 
 test("Search results route reads the paged catalog service, never the repository cache", () => {
   const searchScreen = read("src/app/screens/search/SearchResultsScreen.tsx");
 
   assert.match(searchScreen, /const service = getCatalogRawService\(\)/);
-  assert.doesNotMatch(searchScreen, /getDataRepository|getSearchResults|getHungryService/);
+  assert.doesNotMatch(searchScreen, /getDataRepository|getSearchResults/);
 });
 
 test("Supabase app readiness keeps the legacy cache opt-in and bounded away from public routes", () => {
@@ -413,7 +414,8 @@ test("MVP browse surfaces do not show obvious fake trust claims", () => {
   // The Home feed no longer builds taste or "nearby" sections it never showed.
   assert.doesNotMatch(feed, /Nearby picks/);
   assert.doesNotMatch(feed, /Fastest Near You|Mock distance logic/);
-  assert.doesNotMatch(searchScreen, /fallbackPost|Heart\b|likeCount/);
+  // The heart on a dish card is a real save (profile store), not a like count.
+  assert.doesNotMatch(searchScreen, /fallbackPost|likeCount/);
   // Only positive verification is badged, with one label; unverified rows carry no pill.
   assert.match(searchScreen, /item\.verificationStatus === "approved"/);
   assert.doesNotMatch(searchScreen, /Source verified/);

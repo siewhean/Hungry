@@ -57,9 +57,9 @@ test("ratings read as stars and say so when there are no reviews (M11, L4)", () 
     formatReviewCountLabel(0, "in the last 7 days", { zeroLabel: "No reviews in the last 7 days" }),
     "No reviews in the last 7 days",
   );
-  assert.equal(formatRatingChange(4.5, 4.3, 5, 4), "+0.2★");
-  assert.equal(formatRatingChange(4, 4.5, 5, 4), "-0.5★");
-  assert.equal(formatRatingChange(4, 4, 5, 4), "0.0★");
+  assert.equal(formatRatingChange(4.5, 4.3, 5, 4), "+0.2");
+  assert.equal(formatRatingChange(4, 4.5, 5, 4), "-0.5");
+  assert.equal(formatRatingChange(4, 4, 5, 4), "0.0");
   assert.equal(formatRatingChange(4, 0, 5, 0), "New");
   assert.equal(formatRatingChange(0, 4, 0, 4), "No reviews yet");
   assert.doesNotMatch(formatRatingChange(4.5, 4.3, 5, 4), /%/);
@@ -185,7 +185,7 @@ test("dish saves reload one venue, lists are paged (M14, M15)", () => {
     read("src/lib/services/supabase/supabaseRepository.ts"),
     /export async function refreshSupabaseRepositoryVenueDishes/,
   );
-  assert.match(read("src/app/screens/merchant/MerchantMenuScreen.tsx"), /<FlatList/);
+  assert.match(read("src/app/screens/merchant/MerchantMenuScreen.tsx"), /<SectionList/);
   assert.match(read("src/app/screens/merchant/CustomerInboxScreen.tsx"), /INBOX_PAGE_SIZE/);
   assert.match(read("src/app/screens/merchant/FeaturedVisitorsScreen.tsx"), /CANDIDATE_PAGE_SIZE/);
 });

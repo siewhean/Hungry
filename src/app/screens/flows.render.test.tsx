@@ -6,13 +6,21 @@ import test, { afterEach, beforeEach } from "node:test";
 
 import { ForgotPasswordScreen } from "@/app/screens/auth/ForgotPasswordScreen";
 import { LoginScreen } from "@/app/screens/auth/LoginScreen";
+import { clearExperimentOverrides, setExperimentOverride } from "@/lib/experiments/experiments";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useSessionStore } from "@/store/useSessionStore";
 import { cleanup, createFakeNavigation, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
-beforeEach(() => enterScenario("guest"));
-afterEach(cleanup);
+// These tests drive the password form; the emailed-code default has its own tests.
+beforeEach(() => {
+  setExperimentOverride("auth_email_code_first_v1", "control");
+  return enterScenario("guest");
+});
+afterEach(async () => {
+  await cleanup();
+  clearExperimentOverrides();
+});
 
 const inputs = (view: RenderResult) =>
   Array.from(view.container.ownerDocument.querySelectorAll("input")) as HTMLInputElement[];

@@ -1,386 +1,257 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
-import {
-  Bookmark,
-  CircleCheck,
-  Navigation,
-  PenLine,
-  Star,
-  Search,
-  Store,
-  X,
-} from "lucide-react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
 
-import { confirmHaptic } from "@/lib/haptics";
 import { CollectionAlbumCard, NewCollectionTile } from "@/components/portfolio";
-import { AccessibleImage, AppText, Button, Card, Chip, EmptyState, Input } from "@/components/ui";
+import {
+  SavedMapView,
+  SavedSearchBox,
+  SavedSearchResults,
+  SavedStallRow,
+  SwipeToRemove,
+  type SavedMapViewPin,
+  SavedViewSwitch,
+} from "@/components/saved";
+import { AccessibleImage, AppText, Button, Chip, EmptyState } from "@/components/ui";
+import { isLiveMapAvailable } from "@/components/map/mapAvailability";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
-import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
-import {
-  buildMapsSearchUrl,
-  formatFullStallAddress,
-  getStallPin,
-} from "@/features/detail/stallLocation";
-import { describeMissingStalls, loadVenuesByIds } from "@/features/profile/loadVenuesByIds";
+import { formatDistanceFromUser } from "@/features/detail/stallLocation";
+import { prefetchStallDetail, preloadRoute } from "@/features/navigation/prefetch";
+import { describeMissingStalls } from "@/features/profile/loadVenuesByIds";
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
-import type { CatalogRawDishDetail } from "@/lib/services/catalog";
-import { loadCatalogFavourites } from "@/lib/services/catalog/favourites";
 import {
-  getCatalogRawService,
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
-import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
+  SAVED_SECTION_LABELS,
+  fitSavedPins,
+  formatSavedCount,
+  getSavedOrigin,
+  matchesSavedDishQuery,
+  visibleSavedSections,
+  type SavedSection,
+} from "@/features/saved/savedDishes";
+import { useListCovers } from "@/features/saved/useListCovers";
+import { useSavedDishes } from "@/features/saved/useSavedDishes";
+import { useSavedSearch } from "@/features/saved/useSavedSearch";
+import { useSavedStalls, type SavedStallsState } from "@/features/saved/useSavedStalls";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
+import { getHungryService } from "@/lib/services/serviceProvider";
+import { useLocationStore } from "@/store/useLocationStore";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Bite } from "@/lib/services/types";
-import { reportError } from "@/lib/monitoring/reportError";
 import type { Portfolio, VenueSummary } from "@/types/domain";
-import { isDishDetail } from "./profileGuards";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
+import { SavedDishesSection } from "./SavedDishesSection";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "Favourites">;
-type SavedSection = "dishes" | "stalls" | "posts" | "lists";
 
-const SECTION_LABELS: Record<SavedSection, string> = {
-  dishes: "Dishes",
-  stalls: "Stalls",
-  posts: "Posts",
-  lists: "Collections",
-};
+export { matchesSavedDishQuery, visibleSavedSections };
 
-/** Posts are part of the archived social feed: their tab shows only when the feed is on. */
-export function visibleSavedSections(socialFeedEnabled: boolean): SavedSection[] {
-  return (Object.keys(SECTION_LABELS) as SavedSection[]).filter(
-    (key) => key !== "posts" || socialFeedEnabled,
-  );
-}
-
-const SECTION_HEADINGS: Record<SavedSection, string> = {
-  dishes: "Saved Dishes",
-  stalls: "Saved Stalls",
-  posts: "Saved Posts",
-  lists: "Your Collections",
-};
-
-/** Case-insensitive match on the dish or its stall, for the saved-dishes search box. */
-export function matchesSavedDishQuery(
-  dish: { name: string; venueName?: string },
-  query: string,
-): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return true;
-  return (
-    dish.name.toLowerCase().includes(needle) ||
-    (dish.venueName ?? "").toLowerCase().includes(needle)
-  );
-}
-
-export function FavouritesScreen({ navigation }: Props) {
-  const profile = useProfileStore((state) => state.profile);
+/**
+ * Saved: the one place for everything the diner keeps. Dishes, Stalls and Lists (plus Posts
+ * while the social feed is on) sit under one search box that looks across all of them and the
+ * diner's own reviews. The section, the Want to try / Tried choice and the List / Map choice are
+ * remembered while the app is open, and `section` in the route opens a given section.
+ */
+export function FavouritesScreen({ navigation, route }: Props) {
   const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const showToast = useUIStore((state) => state.showToast);
-  const { componentRadii, palette, spacing, shadows } = useHungryTheme();
-  const repository = getDataRepository();
-  const [section, setSection] = useState<SavedSection>("dishes");
-  const [tab, setTab] = useState<"want" | "tried">("want");
-  const [dishQuery, setDishQuery] = useState("");
-  const dishIds = tab === "want" ? profile.favouriteDishIds : profile.reviewedDishIds;
-  const allDishes = dishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail);
-  const dishes = allDishes.filter((dish) =>
-    matchesSavedDishQuery(
-      { name: dish.name, venueName: repository.getVenueById(dish.venueId)?.name },
-      dishQuery,
-    ),
-  );
-  const dishSearch = (
-    <Input
-      placeholder="Search your saved dishes"
-      accessibilityLabel="Search your saved dishes"
-      value={dishQuery}
-      onChangeText={setDishQuery}
-      returnKeyType="search"
-      autoCorrect={false}
-      leftIcon={<Search color={palette.textMuted} size={18} />}
-      rightIcon={
-        dishQuery ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Clear search"
-            hitSlop={12}
-            onPress={() => setDishQuery("")}
-          >
-            <X color={palette.textMuted} size={18} />
-          </Pressable>
-        ) : undefined
-      }
-    />
-  );
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const profileId = useProfileStore((state) => state.profile.id);
+  const { spacing } = useHungryTheme();
+  const section = useSavedViewStore((state) => state.section);
+  const setSection = useSavedViewStore((state) => state.setSection);
+  const tab = useSavedViewStore((state) => state.tab);
+  const setTab = useSavedViewStore((state) => state.setTab);
+  const mode = useSavedViewStore((state) => state.mode);
+  const setMode = useSavedViewStore((state) => state.setMode);
   const rootNavigation = getRootNavigation(navigation as any);
-  const setDishTried = useProfileStore((state) => state.setDishTried);
-  const toggleEaten = async (dishId: string) => {
-    const eaten = profile.reviewedDishIds.includes(dishId);
-    const saved = await setDishTried(dishId, !eaten);
-    if (saved) confirmHaptic();
-    showToast(
-      saved
-        ? {
-            message: eaten ? "Removed from your tried dishes." : "Marked as eaten.",
-            tone: "success",
-          }
-        : { message: "Couldn't update your tried dishes. Try again.", tone: "error" },
-    );
+  const showToast = useUIStore((state) => state.showToast);
+  const [query, setQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  // A deep link to a section (hungry://... Lists) wins over where the diner left it.
+  const requestedSection = route.params?.section;
+  useEffect(() => {
+    if (requestedSection) setSection(requestedSection);
+  }, [requestedSection, setSection]);
+  const sections = visibleSavedSections(FEATURE_FLAGS.socialFeedEnabled);
+  const activeSection: SavedSection = sections.includes(section) ? section : "dishes";
+
+  // Loaded here, not inside the Dishes tab, so the header count matches the cards below.
+  const userKey = `${authenticatedUserId ?? "guest"}:${profileId}`;
+  const savedDishes = useSavedDishes(userKey);
+  const savedDishCount = savedDishes.savedIds.filter((id) => savedDishes.cards.has(id)).length;
+
+  // Stalls and lists are read as soon as a search, the Stalls section or the Lists section needs
+  // them, then kept.
+  const searching = query.trim() !== "";
+  const [stallsWanted, setStallsWanted] = useState(false);
+  useEffect(() => {
+    if (searching || activeSection === "stalls") setStallsWanted(true);
+  }, [activeSection, searching]);
+  const savedStalls = useSavedStalls(stallsWanted);
+
+  const ownerId = (isAuthenticated ? authenticatedUserId : undefined) ?? profileId;
+  const portfolios = usePortfolioStore((state) => state.portfolios);
+  const mineIds = usePortfolioStore((state) => state.scopeIds.mine);
+  const loadPortfolioScope = usePortfolioStore((state) => state.loadPortfolioScope);
+  const canLoadLists = FEATURE_FLAGS.portfoliosEnabled && isAuthenticated;
+  const loadOwnLists = useCallback(
+    async () => {
+      if (canLoadLists) await loadPortfolioScope("mine");
+    },
+    // ownerId: a different account reloads its own lists.
+
+    [canLoadLists, loadPortfolioScope, ownerId],
+  );
+  const { failed: listsFailed, retry: retryLists } = useRetryableLoad(loadOwnLists, "saved lists");
+  const ownLists = useMemo(() => {
+    const byId = new Map(portfolios.map((portfolio) => [portfolio.id, portfolio]));
+    return (mineIds ?? [])
+      .map((id) => byId.get(id))
+      .filter((portfolio): portfolio is Portfolio => Boolean(portfolio));
+  }, [mineIds, portfolios]);
+
+  const searchableDishes = useMemo(
+    () => savedDishes.savedIds.flatMap((id) => savedDishes.cards.get(id) ?? []),
+    [savedDishes.cards, savedDishes.savedIds],
+  );
+  const search = useSavedSearch({
+    rawQuery: query,
+    userId: ownerId,
+    dishes: searchableDishes,
+    stalls: savedStalls.stalls,
+    lists: ownLists,
+  });
+
+  // One event per finished search, not per keystroke.
+  const searchedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (search.status !== "ready" || searchedFor.current === search.query) return;
+    searchedFor.current = search.query;
+    trackAnalyticsEvent("saved_search_used", {
+      scope: "all",
+      query_length: search.query.length,
+      result_count: search.results.total,
+      dishes: search.results.dishes.length,
+      stalls: search.results.stalls.length,
+      lists: search.results.lists.length,
+      reviews: search.results.reviews.length,
+    });
+  }, [search.query, search.results, search.status]);
+
+  const chooseSection = (next: SavedSection) => {
+    if (next === activeSection) return;
+    setSection(next);
+    trackAnalyticsEvent("saved_section_changed", { section: next, previous: activeSection });
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.allSettled([
+        savedDishes.reload(),
+        canLoadLists ? loadPortfolioScope("mine") : Promise.resolve(),
+      ]);
+      if (stallsWanted) savedStalls.retry();
+    } catch (error) {
+      reportError(error, { screen: "Favourites", action: "refresh" });
+      showToast({ message: "Couldn't refresh. Try again.", tone: "error" });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const showCount = activeSection === "dishes" && savedDishes.status === "ready" && !searching;
   return (
-    <ProfileScreenShell title="Saved">
-      <View style={{ gap: spacing[1] }}>
-        <AppText variant="h1">{SECTION_HEADINGS[section]}</AppText>
-        {section === "dishes" ? (
-          <AppText variant="bodySmall" tone="secondary">
-            {profile.favouriteDishIds.length} cravings saved for later
-          </AppText>
-        ) : null}
-      </View>
-      {/* Scrolls sideways so the tabs never clip at large text sizes or on small phones. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        accessibilityRole="tablist"
-        contentContainerStyle={{ gap: spacing[2] }}
-        style={{ flexGrow: 0, marginBottom: spacing[3] }}
-      >
-        {visibleSavedSections(FEATURE_FLAGS.socialFeedEnabled).map((key) => (
-          <Chip
-            key={key}
-            label={SECTION_LABELS[key]}
-            accessibilityRole="tab"
-            accessibilityLabel={`Saved ${SECTION_LABELS[key].toLowerCase()}`}
-            selected={section === key}
-            onPress={() => setSection(key)}
-          />
-        ))}
-      </ScrollView>
-      {section === "stalls" ? (
-        <SavedStallsSection
-          onOpenStall={(venueId) => rootNavigation.navigate("StallDetail", { venueId })}
+    <ProfileScreenShell
+      title="Saved"
+      subtitle={showCount ? formatSavedCount(savedDishCount) : undefined}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
+    >
+      <SavedSearchBox value={query} onChangeText={setQuery} />
+      {searching ? (
+        <SavedSearchResults
+          search={search}
+          onClear={() => setQuery("")}
+          onRetry={() => setQuery((current) => `${current} `.trimEnd())}
+          onOpenDish={(dish) => {
+            trackAnalyticsEvent("saved_item_opened", {
+              item_type: "dish",
+              dish_id: dish.id,
+              source: "search",
+            });
+            rootNavigation.navigate("DishDetail", { dishId: dish.id, source: "saved" });
+          }}
+          onOpenStall={(venue) => rootNavigation.navigate("StallDetail", { venueId: venue.id })}
+          onOpenList={(portfolio) =>
+            navigation.navigate("PortfolioDetail", { portfolioId: portfolio.id })
+          }
+          onOpenReview={(review) => {
+            if (review.id) rootNavigation.navigate("ReviewDetail", { reviewId: review.id });
+          }}
         />
-      ) : section === "posts" && FEATURE_FLAGS.socialFeedEnabled ? (
-        <SavedPostsSection
-          onOpenPost={(postId) => rootNavigation.navigate("ActivityPostDetail", { postId })}
-        />
-      ) : section === "lists" ? (
-        <SavedListsSection
-          onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
-          onCreateList={() => navigation.navigate("PortfolioCreate")}
-          onOpenAllLists={() => navigation.navigate("ListsHome", undefined, { pop: true })}
-        />
-      ) : getServiceProvider().mode === "supabase" ? (
-        <Fragment key={`${authenticatedUserId ?? "guest"}:${profile.id}`}>
-          {dishSearch}
-          <CatalogSavedDishes navigation={navigation} query={dishQuery} />
-        </Fragment>
       ) : (
         <>
-          <View style={{ flexDirection: "row", gap: spacing[2], marginBottom: spacing[4] }}>
-            <Chip
-              label={`Want to try (${profile.favouriteDishIds.length})`}
-              selected={tab === "want"}
-              onPress={() => setTab("want")}
+          {/* Scrolls sideways so the tabs never clip at large text sizes or on small phones. */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            accessibilityRole="tablist"
+            contentContainerStyle={{ gap: spacing[2] }}
+            style={{ flexGrow: 0 }}
+          >
+            {sections.map((key) => (
+              <Chip
+                key={key}
+                label={SAVED_SECTION_LABELS[key]}
+                accessibilityRole="tab"
+                accessibilityLabel={`Saved ${SAVED_SECTION_LABELS[key].toLowerCase()}`}
+                selected={activeSection === key}
+                onPress={() => chooseSection(key)}
+              />
+            ))}
+          </ScrollView>
+          {activeSection === "stalls" ? (
+            <SavedStallsSection
+              state={savedStalls}
+              onOpenStall={(venueId) => rootNavigation.navigate("StallDetail", { venueId })}
+              preload={(venueId) => {
+                prefetchStallDetail(venueId);
+                preloadRoute(rootNavigation, "StallDetail", { venueId });
+              }}
             />
-            <Chip
-              label={`Tried (${profile.reviewedDishIds.length})`}
-              selected={tab === "tried"}
-              onPress={() => setTab("tried")}
+          ) : activeSection === "posts" && FEATURE_FLAGS.socialFeedEnabled ? (
+            <SavedPostsSection
+              onOpenPost={(postId) => rootNavigation.navigate("ActivityPostDetail", { postId })}
             />
-          </View>
-          {allDishes.length > 0 ? (
-            <View style={{ marginBottom: spacing[3] }}>{dishSearch}</View>
-          ) : null}
-          {dishes.length ? (
-            <View style={{ gap: spacing[4] }}>
-              {dishes.map((dish) => {
-                const venue = repository.getVenueById(dish.venueId);
-                const destination =
-                  venue &&
-                  formatFullStallAddress(venue, {
-                    name: venue.buildingName,
-                    address: venue.address,
-                    postalCode: venue.postalCode,
-                  });
-                return (
-                  <View
-                    key={dish.id}
-                    style={[
-                      shadows.card,
-                      {
-                        backgroundColor: palette.surface,
-                        borderRadius: componentRadii.card,
-                        overflow: "hidden",
-                        borderWidth: 1,
-                        borderColor: palette.border,
-                      },
-                    ]}
-                  >
-                    <View style={{ height: 180, width: "100%", position: "relative" }}>
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${dish.name}${venue?.name ? ` at ${venue.name}` : ""}`}
-                        onPressIn={() => {
-                          prefetchDishDetail(dish.id, repository);
-                          preloadRoute(rootNavigation, "DishDetail", { dishId: dish.id });
-                        }}
-                        onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
-                        style={{ width: "100%", height: "100%" }}
-                      >
-                        <AccessibleImage
-                          source={{ uri: dish.imageUrl }}
-                          style={{ width: "100%", height: "100%" }}
-                          contentFit="cover"
-                          decorative
-                        />
-                      </Pressable>
-                      {tab === "want" ? (
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Remove ${dish.name} from saved`}
-                          hitSlop={6}
-                          onPress={() =>
-                            void toggleFavourite(dish).then((result) => {
-                              if (result.status === "failed") {
-                                showToast({ message: result.message, tone: "error" });
-                              }
-                            })
-                          }
-                          style={{
-                            position: "absolute",
-                            top: spacing[2],
-                            right: spacing[2],
-                            width: 36,
-                            height: 36,
-                            borderRadius: componentRadii.iconButton,
-                            backgroundColor: palette.surfaceTranslucent,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Bookmark size={16} color={palette.orange} fill={palette.orange} />
-                        </Pressable>
-                      ) : null}
-                    </View>
-                    <View style={{ padding: spacing[4], gap: spacing[3] }}>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          justifyContent: "space-between",
-                          gap: spacing[2],
-                        }}
-                      >
-                        <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
-                          {dish.name}
-                        </AppText>
-                        <AppText variant="price" style={{ color: palette.text }}>
-                          S${dish.price.toFixed(2)}
-                        </AppText>
-                      </View>
-                      {venue ? (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                        >
-                          <Store color={palette.orange} size={15} />
-                          <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                            {venue.buildingName ?? venue.name}
-                            {venue.unitNumber ? ` · ${venue.unitNumber}` : ""}
-                          </AppText>
-                        </View>
-                      ) : null}
-                      {dish.reviewCount > 0 ? (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}
-                        >
-                          <Star color={palette.starStroke} fill={palette.starFill} size={15} />
-                          <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
-                          <AppText variant="bodySmall" tone="secondary">
-                            ({dish.reviewCount})
-                          </AppText>
-                        </View>
-                      ) : null}
-                      {destination ? (
-                        <Button
-                          label="Get directions"
-                          leftIcon={<Navigation size={18} color={palette.textOnPrimary} />}
-                          onPress={() =>
-                            void openTrustedMapsUrl(
-                              buildMapsSearchUrl(destination, getStallPin(venue)),
-                            )
-                          }
-                        />
-                      ) : (
-                        <Button
-                          label="View dish"
-                          onPress={() => rootNavigation.navigate("DishDetail", { dishId: dish.id })}
-                        />
-                      )}
-                      <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                        <Button
-                          label={
-                            profile.reviewedDishIds.includes(dish.id) ? "Eaten" : "Mark as eaten"
-                          }
-                          variant="secondary"
-                          size="sm"
-                          fullWidth={false}
-                          leftIcon={<CircleCheck color={palette.textSecondary} size={15} />}
-                          onPress={() => void toggleEaten(dish.id)}
-                          style={{ flex: 1 }}
-                        />
-                        <Button
-                          label="Write a review"
-                          variant="secondary"
-                          size="sm"
-                          fullWidth={false}
-                          leftIcon={<PenLine color={palette.textSecondary} size={15} />}
-                          onPress={() =>
-                            rootNavigation.navigate("ReviewStack", {
-                              screen: "ReviewMain",
-                              params: { venueId: dish.venueId, dishId: dish.id },
-                            })
-                          }
-                          style={{ flex: 1 }}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          ) : allDishes.length > 0 ? (
-            <EmptyState
-              title="No matches"
-              body={`No saved dish matches "${dishQuery.trim()}".`}
-              ctaLabel="Clear search"
-              onPress={() => setDishQuery("")}
+          ) : activeSection === "lists" ? (
+            <SavedListsSection
+              lists={ownLists}
+              failed={listsFailed}
+              onRetry={retryLists}
+              onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
+              onCreateList={() => navigation.navigate("PortfolioCreate")}
+              onOpenSharedLists={() => navigation.navigate("PortfoliosHome")}
+              onOpenChecklists={() => navigation.navigate("ChecklistsHome")}
             />
           ) : (
-            <EmptyState
-              title={tab === "want" ? "Nothing saved yet" : "No dishes tried yet"}
-              body={
-                tab === "want"
-                  ? "Save dishes you want to try and they'll show up here."
-                  : "Mark a dish as tried from its page to keep a record here."
-              }
-              ctaLabel="Discover dishes"
-              onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
+            <SavedDishesSection
+              navigation={navigation}
+              saved={savedDishes}
+              tab={tab}
+              onTabChange={setTab}
+              mode={mode}
+              onModeChange={setMode}
             />
           )}
         </>
@@ -445,323 +316,145 @@ function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => voi
   );
 }
 
-/** Supabase: saved dish ids are catalog ids, so they resolve through the release catalog. */
-function CatalogSavedDishes({ navigation, query }: Pick<Props, "navigation"> & { query: string }) {
-  const favouriteDishIds = useProfileStore((state) => state.profile.favouriteDishIds);
-  const toggleFavourite = useProfileStore((state) => state.toggleFavourite);
-  const showToast = useUIStore((state) => state.showToast);
-  const { componentRadii, palette, spacing } = useHungryTheme();
-  const rootNavigation = getRootNavigation(navigation as any);
-  const [dishes, setDishes] = useState<CatalogRawDishDetail[]>([]);
-  const [unavailableCount, setUnavailableCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [pendingDishId, setPendingDishId] = useState<string | null>(null);
-  const loadVersion = useRef(0);
-  const hasLoadedRef = useRef(false);
-  const favouriteKey = favouriteDishIds.join(",");
-  // The saved set this screen's own Remove produced; that change is already on screen.
-  const ownRemovalKey = useRef<string | null>(null);
-
-  const load = useCallback(async () => {
-    const version = ++loadVersion.current;
-    const service = getCatalogRawService();
-    if (!service) {
-      setDishes([]);
-      setUnavailableCount(0);
-      setLoadError(null);
-      setIsLoading(false);
-      return;
-    }
-    // Only the first load shows the spinner; refreshes keep the list visible.
-    if (!hasLoadedRef.current) setIsLoading(true);
-    setLoadError(null);
-    const result = await loadCatalogFavourites({
-      getFavouriteDishIds: () => getHungryService().profile.getFavouriteDishIds(),
-      getDish: (id) => service.getDish(id),
-    });
-    if (loadVersion.current !== version) return;
-    if (result.status === "error") {
-      setLoadError(result.message);
-    } else {
-      hasLoadedRef.current = true;
-      setDishes(result.dishes);
-      setUnavailableCount(result.unavailableCount);
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Re-resolve when the saved set changes (e.g. a dish saved elsewhere).
-  useEffect(() => {
-    if (ownRemovalKey.current !== null && ownRemovalKey.current === favouriteKey) {
-      ownRemovalKey.current = null;
-      return;
-    }
-    ownRemovalKey.current = null;
-    void load();
-    return () => {
-      loadVersion.current += 1;
-    };
-  }, [favouriteKey, load]);
-
-  const removeFavourite = async (dish: CatalogRawDishDetail) => {
-    setPendingDishId(dish.id);
-    // The store drops the id right away; the row is removed below, so skip the full re-read
-    // that saved-set change would trigger.
-    ownRemovalKey.current = favouriteDishIds.filter((id) => id !== dish.id).join(",");
-    try {
-      const result = await toggleFavourite(
-        { id: dish.id, venueId: dish.venueId },
-        { surface: "saved" },
-      );
-      showToast(
-        result.status === "failed"
-          ? { message: result.message, tone: "error" }
-          : result.status === "removed"
-            ? { message: "Removed from Saved.", tone: "success" }
-            : { message: "This dish is still saved.", tone: "info" },
-      );
-      if (result.status === "removed") {
-        setDishes((current) => current.filter((item) => item.id !== dish.id));
-      }
-    } finally {
-      setPendingDishId(null);
-    }
-  };
-
-  return (
-    <>
-      {isLoading ? (
-        <ActivityIndicator accessibilityLabel="Loading favourites" color={palette.orange} />
-      ) : loadError ? (
-        <EmptyState
-          title="Couldn't load favourites"
-          body={`${loadError} Check your connection and try again.`}
-          ctaLabel="Retry"
-          onPress={() => void load()}
-        />
-      ) : dishes.length && !dishes.some((dish) => matchesSavedDishQuery(dish, query)) ? (
-        <EmptyState title="No matches" body={`No saved dish matches "${query.trim()}".`} />
-      ) : dishes.length ? (
-        <View style={{ gap: spacing[4] }}>
-          {dishes
-            .filter((dish) => matchesSavedDishQuery(dish, query))
-            .map((dish) => (
-              <View
-                key={dish.id}
-                style={{
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: componentRadii.card,
-                  borderWidth: 1,
-                  overflow: "hidden",
-                }}
-              >
-                {dish.imageUrl ? (
-                  <View style={{ height: 180, position: "relative" }}>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Open ${dish.name} at ${dish.venueName}`}
-                      onPress={() =>
-                        rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
-                      }
-                      style={{ height: "100%" }}
-                    >
-                      <AccessibleImage
-                        source={{ uri: dish.imageUrl }}
-                        style={{ width: "100%", height: "100%" }}
-                        contentFit="cover"
-                        decorative
-                      />
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Remove ${dish.name} from favourites`}
-                      accessibilityState={{ busy: pendingDishId === dish.id }}
-                      disabled={pendingDishId === dish.id}
-                      onPress={() => void removeFavourite(dish)}
-                      style={{
-                        position: "absolute",
-                        top: spacing[2],
-                        right: spacing[2],
-                        alignItems: "center",
-                        height: 44,
-                        justifyContent: "center",
-                        width: 44,
-                        borderRadius: componentRadii.iconButton,
-                        backgroundColor: palette.surfaceTranslucent,
-                      }}
-                    >
-                      {pendingDishId === dish.id ? (
-                        <ActivityIndicator color={palette.orange} />
-                      ) : (
-                        <Bookmark size={18} color={palette.orange} fill={palette.orange} />
-                      )}
-                    </Pressable>
-                  </View>
-                ) : null}
-                <View style={{ padding: spacing[4], gap: spacing[3] }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      gap: spacing[2],
-                    }}
-                  >
-                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
-                      {dish.name}
-                    </AppText>
-                    {dish.price !== undefined ? (
-                      <AppText variant="price" style={{ color: palette.text }}>
-                        S${dish.price.toFixed(2)}
-                      </AppText>
-                    ) : null}
-                  </View>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                    <Store color={palette.orange} size={15} />
-                    <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                      {dish.venueName}
-                    </AppText>
-                  </View>
-                  {dish.reviewCount && dish.rating ? (
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                      <Star color={palette.starStroke} fill={palette.starFill} size={15} />
-                      <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
-                      <AppText variant="bodySmall" tone="secondary">
-                        ({dish.reviewCount})
-                      </AppText>
-                    </View>
-                  ) : null}
-                  <Button
-                    label="View dish"
-                    onPress={() =>
-                      rootNavigation.navigate("CatalogRawDetail", { kind: "dish", id: dish.id })
-                    }
-                  />
-                  {!dish.imageUrl ? (
-                    <Button
-                      label={pendingDishId === dish.id ? "Removing..." : "Remove from saved"}
-                      variant="secondary"
-                      loading={pendingDishId === dish.id}
-                      onPress={() => void removeFavourite(dish)}
-                    />
-                  ) : null}
-                </View>
-              </View>
-            ))}
-          {unavailableCount > 0 ? (
-            <AppText tone="muted" variant="micro">
-              {unavailableCount === 1
-                ? "1 saved dish is not in the current catalog."
-                : `${unavailableCount} saved dishes are not in the current catalog.`}
-            </AppText>
-          ) : null}
-        </View>
-      ) : (
-        <EmptyState
-          title={unavailableCount > 0 ? "Saved dishes unavailable" : "No favourites yet"}
-          body={
-            unavailableCount > 0
-              ? "Your saved dishes are not in the current catalog."
-              : "Tap Save to favourites on any dish to keep it here."
-          }
-          ctaLabel="Discover dishes"
-          onPress={() => rootNavigation.navigate("MainTabs", { screen: "Discover" })}
-        />
-      )}
-    </>
-  );
-}
-
 /**
- * Stalls you saved with Save on a stall page (`user_stall_interactions.is_saved`), newest first.
- * The stall rows come from the server in 50-id batches (`loadVenuesByIds`), so a saved stall that
- * is not in the cached directory still shows, and so does the 51st.
+ * Stalls you saved with Save on a stall page, newest first, as rows with the stall's logo, where
+ * it is, how far and whether it is open. A List / Map switch shows them as pins; swipe a row (or
+ * tap the bookmark) to remove it, with Undo. The stall rows come from `useSavedStalls` in 50-id
+ * batches, so a saved stall outside the cached directory still shows.
  */
-function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) => void }) {
-  const { palette, spacing } = useHungryTheme();
-  const userId = useProfileStore((state) => state.profile.id);
-  const interactions = useStallInteractionStore((state) => state.interactions);
-  const isLoaded = useStallInteractionStore((state) => state.isLoaded);
-  const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
-  const loadSavedStalls = useCallback(() => loadInteractions(userId), [loadInteractions, userId]);
-  const { failed: loadFailed, retry } = useRetryableLoad(loadSavedStalls, "saved stalls");
-  const [venues, setVenues] = useState<Map<string, VenueSummary> | null>(null);
-  const [missingCount, setMissingCount] = useState(0);
-  const [venuesFailed, setVenuesFailed] = useState(false);
-  const [venuesReloadKey, setVenuesReloadKey] = useState(0);
-
-  const savedStallIds = useMemo(
-    () =>
-      Object.values(interactions)
-        .filter((interaction) => interaction.isSaved)
-        .sort((left, right) => (right.savedAt ?? "").localeCompare(left.savedAt ?? ""))
-        .map((interaction) => interaction.stallId),
-    [interactions],
+function SavedStallsSection({
+  state,
+  onOpenStall,
+  preload,
+}: {
+  state: SavedStallsState;
+  onOpenStall: (venueId: string) => void;
+  preload: (venueId: string) => void;
+}) {
+  const { spacing } = useHungryTheme();
+  const userId = useProfileStore((store) => store.profile.id);
+  const toggleSaved = useStallInteractionStore((store) => store.toggleSaved);
+  const showToast = useUIStore((store) => store.showToast);
+  const requestedMode = useSavedViewStore((store) => store.mode);
+  const setMode = useSavedViewStore((store) => store.setMode);
+  // A remembered Map choice falls back to the list in a build that cannot draw a map.
+  const mapAvailable = isLiveMapAvailable();
+  const mode = mapAvailable ? requestedMode : "list";
+  const permission = useLocationStore((store) => store.permission);
+  const currentLocation = useLocationStore((store) => store.currentLocation);
+  const manualCoordinate = useLocationStore((store) => store.manualCoordinate);
+  const origin = useMemo(
+    () => getSavedOrigin({ permission, currentLocation, manualCoordinate }),
+    [currentLocation, manualCoordinate, permission],
   );
-  const savedKey = savedStallIds.join(",");
+  const [pendingId, setPendingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!isLoaded) return undefined;
-    const ids = savedKey ? savedKey.split(",") : [];
-    if (ids.length === 0) {
-      setVenues(new Map());
-      setMissingCount(0);
-      return undefined;
-    }
-    let active = true;
-    setVenuesFailed(false);
-    loadVenuesByIds(ids)
-      .then((result) => {
-        if (!active) return;
-        setVenues(new Map(result.venues.map((row) => [row.id, row])));
-        setMissingCount(result.missingCount);
-      })
-      .catch((error) => {
-        reportError(error, { screen: "Favourites", action: "load_saved_stalls" });
-        if (active) setVenuesFailed(true);
+  const distanceFor = (venue: VenueSummary) =>
+    venue.latitude !== undefined && venue.longitude !== undefined
+      ? formatDistanceFromUser(origin, { latitude: venue.latitude, longitude: venue.longitude })
+      : undefined;
+
+  const removeStall = async (venue: VenueSummary) => {
+    setPendingId(venue.id);
+    try {
+      await toggleSaved(userId, venue.id);
+      showToast({
+        message: "Removed from Saved.",
+        tone: "success",
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onPress: () => {
+            toggleSaved(userId, venue.id).catch((error: unknown) => {
+              reportError(error, { screen: "Favourites", action: "undo_remove_stall" });
+              showToast({ message: "Couldn't undo that. Try again.", tone: "error" });
+            });
+          },
+        },
       });
-    return () => {
-      active = false;
-    };
-  }, [isLoaded, savedKey, venuesReloadKey]);
-
-  const onRetry = () => {
-    retry();
-    setVenuesReloadKey((key) => key + 1);
+    } catch (error) {
+      reportError(error, { screen: "Favourites", action: "remove_saved_stall" });
+      showToast({ message: "Couldn't remove that stall. Try again.", tone: "error" });
+    } finally {
+      setPendingId(null);
+    }
   };
-  if (loadFailed || venuesFailed) {
+
+  const mapped = useMemo(
+    () =>
+      state.stalls.filter((venue) => venue.latitude !== undefined && venue.longitude !== undefined),
+    [state.stalls],
+  );
+  const pins = useMemo<SavedMapViewPin[]>(
+    () =>
+      mapped.map((venue) => ({
+        id: venue.id,
+        coordinate: { latitude: venue.latitude as number, longitude: venue.longitude as number },
+        title: venue.name,
+        count: 1,
+      })),
+    [mapped],
+  );
+
+  const chooseMode = (next: "list" | "map") => {
+    if (next === mode) return;
+    setMode(next);
+    if (next === "map") {
+      trackAnalyticsEvent("saved_map_opened", {
+        section: "stalls",
+        pin_count: pins.length,
+        not_on_map: state.stalls.length - pins.length,
+        has_location: origin !== undefined,
+      });
+    }
+  };
+
+  const renderRow = (venue: VenueSummary, source: "list" | "map") => (
+    <SavedStallRow
+      key={venue.id}
+      venue={venue}
+      distanceLabel={distanceFor(venue)}
+      removing={pendingId === venue.id}
+      onPressIn={() => preload(venue.id)}
+      onOpen={() => {
+        trackAnalyticsEvent("saved_item_opened", {
+          item_type: "stall",
+          venue_id: venue.id,
+          source,
+        });
+        onOpenStall(venue.id);
+      }}
+      onRemove={() => void removeStall(venue)}
+    />
+  );
+
+  if (state.status === "error") {
     return (
       <EmptyState
         title="Couldn't load saved stalls"
         body="Check your connection and try again."
         ctaLabel="Retry"
-        onPress={onRetry}
+        onPress={state.retry}
       />
     );
   }
-  if (!isLoaded || venues === null) return <ProfileReviewsSkeleton />;
-
-  const savedVenues = savedStallIds
-    .map((id) => venues.get(id))
-    .filter((venue): venue is VenueSummary => Boolean(venue));
+  if (state.status === "loading") return <ProfileReviewsSkeleton />;
 
   const missingNote =
-    missingCount > 0 ? (
+    state.missingCount > 0 ? (
       <AppText tone="secondary" variant="bodySmall">
-        {describeMissingStalls(missingCount)}
+        {describeMissingStalls(state.missingCount)}
       </AppText>
     ) : null;
 
-  if (savedVenues.length === 0) {
+  if (state.stalls.length === 0) {
     // Every saved id came back with no stall: say so, rather than "No saved stalls yet".
-    return missingCount > 0 ? (
+    return state.missingCount > 0 ? (
       <EmptyState
         title="Couldn't show your saved stalls"
-        body={describeMissingStalls(missingCount)}
+        body={describeMissingStalls(state.missingCount)}
         ctaLabel="Retry"
-        onPress={onRetry}
+        onPress={state.retry}
       />
     ) : (
       <EmptyState title="No saved stalls yet" body="Tap Save on a stall page to keep it here." />
@@ -770,93 +463,78 @@ function SavedStallsSection({ onOpenStall }: { onOpenStall: (venueId: string) =>
 
   return (
     <View style={{ gap: spacing[3] }}>
-      {savedVenues.map((venue) => (
-        <Pressable
-          key={venue.id}
-          accessibilityRole="button"
-          accessibilityLabel={`Open ${venue.name}`}
-          onPress={() => onOpenStall(venue.id)}
-        >
-          <Card style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-            <Bookmark color={palette.orange} fill={palette.orange} size={18} />
-            <View style={{ flex: 1, gap: spacing[1] }}>
-              <AppText variant="bodyBold">{venue.name}</AppText>
-              {venue.buildingName || venue.unitNumber ? (
-                <AppText variant="bodySmall" tone="secondary">
-                  {[venue.unitNumber?.trim(), venue.buildingName].filter(Boolean).join(" · ")}
-                </AppText>
-              ) : null}
-            </View>
-          </Card>
-        </Pressable>
-      ))}
+      {mapAvailable ? (
+        <View style={{ alignSelf: "flex-start" }}>
+          <SavedViewSwitch
+            accessibilityLabel="Show saved stalls as a list or on a map"
+            value={mode}
+            onChange={chooseMode}
+          />
+        </View>
+      ) : null}
+      {mode === "map" ? (
+        <SavedMapView
+          pins={pins}
+          noun="stall"
+          origin={origin}
+          notOnMapCount={state.stalls.length - pins.length}
+          onShowNotOnMap={() => setMode("list")}
+          renderPinCard={(pinId) => {
+            const venue = mapped.find((candidate) => candidate.id === pinId);
+            return venue ? renderRow(venue, "map") : null;
+          }}
+        />
+      ) : (
+        <View style={{ gap: spacing[2] }}>
+          {state.stalls.map((venue) => (
+            <SwipeToRemove
+              key={venue.id}
+              label={venue.name}
+              removing={pendingId === venue.id}
+              onRemove={() => void removeStall(venue)}
+            >
+              {renderRow(venue, "list")}
+            </SwipeToRemove>
+          ))}
+        </View>
+      )}
       {missingNote}
     </View>
   );
 }
 
-/** Your collections (portfolios) as albums, with a tile to start a new one. */
+/** Your lists as albums with real cover photos, and a tile to start a new one. */
 function SavedListsSection({
+  lists,
+  failed,
+  onRetry,
   onOpenList,
   onCreateList,
-  onOpenAllLists,
+  onOpenSharedLists,
+  onOpenChecklists,
 }: {
+  lists: readonly Portfolio[];
+  failed: boolean;
+  onRetry: () => void;
   onOpenList: (portfolioId: string) => void;
   onCreateList: () => void;
-  onOpenAllLists: () => void;
+  onOpenSharedLists: () => void;
+  onOpenChecklists: () => void;
 }) {
   const { spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
-  const profileId = useProfileStore((state) => state.profile.id);
-  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
-  const authenticatedUserId = useSessionStore((state) => state.authenticatedUserId);
-  const portfolios = usePortfolioStore((state) => state.portfolios);
   const items = usePortfolioStore((state) => state.items);
-  const mineIds = usePortfolioStore((state) => state.scopeIds.mine);
-  const loadPortfolioScope = usePortfolioStore((state) => state.loadPortfolioScope);
-  const canLoad = FEATURE_FLAGS.portfoliosEnabled && isAuthenticated;
-  const repository = getDataRepository();
   // Two columns inside the screen's spacing[4] gutters.
   const tileWidth = (width - spacing[4] * 2 - spacing[3]) / 2;
+  const covers = useListCovers(useMemo(() => lists.map((list) => list.id), [lists]));
 
-  // Your own lists by owner on the server, not a filter over everyone's newest 100. Keyed on the
-  // owner id the store queries with (the signed-in account first), so a switch reloads.
-  const ownerId = (isAuthenticated ? authenticatedUserId : undefined) ?? profileId;
-  const loadOwnLists = useCallback(
-    async () => {
-      if (canLoad) await loadPortfolioScope("mine");
-    },
-    // ownerId: a different account reloads its own lists.
-    [canLoad, loadPortfolioScope, ownerId],
-  );
-  const { failed: listsFailed, retry: retryLists } = useRetryableLoad(loadOwnLists, "saved lists");
-
-  const ownLists = useMemo(() => {
-    const byId = new Map(portfolios.map((portfolio) => [portfolio.id, portfolio]));
-    return (mineIds ?? [])
-      .map((id) => byId.get(id))
-      .filter((portfolio): portfolio is Portfolio => Boolean(portfolio));
-  }, [mineIds, portfolios]);
-
-  // Cover mosaic: the first dish photos already in memory for each collection.
-  const coverPhotosById = useMemo(() => {
-    const covers = new Map<string, string[]>();
-    for (const portfolio of ownLists) {
-      const photos = (items[portfolio.id] ?? [])
-        .map((item) => (item.dishId ? repository.getDishById(item.dishId)?.imageUrl : undefined))
-        .filter((uri): uri is string => Boolean(uri));
-      covers.set(portfolio.id, Array.from(new Set(photos)).slice(0, 4));
-    }
-    return covers;
-  }, [items, ownLists, repository]);
-
-  if (listsFailed && ownLists.length === 0) {
+  if (failed && lists.length === 0) {
     return (
       <EmptyState
         title="Couldn't load your lists"
         body="Check your connection and try again."
         ctaLabel="Retry"
-        onPress={retryLists}
+        onPress={onRetry}
       />
     );
   }
@@ -865,24 +543,29 @@ function SavedListsSection({
     <View style={{ gap: spacing[4] }}>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
         <NewCollectionTile width={tileWidth} onPress={onCreateList} />
-        {ownLists.map((portfolio) => (
+        {lists.map((portfolio) => (
           <CollectionAlbumCard
             key={portfolio.id}
             name={portfolio.name}
             itemCount={resolveListItemCount(portfolio, items[portfolio.id])}
-            coverPhotos={coverPhotosById.get(portfolio.id) ?? []}
+            coverPhotos={covers.get(portfolio.id) ?? []}
             width={tileWidth}
             onPress={() => onOpenList(portfolio.id)}
           />
         ))}
       </View>
-      {ownLists.length === 0 ? (
+      {lists.length === 0 ? (
         <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-          Make albums like &quot;Date night&quot; or &quot;Supper spots&quot;, then save dishes into
+          Make lists like &quot;Date night&quot; or &quot;Supper spots&quot;, then save dishes into
           them from any dish page.
         </AppText>
       ) : null}
-      <Button label="All lists" variant="secondary" onPress={onOpenAllLists} />
+      {FEATURE_FLAGS.portfoliosEnabled ? (
+        <Button label="Shared and followed lists" variant="secondary" onPress={onOpenSharedLists} />
+      ) : null}
+      {FEATURE_FLAGS.collectionsEnabled ? (
+        <Button label="Checklists" variant="secondary" onPress={onOpenChecklists} />
+      ) : null}
     </View>
   );
 }

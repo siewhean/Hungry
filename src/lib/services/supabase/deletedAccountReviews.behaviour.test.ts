@@ -39,6 +39,11 @@ const deletedRow = {
 };
 
 test("SET-V1: the photo grid leaves out a deleted account's review instead of a blank tile", async () => {
+  // A backend without get_review_feed_page is read table by table (the fallback path).
+  fake.rpc.get_review_feed_page = () => ({
+    data: null,
+    error: { code: "PGRST202", message: "Could not find the function" },
+  });
   fake.tables.reviews = () => ({
     data: [
       {

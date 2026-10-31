@@ -1,0 +1,14 @@
+{
+  "version": "20261029160000",
+  "name": "20261029160000_merchant_claim_approval",
+  "result": "pass",
+  "rehearsed_at": "2026-10-30T10:44:29Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "9b87340b9bc0049367a55f1027088b6c1fe315a9",
+  "up_sha256": "ce87b88b9d5faae102eee303866d0f46a81fd6241cfc63fe0f10d3bd38400110",
+  "down_sha256": "561fe1848333f5c513831e350f485f144053fcbe1a5b14bec53eaaa3b162c330",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/merchant_claim_approval.sql"]
+}

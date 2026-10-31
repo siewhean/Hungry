@@ -3,20 +3,17 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
 
-test("resilient catalog service loads the Excel fallback only when it is used", () => {
+test("an Excel fallback that cannot load becomes the retryable unavailable error", () => {
   const source = readFileSync(
     resolve(process.cwd(), "src/lib/services/serviceProvider.ts"),
     "utf8",
   );
-  const start = source.indexOf("export function createResilientCatalogReadService(");
-  const end = source.indexOf("export function getServiceProvider()");
+  const start = source.indexOf("function createLazyExcelCatalogFallback()");
+  const end = source.indexOf("export function createResilientCatalogReadService(");
   const body = source.slice(start, end);
 
-  // Production bundles stub the Excel catalog; an eager require crashed every catalog read.
+  // Release bundles stub the Excel catalog, so a failed live read must not crash the app.
   assert.ok(start > 0 && end > start);
-  assert.doesNotMatch(body, /CatalogReadService\s*=\s*getExcelCatalogFallbackService\(\)/);
-  assert.match(body, /fallbackService = getExcelCatalogFallbackService\(\)/);
-  // A fallback that cannot load (stubbed in production) must become a retryable error.
+  assert.match(body, /resolved = getExcelCatalogFallbackService\(\)/);
   assert.match(body, /throw new CatalogUnavailableError\(undefined, error\)/);
-  assert.doesNotMatch(body, /\bfallback\.\w+\(/);
 });

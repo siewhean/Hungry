@@ -90,7 +90,8 @@ test("20: bio is capped at 150 characters in the database, the editor and the mo
 
   const edit = read("src/app/screens/profile/EditProfileScreen.tsx");
   assert.match(edit, /maxLength=\{PROFILE_BIO_MAX_LENGTH\}/);
-  assert.match(edit, /helperText=\{`\$\{bio\.length\}\/\$\{PROFILE_BIO_MAX_LENGTH\}`\}/);
+  // The counter shows only when the limit is near (the last 30 characters).
+  assert.match(edit, /`\$\{bio\.length\}\/\$\{PROFILE_BIO_MAX_LENGTH\}`/);
   assert.match(read("src/app/screens/profile/ProfileHomeScreen.tsx"), /profile\.bio \?/);
 
   const saved = await hungryService.profile.updateProfile({ bio: "  Laksa hunter  " });
@@ -101,23 +102,28 @@ test("20: bio is capped at 150 characters in the database, the editor and the mo
   await hungryService.profile.updateProfile({ bio: "" });
 });
 
-test("21: one Lists area, and Saved has Dishes, Stalls and Lists tabs", () => {
+test("21: Saved is the one door, with Dishes, Stalls and Lists inside it", () => {
   assert.match(read("src/app/screens/profile/ProfileStack.tsx"), /name="ListsHome"/);
   const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(home, /label="Lists"/);
-  assert.doesNotMatch(home, /label="My Checklists"|label="Hungry Portfolios"/);
+  // Saved is the one entry point on Profile; there is no Lists or Collections door beside it.
+  assert.match(home, /key: "saved",[\s\S]*?navigation\.navigate\("Favourites"\)/);
+  assert.doesNotMatch(home, /label="Lists"|label="Collections"/);
+  const saved = read("src/app/screens/profile/FavouritesScreen.tsx");
+  // The Lists section is part of Saved and offers shared lists, not a second Saved page.
+  assert.match(saved, /navigation\.navigate\("PortfoliosHome"\)/);
+  assert.doesNotMatch(saved, /label="Search all saved"|label="All lists"/);
+  assert.doesNotMatch(saved, /navigate\("Collections"\)/);
   const lists = read("src/app/screens/profile/ListsHomeScreen.tsx");
   assert.match(lists, /navigation\.navigate\("Favourites", undefined, \{ pop: true \}\)/);
   assert.match(lists, /navigation\.navigate\("PortfoliosHome"\)/);
   assert.match(lists, /FEATURE_FLAGS\.collectionsEnabled \?/);
-  const saved = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const savedFeature = read("src/features/saved/savedDishes.ts");
   assert.match(
-    saved,
-    /dishes: "Dishes",\s*stalls: "Stalls",\s*posts: "Posts",\s*lists: "Collections"/,
+    savedFeature,
+    /dishes: "Dishes",\s*stalls: "Stalls",\s*lists: "Lists",\s*posts: "Posts"/,
   );
   // Saved > Stalls lists saved stalls (STALL-1), fetched in 50-id batches (SAVED-V2).
-  assert.match(saved, /loadVenuesByIds\(ids\)/);
-  assert.match(saved, /navigation\.navigate\("ListsHome", undefined, \{ pop: true \}\)/);
+  assert.match(read("src/features/saved/useSavedStalls.ts"), /loadVenuesByIds\(ids\)/);
 });
 
 test("22: Surprise me picks among the closest stalls only when location is in use", () => {

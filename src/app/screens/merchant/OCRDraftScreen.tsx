@@ -94,7 +94,7 @@ export function OCRDraftScreen() {
       return true;
     } catch (e) {
       reportError(e, { screen: "OCRDraft", action: "accept_draft" });
-      if (!options.silent) showAlert("Error", "Failed to accept draft.");
+      if (!options.silent) showAlert("Couldn't accept this draft", "Please try again in a moment.");
       return false;
     } finally {
       busyDraftIds.current.delete(draftId);
@@ -112,7 +112,7 @@ export function OCRDraftScreen() {
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
     } catch (e) {
       reportError(e, { screen: "OCRDraft", action: "reject_draft" });
-      showAlert("Error", "Failed to reject draft.");
+      showAlert("Couldn't reject this draft", "Please try again in a moment.");
     }
   };
 

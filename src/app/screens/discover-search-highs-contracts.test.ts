@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-import { readRepoFile } from "@/test/sourceContracts";
+import { readHomeSource, readRepoFile } from "@/test/sourceContracts";
 
 test("Discover feed falls back to the radius search and ranks by computed distance", () => {
   const migration = readRepoFile(
@@ -23,31 +23,32 @@ test("Discover feed falls back to the radius search and ranks by computed distan
   assert.match(smoke, /^rollback;/m);
 });
 
-test("Discover asks for an area instead of asserting the default location", () => {
-  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+test("Discover follows the phone's location and offers to turn it on when it is off", () => {
+  const screen = readHomeSource();
 
   // No OS permission prompt on mount; only the "Use current location" press asks.
   assert.doesNotMatch(screen, /useEffect\(\(\) => \{[^}]*grantLocation\(/);
   assert.match(screen, /const handleUseCurrentLocation = useCallback\(async \(\) => \{/);
-  // Owner decision (round 3): always an area, never just "Singapore"; the area is in orange.
-  assert.doesNotMatch(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
+  // Owner decision (2026-10-29): no area picker. The area follows the phone; with location
+  // off the header says "Singapore", the feed reads island-wide, and a banner offers
+  // "Turn on location".
+  assert.match(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
+  assert.match(screen, /DISCOVER_ISLAND_RADIUS_METERS/);
   assert.match(
     screen,
     /getNearestSingaporeArea\(discoverLocationLatitude, discoverLocationLongitude\)/,
   );
   assert.match(screen, /You are at\s*<\/AppText>/);
-  assert.match(
-    screen,
-    /style=\{\{ color: themeTints\.text \}\} numberOfLines=\{1\}>\s*\{discoverHeaderLabel\}/,
-  );
-  assert.match(
-    screen,
-    /navigation\.navigate\("OnboardingStack", \{ screen: "ManualLocationPicker" \}\)/,
-  );
+  // Round five: with location off the title is "Across Singapore", not "You are at Singapore".
+  assert.match(screen, /`Across \$\{discoverHeaderLabel\}`/);
+  assert.match(screen, /Turn on location for stalls near you/);
+  assert.doesNotMatch(screen, /Location is off, so these are picks across Singapore/);
+  assert.match(screen, /accessibilityLabel="Turn on location"/);
+  assert.doesNotMatch(screen, /ManualLocationPicker|handleChangeArea/);
 });
 
 test("Decide for me picks and logs once, on the result screen, at the effective location", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const result = readRepoFile("src/app/screens/discover/DecideForMeResultScreen.tsx");
   const handler =
     discover.match(/const handleDecideForMe = \(\) => \{[\s\S]*?\n {2}\};/)?.[0] ?? "";
@@ -63,15 +64,15 @@ test("Decide for me picks and logs once, on the result screen, at the effective 
 });
 
 test("Discover rails no longer claim prep times or curation they do not have", () => {
-  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const screen = readHomeSource();
 
   assert.doesNotMatch(screen, /&lt; 15 MIN|★ CURATED|MUST ORDER|Editor&apos;s Choice/);
-  assert.match(screen, /title=\{`Trending \$\{trendingAreaPhrase\}`\}/);
+  assert.match(screen, /title=\{`Most reviewed \$\{trendingAreaPhrase\}`\}/);
   assert.match(screen, /Top rated/);
 });
 
 test("Top rated rail never falls back to trending dishes under its 4.4+ label", () => {
-  const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const screen = readHomeSource();
   const editorChoice =
     screen.match(/const unfilteredEditorChoiceCards = useMemo\([\s\S]*?\n {2}\);/)?.[0] ?? "";
 
@@ -97,7 +98,7 @@ test("Home map centres on the user, wires catalog pins and keeps Mapbox attribut
   assert.match(map, /centerCoordinate=\{mapCenter\}/);
   assert.match(map, /currentLocation=\{isLocationApproximate \? undefined : currentLocation\}/);
   assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
-  assert.match(map, /displayModeRef\.current === "list"/);
+  assert.match(map, /displayMode === "list"\s*\?\s*\[MINIMIZED_HEIGHT, LIST_HEIGHT, FULL_HEIGHT\]/);
   assert.match(map, /"Recenter map on your location"/);
   assert.doesNotMatch(map, /Recenter map to default building/);
   assert.doesNotMatch(surface, /attributionEnabled=\{false\}|logoEnabled=\{false\}/);
@@ -106,7 +107,7 @@ test("Home map centres on the user, wires catalog pins and keeps Mapbox attribut
 
 test("Screens with analytics mount effects are never preloaded", () => {
   const prefetch = readRepoFile("src/features/navigation/prefetch.ts");
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
 
   assert.match(
     prefetch,
@@ -177,7 +178,7 @@ test("Search browse: guests can browse, chips never show everything, errors stay
   assert.doesNotMatch(results, /Sign in to browse the full directory/);
   assert.match(
     readRepoFile("src/features/search/browseGrid.ts"),
-    /dietaryFlags: input\.filters\.includes\("Halal"\) \? \["halal"\] : \[\]/,
+    /if \(input\.filters\.includes\("Halal"\)\) dietaryFlags\.add\("halal"\)/,
   );
   assert.doesNotMatch(results, /body=\{error\}/);
   assert.match(results, /errorMessage=\{error\}/);
@@ -213,7 +214,7 @@ test("Home map recentres only when the chosen building changes", () => {
 });
 
 test("Map is open to every diner from a List/Map toggle on Discover, guests included", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
   const toggle = readRepoFile("src/components/discover/DiscoverViewToggle.tsx");
   const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");

@@ -32,8 +32,10 @@ test("fresh users complete onboarding before the mandatory account step", () => 
   const mandatoryStep = read("src/app/screens/onboarding/MandatoryOnboardingAuthScreen.tsx");
   const welcome = read("src/app/screens/onboarding/WelcomeScreen.tsx");
 
-  const onboardingIndex = splash.indexOf('name: "OnboardingStack"');
-  const authIndex = splash.indexOf('name: "AuthStack"');
+  const onboardingIndex = splash.indexOf("onboardingEntryRoute()");
+  // The last AuthStack route is the signed-out one that follows onboarding; an earlier one is
+  // Welcome's "Sign in" intent (R4-ONB-4).
+  const authIndex = splash.lastIndexOf('name: "AuthStack"');
   assert.ok(onboardingIndex >= 0 && authIndex > onboardingIndex);
   assert.match(onboarding, /name="OnboardingAuth" component=\{MandatoryOnboardingAuthScreen\}/);
   assert.match(mandatoryStep, /completeOnboarding\(hasSkippedTasteQuiz\)/);

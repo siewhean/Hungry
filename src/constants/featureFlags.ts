@@ -50,6 +50,9 @@ export function resolveFeatureFlags(
   const hungryWheelEnabled = surface("EXPO_PUBLIC_ENABLE_WHEEL", true);
   // Crave is only reachable from merchant mode today, so keep it out of production.
   const craveEnabled = surface("EXPO_PUBLIC_ENABLE_CRAVE", nonProductionSurfaceEnabled);
+  // Mood search (typed text sent to Anthropic) is not in the search screen yet. Off hides its
+  // "AI search" switch in Settings; the build that wires mood search turns it on.
+  const aiSearchEnabled = surface("EXPO_PUBLIC_ENABLE_AI_SEARCH", false);
 
   return {
     appEnv,
@@ -63,6 +66,7 @@ export function resolveFeatureFlags(
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,
+    aiSearchEnabled,
     wheelPartyEnabled: hungryWheelEnabled && nonProductionSurfaceEnabled,
     // Favourites are MVP scope: on in every environment. Writes are authenticated
     // and surface server success/failure.
@@ -73,6 +77,10 @@ export function resolveFeatureFlags(
     directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false),
     commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
+    // Google sign-in on Android and web. Production opts in with EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN=1
+    // once the Google provider is configured in Supabase; iPhone never shows it until Sign in
+    // with Apple ships (App Store rule 4.8), whatever this says (authProviders.ts).
+    googleSignInEnabled: surface("EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN", nonProductionSurfaceEnabled),
     floorplansEnabled: false,
     gamificationEnabled: nonProductionSurfaceEnabled,
     collectionsEnabled: nonProductionSurfaceEnabled,

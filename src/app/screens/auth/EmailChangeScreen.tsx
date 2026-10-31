@@ -1,9 +1,8 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View } from "react-native";
-import { CheckCircle2, CircleAlert } from "lucide-react-native";
 import { useEffect, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, AppSymbol } from "@/components/ui";
 import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
 import { isUnexpectedAuthError } from "@/features/auth/authErrors";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -108,9 +107,9 @@ export function EmailChangeScreen({ navigation, route }: Props) {
             }}
           >
             {status === "failed" ? (
-              <CircleAlert color={palette.orange} size={30} />
+              <AppSymbol name="problem" color={palette.orange} size={30} />
             ) : (
-              <CheckCircle2 color={palette.orange} size={30} />
+              <AppSymbol name="done" color={palette.orange} size={30} />
             )}
           </View>
           <AppText

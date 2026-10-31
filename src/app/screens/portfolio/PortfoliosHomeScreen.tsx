@@ -152,7 +152,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
             onPress={() => navigation.navigate("PortfolioCreate")}
           />
           <Button
-            label="Global search"
+            label="Search public lists"
             fullWidth={false}
             variant="secondary"
             onPress={() => navigation.navigate("PortfolioSearch")}

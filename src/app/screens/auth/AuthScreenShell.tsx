@@ -1,12 +1,13 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft } from "lucide-react-native";
 
-import { Screen, AppText, HungryLogo } from "@/components/ui";
+import { Screen, AppText, HungryLogo, AppSymbol } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
+
+export const AUTH_COMPACT_LOGO_SIZE = 48;
 
 interface AuthScreenShellProps {
   title: string;
@@ -14,6 +15,10 @@ interface AuthScreenShellProps {
   footer?: ReactNode;
   /** Overrides the wordmark colour; the default follows the theme's text colour. */
   wordmarkColor?: string;
+  /**
+   * Form screens: a 48 px mark with no wordmark, so the primary button stays above the fold on a
+   * 320x568 phone. The full logo belongs on Welcome.
+   */
   compact?: boolean;
   /** Shows a back chevron on pushed screens (the app is sign-in only: no close control). */
   onBack?: () => void;
@@ -47,7 +52,7 @@ export function AuthScreenShell({
   const titleGap = compact ? spacing[4] : spacing[8];
   const innerGap = compact ? spacing[3] : spacing[4];
   const footerTopGap = compact ? spacing[2] : spacing[3];
-  const logoSize = HUNGRY_LOGO_STANDARD_SIZE;
+  const logoSize = compact ? AUTH_COMPACT_LOGO_SIZE : HUNGRY_LOGO_STANDARD_SIZE;
   // The navy token is near-black in dark mode; the text colour follows the theme.
   const effectiveWordmarkColor = wordmarkColor ?? palette.text;
   const keyboardReveal = useKeyboardRevealFocusedInput();
@@ -89,11 +94,15 @@ export function AuthScreenShell({
                   minWidth: componentSizes.touchTarget,
                 }}
               >
-                <ArrowLeft color={palette.text} size={22} />
+                <AppSymbol name="back" color={palette.text} size={22} />
               </Pressable>
             ) : null}
             <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>
-              <HungryLogo size={logoSize} showWordmark wordmarkColor={effectiveWordmarkColor} />
+              <HungryLogo
+                size={logoSize}
+                showWordmark={!compact}
+                wordmarkColor={effectiveWordmarkColor}
+              />
               <View style={{ alignItems: "center", gap: spacing[1] }}>
                 {title.trim().length > 0 ? (
                   <AppText variant="h1" accessibilityRole="header" style={{ textAlign: "center" }}>

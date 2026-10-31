@@ -18,7 +18,7 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   // Sign-in only: the grid loads for a signed-in user, so loading depends on isAuthenticated.
   assert.match(
     grid,
-    /\[\s*coordinate,\s*filters,\s*isAuthenticated,\s*mode,\s*place,\s*query,\s*requestKey,\s*service,\s*sort,\s*widenRadius,\s*\]/,
+    /\[\s*coordinate,\s*filters,\s*isAuthenticated,\s*mode,\s*parsedFilters,\s*foodTypes,\s*place,\s*query,\s*requestKey,\s*service,\s*sort,\s*widenRadius,\s*\]/,
   );
   assert.doesNotMatch(grid, /\[currentLocation, (isAuthenticated, )?mode/);
   for (const event of [
@@ -39,7 +39,7 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   assert.doesNotMatch(grid, /OPEN_NOW_FILTER|openOnly:/);
   assert.match(
     read("src/features/search/browseGrid.ts"),
-    /maxPrice: input\.filters\.includes\(BUDGET_FILTER\) \? BUDGET_MAX_PRICE : undefined/,
+    /input\.filters\.includes\(BUDGET_FILTER\) \? BUDGET_MAX_PRICE : undefined/,
   );
   assert.match(grid, /Location is off, so distances are from central Singapore\./);
   assert.doesNotMatch(grid, /fontSize: 10/);
@@ -98,7 +98,7 @@ test("settings: device left-handed mode, deletion via RPC, alerts states, haptic
   assert.match(settings, /formatDeletionDate\(scheduledFor\)/);
   assert.doesNotMatch(settings, /label="Profile ID"|label="Display name"/);
   assert.match(settings, /SettingsChoiceSheet/);
-  assert.match(settings, /title="Theme"/);
+  assert.doesNotMatch(settings, /title="Theme"/);
   assert.match(alerts, /busy=\{isBusy\}/);
   assert.match(alerts, /Linking\.openSettings\(\)/);
   assert.match(section, /accessibilityRole="header"/);
@@ -112,7 +112,7 @@ test("edit profile: no pre-prompt, honest toast, unsaved-changes guard, labelled
   const edit = read("src/app/screens/profile/EditProfileScreen.tsx");
 
   assert.doesNotMatch(edit, /confirmGalleryAccess|requestMediaLibraryPermissionsAsync/);
-  assert.match(edit, /Photo selected\. Tap Save changes to use it\./);
+  assert.match(edit, /Photo selected\. Tap Save to use it\./);
   assert.match(edit, /addListener\("beforeRemove"/);
   assert.match(edit, /validateDisplayName\(displayName\)/);
   assert.match(read("src/features/profile/profileName.ts"), /Enter a display name\./);

@@ -1,6 +1,13 @@
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { ExternalLink } from "lucide-react-native";
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 
+import { OpenExternalSymbol } from "./dishSymbols";
 import { BRAND_COLORS, BRAND_BUTTON_TEXT_COLORS } from "@/constants/brandColors";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
@@ -88,7 +95,7 @@ export function DeliveryPlatformButton({
         <AppText variant="bodySmallBold" numberOfLines={1}>
           {meta.label.replace("Order on ", "")}
         </AppText>
-        <ExternalLink size={14} color={palette.textSecondary} />
+        <OpenExternalSymbol size={14} color={palette.textSecondary} />
       </Pressable>
     );
   }
@@ -125,7 +132,10 @@ export function DeliveryPlatformButton({
         >
           {meta.label.replace("Order on ", "")}
         </AppText>
-        <ExternalLink size={16} color={knownPlatform ? knownPlatform.textColor : palette.text} />
+        <OpenExternalSymbol
+          size={16}
+          color={knownPlatform ? knownPlatform.textColor : palette.text}
+        />
       </View>
     </Pressable>
   );
@@ -155,6 +165,10 @@ const styles = StyleSheet.create({
   },
 });
 
+/** Below this window width, or at this text scale, delivery buttons stack one per row. */
+const NARROW_WIDTH = 360;
+const LARGE_TEXT_SCALE = 1.3;
+
 /**
  * Delivery apps as big brand buttons across the page: two share the width, a single one takes
  * half of it (so it never reads as the page's main action).
@@ -169,7 +183,11 @@ export function DeliveryButtonRow({
   venueId?: string;
 }) {
   const { spacing } = useHungryTheme();
+  const { fontScale, width } = useWindowDimensions();
   if (links.length === 0) return null;
+  // Two across need about 140pt each: on a small phone or at large text each app gets a row,
+  // so the names ("GrabFood", "Foodpanda") are never cut to "GrabF…".
+  const oneAcross = width < NARROW_WIDTH || fontScale >= LARGE_TEXT_SCALE;
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
       {links.map((link) => (
@@ -178,7 +196,13 @@ export function DeliveryButtonRow({
           link={link}
           dishId={dishId}
           venueId={venueId}
-          style={links.length === 1 ? { width: "48%" } : { flexBasis: "45%", flexGrow: 1 }}
+          style={
+            oneAcross
+              ? { width: "100%" }
+              : links.length === 1
+                ? { width: "48%" }
+                : { flexBasis: "45%", flexGrow: 1 }
+          }
         />
       ))}
     </View>

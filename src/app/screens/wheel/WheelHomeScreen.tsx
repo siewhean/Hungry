@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { View, Pressable } from "react-native";
+import { ActivityIndicator, View, Pressable } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Users, ArrowRight, Compass } from "lucide-react-native";
 
-import { AppText, Button, Card, Input, Screen } from "@/components/ui";
+import { AppSymbol, AppText, Button, Card, Input, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
@@ -30,11 +31,16 @@ export function WheelHomeScreen({ navigation, route }: Props) {
     }
   }, [route.params?.code]);
   const [joinError, setJoinError] = useState("");
+  const [createError, setCreateError] = useState("");
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  // Without parties there is nothing to choose here, so the wheel opens straight on its lobby.
+  // An invite link is the exception: it says why group spins are not there yet.
+  const startsStraightAway = !PARTY_ENABLED && !route.params?.code;
 
   async function handleCreate() {
     setCreating(true);
+    setCreateError("");
     try {
       // Seed the host's dietary needs so the add sheet can warn about stalls that don't fit.
       const party = await createParty(
@@ -44,10 +50,23 @@ export function WheelHomeScreen({ navigation, route }: Props) {
         useProfileStore.getState().profile.dietaryPreferences,
       );
       navigation.replace("WheelLobby", { partyId: party.id });
+    } catch (error) {
+      reportError(error, { screen: "WheelHome", action: "create_party" });
+      setCreateError(
+        PARTY_ENABLED
+          ? "Couldn't start the party. Check your connection and try again."
+          : "Couldn't set up your wheel. Check your connection and try again.",
+      );
     } finally {
       setCreating(false);
     }
   }
+
+  useEffect(() => {
+    if (!startsStraightAway) return;
+    void handleCreate();
+    // Once, when the screen opens; "Try again" below starts it again after a failure.
+  }, [startsStraightAway]);
 
   async function handleJoin() {
     if (!joinCode.trim() || !joinName.trim()) {
@@ -64,9 +83,34 @@ export function WheelHomeScreen({ navigation, route }: Props) {
         return;
       }
       navigation.replace("WheelLobby", { partyId: party.id });
+    } catch (error) {
+      reportError(error, { screen: "WheelHome", action: "join_party" });
+      setJoinError("Couldn't join the party. Check your connection and try again.");
     } finally {
       setJoining(false);
     }
+  }
+
+  if (startsStraightAway) {
+    return (
+      <Screen title="Your wheel" scroll={false}>
+        <View style={{ alignItems: "center", gap: spacing[4], paddingTop: spacing[8] }}>
+          {createError ? (
+            <>
+              <AppText accessibilityRole="alert" tone="accent" style={{ textAlign: "center" }}>
+                {createError}
+              </AppText>
+              <Button label="Try again" onPress={() => void handleCreate()} loading={creating} />
+            </>
+          ) : (
+            <>
+              <ActivityIndicator color={palette.orange} />
+              <AppText tone="secondary">Setting up your wheel…</AppText>
+            </>
+          )}
+        </View>
+      </Screen>
+    );
   }
 
   return (
@@ -84,7 +128,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
               justifyContent: "center",
             }}
           >
-            <Compass size={44} color={palette.orange} strokeWidth={1.5} />
+            <AppSymbol name="safari" fallback={Compass} size={44} color={palette.orange} />
           </View>
           <AppText
             variant="bodySmall"
@@ -105,6 +149,12 @@ export function WheelHomeScreen({ navigation, route }: Props) {
               </AppText>
             </View>
           </Card>
+        ) : null}
+
+        {createError ? (
+          <AppText accessibilityRole="alert" tone="accent" variant="bodySmall">
+            {createError}
+          </AppText>
         ) : null}
 
         {/* Create Party (solo spin when parties are off) - High Impact */}
@@ -145,7 +195,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2" style={{ color: palette.white }}>
-                  {PARTY_ENABLED ? "Host a Party" : "Spin the wheel"}
+                  {PARTY_ENABLED ? "Host a party" : "Spin the wheel"}
                 </AppText>
                 <AppText variant="bodySmall" style={{ color: palette.white }}>
                   {PARTY_ENABLED
@@ -163,7 +213,12 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                   justifyContent: "center",
                 }}
               >
-                <ArrowRight size={24} color={palette.white} />
+                <AppSymbol
+                  name="arrow.right"
+                  fallback={ArrowRight}
+                  size={24}
+                  color={palette.white}
+                />
               </View>
             </View>
           </LinearGradient>
@@ -191,7 +246,12 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             <Card style={{ borderStyle: "dashed", borderWidth: 1.5, borderColor: palette.border }}>
               <View style={{ gap: spacing[4] }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                  <Users size={18} color={palette.orange} />
+                  <AppSymbol
+                    name="person.2.fill"
+                    fallback={Users}
+                    size={18}
+                    color={palette.orange}
+                  />
                   <AppText variant="h3">Join your friends</AppText>
                 </View>
 
@@ -231,7 +291,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                 ) : null}
 
                 <Button
-                  label={joining ? "Joining..." : "Join the Room"}
+                  label={joining ? "Joining..." : "Join the room"}
                   onPress={handleJoin}
                   disabled={joining}
                   variant="secondary"

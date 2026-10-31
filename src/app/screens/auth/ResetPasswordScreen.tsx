@@ -1,11 +1,14 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, View, type TextInput } from "react-native";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
+import { Pressable, View } from "react-native";
 import { useEffect, useRef, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
-import { trackAuthFailed, trackAuthScreenViewed } from "@/features/auth/authAnalytics";
+import { AppText, Button, FeedErrorBoundary, Input, AppSymbol } from "@/components/ui";
+import {
+  trackAuthFailed,
+  trackAuthScreenViewed,
+  trackPasswordResetCompleted,
+} from "@/features/auth/authAnalytics";
 import {
   getAuthErrorKind,
   getAuthFailureMessage,
@@ -14,14 +17,12 @@ import {
 import {
   getPasswordUpdateErrorMessage,
   PASSWORD_RULES,
-  validateConfirmPassword,
   validatePassword,
 } from "@/features/auth/validation";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useSessionStore } from "@/store/useSessionStore";
-import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
@@ -29,17 +30,16 @@ import { PasswordRequirements } from "./PasswordRequirements";
 import { AUTH_EYE_BUTTON_STYLE } from "./authEyeButton";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
-type FormValues = { password: string; confirmPassword: string };
+type FormValues = { password: string };
 
 export function ResetPasswordScreen({ navigation, route }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const showToast = useUIStore((state) => state.showToast);
+  // Inline copy of the last rejected password, so it is not only a passing toast.
+  const [resetError, setResetError] = useState<string | null>(null);
   const setPasswordRecoveryInProgress = useSessionStore(
     (state) => state.setPasswordRecoveryInProgress,
   );
-  const confirmPasswordRef = useRef<TextInput>(null);
   // The reset link's code can be exchanged only once; a retry after a rejected
   // password must call updatePassword alone.
   const recoveryCodeExchangedRef = useRef(route.params?.recoveryVerified === true);
@@ -57,7 +57,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
-    defaultValues: { password: "", confirmPassword: "" },
+    defaultValues: { password: "" },
   });
   const passwordValue = watch("password");
 
@@ -86,7 +86,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       } catch (error) {
         // No session was created, so nothing to hold.
         setPasswordRecoveryInProgress(false);
-        trackAuthFailed("password_reset", "email", error);
+        trackAuthFailed("password_reset", "email", error, "reset_password");
         const missingVerifier =
           (error as { name?: unknown } | null)?.name === "AuthPKCECodeVerifierMissingError";
         if (!missingVerifier && isUnexpectedAuthError(error)) {
@@ -116,6 +116,8 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
   }, []);
 
   const handleReset = handleSubmit(async ({ password }) => {
+    setResetError(null);
+    let otherDevicesSignedOut = false;
     if (getConfiguredDataSource() === "supabase") {
       const auth = getHungryService().auth;
       if (!(await exchangeLinkCode())) return;
@@ -124,21 +126,28 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
       } catch (error) {
         // The recovery session is signed in: keep the hold so the user stays
         // here and can retry with a different password.
-        trackAuthFailed("password_reset", "email", error);
+        trackAuthFailed("password_reset", "email", error, "reset_password");
         if (isUnexpectedAuthError(error)) reportError(error, { flow: "password_reset_update" });
-        showToast({
-          message:
-            getAuthErrorKind(error) === "other"
-              ? getPasswordUpdateErrorMessage(error)
-              : getAuthFailureMessage(error, ""),
-          tone: "error",
-        });
+        setResetError(
+          getAuthErrorKind(error) === "other"
+            ? getPasswordUpdateErrorMessage(error)
+            : getAuthFailureMessage(error, ""),
+        );
         return;
+      }
+      // A reset is often the answer to a stolen password: end every other session. The new
+      // password is already saved, so a failure here is reported and the reset still finishes.
+      try {
+        await auth.signOut({ scope: "others" });
+        otherDevicesSignedOut = true;
+      } catch (error) {
+        reportError(error, { flow: "password_reset_sign_out_others" });
       }
     } else {
       setPasswordRecoveryInProgress(true);
     }
-    navigation.navigate("ResetPasswordSuccess");
+    trackPasswordResetCompleted();
+    navigation.navigate("ResetPasswordSuccess", { otherDevicesSignedOut });
   });
 
   // A recovery session is already a sign-in. Leaving without a new password signs it out
@@ -181,6 +190,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
     >
       <AuthScreenShell
         title="Set a new password"
+        compact
         onBack={leaveReset}
         backLabel={hasRecoverySession ? "Cancel" : "Back to sign in"}
         footer={
@@ -204,7 +214,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               minHeight: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={12} />
+            <AppSymbol name="back" color={palette.text} size={12} />
             <AppText tone="secondary" style={{ fontWeight: "600" }}>
               {hasRecoverySession ? "Cancel" : "Back to sign in"}
             </AppText>
@@ -231,7 +241,12 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               <Button
                 label="Send a new link"
                 variant="secondary"
-                onPress={() => navigation.navigate("ForgotPassword")}
+                onPress={() =>
+                  navigation.navigate(
+                    "ForgotPassword",
+                    route.params?.email ? { email: route.params.email } : undefined,
+                  )
+                }
               />
             </View>
           ) : isCheckingLink ? (
@@ -252,9 +267,8 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                     textContentType="newPassword"
                     autoComplete="new-password"
                     passwordRules={PASSWORD_RULES}
-                    returnKeyType="next"
-                    submitBehavior="submit"
-                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                    returnKeyType="go"
+                    onSubmitEditing={() => void handleReset()}
                     value={value}
                     onChangeText={onChange}
                     error={!!errors.password}
@@ -274,62 +288,25 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                         style={AUTH_EYE_BUTTON_STYLE}
                       >
                         {showPassword ? (
-                          <EyeOff color={palette.textMuted} size={18} />
+                          <AppSymbol
+                            name="hidePassword"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
                         ) : (
-                          <Eye color={palette.textMuted} size={18} />
+                          <AppSymbol
+                            name="showPassword"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
                         )}
                       </Pressable>
                     }
                   />
                 )}
               />
-              <Controller
-                control={control}
-                name="confirmPassword"
-                rules={{ validate: (value) => validateConfirmPassword(passwordValue ?? "", value) }}
-                render={({ field: { onChange, value } }) => (
-                  <Input
-                    ref={confirmPasswordRef}
-                    label="Confirm new password"
-                    secureTextEntry={!showConfirmPassword}
-                    textContentType="newPassword"
-                    autoComplete="new-password"
-                    passwordRules={PASSWORD_RULES}
-                    returnKeyType="go"
-                    onSubmitEditing={() => void handleReset()}
-                    value={value}
-                    onChangeText={onChange}
-                    error={!!errors.confirmPassword}
-                    errorText={errors.confirmPassword?.message}
-                    rightIcon={
-                      <Pressable
-                        accessible
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          showConfirmPassword
-                            ? "Hide confirmation password"
-                            : "Show confirmation password"
-                        }
-                        accessibilityHint={
-                          showConfirmPassword
-                            ? "Hides the confirmation password characters"
-                            : "Shows the confirmation password characters"
-                        }
-                        onPress={() => setShowConfirmPassword((current) => !current)}
-                        hitSlop={8}
-                        style={AUTH_EYE_BUTTON_STYLE}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff color={palette.textMuted} size={18} />
-                        ) : (
-                          <Eye color={palette.textMuted} size={18} />
-                        )}
-                      </Pressable>
-                    }
-                  />
-                )}
-              />
-
               <View
                 style={{
                   backgroundColor: palette.surfaceRaised,
@@ -340,6 +317,23 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               >
                 <PasswordRequirements password={passwordValue ?? ""} />
               </View>
+
+              {resetError ? (
+                <View
+                  accessible
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                  style={{
+                    backgroundColor: palette.errorSoft,
+                    borderRadius: componentRadii.card,
+                    padding: spacing[3],
+                  }}
+                >
+                  <AppText variant="bodySmall" style={{ color: palette.error }}>
+                    {resetError}
+                  </AppText>
+                </View>
+              ) : null}
 
               <Button
                 label="Update password"

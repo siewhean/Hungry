@@ -29,8 +29,9 @@ appId: ${APP_ID}
       - tapOn: "Connect"
 - runFlow:
     when:
-      visible: "Welcome back"
+      visible: "Sign in to Hungry"
     commands:
+      - tapOn: "Use a password instead"
       - tapOn: "Email address"
       - inputText: "${STAGING_EMAIL}"
       - tapOn: "Password"

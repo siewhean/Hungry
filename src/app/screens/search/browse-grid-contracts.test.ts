@@ -35,13 +35,18 @@ test("Browse grid cards open the matching catalog record", () => {
     source,
     /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",\s*id: item\.id,/,
   );
-  assert.match(source, /item\.imageUrl \?\? \("representativeDish" in item/);
+  // A stall card shows its best cleared dish photo (stallCardImage); a dish card shows its own.
+  assert.match(source, /stallCardImage\(stall\) : item\.imageUrl/);
 });
 
 test("Two-column image grids cycle images every four seconds with page-scoped slide sets", () => {
   const cyclingImage = read("src/components/discover/CyclingGridImage.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  // The menu tiles moved out of the screen into StallMenuDish; read both together.
+  const stallDetail = [
+    read("src/app/screens/detail/StallDetailScreen.tsx"),
+    read("src/components/stall/StallMenuDish.tsx"),
+  ].join("\n");
 
   assert.match(cyclingImage, /const DEFAULT_CYCLE_MS = 4000/);
   assert.match(cyclingImage, /<ScrollView[\s\S]*horizontal[\s\S]*pagingEnabled/);
@@ -68,7 +73,7 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   );
   assert.match(
     quickBites,
-    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
+    /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
   );
 
   assert.match(stallDetail, /getStallDishPhotos/);
@@ -80,5 +85,8 @@ test("Two-column image grids cycle images every four seconds with page-scoped sl
   assert.match(stallDetail, /onPress=\{\(\) => onPress\(dish\)\}/);
   assert.match(stallDetail, /<NoDishPhoto dishName=\{dish\.name\}/);
   assert.match(stallDetail, /<StallMenuDishCard/);
-  assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/);
+  assert.match(
+    stallDetail,
+    /navigation\.navigate\("DishDetail", \{\s*dishId: activeDish\.id,\s*source: "stall_menu"/,
+  );
 });

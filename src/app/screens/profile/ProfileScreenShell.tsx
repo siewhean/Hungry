@@ -1,5 +1,5 @@
-import type { PropsWithChildren, ReactNode } from "react";
-import { View } from "react-native";
+import type { PropsWithChildren, ReactElement, ReactNode } from "react";
+import { View, type RefreshControlProps } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Screen } from "@/components/ui";
@@ -9,10 +9,14 @@ interface ProfileScreenShellProps {
   title: string;
   subtitle?: string;
   headerRight?: ReactNode;
+  /** Replaces the back button, such as a Cancel on a form. */
+  headerLeft?: ReactNode;
   showBack?: boolean;
   testID?: string;
   /** False when the body is its own virtualised list (it fills the screen under the header). */
   scroll?: boolean;
+  /** Pull to refresh. */
+  refreshControl?: ReactElement<RefreshControlProps>;
 }
 
 export function ProfileScreenShell({
@@ -20,9 +24,11 @@ export function ProfileScreenShell({
   title,
   subtitle,
   headerRight,
+  headerLeft,
   showBack = true,
   testID,
   scroll = true,
+  refreshControl,
 }: PropsWithChildren<ProfileScreenShellProps>) {
   const { spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
@@ -35,10 +41,12 @@ export function ProfileScreenShell({
       title={title}
       subtitle={subtitle}
       headerRight={headerRight}
+      headerLeft={headerLeft}
       showBack={showBack}
       headerGap={spacing[3]}
       contentContainerStyle={{ paddingTop: topPadding }}
       scroll={scroll}
+      refreshControl={refreshControl}
     >
       <View testID={testID} style={[{ gap: spacing[4] }, !scroll && { flex: 1 }]}>
         {children}

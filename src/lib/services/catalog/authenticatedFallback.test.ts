@@ -206,15 +206,15 @@ test("fallback detail and venue-menu requests remain on the originating Excel so
 
   assert.match(
     provider,
-    /async getDish\(id, releaseId\) \{[\s\S]*?isExcelFallbackRelease\(releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?getFallback\(\)\.getDish\(id, releaseId\)/,
+    /async getDish\(id, releaseId\) \{[\s\S]*?isExcelFallbackRelease\(releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?fallback\.getDish\(id, releaseId\)/,
   );
   assert.match(
     provider,
-    /async getVenue\(id, releaseId\) \{[\s\S]*?isExcelFallbackRelease\(releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?getFallback\(\)\.getVenue\(id, releaseId\)/,
+    /async getVenue\(id, releaseId\) \{[\s\S]*?isExcelFallbackRelease\(releaseId\)[\s\S]*?requireAuthenticatedCatalogFallbackSession\(\)[\s\S]*?fallback\.getVenue\(id, releaseId\)/,
   );
   assert.match(
     provider,
-    /async listVenueMenu\(venueId, request = \{\}\) \{[\s\S]*?runPagedCatalogRead\([\s\S]*?getFallback\(\)\.listVenueMenu\(venueId, request\)/,
+    /async listVenueMenu\(venueId, request = \{\}\) \{[\s\S]*?runPagedCatalogRead\([\s\S]*?fallback\.listVenueMenu\(venueId, request\)/,
   );
   assert.match(
     provider,

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View } from "react-native";
-import { CheckCircle2 } from "lucide-react-native";
 
-import { AppText, Button, InlineBanner } from "@/components/ui";
+import { AppText, Button, InlineBanner, AppSymbol } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -22,7 +21,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "ResetPasswordSuccess">;
  * (AppBody then mounts the signed-in app). Without a session (mock mode or an
  * expired recovery session) the user is sent to Login instead.
  */
-export function ResetPasswordSuccessScreen({ navigation }: Props) {
+export function ResetPasswordSuccessScreen({ navigation, route }: Props) {
+  const otherDevicesSignedOut = route.params?.otherDevicesSignedOut === true;
   const { palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -88,9 +88,12 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
   return (
     <AuthScreenShell
       title="Password updated"
+      compact
       subtitle={
         isAuthenticated
-          ? "Your new password is saved and you're signed in."
+          ? otherDevicesSignedOut
+            ? "Your new password is saved and you're signed in. We signed you out on your other devices."
+            : "Your new password is saved and you're signed in."
           : "Your new password is saved. Sign in with it to continue."
       }
     >
@@ -106,7 +109,7 @@ export function ResetPasswordSuccessScreen({ navigation }: Props) {
             alignSelf: "center",
           }}
         >
-          <CheckCircle2 color={palette.orange} size={40} />
+          <AppSymbol name="done" color={palette.orange} size={40} />
         </View>
 
         {finishFailed ? (

@@ -7,6 +7,7 @@ import type {
   DataRepository,
   DiscoveryLocationFeed,
   DiscoveryLocationFeedRequest,
+  SavedDishCard,
   SearchResult,
   VenueLocationSearchRequest,
   VenueMenuCursor,
@@ -294,6 +295,10 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     floor: venue?.floor ?? "",
     name: toString(row.name),
     foodTypeTag: toString(row.food_type) || undefined,
+    ...(row.course ? { course: toString(row.course) } : {}),
+    ...(toStringArray(row.cuisine_tags).length
+      ? { cuisineTags: toStringArray(row.cuisine_tags) }
+      : {}),
     imageUrl,
     blurhash: toString(row.blurhash) || undefined,
     distanceMeters: toNumber(row.distance_meters),
@@ -371,6 +376,21 @@ function mapRpcDish(row: Row): DishDetail {
   );
   const reviews = mapReviewRows(row.reviews);
   return reviews.length > 0 ? { ...dish, reviews } : dish;
+}
+
+/**
+ * A dish card from a get_taste_recommendations row (the RPC returns what a card shows, so no
+ * catalog download is needed to show the first picks). The photo is already rights-checked and
+ * the stall pin is the venue's own, else its building's.
+ */
+export function mapTasteCardRow(row: Row): DishDetail {
+  const image = toString(row.image_url);
+  const dish = mapRpcDish({ ...row, gallery: image ? [image] : [] });
+  const latitude = toOptionalCoordinate(row.latitude);
+  const longitude = toOptionalCoordinate(row.longitude);
+  return latitude !== undefined && longitude !== undefined
+    ? { ...dish, venuePin: { latitude, longitude } }
+    : dish;
 }
 
 /** A weekly schedule from the venues.opening_schedule column; undefined when absent or malformed. */
@@ -458,10 +478,15 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     imageUrl: toString(row.venue_image_url) || toString(row.building_image_url) || undefined,
     logoUrl: toString(row.venue_logo_url, toString(row.logo_url)) || undefined,
     buildingName: toString(row.building_name) || undefined,
+    distanceMeters: row.distance_meters == null ? undefined : toNumber(row.distance_meters),
   };
 }
 
-function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undefined {
+function mapDiscoveryFeedDish(
+  row: Row,
+  venue: VenueSummary,
+  taste?: Pick<DishPresentation, "tasteVector" | "tasteConfidence">,
+): DishDetail | undefined {
   const dishId = toString(row.top_dish_id);
   const dishName = toString(row.top_dish_name);
   if (!dishId || !dishName) return undefined;
@@ -494,7 +519,11 @@ function mapDiscoveryFeedDish(row: Row, venue: VenueSummary): DishDetail | undef
     },
     venue,
     // Discover's Halal and Dietary Needs chips read these flags on the stall's top dish.
-    { gallery, dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[] },
+    {
+      gallery,
+      dietaryFlags: toStringArray(row.top_dish_dietary_flags) as DietaryFlag[],
+      ...taste,
+    },
   );
 }
 
@@ -1030,12 +1059,48 @@ export async function searchDishesViaRpc(
     p_cuisine_tags: filters.cuisineTags ?? null,
     p_max_price: filters.maxPrice ?? null,
     p_open_only: filters.openOnly ?? false,
+    // Sent only when the quiz asked, so a backend without the filters keeps working for search.
+    ...(filters.cuisineKeywords?.length ? { p_cuisine_keywords: filters.cuisineKeywords } : {}),
+    ...(filters.stapleKeywords?.length ? { p_staple_keywords: filters.stapleKeywords } : {}),
   });
   if (!rows) return undefined;
   return rows.map((row) => ({
     dish: mapRpcDish(row),
     score: toNumber(row.rank_score, similarityScoreFallback(mapRpcDish(row), tasteProfile)),
   }));
+}
+
+// Loaded on first use: Sentry is a native module that plain service tests never need.
+function reportDiscoveryTasteError(error: unknown): void {
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action: "discovery_feed_taste_vectors" });
+  } catch {
+    // Reporting must never break the feed.
+  }
+}
+
+/** Taste vectors for these dishes in one read. Empty when the read fails: Home then keeps feed order. */
+async function loadDishTasteByDishId(
+  dishIds: string[],
+): Promise<Map<string, Pick<DishPresentation, "tasteVector" | "tasteConfidence">>> {
+  const client = getSupabaseClient();
+  if (!client || dishIds.length === 0) return new Map();
+  const { data, error } = await client
+    .from("dish_taste_vectors")
+    .select("*")
+    .in("dish_id", dishIds);
+  if (error || !Array.isArray(data)) {
+    console.warn("Supabase discovery taste vectors read failed");
+    reportDiscoveryTasteError(error ?? new Error("dish_taste_vectors returned no rows array"));
+    return new Map();
+  }
+  return new Map(
+    [...buildDishPresentationMap([], data as unknown as Row[], [], [])].map(
+      ([dishId, { tasteVector, tasteConfidence }]) => [dishId, { tasteVector, tasteConfidence }],
+    ),
+  );
 }
 
 /**
@@ -1092,22 +1157,32 @@ export async function listDiscoveryFeedByLocationViaRpc(
   // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
   // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
   // the column is missing, this page's top-dish flags come from one batched read.
-  if (rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row)) {
-    const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
-    const flagsByDishId = await loadDishDietaryFlagsByDishId(dishIds);
-    if (flagsByDishId) {
-      rows = rows.map((row) => ({
-        ...row,
-        top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
-      }));
-    }
+  // The feed has no taste columns either; Home ranks "Dishes near you" by palate, so this
+  // page's vectors come from one batched read, alongside the flags read.
+  const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
+  const needsDietaryFlags = rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row);
+  const [flagsByDishId, tasteByDishId] = await Promise.all([
+    needsDietaryFlags ? loadDishDietaryFlagsByDishId(dishIds) : undefined,
+    loadDishTasteByDishId(dishIds),
+  ]);
+  if (flagsByDishId) {
+    rows = rows.map((row) => ({
+      ...row,
+      top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
+    }));
   }
 
-  const venues = rows.map(mapDiscoveryFeedVenue);
+  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
+  // their stored state.
+  const closures = await getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id)));
+  const venues = rows.map(mapDiscoveryFeedVenue).map((venue) => {
+    const closedUntil = closures?.get(venue.id);
+    return closedUntil ? { ...venue, closedUntil } : venue;
+  });
   const results = rows
     .map((row, index) => {
       const venue = venues[index];
-      const dish = mapDiscoveryFeedDish(row, venue);
+      const dish = mapDiscoveryFeedDish(row, venue, tasteByDishId.get(toString(row.top_dish_id)));
       return dish
         ? {
             dish,
@@ -1169,6 +1244,40 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
   return rows;
 }
 
+/** Forgets the reused get_venue_detail result, so the next read of that stall is fresh. */
+export function invalidateVenueDetail(venueId: string): void {
+  venueDetailRequests.delete(venueId);
+}
+
+/**
+ * The merchant reads get_venue_detail returns with the stall (profile, promotions, own claim
+ * status), when that call is already in flight or fresh for this stall. Undefined means "ask the
+ * separate RPCs": no detail call was made (a dish page asking about its stall), the call failed,
+ * or the database predates the columns. Never starts a get_venue_detail call of its own: it embeds
+ * a 50-dish page.
+ */
+export async function getInlineMerchantReads(venueId: string): Promise<
+  | {
+      profile: Row | null;
+      promotions: Row[];
+      claimStatus: string | null;
+    }
+  | undefined
+> {
+  const cached = venueDetailRequests.get(venueId);
+  if (!cached || Date.now() - cached.at >= VENUE_DETAIL_REUSE_MS) return undefined;
+  const row = (await cached.rows)?.[0];
+  if (!row || !("merchant_profile" in row)) return undefined;
+  const profile = row.merchant_profile;
+  const promotions = row.active_promotions;
+  const claimStatus = row.claim_status;
+  return {
+    profile: profile && typeof profile === "object" ? (profile as Row) : null,
+    promotions: Array.isArray(promotions) ? (promotions as Row[]) : [],
+    claimStatus: typeof claimStatus === "string" ? claimStatus : null,
+  };
+}
+
 /** Throws when the configured get_venue_detail RPC failed (offline, timeout). */
 async function getVenueDetailRowsOrThrow(venueId: string): Promise<Row[] | undefined> {
   const rows = await getVenueDetailRows(venueId);
@@ -1187,6 +1296,8 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
+const VENUE_SUMMARIES_BATCH = 50;
+
 /**
  * Stall summaries for many ids (up to 50) in one get_venue_summaries call (no menus). Undefined
  * when Supabase is not configured. Throws when the configured RPC failed (offline, rate cap), so
@@ -1195,13 +1306,56 @@ export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary 
 export async function getVenuesByIdsViaRpc(
   venueIds: string[],
 ): Promise<VenueSummary[] | undefined> {
-  const ids = [...new Set(venueIds)].slice(0, 50);
-  if (ids.length === 0) return [];
-  const rows = await rpcRows("get_venue_summaries", { p_venue_ids: ids });
-  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
-    throw new Error("Couldn't load these stalls.");
+  const unique = [...new Set(venueIds)];
+  if (unique.length === 0) return [];
+  // The RPC reads at most 50 stalls, so a longer list (a big Saved list) goes out as a few
+  // calls, side by side, instead of dropping the rest as "may have closed".
+  const chunks: string[][] = [];
+  for (let start = 0; start < unique.length; start += VENUE_SUMMARIES_BATCH) {
+    chunks.push(unique.slice(start, start + VENUE_SUMMARIES_BATCH));
   }
-  return rows?.map(mapRpcVenue);
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
+      rpcRows("get_venue_summaries", { p_venue_ids: ids }),
+    ),
+  );
+  if (results.some((rows) => !rows)) {
+    if (isSupabaseConfigured() && getSupabaseClient())
+      throw new Error("Couldn't load these stalls.");
+    return undefined;
+  }
+  return results.flatMap((rows) => (rows ?? []).map(mapRpcVenue));
+}
+
+/**
+ * Stalls a merchant has paused ("Closed today", "Reopens 3 Nov"), as venue id -> reopen instant.
+ * Up to 50 ids per get_venue_closures call. Undefined when the read fails or Supabase is not
+ * configured: callers keep the stalls as they were instead of failing the page.
+ */
+export async function getVenueClosuresViaRpc(
+  venueIds: string[],
+): Promise<Map<string, string> | undefined> {
+  const unique = [...new Set(venueIds)];
+  if (unique.length === 0) return new Map();
+  const chunks: string[][] = [];
+  for (let start = 0; start < unique.length; start += VENUE_SUMMARIES_BATCH) {
+    chunks.push(unique.slice(start, start + VENUE_SUMMARIES_BATCH));
+  }
+  const results = await Promise.all(
+    chunks.map((ids) =>
+      // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
+      rpcRows("get_venue_closures", { p_venue_ids: ids }),
+    ),
+  );
+  if (results.some((rows) => !rows)) return undefined;
+  const closures = new Map<string, string>();
+  for (const row of results.flatMap((rows) => rows ?? [])) {
+    const venueId = toString(row.venue_id);
+    const closedUntil = toString(row.closed_until);
+    if (venueId && closedUntil) closures.set(venueId, closedUntil);
+  }
+  return closures;
 }
 
 /** Name, photo, stall and price for many dishes and stalls in one get_item_details call. */
@@ -1209,10 +1363,113 @@ export async function getItemDetailsViaRpc(input: {
   dishIds: string[];
   stallIds: string[];
 }): Promise<Row[] | undefined> {
-  const dishIds = [...new Set(input.dishIds)].slice(0, 200);
-  const stallIds = [...new Set(input.stallIds)].slice(0, 200);
+  const dishIds = [...new Set(input.dishIds)];
+  const stallIds = [...new Set(input.stallIds)];
   if (dishIds.length === 0 && stallIds.length === 0) return [];
-  return rpcRows("get_item_details", { p_dish_ids: dishIds, p_stall_ids: stallIds });
+  // The RPC reads at most 200 of each kind, so a longer list (a profile with hundreds of
+  // reviews) goes out as a few calls, side by side, instead of dropping the rest.
+  const chunks: { dishes: string[]; stalls: string[] }[] = [];
+  for (let start = 0; start < Math.max(dishIds.length, stallIds.length); start += 200) {
+    chunks.push({
+      dishes: dishIds.slice(start, start + 200),
+      stalls: stallIds.slice(start, start + 200),
+    });
+  }
+  const results = await Promise.all(
+    chunks.map(({ dishes, stalls }) =>
+      // n-plus-one-ok: one call per 200 ids, the RPC's own cap, issued together
+      rpcRows("get_item_details", { p_dish_ids: dishes, p_stall_ids: stalls }),
+    ),
+  );
+  if (results.some((rows) => !rows)) return undefined;
+  return results.flatMap((rows) => rows ?? []);
+}
+
+/** get_item_details and get_venue_summaries read at most this many ids per call. */
+const DISH_BATCH_SIZE = 200;
+const VENUE_BATCH_SIZE = 50;
+
+function chunkIds(ids: string[], size: number): string[][] {
+  const chunks: string[][] = [];
+  for (let start = 0; start < ids.length; start += size)
+    chunks.push(ids.slice(start, start + size));
+  return chunks;
+}
+
+/**
+ * Saved-dish cards in a few batched reads: names, photos and prices (get_item_details), each
+ * dish's stall and rating (one table read per 200 dishes) and the stalls' places
+ * (get_venue_summaries per 50). Never one request per dish. Dishes that are gone are left out.
+ * Undefined when any read fails, so the page shows a retry instead of a short list.
+ */
+export async function getSavedDishCardsViaRpc(
+  dishIds: string[],
+): Promise<SavedDishCard[] | undefined> {
+  const ids = [...new Set(dishIds)];
+  if (ids.length === 0) return [];
+  const client = getSupabaseClient();
+  if (!client || !isSupabaseConfigured()) return undefined;
+  const details = await getItemDetailsViaRpc({ dishIds: ids, stallIds: [] });
+  if (!details) return undefined;
+
+  const refResults = await Promise.all(
+    chunkIds(ids, DISH_BATCH_SIZE).map((chunk) =>
+      // n-plus-one-ok: one read per 200 ids, issued together
+      client.from("dishes").select("id,venue_id,rating_avg,review_count").in("id", chunk),
+    ),
+  );
+  const refs = new Map<string, Row>();
+  for (const result of refResults) {
+    if (result.error || !Array.isArray(result.data)) return undefined;
+    for (const row of result.data as Row[]) refs.set(toString(row.id), row);
+  }
+
+  const venueIds = [
+    ...new Set([...refs.values()].map((row) => toString(row.venue_id)).filter(Boolean)),
+  ];
+  const venueResults = await Promise.all(
+    chunkIds(venueIds, VENUE_BATCH_SIZE).map((chunk) =>
+      // n-plus-one-ok: get_venue_summaries caps 50 ids per call, so larger sets go in chunks
+      rpcRows("get_venue_summaries", { p_venue_ids: chunk }),
+    ),
+  );
+  if (venueResults.some((rows) => !rows)) return undefined;
+  const venueRows = new Map<string, Row>(
+    venueResults.flatMap((rows) => rows ?? []).map((row) => [toString(row.venue_id), row]),
+  );
+
+  return details.flatMap((detail) => {
+    const id = toString(detail.dish_id);
+    const ref = refs.get(id);
+    if (!id || !ref) return [];
+    const venueId = toString(ref.venue_id) || undefined;
+    const venueRow = venueId ? venueRows.get(venueId) : undefined;
+    const venue = venueRow ? mapRpcVenue(venueRow) : undefined;
+    const building = toRecord(venueRow?.building);
+    const reviewCount = toNumber(ref.review_count);
+    return [
+      {
+        id,
+        name: toString(detail.name),
+        venueId,
+        venueName: toString(detail.stall_name) || venue?.name,
+        buildingName: venue?.buildingName,
+        unitNumber: venue?.unitNumber || undefined,
+        address: venue?.address,
+        postalCode: venue?.postalCode,
+        price:
+          detail.price === null || detail.price === undefined ? undefined : Number(detail.price),
+        imageUrl: toString(detail.image_url) || undefined,
+        logoUrl: venue?.logoUrl,
+        rating: reviewCount > 0 ? toNumber(ref.rating_avg) : undefined,
+        reviewCount,
+        isOpen: venue?.isOpen,
+        // The stall's own point, else its building's (the summary's building carries both).
+        latitude: venue?.latitude ?? toOptionalCoordinate(building.latitude),
+        longitude: venue?.longitude ?? toOptionalCoordinate(building.longitude),
+      } satisfies SavedDishCard,
+    ];
+  });
 }
 
 export async function listBuildingsViaRpc(

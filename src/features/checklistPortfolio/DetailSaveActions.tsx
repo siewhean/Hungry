@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Check, Plus } from "lucide-react-native";
 import { Pressable, View } from "react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, BottomSheet, Button, Input } from "@/components/ui";
+import { PlusSymbol } from "@/components/dish/dishSymbols";
+import { AppSymbol, AppText, BottomSheet, Button, Input } from "@/components/ui";
 import {
   buildSaveToListOptions,
   DEFAULT_PORTFOLIO_NAME,
@@ -285,7 +285,18 @@ function SaveToListSheet({
   return (
     <BottomSheet ref={sheetRef} accessibilityLabel="Save to list" snapPoints={["60%", "90%"]}>
       <View style={{ gap: spacing[2] }}>
-        <AppText variant="h2">Save to list</AppText>
+        <View
+          style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
+        >
+          <AppText variant="h2">Save to list</AppText>
+          <Button
+            label="Done"
+            variant="ghost"
+            size="sm"
+            fullWidth={false}
+            onPress={() => sheetRef.current?.dismiss()}
+          />
+        </View>
         <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
           {target.label}
         </AppText>
@@ -338,7 +349,12 @@ function SaveToListSheet({
                   </AppText>
                 ) : null}
               </View>
-              {selected ? <Check size={18} color={palette.orange} /> : null}
+              {/* An empty circle when not in the list, a filled tick when it is. */}
+              <AppSymbol
+                name={selected ? "triedFilled" : "emptyCheckbox"}
+                color={selected ? palette.orange : palette.textMuted}
+                size={22}
+              />
             </Pressable>
           );
         })}
@@ -351,8 +367,7 @@ function SaveToListSheet({
         />
         <Button
           label="Create and add"
-          variant="secondary"
-          leftIcon={<Plus color={palette.text} size={16} />}
+          leftIcon={<PlusSymbol color={palette.textOnOrange} size={16} />}
           disabled={!newListName.trim() || isSaving || isLoading}
           onPress={() => {
             const name = newListName.trim();

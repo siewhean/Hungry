@@ -59,6 +59,13 @@ function parseAction(value: unknown): EmailAction | null {
 }
 
 function getTemplateId(action: EmailAction): string {
+  // The emailed sign-in code is a "magiclink" email. It gets its own template when one is set,
+  // so the wording can say "sign in" without touching the re-authentication email; without it
+  // the magic-link template is used, as before.
+  if (action === "magiclink") {
+    const signIn = Deno.env.get("RESEND_TEMPLATE_SIGNIN_ID")?.trim();
+    if (signIn) return signIn;
+  }
   const envName = {
     signup: "RESEND_TEMPLATE_SIGNUP_ID",
     recovery: "RESEND_TEMPLATE_RECOVERY_ID",

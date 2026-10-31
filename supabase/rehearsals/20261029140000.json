@@ -1,0 +1,14 @@
+{
+  "version": "20261029140000",
+  "name": "20261029140000_merchant_archived_dishes_and_insight_facts",
+  "result": "pass",
+  "rehearsed_at": "2026-10-30T05:51:34Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "3e98a805f675e590448214a3ef15cf1dd26c3b85",
+  "up_sha256": "084026db6358858720ec9e3650b650969d0cdcd91bcd7f2943c104829d7b1697",
+  "down_sha256": "68405c68044fb49df54c2a5ab9528c682c3e9adffc01cbf77ec56aff217dc939",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/merchant_archived_dishes_and_insight_facts.sql"]
+}

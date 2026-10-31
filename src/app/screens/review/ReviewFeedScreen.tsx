@@ -56,6 +56,7 @@ import {
   makeReviewInteractionId,
   type ReviewFeedItem,
 } from "@/features/review/reviewFeed";
+import { REVIEW_SEARCH_MIN_LENGTH, reviewMatchesQuery } from "@/features/review/reviewSearch";
 import {
   buildReviewExploreChips,
   filterReviewExplore,
@@ -84,6 +85,17 @@ const REVIEW_FEED_PAGE_SIZE = 50;
 /** A focus refetch runs when the loaded page is older than this (e.g. after posting a review). */
 const REVIEW_FEED_STALE_MS = 15_000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/** Wait for a pause in typing before asking the server to search every review. */
+const REVIEW_SEARCH_DEBOUNCE_MS = 300;
+
+/** One server search: the query it answers, its results so far and where the next page starts. */
+interface ReviewSearchState {
+  query: string;
+  items: ReviewFeedItem[];
+  hasMore: boolean;
+  cursor?: { before: string; beforeId: string };
+  status: "loading" | "ready" | "failed";
+}
 
 /** "3h ago" within a week; otherwise the date, with the year when it is not this year. */
 function formatReviewDate(createdAt: string): string {
@@ -116,23 +128,31 @@ function ReviewFeedSkeleton() {
   );
 }
 
-function ReviewSearchQuerySummary({ query }: { query: string }) {
-  const trimmedQuery = query.trim();
+/** One line under the chips while searching: how many reviews matched. */
+function ReviewSearchQuerySummary({
+  query,
+  count,
+  hasMore,
+}: {
+  query: string;
+  count: number;
+  hasMore: boolean;
+}) {
   const { spacing } = useHungryTheme();
 
-  if (!trimmedQuery) {
+  if (!query.trim()) {
     return null;
   }
 
   return (
-    <View style={{ gap: spacing[0.5], paddingHorizontal: spacing[1] }}>
-      <AppText variant="micro" tone="secondary">
-        Showing results for
-      </AppText>
-      <AppText variant="bodySmallBold" style={{ flexShrink: 1 }}>
-        {trimmedQuery}
-      </AppText>
-    </View>
+    <AppText
+      variant="micro"
+      tone="secondary"
+      accessibilityLiveRegion="polite"
+      style={{ paddingHorizontal: spacing[1] }}
+    >
+      {`${count}${hasMore ? "+" : ""} ${count === 1 && !hasMore ? "result" : "results"}`}
+    </AppText>
   );
 }
 
@@ -169,7 +189,7 @@ const ReviewTile = memo(function ReviewTile({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, ${dateLabel}`}
+      accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, rated ${item.review.rating} of 5, ${dateLabel}`}
       accessibilityHint={
         holdAction === "manage"
           ? "Opens the review. Hold to edit or delete it"
@@ -187,7 +207,8 @@ const ReviewTile = memo(function ReviewTile({
       style={({ pressed }) => ({ height: size, opacity: pressed ? 0.85 : 1, width: size })}
     >
       <AccessibleImage
-        source={{ uri: item.review.photos[0] }}
+        // The small copy keeps a 3-column grid light; older reviews have only the full photo.
+        source={{ uri: item.review.photoThumbnails?.[0] || item.review.photos[0] }}
         style={{ backgroundColor: palette.bgSoft, height: size, width: size }}
         contentFit="cover"
         decorative
@@ -265,6 +286,9 @@ export function ReviewFeedScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
   const [serviceLoadFailed, setServiceLoadFailed] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchState, setSearchState] = useState<ReviewSearchState | null>(null);
+  const searchLoadIdRef = useRef(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreServiceReviews, setHasMoreServiceReviews] = useState(false);
@@ -407,6 +431,8 @@ export function ReviewFeedScreen() {
     useCallback(() => {
       // Re-filter on every focus: a review deleted on its own page leaves the loaded pages.
       bumpSafetyFilter();
+      // Once per focus: the tab is preloaded, and a preloaded tab is not focused.
+      trackAnalyticsEvent("review_feed_viewed", { source: "tab" });
       if (serviceProviderMode === "mock") {
         setServiceReviewItems(null);
         return undefined;
@@ -427,6 +453,89 @@ export function ReviewFeedScreen() {
     [],
   );
 
+  // Search asks the server to look through every review, not only the pages already loaded. The
+  // grid keeps filtering the loaded pages while the person types and while the answer is on its
+  // way, so typing never feels slow.
+  const trimmedQuery = searchQuery.trim();
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(trimmedQuery), REVIEW_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [trimmedQuery]);
+  // Clearing the box shows the grid at once, without waiting out the debounce.
+  const activeQuery = trimmedQuery ? debouncedQuery : "";
+  const serverSearching =
+    serviceProviderMode !== "mock" && activeQuery.length >= REVIEW_SEARCH_MIN_LENGTH;
+
+  useEffect(() => {
+    const loadId = ++searchLoadIdRef.current;
+    if (!serverSearching) {
+      setSearchState(null);
+      return;
+    }
+    setSearchState((current) =>
+      current?.query === activeQuery
+        ? current
+        : { query: activeQuery, items: [], hasMore: false, status: "loading" },
+    );
+    getHungryService()
+      .reviews.searchReviewsPage({
+        query: activeQuery,
+        limit: REVIEW_FEED_PAGE_SIZE,
+        withPhotos: true,
+      })
+      .then((page) => {
+        if (loadId !== searchLoadIdRef.current) return;
+        setSearchState({
+          query: activeQuery,
+          items: page.entries.map(toServiceFeedItem),
+          hasMore: page.hasMore,
+          cursor: page.nextCursor,
+          status: "ready",
+        });
+      })
+      .catch((error: unknown) => {
+        if (loadId !== searchLoadIdRef.current) return;
+        reportError(error, { screen: "ReviewFeedScreen", action: "search_reviews" });
+        setSearchState({ query: activeQuery, items: [], hasMore: false, status: "failed" });
+      });
+    return () => {
+      searchLoadIdRef.current += 1;
+    };
+  }, [activeQuery, serverSearching, toServiceFeedItem]);
+
+  const loadMoreSearchResults = useCallback(async () => {
+    const current = searchState;
+    if (!current || current.status !== "ready" || !current.hasMore || !current.cursor) return;
+    const loadId = ++searchLoadIdRef.current;
+    try {
+      const page = await getHungryService().reviews.searchReviewsPage({
+        query: current.query,
+        limit: REVIEW_FEED_PAGE_SIZE,
+        withPhotos: true,
+        before: current.cursor.before,
+        beforeId: current.cursor.beforeId,
+      });
+      if (loadId !== searchLoadIdRef.current) return;
+      setSearchState((latest) => {
+        if (!latest || latest.query !== current.query) return latest;
+        const known = new Set(latest.items.map((item) => item.review.id));
+        return {
+          ...latest,
+          items: [
+            ...latest.items,
+            ...page.entries.map(toServiceFeedItem).filter((item) => !known.has(item.review.id)),
+          ],
+          hasMore: page.hasMore,
+          cursor: page.nextCursor ?? latest.cursor,
+        };
+      });
+    } catch (error) {
+      if (loadId !== searchLoadIdRef.current) return;
+      reportError(error, { screen: "ReviewFeedScreen", action: "search_reviews_more" });
+      showToast({ message: "Could not load more reviews.", tone: "warning" });
+    }
+  }, [searchState, showToast, toServiceFeedItem]);
+
   const handleRefresh = useCallback(async () => {
     if (serviceProviderMode === "mock") return;
     setIsRefreshing(true);
@@ -445,9 +554,17 @@ export function ReviewFeedScreen() {
 
   const handleLoadMore = useCallback(async () => {
     // A load-more during a refresh would win the shared load id and throw the refresh away.
-    if (serviceProviderMode === "mock" || !hasMoreServiceReviews || isLoadingMore || isRefreshing) {
+    if (serviceProviderMode === "mock" || isLoadingMore || isRefreshing) return;
+    if (serverSearching) {
+      setIsLoadingMore(true);
+      try {
+        await loadMoreSearchResults();
+      } finally {
+        setIsLoadingMore(false);
+      }
       return;
     }
+    if (!hasMoreServiceReviews) return;
     const cursor = feedCursorRef.current;
     if (!cursor) return;
     setIsLoadingMore(true);
@@ -456,7 +573,15 @@ export function ReviewFeedScreen() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMoreServiceReviews, isLoadingMore, isRefreshing, loadServiceReviews, serviceProviderMode]);
+  }, [
+    hasMoreServiceReviews,
+    isLoadingMore,
+    isRefreshing,
+    loadMoreSearchResults,
+    loadServiceReviews,
+    serverSearching,
+    serviceProviderMode,
+  ]);
 
   const requireAccount = useRequireAccount();
   const requireAccountForReviewAction = useCallback(
@@ -476,23 +601,38 @@ export function ReviewFeedScreen() {
   );
 
   // Every review with a photo, newest first.
-  const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const reviews = visibleGridReviews(
-      reviewsWithPhotos(
+  const gridReviews = useCallback(
+    (source: readonly ReviewFeedItem[]): ReviewFeedItem[] => {
+      const reviews = visibleGridReviews(reviewsWithPhotos(source), {
+        viewerId,
+        isHidden: (item) =>
+          isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
+      });
+      return [...reviews].sort(
+        (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
+      );
+    },
+    // safetyFilterVersion: a report, block or deletion changes what is hidden.
+
+    [safetyFilterVersion, viewerId],
+  );
+  const allReviews = useMemo<ReviewFeedItem[]>(
+    () =>
+      gridReviews(
         serviceProviderMode === "mock"
           ? listReviewFeedItems(repository)
           : (serviceReviewItems ?? []),
       ),
-      {
-        viewerId,
-        isHidden: (item) =>
-          isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
-      },
-    );
-    return [...reviews].sort(
-      (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
-    );
-  }, [repository, safetyFilterVersion, serviceProviderMode, serviceReviewItems, viewerId]);
+    [gridReviews, repository, serviceProviderMode, serviceReviewItems],
+  );
+  // The server's answer for the query in force; null until it arrives (and for short queries).
+  const serverSearchItems = useMemo(
+    () =>
+      serverSearching && searchState?.status === "ready" && searchState.query === activeQuery
+        ? gridReviews(searchState.items)
+        : null,
+    [activeQuery, gridReviews, searchState, serverSearching],
+  );
 
   // Chips follow the diner's palette, the foods and the areas on the page.
   // The picked food or area stays in the rail even when a reload drops it from the top values.
@@ -507,20 +647,15 @@ export function ReviewFeedScreen() {
   const activeChip = resolveActiveReviewChip(chips, chipId);
 
   const filteredReviews = useMemo(() => {
-    const byChip = filterReviewExplore(allReviews, activeChip, {
+    const byChip = filterReviewExplore(serverSearchItems ?? allReviews, activeChip, {
       userVector: tasteVector,
       areaOf,
     });
-    if (!searchQuery.trim()) return byChip;
-    const q = searchQuery.toLowerCase();
-    return byChip.filter(
-      (item) =>
-        item.dishName.toLowerCase().includes(q) ||
-        item.venueName.toLowerCase().includes(q) ||
-        item.review.text.toLowerCase().includes(q) ||
-        item.review.tags.some((t) => t.toLowerCase().includes(q)),
-    );
-  }, [activeChip, allReviews, areaOf, searchQuery, tasteVector]);
+    // The server already matched its results; the loaded pages are matched here.
+    if (serverSearchItems || !trimmedQuery) return byChip;
+    return byChip.filter((item) => reviewMatchesQuery(item, trimmedQuery));
+  }, [activeChip, allReviews, areaOf, serverSearchItems, tasteVector, trimmedQuery]);
+  const searchHasMore = Boolean(serverSearchItems && searchState?.hasMore);
 
   // review_tile_labels_v1: exposure only once a focused, non-empty live grid is on screen (the
   // tab is preloaded, and mock tiles open the dish page). Latched, so a tab swipe never flips
@@ -612,7 +747,7 @@ export function ReviewFeedScreen() {
       });
       // Mock reviews live on their dish; live reviews open on their own page.
       if (serviceProviderMode === "mock") {
-        navigation.navigate("DishDetail", { dishId: item.dishId });
+        navigation.navigate("DishDetail", { dishId: item.dishId, source: "review_feed" });
         return;
       }
       navigation.navigate("ReviewDetail", { reviewId: item.review.id });
@@ -703,7 +838,11 @@ export function ReviewFeedScreen() {
           gap={spacing[2]}
         />
 
-        <ReviewSearchQuerySummary query={searchQuery} />
+        <ReviewSearchQuerySummary
+          query={searchQuery}
+          count={filteredReviews.length}
+          hasMore={searchHasMore}
+        />
       </View>
 
       {/* Photo grid */}
@@ -747,9 +886,13 @@ export function ReviewFeedScreen() {
               <EmptyState
                 title="No reviews found"
                 body={
-                  hasMoreServiceReviews
-                    ? "No match in the latest reviews. Try a dish or stall name."
-                    : "Try a different search term."
+                  serverSearchItems
+                    ? "Try a different dish, stall or taste."
+                    : searchState?.status === "failed"
+                      ? "Couldn't search every review. Showing the latest ones only."
+                      : serverSearching
+                        ? "Searching every review…"
+                        : "Try a different search term."
                 }
               />
             ) : activeChip && activeChip.kind !== "all" && allReviews.length > 0 ? (

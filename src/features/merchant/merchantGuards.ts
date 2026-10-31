@@ -23,6 +23,14 @@ export function isVerificationCurrent(
   return !Number.isFinite(expiresAt) || expiresAt > now.getTime();
 }
 
+/** Until verification, only drafts can change: the database refuses edits to live dishes. */
+export function isLockedLiveDish(
+  dish: { isMerchantDraft?: boolean },
+  isVerified: boolean,
+): boolean {
+  return !isVerified && dish.isMerchantDraft === false;
+}
+
 /**
  * Resolve the merchant access level from current state.
  * - "none": feature disabled or no merchant account
@@ -73,7 +81,7 @@ export function canManageMenu(level: MerchantAccessLevel): boolean {
  * - Submit/resubmit evidence
  * - View limited onboarding instructions
  * - Prepare the stall profile and menu (hidden from diners until verified)
- * - Open Profile and Settings, which hold the "Switch to Customer Mode" and "Sign out" exits
+ * - Open Profile and Settings, which hold the "Switch to customer mode" and "Sign out" exits
  */
 export const UNVERIFIED_ALLOWED_SCREENS = [
   "VerificationCentre",

@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import {
   NavigationContainer,
   createNavigationContainerRef,
+  getPathFromState,
   type Theme,
 } from "@react-navigation/native";
 import {
@@ -28,9 +29,10 @@ import { useHungryTheme } from "@/theme";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isE2eDeveloperLauncherBuild } from "@/lib/runtime/e2eDeveloperLauncher";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import { onboardingEntryRoute } from "./onboardingEntry";
 import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
-import { createRootLinking } from "./linking";
+import { createRootLinking, withoutEmailParam } from "./linking";
 import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/notifications/push";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -51,6 +53,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "ReportProblem",
   "MerchantClaimExplainer",
   "DishDetail",
+  "DishReviews",
   "CatalogRawDetail",
   "SearchHome",
   "SearchResults",
@@ -250,6 +253,10 @@ const loadDishDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/DishDetailScreenV2") as typeof import("@/app/screens/detail/DishDetailScreenV2")
   ).DishDetailScreenV2;
+const loadDishReviewsScreen = () =>
+  (
+    require("@/app/screens/detail/DishReviewsScreen") as typeof import("@/app/screens/detail/DishReviewsScreen")
+  ).DishReviewsScreen;
 const loadCatalogRawDetailScreen = () =>
   (
     require("@/app/screens/catalog/CatalogRawDetailScreen") as typeof import("@/app/screens/catalog/CatalogRawDetailScreen")
@@ -539,11 +546,13 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           isAuthenticated: state.isAuthenticated,
           hasCompletedOnboarding: state.hasCompletedOnboarding,
           onboardingCompletionPending: state.onboardingCompletionPending,
+          returningAccountIntent: state.returningAccountIntent,
           onAuthRedirect: (route) => {
             state.setReturnRoute({ name: route.name, params: route.params });
           },
         };
       }),
+      getPathFromState: withoutEmailParam(getPathFromState),
       // Tapped push notifications open their deep link through the same linking rules.
       getInitialURL: async () => (await Linking.getInitialURL()) ?? getInitialNotificationUrl(),
       subscribe: (listener: (url: string) => void) => {
@@ -679,7 +688,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       if (isAuthenticated && !hasCompletedOnboarding) {
         navigationRef.resetRoot({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
+          routes: [onboardingEntryRoute()],
         });
         return;
       }
@@ -797,6 +806,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {/* Reviewer profiles stay reachable from reviews and follower lists. */}
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
+          <RootStack.Screen getComponent={loadDishReviewsScreen} name="DishReviews" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
           <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />

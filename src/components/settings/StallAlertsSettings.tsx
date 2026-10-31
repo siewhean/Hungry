@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AppState, Linking } from "react-native";
-import {
-  BellOff,
-  BellRing,
-  RefreshCw,
-  Sparkles,
-  Store,
-  UserPlus,
-  UtensilsCrossed,
-} from "lucide-react-native";
+import { AppState, Linking } from "react-native";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -16,6 +7,7 @@ import { getNotificationPermissionState, registerForStallAlerts } from "@/lib/no
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui";
 import { DEFAULT_PUSH_PREFERENCES, type PushPreferences } from "@/types/domain";
 import { SettingsRow } from "./SettingsRow";
 import { SettingsSection } from "./SettingsSection";
@@ -41,7 +33,7 @@ interface StallAlertsSettingsProps {
 /**
  * Push alerts: opt-in menu changes at followed stalls and lunch and dinner
  * suggestions (both off until turned on), and the weekly picks and follow-request
- * pushes (on unless the user opts out). While the phone blocks notifications the
+ * pushes (the follow-request one on unless the user opts out). While the phone blocks notifications the
  * switches still show what is saved, dimmed, so a saved alert can be turned off.
  */
 export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSettingsProps) {
@@ -105,14 +97,12 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
     setIsSaving(true);
     try {
       if (enabled && !(await registerForStallAlerts())) {
-        Alert.alert(
-          "Notifications are off",
-          "Allow notifications for Hungry in your phone settings to get these alerts.",
-          [
-            { text: "Not now", style: "cancel" },
-            { text: "Open settings", onPress: () => void Linking.openSettings().catch(() => {}) },
-          ],
-        );
+        // The "Notifications are off for Hungry" row below opens the phone's settings.
+        setPermissionDenied(true);
+        showToast({
+          message: "Allow notifications for Hungry in your phone settings to get these alerts.",
+          tone: "warning",
+        });
         return;
       }
       const next = await getHungryService().push.updatePreferences({ [key]: enabled });
@@ -133,9 +123,11 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       {permissionDenied ? (
         <SettingsRow
           editorial
+          iconTone="neutral"
           label="Notifications are off for Hungry"
           description="Open settings to turn them on. Until then these alerts can't reach you."
-          icon={<BellOff size={20} color={palette.orange} />}
+          icon={<AppSymbol name="notificationsOff" size={20} color={palette.textSecondary} />}
+          type="action"
           onPress={() => void Linking.openSettings().catch(() => {})}
           isLast={false}
         />
@@ -143,20 +135,23 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       {loadState === "error" ? (
         <SettingsRow
           editorial
+          iconTone="neutral"
           label="Couldn't load your alert settings"
           description="Tap to try again."
-          icon={<RefreshCw size={20} color={palette.orange} />}
+          icon={<AppSymbol name="retry" size={20} color={palette.textSecondary} />}
+          type="action"
           onPress={() => loadPreferences()}
           isLast={false}
         />
       ) : null}
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Menu changes at followed stalls"
         description={`New dishes, price changes and restocks. Quiet ${formatHour(
           preferences.quietStartHour,
         )} to ${formatHour(preferences.quietEndHour)}, at most ${preferences.weeklyCap} a week.`}
-        icon={<BellRing size={20} color={palette.orange} />}
+        icon={<AppSymbol name="menuChanges" size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.stallUpdates}
         dimmed={permissionDenied}
@@ -166,9 +161,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Weekly picks"
         description="A Monday nudge when your new dish picks are ready on Home."
-        icon={<Sparkles size={20} color={palette.orange} />}
+        icon={<AppSymbol name="weeklyPicks" size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.weeklyPicks}
         dimmed={permissionDenied}
@@ -178,9 +174,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Lunch and dinner ideas"
         description="Three picks at 11:30am or 5:30pm, only on days you haven't opened Hungry yet."
-        icon={<UtensilsCrossed size={20} color={palette.orange} />}
+        icon={<AppSymbol name="mealIdeas" size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.mealtimeSuggestions}
         dimmed={permissionDenied}
@@ -190,9 +187,10 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Follow requests"
         description="When someone asks to follow your private profile."
-        icon={<UserPlus size={20} color={palette.orange} />}
+        icon={<AppSymbol name="followRequests" size={20} color={palette.textSecondary} />}
         type="toggle"
         isEnabled={preferences.socialActivity}
         dimmed={permissionDenied}
@@ -202,8 +200,9 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
       />
       <SettingsRow
         editorial
+        iconTone="neutral"
         label="Followed stalls"
-        icon={<Store size={20} color={palette.orange} />}
+        icon={<AppSymbol name="followedStalls" size={20} color={palette.textSecondary} />}
         type="navigation"
         onPress={onOpenFollowedStalls}
         isLast

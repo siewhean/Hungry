@@ -35,7 +35,10 @@ password_requirements = ""
 # Pinned like [auth.email] so `supabase config push` cannot reset them. Compare with Dashboard >
 # Authentication > Rate Limits before pushing config.
 [auth.rate_limit]
-email_sent = 30
+# Raised from 30 (AUTH4-3): every email-code sign-in and sign-up is now an email, so 30 an hour
+# stops the 31st person. 200 is within the Resend plan. This file does not change production by
+# itself: raise the same value in Dashboard > Authentication > Rate Limits (or push the config).
+email_sent = 200
 sign_in_sign_ups = 30
 token_verifications = 30
 token_refresh = 150
@@ -53,8 +56,9 @@ secure_password_change = true
 double_confirm_changes = true
 
 # The app asks for the emailed code ({{ .Token }}) on these screens:
-# confirmation (EmailVerificationScreen), recovery (ForgotPasswordScreen) and
-# magic_link (account deletion, AccountDeletionCodeDialog).
+# confirmation (EmailVerificationScreen, and the first sign-in code of a new address), recovery
+# (ForgotPasswordScreen) and magic_link (the sign-in code of an existing account, and account
+# deletion, AccountDeletionCodeDialog).
 [auth.email.template.confirmation]
 subject = "Your Hungry code: confirm your email"
 content_path = "./supabase/templates/confirmation.html"
@@ -64,7 +68,7 @@ subject = "Your Hungry code: reset your password"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.template.magic_link]
-subject = "Your Hungry code: confirm account deletion"
+subject = "Your Hungry code"
 content_path = "./supabase/templates/magic_link.html"
 
 # Production sends auth email through the Send Email Hook (send-email Edge

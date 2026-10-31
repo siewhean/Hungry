@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { Alert, Share, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "./AppSymbol";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
 
@@ -38,7 +38,9 @@ export function EmptyState({
   onSendError,
 }: EmptyStateProps) {
   const { spacing, palette } = useHungryTheme();
-  const renderIcon = icon ?? <Info size={34} color={palette.textSecondary} />;
+  const renderIcon = icon ?? (
+    <AppSymbol name="info" size={34} weight="regular" color={palette.textSecondary} />
+  );
   const reportContext = sendErrorContext ?? "Hungry screen";
   const resolvedOnSendError = !showDebugErrorDetails
     ? undefined

@@ -52,6 +52,7 @@ before(async () => {
     checklist: { checklistId: checklist.id },
     checklistPicker: { checklistId: checklist.id, mode: "dish" },
     dish: { id: dish.id },
+    dishReviews: { dishId: dish.id },
     portfolio: { portfolioId: portfolio.id },
     portfolioPicker: { portfolioId: portfolio.id, mode: "dish" },
     report: { venueId: dish.venueId, dishId: dish.id, subjectName: dish.name },

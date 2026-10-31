@@ -44,10 +44,17 @@ test("photos upload before the public review row is written", () => {
     service.indexOf("async submitReview(draft: SubmitReviewInput)"),
     service.indexOf("async listRecentReviews(options)"),
   );
+  // The review and its photo rows are published by one submit_review call, after the uploads.
   const uploadAt = submit.indexOf("await uploadReviewPhotos(");
-  const insertAt = submit.indexOf('.from("reviews").insert(reviewRow)');
-  assert.ok(uploadAt > 0 && insertAt > uploadAt, "upload must run before the review insert");
-  assert.match(submit, /code: REVIEW_PHOTOS_NOT_ATTACHED/);
+  const publishAt = submit.indexOf('client.rpc("submit_review"');
+  assert.ok(uploadAt > 0 && publishAt > uploadAt, "upload must run before the review is published");
+  assert.doesNotMatch(submit, /\.from\("reviews"\)\.insert/);
+  // A backend without submit_review keeps the table-by-table path, upload still first.
+  const legacy = service.slice(
+    service.indexOf("async function submitReviewWithoutRpc("),
+    service.indexOf("async function mapReviewFeedRpcPage("),
+  );
+  assert.match(legacy, /code: REVIEW_PHOTOS_NOT_ATTACHED/);
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   assert.match(review, /Your review is posted, but the photos didn't upload/);
 });
@@ -71,10 +78,10 @@ test("review editor: dish first, helper text, modal picker, route wins over a st
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const order = [
     // The required photo comes right after the dish (REV-7), before rating and text.
-    "{/* 1. Dish */}",
-    "{/* 2. Photo: required",
-    "{/* 3. Rating */}",
-    "{/* 4. Review text */}",
+    "{dishSection}",
+    "{photoSection}",
+    "{ratingSection}",
+    "{textSection}",
   ];
   assert.match(review, /title="Photo \(required\)"/);
   const positions = order.map((marker) => review.indexOf(marker));
@@ -143,6 +150,14 @@ test("stall detail's menu photo button uploads through supply.submitMenuPhoto", 
   assert.match(stall, /"Add a menu photo"/);
   assert.match(stall, /getHungryService\(\)\.supply\.submitMenuPhoto\(\{\s*venueId: venue\.id/);
   assert.match(stall, /"Thanks, we'll add the menu soon\."/);
+  // App Review 5.1.2(i): the photo is read by Google only after the person allowed AI features.
+  assert.match(stall, /const allowAiReading = await ensureAiSearchConsent\(\)/);
+  assert.match(stall, /allowAiReading,\s*\}\)/);
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+  assert.match(
+    service,
+    /if \(input\.allowAiReading\) \{\s*void client\.functions\s*\.invoke\("ingest-menu-photo"/,
+  );
   assert.match(stall, /const canSubmitMenuPhoto = isAuthenticated && Platform\.OS !== "web"/);
   // No longer a detour into a review editor with no dishes.
   assert.doesNotMatch(stall, /label="Add a menu photo"[\s\S]{0,200}ReviewMain/);
@@ -154,7 +169,7 @@ test("prototype-only review features stay out of production", () => {
 
   assert.match(review, /const reviewMusicEnabled = false/);
   assert.match(review, /const reviewVideoEnabled = false/);
-  assert.match(review, /\{reviewMusicEnabled \? \(/);
+  assert.match(review, /reviewMusicEnabled \? \(/);
   assert.match(review, /const hasVideo = reviewVideoEnabled && Boolean\(draft\.videoUri\)/);
   assert.doesNotMatch(review, /\(draft\.videoUri \? 20 : 0\)/);
   // The local-only reply prototype was deleted outright (detail-L21).

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, View, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Camera } from "lucide-react-native";
 
-import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AccessibleImage, AppText, Button, Card, Input } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Input } from "@/components/ui";
 import { validateEmail } from "@/features/auth/validation";
 import { PROFILE_BIO_MAX_LENGTH } from "@/features/profile/profileBio";
 import {
@@ -15,6 +13,7 @@ import {
 } from "@/features/profile/profileName";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
+import { confirmAction } from "@/lib/runtime/confirmAction";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -102,14 +101,13 @@ export function EditProfileScreen({ navigation }: Props) {
     const unsubscribe = navigation.addListener("beforeRemove", (event) => {
       if (!isDirty || allowLeaveRef.current) return;
       event.preventDefault();
-      Alert.alert("Discard changes?", "Your profile changes haven't been saved.", [
-        { text: "Keep editing", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: () => navigation.dispatch(event.data.action),
-        },
-      ]);
+      confirmAction({
+        title: "Discard changes?",
+        message: "Your profile changes haven't been saved.",
+        confirmLabel: "Discard",
+        destructive: true,
+        onConfirm: () => navigation.dispatch(event.data.action),
+      });
     });
     return unsubscribe;
   }, [isDirty, navigation]);
@@ -125,20 +123,25 @@ export function EditProfileScreen({ navigation }: Props) {
       return;
     }
 
-    const result = await imagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+    try {
+      const result = await imagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (result.canceled || !result.assets?.length) {
-      return;
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      setAvatarUri(result.assets[0].uri);
+      setRemoveAvatar(false);
+      showToast({ message: "Photo selected. Tap Save to use it.", tone: "info" });
+    } catch (error) {
+      reportError(error, { screen: "EditProfile", action: "pick_avatar" });
+      showToast({ message: "Couldn't open your photos.", tone: "error" });
     }
-
-    setAvatarUri(result.assets[0].uri);
-    setRemoveAvatar(false);
-    showToast({ message: "Photo selected. Tap Save changes to use it.", tone: "info" });
   };
 
   useEffect(() => {
@@ -157,11 +160,121 @@ export function EditProfileScreen({ navigation }: Props) {
   const handleRemovePhoto = () => {
     setAvatarUri(undefined);
     setRemoveAvatar(true);
-    showToast({ message: "Photo removed. Tap Save changes to confirm.", tone: "info" });
+    showToast({ message: "Photo removed. Tap Save to confirm.", tone: "info" });
+  };
+
+  const save = () => {
+    void (async () => {
+      if (nameError) {
+        showToast({ message: nameError, tone: "warning" });
+        return;
+      }
+      const nextEmail = email.trim().toLowerCase();
+      const emailChanged = nextEmail !== (profile.email ?? "").trim().toLowerCase();
+      if (emailChanged) {
+        const emailCheck = validateEmail(nextEmail);
+        if (emailCheck !== true) {
+          showToast({ message: emailCheck, tone: "warning" });
+          return;
+        }
+      }
+      setIsSaving(true);
+      try {
+        const savedProfile = await getHungryService().profile.updateProfile({
+          displayName: trimmedName,
+          ...(bioChanged ? { bio: trimmedBio } : {}),
+          // An empty avatarUrl removes the photo; no new photo leaves it unchanged.
+          ...(removeAvatar ? { avatarUrl: "" } : avatarUri ? { avatarUrl: avatarUri } : {}),
+        });
+        applySavedProfileEdits(savedProfile);
+        clearDrafts();
+        allowLeaveRef.current = true;
+        trackAnalyticsEvent("profile_updated", {
+          name_changed: trimmedName !== profile.displayName.trim(),
+          bio_changed: bioChanged,
+          avatar_changed: avatarUri !== undefined || removeAvatar,
+          email_change_requested: emailChanged,
+        });
+        if (emailChanged) {
+          try {
+            await getHungryService().auth.requestEmailChange(nextEmail);
+            showToast({
+              message: `Check your current inbox and ${nextEmail} for links to confirm the change.`,
+              tone: "success",
+            });
+          } catch (error) {
+            reportError(error, { area: "edit_profile_email_change" });
+            showToast({
+              message: "Profile saved, but we could not start the email change.",
+              tone: "warning",
+            });
+            return;
+          }
+        } else {
+          showToast({ message: "Profile updated.", tone: "success" });
+        }
+        navigation.goBack();
+      } catch (error) {
+        const refusal = profileTextRefusalHint(error);
+        // A refused name or bio is the person's to fix; anything else is unexpected.
+        if (!refusal) reportError(error, { screen: "EditProfile", action: "save_profile" });
+        showToast({
+          message:
+            refusal === "display_name_reserved"
+              ? "That display name is reserved. Please choose another."
+              : refusal === "display_name_too_long"
+                ? `Use ${PROFILE_DISPLAY_NAME_MAX_LENGTH} characters or fewer for your name.`
+                : refusal === "display_name_blocked_term"
+                  ? "That display name contains words we don't allow."
+                  : refusal === "bio_text_not_allowed"
+                    ? "Your bio contains words or links we don't allow. Please edit it."
+                    : "Could not save profile right now.",
+          tone: "warning",
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    })();
   };
 
   return (
-    <ProfileScreenShell title="Edit profile">
+    <ProfileScreenShell
+      title="Edit profile"
+      headerLeft={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+          hitSlop={8}
+          onPress={() => navigation.goBack()}
+          style={{ justifyContent: "center", minHeight: 44, paddingRight: spacing[2] }}
+        >
+          <AppText style={{ color: palette.accentText }}>Cancel</AppText>
+        </Pressable>
+      }
+      headerRight={
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Save changes"
+          accessibilityState={{
+            disabled: !isDirty || Boolean(nameError) || isSaving,
+            busy: isSaving,
+          }}
+          disabled={!isDirty || Boolean(nameError) || isSaving}
+          hitSlop={8}
+          onPress={save}
+          style={{ justifyContent: "center", minHeight: 44, paddingLeft: spacing[2] }}
+        >
+          <AppText
+            style={{
+              color: !isDirty || nameError ? palette.textMuted : palette.accentText,
+              fontWeight: "700",
+            }}
+          >
+            {isSaving ? "Saving…" : "Save"}
+          </AppText>
+        </Pressable>
+      }
+    >
       <View style={{ alignItems: "center", marginBottom: spacing[2] }}>
         <Pressable
           accessibilityRole="button"
@@ -221,15 +334,27 @@ export function EditProfileScreen({ navigation }: Props) {
               borderColor: palette.surface,
             }}
           >
-            <Camera size={16} color={palette.textOnOrange} />
+            <AppSymbol name="camera" size={16} color={palette.textOnOrange} />
           </View>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edit picture"
+          onPress={() => {
+            void handlePickAvatar();
+          }}
+          style={{ minHeight: 44, justifyContent: "center", marginTop: spacing[1] }}
+        >
+          <AppText variant="bodySmall" style={{ color: palette.accentText, fontWeight: "600" }}>
+            Edit picture
+          </AppText>
         </Pressable>
         {avatarPreviewUri ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Remove profile photo"
             onPress={handleRemovePhoto}
-            style={{ minHeight: 44, justifyContent: "center", marginTop: spacing[1] }}
+            style={{ minHeight: 44, justifyContent: "center" }}
           >
             <AppText variant="bodySmall" style={{ color: palette.error, fontWeight: "600" }}>
               Remove photo
@@ -238,7 +363,7 @@ export function EditProfileScreen({ navigation }: Props) {
         ) : null}
       </View>
 
-      <Card>
+      <View style={{ gap: spacing[3] }}>
         <View style={{ gap: spacing[3] }}>
           <Input
             label="Display name"
@@ -256,7 +381,12 @@ export function EditProfileScreen({ navigation }: Props) {
             multiline
             maxLength={PROFILE_BIO_MAX_LENGTH}
             accessibilityHint={`Up to ${PROFILE_BIO_MAX_LENGTH} characters`}
-            helperText={`${bio.length}/${PROFILE_BIO_MAX_LENGTH}`}
+            // The counter appears only when the limit is getting close.
+            helperText={
+              bio.length >= PROFILE_BIO_MAX_LENGTH - 30
+                ? `${bio.length}/${PROFILE_BIO_MAX_LENGTH}`
+                : undefined
+            }
           />
           <Input
             label="Email"
@@ -276,97 +406,7 @@ export function EditProfileScreen({ navigation }: Props) {
             </AppText>
           ) : null}
         </View>
-      </Card>
-      <Button
-        label="Save changes"
-        loading={isSaving}
-        disabled={!isDirty || Boolean(nameError)}
-        onPress={() => {
-          void (async () => {
-            if (nameError) {
-              showToast({ message: nameError, tone: "warning" });
-              return;
-            }
-            const nextEmail = email.trim().toLowerCase();
-            const emailChanged = nextEmail !== (profile.email ?? "").trim().toLowerCase();
-            if (emailChanged) {
-              const emailCheck = validateEmail(nextEmail);
-              if (emailCheck !== true) {
-                showToast({ message: emailCheck, tone: "warning" });
-                return;
-              }
-            }
-            setIsSaving(true);
-            try {
-              const savedProfile = await getHungryService().profile.updateProfile({
-                displayName: trimmedName,
-                ...(bioChanged ? { bio: trimmedBio } : {}),
-                // An empty avatarUrl removes the photo; no new photo leaves it unchanged.
-                ...(removeAvatar ? { avatarUrl: "" } : avatarUri ? { avatarUrl: avatarUri } : {}),
-                dietaryPreferences: profile.dietaryPreferences,
-              });
-              applySavedProfileEdits(savedProfile);
-              clearDrafts();
-              allowLeaveRef.current = true;
-              trackAnalyticsEvent("profile_updated", {
-                name_changed: trimmedName !== profile.displayName.trim(),
-                bio_changed: bioChanged,
-                avatar_changed: avatarUri !== undefined || removeAvatar,
-                email_change_requested: emailChanged,
-              });
-              if (emailChanged) {
-                try {
-                  await getHungryService().auth.requestEmailChange(nextEmail);
-                  showToast({
-                    message: `Check your current inbox and ${nextEmail} for links to confirm the change.`,
-                    tone: "success",
-                  });
-                } catch (error) {
-                  reportError(error, { area: "edit_profile_email_change" });
-                  showToast({
-                    message: "Profile saved, but we could not start the email change.",
-                    tone: "warning",
-                  });
-                  return;
-                }
-              } else {
-                showToast({ message: "Profile updated.", tone: "success" });
-              }
-              navigation.goBack();
-            } catch (error) {
-              const refusal = profileTextRefusalHint(error);
-              // A refused name or bio is the person's to fix; anything else is unexpected.
-              if (!refusal) reportError(error, { screen: "EditProfile", action: "save_profile" });
-              showToast({
-                message:
-                  refusal === "display_name_reserved"
-                    ? "That display name is reserved. Please choose another."
-                    : refusal === "display_name_too_long"
-                      ? `Use ${PROFILE_DISPLAY_NAME_MAX_LENGTH} characters or fewer for your name.`
-                      : refusal === "display_name_blocked_term"
-                        ? "That display name contains words we don't allow."
-                        : refusal === "bio_text_not_allowed"
-                          ? "Your bio contains words or links we don't allow. Please edit it."
-                          : "Could not save profile right now.",
-                tone: "warning",
-              });
-            } finally {
-              setIsSaving(false);
-            }
-          })();
-        }}
-      />
-      <Button
-        label="Retake the taste quiz"
-        variant="secondary"
-        onPress={() => {
-          const rootNavigation = getRootNavigation(navigation);
-          rootNavigation.navigate("OnboardingStack", {
-            screen: "TasteQuiz",
-            params: { mode: "profile" },
-          });
-        }}
-      />
+      </View>
     </ProfileScreenShell>
   );
 }

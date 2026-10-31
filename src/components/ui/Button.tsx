@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -9,13 +9,18 @@ import {
   type ViewStyle,
   type PressableProps,
 } from "react-native";
-import * as Haptics from "@/lib/haptics";
+import Animated from "react-native-reanimated";
+import { tapHaptic } from "@/lib/haptics";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { usePressScale } from "@/lib/motion/uiMotion";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "glass";
 type ButtonSize = "sm" | "md" | "lg";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface ButtonProps extends Omit<PressableProps, "style"> {
   label: string;
@@ -50,7 +55,9 @@ export function Button({
   labelEllipsizeMode,
   leftIcon,
   rightIcon,
+  onPress,
   onPressIn,
+  onPressOut,
   accessibilityLabel,
   accessibilityState,
   ...props
@@ -58,6 +65,11 @@ export function Button({
   const { componentCornerCurve, componentRadii, componentSizes, opacity, palette, spacing } =
     useHungryTheme();
   const isDisabled = disabled || loading;
+  // A disabled primary button goes neutral: the faded orange read as a broken enabled button,
+  // above all in dark mode. Loading keeps the brand colour, since the control is working.
+  const neutralDisabled = Boolean(disabled) && !loading && variant === "primary";
+  const [pressed, setPressed] = useState(false);
+  const press = usePressScale(useReduceMotion());
 
   const variantStyle: Record<ButtonVariant, ViewStyle> = {
     primary: {
@@ -104,8 +116,9 @@ export function Button({
       paddingHorizontal: spacing[6],
     },
   };
-  const foregroundColor =
-    variant === "primary"
+  const foregroundColor = neutralDisabled
+    ? palette.textMuted
+    : variant === "primary"
       ? palette.textOnOrange
       : variant === "destructive"
         ? palette.textOnDestructive
@@ -121,7 +134,7 @@ export function Button({
   }
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{
@@ -132,25 +145,39 @@ export function Button({
       disabled={isDisabled}
       onPressIn={(event) => {
         if (!isDisabled) {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setPressed(true);
+          press.onPressIn();
           onPressIn?.(event);
         }
       }}
-      style={({ pressed }) => [
+      // One light tap when the press commits, not when the finger lands (a drag off cancels it).
+      onPress={(event) => {
+        tapHaptic();
+        onPress?.(event);
+      }}
+      onPressOut={(event) => {
+        setPressed(false);
+        press.onPressOut();
+        onPressOut?.(event);
+      }}
+      style={[
         styles.base,
         variantStyle[variant],
         sizeStyle[size],
         {
           borderRadius: componentRadii.button,
           borderCurve: componentCornerCurve.borderCurve,
-          opacity: isDisabled ? opacity.disabled : 1,
+          opacity: isDisabled && !neutralDisabled ? opacity.disabled : 1,
           width: fullWidth ? "100%" : undefined,
-          transform: [{ translateY: pressed ? 1 : 0 }],
         },
+        neutralDisabled
+          ? { backgroundColor: palette.surfaceRaised, borderColor: palette.border }
+          : null,
         pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "glass" ? { backgroundColor: palette.surfaceTranslucent } : null,
         style,
+        press.animatedStyle,
       ]}
       {...props}
     >
@@ -191,7 +218,7 @@ export function Button({
           {rightIcon}
         </View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

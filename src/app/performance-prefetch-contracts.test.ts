@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { readHomeSource } from "@/test/sourceContracts";
 
 function read(pathFromRepoRoot: string): string {
   return readFileSync(resolve(process.cwd(), pathFromRepoRoot), "utf8");
@@ -93,7 +94,7 @@ test("startup defers profile, mock data, and native analytics module loading", (
 test("home, discover, and quick bites avoid duplicate render-time data work", () => {
   const homeFeed = read("src/features/home/feed.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
 
   assert.match(homeFeed, /export interface HomeFeedBundle/);
@@ -143,7 +144,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 test("prefetch layer warms images, data, and route modules without blocking navigation", () => {
   const prefetch = read("src/features/navigation/prefetch.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
@@ -201,7 +202,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   );
   assert.match(
     homeScreen,
-    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id, source: "feed" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     quickBites,
@@ -224,7 +225,7 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   const iconButton = read("src/components/ui/IconButton.tsx");
   const merchantDashboard = read("src/app/screens/merchant/MerchantDashboardScreen.tsx");
   const merchantMenu = read("src/app/screens/merchant/MerchantMenuScreen.tsx");
-  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
+  const favourites = read("src/app/screens/profile/SavedDishesSection.tsx");
   const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const socialPostDetail = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
@@ -262,12 +263,16 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   );
 
   assert.match(profileHome, /const prefetchMerchantDashboard = useCallback/);
-  assert.match(profileHome, /function MenuRow[\s\S]*onPressIn\?: \(\) => void/);
-  assert.match(profileHome, /function StatBlock[\s\S]*onPressIn\?: \(\) => void/);
-  assert.match(profileHome, /onPressIn=\{prefetchMerchantDashboard\}/);
-  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "SocialGrid"/);
-  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "ReviewHistory"\)\}/);
-  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "Settings"\)\}/);
+  assert.match(
+    read("src/components/ui/OverflowMenu.tsx"),
+    /export type OverflowMenuItem = \{[\s\S]*onPressIn\?: \(\) => void/,
+  );
+  // The stat row (shared with other profiles) passes press-in through to its tiles.
+  assert.match(read("src/components/profile/ProfileStatRow.tsx"), /onPressIn\?: \(\) => void/);
+  assert.match(profileHome, /onPressIn: prefetchMerchantDashboard/);
+  assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "SocialGrid"/);
+  assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "ReviewHistory"\)/);
+  assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "Settings"\)/);
 
   assert.match(developerLauncher, /onV1PressIn\?: \(\) => void/);
   assert.match(developerLauncher, /prefetchStallDetail\(sampleStallVenueId, repository\)/);

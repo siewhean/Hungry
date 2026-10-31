@@ -15,14 +15,22 @@ function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
 }
 
-const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+// The review card is its own component: read it with the screen.
+const stallDetail =
+  read("src/app/screens/detail/StallDetailScreen.tsx") +
+  read("src/components/stall/StallReviewCard.tsx");
 const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
+const dishReviewsScreen = read("src/app/screens/detail/DishReviewsScreen.tsx");
+const dishReviewCard = read("src/components/dish/DishReviewCard.tsx");
 
 test("stall reviews are one newest-first query naming each dish, with a write-review path", () => {
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
   assert.match(stallDetail, /on \{review\.dishName\}/);
-  assert.match(stallDetail, /navigation\.navigate\("DishDetail", \{ dishId: review\.dishId \}\)/);
+  assert.match(
+    stallDetail,
+    /navigation\.navigate\("DishDetail", \{\s*dishId: review\.dishId,\s*source: "stall_review",?\s*\}\)/,
+  );
   assert.match(stallDetail, /Couldn&apos;t load reviews for this stall\./);
   // One "Write a review" pill lives in the sticky bar; the Reviews heading carries no second link.
   assert.match(stallDetail, /onReview=\{[\s\S]*?openWriteReview/);
@@ -81,14 +89,14 @@ test("stall header shows rating, price, status, actions and delivery links", () 
   // Directions and Save live in the sticky bottom bar; Share floats over the photo.
   assert.match(stallDetail, /<StallInteractionBar[\s\S]*?layout="sticky"/);
   assert.match(stallDetail, /onDirections=/);
-  assert.match(stallDetail, /accessibilityLabel="Share stall"[\s\S]*?side="right"/);
+  assert.match(stallDetail, /<DetailCollapsingHeader[\s\S]*?shareLabel="Share stall"/);
   assert.match(read("src/components/stall/StallInteractionBar.tsx"), /label: "Directions"/);
   // Phone and email sit in a Contact details card; delivery uses the wide button row.
   assert.match(stallDetail, /Contact details/);
   assert.match(stallDetail, /label="Call"/);
   assert.match(stallDetail, /<DeliveryButtonRow/);
   assert.match(stallDetail, /cachedVenue && serviceProviderMode !== "supabase"/);
-  assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\.imageUrl/);
+  assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\?\.imageUrl/);
   assert.doesNotMatch(stallDetail, /hero dish photo/);
 });
 
@@ -126,13 +134,14 @@ test("stall rating and price summaries come from the menu, and are absent withou
 test("dish detail always reads its reviews and only says 'No reviews yet' at zero", () => {
   assert.match(dishDetail, /reviews\.listRecentReviews\(\{ dishIds: \[reviewDishId\]/);
   assert.match(dishDetail, /See all \$\{dishReviews\.length\} reviews/);
-  // Past the first page the button pages with the createdAt cursor instead of claiming a total.
-  assert.match(dishDetail, /setHasMoreReviews\(entries\.length === DISH_REVIEW_PAGE_SIZE\)/);
-  assert.match(dishDetail, /before: last\.createdAt,\s*beforeId: last\.id,/);
-  assert.match(dishDetail, /label="Show more reviews"/);
+  assert.match(dishDetail, /navigation\.navigate\("DishReviews", \{ dishId: dish\.id \}\)/);
+  assert.match(dishDetail, /setHasMoreReviews\(entries\.length >= DISH_REVIEW_PAGE_SIZE\)/);
+  // The full list pages with the createdAt cursor instead of claiming a total.
+  assert.match(dishReviewsScreen, /before: last\.createdAt,\s*beforeId: last\.id,/);
+  assert.match(dishReviewsScreen, /label="Show more reviews"/);
   assert.match(dishDetail, /dish\.reviewCount === 0 \? \(\s*<EmptyState\s*title="No reviews yet"/);
-  assert.match(dishDetail, /formatTimeAgo\(review\.createdAt\)/);
-  assert.match(dishDetail, /Reply from the owner/);
+  assert.match(dishReviewCard, /formatTimeAgo\(review\.createdAt\)/);
+  assert.match(dishReviewCard, /Reply from the owner/);
   assert.doesNotMatch(dishDetail, /dish\.reviews\.slice/);
 });
 
@@ -142,7 +151,11 @@ test("dish attributes never present placeholder taste data as fact", () => {
   assert.doesNotMatch(dishDetail, /% taste match/);
   // The taste matrix box is gone; the "how it tastes to you" rows come from the dish's own vector.
   assert.doesNotMatch(dishDetail, /showTasteMatch|tasteMatch/);
-  assert.match(dishDetail, /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/);
+  assert.match(dishDetail, /<DishTasteCard/);
+  assert.match(
+    read("src/components/dish/DishTasteCard.tsx"),
+    /perceivedTasteRows\(standardVector, palate\)/,
+  );
   const disclosure = read("src/lib/services/dataTrustDisclosure.ts");
   assert.doesNotMatch(disclosure, /Live wait estimate/);
 });
@@ -154,7 +167,8 @@ test("dish Tried is per dish and never clears the stall; Food Cred copy uses awa
     /getInteraction\(dish\.venueId\)\?\.isTried\) \{\s*return \{ saved: true, pointsAwarded: 0[\s\S]*await stalls\.markTried/,
   );
   assert.doesNotMatch(dishDetail, /-5 Food Cred|"\+5 Food Cred"|adjustPoints/);
-  assert.match(dishDetail, /FEATURE_FLAGS\.gamificationEnabled && pointsAwarded > 0/);
+  // Food Cred is announced once, by the app-wide pill, never repeated in the Tried toast.
+  assert.doesNotMatch(dishDetail, /Food Cred\b[^\n]*(toast|message)/i);
   const store = read("src/store/useStallInteractionStore.ts");
   assert.doesNotMatch(store, /pointsAwarded = 5;/);
   // Points come from what the award call actually credited, not a stale before/after total.

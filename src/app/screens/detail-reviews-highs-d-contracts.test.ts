@@ -19,8 +19,14 @@ const migration = (name: string) => read(`supabase/migrations/${name}`);
 
 const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 const service = read("src/lib/services/supabase/supabaseService.ts");
-const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
-const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+// The dish review card is its own component: read it with the screen.
+const dishDetail =
+  read("src/app/screens/detail/DishDetailScreenV2.tsx") +
+  read("src/components/dish/DishReviewCard.tsx");
+// The review card is its own component: read it with the screen.
+const stallDetail =
+  read("src/app/screens/detail/StallDetailScreen.tsx") +
+  read("src/components/stall/StallReviewCard.tsx");
 
 test("H27: get_dish_detail returns the dish photo only, never the stall photo", () => {
   const sql = migration("20261021160000_get_dish_detail_dish_photo_only.sql");

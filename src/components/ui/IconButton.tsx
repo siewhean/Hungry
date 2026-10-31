@@ -6,7 +6,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import * as Haptics from "@/lib/haptics";
+import { tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
 
@@ -29,6 +29,7 @@ export function IconButton({
   size,
   style,
   disabled,
+  onPress,
   onPressIn,
   ...props
 }: Props) {
@@ -82,10 +83,12 @@ export function IconButton({
       hitSlop={spacing[2.5]}
       disabled={disabled}
       onPressIn={(event) => {
-        if (!isDisabled) {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          onPressIn?.(event);
-        }
+        if (!isDisabled) onPressIn?.(event);
+      }}
+      // One light tap when the press commits, not when the finger lands.
+      onPress={(event) => {
+        tapHaptic();
+        onPress?.(event);
       }}
       style={({ pressed }) => [
         styles.base,

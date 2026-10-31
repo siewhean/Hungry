@@ -15,6 +15,8 @@ export interface LinkingAuthState {
   hasCompletedOnboarding?: boolean;
   /** Onboarding is done on the device but waits for the account step (OnboardingAuth). */
   onboardingCompletionPending?: boolean;
+  /** Welcome's "Sign in" was tapped and nobody has signed in yet: signed-out links open Login. */
+  returningAccountIntent?: boolean;
   /** Called with the route a signed-out user was sent to onboarding/Login from. */
   onAuthRedirect?: (route: LinkingRoute) => void;
 }
@@ -220,7 +222,7 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     if (!dishId) return undefined;
     return isCatalogDeepLinkMode()
       ? createStateOverHome("CatalogRawDetail", { kind: "dish", id: dishId })
-      : createStateOverHome("DishDetail", { dishId });
+      : createStateOverHome("DishDetail", { dishId, source: "deep_link" });
   }
   if (parts[0] === "venue" || parts[0] === "stall") {
     const venueId = decodePathSegment(parts[1]);
@@ -331,14 +333,49 @@ function isSignedOutOnlyAuthState(state: LinkingState): boolean {
 function signedOutState(
   hasCompletedOnboarding: boolean | undefined,
   onboardingCompletionPending?: boolean,
+  returningAccountIntent?: boolean,
 ): LinkingState {
   // As Splash does: someone who finished the quiz but not the account step resumes there.
   if (onboardingCompletionPending) {
     return createState("OnboardingStack", { screen: "OnboardingAuth" });
   }
-  return hasCompletedOnboarding
+  return hasCompletedOnboarding || returningAccountIntent
     ? createState("AuthStack", { screen: "Login" })
     : createState("OnboardingStack", { screen: "OnboardingWelcome" });
+}
+
+/**
+ * Removes `email` from a URL's query string. Login, Forgot password and the verify screen carry
+ * the address as a param so the next screen can fill it in, and on web React Navigation would
+ * write it into the address bar, history and any shared or logged URL. The dish page's
+ * in-app params go too: `prefill` (an object, which would read `prefill=[object Object]`) and,
+ * on a /dish/ path, `source` (reload and shared links say `deep_link` instead).
+ */
+export function stripEmailQuery(path: string): string {
+  const queryStart = path.indexOf("?");
+  if (queryStart < 0) return path;
+  const hashStart = path.indexOf("#", queryStart);
+  const query = path.slice(queryStart + 1, hashStart < 0 ? undefined : hashStart);
+  const dropped = new Set(["email", "prefill"]);
+  if (/^\/?dish\//.test(path)) dropped.add("source");
+  const kept = query.split("&").filter((pair) => {
+    if (!pair) return false;
+    const key = pair.split("=")[0];
+    try {
+      return !dropped.has(decodeURIComponent(key).toLowerCase());
+    } catch {
+      return true;
+    }
+  });
+  const hash = hashStart < 0 ? "" : path.slice(hashStart);
+  return `${path.slice(0, queryStart)}${kept.length > 0 ? `?${kept.join("&")}` : ""}${hash}`;
+}
+
+/** Wraps React Navigation's getPathFromState so no URL it builds carries an email address. */
+export function withoutEmailParam<State, Options>(
+  getPathFromState: (state: State, options?: Options) => string,
+) {
+  return (state: State, options?: Options) => stripEmailQuery(getPathFromState(state, options));
 }
 
 export function createRootLinking(
@@ -410,7 +447,7 @@ export function createRootLinking(
         ...(FEATURE_FLAGS.hungryWheelEnabled
           ? {
               WheelStack: {
-                path: "join/:code",
+                path: "join/:code?",
                 screens: { WheelHome: "" },
               },
             }
@@ -438,6 +475,7 @@ export function createRootLinking(
         isAuthenticated,
         hasCompletedOnboarding,
         onboardingCompletionPending,
+        returningAccountIntent,
         onAuthRedirect,
       } = getAuthState();
       const activeRoute = state.routes[state.routes.length - 1];
@@ -452,7 +490,11 @@ export function createRootLinking(
       }
       if (!isAuthenticated) {
         rememberRoute(activeRoute);
-        return signedOutState(hasCompletedOnboarding, onboardingCompletionPending);
+        return signedOutState(
+          hasCompletedOnboarding,
+          onboardingCompletionPending,
+          returningAccountIntent,
+        );
       }
 
       return state;

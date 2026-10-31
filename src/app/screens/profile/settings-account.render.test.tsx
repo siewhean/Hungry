@@ -90,7 +90,7 @@ test("with a deletion pending, Settings shows Keep my account first and hides De
   const text = view.text();
   assert.match(text, /Keep my account/);
   assert.ok(
-    text.indexOf("Deletion scheduled for") < text.indexOf("Dining preferences"),
+    text.indexOf("Deletion scheduled for") < text.indexOf("Your taste"),
     "the banner comes before the first section",
   );
   assert.equal(view.findByText("Delete account"), null);
@@ -195,9 +195,9 @@ test("a deletion refused because the user owns a business explains the hand-over
 
 // --- SET-12 + experiment settings_dining_unfolded_v1 -----------------------------------------
 
-test("the folded Dining header reads its summary with the title", async () => {
+test("the folded Your taste header reads its summary with the title", async () => {
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
-  const header = view.findByLabel(/^Dining preferences, /);
+  const header = view.findByLabel(/^Your taste, /);
   assert.ok(header, "the summary is part of the header label");
   assert.match(header.getAttribute("aria-label") ?? "", /food|new|adventur|try|open/i);
   assert.equal(view.findByText("Meal budget"), null, "control starts folded");
@@ -279,14 +279,14 @@ test("SET-V4: a Settings dining edit tags surface settings, and an unchanged fin
 
 // --- SET-4, SET-15, SET-19, SET-14 ----------------------------------------------------------
 
-test("Settings drops archived-posts copy, shows left-handed mode only to merchants, and Email support is a link", async () => {
+test("Settings drops archived-posts copy, shows left-handed mode only to merchants, and Privacy policy is a link", async () => {
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
   assert.doesNotMatch(view.text(), /posts/i);
   assert.equal(view.findByText("Left-handed mode"), null);
   assert.equal(view.findByText("Sign in or create an account"), null);
   assert.ok(view.findByText("Blocked people"), "hidden posts are archived, so only blocks list");
-  const email = view.findByLabel("Email support");
-  assert.equal(email?.getAttribute("role"), "link");
+  const privacy = view.findByLabel("Privacy policy");
+  assert.equal(privacy?.getAttribute("role"), "link");
 
   await enterScenario("merchant");
   const merchantView = await renderScreen(SettingsScreen as never, { name: "Settings" });

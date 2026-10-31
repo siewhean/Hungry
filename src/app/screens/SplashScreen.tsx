@@ -14,6 +14,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
+import { onboardingEntryRoute } from "@/app/navigation/onboardingEntry";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useMerchantStore } from "@/store/useMerchantStore";
@@ -61,6 +62,7 @@ const HYDRATION_FALLBACK_MS = 5000;
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const returningAccountIntent = useSessionStore((state) => state.returningAccountIntent);
   const isAuthReady = useSessionStore((state) => state.isAuthReady);
   const returnRoute = useSessionStore((state) => state.returnRoute);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
@@ -164,12 +166,23 @@ export function SplashScreen({ navigation }: Props) {
     const timer = setTimeout(() => {
       // Fresh users complete local onboarding before they are offered account
       // creation/sign-in. Main app screens never mount during either step.
-      if (!hasCompletedOnboarding) {
-        // Onboarding comes first; a remembered Merchant mode is forgotten, not kept for later.
+      if (!hasCompletedOnboarding && returningAccountIntent && !isAuthenticated) {
+        // Welcome's "Sign in" was tapped last: back to Login, not through onboarding again.
         dismissMerchantModeRestore();
         navigation.reset({
           index: 0,
-          routes: [{ name: "OnboardingStack", params: { screen: "OnboardingWelcome" } }],
+          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+        });
+        return;
+      }
+
+      if (!hasCompletedOnboarding) {
+        // Onboarding comes first; a remembered Merchant mode is forgotten, not kept for later.
+        // A run left unfinished in the last 24 hours reopens on its step, with its answers.
+        dismissMerchantModeRestore();
+        navigation.reset({
+          index: 0,
+          routes: [onboardingEntryRoute()],
         });
         return;
       }
@@ -245,6 +258,7 @@ export function SplashScreen({ navigation }: Props) {
   }, [
     dismissMerchantModeRestore,
     hasCompletedOnboarding,
+    returningAccountIntent,
     isAuthenticated,
     isAuthReady,
     merchantModeRestore,

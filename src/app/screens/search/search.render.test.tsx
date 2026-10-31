@@ -2,7 +2,9 @@
 // Run with `node scripts/test-render.mjs src/app/screens/search/search.render.test.tsx`.
 
 import assert from "node:assert/strict";
-import { act } from "react";
+import { readFileSync } from "node:fs";
+import { act, createElement, useState } from "react";
+import { NavigationRouteContext } from "@react-navigation/native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { DishSearchScreen } from "@/app/screens/search/DishSearchScreen";
@@ -23,12 +25,14 @@ import type {
   CatalogRawDishCard,
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
-import { CatalogReleaseExpiredError } from "@/lib/services/catalog";
+import { CatalogRateLimitedError, CatalogReleaseExpiredError } from "@/lib/services/catalog";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
-import { cleanup, renderScreen, type RenderResult } from "@/test/render";
+import { cleanup, render, renderScreen, type RenderResult } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
 type Service = ReturnType<typeof getCatalogRawService>;
@@ -86,6 +90,12 @@ function stubCatalog(overrides: Partial<Service>) {
   );
   Object.assign(service, overrides);
   restore = () => Object.assign(service, originals);
+}
+
+/** Sets the jsdom window width and tells react-native-web, so useWindowDimensions follows. */
+function resizeWindow(width: number) {
+  window.innerWidth = width;
+  window.dispatchEvent(new (window as unknown as { Event: typeof Event }).Event("resize"));
 }
 
 const wait = (ms: number) =>
@@ -253,6 +263,726 @@ test("stall cards show the top dish rating and keep same-name stalls apart (SEAR
   assert.equal((view.text().match(/Top dish 4\.4 \(30\)/g) ?? []).length, 2);
 });
 
+function stallCard(id: string, overrides: Partial<CatalogRawVenueCard> = {}): CatalogRawVenueCard {
+  return {
+    id,
+    buildingId: "maxwell",
+    name: `Laksa House ${id}`,
+    buildingName: "Maxwell Food Centre",
+    menuCount: 3,
+    verificationStatus: "raw",
+    menuRightsStatus: "merchant_owned",
+    mediaRightsStatus: "merchant_owned",
+    ...overrides,
+  };
+}
+
+test("stall cards show the matched dish and the main price, and open the stall (SR4-3, SR4-4, SR4-8, SR4-9)", async () => {
+  stubCatalog({
+    listVenues: async () =>
+      page([
+        stallCard("v1", {
+          logoUrl: "https://example.com/logo.png",
+          mainPrice: 5,
+          matchedDish: { id: "d1", name: "Signature Laksa", price: 6, verificationStatus: "raw" },
+        }),
+        stallCard("v2", { mainPrice: 7.5 }),
+      ]),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "stalls", initialQuery: "laksa" });
+  await wait(400);
+  assert.match(view.text(), /Signature Laksa · S\$6\.00/, "the dish that matched the query");
+  assert.match(view.text(), /Mains around S\$7\.50/, "the typical price of the mains");
+  // A stall with a logo shows it; one without falls back to its initials.
+  assert.equal(view.findByLabel("Laksa House v1 stall logo unavailable"), null);
+  assert.ok(view.findByLabel("Laksa House v2 stall logo unavailable"));
+
+  await view.press(view.findByLabel(/^Laksa House v1,/));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["StallDetail", { venueId: "v1" }],
+  });
+  const opened = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_result_opened",
+  );
+  assert.equal(opened?.properties.mode, "stalls");
+});
+
+test("a card photo that fails to load shows the stall's initials instead (SR4-11)", async () => {
+  stubCatalog({
+    listDishes: async () =>
+      page([
+        dishCard("p1", { imageUrl: "https://example.com/broken.jpg", venueName: "Photo Stall" }),
+      ]),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  const image = document.querySelector('[data-stub="expo-image.Image"]') as
+    | (HTMLElement & { __triggerError?: () => void })
+    | null;
+  assert.ok(image?.__triggerError, "the card draws its photo");
+  assert.equal(view.findByLabel("Photo Stall stall logo unavailable"), null);
+  await act(async () => {
+    image.__triggerError?.();
+  });
+  assert.ok(view.findByLabel("Photo Stall stall logo unavailable"), "initials replace the photo");
+  assert.equal(document.querySelector('[data-stub="expo-image.Image"]'), null);
+});
+
+test("the results header is one search row; modes, chips and the count scroll with the list (SR4-6)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "dishes", initialFilter: "Halal" });
+  await wait(400);
+  const row = view.findByTestId("search-sticky-row");
+  assert.ok(row, "the sticky search row");
+  assert.ok(row.contains(view.findByTestId("browse-results-search-input")));
+  assert.ok(row.contains(view.findByLabel("Go back")));
+  const filters = view.findByLabel("Filters and sort, 1 on");
+  assert.ok(filters && row.contains(filters), "Filters sits in the search row with a count badge");
+  assert.equal(view.findByTestId("search-filters-badge")?.textContent, "1");
+  // The mode tabs, the selected chip and the count are in the list header, not the sticky row.
+  const tabs = Array.from(view.container.querySelectorAll('[role="tab"]'));
+  assert.equal(tabs.length, 2);
+  assert.ok(tabs.every((tab) => !row.contains(tab)));
+  const selected = view.findByLabel("Remove Halal filter");
+  assert.ok(selected && !row.contains(selected));
+  assert.ok(!row.contains(view.findByLabel(/^Sort by,/)));
+
+  // A chip picked in the sheet counts on the badge; removing a selected chip counts it down.
+  await view.press(view.findByText("Rice"));
+  assert.ok(view.findByLabel("Filters and sort, 2 on"));
+  await view.press(view.findByLabel("Remove Halal filter"));
+  assert.ok(view.findByLabel("Filters and sort, 1 on"));
+  assert.equal(view.findByLabel("Remove Halal filter"), null);
+});
+
+test("the Filters sheet offers the release's common food types and sends them as keywords (SR4-24)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request: CatalogPageRequest) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+    suggest: async () => [
+      { kind: "food_type", label: "Laksa" },
+      { kind: "food_type", label: "Chicken Rice" },
+      { kind: "stall", label: "Some Stall" },
+    ],
+  });
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  assert.ok(view.findByText("Food type"));
+  assert.equal(view.findByText("Some Stall"), null, "only food types become chips");
+  assert.equal(view.findByText("Japanese"), null, "the fixed cuisine chips are gone");
+  await view.press(view.findByText("Laksa"));
+  await wait(400);
+  assert.ok(view.findByLabel("Filters and sort, 1 on"));
+  assert.ok(view.findByLabel("Remove Laksa filter"));
+  assert.ok(requests.at(-1)?.foodKeywords?.includes("Laksa"));
+  assert.ok(
+    getTrackedAnalyticsEvents().some(
+      (event) => event.event === "search_filter_changed" && event.properties.filter === "Laksa",
+    ),
+  );
+  await view.press(view.findByLabel("Remove Laksa filter"));
+  await wait(400);
+  assert.equal(view.findByLabel("Remove Laksa filter"), null);
+  assert.deepEqual(requests.at(-1)?.foodKeywords, []);
+});
+
+test("no filters on: Filters has no badge and the summary echoes the query (SR4-6, SR4-25)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "laksa" });
+  await wait(400);
+  const filters = view.findByLabel("Filters and sort");
+  assert.ok(filters);
+  assert.equal(view.findByTestId("search-filters-badge"), null);
+  assert.match(view.text(), /1 dish for “laksa”/);
+});
+
+test("one note shows at a time and dismissing it brings up the next; location is a chip (SR5-5)", async () => {
+  stubCatalog({
+    listDishes: async () => ({ ...page([dishCard("1")]), releaseId: "excel-fallback-v1" }),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialFilter: "Halal" });
+  await wait(400);
+  // Offline copy first; the halal note waits, and there is no "+N more" row.
+  assert.ok(view.findByTestId("search-offline-copy"));
+  assert.doesNotMatch(view.text(), /MUIS/);
+  assert.equal(view.findByText(/more$/), null);
+  // The location note is one compact chip in the rail, not a line of text.
+  assert.doesNotMatch(view.text(), /central Singapore/);
+  assert.ok(view.findByTestId("search-location-chip"));
+  assert.match(view.text(), /Location off/);
+  assert.ok(view.findByLabel(/Turn on location$/));
+  await view.press(view.findByLabel("Dismiss notes"));
+  assert.equal(view.findByTestId("search-offline-copy"), null);
+  assert.match(view.text(), /MUIS/);
+  await view.press(view.findByLabel("Dismiss notes"));
+  assert.equal(view.findByLabel("Notes about these results"), null);
+});
+
+test("the Dishes and Stalls segment and the parsed filters share one rail (SR5-5)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "halal laksa" });
+  await wait(400);
+  const chips = view.findByTestId("search-parsed-chips");
+  const tablist = view.container.querySelector('[role="tablist"]');
+  assert.ok(chips && tablist);
+  assert.equal(chips.parentElement, tablist.parentElement, "one row, not two stacked rows");
+});
+
+test("the too-short hint is a live region (SR4-29)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "dishes" });
+  await view.type(view.findByTestId("browse-results-search-input"), "l");
+  await wait(50);
+  const hint = view.findByText(/Type at least 2 letters/);
+  assert.ok(hint);
+  assert.equal(hint.closest("[aria-live]")?.getAttribute("aria-live"), "polite");
+});
+
+for (const [width, cardWidth] of [
+  [320, "148px"],
+  [390, "183px"],
+] as const) {
+  test(`at ${width} wide the cards share the width between the 12pt list gutters and the search row keeps Filters (SR4-6)`, async () => {
+    resizeWindow(width);
+    try {
+      stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+      const view = await renderResults({ browseMode: "dishes" });
+      await wait(400);
+      const card = view.findByLabel(/^Dish 1,/);
+      assert.ok(card, "a card");
+      assert.equal(card.parentElement?.style.width, cardWidth);
+      const row = view.findByTestId("search-sticky-row");
+      assert.ok(row?.contains(view.findByLabel(/^Filters and sort/)));
+    } finally {
+      resizeWindow(390);
+    }
+  });
+}
+
+test("a heart on a dish card saves it without opening it, and tapping again removes it (SR4-17)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  const heart = view.findByLabel("Save Dish 1");
+  assert.ok(heart, "a heart on the card");
+  const openCard = view.findByLabel(/^Dish 1,/);
+  assert.ok(
+    openCard && !openCard.contains(heart),
+    "the heart is beside the card button, not inside it",
+  );
+  const calls = view.navigation.calls.length;
+  await view.press(heart);
+  await wait(200);
+  assert.equal(view.navigation.calls.length, calls, "the card did not open");
+  assert.ok(view.findByLabel("Remove Dish 1 from saved"));
+  assert.ok(useProfileStore.getState().profile.favouriteDishIds.includes("1"));
+  assert.ok(
+    getTrackedAnalyticsEvents().some(
+      (event) => event.event === "dish_favourited" && event.properties.surface === "search",
+    ),
+  );
+  await view.press(view.findByLabel("Remove Dish 1 from saved"));
+  await wait(200);
+  assert.ok(view.findByLabel("Save Dish 1"));
+  assert.equal(useProfileStore.getState().profile.favouriteDishIds.includes("1"), false);
+});
+
+test("stall cards have no heart (SR4-17)", async () => {
+  stubCatalog({ listVenues: async () => page([stallCard("v1")]), listPlaces: async () => [] });
+  const view = await renderResults({ browseMode: "stalls" });
+  await wait(400);
+  assert.equal(view.findByLabel(/^Save /), null);
+});
+
+test("a search that arrives on an open results screen is recorded too (SR4-30)", async () => {
+  stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
+  function RouteHarness() {
+    const [query, setQuery] = useState("laksa");
+    return createElement(
+      "div",
+      null,
+      createElement("button", { onClick: () => setQuery("mee pok"), "aria-label": "New search" }),
+      createElement(
+        NavigationRouteContext.Provider,
+        {
+          value: {
+            key: "r2",
+            name: "SearchResults",
+            params: { browseMode: "dishes", initialQuery: query },
+          } as never,
+        },
+        createElement(SearchResultsScreen),
+      ),
+    );
+  }
+  const view = await render(createElement(RouteHarness));
+  await wait(300);
+  await view.press(view.findByLabel("New search"));
+  await wait(300);
+  const lengths = getTrackedAnalyticsEvents()
+    .filter((event) => event.event === "search_query")
+    .map((event) => event.properties.query_length);
+  assert.deepEqual(lengths, ["laksa".length, "mee pok".length]);
+});
+
+test("a GPS refresh keeps the list; Update for new location reloads it (SR4-26)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request: CatalogPageRequest) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  withGps();
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  const loads = requests.length;
+  assert.equal(requests.at(-1)?.coordinate?.latitude, 1.28);
+  assert.equal(view.findByLabel("Update for new location"), null);
+
+  await act(async () => {
+    useLocationStore.setState({ currentLocation: { latitude: 1.31, longitude: 103.87 } });
+  });
+  await wait(400);
+  assert.equal(requests.length, loads, "walking does not reload the list");
+  assert.ok(view.findByLabel("Update for new location"));
+
+  await view.press(view.findByLabel("Update for new location"));
+  await wait(400);
+  assert.equal(requests.at(-1)?.coordinate?.latitude, 1.31);
+  assert.equal(view.findByLabel("Update for new location"), null);
+});
+
+test("a new search starts from where the diner is now (SR4-26)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request: CatalogPageRequest) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  withGps();
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  await act(async () => {
+    useLocationStore.setState({ currentLocation: { latitude: 1.31, longitude: 103.87 } });
+  });
+  await view.type(view.findByTestId("browse-results-search-input"), "laksa");
+  await wait(600);
+  assert.equal(requests.at(-1)?.query, "laksa");
+  assert.equal(requests.at(-1)?.coordinate?.latitude, 1.31);
+  assert.equal(view.findByLabel("Update for new location"), null);
+});
+
+test("a card with no rating keeps the rating line's height, so a row of cards lines up (SR4-19)", async () => {
+  stubCatalog({
+    listDishes: async () =>
+      page([dishCard("1"), dishCard("2", { rating: undefined, reviewCount: 0 })]),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes" });
+  await wait(400);
+  for (const label of [/^Dish 1,/, /^Dish 2,/]) {
+    const card = view.findByLabel(label);
+    assert.ok(card, `${label}`);
+    const reserved = Array.from(card.querySelectorAll<HTMLElement>("div")).filter(
+      (el) => el.style.minHeight === "16px",
+    );
+    assert.equal(reserved.length, 1, `${label} reserves one rating line`);
+  }
+});
+
+test("the offline copy keeps the catalog page for a stall tap", async () => {
+  stubCatalog({
+    listVenues: async () => ({
+      ...page([stallCard("v1")]),
+      releaseId: "excel-fallback-1",
+    }),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "stalls" });
+  await wait(400);
+  await view.press(view.findByLabel(/^Laksa House v1,/));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["CatalogRawDetail", { kind: "venue", id: "v1", releaseId: "excel-fallback-1" }],
+  });
+});
+
+test("Search home: a stall suggestion with a venue id opens the stall; a chain's name searches", async () => {
+  stubCatalog({
+    suggest: async () => [
+      { kind: "stall", label: "Sungei Road Laksa", venueId: "v9", subtitle: "Maxwell Food Centre" },
+      { kind: "stall", label: "Ya Kun Kaya Toast" },
+    ],
+    listDishes: async () => page<CatalogRawDishCard>([]),
+  });
+  const view = await renderHome();
+  await view.type(view.findByLabel("Search dishes, stalls, or hawker centres"), "sungei");
+  await wait(400);
+  assert.match(view.text(), /Stall · Maxwell Food Centre/);
+  await view.press(view.findByLabel("Open Sungei Road Laksa, Stall at Maxwell Food Centre"));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["StallDetail", { venueId: "v9" }],
+  });
+
+  await view.type(view.findByLabel("Search dishes, stalls, or hawker centres"), "ya kun");
+  await wait(400);
+  await view.press(view.findByLabel("Search Ya Kun Kaya Toast, Stall"));
+  const call = view.navigation.calls.at(-1);
+  assert.equal(call?.method, "navigate");
+  assert.equal((call?.args[0] as string) ?? "", "SearchResults");
+  assert.equal((call?.args[1] as { browseMode?: string }).browseMode, "stalls");
+  assert.equal((call?.args[1] as { initialQuery?: string }).initialQuery, "Ya Kun Kaya Toast");
+});
+
+async function typeHome(view: RenderResult, text: string) {
+  await view.type(view.findByLabel("Search dishes, stalls, or hawker centres"), text);
+}
+
+test("Search home types ahead: Search “xyz” first, then the top dishes and stalls (SR4-13)", async () => {
+  const requests: { kind: string; request: CatalogPageRequest }[] = [];
+  stubCatalog({
+    suggest: async () => [{ kind: "food_type", label: "Laksa" }],
+    listDishes: async (request: CatalogPageRequest) => {
+      if (request.query) requests.push({ kind: "dishes", request });
+      return page([dishCard("1", { name: "Curry Laksa", venueName: "Laksa House", price: 5.5 })]);
+    },
+    listVenues: async (request: CatalogPageRequest) => {
+      requests.push({ kind: "stalls", request });
+      return page([stallCard("v1", { name: "Laksa House", buildingName: "Maxwell Food Centre" })]);
+    },
+  });
+  const view = await renderHome();
+  await typeHome(view, "laksa");
+  assert.ok(view.findByLabel("Finding matches"), "a skeleton while the matches load");
+  await wait(700);
+  assert.equal(view.findByLabel("Finding matches"), null);
+  assert.deepEqual(
+    requests.map((entry) => [entry.kind, entry.request.query, entry.request.limit]),
+    [
+      ["dishes", "laksa", 3],
+      ["stalls", "laksa", 2],
+    ],
+  );
+  // "Search “laksa”" is the first row of the panel.
+  const panel = view.findByLabel("Search suggestions");
+  assert.ok(panel);
+  assert.equal(panel.querySelector("button")?.getAttribute("aria-label"), "Search for laksa");
+  assert.match(view.text(), /Curry Laksa/);
+  assert.match(view.text(), /Laksa House · S\$5\.50/);
+  assert.match(view.text(), /Maxwell Food Centre/);
+
+  await view.press(view.findByLabel("Open Curry Laksa from Laksa House"));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: [
+      "DishDetail",
+      { dishId: "1", source: "search_typeahead", catalogFallback: { releaseId: "release-1" } },
+    ],
+  });
+  await view.press(view.findByLabel("Open Laksa House at Maxwell Food Centre"));
+  assert.deepEqual(view.navigation.calls.at(-1), {
+    method: "navigate",
+    args: ["StallDetail", { venueId: "v1" }],
+  });
+  const opened = getTrackedAnalyticsEvents().filter(
+    (event) => event.event === "search_typeahead_opened",
+  );
+  assert.deepEqual(
+    opened.map((event) => event.properties.kind),
+    ["dish", "stall"],
+  );
+
+  await view.press(view.findByLabel("Search for laksa"));
+  const call = view.navigation.calls.at(-1);
+  assert.equal(call?.args[0], "SearchResults");
+  assert.equal((call?.args[1] as { initialQuery?: string }).initialQuery, "laksa");
+});
+
+test("Search home typeahead: nothing found says so and the search row stays (SR4-13)", async () => {
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: async () => page<CatalogRawDishCard>([]),
+    listVenues: async () => page<CatalogRawVenueCard>([]),
+  });
+  const view = await renderHome();
+  await typeHome(view, "zzzzq");
+  await wait(700);
+  assert.match(view.text(), /No matches for “zzzzq”/);
+  assert.ok(view.findByLabel("Search for zzzzq"), "the search row is still there");
+});
+
+test("Search home typeahead: a failed load says so, is reported once, and keeps the search row (SR4-13)", async () => {
+  const errors: unknown[] = [];
+  const original = console.error;
+  const globals = globalThis as { __DEV__?: boolean };
+  const previousDev = globals.__DEV__;
+  // reportError logs to the console in development; that is what this test reads.
+  globals.__DEV__ = true;
+  console.error = (...args: unknown[]) => {
+    if (args[0] === "[reportError]") errors.push(args[1]);
+  };
+  try {
+    stubCatalog({
+      suggest: async () => [],
+      listDishes: async (request: CatalogPageRequest) => {
+        if (request.query) throw new Error("matches down");
+        return page<CatalogRawDishCard>([]);
+      },
+      listVenues: async () => page<CatalogRawVenueCard>([]),
+    });
+    const view = await renderHome();
+    await typeHome(view, "laksa");
+    await wait(700);
+    assert.match(view.text(), /Couldn't load matches/);
+    assert.ok(view.findByLabel("Search for laksa"));
+    assert.equal(view.findByLabel("Finding matches"), null);
+    assert.deepEqual(
+      errors.map((error) => (error as Error).message),
+      ["matches down"],
+    );
+  } finally {
+    console.error = original;
+    globals.__DEV__ = previousDev;
+  }
+});
+
+test("Search home: one Near me entry, a Halal chip without a check mark, 44 pt recents (SR4-20, SR4-22)", async () => {
+  useSearchStore.setState({ recentSearches: ["laksa"] });
+  stubCatalog({ suggest: async () => [], listDishes: async () => page<CatalogRawDishCard>([]) });
+  const view = await renderHome();
+  assert.ok(view.findByLabel("Search near me dishes"));
+  assert.equal(view.findByText("Browse dishes near you"), null);
+  assert.doesNotMatch(view.findByLabel("Search halal dishes")?.textContent ?? "", /✓/);
+  const remove = view.findByLabel("Remove laksa from recent searches");
+  assert.equal(remove?.style.width, "44px");
+  assert.equal(remove?.style.height, "44px");
+});
+
+test("ParsedQueryChips: diet and price words become filters and removable chips (SR4-2)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "halal laksa under $5" });
+  await wait(400);
+  const first = requests.at(-1);
+  assert.equal(first?.query, "laksa", "the filter words are not searched for");
+  assert.deepEqual(first?.dietaryFlags, ["halal"]);
+  assert.equal(first?.maxPrice, 5);
+  const chips = view.findByTestId("search-parsed-chips");
+  assert.ok(chips, "the parsed filters show as chips");
+  assert.match(chips.textContent ?? "", /Halal/);
+  assert.match(chips.textContent ?? "", /Under S\$5/);
+  // The input keeps what was typed.
+  const input = view.findByTestId("browse-results-search-input") as HTMLInputElement;
+  assert.equal(input.value, "halal laksa under $5");
+  const applied = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_parse_applied",
+  );
+  assert.equal(applied?.properties.part_count, 2);
+  assert.equal(applied?.properties.part_kinds, "dietary,price");
+
+  // Removing the Halal chip searches for the word "halal" instead; the price stays a filter.
+  await view.press(view.findByLabel(/^Halal, from your search/));
+  await wait(400);
+  const after = requests.at(-1);
+  assert.equal(after?.query, "halal laksa");
+  assert.deepEqual(after?.dietaryFlags, []);
+  assert.equal(after?.maxPrice, 5);
+  assert.equal(view.findByLabel(/^Halal, from your search/), null);
+  assert.ok(view.findByLabel(/^Under S\$5, from your search/));
+  const removed = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_parse_removed",
+  );
+  assert.equal(removed?.properties.part_kind, "dietary");
+});
+
+test("parsed filters that find nothing fall back to the whole text, with a note and the chip kept (SR4-2)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      // Dietary tags are sparse: only the plain text finds the dish.
+      const filtered = (request.dietaryFlags?.length ?? 0) > 0;
+      return page(filtered ? [] : [dishCard("1", { name: "Vegetarian Bee Hoon" })]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "vegetarian bee hoon" });
+  // The empty result switches to the whole text in a second step, which loads after its own pause.
+  await wait(500);
+  await wait(500);
+  const first = requests[0];
+  assert.equal(first?.query, "bee hoon");
+  assert.deepEqual(first?.dietaryFlags, ["vegetarian"]);
+  const last = requests.at(-1);
+  assert.equal(last?.query, "bee hoon", "the dish words are searched, with the filters dropped");
+  assert.deepEqual(last?.dietaryFlags, []);
+  assert.match(view.text(), /Vegetarian Bee Hoon/);
+  const note = view.findByTestId("search-parsed-relaxed-note");
+  assert.ok(note, "the note says why the results changed");
+  assert.match(note.textContent ?? "", /Nothing matched with Vegetarian/);
+  assert.match(note.textContent ?? "", /these results are for "bee hoon"/);
+  assert.ok(view.findByLabel(/^Vegetarian, from your search/), "the chip stays");
+  assert.equal(view.findByText("No dishes"), null);
+  const relaxedEvent = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_parse_relaxed",
+  );
+  assert.equal(relaxedEvent?.properties.part_count, 1);
+  assert.equal(
+    getTrackedAnalyticsEvents().some((event) => event.event === "search_zero_results"),
+    false,
+    "a search that is retried with the whole text is not a zero-result search",
+  );
+
+  // Removing the chip searches "vegetarian" as a word, and the note goes away.
+  await view.press(view.findByLabel(/^Vegetarian, from your search/));
+  await wait(400);
+  assert.equal(view.findByTestId("search-parsed-relaxed-note"), null);
+  assert.equal(requests.at(-1)?.query, "vegetarian bee hoon");
+  assert.deepEqual(requests.at(-1)?.dietaryFlags, []);
+});
+
+test('SR5-1: "halal laksa under $5" with no halal tags relaxes to the dish words, never the raw text', async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      const filtered = (request.dietaryFlags?.length ?? 0) > 0 || request.maxPrice !== undefined;
+      // Only a request for exactly "laksa" with no filters finds the dish.
+      return page(!filtered && request.query === "laksa" ? [dishCard("1", { name: "Laksa" })] : []);
+    },
+    listPlaces: async () => [],
+    suggest: async () => [],
+  });
+  const view = await renderResults({
+    browseMode: "dishes",
+    initialQuery: "halal laksa under $5",
+  });
+  await wait(500);
+  await wait(500);
+  assert.equal(requests[0]?.query, "laksa");
+  assert.equal(requests.at(-1)?.query, "laksa", "the raw text 'under 5' words are never sent");
+  assert.deepEqual(requests.at(-1)?.dietaryFlags, []);
+  assert.equal(requests.at(-1)?.maxPrice, undefined);
+  const note = view.findByTestId("search-parsed-relaxed-note");
+  assert.ok(note);
+  assert.match(note.textContent ?? "", /Nothing matched with Halal, Under S\$5/);
+  assert.match(note.textContent ?? "", /these results are for "laksa"/);
+  assert.match(view.text(), /Laksa/);
+});
+
+test("SR5-1: when even the dish words find nothing there is no claim, just the empty state", async () => {
+  stubCatalog({
+    listDishes: async () => page<CatalogRawDishCard>([]),
+    listVenues: async () => page<CatalogRawVenueCard>([]),
+    listPlaces: async () => [],
+    suggest: async () => [{ kind: "food_type", label: "Chicken Rice" }],
+  });
+  const view = await renderResults({
+    browseMode: "dishes",
+    initialQuery: "halal laksa under $5",
+  });
+  await wait(500);
+  await wait(500);
+  assert.equal(view.findByTestId("search-parsed-relaxed-note"), null);
+  assert.doesNotMatch(view.text(), /these results are for/);
+  assert.ok(view.findByTestId("search-empty-state"));
+  assert.match(view.text(), /No matches found/);
+  assert.ok(view.findByLabel(/^Halal, from your search/), "the chips stay");
+  assert.ok(view.findByLabel("Search Chicken Rice"), "popular searches are offered");
+});
+
+test("parsed filters that find results keep the filtered search and show no note", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "halal laksa" });
+  await wait(400);
+  assert.equal(requests.at(-1)?.query, "laksa");
+  assert.equal(view.findByTestId("search-parsed-relaxed-note"), null);
+});
+
+test("a typed price cap lower than the Under S$6 chip wins, and the chip stays on its own (SR4-2)", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  await renderResults({
+    browseMode: "dishes",
+    initialQuery: "laksa below 4",
+    initialFilter: "Under S$6",
+  });
+  await wait(400);
+  assert.equal(requests.at(-1)?.maxPrice, 4);
+});
+
+test("a query with no filter words has no chips and is sent as typed", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      return page([dishCard("1")]);
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "chicken rice" });
+  await wait(400);
+  assert.equal(requests.at(-1)?.query, "chicken rice");
+  assert.equal(view.findByTestId("search-parsed-chips"), null);
+  assert.equal(
+    getTrackedAnalyticsEvents().some((event) => event.event === "search_parse_applied"),
+    false,
+  );
+});
+
+test("a rate-limited search says to wait, not to check the connection, and Retry waits (SR4-15)", async () => {
+  let calls = 0;
+  stubCatalog({
+    listDishes: async () => {
+      calls += 1;
+      throw new CatalogRateLimitedError();
+    },
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "laksa" });
+  await wait(400);
+  assert.match(view.text(), /Too many searches/);
+  assert.doesNotMatch(view.text(), /Check your connection/);
+  const retry = view.findByText(/^Try again in \d+s$/);
+  assert.ok(retry, "Retry shows the wait");
+  const before = calls;
+  await view.press(retry);
+  await wait(50);
+  assert.equal(calls, before, "Retry does nothing until the wait is over");
+});
+
 // ---- Search home
 
 function fakeFlags(flags: Record<string, string>) {
@@ -309,6 +1039,15 @@ async function renderHome() {
   return view;
 }
 
+test("Search home says when it is showing the saved copy of the catalog (SR4-31)", async () => {
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: async () => ({ ...page([dishCard("1")]), releaseId: "excel-fallback-v1" }),
+  });
+  const view = await renderHome();
+  assert.ok(view.findByTestId("search-home-offline-copy"));
+});
+
 test("Search home control: the island-wide top 3, no star for an unreviewed dish (SEARCH-7)", async () => {
   const requests: CatalogPageRequest[] = [];
   stubCatalog({
@@ -325,7 +1064,12 @@ test("Search home control: the island-wide top 3, no star for an unreviewed dish
   const view = await renderHome();
   assert.match(view.text(), /Dishes to Discover/);
   assert.deepEqual(requests[0], { limit: 3, sort: "quality" });
-  assert.equal((view.text().match(/★/g) ?? []).length, 2, "no ★ 0.0 for the unreviewed dish");
+  assert.doesNotMatch(view.text(), /★/, "the star is a symbol, not a text glyph");
+  assert.equal(
+    (view.text().match(/4\.5 \(10\)/g) ?? []).length,
+    2,
+    "no 0.0 for the unreviewed dish",
+  );
   assert.equal(flags.state.exposures, 1, "exposed once the section is on screen");
   await view.press(view.findByLabel("View Dish 1 from Stall 1"));
   const opened = getTrackedAnalyticsEvents().find(
@@ -630,4 +1374,108 @@ test("SEARCH-9: a typed query that settles sends one search_query; quick typing 
   assert.equal(typed()[0].properties.query_length, 5);
   await settleTyping();
   assert.equal(typed().length, 1, "staying on the results does not log it again");
+});
+
+// ---- Round five (SR5-3, SR5-6, SR5-8, SR5-10)
+
+test("SR5-8: typeahead rows show a 40 pt thumbnail when there is a photo or logo, a symbol tile otherwise", async () => {
+  stubCatalog({
+    suggest: async () => [],
+    listDishes: async () =>
+      page([dishCard("1", { name: "Curry Laksa", imageUrl: "https://example.com/d.jpg" })]),
+    listVenues: async () =>
+      page([
+        stallCard("v1", { name: "Laksa House", logoUrl: "https://example.com/logo.png" }),
+        stallCard("v2", { name: "Laksa Corner" }),
+      ]),
+  });
+  const view = await renderHome();
+  await typeHome(view, "laksa");
+  await wait(700);
+  const dishRow = view.findByLabel("Open Curry Laksa from Stall 1");
+  const logoRow = view.findByLabel("Open Laksa House at Maxwell Food Centre");
+  const plainRow = view.findByLabel("Open Laksa Corner at Maxwell Food Centre");
+  const photo = '[data-stub="expo-image.Image"]';
+  assert.ok(dishRow?.querySelector(photo), "the dish photo");
+  assert.ok(logoRow?.querySelector(photo), "the stall logo");
+  assert.equal(plainRow?.querySelector(photo), null, "no photo: the symbol tile");
+  assert.equal(
+    plainRow
+      ?.querySelector("[style*='width: 40px']")
+      ?.getAttribute("style")
+      ?.includes("height: 40px"),
+    true,
+  );
+});
+
+test("SR5-10: the Search home clear button is a 44 pt square", async () => {
+  stubCatalog({ suggest: async () => [], listDishes: async () => page<CatalogRawDishCard>([]) });
+  const view = await renderHome();
+  await typeHome(view, "lak");
+  const clear = view.findByLabel("Clear search");
+  assert.equal(clear?.style.width, "44px");
+  assert.equal(clear?.style.height, "44px");
+});
+
+test("SR5-6: an empty result offers the other tab's count, popular searches and recents", async () => {
+  useSearchStore.setState({ recentSearches: ["chicken rice", "zzz"] });
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async () => page<CatalogRawDishCard>([]),
+    listVenues: async (request) => {
+      requests.push(request);
+      return page([stallCard("v1"), stallCard("v2")]);
+    },
+    listPlaces: async () => [],
+    suggest: async (text) =>
+      text
+        ? []
+        : [
+            { kind: "food_type", label: "Laksa" },
+            { kind: "food_type", label: "Chicken Rice" },
+          ],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "zzz" });
+  await wait(600);
+  assert.ok(view.findByTestId("search-empty-state"));
+  assert.ok(view.findByText("2 stalls match “zzz”"), "the other tab's count");
+  assert.equal(requests.at(-1)?.query, "zzz");
+  assert.equal(requests.at(-1)?.limit, 1, "a count request, not a page");
+  assert.ok(view.findByLabel("Search Laksa"), "popular searches");
+  assert.ok(view.findByLabel("Search chicken rice again"), "recent searches");
+  assert.equal(view.findByLabel("Search zzz again"), null, "not the query that just failed");
+
+  // A popular chip searches it; the other tab's button switches tabs.
+  await view.press(view.findByLabel("Search Laksa"));
+  await wait(400);
+  assert.equal(
+    (view.findByTestId("browse-results-search-input") as HTMLInputElement).value,
+    "Laksa",
+  );
+});
+
+test("SR5-6: the other tab's button switches to it", async () => {
+  stubCatalog({
+    listDishes: async () => page<CatalogRawDishCard>([]),
+    listVenues: async () => page([stallCard("v1")]),
+    listPlaces: async () => [],
+    suggest: async () => [],
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "zzz" });
+  await wait(600);
+  await view.press(view.findByText("1 stall matches “zzz”"));
+  await wait(400);
+  assert.match(view.text(), /1 stall for “zzz”/, "the Stalls tab is showing");
+  assert.ok(view.findByLabel(/^Laksa House v1/));
+});
+
+test("SR5-3: cards press down 0.97 over 120 ms (PressableScale) and list rows highlight", () => {
+  const results = readFileSync("src/app/screens/search/SearchResultsScreen.tsx", "utf8");
+  const home = readFileSync("src/app/screens/search/DishSearchScreen.tsx", "utf8");
+  assert.match(results, /<PressableScale[\s\S]*?testID=\{`search-card-/);
+  assert.match(home, /<PressableScale[\s\S]*?accessibilityLabel=\{`View \$\{dish\.name\}/);
+  assert.match(home, /style=\{\(\{ pressed \}\) => rowStyle\(pressed\)\}/);
+  const pressable = readFileSync("src/components/ui/PressableScale.tsx", "utf8");
+  assert.match(pressable, /PRESS_SCALE = 0\.97/);
+  assert.match(pressable, /PRESS_DURATION_MS = 120/);
 });

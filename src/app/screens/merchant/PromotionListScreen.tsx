@@ -1,10 +1,11 @@
 import React, { useState, useCallback } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { Plus, Calendar, Target, BarChart2, X } from "lucide-react-native";
+import { ArrowRight, Plus, Calendar, Target, BarChart2, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import {
+  AppSymbol,
   AppText,
   Button,
   IconButton,
@@ -20,6 +21,7 @@ import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
+import { formatPromotionRange } from "@/features/merchant/dateRange";
 import type { MerchantPromotion, PromotionStatus } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -252,8 +254,7 @@ export function PromotionListScreen() {
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Calendar size={14} color={palette.textSecondary} />
                       <AppText variant="micro" tone="muted">
-                        {new Date(promo.startDate).toLocaleDateString()} -{" "}
-                        {new Date(promo.endDate).toLocaleDateString()}
+                        {formatPromotionRange(promo.startDate, promo.endDate)}
                       </AppText>
                     </View>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -266,7 +267,29 @@ export function PromotionListScreen() {
                     </View>
                   </View>
 
-                  {pricing.label ? (
+                  {pricing.originalPrice !== undefined && pricing.finalPrice !== undefined ? (
+                    <View
+                      accessible
+                      accessibilityLabel={`S$${pricing.originalPrice.toFixed(2)} to S$${pricing.finalPrice.toFixed(2)}`}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: spacing[2],
+                        marginBottom: spacing[3],
+                      }}
+                    >
+                      <AppText variant="bodySmallBold">
+                        S${pricing.originalPrice.toFixed(2)}
+                      </AppText>
+                      <AppSymbol
+                        name="arrow.right"
+                        fallback={ArrowRight}
+                        size={14}
+                        color={palette.textSecondary}
+                      />
+                      <AppText variant="bodySmallBold">S${pricing.finalPrice.toFixed(2)}</AppText>
+                    </View>
+                  ) : pricing.label ? (
                     <AppText variant="bodySmallBold" style={{ marginBottom: spacing[3] }}>
                       {pricing.label}
                     </AppText>

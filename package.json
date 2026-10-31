@@ -120,6 +120,7 @@
     "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-community/netinfo": "12.0.1",
     "@react-native-community/slider": "5.2.0",
+    "@react-native-menu/menu": "2.0.0",
     "@react-navigation/bottom-tabs": "^7.15.9",
     "@react-navigation/material-top-tabs": "^7.4.23",
     "@react-navigation/native": "^7.2.2",
@@ -151,6 +152,7 @@
     "expo-notifications": "~57.0.24",
     "expo-secure-store": "~57.0.4",
     "expo-status-bar": "~57.0.1",
+    "expo-symbols": "~57.0.3",
     "expo-updates": "~57.0.26",
     "expo-video": "~57.0.5",
     "expo-web-browser": "~57.0.3",
@@ -203,7 +205,9 @@
     "js-yaml": "4.3.2",
     "postcss": "8.5.30",
     "@xmldom/xmldom": "0.8.15",
-    "uuid": "14.0.0"
+    "uuid": "14.0.0",
+    "joi": "17.13.9",
+    "node-forge": "1.4.2"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

@@ -129,7 +129,7 @@ test("mandatory-auth native flows reject guest entry and protected deep-link byp
     assert.match(flow, /assertNotVisible: "Continue as Guest"/);
     assert.match(flow, /assertNotVisible: "Skip login"/);
     assert.match(flow, /Already have an account\.\*Sign in/);
-    assert.match(flow, /visible: "Welcome back"/);
+    assert.match(flow, /visible: "Sign in to Hungry"/);
     assert.match(flow, /openLink: "hungry:\/(?:\/)?(?:dish|venue)\//);
     assert.match(flow, /assertNotVisible: "Discover"/);
   }

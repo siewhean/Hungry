@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { applyAnalyticsPreference } from "@/lib/analytics/preference";
+
 import { hungryPersistStorage } from "./persistStorage";
 
 export type ToastTone = "success" | "error" | "info" | "warning";
@@ -9,6 +11,8 @@ export interface ToastPayload {
   message: string;
   tone?: ToastTone;
   duration?: number;
+  /** A button on the toast, e.g. Undo. The toast stays up for `duration` so there is time to tap. */
+  action?: { label: string; onPress: () => void };
   backgroundColor?: string;
   borderColor?: string;
   textColor?: string;
@@ -76,6 +80,13 @@ interface UIState {
   setReducedMotionEnabled: (enabled: boolean) => void;
   allowSearchHistory: boolean;
   setAllowSearchHistory: (enabled: boolean) => void;
+  /**
+   * "Share usage analytics", a device setting that survives sign-out. It reads on here, but the
+   * app holds it off until the person has answered the one-time question
+   * (`enforcePreConsentAnalytics`, features/privacy/consent.ts).
+   */
+  analyticsEnabled: boolean;
+  setAnalyticsEnabled: (enabled: boolean) => void;
   /** Device setting: kept across sign-outs and never overwritten by a server profile. */
   leftHandedMode: boolean;
   setLeftHandedMode: (enabled: boolean) => void;
@@ -89,6 +100,17 @@ interface UIState {
   safetyMenu: SafetyMenu | null;
   openSafetyMenu: (menu: SafetyMenu) => void;
   closeSafetyMenu: () => void;
+  /**
+   * While set, the app-wide "+N Food Cred" pill waits and counts the points it was handed,
+   * so a popup that follows the award (the "you tried it" popup) can show them itself.
+   */
+  credHold: { points: number } | null;
+  holdCredToast: () => void;
+  addHeldCredPoints: (points: number) => void;
+  /** Ends the hold; `show` replays the held points as the pill (nothing used them). */
+  releaseCredToast: (show: boolean) => void;
+  /** A replay of held points for the pill to show; set by `releaseCredToast(true)`. */
+  credReplay: { id: number; points: number } | null;
 }
 
 export const useUIStore = create<UIState>()(
@@ -123,6 +145,11 @@ export const useUIStore = create<UIState>()(
       setReducedMotionEnabled: (reducedMotionEnabled) => set({ reducedMotionEnabled }),
       allowSearchHistory: true,
       setAllowSearchHistory: (allowSearchHistory) => set({ allowSearchHistory }),
+      analyticsEnabled: true,
+      setAnalyticsEnabled: (analyticsEnabled) => {
+        applyAnalyticsPreference(analyticsEnabled);
+        set({ analyticsEnabled });
+      },
       leftHandedMode: false,
       setLeftHandedMode: (leftHandedMode) => set({ leftHandedMode }),
       signInPrompt: null,
@@ -138,17 +165,50 @@ export const useUIStore = create<UIState>()(
       safetyMenu: null,
       openSafetyMenu: (safetyMenu) => set({ safetyMenu }),
       closeSafetyMenu: () => set({ safetyMenu: null }),
+      credHold: null,
+      credReplay: null,
+      holdCredToast: () => set({ credHold: { points: 0 } }),
+      addHeldCredPoints: (points) =>
+        set((state) =>
+          state.credHold ? { credHold: { points: state.credHold.points + points } } : state,
+        ),
+      releaseCredToast: (show) =>
+        set((state) => {
+          const held = state.credHold;
+          if (!held) return state;
+          if (show && held.points > 0) {
+            return {
+              credHold: null,
+              credReplay: { id: (state.credReplay?.id ?? 0) + 1, points: held.points },
+            };
+          }
+          return { credHold: null };
+        }),
     }),
     {
       name: "hungry-ui-v1",
       storage: hungryPersistStorage,
+      // Version 1: Settings no longer offers an app Theme or Reduce motion switch (iOS has both),
+      // so a value saved by an earlier build is dropped rather than leaving it stuck on.
+      version: 1,
+      migrate: (persisted) => {
+        const {
+          themePreference: _theme,
+          reducedMotionEnabled: _motion,
+          ...rest
+        } = (persisted ?? {}) as Record<string, unknown>;
+        return rest as never;
+      },
       partialize: (state) => ({
-        themePreference: state.themePreference,
         hapticFeedbackEnabled: state.hapticFeedbackEnabled,
-        reducedMotionEnabled: state.reducedMotionEnabled,
         allowSearchHistory: state.allowSearchHistory,
+        analyticsEnabled: state.analyticsEnabled,
         leftHandedMode: state.leftHandedMode,
       }),
+      // A saved opt-out applies before the first event of the next launch is sent.
+      onRehydrateStorage: () => (state) => {
+        if (state && state.analyticsEnabled === false) applyAnalyticsPreference(false);
+      },
     },
   ),
 );

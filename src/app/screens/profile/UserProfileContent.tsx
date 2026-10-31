@@ -1,25 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import {
-  Lock,
-  MessageCircleMore,
-  MoreHorizontal,
-  PencilLine,
-  Share2,
-  UserCheck,
-  Users,
-  Utensils,
-} from "lucide-react-native";
 
-import {
-  AccessibleImage,
-  AppText,
-  Avatar,
-  Button,
-  Card,
-  EmptyState,
-  Skeleton,
-} from "@/components/ui";
+import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
+import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
+import { ProfileStatRow, type ProfileStat } from "@/components/profile/ProfileStatRow";
+import { AccessibleImage, AppSymbol, AppText, Avatar, Button, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { FollowPillButton } from "@/components/social/FollowPillButton";
@@ -29,6 +14,10 @@ import { biteToStallPost } from "@/lib/services/postTransforms";
 import { promptContentSafetyActions } from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { formatMemberSince } from "@/features/profile/relativeDate";
+import { pluralLabel } from "@/features/profile/plural";
+import { useProfileFavouriteDishes } from "@/features/profile/useProfileFavouriteDishes";
+import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { useFollowPress } from "@/features/profile/useFollowPress";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -77,7 +66,7 @@ export function UserProfileContent({
   authorAvatarUrl,
   authorId,
 }: UserProfileContentProps) {
-  const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   const repository = getDataRepository();
   const rootNavigation = getRootNavigation(navigation);
   const followedUserIds = useSocialStore((state) => state.followedUserIds);
@@ -290,6 +279,9 @@ export function UserProfileContent({
       .finally(() => setIsLoadingMoreReviews(false));
   };
 
+  // One batched dish lookup for every review card on screen.
+  const { infoFor: reviewDishInfo } = useReviewDishDetails(reviews);
+
   const resolvedAuthorAvatarUrl = useMemo(() => {
     if (authorAvatarUrl?.trim()) return authorAvatarUrl.trim();
     if (publicProfile?.avatarUrl?.trim()) return publicProfile.avatarUrl.trim();
@@ -302,38 +294,38 @@ export function UserProfileContent({
     const service = getHungryService().social;
     setServerFollowState(null);
 
+    // Counts and follow status are separate reads: a failed counts read must not leave a stale
+    // "Following" from storage uncorrected, and a failed status read keeps the counts.
     void Promise.all([
-      service.getFollowCounts(resolvedAuthorId),
-      service.getFollowStatus(resolvedAuthorId).catch(() => null),
-    ])
-      .then(([counts, serverFollowStatus]) => {
-        if (!isActive) return;
-        const serverIsFollowing =
-          serverFollowStatus === null ? null : serverFollowStatus === "approved";
-        // The server wins both ways, so a stale persisted follow is cleared too.
-        if (serverIsFollowing !== null) setFollowedUserId(resolvedAuthorId, serverIsFollowing);
-        if (serverFollowStatus !== null) {
-          setFollowRequested(resolvedAuthorId, serverFollowStatus === "pending");
-        }
-        const viewerIsFollowing =
-          serverIsFollowing ?? Boolean(useSocialStore.getState().followedUserIds[resolvedAuthorId]);
-        setServerFollowState({
-          userId: resolvedAuthorId,
-          followersCount: counts?.followersCount ?? null,
-          followingCount: counts?.followingCount ?? null,
-          viewerIsFollowing,
-        });
-      })
-      .catch((error) => {
-        reportError(error, { screen: "UserProfile", action: "load_follow_counts" });
-        if (!isActive) return;
-        setServerFollowState({
-          userId: resolvedAuthorId,
-          followersCount: null,
-          followingCount: null,
-          viewerIsFollowing: false,
-        });
+      service.getFollowCounts(resolvedAuthorId).then(
+        (counts) => ({ ok: true as const, counts }),
+        (error: unknown) => {
+          reportError(error, { screen: "UserProfile", action: "load_follow_counts" });
+          return { ok: false as const, counts: null };
+        },
+      ),
+      service.getFollowStatus(resolvedAuthorId).catch((error: unknown) => {
+        reportError(error, { screen: "UserProfile", action: "load_follow_status" });
+        return null;
+      }),
+    ]).then(([{ counts }, serverFollowStatus]) => {
+      if (!isActive) return;
+      const serverIsFollowing =
+        serverFollowStatus === null ? null : serverFollowStatus === "approved";
+      // The server wins both ways, so a stale persisted follow is cleared too.
+      if (serverIsFollowing !== null) setFollowedUserId(resolvedAuthorId, serverIsFollowing);
+      if (serverFollowStatus !== null) {
+        setFollowRequested(resolvedAuthorId, serverFollowStatus === "pending");
+      }
+      const viewerIsFollowing =
+        serverIsFollowing ?? Boolean(useSocialStore.getState().followedUserIds[resolvedAuthorId]);
+      setServerFollowState({
+        userId: resolvedAuthorId,
+        followersCount: counts?.followersCount ?? null,
+        followingCount: counts?.followingCount ?? null,
+        viewerIsFollowing,
       });
+    });
 
     return () => {
       isActive = false;
@@ -383,6 +375,30 @@ export function UserProfileContent({
     publicProfile?.id === resolvedAuthorId &&
     publicProfile?.isPrivate === true &&
     publicProfile.canViewContent !== true;
+  const canReadContent = publicProfileStatus === "loaded" && !isSelf && !isPrivateLocked;
+  const { dishIds: pinnedDishIds } = useProfileFavouriteDishes(resolvedAuthorId, canReadContent);
+  // How close their taste is to yours; null (and hidden) when the server has nothing to say.
+  const [tasteMatch, setTasteMatch] = useState<number | null>(null);
+  useEffect(() => {
+    setTasteMatch(null);
+    if (!resolvedAuthorId || !canReadContent) return;
+    let isMounted = true;
+    void getHungryService()
+      .profile.getTasteMatch(resolvedAuthorId)
+      .then((score) => {
+        if (isMounted) setTasteMatch(score);
+      })
+      .catch((error) => {
+        reportError(error, { screen: "UserProfile", action: "load_taste_match" });
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [canReadContent, resolvedAuthorId]);
+  const memberSince =
+    publicProfile?.id === resolvedAuthorId && publicProfile?.createdAt
+      ? formatMemberSince(publicProfile.createdAt)
+      : "";
   const handleFollowPress = () => {
     if (!resolvedAuthorId) return;
     followPress({
@@ -434,6 +450,38 @@ export function UserProfileContent({
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
   const activeItemsCount = activeTab === "posts" ? posts.length : reviews.length;
 
+  const followStats: ProfileStat[] = [
+    {
+      key: "followers",
+      label: pluralLabel(followersCount, "Follower"),
+      value: followersCount,
+      accessibilityHint: `Opens ${authorName}'s followers`,
+      onPress: () => openProfileConnections("UserFollowers"),
+    },
+    {
+      key: "following",
+      label: "Following",
+      value: followingCount,
+      accessibilityHint: `Opens the people ${authorName} follows`,
+      onPress: () => openProfileConnections("UserFollowing"),
+    },
+  ];
+  // A private account you do not follow shows only the follow counts.
+  const stats: ProfileStat[] = isPrivateLocked
+    ? followStats
+    : [
+        {
+          key: "reviews",
+          label: pluralLabel(reviewCount, "Review"),
+          value: reviewCount,
+          accessibilityHint: `Shows ${authorName}'s reviews`,
+          onPress: () => setActiveTab("reviews"),
+        },
+        ...followStats,
+        // Count only: the visited-stalls list is the viewer's own and is not shown for others.
+        { key: "stalls", label: "Stalls", value: stallsCount },
+      ];
+
   // A wrong or deleted id (or an account hidden from this viewer) is not a profile: no fake
   // "Hungry member" with a Follow button. A failed read keeps the name from the link, if any.
   if (
@@ -451,7 +499,9 @@ export function UserProfileContent({
               ? "Check your connection and try again."
               : "This profile doesn't exist or isn't available."
           }
-          icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+          icon={
+            <AppSymbol name="noPosts" size={36} weight="regular" color={palette.textSecondary} />
+          }
           ctaLabel={failed ? "Retry" : undefined}
           onPress={failed ? () => setPublicProfileReloadKey((key) => key + 1) : undefined}
         />
@@ -461,7 +511,7 @@ export function UserProfileContent({
 
   return (
     <ProfileScreenShell
-      title={authorName}
+      title="Profile"
       headerRight={
         resolvedAuthorId && !isSelf ? (
           <View style={{ flexDirection: "row" }}>
@@ -477,7 +527,7 @@ export function UserProfileContent({
               }
               style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
             >
-              <Share2 color={palette.text} size={20} />
+              <AppSymbol name="share" size={20} color={palette.text} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -487,7 +537,7 @@ export function UserProfileContent({
               onPress={openProfileSafetyActions}
               style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
             >
-              <MoreHorizontal color={palette.text} size={22} />
+              <AppSymbol name="moreActions" size={24} weight="regular" color={palette.text} />
             </Pressable>
           </View>
         ) : undefined
@@ -531,6 +581,16 @@ export function UserProfileContent({
                 {authorBio}
               </AppText>
             ) : null}
+            {tasteMatch !== null || memberSince ? (
+              <AppText variant="micro" tone="secondary" testID="user-profile-meta">
+                {[
+                  tasteMatch !== null ? `${tasteMatch}% taste match` : "",
+                  memberSince ? `Member since ${memberSince}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </AppText>
+            ) : null}
             {canShowFollowButton ? (
               <FollowPillButton
                 label={followButtonLabel}
@@ -554,45 +614,13 @@ export function UserProfileContent({
           <EmptyState
             title="Profile unavailable"
             body={`We can't open ${authorName}'s profile right now.`}
-            icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+            icon={
+              <AppSymbol name="noPosts" size={36} weight="regular" color={palette.textSecondary} />
+            }
           />
         ) : (
           <>
-            <View style={{ gap: spacing[4] }}>
-              <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                <StatBlock
-                  icon={<Users color={palette.orange} size={14} />}
-                  label="Followers"
-                  value={followersCount}
-                  accessibilityHint={`Opens ${authorName}'s followers`}
-                  onPress={() => openProfileConnections("UserFollowers")}
-                />
-                <StatBlock
-                  icon={<UserCheck color={palette.orange} size={14} />}
-                  label="Following"
-                  value={followingCount}
-                  accessibilityHint={`Opens the people ${authorName} follows`}
-                  onPress={() => openProfileConnections("UserFollowing")}
-                />
-              </View>
-              {isPrivateLocked ? null : (
-                <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                  <StatBlock
-                    icon={<PencilLine color={palette.orange} size={14} />}
-                    label="Reviews"
-                    value={reviewCount}
-                    accessibilityHint={`Shows ${authorName}'s reviews`}
-                    onPress={() => setActiveTab("reviews")}
-                  />
-                  {/* Count only: the visited-stalls list is the viewer's own and is not shown for others. */}
-                  <StatBlock
-                    icon={<Utensils color={palette.orange} size={14} />}
-                    label="Stalls"
-                    value={stallsCount}
-                  />
-                </View>
-              )}
-            </View>
+            <ProfileStatRow stats={stats} testID="user-profile-stats" />
 
             {isPrivateLocked ? (
               <EmptyState
@@ -602,10 +630,23 @@ export function UserProfileContent({
                     ? `Follow ${authorName} to see their posts and reviews.`
                     : `Follow ${authorName} to see their reviews.`
                 }
-                icon={<Lock color={palette.textSecondary} size={36} />}
+                icon={
+                  <AppSymbol
+                    name="profilePrivate"
+                    size={36}
+                    weight="regular"
+                    color={palette.textSecondary}
+                  />
+                }
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
+                <FavouriteDishesRow
+                  dishIds={pinnedDishIds}
+                  onOpenDish={(dishId) =>
+                    rootNavigation.navigate("DishDetail", { dishId, source: "user_profile" })
+                  }
+                />
                 <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
                 {showPosts() ? (
                   <View
@@ -710,47 +751,28 @@ export function UserProfileContent({
                     </View>
                   ) : (
                     <View style={{ gap: spacing[3] }}>
-                      {reviews.map((review) => {
-                        const dishName = review.dishId
-                          ? repository.getDishById(review.dishId)?.name
-                          : undefined;
-                        const reviewCard = (
-                          <Card
-                            style={{
-                              borderColor: palette.border,
-                              borderWidth: 1,
-                              gap: spacing[2],
-                              padding: spacing[3],
-                              backgroundColor:
-                                colorScheme === "dark" ? palette.surfaceRaised : palette.surface,
-                            }}
-                          >
-                            {dishName ? <AppText variant="bodyBold">{dishName}</AppText> : null}
-                            <AppText variant="micro" tone="secondary">
-                              {`Rated ${review.rating}/5`}
-                            </AppText>
-                            {review.text ? <AppText>{review.text}</AppText> : null}
-                          </Card>
-                        );
-
-                        return review.dishId ? (
-                          <Pressable
-                            key={review.id}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Review of ${dishName ?? "dish"}, rated ${review.rating} out of 5`}
-                            accessibilityHint="Opens the dish"
-                            onPress={() =>
-                              rootNavigation.navigate("DishDetail", {
-                                dishId: review.dishId as string,
-                              })
-                            }
-                          >
-                            {reviewCard}
-                          </Pressable>
-                        ) : (
-                          <View key={review.id}>{reviewCard}</View>
-                        );
-                      })}
+                      {reviews.map((review, index) => (
+                        <ProfileReviewCard
+                          key={review.id}
+                          review={review}
+                          dish={reviewDishInfo(review.dishId)}
+                          onOpenDish={
+                            review.dishId
+                              ? () => {
+                                  trackAnalyticsEvent("profile_item_opened", {
+                                    kind: "review",
+                                    position: index,
+                                    source: "user_profile",
+                                  });
+                                  rootNavigation.navigate("DishDetail", {
+                                    dishId: review.dishId as string,
+                                    source: "user_profile",
+                                  });
+                                }
+                              : undefined
+                          }
+                        />
+                      ))}
                     </View>
                   )
                 ) : activeTab === "posts" && !postsLoaded ? (
@@ -761,7 +783,14 @@ export function UserProfileContent({
                   <EmptyState
                     title="Couldn't load posts"
                     body="Check your connection and try again."
-                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    icon={
+                      <AppSymbol
+                        name="noPosts"
+                        size={36}
+                        weight="regular"
+                        color={palette.textSecondary}
+                      />
+                    }
                     ctaLabel="Retry"
                     onPress={() => {
                       setPostsLoaded(false);
@@ -772,7 +801,14 @@ export function UserProfileContent({
                   <EmptyState
                     title="Couldn't load reviews"
                     body="Check your connection and try again."
-                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    icon={
+                      <AppSymbol
+                        name="noPosts"
+                        size={36}
+                        weight="regular"
+                        color={palette.textSecondary}
+                      />
+                    }
                     ctaLabel="Retry"
                     onPress={() => {
                       setReviewsLoaded(false);
@@ -782,8 +818,19 @@ export function UserProfileContent({
                 ) : (
                   <EmptyState
                     title={`No ${activeTitle.toLowerCase()}s yet`}
-                    body="Shared profile activity will appear here."
-                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    body={
+                      activeTab === "posts"
+                        ? `${authorName} hasn't posted anything yet.`
+                        : `${authorName} hasn't reviewed anything yet.`
+                    }
+                    icon={
+                      <AppSymbol
+                        name="noPosts"
+                        size={36}
+                        weight="regular"
+                        color={palette.textSecondary}
+                      />
+                    }
                   />
                 )}
                 {activeTab === "reviews" && hasMoreReviews ? (
@@ -810,55 +857,5 @@ export function UserProfileContent({
         )}
       </View>
     </ProfileScreenShell>
-  );
-}
-
-function StatBlock({
-  icon,
-  label,
-  value,
-  accessibilityHint,
-  onPress,
-}: {
-  icon: ReactNode;
-  label: string;
-  /** null while loading. */
-  value: number | string | null;
-  accessibilityHint?: string;
-  onPress?: () => void;
-}) {
-  const { colorScheme, componentRadii, palette, spacing } = useHungryTheme();
-  return (
-    <Pressable
-      accessible
-      accessibilityRole={onPress ? "button" : "text"}
-      accessibilityLabel={value === null ? `${label}, loading` : `${value} ${label}`}
-      accessibilityHint={accessibilityHint}
-      disabled={!onPress}
-      onPress={onPress}
-      style={{
-        backgroundColor: colorScheme === "dark" ? palette.surfaceRaised : palette.bgSoft,
-        borderRadius: componentRadii.card,
-        paddingVertical: spacing[3],
-        paddingHorizontal: spacing[3],
-        alignItems: "center",
-        flex: 1,
-        gap: spacing[1],
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-        {icon}
-        {value === null ? (
-          <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
-        ) : (
-          <AppText variant="h3" style={{ color: palette.text }}>
-            {value}
-          </AppText>
-        )}
-      </View>
-      <AppText variant="micro" tone="secondary" style={{ letterSpacing: 0.5 }}>
-        {label}
-      </AppText>
-    </Pressable>
   );
 }

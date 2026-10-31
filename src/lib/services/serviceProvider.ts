@@ -340,90 +340,101 @@ async function runPagedCatalogRead<T>(
   );
 }
 
+/**
+ * The Excel fallback loads its whole catalogue when its module is first required, and
+ * release bundles stub that data out (it throws on access). So the module is resolved
+ * on the first fallback read, never when the service is built: opening Discover must
+ * not touch it while Supabase is healthy.
+ */
+function createLazyExcelCatalogFallback(): CatalogReadService {
+  let resolved: CatalogReadService | null = null;
+  return new Proxy({} as CatalogReadService, {
+    get(_target, property) {
+      if (property === "clearCache" && !resolved) return () => undefined;
+      if (!resolved) {
+        try {
+          resolved = getExcelCatalogFallbackService();
+        } catch (error) {
+          // A release bundle cannot load the stubbed Excel data: surface the retryable
+          // unavailable error the screens handle rather than crashing the app.
+          throw new CatalogUnavailableError(undefined, error);
+        }
+      }
+      const value = Reflect.get(resolved, property);
+      return typeof value === "function" ? value.bind(resolved) : value;
+    },
+  });
+}
+
 export function createResilientCatalogReadService(
   primary: CatalogReadService = (
     require("@/lib/services/catalog") as typeof import("@/lib/services/catalog")
   ).catalogRawService,
-  fallbackOverride?: CatalogReadService,
+  fallback: CatalogReadService = createLazyExcelCatalogFallback(),
 ): CatalogReadService {
-  // Loaded on first use: production bundles stub the Excel catalog, so requiring it
-  // up front crashed every catalog read even when the live catalog was healthy. When the
-  // live catalog fails in such a bundle the fallback cannot load either, and that surfaces
-  // as the retryable unavailable error the screens already handle instead of a crash.
-  let fallbackService = fallbackOverride ?? null;
-  const getFallback = () => {
-    if (fallbackService) return fallbackService;
-    try {
-      fallbackService = getExcelCatalogFallbackService();
-    } catch (error) {
-      throw new CatalogUnavailableError(undefined, error);
-    }
-    return fallbackService;
-  };
-
   return {
     clearCache() {
       primary.clearCache();
-      fallbackService?.clearCache();
+      fallback.clearCache();
     },
     async listDishes(request) {
       return runPagedCatalogRead(
         request,
         () => primary.listDishes(request),
-        () => getFallback().listDishes(request),
+        () => fallback.listDishes(request),
       );
     },
     async listVenues(request) {
       return runPagedCatalogRead(
         request,
         () => primary.listVenues(request),
-        () => getFallback().listVenues(request),
+        () => fallback.listVenues(request),
       );
     },
     async getDish(id, releaseId) {
       if (isExcelFallbackRelease(releaseId)) {
         requireAuthenticatedCatalogFallbackSession();
-        return getFallback().getDish(id, releaseId);
+        return fallback.getDish(id, releaseId);
       }
       return runAuthenticatedCatalogFallback(
         () => primary.getDish(id, releaseId),
-        () => getFallback().getDish(id, releaseId),
+        () => fallback.getDish(id, releaseId),
       );
     },
     async getVenue(id, releaseId) {
       if (isExcelFallbackRelease(releaseId)) {
         requireAuthenticatedCatalogFallbackSession();
-        return getFallback().getVenue(id, releaseId);
+        return fallback.getVenue(id, releaseId);
       }
       return runAuthenticatedCatalogFallback(
         () => primary.getVenue(id, releaseId),
-        () => getFallback().getVenue(id, releaseId),
+        () => fallback.getVenue(id, releaseId),
       );
     },
     async listVenueMenu(venueId, request = {}) {
       return runPagedCatalogRead(
         request,
         () => primary.listVenueMenu(venueId, request),
-        () => getFallback().listVenueMenu(venueId, request),
+        () => fallback.listVenueMenu(venueId, request),
       );
     },
     async getMapViewport(request) {
       if (isExcelFallbackRelease(request.releaseId)) {
         requireAuthenticatedCatalogFallbackSession();
-        return getFallback().getMapViewport(request);
+        return fallback.getMapViewport(request);
       }
       return runAuthenticatedCatalogFallback(
         async () => requireMapRelease(await primary.getMapViewport(request)),
-        () => getFallback().getMapViewport(request),
+        () => fallback.getMapViewport(request),
       );
     },
     // Typeahead is best effort: an unavailable live catalog just gives no suggestions.
     async suggest(prefix) {
-      return primary.suggest(prefix).catch(() => getFallback().suggest(prefix));
+      return primary.suggest(prefix).catch(() => fallback.suggest(prefix));
     },
     // Place search is best effort too: an unavailable live catalog finds no places.
     async listPlaces(request) {
-      return primary.listPlaces(request).catch(() => getFallback().listPlaces(request));
+      return primary.listPlaces(request).catch(() => fallback.listPlaces(request));
     },
   };
 }

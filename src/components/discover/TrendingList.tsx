@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { ChevronRight, Star } from "lucide-react-native";
+import { ChevronRight, Utensils } from "lucide-react-native";
 
-import { AccessibleImage, AppText } from "@/components/ui";
+import { HOME_PRICE_STYLE } from "@/components/discover/home/homeLayout";
+import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
+import { buildBiteLabel, formatBiteDistance } from "@/features/discover/biteLabel";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
@@ -15,9 +18,38 @@ interface TrendingListProps {
 
 const MAX_ROWS = 5;
 
-function distanceLabel(meters: number | undefined): string | undefined {
-  if (meters === undefined || !Number.isFinite(meters) || meters <= 0) return undefined;
-  return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`;
+/** The row photo; a missing or broken photo shows the same dish icon as the card rails. */
+function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: string }) {
+  const { componentRadii, palette } = useHungryTheme();
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const showPhoto = Boolean(photoUrl) && photoUrl !== failedUrl;
+  return (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.bgSoft,
+        borderRadius: componentRadii.card,
+        height: 72,
+        justifyContent: "center",
+        overflow: "hidden",
+        width: 72,
+      }}
+    >
+      {showPhoto ? (
+        <AccessibleImage
+          source={{ uri: photoUrl }}
+          decorative
+          contentFit="cover"
+          onError={() => setFailedUrl(photoUrl)}
+          style={{ height: "100%", width: "100%" }}
+        />
+      ) : (
+        <View accessibilityRole="image" accessibilityLabel={`${dishName} photo unavailable`}>
+          <Utensils color={palette.textMuted} size={24} />
+        </View>
+      )}
+    </View>
+  );
 }
 
 /** Trending dishes as rich rows: photo, name, stall and unit, rating, price and distance. */
@@ -43,12 +75,12 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
         <AppText variant="h2">{title}</AppText>
       )}
       {bites.slice(0, MAX_ROWS).map((bite) => {
-        const distance = distanceLabel(bite.distanceMeters);
+        const distance = formatBiteDistance(bite.distanceMeters);
         return (
-          <Pressable
+          <PressableScale
             key={bite.id}
             accessibilityRole="button"
-            accessibilityLabel={`${bite.dishName} at ${bite.venueName}`}
+            accessibilityLabel={buildBiteLabel(bite)}
             onPress={() => onOpen(bite)}
             onPressIn={() => onPrefetch?.(bite)}
             style={{
@@ -62,24 +94,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
               padding: spacing[3],
             }}
           >
-            <View
-              style={{
-                backgroundColor: palette.bgSoft,
-                borderRadius: componentRadii.card,
-                height: 72,
-                overflow: "hidden",
-                width: 72,
-              }}
-            >
-              {bite.photoUrl ? (
-                <AccessibleImage
-                  source={{ uri: bite.photoUrl }}
-                  decorative
-                  contentFit="cover"
-                  style={{ height: "100%", width: "100%" }}
-                />
-              ) : null}
-            </View>
+            <TrendingThumb photoUrl={bite.photoUrl} dishName={bite.dishName} />
             <View style={{ flex: 1, gap: 2 }}>
               <AppText variant="bodyBold" numberOfLines={1}>
                 {bite.dishName}
@@ -91,7 +106,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                 {bite.rating > 0 ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-                    <Star size={12} color={palette.starStroke} fill={palette.starFill} />
+                    <AppSymbol name="rating" size={12} color={palette.starFill} />
                     <AppText variant="micro">{bite.rating.toFixed(1)}</AppText>
                   </View>
                 ) : null}
@@ -101,14 +116,17 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
                   </AppText>
                 ) : null}
                 {bite.price > 0 ? (
-                  <AppText variant="bodySmallBold" style={{ color: palette.text }}>
+                  <AppText
+                    variant="bodySmallBold"
+                    style={{ color: palette.text, ...HOME_PRICE_STYLE }}
+                  >
                     S${bite.price.toFixed(2)}
                   </AppText>
                 ) : null}
               </View>
             </View>
             <ChevronRight size={20} color={palette.textMuted} />
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>

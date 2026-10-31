@@ -16,7 +16,7 @@ test("Decide For Me shows distance, Directions and Save, and respects the budget
   assert.match(screen, /formatDistance\(dish\.distanceMeters\)/);
   assert.match(screen, /label="Directions"/);
   assert.match(screen, /trackAnalyticsEvent\("directions_opened"/);
-  assert.match(screen, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress\)\)/);
+  assert.match(screen, /openTrustedMapsUrl\(directionsUrl\)/);
   assert.match(screen, /toggleFavourite\(dish\)/);
   // Budget logic lives in the candidate helper.
   const candidates = read("src/features/discovery/decideForMeCandidates.ts");
@@ -50,7 +50,7 @@ test("Decide For Me has no fake cart, routes back to Discover, and tracks its fu
 test("taste quiz asks for a usual budget and saves it with dietary preferences", () => {
   const quiz = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
 
-  assert.match(quiz, /Usual budget per dish/);
+  assert.match(read("src/app/screens/onboarding/DietaryStep.tsx"), /Usual budget per dish/);
   assert.match(quiz, /setMaxDishBudget\(maxDishBudget(, \{ surface(: flowMode)? \})?\)/);
 });
 

@@ -132,7 +132,7 @@ test("G8 own profile: signed-out view, honest taste, grouped menu, stall contrib
   assert.match(home, /Only approved followers can see your profile through the link\./);
   assert.match(home, /OWN_REVIEWS_INLINE_LIMIT/);
   assert.match(home, /textOnOrange/);
-  assert.match(home, /StyleSheet\.hairlineWidth/);
+  assert.match(read("src/components/ui/OverflowMenu.tsx"), /StyleSheet\.hairlineWidth/);
   assert.doesNotMatch(home, /Add Discovered Stall/);
 });
 
@@ -191,7 +191,9 @@ test("G8 lists and detail screens: loading, error and retry states", () => {
   const history = read("src/app/screens/profile/ReviewHistoryScreen.tsx");
   assert.match(history, /useIsFocused/);
   assert.match(history, /REVIEW_HISTORY_PAGE_SIZE/);
-  assert.match(history, /No written notes/);
+  // A review without notes shows no empty "notes" box (R4 PROF4-8).
+  assert.doesNotMatch(history, /No written notes/);
+  assert.match(history, /<ProfileReviewCard/);
 
   const visited = read("src/app/screens/profile/VisitedStallsScreen.tsx");
   assert.doesNotMatch(visited, /Open now|Closed now/);

@@ -50,10 +50,15 @@ test("onboarding food visuals use generated local food assets", () => {
   );
   // Result cards are real catalog dishes: show the dish's own photo or the
   // shared no-photo tile, never an onboarding stock image of a different dish.
+  const resultCardSource = fs.readFileSync(
+    path.join(repoRoot, "src/app/screens/onboarding/ResultDishCard.tsx"),
+    "utf8",
+  );
+  // A missing photo, or one that fails to load, shows the cuisine tile (labelled "no photo yet").
   assert.match(
-    resultScreenSource,
-    /dish\.imageUrl \? \([\s\S]*source=\{\{ uri: dish\.imageUrl \}\}[\s\S]*<NoDishPhoto dishName=\{dish\.name\}/,
-    "onboarding result recommendations should use dish.imageUrl with the shared no-photo fallback",
+    resultCardSource,
+    /!dish\.imageUrl \|\| failed\) \{\s*return <CuisineTile dish=\{dish\}[\s\S]*source=\{\{ uri: dish\.imageUrl \}\}[\s\S]*onError=\{\(\) => setFailed\(true\)\}/,
+    "onboarding result recommendations should use dish.imageUrl with the cuisine-tile fallback",
   );
   assert.doesNotMatch(
     `${source}\n${resultScreenSource}`,

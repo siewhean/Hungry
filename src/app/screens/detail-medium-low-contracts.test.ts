@@ -13,8 +13,9 @@ test("detail-M1/M15/L12: stall interaction bar loads first, rolls back and repor
   assert.match(bar, /loadInteractions\(/);
   assert.match(bar, /ActivityIndicator/);
   assert.match(bar, /onRequireAuth/);
-  // Un-marking Visited never asks for a review first.
-  assert.match(bar, /!isTried && !hasReviewed/);
+  // Visited is one tap: no review gate on the button, the server pays points once a review exists.
+  assert.doesNotMatch(bar, /onReviewRequired|reviewPromptText/);
+  assert.match(bar, /skipPoints: !\(hasReviewedDishAtVenue \?\? false\)/);
   assert.match(store, /function rollbackInteraction\(/);
   assert.match(store, /rollbackInteraction\(stallId, updated, existing\)/);
   // The dish page checks the freshly loaded state before marking the stall.
@@ -29,7 +30,10 @@ test("detail-M3/M17/L17/L24: sold-out dishes and prices read the same everywhere
 
   assert.match(dish, /Sold out today/);
   assert.match(dish, /isSoldOut\(item\.availabilityFlags\)\s*\? "sold out today"/);
-  assert.match(stall, /function menuDishAccessibilityLabel/);
+  assert.match(
+    readRepoFile("src/components/stall/StallMenuDish.tsx"),
+    /export function menuDishAccessibilityLabel/,
+  );
   assert.match(card, /formatDishPrice/);
   assert.match(card, /No ratings yet/);
   assert.match(card, /reviewCount > 0 && /);
@@ -78,10 +82,17 @@ test("detail-M10/L1/L19: reviews can be reported, blocked and open their author"
   assert.match(actions, /onLongPress=\{openSafetyActions\}/);
   assert.match(actions, /promptReviewSafetyActions/);
   assert.match(readRepoFile("src/components/review/index.ts"), /ReviewReaderActions/);
-  for (const source of [stall, dish]) {
+  // The stall page's review card is its own component.
+  const stallReviewCard = readRepoFile("src/components/stall/StallReviewCard.tsx");
+  const dishReviewCard = readRepoFile("src/components/dish/DishReviewCard.tsx");
+  const dishReviewActions = readRepoFile("src/features/detail/useDishReviewActions.ts");
+  for (const source of [stall + stallReviewCard, dishReviewCard + dishReviewActions]) {
     assert.match(source, /<ReviewReaderActions/);
     assert.match(source, /navigation\.navigate\("UserProfile"/);
   }
+  // A visible "..." opens the same report and block sheet on both pages, not only a long-press.
+  assert.match(stallReviewCard, /<ReviewMoreButton/);
+  assert.match(dishReviewCard, /<ReviewMoreButton/);
   assert.match(
     readRepoFile("src/components/stall/PopularVisitorsSection.tsx"),
     /Picked by the owner/,

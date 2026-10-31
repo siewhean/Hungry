@@ -1,7 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import { ChevronRight, ExternalLink } from "lucide-react-native";
-import { AppText } from "../ui";
+import { AppSymbol, AppText } from "../ui";
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
@@ -14,8 +13,12 @@ interface SettingsRowProps {
   /** Press-and-hold action (for example copying the version); the row says so in `description`. */
   onLongPress?: () => void;
   value?: string;
-  /** "link" opens a website or mail app outside Hungry (announced as a link, with an external icon). */
-  type?: "toggle" | "navigation" | "value" | "link";
+  /**
+   * "navigation" opens another screen (disclosure arrow); "action" does its work in place (no
+   * arrow); "link" opens a website or mail app outside Hungry (announced as a link, with an
+   * external icon).
+   */
+  type?: "toggle" | "navigation" | "value" | "link" | "action";
   isEnabled?: boolean;
   onToggle?: (value: boolean) => void;
   isLast?: boolean;
@@ -25,6 +28,8 @@ interface SettingsRowProps {
   /** Fades the row when what it controls is currently unavailable. */
   dimmed?: boolean;
   editorial?: boolean;
+  /** "neutral" puts the icon on a grey disc instead of the orange accent one. */
+  iconTone?: "accent" | "neutral";
 }
 
 /** Font scale from which row text is no longer cut to a fixed number of lines. */
@@ -45,6 +50,7 @@ export const SettingsRow = memo(function SettingsRow({
   busy = false,
   dimmed = false,
   editorial = false,
+  iconTone = "accent",
 }: SettingsRowProps) {
   const { palette, radii, spacing } = useHungryTheme();
   // At large text sizes labels and values wrap in full instead of being cut off.
@@ -85,7 +91,7 @@ export const SettingsRow = memo(function SettingsRow({
             <View
               style={{
                 alignItems: "center",
-                backgroundColor: palette.orangeLight,
+                backgroundColor: iconTone === "neutral" ? palette.bgSoft : palette.orangeLight,
                 borderRadius: radii.pill,
                 height: 40,
                 justifyContent: "center",
@@ -161,7 +167,7 @@ export const SettingsRow = memo(function SettingsRow({
                 {value}
               </AppText>
             ) : null}
-            <ChevronRight size={18} color={palette.textMuted} />
+            <AppSymbol name="chevronRight" size={16} weight="semibold" color={palette.textMuted} />
           </View>
         ) : null}
 
@@ -176,7 +182,7 @@ export const SettingsRow = memo(function SettingsRow({
                 {value}
               </AppText>
             ) : null}
-            <ExternalLink size={18} color={palette.textMuted} />
+            <AppSymbol name="external" size={18} weight="regular" color={palette.textMuted} />
           </View>
         ) : null}
 

@@ -117,9 +117,13 @@ test("every live experiment key is read somewhere in the app", () => {
   };
   walk(path.join(process.cwd(), "src"));
   const all = sources.join("\n");
-  // A concluded experiment stays registered as a record but is no longer read.
+  // A concluded experiment stays registered as a record but is no longer read. A draft whose
+  // screen is not built yet may be defined first; this list only shrinks.
+  const UNWIRED_DRAFTS: readonly string[] = ["auth_signup_name_later_v1"];
   for (const key of KEYS.filter(
-    (k) => (EXPERIMENTS[k] as ExperimentDefinition).status !== "concluded",
+    (k) =>
+      (EXPERIMENTS[k] as ExperimentDefinition).status !== "concluded" &&
+      !UNWIRED_DRAFTS.includes(k),
   )) {
     assert.ok(all.includes(`"${key}"`), `${key} is registered but no screen reads it`);
   }
@@ -220,4 +224,60 @@ test("a draft experiment never reads PostHog, but QA can preview its variants", 
   setExperimentOverride(draft, other as never);
   assert.equal(getExperimentVariant(draft, { expose: true }), other);
   assert.deepEqual(fake.state.exposures, []);
+});
+
+test("auth experiments state the sample they need per arm before a result may be read", () => {
+  const authKeys = KEYS.filter((key) => key.startsWith("auth_"));
+  assert.ok(authKeys.length >= 4);
+  for (const key of authKeys) {
+    assert.equal(
+      (EXPERIMENTS[key] as ExperimentDefinition).minSamplePerArm,
+      390,
+      `${key}: 10-point change, 95% confidence, 80% power, 45% baseline`,
+    );
+  }
+});
+
+test("a running experiment with no PostHog flag is a rollout, not a test", () => {
+  // Round-four finding AUTH4-2: no flag existed in PostHog, so every "running" test served
+  // control. These predate the finding and run on their fallback until sh creates their flags;
+  // this list only shrinks. Anything new that is "running" must be a rollout whose fallback is
+  // the arm everyone should get.
+  const RUNNING_WITHOUT_FLAG: readonly string[] = [
+    "welcome_back_v2",
+    "onboarding_account_framing_v1",
+    "stall_bar_cta_v1",
+    "catalog_save_to_list_v1",
+    "review_tile_labels_v1",
+    "profile_first_review_nudge_v1",
+  ];
+  // These have a multivariate PostHog flag (created 2026-10-31), switched off until launch, so
+  // they serve their fallback until the flag is turned on: no app release needed to start them.
+  const FLAG_EXISTS_OFF_UNTIL_LAUNCH: readonly string[] = [
+    "saved_card_density_v1",
+    "saved_default_sort_v1",
+    "saved_remove_undo_v1",
+  ];
+  const running = KEYS.filter(
+    (key) => (EXPERIMENTS[key] as ExperimentDefinition).status === "running",
+  );
+  const unexpected = running.filter(
+    (key) =>
+      !(EXPERIMENTS[key] as ExperimentDefinition).rollout &&
+      !RUNNING_WITHOUT_FLAG.includes(key) &&
+      !FLAG_EXISTS_OFF_UNTIL_LAUNCH.includes(key),
+  );
+  assert.deepEqual(unexpected, [], "new running experiments need a PostHog flag: start as draft");
+  const stale = [...RUNNING_WITHOUT_FLAG, ...FLAG_EXISTS_OFF_UNTIL_LAUNCH].filter(
+    (key) => !running.includes(key as ExperimentKey),
+  );
+  assert.deepEqual(stale, [], "these are no longer running: remove them from the list");
+});
+
+test("the email-code release serves the code form unless a flag says control", () => {
+  assert.equal(getExperimentVariant("auth_email_code_first_v1", { expose: true }), "email_code");
+  const fake = fakeSource({ auth_email_code_first_v1: "control" });
+  setExperimentFlagSource(fake.source);
+  assert.equal(getExperimentVariant("auth_email_code_first_v1", { expose: true }), "control");
+  assert.deepEqual(fake.state.exposures, ["auth_email_code_first_v1"]);
 });

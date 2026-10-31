@@ -11,11 +11,8 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { FoodOpenness } from "@/types/domain";
-import {
-  OnboardingProgress,
-  trackOnboardingStepSkipped,
-  trackOnboardingStepViewed,
-} from "./OnboardingProgress";
+import { OnboardingHeader } from "./OnboardingHeader";
+import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
   ONBOARDING_ACTIONS_BOTTOM_PADDING,
@@ -92,14 +89,10 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
 
       <ScrollView contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[3] }}>
         {isSettings ? null : <OnboardingProgress step="openness" />}
-        <View style={{ gap: spacing[2] }}>
-          <AppText variant="h2" accessibilityRole="header">
-            How open are you to trying new food?
-          </AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            We use this to balance dishes you know with new ones. You can change it in Settings.
-          </AppText>
-        </View>
+        <OnboardingHeader
+          title="How open are you to trying new food?"
+          subtitle="We use this to balance dishes you know with new ones. You can change it in Settings."
+        />
 
         <View accessibilityRole="radiogroup" style={{ gap: spacing[2] }}>
           {FOOD_OPENNESS_OPTIONS.map((option) => {
@@ -110,6 +103,7 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
                 key={option.value}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: isSelected }}
+                aria-checked={isSelected}
                 accessibilityLabel={option.label}
                 accessibilityHint={option.description}
                 onPress={() => setSelected(option.value)}
@@ -147,17 +141,6 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
         }}
       >
         <Button label={isSettings ? "Save" : "Continue"} onPress={() => finish(selected)} />
-        {isSettings ? null : (
-          <Button
-            label="Skip"
-            variant="ghost"
-            onPress={() => {
-              // Skip saves nothing: the default applies until the user picks one in Settings.
-              trackOnboardingStepSkipped("openness");
-              navigation.navigate("TasteProfileResult");
-            }}
-          />
-        )}
       </View>
     </SafeAreaView>
   );

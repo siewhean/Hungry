@@ -52,12 +52,48 @@ function slicePath(
   ].join(" ");
 }
 
+/**
+ * A slice's fill and the text colour that reads on it. The lobby and spin lists use the same
+ * colours for their dots, so a name in the list can be matched to its slice.
+ */
+export function getWheelSliceColors(
+  palette: {
+    orange: string;
+    orangeLight: string;
+    surface: string;
+    text: string;
+    textOnOrange: string;
+  },
+  index: number,
+  count: number,
+): { fill: string; text: string; isOrange: boolean } {
+  // With an odd count the last slice would be orange next to the first one: use a third colour
+  // there so neighbouring slices always differ.
+  const isOddLast = count % 2 === 1 && count > 1 && index === count - 1;
+  const isOrange = index % 2 === 0 && !isOddLast;
+  return {
+    fill: isOddLast ? palette.orangeLight : isOrange ? palette.orange : palette.surface,
+    // Near-black on orange (white on orange measured 3.69:1).
+    text: isOrange ? palette.textOnOrange : palette.text,
+    isOrange,
+  };
+}
+
+/**
+ * Text along a slice's radius reads from the rim towards the centre on the right half and is
+ * turned half a circle on the left half, so no label is ever upside down.
+ */
+export function wheelLabelRotation(midAngle: number): number {
+  const along = midAngle - 90;
+  return midAngle > 180 ? along + 180 : along;
+}
+
 function truncateLabel(label: string, maxChars: number): string {
   return label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
 }
 
 export function WheelSvg({ entries, size = 300 }: Props) {
-  const { palette } = useHungryTheme();
+  const { palette, typography } = useHungryTheme();
 
   const active = selectActiveWheelEntries(entries);
   const cx = size / 2;
@@ -82,7 +118,8 @@ export function WheelSvg({ entries, size = 300 }: Props) {
 
   const segmentAngle = 360 / active.length;
   const labelRadius = r * 0.62; // midpoint between centre and rim for label
-  const maxLabelChars = active.length <= 4 ? 10 : active.length <= 8 ? 7 : 5;
+  // Radial text has the slice's length to run along, so the cut-off is generous.
+  const maxLabelChars = active.length <= 4 ? 16 : active.length <= 8 ? 13 : 11;
 
   return (
     <View
@@ -99,21 +136,10 @@ export function WheelSvg({ entries, size = 300 }: Props) {
             const startAngle = i * segmentAngle;
             const endAngle = startAngle + segmentAngle;
             const midAngle = startAngle + segmentAngle / 2;
-            // With an odd count the last slice would be orange next to the first one: use a
-            // third colour there so neighbouring slices always differ.
-            const isOddLast =
-              active.length % 2 === 1 && active.length > 1 && i === active.length - 1;
-            const isOrange = i % 2 === 0 && !isOddLast;
-            const fill = isOddLast
-              ? palette.orangeLight
-              : isOrange
-                ? palette.orange
-                : palette.surface;
-            // Near-black on orange (white on orange measured 3.69:1).
-            const textFill = isOrange ? palette.textOnOrange : palette.text;
+            const { fill, text: textFill } = getWheelSliceColors(palette, i, active.length);
 
             const labelPt = polarToCartesian(cx, cy, labelRadius, midAngle);
-            const labelAngle = midAngle - 90; // rotate text to sit along arc
+            const labelAngle = wheelLabelRotation(midAngle);
 
             return (
               <G key={entry.id}>
@@ -127,8 +153,8 @@ export function WheelSvg({ entries, size = 300 }: Props) {
                   x={labelPt.x}
                   y={labelPt.y}
                   fill={textFill}
+                  fontFamily={typography.bodySmallBold.fontFamily}
                   fontSize={12}
-                  fontWeight="600"
                   textAnchor="middle"
                   alignmentBaseline="middle"
                   rotation={labelAngle}

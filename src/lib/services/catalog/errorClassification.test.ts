@@ -8,6 +8,7 @@ import {
   CatalogConfigurationError,
   CatalogContractError,
   CatalogNetworkError,
+  CatalogRateLimitedError,
   CatalogReleaseExpiredError,
   CatalogRpcError,
   CatalogSessionInvalidError,
@@ -33,6 +34,9 @@ const cases: [string, unknown, new (...args: never[]) => CatalogAccessError][] =
   ["not authorized", { message: "User not authorized" }, CatalogAuthorizationError],
   ["not authorised", { message: "not authorised" }, CatalogAuthorizationError],
   ["forbidden", { message: "Forbidden" }, CatalogAuthorizationError],
+  ["429", { status: 429, message: "x" }, CatalogRateLimitedError],
+  ["limiter code", { code: "rate_limited", message: "Too many requests" }, CatalogRateLimitedError],
+  ["too many requests", { message: "Too many requests" }, CatalogRateLimitedError],
   ["503", { status: 503, message: "x" }, CatalogNetworkError],
   ["statement timeout", { code: "57014", message: "x" }, CatalogNetworkError],
   ["econnreset", { code: "ECONNRESET", message: "x" }, CatalogNetworkError],
@@ -86,6 +90,7 @@ test("only network and unavailable failures may fall back to the bundled catalog
     new CatalogAuthorizationError(),
     new CatalogConfigurationError(),
     new CatalogReleaseExpiredError(),
+    new CatalogRateLimitedError(),
     new Error("plain"),
   ]) {
     assert.equal(isCatalogFallbackEligibleError(error), false, error.name);

@@ -13,7 +13,9 @@ import type {
   ChecklistItem,
   CustomerInteraction,
   DishDetail,
+  DishTasteRatingSummary,
   DietaryFlag,
+  PrivacyConsents,
   PushPreferences,
   LifecycleSnapshot,
   WelcomeBackDish,
@@ -22,6 +24,7 @@ import type {
   InteractionType,
   MerchantAccount,
   MerchantAnalytics,
+  MerchantDailyPoint,
   MerchantDashboardSummary,
   MerchantNotification,
   MerchantNotificationPreferences,
@@ -47,6 +50,7 @@ import type {
   OpeningSchedule,
   PublicMerchantProfile,
   PublicUserProfile,
+  ReviewStats,
   PromotionStatus,
   RecommendationBucket,
   RecommendationSurface,
@@ -128,6 +132,29 @@ export interface PortfolioItemDetailRow {
   stallName?: string;
   price?: number;
   imageUrl?: string;
+}
+
+/** One saved dish as the Saved page shows it: the dish, its stall and where the stall is. */
+export interface SavedDishCard {
+  id: string;
+  name: string;
+  venueId?: string;
+  venueName?: string;
+  buildingName?: string;
+  unitNumber?: string;
+  address?: string;
+  postalCode?: string;
+  price?: number;
+  imageUrl?: string;
+  /** The stall's logo, drawn on the placeholder tile while the dish has no photo. */
+  logoUrl?: string;
+  /** Absent until the dish has a review. */
+  rating?: number;
+  reviewCount?: number;
+  isOpen?: boolean;
+  /** The stall's own point, else its building's. */
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface DataRepository {
@@ -624,6 +651,18 @@ export interface ListRecentReviewsOptions {
   withPhotos?: boolean;
 }
 
+/** Search over every review (not only the loaded page): dish, stall, text or taste tag. */
+export interface SearchReviewsOptions {
+  query: string;
+  /** Page size (defaults to 50). */
+  limit?: number;
+  /** Keyset cursor from the previous page's `nextCursor`. */
+  before?: string;
+  beforeId?: string;
+  /** Only reviews with a photo (the Reviews grid). Defaults to true. */
+  withPhotos?: boolean;
+}
+
 export interface SubmitMenuPhotoInput {
   venueId: string;
   photoUri: string;
@@ -631,6 +670,11 @@ export interface SubmitMenuPhotoInput {
   photoFileSizeBytes?: number;
   dishId?: string;
   reviewText?: string;
+  /**
+   * The person allowed AI features, so the photo may be sent to Google to read the menu.
+   * Without it the photo is stored but not sent (App Review 5.1.2(i)).
+   */
+  allowAiReading?: boolean;
 }
 
 export type CatalogCorrectionKind =
@@ -748,6 +792,15 @@ export interface MerchantClaimSubmissionResult {
 /** Where the signed-in user's claim for a stall stands, in diner-facing terms. */
 export type MerchantClaimStatus = "none" | "submitted" | "in_review" | "approved" | "rejected";
 
+/** One of the signed-in user's own stall claims, for the Merchant Centre gate. */
+export interface MerchantClaimSummary {
+  claimId: string;
+  venueId: string;
+  venueName: string;
+  status: Exclude<MerchantClaimStatus, "none">;
+  submittedAt: string;
+}
+
 export interface DraftDishRow {
   id: string;
   venueId: string;
@@ -854,8 +907,14 @@ export interface HungryService {
     verifyEmailCode(
       email: string,
       code: string,
-      type: "signup" | "recovery",
+      type: "signup" | "recovery" | "email",
     ): Promise<Session | null>;
+    /**
+     * Emails an 8-digit sign-in code: no password. An address with no account becomes a new
+     * account (named `displayName` when given), so the same call serves sign-in and sign-up and
+     * never reveals which one it was. Finish with verifyEmailCode(email, code, "email").
+     */
+    signInWithEmailCode(email: string, options?: { displayName?: string }): Promise<void>;
     signIn(email: string, password: string): Promise<Session>;
     signInWithGoogle(): Promise<Session>;
     signInWithApple(): Promise<Session>;
@@ -912,11 +971,21 @@ export interface HungryService {
     getVenue(id: string): Promise<VenueSummary | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    /**
+     * Diner taste ratings for a dish, averaged per axis (get_dish_taste_rating_summary). Only
+     * axes with 3+ raters are returned; {} while no axis has enough. Throws on a failed read.
+     */
+    getDishTasteRatingSummary(dishId: string): Promise<DishTasteRatingSummary>;
     /** Name, photo, stall and price for a set of dishes and stalls in one call. */
     getItemDetails(input: {
       dishIds: string[];
       stallIds: string[];
     }): Promise<PortfolioItemDetailRow[]>;
+    /**
+     * Saved-dish cards for a set of dish ids in a few batched reads, never one per dish. Ids
+     * that are gone or not visible are left out. Throws when a read fails.
+     */
+    getSavedDishCards(dishIds: string[]): Promise<SavedDishCard[]>;
     /** Stall summaries (hours, open flag, building) for a set of ids in one call; no menus. */
     getVenuesByIds(ids: string[]): Promise<VenueSummary[]>;
     listActivePromotionsForTarget(input: {
@@ -962,7 +1031,15 @@ export interface HungryService {
      * caller uses listDishesByVenue.
      */
     listDishesByVenuePage?(venueId: string, cursor?: VenueMenuCursor): Promise<VenueMenuPage>;
-    listPopularNearby(lat?: number, lng?: number): Promise<DishDetail[]>;
+    /**
+     * `noCatalogFallback` makes a failed server read throw instead of falling back to the cached
+     * catalog, whose download is large (onboarding has none cached and shows a Retry instead).
+     */
+    listPopularNearby(
+      lat?: number,
+      lng?: number,
+      options?: { noCatalogFallback?: boolean },
+    ): Promise<DishDetail[]>;
     listDiscoveryFeedByLocation(
       request: DiscoveryLocationFeedRequest,
     ): Promise<DiscoveryLocationFeed | undefined>;
@@ -988,11 +1065,15 @@ export interface HungryService {
       userId: string,
       page?: { limit?: number; offset?: number },
     ): Promise<DishDetail["reviews"]>;
+    /** Totals and the 1-5 histogram over all of your reviews; undefined on a backend without it. */
+    getMyReviewStats(): Promise<ReviewStats | undefined>;
     submitReview(draft: SubmitReviewInput): Promise<void>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
     /** The same feed as listRecentReviews, with paging state that survives dropped rows. */
     listRecentReviewsPage(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedPage>;
+    /** The same page shape for a text search over all reviews, newest first. */
+    searchReviewsPage(options: SearchReviewsOptions): Promise<RecentReviewFeedPage>;
     /** One review with its dish and stall names (the shared review page); null when not visible. */
     getReviewById(reviewId: string): Promise<RecentReviewFeedEntry | null>;
     /** Marks (helpful=true) or un-marks a review as helpful for the signed-in user. Idempotent. */
@@ -1009,6 +1090,18 @@ export interface HungryService {
     updateProfile(updates: Partial<UserProfile>): Promise<UserProfile>;
     /** Another user's public profile (name, avatar, bio); undefined when hidden or missing. */
     getPublicProfile(userId: string): Promise<PublicUserProfile | undefined>;
+    /**
+     * 0-100 taste match with another diner; null when there is none to show (yourself, a blocked
+     * or private account, or either of you has no taste fingerprint yet, or an older backend).
+     */
+    getTasteMatch(userId: string): Promise<number | null>;
+    /**
+     * The dishes pinned on a profile, in order (at most 4); null on an older backend that has no
+     * pins table yet, so callers can tell "none pinned" from "cannot pin".
+     */
+    listFavouriteDishIds(userId: string): Promise<string[] | null>;
+    /** Replaces your pinned dishes (at most 4, each saved or reviewed by you); returns the stored order. */
+    setFavouriteDishes(dishIds: string[]): Promise<string[]>;
     /** Every category of the signed-in user's own data. Throws instead of returning partial data. */
     exportMyData(): Promise<MyDataExport>;
     updateDietaryPreferences(flags: DietaryFlag[]): Promise<void>;
@@ -1047,6 +1140,14 @@ export interface HungryService {
     /** Unbinds this device's registered push token from the signed-in user. Call before sign-out. */
     unregisterPushToken(): Promise<void>;
     markOpened(notificationId: string): Promise<void>;
+  };
+
+  // Consents saved on the account (analytics, AI search)
+  privacy: {
+    /** Nothing answered yet when nobody is signed in. */
+    getConsents(): Promise<PrivacyConsents>;
+    /** Saves only the consents named; the others are left as they are. Throws when it cannot save. */
+    saveConsents(updates: Partial<PrivacyConsents>): Promise<void>;
   };
 
   // Lifecycle (new, current, at risk, dormant, ...)
@@ -1366,6 +1467,15 @@ export interface HungryService {
 
     // Analytics
     getAnalytics(outletId: string, dateRange: "today" | "7d" | "30d"): Promise<MerchantAnalytics>;
+    /**
+     * Visits and actions per Singapore day for the Performance chart, oldest first. `previous`
+     * is the same number of days just before the range, for the chart's comparison bars.
+     */
+    getDailySeries(
+      outletId: string,
+      dateRange: "7d" | "30d",
+      period?: "current" | "previous",
+    ): Promise<MerchantDailyPoint[]>;
     getDashboardSummary(outletId: string): Promise<MerchantDashboardSummary>;
     getWeeklySummaryStats(outletId: string): Promise<MerchantWeeklySummary>;
     getMerchantNotifications(merchantAccountId: string): Promise<MerchantNotification[]>;
@@ -1410,6 +1520,8 @@ export interface HungryService {
     ): Promise<MerchantClaimSubmissionResult>;
     /** The caller's own claim for this stall ("none" when there is no claim or no session). */
     getMerchantClaimStatus(venueId: string): Promise<MerchantClaimStatus>;
+    /** The caller's own claims, newest first, with the stall names. Empty when signed out. */
+    getMyMerchantClaims(): Promise<MerchantClaimSummary[]>;
     listDraftDishesQueue(venueId?: string): Promise<DraftDishRow[]>;
     reviewDraftDish(
       draftDishId: string,

@@ -5,6 +5,7 @@ import {
   assertRepoFileExists,
   assertSourceExcludes,
   assertSourceIncludes,
+  readHomeSource,
   readRepoFile,
   segmentBetween,
 } from "@/test/sourceContracts";
@@ -30,9 +31,9 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
       /EmailVerification:\s*\|\s*\{\s*email\?: string;\s*completedOnboarding\?: boolean;\s*code\?: string;/,
       /ForgotPassword: (undefined|\{ email\?: string; fromSignedIn\?: boolean \} \| undefined)/,
       /ResetPassword:\s*\|\s*\{\s*email\?: string;\s*code\?: string;\s*error\?: "expired" \| "invalid";\s*recoveryVerified\?: boolean;\s*(fromSignedIn\?: boolean;\s*)?linkError\?: "expired" \| "invalid";\s*\}\s*\|\s*undefined/,
-      /TasteQuiz:\s*\|\s*\{\s*mode\?: "onboarding" \| "profile";\s*initialPhase\?: "taste" \| "dietary";[\s\S]*?\}\s*\|\s*undefined/,
+      /TasteQuiz:\s*\|\s*\{\s*mode\?: "onboarding" \| "profile";\s*initialPhase\?: "taste" \| "dietary"( \| "budget")?;[\s\S]*?\}\s*\|\s*undefined/,
       /LocationPermission: undefined/,
-      /ManualLocationPicker: \{ mode\?: "settings"( \| "onboarding")? \} \| undefined/,
+      /ManualLocationPicker:\s*\|\s*\{\s*mode\?: "settings"( \| "onboarding")?;[\s\S]*?\}\s*\|\s*undefined/,
     ],
     "navigation auth/onboarding types",
   );
@@ -61,10 +62,11 @@ test("user auth and onboarding flows cover account, taste, dietary, and location
     login,
     [
       /getHungryService\(\)\.auth\.signIn\(/,
-      /service\.auth\.signInWithGoogle\(/,
-      /service\.auth\.signInWithApple\(/,
+      /auth\.signInWithGoogle\(\)/,
+      /auth\.signInWithApple\(\)/,
       // Email sign-in is an existing account; the quiz state is not overwritten.
-      /completeAuth\(\{\s*completedOnboarding: getConfiguredDataSource\(\) !== "supabase"\s*\}\)/,
+      /const isMock = getConfiguredDataSource\(\) !== "supabase"/,
+      /completeAuth\(\{[\s\S]*completedOnboarding: isMock/,
     ],
     "LoginScreen",
   );
@@ -190,7 +192,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
 });
 
 test("discover routes diners to details, opens the map from a toggle, and search grids open catalog records", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const quickBites = readRepoFile("src/app/screens/discover/QuickBitesScreen.tsx");
   const searchResults = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
   const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
@@ -217,7 +219,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /ExpandableSearchLauncher/,
       /accessibilityLabel="Search dishes"/,
       /iconAlignment="right"/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
       /accessibilityLabel=\{`Open \$\{item\.dishName\} at \$\{item\.venueName\}`\}/,
       /\{item\.dishName\}/,
     ],
@@ -226,6 +228,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
   assertSourceIncludes(
     searchResults,
     [
+      /navigation\.navigate\("StallDetail", \{ venueId: item\.id \}\)/,
       /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",/,
       /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/,
       /type: "search_query"/,
@@ -250,10 +253,10 @@ test("discover routes diners to details, opens the map from a toggle, and search
 test("dish and stall details expose correct detail surfaces without user-mode map/cart regressions", () => {
   const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const userModeStallPress = segmentBetween(
     discover,
-    "if (isUserMode) {",
+    'buttonId: "vertical_stall_showcase_card"',
     'navigation.navigate("MapZoomedIn"',
   );
 
@@ -261,7 +264,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
     dishDetail,
     [
       /const heroPhotos = useMemo\(\(\) => \(dish \? buildDishHeroPhotos\(dish\) : \[\]\), \[dish\]\)/,
-      /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/,
+      /<DishTasteCard/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,
     ],
@@ -275,7 +278,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
       /<AppText variant="bodyBold">Address<\/AppText>/,
-      /\{stallAddress\}/,
+      /\{shortStallAddress \|\| stallAddress\}/,
       /Loading stall/,
       /<AppText variant="h2">Menu<\/AppText>/,
       /const \[visibleMenuItemCount, setVisibleMenuItemCount\] = useState\(INITIAL_MENU_ITEM_COUNT\)/,
@@ -287,7 +290,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
       /filteredMenuDishes\.slice\(0, visibleMenuItemCount\)/,
       /setVisibleMenuItemCount\(\(current\) =>[\s\S]*MENU_ITEM_BATCH_SIZE[\s\S]*filteredMenuDishes\.length/,
       /<MenuFilterDropdown/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/,
+      /navigation\.navigate\("DishDetail", \{\s*dishId: activeDish\.id,\s*source: "stall_menu"/,
       /StallInteractionBar/,
       /ReviewShareSheet/,
     ],
@@ -466,13 +469,14 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     profileHome,
     [
-      /profile\.avatarUrl \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
+      /profile\.avatarUrl && !avatarFailed \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
       /avatarInitials/,
-      /<AppText variant="h2">Taste Fingerprint<\/AppText>/,
-      /label="Reviews"/,
-      /label="Badges"/,
-      /label="Saved dishes"/,
-      /accessibilityLabel=\{menuOpen \? "Close quick access" : "Open quick access"\}/,
+      /<AppText[^>]*variant=\{compactTasteHeader \? "h3" : "h2"\}[^>]*numberOfLines=\{1\}[^>]*>\s*Taste Fingerprint\s*<\/AppText>/,
+      /key: "reviews",/,
+      /key: "saved",/,
+      /<ProfileStatRow stats=\{stats\}/,
+      /openAccessibilityLabel="Close quick access"/,
+      /: "Open quick access"/,
       /label="Edit"[\s\S]*onPress=\{\(\) => navigation\.navigate\("EditProfile"\)\}/,
       /accessibilityLabel="Share Taste Fingerprint"/,
       /<AppText variant="h1" numberOfLines=\{2\}[\s\S]*profile\.displayName/,
@@ -486,12 +490,13 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
   assertSourceIncludes(
     userProfile,
     [
-      /<ProfileScreenShell\s+title=\{authorName\}/,
+      /<ProfileScreenShell\s+title="Profile"/,
       /Avatar name=\{authorName\} uri=\{resolvedAuthorAvatarUrl\}/,
-      /label="Followers"/,
-      /label="Following"/,
-      /label="Reviews"/,
-      /label="Stalls"/,
+      /<ProfileStatRow stats=\{stats\}/,
+      /label: pluralLabel\(followersCount, "Follower"\)/,
+      /label: "Following"/,
+      /label: pluralLabel\(reviewCount, "Review"\)/,
+      /label: "Stalls"/,
       /activeTab === "posts"/,
       /activeTab === "reviews"/,
       /post\.authorId === normalizedAuthorId/,

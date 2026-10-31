@@ -1,10 +1,22 @@
-import { useState, type PropsWithChildren } from "react";
+import { useEffect, useState, type PropsWithChildren } from "react";
 import { Pressable, View, StyleSheet } from "react-native";
-import { ChevronDown } from "lucide-react-native";
-import { AppText } from "../ui";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { AppSymbol, AppText } from "../ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { selectHaptic } from "@/lib/haptics";
+import { EASE_OUT } from "@/lib/motion/uiMotion";
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
+
+/** Folding a section takes 200 ms (ease-out, under 300 ms), and none under Reduce Motion. */
+const FOLD_MS = 200;
 
 interface SettingsSectionProps {
   title?: string;
@@ -28,11 +40,18 @@ export function SettingsSection({
   children,
 }: PropsWithChildren<SettingsSectionProps>) {
   const { componentRadii, spacing, palette } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const canFold = collapsible && Boolean(title);
   const [collapsed, setCollapsed] = useState(canFold && defaultCollapsed);
 
+  // A small secondary header, like the system grouped list; the card below carries the weight.
+  const headerStyle = { marginLeft: spacing[4], color: palette.textSecondary };
+
   return (
-    <View style={{ marginBottom: spacing[6] }}>
+    <Animated.View
+      layout={reduceMotion ? undefined : LinearTransition.duration(FOLD_MS)}
+      style={{ marginBottom: spacing[6] }}
+    >
       {title && canFold ? (
         <Pressable
           accessibilityRole="button"
@@ -53,46 +72,40 @@ export function SettingsSection({
             minHeight: 44,
           }}
         >
-          <AppText variant={editorial ? "h2" : "micro"} accessibilityRole="header">
-            {title}
-          </AppText>
-          <View
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              flexShrink: 1,
-              gap: spacing[2],
-              marginLeft: spacing[3],
-            }}
-          >
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText
+              variant={editorial ? "bodySmallBold" : "micro"}
+              accessibilityRole="header"
+              style={editorial ? headerStyle : undefined}
+            >
+              {title}
+            </AppText>
             {collapsed && collapsedSummary ? (
               <AppText
                 tone="muted"
                 variant="bodySmall"
-                style={{ flexShrink: 1, textAlign: "right" }}
+                style={editorial ? { marginLeft: spacing[4] } : undefined}
               >
                 {collapsedSummary}
               </AppText>
             ) : null}
-            <ChevronDown
-              size={20}
-              color={palette.textMuted}
-              style={{ transform: [{ rotate: collapsed ? "0deg" : "180deg" }] }}
-            />
           </View>
+          <FoldChevron open={!collapsed} reduceMotion={reduceMotion} color={palette.textMuted} />
         </Pressable>
       ) : title ? (
         <AppText
-          variant={editorial ? "h2" : "micro"}
+          variant={editorial ? "bodySmallBold" : "micro"}
           accessibilityRole="header"
-          style={editorial ? { marginBottom: spacing[2], color: palette.text } : styles.title}
+          style={editorial ? { ...headerStyle, marginBottom: spacing[2] } : styles.title}
         >
           {title}
         </AppText>
       ) : null}
 
       {collapsed ? null : (
-        <View
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeIn.duration(FOLD_MS)}
+          exiting={reduceMotion ? undefined : FadeOut.duration(FOLD_MS)}
           style={[
             styles.content,
             {
@@ -103,7 +116,7 @@ export function SettingsSection({
           ]}
         >
           {children}
-        </View>
+        </Animated.View>
       )}
 
       {description ? (
@@ -111,7 +124,35 @@ export function SettingsSection({
           {description}
         </AppText>
       ) : null}
-    </View>
+    </Animated.View>
+  );
+}
+
+/** The fold arrow turns over with the section (instantly under Reduce Motion). */
+function FoldChevron({
+  open,
+  reduceMotion,
+  color,
+}: {
+  open: boolean;
+  reduceMotion: boolean;
+  color: string;
+}) {
+  const turn = useSharedValue(open ? 1 : 0);
+  useEffect(() => {
+    turn.set(
+      reduceMotion
+        ? open
+          ? 1
+          : 0
+        : withTiming(open ? 1 : 0, { duration: FOLD_MS, easing: EASE_OUT }),
+    );
+  }, [open, reduceMotion, turn]);
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.get() * 180}deg` }] }));
+  return (
+    <Animated.View style={style}>
+      <AppSymbol name="chevronDown" size={16} weight="semibold" color={color} />
+    </Animated.View>
   );
 }
 

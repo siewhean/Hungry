@@ -63,12 +63,12 @@ test("only reviews with a photo are shown", () => {
   assert.equal(reviewsWithPhotos([item("5", "X", "Y", NEUTRAL_TASTE_VECTOR, [" "])]).length, 0);
 });
 
-test("chips: your taste first, then all, most reviewed foods, then areas", () => {
+test("chips: all first, then your taste, most reviewed foods, then areas (REV-15)", () => {
   const shown = reviewsWithPhotos(items);
   const chips = buildReviewExploreChips(shown, { userVector: spicyLover, areaOf });
   assert.deepEqual(
     chips.map((chip) => chip.label),
-    ["For your taste", "All", "Laksa", "Chicken Rice", "Maxwell", "Amoy"],
+    ["All", "For your taste", "Laksa", "Chicken Rice", "Maxwell", "Amoy"],
   );
   // No palette: no taste chip.
   const plain = buildReviewExploreChips(shown, { userVector: NEUTRAL_TASTE_VECTOR, areaOf });
@@ -95,7 +95,8 @@ test("a picked food that drops out of the top six stays selected; a lost chip fa
     userVector: spicyLover,
     areaOf: (i) => (i as unknown as { area: string }).area,
   });
-  assert.equal(chips[0]?.id, "taste", "taste is first for a diner with a palette");
+  assert.equal(chips[0]?.id, "all", "All comes first, taste second, for a diner with a palette");
+  assert.equal(chips[1]?.id, "taste");
 
   // "food:Satay" is not on the page any more: it is kept, not swapped for "For your taste".
   const kept = withSelectedReviewChip(chips, "food:Satay");

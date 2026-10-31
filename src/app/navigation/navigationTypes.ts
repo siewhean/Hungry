@@ -1,6 +1,7 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { DecideAnswers } from "@/features/discovery/decideQuiz";
-import type { TasteVector } from "@/types/domain";
+import type { DishPrefill } from "@/features/detail/dishPrefill";
+import type { DishDetailSource } from "@/features/detail/dishSources";
 
 export type AuthStackParamList = {
   /**
@@ -42,7 +43,8 @@ export type AuthStackParamList = {
         linkError?: "expired" | "invalid";
       }
     | undefined;
-  ResetPasswordSuccess: undefined;
+  /** otherDevicesSignedOut: the reset also ended the sessions on other devices. */
+  ResetPasswordSuccess: { otherDevicesSignedOut?: boolean } | undefined;
 };
 
 export type OnboardingStackParamList = {
@@ -50,19 +52,15 @@ export type OnboardingStackParamList = {
   TasteQuiz:
     | {
         mode?: "onboarding" | "profile";
-        initialPhase?: "taste" | "dietary";
+        initialPhase?: "taste" | "dietary" | "budget"; // "budget": dietary step, scrolled to the budget
         /** The page the edit was opened from, for the preference events' surface. */
-        source?: "settings";
+        source?: "settings" | "home";
       }
     | undefined;
   DietaryPreferences:
     | {
         mode?: "onboarding" | "profile";
         initialPhase?: "taste" | "dietary";
-        /** Taste answers carried over from the TasteQuiz route. */
-        answers?: TasteVector;
-        /** The questions the user actually answered (the rest kept the middle value). */
-        answeredKeys?: (keyof TasteVector)[];
       }
     | undefined;
   /** "How open are you to trying new food?" mode "settings": change it from Settings and go back. */
@@ -71,13 +69,20 @@ export type OnboardingStackParamList = {
   TasteProfileResult: undefined;
   LocationPermission: undefined;
   /** mode "settings": change the location from Settings and go back, without onboarding. */
-  ManualLocationPicker: { mode?: "settings" | "onboarding" } | undefined;
+  ManualLocationPicker:
+    | {
+        mode?: "settings" | "onboarding";
+        /** Shown inline above the search, e.g. "No problem. Pick your area instead". */
+        notice?: string;
+      }
+    | undefined;
   /** dishName: the dish a guest tapped save on, so the headline can say what the account is for. */
   OnboardingAuth: { dishName?: string } | undefined;
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
-  Favourites: undefined;
+  /** Saved: opens on `section` (a deep link to Lists, say); else where the diner left it. */
+  Favourites: { section?: "dishes" | "stalls" | "lists" | "posts" } | undefined;
   /** One Lists area: Saved, your lists (portfolios) and checklists. */
   ListsHome: undefined;
   Collections: undefined;
@@ -133,11 +138,12 @@ export type MerchantTabParamList = {
   // Extended sections
   VerificationCentre: undefined;
   HomeBasedVerification: undefined;
-  BusinessProfileEditor: undefined;
+  /** `section` scrolls the long form to that part when it opens. */
+  BusinessProfileEditor: { section?: "location" | "hours" | "contact" } | undefined;
   DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
   /** `filter` opens a filtered list; `replyToId` opens the reply composer for that review. */
-  CustomerInbox: { filter?: "unreplied"; replyToId?: string } | undefined;
+  CustomerInbox: { filter?: "all" | "unreplied"; replyToId?: string } | undefined;
   FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
@@ -153,15 +159,25 @@ export type RootStackParamList = {
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
-  ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
+  ReportProblem: {
+    venueId: string;
+    dishId?: string;
+    subjectName?: string;
+    /** Picks a reason up front, e.g. "wrong_hours" from the stall page's Add opening hours. */
+    initialKind?: "wrong_hours";
+  };
   /** `source` names where the dish was opened from, for the dish_viewed event. */
   DishDetail: {
     dishId?: string;
     id?: string;
-    source?: string;
+    source?: DishDetailSource;
+    /** What the card already knows: the page paints it at once and starts the stall reads. */
+    prefill?: DishPrefill;
     /** Opened from a catalog card: a dish page that can't be found shows the catalog record. */
     catalogFallback?: { releaseId?: string };
   };
+  /** Every written review of one dish, paged, with sort and a photo filter. */
+  DishReviews: { dishId: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
   SearchResults:
@@ -228,7 +244,8 @@ export type RootStackParamList = {
       }
     | undefined;
   DeveloperLauncher: undefined;
-  Favourites: undefined;
+  /** Saved: opens on `section` (a deep link to Lists, say); else where the diner left it. */
+  Favourites: { section?: "dishes" | "stalls" | "lists" | "posts" } | undefined;
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;

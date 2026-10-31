@@ -17,6 +17,7 @@ export type CatalogErrorKind =
   | "network"
   | "rpc"
   | "release_expired"
+  | "rate_limited"
   | "unavailable";
 
 /** Pages served from the bundled offline copy (the Excel fallback) carry this release id. */
@@ -116,7 +117,16 @@ export interface CatalogRawVenueCard {
   /** The stall's best displayable dish: its rating and review count (quality_rating columns). */
   qualityRating?: number;
   qualityReviewCount?: number;
+  /** The stall's own logo, when it has one. */
+  logoUrl?: string;
+  /** Median price of the stall's mains (drinks and sides left out), for "Mains from S$x". */
+  mainPrice?: number;
   representativeDish?: Pick<
+    CatalogRawDishCard,
+    "id" | "name" | "imageUrl" | "price" | "verificationStatus"
+  >;
+  /** The stall's best dish for the typed query; only on stall search results. */
+  matchedDish?: Pick<
     CatalogRawDishCard,
     "id" | "name" | "imageUrl" | "price" | "verificationStatus"
   >;
@@ -181,6 +191,10 @@ export interface CatalogSuggestion {
   label: string;
   /** Building id, on place suggestions. */
   placeId?: string;
+  /** Venue id, on a stall suggestion whose name belongs to one stall; a chain's name has none. */
+  venueId?: string;
+  /** The stall's building, shown under a stall suggestion that has a venue id. */
+  subtitle?: string;
 }
 
 /** A mall, hawker centre, food court or other building with several stalls. */
@@ -297,6 +311,17 @@ export class CatalogReleaseExpiredError extends CatalogAccessError {
   }
 }
 
+/**
+ * The request limiter answered 429: the caller is searching faster than the endpoint allows.
+ * Retrying straight away fails again, and it is not a connection problem, so it has its own copy.
+ */
+export class CatalogRateLimitedError extends CatalogAccessError {
+  constructor(message = "Too many searches in a minute. Try again in a moment.", cause?: unknown) {
+    super(message, { kind: "rate_limited", fallbackEligible: false, cause });
+    this.name = "CatalogRateLimitedError";
+  }
+}
+
 export class CatalogNetworkError extends CatalogAccessError {
   constructor(message = "The online catalog could not be reached.", cause?: unknown) {
     super(message, { kind: "network", fallbackEligible: true, cause });
@@ -369,6 +394,16 @@ function looksLikeNetworkFailure(value: unknown): boolean {
     message.includes("aborted") ||
     message.includes("socket") ||
     message.includes("connection")
+  );
+}
+
+/** The limiter answers 429 with {"code":"rate_limited"} (app_private.check_request_rate). */
+function looksLikeRateLimited(value: unknown): boolean {
+  const message = errorMessage(value).toLowerCase();
+  return (
+    errorStatus(value) === 429 ||
+    errorCode(value) === "rate_limited" ||
+    message.includes("too many requests")
   );
 }
 
@@ -449,6 +484,7 @@ export function classifyCatalogAccessError(value: unknown, context: "session" | 
   if (looksLikeConfigurationFailure(value)) return new CatalogConfigurationError(message, value);
   if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
   if (looksLikeAuthorizationFailure(value)) return new CatalogAuthorizationError(message, value);
+  if (looksLikeRateLimited(value)) return new CatalogRateLimitedError(undefined, value);
   if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
   if (looksLikeExpiredRelease(value)) return new CatalogReleaseExpiredError(undefined, value);
   if (looksLikeContractFailure(value)) return new CatalogContractError(message, value);
@@ -534,6 +570,7 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
   const representative = asRecord(row.representative_dish);
   const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
   const representativeRightsStatus = asString(representative.media_rights_status) ?? "unverified";
+  const matched = asRecord(row.matched_dish);
   return {
     id: asString(row.id) ?? "",
     buildingId: asString(row.building_id) ?? "",
@@ -553,6 +590,19 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
     menuCount: asNumber(row.menu_count) ?? 0,
     qualityRating: asNumber(row.quality_rating),
     qualityReviewCount: asNumber(row.quality_review_count),
+    logoUrl: asString(row.logo_url),
+    mainPrice: asNumber(row.main_price),
+    matchedDish: asString(matched.id)
+      ? {
+          id: asString(matched.id) ?? "",
+          name: asString(matched.name) ?? "Unnamed dish",
+          imageUrl: sanitizeCatalogCardImageUrl(asString(matched.image_url), sourceRpc, {
+            rightsStatus: "unverified",
+          }),
+          price: asNumber(matched.price),
+          verificationStatus: verificationStatus(matched.verification_status),
+        }
+      : undefined,
     representativeDish: asString(representative.id)
       ? {
           id: asString(representative.id) ?? "",
@@ -595,7 +645,10 @@ function mapSuggestions(value: unknown): CatalogSuggestion[] {
     const kind = row.kind;
     if (!label || (kind !== "food_type" && kind !== "place" && kind !== "stall")) return [];
     const placeId = kind === "place" ? asString(row.id) : undefined;
-    return [placeId ? { kind, label, placeId } : { kind, label }];
+    if (placeId) return [{ kind, label, placeId }];
+    const venueId = kind === "stall" ? asString(row.id) : undefined;
+    if (venueId) return [{ kind, label, venueId, subtitle: asString(row.subtitle) }];
+    return [{ kind, label }];
   });
 }
 

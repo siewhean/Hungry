@@ -214,7 +214,7 @@ test("favourites report a failed saved-id read as a retryable error, not an empt
     getFavouriteDishIds: async () => {
       throw new Error("network request failed");
     },
-    getDish: async () => {
+    getSavedDishCards: async () => {
       throw new Error("not called");
     },
   });
@@ -222,15 +222,15 @@ test("favourites report a failed saved-id read as a retryable error, not an empt
 
   const empty = await loadCatalogFavourites({
     getFavouriteDishIds: async () => [],
-    getDish: async () => {
+    getSavedDishCards: async () => {
       throw new Error("not called");
     },
   });
-  assert.deepEqual(empty, { status: "loaded", dishes: [], unavailableCount: 0 });
+  assert.deepEqual(empty, { status: "loaded", savedIds: [], cards: [], unavailableCount: 0 });
 
   const outage = await loadCatalogFavourites({
     getFavouriteDishIds: async () => ["d1", "d2"],
-    getDish: async () => {
+    getSavedDishCards: async () => {
       throw new CatalogNetworkError();
     },
   });
@@ -238,15 +238,13 @@ test("favourites report a failed saved-id read as a retryable error, not an empt
 
   const partial = await loadCatalogFavourites({
     getFavouriteDishIds: async () => ["d1", "d2", "d1"],
-    getDish: async (id) => {
-      if (id === "d2") throw new Error("Dish not found in the bundled Excel catalog.");
-      return { id } as CatalogRawDishDetail;
-    },
+    getSavedDishCards: async (ids) =>
+      ids.filter((id) => id !== "d2").map((id) => ({ id, name: id })),
   });
   assert.equal(partial.status, "loaded");
   if (partial.status === "loaded") {
     assert.deepEqual(
-      partial.dishes.map((dish) => dish.id),
+      partial.cards.map((card) => card.id),
       ["d1"],
     );
     assert.equal(partial.unavailableCount, 1);
@@ -300,23 +298,24 @@ test("browse grid keeps rows on a failed continuation and offers retry", () => {
   assert.match(grid, /onPress=\{\(\) => void loadPage\(nextCursor, true\)\}/);
 });
 
-test("favourites rows use sibling Open and Remove controls", () => {
-  const favourites = read("src/app/screens/profile/FavouritesScreen.tsx");
-  const legacy = favourites.slice(favourites.indexOf("Want to try ("));
-  const openStart = legacy.indexOf("accessibilityLabel={`Open ${dish.name}");
-  const openEnd = legacy.indexOf("</Pressable>", openStart);
-  const removeAt = legacy.indexOf("accessibilityLabel={`Remove ${dish.name}");
+test("saved dish cards use sibling Open and Remove controls", () => {
+  const card = read("src/components/saved/SavedDishCard.tsx");
+  const section = read("src/app/screens/profile/SavedDishesSection.tsx");
+  // In the large card the Remove button sits next to the Open pressable, not inside it.
+  const openStart = card.indexOf("accessibilityLabel={openLabel}");
+  const openEnd = card.indexOf("</Pressable>", openStart);
+  const removeAt = card.indexOf("{removeButton ? (");
 
   assert.ok(openStart > 0 && removeAt > 0);
   assert.ok(removeAt > openEnd, "Remove must not be nested inside the Open pressable");
-  assert.match(favourites, /title="Couldn't load favourites"/);
-  assert.match(favourites, /loadCatalogFavourites\(/);
+  assert.match(section, /title="Couldn't load your saved dishes"/);
+  assert.match(read("src/features/saved/useSavedDishes.ts"), /loadCatalogFavourites\(/);
 });
 
 test("Discover header hides the area count when no in-area venues are known", () => {
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   assert.match(
     discover,
-    /discoverAreaCountLabel !== "0" \? \([\s\S]{0,200}places to eat \$\{[\s\S]{0,160}\) : null/,
+    /discoverAreaCountLabel !== "0" \? \([\s\S]{0,200}stalls \$\{discoverAreaName[\s\S]{0,160}\) : null/,
   );
 });
