@@ -1,16 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ElementRef } from "react";
 import {
+  type LayoutChangeEvent,
+  PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
   useWindowDimensions,
-  Animated,
-  PanResponder,
 } from "react-native";
+import BottomSheet, {
+  BottomSheetScrollView,
+  type BottomSheetScrollViewMethods,
+} from "@gorhom/bottom-sheet";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { ChevronLeft, ChevronRight, Layers, LocateFixed, X } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Layers, LocateFixed, Star, X } from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 
@@ -22,12 +31,15 @@ import {
   getClusterPinColor,
   type MapSurfaceMarker,
 } from "@/components/map";
+import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   FilterChipRail,
   FeedErrorBoundary,
   ExpandableSearchLauncher,
+  PressableScale,
 } from "@/components/ui";
 import {
   getBuildingById,
@@ -48,6 +60,7 @@ import { isMapEdgeBackSwipe } from "@/features/discovery/mapEdgeBack";
 import {
   formatMapCardDetail,
   formatMapCardDish,
+  formatMapCardRating,
   mapCardAccessibilityLabel,
   shortOpenLabel,
   type MapCardMatchedDish,
@@ -60,9 +73,10 @@ import { reportError } from "@/lib/monitoring/reportError";
 import type { VenueSummary } from "@/types/domain";
 
 const DEFAULT_BUILDING_ID = "hc-maxwell";
-// "Open now" is not offered on the map: the catalog only carries a copy of the stored
-// open flag, which disagrees with the hours Discover shows (M11).
-type HomeMapFilterId = "nearMe" | "hawkerOnly" | "topRated";
+// "Open now" reads each stall's hours (the same rule as the stall page), never the catalog's stored
+// open flag, which disagrees with the hours Discover shows (M11). It narrows the cards and pins to
+// the stalls whose hours were read and are open.
+type HomeMapFilterId = "openNow" | "nearMe" | "hawkerOnly" | "topRated";
 
 /** Camera moves settle before the catalog is read again. */
 const MAP_REFETCH_DEBOUNCE_MS = 350;
@@ -79,6 +93,12 @@ const LOADING_PILL_DELAY_MS = 400;
 /** Stalls whose hours are read for the "Open" label: one batched read (cards are capped at 24). */
 const CARD_HOURS_BATCH = 24;
 const BACK_BUTTON_SIZE = 44;
+/** Within this distance of the diner the map counts as centred on them. */
+const CENTERED_METERS = 50;
+const MINIMIZED_HEIGHT = 60;
+/** The three resting heights of the sheet (the list adds a middle and a full one). */
+const CARDS_SNAP_INDEX = 1;
+const LIST_SNAP_INDEX = 1;
 const CARD_WIDTH = 320;
 /** The card in the carousel, top to bottom: photo, then padding, a name line and two detail lines. */
 const CARD_IMAGE_HEIGHT = 120;
@@ -96,6 +116,7 @@ const CAROUSEL_BASE_HEIGHT = SHEET_HEADER_HEIGHT + CAROUSEL_CONTENT_HEIGHT;
 const TOP_RATED_MIN_RATING = 4.5;
 
 const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
+  { id: "openNow", label: "Open now" },
   { id: "nearMe", label: "Near me" },
   { id: "hawkerOnly", label: "Hawker" },
   { id: "topRated", label: "Top rated" },
@@ -132,7 +153,7 @@ function SheetModeToggle({
             accessibilityRole="tab"
             accessibilityLabel={`Show ${option.label.toLowerCase()} in the sheet`}
             accessibilityState={{ selected }}
-            hitSlop={6}
+            hitSlop={8}
             onPress={() => {
               if (!selected) onChange(option.id);
             }}
@@ -156,6 +177,31 @@ function SheetModeToggle({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+/** "4.6 (23) · Open · 120 m · Maxwell Food Centre" with a star symbol before the rating. */
+function MapCardDetailLine({
+  rating,
+  detail,
+  fillWhenEmpty = false,
+}: {
+  rating?: string;
+  detail: string;
+  fillWhenEmpty?: boolean;
+}) {
+  const { palette } = useHungryTheme();
+  const text = [rating, detail].filter(Boolean).join(" · ");
+  if (!text && !fillWhenEmpty) return null;
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+      {rating ? (
+        <AppSymbol name="star.fill" fallback={Star} filled size={12} color={palette.starFill} />
+      ) : null}
+      <AppText variant="micro" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
+        {text || " "}
+      </AppText>
     </View>
   );
 }
@@ -245,6 +291,10 @@ export function HomeMapScreen() {
     ReadonlyMap<string, MapCardMatchedDish>
   >(new Map());
   const [openLabelByVenue, setOpenLabelByVenue] = useState<ReadonlyMap<string, string>>(new Map());
+  // The cards whose hours have been read (or failed to), so "Open now" never empties the map while
+  // the hours are still loading, and shows every stall when the hours cannot be read.
+  const [hoursReadFor, setHoursReadFor] = useState<CatalogRawVenueCard[] | undefined>();
+  const [hoursFailed, setHoursFailed] = useState(false);
   const venueHoursRef = useRef(new Map<string, VenueSummary>());
   // The "Loading places…" pill waits a moment so a quick pan does not flash it (M10).
   const [showLoadingPill, setShowLoadingPill] = useState(false);
@@ -252,27 +302,40 @@ export function HomeMapScreen() {
   const [mapQuery, setMapQuery] = useState("");
   // The pin and the card of the same stall light up together (M10).
   const [selectedVenueId, setSelectedVenueId] = useState<string | undefined>();
-  const carouselRef = useRef<ScrollView>(null);
-  const listRef = useRef<ScrollView>(null);
+  const carouselRef = useRef<BottomSheetScrollViewMethods>(null);
+  const listRef = useRef<BottomSheetScrollViewMethods>(null);
   const listRowYRef = useRef<Record<string, number>>({});
 
   // The home-indicator inset sits under the card, never over its text.
   const CAROUSEL_HEIGHT = CAROUSEL_BASE_HEIGHT + insets.bottom;
-  const MINIMIZED_HEIGHT = 60;
   // Heights follow the screen: 620 pt covered a 667 pt phone, search row included (L11).
   const FULL_HEIGHT = Math.min(620, Math.round(screenHeight * 0.7));
   const LIST_HEIGHT = Math.min(FULL_HEIGHT, Math.round(screenHeight * 0.5));
-  const sheetHeightsRef = useRef({ full: FULL_HEIGHT, list: LIST_HEIGHT });
-  sheetHeightsRef.current = { full: FULL_HEIGHT, list: LIST_HEIGHT };
-  const listLevelRef = useRef<"list" | "full" | "min">("list");
 
-  const animatedHeight = useRef(new Animated.Value(CAROUSEL_HEIGHT)).current;
+  // The sheet is @gorhom/bottom-sheet: it drags and snaps on the UI thread. Its resting heights
+  // (detents) are the cards, or collapsed / list / full for the list.
+  const sheetRef = useRef<ElementRef<typeof BottomSheet>>(null);
+  const snapPoints = useMemo(
+    () =>
+      displayMode === "list"
+        ? [MINIMIZED_HEIGHT, LIST_HEIGHT, FULL_HEIGHT]
+        : [MINIMIZED_HEIGHT, CAROUSEL_HEIGHT],
+    [CAROUSEL_HEIGHT, FULL_HEIGHT, LIST_HEIGHT, displayMode],
+  );
+  const snapPointsRef = useRef(snapPoints);
+  snapPointsRef.current = snapPoints;
   // Where the sheet is (or is heading); the edge-back swipe only starts above it.
   const sheetTargetHeightRef = useRef(CAROUSEL_HEIGHT);
-  const isMinimized = useRef(false);
-  // The sheet PanResponder is created once, so it reads the live mode from a ref.
-  const displayModeRef = useRef(displayMode);
-  displayModeRef.current = displayMode;
+  const sheetIndexRef = useRef(CARDS_SNAP_INDEX);
+  // The sheet's top edge and the container height, read by the floating buttons on the UI thread.
+  const sheetPosition = useSharedValue(screenHeight);
+  const containerHeight = useSharedValue(screenHeight);
+  const handleContainerLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      containerHeight.value = event.nativeEvent.layout.height;
+    },
+    [containerHeight],
+  );
 
   // Recentre only when the chosen building changes. A GPS refresh or manual
   // pick that moves the nearest building must not yank the map mid-pan; the
@@ -286,6 +349,9 @@ export function HomeMapScreen() {
 
   // "Near me" only holds while the map sits on the diner. Panning to another
   // district (or losing the GPS fix) switches it off so that area's pins show.
+  // The recentre arrow fills once the map sits on the diner, as Apple Maps does.
+  const isCenteredOnUser =
+    !isLocationApproximate && calculateDistanceMeters(mapCenter, currentLocation) < CENTERED_METERS;
   const nearMeActive =
     mapFilters.nearMe &&
     canUseNearMe &&
@@ -410,6 +476,8 @@ export function HomeMapScreen() {
         if (text) labels.set(card.id, text);
       }
       setOpenLabelByVenue(labels);
+      setHoursFailed(false);
+      setHoursReadFor(rawVenueCards);
     };
     if (unread.length === 0) {
       publish();
@@ -424,6 +492,10 @@ export function HomeMapScreen() {
       })
       .catch((error: unknown) => {
         reportError(error, { screen: "HomeMapScreen", action: "load_card_hours" });
+        if (active) {
+          setHoursFailed(true);
+          setHoursReadFor(rawVenueCards);
+        }
       });
     return () => {
       active = false;
@@ -432,30 +504,41 @@ export function HomeMapScreen() {
 
   // Top Rated and a search narrow the pins on the server. Once pins are individual stalls,
   // the cards keep only those stalls so a card never names a place the map hides.
+  // "Open now" keeps the stalls whose hours say open, once the hours are read.
+  const openNowActive = mapFilters.openNow && hoursReadFor === rawVenueCards && !hoursFailed;
   const venueCards = useMemo(() => {
-    if (currentZoom < 14 || !(mapFilters.topRated || mapQuery)) return rawVenueCards;
     const pinIds = new Set(rawMapItems.flatMap((item) => (item.kind === "venue" ? [item.id] : [])));
-    return rawVenueCards.filter((card) => pinIds.has(card.id));
-  }, [currentZoom, mapFilters.topRated, mapQuery, rawMapItems, rawVenueCards]);
+    const narrowedByPins =
+      currentZoom < 14 || !(mapFilters.topRated || mapQuery)
+        ? rawVenueCards
+        : rawVenueCards.filter((card) => pinIds.has(card.id));
+    return openNowActive
+      ? narrowedByPins.filter((card) => openLabelByVenue.get(card.id) === "Open")
+      : narrowedByPins;
+  }, [
+    currentZoom,
+    mapFilters.topRated,
+    mapQuery,
+    openLabelByVenue,
+    openNowActive,
+    rawMapItems,
+    rawVenueCards,
+  ]);
   const emptyMessage =
     mapLoadState === "idle" && venueCards.length === 0
       ? mapQuery
         ? `No places match "${mapQuery}" here. Zoom out or clear the search.`
-        : mapFilters.topRated
-          ? "No places here have enough ratings yet. Turn off Top rated to see them all."
-          : "No places here. Zoom out or clear filters."
+        : openNowActive
+          ? "No places here are open right now. Zoom out or turn off Open now."
+          : mapFilters.topRated
+            ? "No places here have enough ratings yet. Turn off Top rated to see them all."
+            : "No places here. Zoom out or clear filters."
       : undefined;
   const pinsAreCapped = rawMapItems.length > MAX_RENDERED_MARKERS;
 
-  const snapTo = (height: number) => {
-    sheetTargetHeightRef.current = height;
-    Animated.spring(animatedHeight, {
-      toValue: height,
-      useNativeDriver: false,
-      tension: 50,
-      friction: 8,
-    }).start();
-  };
+  const snapToIndex = useCallback((index: number) => {
+    sheetRef.current?.snapToIndex(index);
+  }, []);
 
   const openStall = useCallback(
     (venueId: string) => navigation.navigate("StallDetail", { venueId }),
@@ -489,10 +572,7 @@ export function HomeMapScreen() {
       if (cardIndex >= 0 && selectedVenueId !== item.id) {
         setSelectedVenueId(item.id);
         if (displayMode === "carousel") {
-          if (isMinimized.current) {
-            snapTo(CAROUSEL_HEIGHT);
-            isMinimized.current = false;
-          }
+          if (sheetIndexRef.current === 0) snapToIndex(CARDS_SNAP_INDEX);
           carouselRef.current?.scrollTo({
             x: cardIndex * (CARD_WIDTH + spacing[4]),
             animated: true,
@@ -504,7 +584,7 @@ export function HomeMapScreen() {
       }
       openStall(item.id);
     },
-    [displayMode, openStall, rawMapItems, selectedVenueId, spacing, venueCards],
+    [displayMode, openStall, rawMapItems, selectedVenueId, snapToIndex, spacing, venueCards],
   );
 
   const submitSearch = useCallback(() => {
@@ -522,36 +602,6 @@ export function HomeMapScreen() {
     setSearchText("");
     setMapQuery("");
   }, []);
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10,
-      onPanResponderRelease: (_, gestureState) => {
-        if (displayModeRef.current === "list") {
-          const { full, list } = sheetHeightsRef.current;
-          if (gestureState.dy < -100) {
-            snapTo(full);
-            listLevelRef.current = "full";
-          } else if (gestureState.dy > 100) {
-            const next = listLevelRef.current === "full" ? "list" : "min";
-            snapTo(next === "list" ? list : MINIMIZED_HEIGHT);
-            listLevelRef.current = next;
-          }
-          return;
-        }
-
-        // Swipe down to peek
-        if (gestureState.dy > 50) {
-          snapTo(MINIMIZED_HEIGHT);
-          isMinimized.current = true;
-        } else if (gestureState.dy < -50) {
-          snapTo(CAROUSEL_HEIGHT);
-          isMinimized.current = false;
-        }
-      },
-    }),
-  ).current;
 
   // Always land on Discover: after sign-in or "open on map" the screen below may be Home.
   const backToList = useCallback(() => {
@@ -584,32 +634,39 @@ export function HomeMapScreen() {
 
   useEffect(() => {
     // The list opens half-way so it shows several rows, not one.
-    listLevelRef.current = "list";
-    isMinimized.current = false;
-    snapTo(displayMode === "list" ? sheetHeightsRef.current.list : CAROUSEL_HEIGHT);
-  }, [displayMode]);
+    snapToIndex(displayMode === "list" ? LIST_SNAP_INDEX : CARDS_SNAP_INDEX);
+  }, [displayMode, snapToIndex]);
 
+  // With "Open now" on, the map shows the open stalls that have cards, and no clusters (a cluster's
+  // count cannot be narrowed by hours).
   const markers = useMemo<MapSurfaceMarker[]>(
     () =>
-      rawMapItems.slice(0, MAX_RENDERED_MARKERS).map((item) =>
-        item.kind === "cluster"
-          ? {
-              id: `cluster-${item.id}`,
-              label: `${item.count} venues`,
-              accessibilityLabel: `${item.count} venues. Double tap to zoom in.`,
-              coordinate: { latitude: item.latitude, longitude: item.longitude },
-              accent: getClusterPinColor(palette),
-              clusterCount: item.count,
-            }
-          : {
-              id: `stall-${item.id}`,
-              label: item.label,
-              coordinate: { latitude: item.latitude, longitude: item.longitude },
-              // Colour is the building type, as the legend says.
-              accent: getBuildingPinColor(item.buildingType, palette),
-            },
-      ),
-    [palette, rawMapItems],
+      (openNowActive
+        ? rawMapItems.filter(
+            (item) => item.kind === "venue" && venueCards.some((card) => card.id === item.id),
+          )
+        : rawMapItems
+      )
+        .slice(0, MAX_RENDERED_MARKERS)
+        .map((item) =>
+          item.kind === "cluster"
+            ? {
+                id: `cluster-${item.id}`,
+                label: `${item.count} venues`,
+                accessibilityLabel: `${item.count} venues. Double tap to zoom in.`,
+                coordinate: { latitude: item.latitude, longitude: item.longitude },
+                accent: getClusterPinColor(palette),
+                clusterCount: item.count,
+              }
+            : {
+                id: `stall-${item.id}`,
+                label: item.label,
+                coordinate: { latitude: item.latitude, longitude: item.longitude },
+                // Colour is the building type, as the legend says.
+                accent: getBuildingPinColor(item.buildingType, palette),
+              },
+        ),
+    [openNowActive, palette, rawMapItems, venueCards],
   );
 
   const cameraPadding = useMemo(
@@ -626,36 +683,78 @@ export function HomeMapScreen() {
       venue,
       richCards ? matchedDishByVenue.get(venue.id) : undefined,
     );
+    const rating = richCards ? formatMapCardRating(venue) : undefined;
     const detail = formatMapCardDetail(
-      richCards ? venue : { ...venue, qualityRating: undefined, qualityReviewCount: undefined },
+      venue,
       richCards ? openLabelByVenue.get(venue.id) : undefined,
     );
-    return { dishLine, detail, label: mapCardAccessibilityLabel(venue, dishLine, detail) };
+    return {
+      dishLine,
+      rating: rating?.text,
+      detail,
+      label: mapCardAccessibilityLabel(venue, dishLine, detail, rating?.spoken),
+    };
   };
 
   // The same two moves the drag handle makes, for screen readers and switch users (M11).
-  const expandSheet = () => {
-    if (displayMode === "list") {
-      snapTo(sheetHeightsRef.current.full);
-      listLevelRef.current = "full";
-    } else {
-      snapTo(CAROUSEL_HEIGHT);
-      isMinimized.current = false;
-    }
-  };
-  const collapseSheet = () => {
-    if (displayMode === "list") {
-      const next = listLevelRef.current === "full" ? "list" : "min";
-      snapTo(next === "list" ? sheetHeightsRef.current.list : MINIMIZED_HEIGHT);
-      listLevelRef.current = next;
-    } else {
-      snapTo(MINIMIZED_HEIGHT);
-      isMinimized.current = true;
-    }
-  };
+  const expandSheet = useCallback(() => {
+    snapToIndex(Math.min(sheetIndexRef.current + 1, snapPointsRef.current.length - 1));
+  }, [snapToIndex]);
+  const collapseSheet = useCallback(() => {
+    snapToIndex(Math.max(sheetIndexRef.current - 1, 0));
+  }, [snapToIndex]);
+
+  // The buttons ride on top of the sheet and fade once the list is stretched over the map. This
+  // runs on the UI thread from the sheet's own position, so it never waits on React.
+  const floatingButtonsStyle = useAnimatedStyle(() => {
+    const sheetHeight = Math.max(containerHeight.value - sheetPosition.value, MINIMIZED_HEIGHT);
+    return {
+      opacity: interpolate(sheetHeight, [LIST_HEIGHT, FULL_HEIGHT], [1, 0], Extrapolation.CLAMP),
+      transform: [{ translateY: -sheetHeight }],
+    };
+  });
+
+  /** The sheet's grabber and the Cards / List switch: dragging the strip drags the sheet. */
+  const renderSheetHandle = useCallback(
+    () => (
+      <View style={styles.sheetHeader}>
+        <View
+          accessible
+          accessibilityRole="adjustable"
+          accessibilityLabel="Places sheet"
+          accessibilityHint="Swipe up to show more places, down to show fewer"
+          accessibilityActions={[
+            { name: "increment", label: "Show more places" },
+            { name: "decrement", label: "Show fewer places" },
+          ]}
+          onAccessibilityAction={(event) => {
+            if (event.nativeEvent.actionName === "increment") expandSheet();
+            else if (event.nativeEvent.actionName === "decrement") collapseSheet();
+          }}
+          style={styles.dragHandleTarget}
+        >
+          <View style={[styles.dragBar, { backgroundColor: palette.border }]} />
+        </View>
+        <View style={[styles.sheetModeToggle, { right: spacing[3] }]}>
+          <SheetModeToggle
+            value={displayMode}
+            onChange={(next) => {
+              setDisplayMode(next);
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }}
+          />
+        </View>
+      </View>
+    ),
+    [collapseSheet, displayMode, expandSheet, palette.border, spacing],
+  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.bg }} {...edgeBackPanResponder.panHandlers}>
+    <View
+      style={{ flex: 1, backgroundColor: palette.bg }}
+      onLayout={handleContainerLayout}
+      {...edgeBackPanResponder.panHandlers}
+    >
       <FeedErrorBoundary
         title="Map currently unavailable"
         body="We hit a rendering issue with the map. Please try again."
@@ -670,8 +769,7 @@ export function HomeMapScreen() {
           onMapPress={() => {
             // A tap only folds the sheet. The camera stays where the diner left it.
             if (displayMode === "carousel") {
-              snapTo(isMinimized.current ? CAROUSEL_HEIGHT : MINIMIZED_HEIGHT);
-              isMinimized.current = !isMinimized.current;
+              snapToIndex(sheetIndexRef.current === 0 ? CARDS_SNAP_INDEX : 0);
             }
           }}
           onZoomChange={setCurrentZoom}
@@ -721,7 +819,6 @@ export function HomeMapScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Go back"
-              hitSlop={4}
               onPress={backToList}
               style={{
                 alignItems: "center",
@@ -733,7 +830,13 @@ export function HomeMapScreen() {
                 ...shadows.floating,
               }}
             >
-              <ChevronLeft color={palette.text} size={24} />
+              <AppSymbol
+                name="chevron.backward"
+                fallback={ChevronLeft}
+                color={palette.text}
+                size={22}
+                weight="semibold"
+              />
             </Pressable>
             <ExpandableSearchLauncher
               query={searchText}
@@ -760,7 +863,12 @@ export function HomeMapScreen() {
             gap={spacing[2]}
             renderLeftIcon={(option, selected) =>
               option.id === "nearMe" ? (
-                <LocateFixed size={14} color={selected ? palette.orange : palette.textMuted} />
+                <AppSymbol
+                  name="location"
+                  fallback={LocateFixed}
+                  size={14}
+                  color={selected ? palette.orange : palette.textMuted}
+                />
               ) : null
             }
           />
@@ -769,7 +877,7 @@ export function HomeMapScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Clear search ${mapQuery}`}
-                hitSlop={8}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 onPress={clearMapSearch}
                 style={{
                   alignItems: "center",
@@ -787,12 +895,12 @@ export function HomeMapScreen() {
                 <AppText variant="micro" numberOfLines={1} style={{ maxWidth: 200 }}>
                   {`"${mapQuery}"`}
                 </AppText>
-                <X color={palette.textMuted} size={14} />
+                <AppSymbol name="xmark" fallback={X} color={palette.textMuted} size={14} />
               </Pressable>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`See all results for ${mapQuery}`}
-                hitSlop={8}
+                hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
                 onPress={() => navigation.navigate("SearchResults", { initialQuery: mapQuery })}
               >
                 <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
@@ -817,6 +925,7 @@ export function HomeMapScreen() {
               }
               accessibilityLiveRegion="polite"
               disabled={mapLoadState !== "error"}
+              hitSlop={6}
               onPress={() => setMapReloadKey((key) => key + 1)}
               style={{
                 alignSelf: "flex-start",
@@ -852,24 +961,19 @@ export function HomeMapScreen() {
 
       {/* Floating Buttons: legend, List/Map and recentre share one row; the legend opens above it */}
       <Animated.View
-        style={{
-          position: "absolute",
-          // Rides on top of the sheet, and fades once the list is stretched over the map.
-          bottom: animatedHeight.interpolate({
-            inputRange: [MINIMIZED_HEIGHT, FULL_HEIGHT],
-            outputRange: [MINIMIZED_HEIGHT + spacing[4], FULL_HEIGHT + spacing[4]],
-            extrapolate: "clamp",
-          }),
-          opacity: animatedHeight.interpolate({
-            inputRange: [LIST_HEIGHT, FULL_HEIGHT],
-            outputRange: [1, 0],
-            extrapolate: "clamp",
-          }),
-          left: spacing[4],
-          right: spacing[4],
-          zIndex: zIndex.overlay,
-          gap: spacing[3],
-        }}
+        style={[
+          {
+            position: "absolute",
+            // Rides on top of the sheet (translateY follows its top edge) and fades once the
+            // list is stretched over the map.
+            bottom: spacing[4],
+            left: spacing[4],
+            right: spacing[4],
+            zIndex: zIndex.overlay,
+            gap: spacing[3],
+          },
+          floatingButtonsStyle,
+        ]}
         pointerEvents="box-none"
       >
         {showLegend ? (
@@ -901,7 +1005,12 @@ export function HomeMapScreen() {
               },
             ]}
           >
-            <Layers color={palette.orange} size={20} />
+            <AppSymbol
+              name="square.3.layers.3d"
+              fallback={Layers}
+              color={palette.orange}
+              size={20}
+            />
           </Pressable>
 
           <DiscoverViewToggle value="map" onChange={backToList} />
@@ -940,62 +1049,43 @@ export function HomeMapScreen() {
               },
             ]}
           >
-            <LocateFixed color={palette.orange} size={24} />
+            <AppSymbol
+              name={isCenteredOnUser ? "location.fill" : "location"}
+              fallback={LocateFixed}
+              color={palette.orange}
+              size={24}
+            />
           </Pressable>
         </View>
       </Animated.View>
 
-      {/* Bottom UI Container */}
-      <Animated.View
-        {...panResponder.panHandlers}
-        style={[
-          styles.animatedCard,
-          {
-            backgroundColor: palette.surface,
-            height: animatedHeight,
-            zIndex: zIndex.sheet,
-            bottom: 0,
-            paddingHorizontal: displayMode === "list" ? spacing[4] : 0,
-            borderTopLeftRadius: radii.xl,
-            borderTopRightRadius: radii.xl,
-            ...shadows.floating,
-          },
-        ]}
+      {/* Bottom sheet: detents are the resting heights, the handle carries the Cards / List switch */}
+      <BottomSheet
+        ref={sheetRef}
+        index={displayMode === "list" ? LIST_SNAP_INDEX : CARDS_SNAP_INDEX}
+        snapPoints={snapPoints}
+        animatedPosition={sheetPosition}
+        enableDynamicSizing={false}
+        enablePanDownToClose={false}
+        enableOverDrag={false}
+        handleComponent={renderSheetHandle}
+        onAnimate={(_from, to) => {
+          sheetIndexRef.current = to;
+          sheetTargetHeightRef.current = snapPointsRef.current[to] ?? CAROUSEL_HEIGHT;
+        }}
+        backgroundStyle={{
+          backgroundColor: palette.surface,
+          borderTopLeftRadius: radii.xl,
+          borderTopRightRadius: radii.xl,
+          ...shadows.floating,
+        }}
+        style={{ zIndex: zIndex.sheet }}
       >
-        <View style={styles.sheetHeader}>
-          <View
-            accessible
-            accessibilityRole="adjustable"
-            accessibilityLabel="Places sheet"
-            accessibilityHint="Swipe up to show more places, down to show fewer"
-            accessibilityActions={[
-              { name: "increment", label: "Show more places" },
-              { name: "decrement", label: "Show fewer places" },
-            ]}
-            onAccessibilityAction={(event) => {
-              if (event.nativeEvent.actionName === "increment") expandSheet();
-              else if (event.nativeEvent.actionName === "decrement") collapseSheet();
-            }}
-            style={styles.dragHandleTarget}
-          >
-            <View style={[styles.dragBar, { backgroundColor: palette.border }]} />
-          </View>
-          <View style={[styles.sheetModeToggle, { right: spacing[3] }]}>
-            <SheetModeToggle
-              value={displayMode}
-              onChange={(next) => {
-                setDisplayMode(next);
-                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              }}
-            />
-          </View>
-        </View>
-
         {displayMode === "list" ? (
-          <ScrollView
+          <BottomSheetScrollView
             ref={listRef}
             contentContainerStyle={{
-              paddingHorizontal: spacing[3],
+              paddingHorizontal: spacing[4] + spacing[3],
               gap: spacing[4],
               paddingBottom: insets.bottom + spacing[12],
             }}
@@ -1009,7 +1099,7 @@ export function HomeMapScreen() {
               </AppText>
             ) : null}
             {venueCards.map((venue, index) => (
-              <Pressable
+              <PressableScale
                 key={venue.id}
                 accessibilityRole="button"
                 accessibilityLabel={cardText(venue).label}
@@ -1036,30 +1126,25 @@ export function HomeMapScreen() {
                       {cardText(venue).dishLine}
                     </AppText>
                   ) : null}
-                  {cardText(venue).detail ? (
-                    <AppText variant="micro" tone="muted">
-                      {cardText(venue).detail}
-                    </AppText>
-                  ) : null}
+                  <MapCardDetailLine
+                    rating={cardText(venue).rating}
+                    detail={cardText(venue).detail}
+                  />
                 </View>
-                <ChevronRight size={16} color={palette.orange} />
-              </Pressable>
+                <AppSymbol
+                  name="chevron.forward"
+                  fallback={ChevronRight}
+                  color={palette.orange}
+                  size={16}
+                />
+              </PressableScale>
             ))}
-          </ScrollView>
+          </BottomSheetScrollView>
         ) : (
-          <Animated.View
+          <View
             style={{
               height: CAROUSEL_CONTENT_HEIGHT + insets.bottom,
               paddingTop: SHEET_CARD_TOP_PADDING,
-              transform: [
-                {
-                  translateY: animatedHeight.interpolate({
-                    inputRange: [MINIMIZED_HEIGHT, CAROUSEL_HEIGHT],
-                    outputRange: [CAROUSEL_HEIGHT - MINIMIZED_HEIGHT, 0],
-                    extrapolate: "clamp",
-                  }),
-                },
-              ],
             }}
           >
             {emptyMessage ? (
@@ -1071,11 +1156,10 @@ export function HomeMapScreen() {
                 {emptyMessage}
               </AppText>
             ) : null}
-            <ScrollView
+            <BottomSheetScrollView
               ref={carouselRef}
               horizontal
               showsHorizontalScrollIndicator={false}
-              decelerationRate="fast"
               snapToInterval={CARD_WIDTH + spacing[4]}
               snapToAlignment="start"
               // Swiping to a card lights up its pin.
@@ -1092,7 +1176,7 @@ export function HomeMapScreen() {
               }}
             >
               {venueCards.map((venue, index) => (
-                <Pressable
+                <PressableScale
                   key={venue.id}
                   accessibilityRole="button"
                   accessibilityLabel={cardText(venue).label}
@@ -1119,20 +1203,22 @@ export function HomeMapScreen() {
                         style={StyleSheet.absoluteFill}
                         contentFit="cover"
                         accessibilityLabel={`${venue.name} image`}
+                        fallback={
+                          <NoDishPhoto
+                            designed
+                            dishName={venue.name}
+                            logoUrl={venue.logoUrl}
+                            style={StyleSheet.absoluteFill}
+                          />
+                        }
                       />
                     ) : (
-                      <View
-                        style={[
-                          StyleSheet.absoluteFill,
-                          {
-                            alignItems: "center",
-                            backgroundColor: palette.bgSoft,
-                            justifyContent: "center",
-                          },
-                        ]}
-                      >
-                        <AppText tone="muted">Image unavailable</AppText>
-                      </View>
+                      <NoDishPhoto
+                        designed
+                        dishName={venue.name}
+                        logoUrl={venue.logoUrl}
+                        style={StyleSheet.absoluteFill}
+                      />
                     )}
                   </View>
                   <View style={{ padding: spacing[3], gap: spacing[1] }}>
@@ -1142,26 +1228,23 @@ export function HomeMapScreen() {
                     <AppText variant="micro" tone="secondary" numberOfLines={1}>
                       {cardText(venue).dishLine ?? " "}
                     </AppText>
-                    <AppText variant="micro" tone="muted" numberOfLines={1}>
-                      {cardText(venue).detail || " "}
-                    </AppText>
+                    <MapCardDetailLine
+                      rating={cardText(venue).rating}
+                      detail={cardText(venue).detail}
+                      fillWhenEmpty
+                    />
                   </View>
-                </Pressable>
+                </PressableScale>
               ))}
-            </ScrollView>
-          </Animated.View>
+            </BottomSheetScrollView>
+          </View>
         )}
-      </Animated.View>
+      </BottomSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  animatedCard: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-  },
   sheetHeader: {
     width: "100%",
     height: SHEET_HEADER_HEIGHT,

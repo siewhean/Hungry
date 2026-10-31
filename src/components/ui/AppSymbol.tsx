@@ -73,6 +73,7 @@ const APP_SYMBOLS = {
   nearYou: { ios: "mappin.and.ellipse", lucide: MapPin },
   yourTaste: { ios: "slider.horizontal.3", lucide: SlidersHorizontal },
   selected: { ios: "checkmark", lucide: Check },
+  noPhoto: { ios: "fork.knife", lucide: Utensils },
   // Settings
   menuChanges: { ios: "bell.badge", lucide: BellRing },
   notificationsOff: { ios: "bell.slash", lucide: BellOff },

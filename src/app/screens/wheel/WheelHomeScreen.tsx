@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { LinearGradient } from "expo-linear-gradient";
 import { Users, ArrowRight, Compass } from "lucide-react-native";
 
-import { AppText, Button, Card, Input, Screen } from "@/components/ui";
+import { AppSymbol, AppText, Button, Card, Input, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -128,7 +128,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
               justifyContent: "center",
             }}
           >
-            <Compass size={44} color={palette.orange} strokeWidth={1.5} />
+            <AppSymbol name="safari" fallback={Compass} size={44} color={palette.orange} />
           </View>
           <AppText
             variant="bodySmall"
@@ -195,7 +195,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2" style={{ color: palette.white }}>
-                  {PARTY_ENABLED ? "Host a Party" : "Spin the wheel"}
+                  {PARTY_ENABLED ? "Host a party" : "Spin the wheel"}
                 </AppText>
                 <AppText variant="bodySmall" style={{ color: palette.white }}>
                   {PARTY_ENABLED
@@ -213,7 +213,12 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                   justifyContent: "center",
                 }}
               >
-                <ArrowRight size={24} color={palette.white} />
+                <AppSymbol
+                  name="arrow.right"
+                  fallback={ArrowRight}
+                  size={24}
+                  color={palette.white}
+                />
               </View>
             </View>
           </LinearGradient>
@@ -241,7 +246,12 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             <Card style={{ borderStyle: "dashed", borderWidth: 1.5, borderColor: palette.border }}>
               <View style={{ gap: spacing[4] }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                  <Users size={18} color={palette.orange} />
+                  <AppSymbol
+                    name="person.2.fill"
+                    fallback={Users}
+                    size={18}
+                    color={palette.orange}
+                  />
                   <AppText variant="h3">Join your friends</AppText>
                 </View>
 
@@ -281,7 +291,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                 ) : null}
 
                 <Button
-                  label={joining ? "Joining..." : "Join the Room"}
+                  label={joining ? "Joining..." : "Join the room"}
                   onPress={handleJoin}
                   disabled={joining}
                   variant="secondary"

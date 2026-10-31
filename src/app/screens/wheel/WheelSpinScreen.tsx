@@ -21,7 +21,7 @@ import { Play, X } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge, Button, Card } from "@/components/ui";
+import { AppSymbol, AppText, Badge, Button, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { WheelSvg, getWheelSliceColors } from "@/components/wheel/WheelSvg";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -85,18 +85,8 @@ export function WheelSpinScreen({ navigation }: Props) {
         if (now - lastHapticAt.current < HAPTIC_MIN_INTERVAL_MS) return;
         lastHapticAt.current = now;
 
-        // Intensity logic:
-        // 1. Initial burst (first 2 full rotations): Heavy
-        // 2. Middle phase (rotations 3-4): Medium
-        // 3. Final slowdown (rotation 5+): Light
-
-        if (value < 720) {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        } else if (value < 1440) {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        } else {
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
+        // A segment passing the pointer is a value change: the system selection tick, nothing else.
+        void Haptics.selectionAsync();
       }
     });
 
@@ -142,6 +132,7 @@ export function WheelSpinScreen({ navigation }: Props) {
         const winnerEntry = spinEntries[winnerIndex];
         if (!winnerEntry) return;
         AccessibilityInfo.announceForAccessibility(`The wheel landed on ${winnerEntry.label}`);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         // Settle the spin locally (solo has no server to broadcast party_resolved),
         // then route on the resolved state.
@@ -279,7 +270,7 @@ export function WheelSpinScreen({ navigation }: Props) {
             opacity: pressed ? 0.7 : 1,
           })}
         >
-          <X size={20} color={palette.text} />
+          <AppSymbol name="xmark" fallback={X} size={20} color={palette.text} />
         </Pressable>
         <MemberAvatarRow members={members} />
       </View>
@@ -427,10 +418,12 @@ export function WheelSpinScreen({ navigation }: Props) {
               },
             ]}
           >
-            <Play
+            <AppSymbol
+              name="play.fill"
+              fallback={Play}
+              filled={canSpin}
               size={24}
               color={canSpin ? palette.white : palette.textMuted}
-              fill={canSpin ? palette.white : "transparent"}
             />
             <AppText
               variant="h2"

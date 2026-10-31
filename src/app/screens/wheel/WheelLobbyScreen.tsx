@@ -5,7 +5,7 @@ import { Copy, List, Trash2, Users, Plus } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AppSymbol, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { getWheelSliceColors } from "@/components/wheel/WheelSvg";
@@ -52,6 +52,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
   // MD-W2: a new wheel starts with the nearest open stalls instead of an empty list.
   const [prefilling, setPrefilling] = useState(false);
   const [prefilledCount, setPrefilledCount] = useState(0);
+  // Stalls added while closed (late at night), by venue id, with when they open.
+  const [opensAtByVenue, setOpensAtByVenue] = useState<Record<string, string>>({});
   // The prefill ran and nothing near the diner is open: say so, rather than a bare empty wheel.
   const [prefillFoundNone, setPrefillFoundNone] = useState(false);
   const prefillStarted = useRef(false);
@@ -83,6 +85,11 @@ export function WheelLobbyScreen({ navigation }: Props) {
           addEntry(stall.venueId, stall.buildingId, stall.label, stall.imageUrl, "prefill");
         }
         setPrefilledCount(stalls.length);
+        setOpensAtByVenue(
+          Object.fromEntries(
+            stalls.flatMap((stall) => (stall.opensAt ? [[stall.venueId, stall.opensAt]] : [])),
+          ),
+        );
         setPrefillFoundNone(stalls.length === 0);
         trackAnalyticsEvent("wheel_prefilled", { party_id: partyId, count: stalls.length });
       })
@@ -117,6 +124,17 @@ export function WheelLobbyScreen({ navigation }: Props) {
     : activeEntries.length === 1
       ? "Add one more to spin"
       : "Add two to spin";
+
+  // "We added 3 open stalls", or, late at night, "We added 1 open stall and 3 that open soon".
+  const soonCount = Object.keys(opensAtByVenue).length;
+  const openCount = prefilledCount - soonCount;
+  const prefillNote = `We added ${
+    openCount === 0
+      ? `${soonCount} ${soonCount === 1 ? "stall that opens" : "stalls that open"} soon`
+      : soonCount === 0
+        ? `${openCount} open ${openCount === 1 ? "stall" : "stalls"}`
+        : `${openCount} open ${openCount === 1 ? "stall" : "stalls"} and ${soonCount} that open soon`
+  } near you. Remove any you don't fancy, or add your own.`;
 
   async function copyCode() {
     await Clipboard.setStringAsync(party!.code);
@@ -161,22 +179,30 @@ export function WheelLobbyScreen({ navigation }: Props) {
             borderWidth: 1,
           }}
         />
-        <AppText variant="bodyBold" style={{ flex: 1 }}>
-          {item.label}
-        </AppText>
+        <View style={{ flex: 1 }}>
+          <AppText variant="bodyBold">{item.label}</AppText>
+          {opensAtByVenue[item.venueId] ? (
+            <AppText variant="micro" tone="secondary">
+              {`Closed now · ${opensAtByVenue[item.venueId]}`}
+            </AppText>
+          ) : null}
+        </View>
         {canRemove && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Remove ${item.label} from the wheel`}
             onPress={() => removeEntry(item.id)}
-            hitSlop={8}
             style={{
               padding: spacing[2],
+              minHeight: 44,
+              minWidth: 44,
+              alignItems: "center",
+              justifyContent: "center",
               backgroundColor: palette.bgSoft,
               borderRadius: radii.sm,
             }}
           >
-            <Trash2 size={16} color={palette.error} />
+            <AppSymbol name="trash" fallback={Trash2} size={16} color={palette.error} />
           </Pressable>
         )}
       </View>
@@ -186,7 +212,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
   return (
     <>
       <Screen
-        title={PARTY_ENABLED ? "Party Lobby" : "Your wheel"}
+        title={PARTY_ENABLED ? "Party lobby" : "Your wheel"}
         subtitle={
           PARTY_ENABLED ? "Invite friends and decide together" : "Add places, then spin to decide"
         }
@@ -243,7 +269,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                     opacity: pressed ? 0.8 : 1,
                   })}
                 >
-                  <Copy size={20} color={palette.white} />
+                  <AppSymbol name="doc.on.doc" fallback={Copy} size={20} color={palette.white} />
                   <AppText
                     variant="micro"
                     style={{
@@ -268,9 +294,9 @@ export function WheelLobbyScreen({ navigation }: Props) {
                   marginBottom: spacing[3],
                 }}
               >
-                <Users size={18} color={palette.orange} />
+                <AppSymbol name="person.2.fill" fallback={Users} size={18} color={palette.orange} />
                 <AppText variant="h3">
-                  People in Room ({members.filter((m) => m.isPresent).length})
+                  People in room ({members.filter((m) => m.isPresent).length})
                 </AppText>
               </View>
               <Card
@@ -302,7 +328,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 gap: spacing[2],
               }}
             >
-              <List size={18} color={palette.orange} />
+              <AppSymbol name="list.bullet" fallback={List} size={18} color={palette.orange} />
               <AppText variant="h3">Options</AppText>
             </View>
             {/* Solo wheels are always classic, so the mode badge only shows when it says something. */}
@@ -336,7 +362,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                     tone="secondary"
                     style={{ padding: spacing[3], paddingBottom: 0 }}
                   >
-                    {`We added ${prefilledCount} open stalls near you. Remove any you don't fancy, or add your own.`}
+                    {prefillNote}
                   </AppText>
                 ) : null
               }
@@ -361,7 +387,9 @@ export function WheelLobbyScreen({ navigation }: Props) {
                           ? "Add some spots to start the party."
                           : "Add some spots, then spin to decide."
                     }
-                    icon={<Plus size={36} color={palette.textMuted} />}
+                    icon={
+                      <AppSymbol name="plus" fallback={Plus} size={36} color={palette.textMuted} />
+                    }
                   />
                 )
               }
@@ -377,7 +405,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
               onPress={() => setAddSheetOpen(true)}
               variant="secondary"
               style={{ flex: 1 }}
-              leftIcon={<Plus size={20} color={palette.text} />}
+              leftIcon={<AppSymbol name="plus" fallback={Plus} size={20} color={palette.text} />}
             />
             {isHost && (
               <Button
@@ -407,7 +435,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
           <Pressable
             accessibilityRole="button"
             onPress={handleLeave}
-            style={{ padding: spacing[2] }}
+            style={{ padding: spacing[2], minHeight: 44, justifyContent: "center" }}
           >
             <AppText
               variant="bodySmallBold"
@@ -417,7 +445,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 letterSpacing: 1,
               }}
             >
-              {PARTY_ENABLED ? "Leave Party" : "Close wheel"}
+              {PARTY_ENABLED ? "Leave party" : "Close wheel"}
             </AppText>
           </Pressable>
         </View>
