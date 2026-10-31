@@ -1,8 +1,8 @@
 {
   "global": {
     "lines": 86.2,
-    "branches": 85.6,
-    "functions": 82.7
+    "branches": 85.7,
+    "functions": 82.8
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -66,10 +66,10 @@
     "src/features/detail/perceivedTaste.ts": 98,
     "src/features/detail/scrollToSection.ts": 100,
     "src/features/detail/similarDishes.ts": 86.7,
-    "src/features/detail/stallDisplayName.ts": 97.2,
+    "src/features/detail/stallDisplayName.ts": 98.1,
     "src/features/detail/stallLocation.ts": 96.4,
     "src/features/detail/stallOpenState.ts": 100,
-    "src/features/detail/stallVisited.ts": 92.6,
+    "src/features/detail/stallVisited.ts": 96.3,
     "src/features/detail/tasteMatch.ts": 100,
     "src/features/discover/areaCount.ts": 100,
     "src/features/discover/biteLabel.ts": 100,
@@ -135,7 +135,7 @@
     "src/features/profile/stallSubmissionStatus.ts": 97.1,
     "src/features/profile/tasteFingerprint.ts": 100,
     "src/features/review/dishPicker.ts": 99.2,
-    "src/features/review/dishPickerSearch.ts": 91.9,
+    "src/features/review/dishPickerSearch.ts": 93,
     "src/features/review/musicData.ts": 100,
     "src/features/review/publishErrorCopy.ts": 100,
     "src/features/review/reviewDraft.ts": 100,
@@ -174,7 +174,7 @@
     "src/lib/analytics/mockAnalytics.ts": 100,
     "src/lib/analytics/posthogSink.ts": 99.3,
     "src/lib/analytics/preference.ts": 100,
-    "src/lib/analytics/privacy.ts": 94.7,
+    "src/lib/analytics/privacy.ts": 95.4,
     "src/lib/date/formatTimeAgo.ts": 95.8,
     "src/lib/experiments/experiments.ts": 97.7,
     "src/lib/geo/distance.ts": 100,
@@ -196,9 +196,9 @@
     "src/lib/security/communitySafety.ts": 96.2,
     "src/lib/security/inputSanitization.ts": 100,
     "src/lib/security/merchantLinks.ts": 100,
-    "src/lib/services/catalog/excelFallback.ts": 96.1,
+    "src/lib/services/catalog/excelFallback.ts": 96.3,
     "src/lib/services/catalog/favourites.ts": 100,
-    "src/lib/services/catalog/index.ts": 92,
+    "src/lib/services/catalog/index.ts": 92.1,
     "src/lib/services/catalog/media.ts": 100,
     "src/lib/services/catalog/paging.ts": 92.9,
     "src/lib/services/excel/excelService.ts": 70.3,
@@ -207,7 +207,7 @@
     "src/lib/services/mock/data.ts": 99.3,
     "src/lib/services/mock/mockService.ts": 82.4,
     "src/lib/services/mock/persistence.ts": 71.6,
-    "src/lib/services/mock/repositories.ts": 82.5,
+    "src/lib/services/mock/repositories.ts": 83,
     "src/lib/services/mock/stallPostState.ts": 100,
     "src/lib/services/mock/validation.ts": 84.3,
     "src/lib/services/postTransforms.ts": 98,
@@ -217,7 +217,7 @@
     "src/lib/services/storyGalleryAssets.ts": 95,
     "src/lib/services/supabase/authStorage.ts": 97.9,
     "src/lib/services/supabase/client.ts": 97.1,
-    "src/lib/services/supabase/mediaUpload.ts": 66.9,
+    "src/lib/services/supabase/mediaUpload.ts": 67.2,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/supabaseRepository.ts": 74,
     "src/lib/services/supabase/supabaseService.ts": 58.8,
@@ -253,7 +253,7 @@
     "src/theme/tokens.ts": 99.8,
     "src/types/domain.ts": 100,
     "src/utils/openingSchedule.ts": 94.5,
-    "src/utils/operatingHours.ts": 97,
+    "src/utils/operatingHours.ts": 97.3,
     "src/utils/stallStatus.ts": 84.1
   }
 }
