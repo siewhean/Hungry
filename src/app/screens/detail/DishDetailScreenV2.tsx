@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Animated,
-  Platform,
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import type { ColorValue, TextStyle } from "react-native";
+import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -141,7 +134,10 @@ function getMoreFromStall(currentDish: DishDetail, venueDishes: DishDetail[]) {
 
 export function DishDetailScreenV2({ navigation, route }: Props) {
   // Drives the photo fading out as the page scrolls.
-  const [heroScrollY] = useState(() => new Animated.Value(0));
+  const heroScrollY = useSharedValue(0);
+  const onHeroScroll = useAnimatedScrollHandler((event) => {
+    heroScrollY.value = event.contentOffset.y;
+  });
   const repository = getDataRepository();
   // Live builds read this page through its RPCs only. The synchronous repository's first read
   // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
@@ -997,9 +993,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           />
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
-              useNativeDriver: Platform.OS !== "web",
-            })}
+            onScroll={onHeroScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
               paddingBottom: insets.bottom + 96,

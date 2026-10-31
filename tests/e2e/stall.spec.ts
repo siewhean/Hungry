@@ -46,9 +46,7 @@ test.describe("stall page", () => {
     await expect(page.getByText(/Saved\. Find it in Profile/)).toBeVisible({ timeout: 10_000 });
   });
 
-  test("Mark visited is one tap and opens the What did you have sheet in place", async ({
-    page,
-  }) => {
+  test("Mark visited is one tap and opens the What did you have sheet", async ({ page }) => {
     await openStall(page);
     const markVisited = page.getByRole("checkbox", { name: "Mark this stall visited" });
     const visited = page.getByRole("checkbox", { name: "Visited", exact: true });
@@ -62,9 +60,11 @@ test.describe("stall page", () => {
     const before = page.url();
     await markVisited.click();
     await expect(page.getByTestId("stall-visited-sheet")).toBeVisible({ timeout: 10_000 });
-    expect(page.url()).toBe(before);
+    // On web the form sheet is a route over the stall; Skip returns to the stall.
+    expect(page.url()).toContain("StallVisited");
     await page.getByRole("button", { name: "Skip" }).click();
     await expect(page.getByTestId("stall-visited-sheet")).toHaveCount(0);
+    expect(page.url()).toBe(before);
   });
 
   test("a menu dish opens its page, and Back returns to the stall", async ({ page }) => {

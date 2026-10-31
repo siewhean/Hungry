@@ -2,7 +2,7 @@
   "global": {
     "lines": 86.1,
     "branches": 85.6,
-    "functions": 82.6
+    "functions": 82.7
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -61,6 +61,7 @@
     "src/features/detail/dishReviewSummary.ts": 100,
     "src/features/detail/dishSources.ts": 97.4,
     "src/features/detail/dishTasteSummary.ts": 100,
+    "src/features/detail/formatSgPhone.ts": 100,
     "src/features/detail/menuCategory.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
     "src/features/detail/scrollToSection.ts": 100,
@@ -126,6 +127,7 @@
     "src/features/profile/exportMyData.ts": 93.3,
     "src/features/profile/loadVenuesByIds.ts": 100,
     "src/features/profile/pendingQuizResponse.ts": 100,
+    "src/features/profile/plural.ts": 100,
     "src/features/profile/profileBio.ts": 100,
     "src/features/profile/profileName.ts": 100,
     "src/features/profile/relativeDate.ts": 100,
