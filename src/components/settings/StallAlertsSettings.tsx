@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { AppState, Linking } from "react-native";
 
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getNotificationPermissionState, registerForStallAlerts } from "@/lib/notifications/push";
@@ -144,21 +145,23 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
           isLast={false}
         />
       ) : null}
-      <SettingsRow
-        editorial
-        iconTone="neutral"
-        label="Menu changes at followed stalls"
-        description={`New dishes, price changes and restocks. Quiet ${formatHour(
-          preferences.quietStartHour,
-        )} to ${formatHour(preferences.quietEndHour)}, at most ${preferences.weeklyCap} a week.`}
-        icon={<AppSymbol name="menuChanges" size={20} color={palette.textSecondary} />}
-        type="toggle"
-        isEnabled={preferences.stallUpdates}
-        dimmed={permissionDenied}
-        busy={isBusy}
-        onToggle={(value) => void handleToggle("stallUpdates", value)}
-        isLast={false}
-      />
+      {FEATURE_FLAGS.stallFollowEnabled ? (
+        <SettingsRow
+          editorial
+          iconTone="neutral"
+          label="Menu changes at followed stalls"
+          description={`New dishes, price changes and restocks. Quiet ${formatHour(
+            preferences.quietStartHour,
+          )} to ${formatHour(preferences.quietEndHour)}, at most ${preferences.weeklyCap} a week.`}
+          icon={<AppSymbol name="menuChanges" size={20} color={palette.textSecondary} />}
+          type="toggle"
+          isEnabled={preferences.stallUpdates}
+          dimmed={permissionDenied}
+          busy={isBusy}
+          onToggle={(value) => void handleToggle("stallUpdates", value)}
+          isLast={false}
+        />
+      ) : null}
       <SettingsRow
         editorial
         iconTone="neutral"
@@ -196,17 +199,19 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("socialActivity", value)}
-        isLast={false}
+        isLast={!FEATURE_FLAGS.stallFollowEnabled}
       />
-      <SettingsRow
-        editorial
-        iconTone="neutral"
-        label="Followed stalls"
-        icon={<AppSymbol name="followedStalls" size={20} color={palette.textSecondary} />}
-        type="navigation"
-        onPress={onOpenFollowedStalls}
-        isLast
-      />
+      {FEATURE_FLAGS.stallFollowEnabled ? (
+        <SettingsRow
+          editorial
+          iconTone="neutral"
+          label="Followed stalls"
+          icon={<AppSymbol name="followedStalls" size={20} color={palette.textSecondary} />}
+          type="navigation"
+          onPress={onOpenFollowedStalls}
+          isLast
+        />
+      ) : null}
     </SettingsSection>
   );
 }

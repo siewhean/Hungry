@@ -20,6 +20,7 @@ const ARCHIVED_FLAGS = [
   "activityEnabled",
   "directMessagesEnabled",
   "followConnectionsEnabled",
+  "stallFollowEnabled",
 ] as const;
 
 // Surfaces that stay out of production (mock-backed or not launch-ready).
@@ -48,7 +49,7 @@ test("production ships main's core surfaces and keeps advanced surfaces closed",
   }
 });
 
-test("the archived social feed, Activity and Messages are off until a build opts in", () => {
+test("the archived social feed, Activity, Messages and Follow stall are off until a build opts in", () => {
   for (const appEnv of ["development", "staging", "production"] as const) {
     const flags = resolveFeatureFlags(appEnv, "production", {});
     for (const flag of ARCHIVED_FLAGS) {
@@ -60,6 +61,7 @@ test("the archived social feed, Activity and Messages are off until a build opts
     EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
     EXPO_PUBLIC_ENABLE_MESSAGES: "1",
     EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS: "1",
+    EXPO_PUBLIC_ENABLE_STALL_FOLLOW: "1",
   });
   for (const flag of ARCHIVED_FLAGS) {
     assert.equal(optedIn[flag], true, `${flag} can be opted back in`);
