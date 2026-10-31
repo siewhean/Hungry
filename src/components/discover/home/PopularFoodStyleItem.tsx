@@ -1,8 +1,8 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
-import { AccessibleImage, AppText } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
 import type { PopularFoodStyle } from "@/features/discover/popularFoodStyles";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
@@ -25,13 +25,16 @@ function FoodStyleButton({
   onPress: () => void;
 }) {
   const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  // A bowl whose art fails to load shows a dish symbol, not an empty circle.
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => setImageFailed(false), [imageSource]);
   const bowlSize = 72;
   const labelGap = spacing[1.5];
   const labelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
   const buttonHeight = bowlSize + labelGap + labelLineHeight * 2;
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`Search for ${label}`}
       onPressIn={onPressIn}
@@ -52,14 +55,28 @@ function FoodStyleButton({
           },
         ]}
       >
-        <AccessibleImage
-          source={imageSource}
-          style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-          transition={120}
-          decorative
-        />
+        {imageFailed ? (
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.bgSoft,
+              flex: 1,
+              justifyContent: "center",
+            }}
+          >
+            <AppSymbol name="dish" size={28} color={palette.textMuted} />
+          </View>
+        ) : (
+          <AccessibleImage
+            source={imageSource}
+            style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            transition={120}
+            onError={() => setImageFailed(true)}
+            decorative
+          />
+        )}
       </View>
       <AppText
         variant="bodySmallBold"
@@ -76,7 +93,7 @@ function FoodStyleButton({
       >
         {label}
       </AppText>
-    </Pressable>
+    </PressableScale>
   );
 }
 

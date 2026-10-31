@@ -1,13 +1,14 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { ChevronRight, Star } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 
-import { AppText } from "@/components/ui";
+import { AppSymbol, AppText, PressableScale } from "@/components/ui";
 import { DiscoverFoodRailLoadingSkeleton } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { DiscoverBiteImage } from "@/components/discover/home/DiscoverImages";
 import {
   DISCOVER_TEXT_LINK_HIT_SLOP,
+  HOME_PRICE_STYLE,
   type DiscoverBiteCardVariant,
   type DiscoverRailLayout,
 } from "@/components/discover/home/homeLayout";
@@ -16,29 +17,37 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
-export function DiscoverRailBadge({ label, tone }: { label: string; tone: "accent" | "success" }) {
+export function DiscoverRailBadge({
+  label,
+  showStar = false,
+  tone,
+}: {
+  label: string;
+  /** Draws a filled star before the label, in the label's colour. */
+  showStar?: boolean;
+  tone: "accent" | "success";
+}) {
   const { colorScheme, palette, radii, spacing } = useHungryTheme();
   const isAccent = tone === "accent";
+  const labelColor = isAccent
+    ? palette.textOnOrange
+    : colorScheme === "dark"
+      ? palette.textOnOrange
+      : palette.white;
   return (
     <View
       style={{
+        alignItems: "center",
         backgroundColor: isAccent ? palette.orange : palette.success,
         borderRadius: radii.sm,
+        flexDirection: "row",
+        gap: spacing[0.5],
         paddingHorizontal: spacing[2],
         paddingVertical: spacing[0.5],
       }}
     >
-      <AppText
-        variant="micro"
-        style={{
-          color: isAccent
-            ? palette.textOnOrange
-            : colorScheme === "dark"
-              ? palette.textOnOrange
-              : palette.white,
-          fontWeight: "800",
-        }}
-      >
+      {showStar ? <AppSymbol name="rating" size={11} color={labelColor} /> : null}
+      <AppText variant="micro" style={{ color: labelColor, fontWeight: "800" }}>
         {label}
       </AppText>
     </View>
@@ -75,7 +84,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   const handlePress = useCallback(() => onOpen(bite, buttonId), [bite, buttonId, onOpen]);
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={getCardLabel(bite)}
       onPressIn={handlePressIn}
@@ -97,8 +106,11 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
       {variant === "topRated" && hasRating ? (
         <View
           style={{
+            alignItems: "center",
             backgroundColor: palette.orange,
             borderRadius: radii.sm,
+            flexDirection: "row",
+            gap: spacing[0.5],
             left: spacing[2],
             paddingHorizontal: spacing[2],
             paddingVertical: spacing[0.5],
@@ -106,8 +118,9 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
             top: spacing[2],
           }}
         >
+          <AppSymbol name="rating" size={11} color={palette.textOnOrange} />
           <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
-            {`★ ${bite.rating.toFixed(1)}`}
+            {bite.rating.toFixed(1)}
           </AppText>
         </View>
       ) : null}
@@ -130,12 +143,12 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
             marginTop: spacing[1],
           }}
         >
-          <AppText variant="price" style={{ color: palette.text }}>
+          <AppText variant="bodySmallBold" style={{ color: palette.text, ...HOME_PRICE_STYLE }}>
             S${bite.price.toFixed(2)}
           </AppText>
           {variant !== "price" && hasRating ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star color={palette.starStroke} size={12} fill={palette.starFill} />
+              <AppSymbol name="rating" size={12} color={palette.starFill} />
               <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
                 {bite.rating.toFixed(1)}
               </AppText>
@@ -143,7 +156,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
           ) : null}
         </View>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 });
 

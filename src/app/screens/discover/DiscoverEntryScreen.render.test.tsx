@@ -76,6 +76,9 @@ const FEED_ROWS = [
   feedRow(4, { venue_name: "Lao Ban", top_dish_name: "Beancurd" }),
 ];
 
+/** Nine dishes: enough for "Dishes across Singapore" and "Most reviewed" to show different ones. */
+const BIG_FEED_ROWS = Array.from({ length: 9 }, (_, i) => feedRow(i + 1));
+
 /** dish_taste_vectors rows the live feed's taste read returns; empty means no palate data. */
 let tasteRows: Record<string, unknown>[] = [];
 
@@ -208,7 +211,7 @@ test("Supabase builds show the redesigned Home from the live feed, with no full-
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  assert.match(view.text(), /You are at/);
+  assert.match(view.text(), /Across Singapore/);
   assert.match(view.text(), /Hawker classics/);
   assert.match(view.text(), /Dishes across Singapore/);
   assert.match(view.text(), /Hajjah Mariam/);
@@ -230,12 +233,12 @@ test("dish cards open the redesigned dish page and stall rows the stall page, wi
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  // The small feed shows this dish in Dishes across Singapore (first, for a diner with a palate)
-  // and again in Most reviewed: press the rail card.
+  // The small feed shows this dish once: in Dishes across Singapore. "Most reviewed" would only
+  // repeat it, so it steps aside (H5-2). Press the rail card.
   const dishCards = view.container.querySelectorAll<HTMLElement>(
     '[aria-label^="Chicken Rice, Tian Tian, S$7.00"]',
   );
-  assert.equal(dishCards.length, 2);
+  assert.equal(dishCards.length, 1);
   await view.press(dishCards[0]);
   assert.deepEqual(view.navigation.calls.at(-1)?.args, [
     "DishDetail",
@@ -291,8 +294,10 @@ test("a halal diner's Home shows only halal dishes, also when the profile arrive
 test("without a GPS fix or a pick the header says Singapore, offers to turn location on and hides made-up distances", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.match(view.text(), /You are atSingapore/);
-  assert.match(view.text(), /Location is off, so these are picks across Singapore\./);
+  assert.match(view.text(), /^Across Singapore/);
+  assert.doesNotMatch(view.text(), /You are at/);
+  assert.match(view.text(), /Turn on location for stalls near you/);
+  assert.doesNotMatch(view.text(), /Location is off, so these are picks/);
   assert.ok(view.findByLabel("Turn on location"));
   assert.equal(view.findByLabel(/choose your area/i), null, "there is no area picker");
   // Stall rows name the building the stall is in, not its planning area.
@@ -532,7 +537,7 @@ test("H4-16: a stall's rating sits in its own pill, apart from the open state", 
   serveLiveFeed([feedRow(1, { operating_hours: "Mon-Sun 24 hours" }), feedRow(2), feedRow(3)]);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   assert.ok(view.findByLabel("Rated 4.5"), "a rating pill is on the stall row");
-  assert.doesNotMatch(view.text(), /Open · Open 24 hours ·\s*★/);
+  assert.doesNotMatch(view.text(), /Open · Open 24 hours ·\s*(★|Rated)/);
 });
 
 test("R4-B5: 'No matching results' is one page-level state with a one-tap way to clear the filters", async () => {
@@ -816,7 +821,7 @@ test("H4-1: the control arm keeps 'Menu coming soon' on every bare stall", async
 });
 
 test("H4-3: the review-count rail is called 'Most reviewed', as its See all page is", async () => {
-  serveLiveFeed();
+  serveLiveFeed(BIG_FEED_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   assert.match(view.text(), /Most reviewed (in|across) /);
   assert.doesNotMatch(view.text(), /Trending/);
@@ -976,7 +981,7 @@ test("H4-14: with dishes to show, the classics sit below the first dish section"
 });
 
 test("P3-2: a diner with a palate gets Dishes near you, then the classics, then Most reviewed", async () => {
-  serveLiveFeed();
+  serveLiveFeed(BIG_FEED_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   const personal = text.indexOf("Dishes across Singapore");
@@ -996,7 +1001,7 @@ test("P3-2: a diner without a palate keeps Most reviewed first", async () => {
       tasteVector: { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 },
     },
   }));
-  serveLiveFeed();
+  serveLiveFeed(BIG_FEED_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   assert.ok(text.indexOf("Most reviewed") > 0);
@@ -1022,7 +1027,7 @@ test("P3-1: with location on the rail says Dishes near you; with it off, across 
 
 test("H4-14: the control arm keeps the classics above the dishes", async () => {
   m.experiments.setExperimentOverride("home_above_fold_v1", "control");
-  serveLiveFeed();
+  serveLiveFeed(BIG_FEED_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   assert.ok(text.indexOf("Hawker classics") < text.indexOf("Most reviewed"));
@@ -1056,14 +1061,40 @@ test("H4-18: All stalls and All dishes close the page instead of splitting it", 
 });
 
 test("H4-27: a dish card and a Most reviewed row read the same", async () => {
-  serveLiveFeed();
+  serveLiveFeed(BIG_FEED_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  // Both rails show rated dishes; every card and row label has the same shape.
   const labels = [
-    ...view.container.querySelectorAll<HTMLElement>('[aria-label^="Chicken Rice, Tian Tian"]'),
-  ].map((element) => element.getAttribute("aria-label"));
-  assert.equal(labels.length, 2);
-  assert.equal(labels[0], labels[1]);
-  assert.match(labels[0] ?? "", /^Chicken Rice, Tian Tian, S\$7\.00, rated 4\.5 from 12 reviews/);
+    ...view.container.querySelectorAll<HTMLElement>('[aria-label*=", rated 4.5 from"]'),
+  ]
+    .map((element) => element.getAttribute("aria-label") ?? "")
+    .filter((label) => /^Dish \d, Stall \d, S\$/.test(label));
+  assert.ok(labels.length >= 2, "a card and a row");
+  for (const label of labels) {
+    assert.match(label, /^Dish \d, Stall \d, S\$\d+\.\d{2}, rated 4\.5 from \d+ reviews/);
+  }
+});
+
+test("H5-2: Most reviewed does not open with the dishes Dishes across Singapore already shows", async () => {
+  // Four dishes: the main rail keeps all of them, so Most reviewed would only repeat them.
+  serveLiveFeed();
+  const small = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(small.text(), /Dishes across Singapore/);
+  assert.doesNotMatch(small.text(), /Most reviewed/);
+  assert.equal(
+    small.container.querySelectorAll('[aria-label^="Chicken Rice, Tian Tian"]').length,
+    1,
+  );
+  await small.unmount();
+
+  // Nine dishes: the rails show different ones, and no dish card repeats on the page.
+  serveLiveFeed(BIG_FEED_ROWS);
+  const big = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(big.text(), /Most reviewed/);
+  const dishLabels = [...big.container.querySelectorAll<HTMLElement>('[aria-label^="Dish "]')]
+    .map((element) => element.getAttribute("aria-label")?.split(",")[0])
+    .filter((name) => name && /^Dish \d$/.test(name));
+  assert.equal(new Set(dishLabels).size, dishLabels.length, "no dish shows twice");
 });
 
 test("home_viewed: one event per visit, once there is content", async () => {

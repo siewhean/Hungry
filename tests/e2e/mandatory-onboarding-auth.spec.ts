@@ -29,7 +29,9 @@ test("protected web deep links return an onboarded signed-out user to login", as
   await openLoginAfterLocalOnboarding(page);
 
   await page.goto("/dish/dish-chicken-rice");
-  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByText("Chicken Rice", { exact: true })).toHaveCount(0);
 });
 
@@ -42,6 +44,8 @@ test("successful mock authentication is required before the app shell mounts", a
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
   // The app shell opens on Discover, the home page.
-  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/^(You are at|Across Singapore)/).first()).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByText("Sign in to Hungry", { exact: true })).toHaveCount(0);
 });

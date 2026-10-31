@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { Bite } from "@/lib/services/types";
 import type { DishDetail, TasteVector } from "@/types/domain";
-import { pickRailsWithoutRepeats, tasteOrderBites } from "./homeRanking";
+import { dropDishesShownElsewhere, pickRailsWithoutRepeats, tasteOrderBites } from "./homeRanking";
 
 const NEUTRAL: TasteVector = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
 const SPICY_FAN: TasteVector = { ...NEUTRAL, spicy: 9 };
@@ -107,5 +107,24 @@ test("pickRailsWithoutRepeats leaves a thin rail thin, but keeps one marked keep
     thin.map((item) => item.dishId),
     ["d"],
     "a plain rail shows only what no rail above has",
+  );
+});
+
+test("dropDishesShownElsewhere skips dishes the other rail shows and hides a rail left too thin", () => {
+  const trending = [bite("a"), bite("b"), bite("c"), bite("d"), bite("e")];
+  const shown = [bite("a"), bite("b")];
+  assert.deepEqual(
+    dropDishesShownElsewhere(trending, shown, 3).map((item) => item.dishId),
+    ["c", "d", "e"],
+  );
+  assert.deepEqual(
+    dropDishesShownElsewhere(trending, [bite("a"), bite("b"), bite("c")], 3),
+    [],
+    "two new dishes are fewer than a rail's worth",
+  );
+  assert.deepEqual(
+    dropDishesShownElsewhere(trending, [bite("z")], 3).map((item) => item.dishId),
+    ["a", "b", "c", "d", "e"],
+    "a rail that shares nothing is unchanged",
   );
 });
