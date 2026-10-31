@@ -16,7 +16,7 @@ test("sign in with an emailed code: email, check your email, 8 digits, signed in
   await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
 
   await page.getByLabel("Email address", { exact: true }).fill("qa-code@hungry.test");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Email me a code", exact: true }).click();
   await expect(page.getByText("Check your email", { exact: true })).toBeVisible();
   await expect(page.getByText(/qa-code@hungry\.test/)).toBeVisible();
 
@@ -30,7 +30,7 @@ test("sign in with an emailed code: email, check your email, 8 digits, signed in
 test("Wrong email? returns to the email step with the address kept", async ({ page }) => {
   await openLogin(page);
   await page.getByLabel("Email address", { exact: true }).fill("qa-wrong@hungry.test");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Email me a code", exact: true }).click();
   await expect(page.getByText("Check your email", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Wrong email? Change it" }).click();
   await expect(page.getByLabel("Email address", { exact: true })).toHaveValue(
@@ -77,12 +77,12 @@ test("the web address never carries the email a screen was opened with", async (
 test("a code that cannot be sent says why and stays on the email step", async ({ page }) => {
   await openLogin(page);
   await page.getByLabel("Email address", { exact: true }).fill("offline@hungry.test");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Email me a code", exact: true }).click();
   await expect(page.getByText(/You're offline/)).toBeVisible();
   await expect(page.getByText("Check your email", { exact: true })).toHaveCount(0);
 
   await page.getByLabel("Email address", { exact: true }).fill("ratelimit@hungry.test");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Email me a code", exact: true }).click();
   await expect(page.getByRole("alert").first()).toBeVisible();
   await expect(page.getByText("Check your email", { exact: true })).toHaveCount(0);
 
@@ -96,7 +96,7 @@ test("a wrong code is announced, empties the field, and the right one then signs
 }) => {
   await openLogin(page);
   await page.getByLabel("Email address", { exact: true }).fill("qa-wrong-code@hungry.test");
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByRole("button", { name: "Email me a code", exact: true }).click();
   await expect(page.getByText("Check your email", { exact: true })).toBeVisible();
 
   const code = page.getByLabel("Enter the code", { exact: true });
@@ -113,13 +113,15 @@ test("a wrong code is announced, empties the field, and the right one then signs
 test.describe("a 320x568 phone", () => {
   test.use({ viewport: { width: 320, height: 568 } });
 
-  test("Create account keeps Continue within one scroll of the name field", async ({ page }) => {
+  test("Create account keeps the code button within one scroll of the name field", async ({
+    page,
+  }) => {
     await openLogin(page);
     await page.getByRole("button", { name: "Create account" }).click();
     const name = page.getByLabel("Name shown on your reviews").filter({ visible: true });
     await expect(name).toBeVisible();
     const continueButton = page
-      .getByRole("button", { name: "Continue", exact: true })
+      .getByRole("button", { name: "Email me a code", exact: true })
       .filter({ visible: true });
     const box = await continueButton.boundingBox();
     const nameBox = await name.boundingBox();

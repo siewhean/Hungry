@@ -1,6 +1,5 @@
 import { Fragment, useState, useRef, useEffect } from "react";
 import {
-  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -8,15 +7,16 @@ import {
   View,
   type TextInput,
 } from "react-native";
+import ReAnimated from "react-native-reanimated";
 import type { NavigationProp } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
-import { ArrowLeft, Eye, EyeOff, Mail, Lock } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, AppSymbol } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { useFadeRiseIn } from "@/lib/motion/uiMotion";
 import {
   trackAuthFailed,
   trackAuthScreenViewed,
@@ -102,32 +102,16 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
     setUnconfirmedEmail(null);
   };
 
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(20)).current;
+  // Under 300 ms on the UI thread; Reduce Motion keeps a short fade and drops the slide.
+  const entranceStyle = useFadeRiseIn(reduceMotion, { duration: 240, distance: 20 });
 
   useEffect(() => {
     trackAuthScreenViewed("onboarding_auth");
     trackOnboardingStepViewed("account");
   }, []);
 
-  useEffect(() => {
-    const duration = reduceMotion ? 0 : 320;
-    Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration, useNativeDriver: true }),
-    ]).start();
-  }, [fadeAnim, reduceMotion, slideAnim]);
-
-  // Animate tab switch
-  const tabAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    tabAnim.setValue(0);
-    Animated.timing(tabAnim, {
-      toValue: 1,
-      duration: reduceMotion ? 0 : 200,
-      useNativeDriver: true,
-    }).start();
-  }, [reduceMotion, tab, tabAnim]);
+  // Animate tab switch: a short rise and fade on the UI thread; Reduce Motion keeps the fade.
+  const tabStyle = useFadeRiseIn(reduceMotion, { distance: 6, resetKey: tab });
 
   const signUpForm = useForm<SignUpValues>({
     defaultValues: { displayName: "", email: "", password: "" },
@@ -354,16 +338,17 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View
+        <ReAnimated.View
           onFocus={keyboardReveal.onFocus}
-          style={{
-            flex: 1,
-            paddingTop: 20,
-            paddingBottom: insets.bottom + 24,
-            paddingHorizontal: 24,
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }],
-          }}
+          style={[
+            {
+              flex: 1,
+              paddingTop: 20,
+              paddingBottom: insets.bottom + 24,
+              paddingHorizontal: 24,
+            },
+            entranceStyle,
+          ]}
         >
           {/* Back to the result screen; absent when a relaunch opened this step directly. */}
           {navigation.canGoBack() ? (
@@ -381,7 +366,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                 width: 44,
               }}
             >
-              <ArrowLeft color={palette.text} size={22} />
+              <AppSymbol name="back" color={palette.text} size={22} />
             </Pressable>
           ) : null}
 
@@ -456,20 +441,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
           ) : null}
 
           {/* Form */}
-          <Animated.View
-            style={{
-              gap: spacing[2],
-              opacity: tabAnim,
-              transform: [
-                {
-                  translateY: tabAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [6, 0],
-                  }),
-                },
-              ],
-            }}
-          >
+          <ReAnimated.View style={[{ gap: spacing[2] }, tabStyle]}>
             {/* Keyed: the two forms must not share Controller instances, or typing on Sign in
                 after Create account would write into the sign-up form (useController keeps
                 the control it first registered with). */}
@@ -537,7 +509,14 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => signUpPasswordRef.current?.focus()}
-                        leftIcon={<Mail color={palette.textMuted} size={18} />}
+                        leftIcon={
+                          <AppSymbol
+                            name="email"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
+                        }
                         error={!!signUpErrors.email}
                         errorText={signUpErrors.email?.message}
                       />
@@ -568,7 +547,14 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                         passwordRules={PASSWORD_RULES}
                         returnKeyType="go"
                         onSubmitEditing={() => void handleSignUp()}
-                        leftIcon={<Lock color={palette.textMuted} size={18} />}
+                        leftIcon={
+                          <AppSymbol
+                            name="password"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
+                        }
                         rightIcon={
                           <Pressable
                             accessibilityRole="button"
@@ -577,9 +563,19 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                             hitSlop={8}
                           >
                             {showPassword ? (
-                              <EyeOff color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="hidePassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             ) : (
-                              <Eye color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="showPassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             )}
                           </Pressable>
                         }
@@ -632,7 +628,14 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                         returnKeyType="next"
                         submitBehavior="submit"
                         onSubmitEditing={() => loginPasswordRef.current?.focus()}
-                        leftIcon={<Mail color={palette.textMuted} size={18} />}
+                        leftIcon={
+                          <AppSymbol
+                            name="email"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
+                        }
                         error={!!loginErrors.email}
                         errorText={loginErrors.email?.message}
                       />
@@ -655,7 +658,14 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                         autoComplete="current-password"
                         returnKeyType="go"
                         onSubmitEditing={() => void handleLogin()}
-                        leftIcon={<Lock color={palette.textMuted} size={18} />}
+                        leftIcon={
+                          <AppSymbol
+                            name="password"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
+                        }
                         rightIcon={
                           <Pressable
                             accessibilityRole="button"
@@ -664,9 +674,19 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                             hitSlop={8}
                           >
                             {showPassword ? (
-                              <EyeOff color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="hidePassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             ) : (
-                              <Eye color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="showPassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             )}
                           </Pressable>
                         }
@@ -710,8 +730,8 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                 ) : null}
               </Fragment>
             )}
-          </Animated.View>
-        </Animated.View>
+          </ReAnimated.View>
+        </ReAnimated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

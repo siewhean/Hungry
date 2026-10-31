@@ -1,10 +1,16 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View, type TextInput } from "react-native";
-import { Eye, EyeOff, Lock, Mail, ArrowRight } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, InlineBanner, Input } from "@/components/ui";
+import {
+  AppText,
+  Button,
+  FeedErrorBoundary,
+  InlineBanner,
+  Input,
+  AppSymbol,
+} from "@/components/ui";
 import {
   trackAuthFailed,
   trackAuthScreenViewed,
@@ -264,7 +270,14 @@ export function LoginScreen({ navigation, route }: Props) {
                         onBlur();
                         emailSuggestion.check(value);
                       }}
-                      leftIcon={<Mail color={palette.textMuted} size={18} />}
+                      leftIcon={
+                        <AppSymbol
+                          name="email"
+                          color={palette.textMuted}
+                          size={18}
+                          weight="regular"
+                        />
+                      }
                       error={!!errors.email}
                       errorText={errors.email?.message}
                     />
@@ -297,7 +310,14 @@ export function LoginScreen({ navigation, route }: Props) {
                         onSubmitEditing={() => void handleLogin()}
                         value={value}
                         onChangeText={onChange}
-                        leftIcon={<Lock color={palette.textMuted} size={18} />}
+                        leftIcon={
+                          <AppSymbol
+                            name="password"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
+                        }
                         rightIcon={
                           <Pressable
                             accessible
@@ -313,9 +333,19 @@ export function LoginScreen({ navigation, route }: Props) {
                             style={AUTH_EYE_BUTTON_STYLE}
                           >
                             {showPassword ? (
-                              <EyeOff color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="hidePassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             ) : (
-                              <Eye color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="showPassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             )}
                           </Pressable>
                         }
@@ -391,7 +421,13 @@ export function LoginScreen({ navigation, route }: Props) {
                 onPress={handleLogin}
                 loading={isSubmitting}
                 disabled={isBusy}
-                rightIcon={<ArrowRight size={18} color={palette.textOnOrange} />}
+                rightIcon={
+                  <AppSymbol
+                    name="forward"
+                    size={18}
+                    color={isBusy ? palette.textMuted : palette.textOnOrange}
+                  />
+                }
               />
               {emailCodeFirst ? (
                 <View style={{ alignItems: "center" }}>
