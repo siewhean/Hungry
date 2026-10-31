@@ -74,15 +74,16 @@ test("ResultsNotes: one note is one line with no +N, and it can be dismissed", a
   assert.equal(view.findByLabel("Notes about these results"), null);
 });
 
-test("ResultsNotes: the first note shows, the rest sit behind +N more", async () => {
+test("ResultsNotes: one note at a time, and dismissing it brings up the next", async () => {
   const view = await render(createElement(ResultsNotes, { notes: [offline, halal] }));
   assert.match(view.text(), /Saved copy/);
-  assert.doesNotMatch(view.text(), /MUIS/);
-  await view.press(view.findByLabel("Show 1 more notes"));
+  assert.doesNotMatch(view.text(), /MUIS/, "the second note waits");
+  assert.equal(view.findByText(/more/), null, "no +N more row");
+  await view.press(view.findByLabel("Dismiss notes"));
   assert.match(view.text(), /MUIS/);
-  assert.ok(view.findByLabel("Show fewer notes"));
-  await view.press(view.findByLabel("Show fewer notes"));
-  assert.doesNotMatch(view.text(), /MUIS/);
+  assert.doesNotMatch(view.text(), /Saved copy/);
+  await view.press(view.findByLabel("Dismiss notes"));
+  assert.equal(view.findByLabel("Notes about these results"), null);
 });
 
 test("ResultsNotes: a note with an action is one tap target", async () => {
@@ -101,7 +102,7 @@ test("ResultsNotes: a note with an action is one tap target", async () => {
   assert.equal(pressed, 1);
 });
 
-test("ResultsNotes: a dismissed set stays dismissed until the notes change", async () => {
+test("ResultsNotes: a dismissed note stays dismissed until its text changes", async () => {
   function Harness() {
     const [notes, setNotes] = useState<ResultsNote[]>([offline]);
     return createElement(
@@ -109,16 +110,20 @@ test("ResultsNotes: a dismissed set stays dismissed until the notes change", asy
       null,
       createElement(ResultsNotes, { notes }),
       createElement("button", { onClick: () => setNotes([offline]) }, "same"),
-      createElement("button", { onClick: () => setNotes([offline, halal]) }, "more"),
+      createElement(
+        "button",
+        { onClick: () => setNotes([{ ...offline, text: "Another." }]) },
+        "changed",
+      ),
     );
   }
   const view = await render(createElement(Harness));
   await view.press(view.findByLabel("Dismiss notes"));
   assert.equal(view.findByLabel("Notes about these results"), null);
   await view.press(view.findByText("same"));
-  assert.equal(view.findByLabel("Notes about these results"), null, "the same notes stay away");
-  await view.press(view.findByText("more"));
-  assert.ok(view.findByLabel("Notes about these results"), "a new set of notes shows again");
+  assert.equal(view.findByLabel("Notes about these results"), null, "the same note stays away");
+  await view.press(view.findByText("changed"));
+  assert.ok(view.findByLabel("Notes about these results"), "a note with new text shows again");
 });
 
 // ---- useTypeaheadMatches

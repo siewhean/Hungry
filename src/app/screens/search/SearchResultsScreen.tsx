@@ -15,24 +15,12 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import type { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { BottomSheetScrollView, type BottomSheetModal } from "@gorhom/bottom-sheet";
-import {
-  ArrowLeft,
-  Check,
-  ChevronDown,
-  Heart,
-  Info,
-  MapPin,
-  MapPinOff,
-  Share2,
-  SlidersHorizontal,
-  Star,
-  X,
-} from "lucide-react-native";
 import { FlashList, type FlashListRef } from "@shopify/flash-list";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   BottomSheet,
   Button,
@@ -40,6 +28,7 @@ import {
   ChipGroup,
   EmptyState,
   IconButton,
+  PressableScale,
   Screen,
   Skeleton,
 } from "@/components/ui";
@@ -47,6 +36,8 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { appendUniqueById } from "@/lib/services/catalog/paging";
 import { ParsedQueryChips } from "@/features/search/ParsedQueryChips";
 import { ResultsNotes, type ResultsNote } from "@/features/search/ResultsNotes";
+import { SaveHeartButton } from "@/features/search/SaveHeartButton";
+import { SearchEmptyState } from "@/features/search/SearchEmptyState";
 import { parseSearchQuery, type ParsedQueryPart } from "@/features/search/queryParser";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
@@ -99,6 +90,7 @@ import {
   summarizeCatalogRequest,
 } from "@/lib/services/catalog/diagnostics";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { selectHaptic } from "@/lib/haptics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -214,7 +206,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
   // on web and breaks hydration.
   return (
     <View style={{ padding: spacing[1], width: itemWidth }}>
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={cardAccessibilityLabel(mode, item)}
         accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
@@ -295,7 +287,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
             <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
               {rating ? (
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                  <Star color={palette.starFill} fill={palette.starFill} size={12} />
+                  <AppSymbol name="rating" color={palette.ratingStar} size={12} />
                   <AppText tone="secondary" variant="micro">
                     {rating}
                   </AppText>
@@ -320,14 +312,12 @@ const RawCatalogCard = memo(function RawCatalogCard({
             </View>
           </View>
         </View>
-      </Pressable>
+      </PressableScale>
       {dish && onToggleSave ? (
-        <Pressable
-          accessibilityRole="button"
+        <SaveHeartButton
           accessibilityLabel={saved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
-          accessibilityState={{ selected: saved }}
-          hitSlop={4}
           onPress={() => onToggleSave(dish)}
+          saved={saved}
           style={{
             alignItems: "center",
             backgroundColor: palette.surface,
@@ -339,13 +329,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
             top: spacing[1] + 1 + itemWidth * 0.7 - 44 - spacing[2],
             width: 44,
           }}
-        >
-          <Heart
-            color={saved ? palette.error : palette.textMuted}
-            fill={saved ? palette.error : "transparent"}
-            size={20}
-          />
-        </Pressable>
+        />
       ) : null}
     </View>
   );
@@ -470,13 +454,14 @@ function RawCatalogBrowseGrid({
     [parseVariant, parsedFromText, typedQuery],
   );
   const parsedKey = parsed.parts.map((part) => part.key).join("|");
-  // Tags are sparse, so "vegetarian bee hoon" can find nothing as a filtered search while the plain
-  // text finds the dish. When the parsed reading has no results, the whole text is searched with no
-  // parsed filters; the chips stay, and removing one starts over.
+  // Tags are sparse, so "vegetarian bee hoon" can find nothing as a filtered search while the dish
+  // is there. When the parsed reading has no results, the dish words ("bee hoon") are searched with
+  // the parsed filters dropped; the chips stay, and removing one starts over. The raw text is never
+  // sent: "under" and "5" from "laksa under $5" would be words that must match.
   const [relaxedScope, setRelaxedScope] = useState<string | undefined>();
   const relaxScope = JSON.stringify([mode, typedQuery, filters, foodTypes, place?.id, parsedKey]);
   const relaxed = relaxedScope === relaxScope;
-  const query = relaxed ? typedQuery : parsed.text;
+  const query = parsed.text;
   const requestParsedKey = relaxed ? `${parsedKey}!` : parsedKey;
   const parsedFilters = useMemo(
     () =>
@@ -856,7 +841,12 @@ function RawCatalogBrowseGrid({
   // "what did people fail to find" can be answered. Partial typing is never logged.
   const hasNoResults = loadedKey === requestKey && !isLoading && !error && items.length === 0;
   // The parsed filters found nothing: search the whole typed text instead (see `relaxed` above).
-  const willRelax = hasNoResults && !relaxed && parsed.parts.length > 0;
+  // With no dish words left ("halal" alone) there is nothing to relax to: the empty state shows.
+  const willRelax =
+    hasNoResults &&
+    !relaxed &&
+    parsed.parts.length > 0 &&
+    parsed.text.length >= CATALOG_QUERY_MIN_CHARS;
   useEffect(() => {
     if (!willRelax) return;
     setRelaxedScope(relaxScope);
@@ -885,7 +875,7 @@ function RawCatalogBrowseGrid({
   }, [query, recordCommittedQuery, resultsSettled]);
   useEffect(() => {
     if (!hasNoResults || willRelax || !committedQuery) return;
-    if (committedQuery.toLowerCase() !== query.toLowerCase()) return;
+    if (committedQuery.toLowerCase() !== typedQuery.toLowerCase()) return;
     if (loggedZeroKeyRef.current === requestKey) return;
     loggedZeroKeyRef.current = requestKey;
     trackAnalyticsEvent("search_zero_results", {
@@ -902,8 +892,8 @@ function RawCatalogBrowseGrid({
     filters,
     hasNoResults,
     mode,
-    query,
     requestKey,
+    typedQuery,
     willRelax,
   ]);
 
@@ -935,6 +925,47 @@ function RawCatalogBrowseGrid({
     };
   }, [filterCount, hasNoResults, parsed.parts.length, query, service]);
 
+  // An empty Dishes tab can still have stalls with that name (and the other way round): one
+  // single-row count request tells the empty state to offer the other tab.
+  const otherMode: BrowseMode = mode === "dishes" ? "stalls" : "dishes";
+  const [otherModeCount, setOtherModeCount] = useState<{
+    count: number;
+    mode: BrowseMode;
+    query: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!hasNoResults || willRelax || !allowModeSwitch || query.length < CATALOG_QUERY_MIN_CHARS) {
+      return;
+    }
+    let active = true;
+    const request = {
+      ...buildBrowseRequest({
+        query,
+        filters: [],
+        sort: "relevance",
+        coordinate,
+        buildingId: place?.id,
+      }),
+      limit: 1,
+    };
+    (otherMode === "dishes" ? service.listDishes(request) : service.listVenues(request))
+      .then((page) => {
+        if (active) {
+          setOtherModeCount({
+            count: page.matchCount ?? page.items.length,
+            mode: otherMode,
+            query,
+          });
+        }
+      })
+      .catch((countError) =>
+        reportError(countError, { surface: "catalog_browse", load: "other_mode_count" }),
+      );
+    return () => {
+      active = false;
+    };
+  }, [allowModeSwitch, coordinate, hasNoResults, otherMode, place?.id, query, service, willRelax]);
+
   // Android reads the hint's live region; iOS needs it announced.
   useEffect(() => {
     if (tooShort) {
@@ -965,6 +996,17 @@ function RawCatalogBrowseGrid({
       active = false;
     };
   }, [service]);
+
+  const switchMode = useCallback(
+    (option: BrowseMode) => {
+      if (option === mode) return;
+      setItems([]);
+      setMatchCount(undefined);
+      setMode(option);
+      trackAnalyticsEvent("search_mode_changed", { mode: option });
+    },
+    [mode],
+  );
 
   const clearFilters = useCallback(() => {
     setFilters([]);
@@ -1154,33 +1196,21 @@ function RawCatalogBrowseGrid({
   // A place lists its whole building with no radius, so there is nothing to widen.
   const radiusInPlay = !query && !widenRadius && !place;
 
+  // One note shows at a time, most important first. The location note is a chip in the rail below.
   const notes: ResultsNote[] = [];
+  // Claimed only when there are results to claim it for; an empty fallback shows the empty state.
+  if (relaxed && loadedKey === requestKey && !isLoading && items.length > 0) {
+    notes.push({
+      id: "relaxed",
+      testID: "search-parsed-relaxed-note",
+      text: `Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${query}". Remove a chip to search without it.`,
+    });
+  }
   if (isOfflineCopy) {
     notes.push({
       id: "offline",
       testID: "search-offline-copy",
       text: "You're seeing a saved copy of the catalog. It may be out of date.",
-    });
-  }
-  if (isUsingDefaultLocation) {
-    notes.push({
-      id: "location",
-      text: "Location is off, so distances are from central Singapore.",
-      action: {
-        label: "Turn on location",
-        accessibilityLabel:
-          "Location is off, so distances are from central Singapore. Turn on location",
-        onPress: () => {
-          void grantLocation().then((granted) => {
-            if (!granted) {
-              showToast({
-                message: "Location access is off. Turn it on in Settings to use your location.",
-                tone: "info",
-              });
-            }
-          });
-        },
-      },
     });
   }
   if (filters.includes("Halal") || parsed.dietary.includes("halal")) {
@@ -1189,26 +1219,22 @@ function RawCatalogBrowseGrid({
       text: "Halal tags come from stalls and public listings, and are not all MUIS-certified. Check the stall's certificate if it matters to you.",
     });
   }
+  const turnOnLocation = () => {
+    void grantLocation().then((granted) => {
+      if (!granted) {
+        showToast({
+          message: "Location access is off. Turn it on in Settings to use your location.",
+          tone: "info",
+        });
+      }
+    });
+  };
 
   // Everything above the first card scrolls away with the list; only the search row stays put.
   const listHeader = (
     <View style={{ gap: spacing[3], paddingHorizontal: spacing[1], paddingBottom: spacing[2] }}>
-      <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
-      {relaxed ? (
-        <View
-          accessibilityLiveRegion="polite"
-          accessibilityRole="text"
-          testID="search-parsed-relaxed-note"
-          style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
-        >
-          <Info color={palette.textMuted} size={16} />
-          <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
-            {`Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${typedQuery}". Remove a chip to search without it.`}
-          </AppText>
-        </View>
-      ) : null}
       {place ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`Showing only ${place.name}. Tap to show everywhere`}
           onPress={clearPlace}
@@ -1225,12 +1251,12 @@ function RawCatalogBrowseGrid({
             paddingHorizontal: spacing[3],
           }}
         >
-          <MapPin color={palette.orange} size={16} />
+          <AppSymbol name="nearYou" color={palette.orange} size={16} />
           <AppText numberOfLines={1} variant="bodySmall" style={{ flexShrink: 1 }}>
             {place.name}
           </AppText>
-          <X color={palette.textMuted} size={16} />
-        </Pressable>
+          <AppSymbol name="close" color={palette.textMuted} size={14} />
+        </PressableScale>
       ) : null}
       {offeredPlaces.length > 0 ? (
         <View accessibilityLabel="Places" style={{ gap: spacing[1] }}>
@@ -1243,14 +1269,16 @@ function RawCatalogBrowseGrid({
               accessibilityRole="button"
               accessibilityLabel={`Show stalls at ${offered.name}`}
               onPress={() => selectPlace({ id: offered.id, name: offered.name })}
-              style={{
+              style={({ pressed }) => ({
                 alignItems: "center",
+                backgroundColor: pressed ? palette.surfaceRaised : "transparent",
+                borderRadius: 12,
                 flexDirection: "row",
                 gap: spacing[2],
                 minHeight: 44,
-              }}
+              })}
             >
-              <MapPin color={palette.orange} size={18} />
+              <AppSymbol name="nearYou" color={palette.orange} size={18} />
               <View style={{ flex: 1 }}>
                 <AppText numberOfLines={1} variant="bodyBold">
                   {offered.name}
@@ -1266,6 +1294,8 @@ function RawCatalogBrowseGrid({
           ))}
         </View>
       ) : null}
+      {/* One rail: the Dishes and Stalls segment, the filters read from the text, the chosen filters,
+          and the location chip. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -1281,17 +1311,12 @@ function RawCatalogBrowseGrid({
                 label={MODE_LABELS[option]}
                 accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
                 selected={mode === option}
-                onPress={() => {
-                  if (option === mode) return;
-                  setItems([]);
-                  setMatchCount(undefined);
-                  setMode(option);
-                  trackAnalyticsEvent("search_mode_changed", { mode: option });
-                }}
+                onPress={() => switchMode(option)}
               />
             ))}
           </View>
         ) : null}
+        <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
         {filters.map((filter) => (
           <Chip
             key={filter}
@@ -1310,6 +1335,30 @@ function RawCatalogBrowseGrid({
             onPress={() => handleSelectFoodType(label)}
           />
         ))}
+        {isUsingDefaultLocation ? (
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel="Location is off, so distances are from central Singapore. Turn on location"
+            onPress={turnOnLocation}
+            testID="search-location-chip"
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: 18,
+              borderWidth: 1,
+              flexDirection: "row",
+              gap: spacing[1],
+              minHeight: 44,
+              paddingHorizontal: spacing[3],
+            }}
+          >
+            <AppSymbol name="locationOff" color={palette.orangeText} size={14} />
+            <AppText variant="bodySmall" style={{ color: palette.orangeText, fontWeight: "600" }}>
+              Location off
+            </AppText>
+          </PressableScale>
+        ) : null}
       </ScrollView>
       <ResultsNotes notes={notes} />
       {locationMoved ? (
@@ -1326,10 +1375,10 @@ function RawCatalogBrowseGrid({
           }
           style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
         >
-          <MapPin color={palette.orange} size={16} />
+          <AppSymbol name="location" color={palette.orangeText} size={16} />
           <AppText tone="secondary" variant="micro" style={{ flex: 1 }}>
             {"You've moved, so distances may have changed. "}
-            <AppText variant="micro" style={{ color: palette.orange }}>
+            <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "600" }}>
               Update for new location
             </AppText>
           </AppText>
@@ -1353,7 +1402,7 @@ function RawCatalogBrowseGrid({
           style={{ alignItems: "center", flexDirection: "row", gap: spacing[1], minHeight: 44 }}
         >
           <AppText variant="bodySmall">{sortLabel}</AppText>
-          <ChevronDown color={palette.textMuted} size={16} />
+          <AppSymbol name="chevronDown" color={palette.textMuted} size={16} />
         </Pressable>
       </View>
     </View>
@@ -1378,7 +1427,7 @@ function RawCatalogBrowseGrid({
               variant="ghost"
               accessibilityLabel="Go back"
               onPress={handleBack}
-              icon={<ArrowLeft color={palette.text} size={22} />}
+              icon={<AppSymbol name="back" color={palette.text} size={22} />}
             />
             <View style={{ flex: 1, justifyContent: "center" }}>
               <TextInput
@@ -1432,7 +1481,7 @@ function RawCatalogBrowseGrid({
                   }}
                   style={browseStyles.clearButton}
                 >
-                  <X color={palette.textMuted} size={18} />
+                  <AppSymbol name="clear" color={palette.textMuted} size={20} weight="regular" />
                 </Pressable>
               ) : null}
             </View>
@@ -1443,7 +1492,7 @@ function RawCatalogBrowseGrid({
                   filterCount > 0 ? `Filters and sort, ${filterCount} on` : "Filters and sort"
                 }
                 onPress={() => filterSheetRef.current?.present()}
-                icon={<SlidersHorizontal color={palette.text} size={20} />}
+                icon={<AppSymbol name="filters" color={palette.text} size={22} />}
               />
               {filterCount > 0 ? (
                 <View
@@ -1472,7 +1521,7 @@ function RawCatalogBrowseGrid({
                 variant="ghost"
                 accessibilityLabel="Share this search"
                 onPress={handleShare}
-                icon={<Share2 color={palette.text} size={20} />}
+                icon={<AppSymbol name="share" color={palette.text} size={20} />}
               />
             ) : null}
           </View>
@@ -1543,41 +1592,37 @@ function RawCatalogBrowseGrid({
                   onPress={() => void loadPage()}
                 />
               ) : (
-                <View style={{ gap: spacing[2] }}>
-                  <EmptyState
-                    title="No matches found"
-                    body={
-                      filterCount || parsed.parts.length
-                        ? "Try removing a filter or searching for something else."
-                        : "Try another search."
-                    }
-                  />
-                  <View style={{ alignItems: "center", gap: spacing[2] }}>
-                    {suggestedQuery ? (
-                      <Button
-                        label={`Did you mean "${suggestedQuery}"?`}
-                        onPress={() => {
-                          updateSearchText(suggestedQuery);
-                          recordCommittedQuery(suggestedQuery, {
-                            recordTaste: true,
-                            remember: true,
-                            source: "results",
-                          });
-                        }}
-                      />
-                    ) : null}
-                    {filterCount ? (
-                      <Button label="Clear filters" variant="secondary" onPress={clearFilters} />
-                    ) : null}
-                    {radiusInPlay ? (
-                      <Button
-                        label="Search all Singapore"
-                        variant="secondary"
-                        onPress={() => setWidenedScope(widenScope)}
-                      />
-                    ) : null}
-                  </View>
-                </View>
+                <SearchEmptyState
+                  body={
+                    filterCount || parsed.parts.length
+                      ? "Try removing a filter or searching for something else."
+                      : "Try another search."
+                  }
+                  query={query}
+                  suggestedQuery={suggestedQuery}
+                  otherMode={
+                    otherModeCount &&
+                    otherModeCount.mode === otherMode &&
+                    otherModeCount.query === query &&
+                    otherModeCount.count > 0
+                      ? { mode: otherMode, count: otherModeCount.count }
+                      : undefined
+                  }
+                  onSwitchMode={() => switchMode(otherMode)}
+                  onClearFilters={filterCount ? clearFilters : undefined}
+                  onWiden={radiusInPlay ? () => setWidenedScope(widenScope) : undefined}
+                  popular={foodTypeOptions.filter(
+                    (label) => label.toLowerCase() !== query.toLowerCase(),
+                  )}
+                  onSearch={(text) => {
+                    updateSearchText(text);
+                    recordCommittedQuery(text, {
+                      recordTaste: true,
+                      remember: true,
+                      source: "results",
+                    });
+                  }}
+                />
               )
             }
             ListFooterComponent={
@@ -1639,21 +1684,27 @@ function RawCatalogBrowseGrid({
                   accessibilityRole="radio"
                   accessibilityState={{ checked: selected }}
                   aria-checked={selected}
-                  onPress={() => handleSelectSort(option.id)}
-                  style={{
+                  onPress={() => {
+                    selectHaptic();
+                    handleSelectSort(option.id);
+                  }}
+                  style={({ pressed }) => ({
                     alignItems: "center",
+                    backgroundColor: pressed ? palette.surfaceRaised : "transparent",
                     borderBottomColor: palette.border,
                     borderBottomWidth: 1,
                     flexDirection: "row",
                     gap: spacing[3],
                     minHeight: 48,
                     paddingVertical: spacing[2],
-                  }}
+                  })}
                 >
                   <AppText variant="bodyBold" style={{ flex: 1 }}>
                     {option.label}
                   </AppText>
-                  {selected ? <Check size={18} color={palette.orange} /> : null}
+                  {selected ? (
+                    <AppSymbol name="selected" color={palette.orangeText} size={18} />
+                  ) : null}
                 </Pressable>
               );
             })}

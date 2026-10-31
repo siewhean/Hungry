@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 85.9,
+    "lines": 86,
     "branches": 85.5,
-    "functions": 82.1
+    "functions": 82.5
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -41,6 +41,7 @@
     "src/features/auth/mockAuth.ts": 95,
     "src/features/auth/pendingDishSave.ts": 99.2,
     "src/features/auth/pendingEmailVerification.ts": 100,
+    "src/features/auth/returningAccount.ts": 100,
     "src/features/auth/useResendCooldown.ts": 90,
     "src/features/auth/validation.ts": 99.2,
     "src/features/checklistPortfolio/listItemScore.ts": 100,
@@ -242,7 +243,7 @@
     "src/store/useStallSubmissionStore.ts": 81.6,
     "src/store/useUIStore.ts": 99.5,
     "src/store/useWheelStore.ts": 81.5,
-    "src/theme/tokens.ts": 99.5,
+    "src/theme/tokens.ts": 99.8,
     "src/types/domain.ts": 100,
     "src/utils/openingSchedule.ts": 94.5,
     "src/utils/operatingHours.ts": 97,

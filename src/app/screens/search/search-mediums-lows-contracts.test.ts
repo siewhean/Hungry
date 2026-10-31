@@ -134,9 +134,12 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /mergeStallOutlets\(items as CatalogRawVenueCard\[\]\)/);
   assert.match(grid, /\+\$\{outlets\} \$\{outlets === 1 \? "outlet" : "outlets"\}/);
   // M10: ways forward from an empty result.
-  assert.match(grid, /label="Clear filters"/);
-  assert.match(grid, /label="Search all Singapore"/);
-  assert.match(grid, /Did you mean "\$\{suggestedQuery\}"\?/);
+  const emptyState = read("src/features/search/SearchEmptyState.tsx");
+  assert.match(grid, /onClearFilters=\{filterCount \? clearFilters : undefined\}/);
+  assert.match(grid, /onWiden=\{radiusInPlay \?/);
+  assert.match(emptyState, /label="Clear filters"/);
+  assert.match(emptyState, /label="Search all Singapore"/);
+  assert.match(emptyState, /Did you mean "\$\{suggestedQuery\}"\?/);
   // L8: the field can grow with the system font size, and takes at most 80 characters.
   assert.match(grid, /minHeight: 48/);
   assert.doesNotMatch(grid, /height: 48/);
@@ -167,7 +170,7 @@ test("M8: one search event for guests and members; zero results only for submitt
   assert.equal(grid.match(/trackAnalyticsEvent\("search_query"/g)?.length, 1);
   assert.equal(grid.match(/trackAnalyticsEvent\("search_zero_results"/g)?.length, 1);
   // Zero results need a committed query that equals what is on screen, once per request.
-  assert.match(grid, /committedQuery\.toLowerCase\(\) !== query\.toLowerCase\(\)/);
+  assert.match(grid, /committedQuery\.toLowerCase\(\) !== typedQuery\.toLowerCase\(\)/);
   assert.match(grid, /loggedZeroKeyRef\.current === requestKey/);
   // SEARCH-8: the text only when search history is allowed.
   assert.match(
