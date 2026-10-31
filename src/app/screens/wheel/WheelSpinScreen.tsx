@@ -21,7 +21,7 @@ import { Play, X } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge, Button, Card } from "@/components/ui";
+import { AppSymbol, AppText, Badge, Button, Card } from "@/components/ui";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { WheelSvg, getWheelSliceColors } from "@/components/wheel/WheelSvg";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -270,7 +270,7 @@ export function WheelSpinScreen({ navigation }: Props) {
             opacity: pressed ? 0.7 : 1,
           })}
         >
-          <X size={20} color={palette.text} />
+          <AppSymbol name="xmark" fallback={X} size={20} color={palette.text} />
         </Pressable>
         <MemberAvatarRow members={members} />
       </View>
@@ -418,10 +418,12 @@ export function WheelSpinScreen({ navigation }: Props) {
               },
             ]}
           >
-            <Play
+            <AppSymbol
+              name="play.fill"
+              fallback={Play}
+              filled={canSpin}
               size={24}
               color={canSpin ? palette.white : palette.textMuted}
-              fill={canSpin ? palette.white : "transparent"}
             />
             <AppText
               variant="h2"

@@ -1203,6 +1203,14 @@ export function HomeMapScreen() {
                         style={StyleSheet.absoluteFill}
                         contentFit="cover"
                         accessibilityLabel={`${venue.name} image`}
+                        fallback={
+                          <NoDishPhoto
+                            designed
+                            dishName={venue.name}
+                            logoUrl={venue.logoUrl}
+                            style={StyleSheet.absoluteFill}
+                          />
+                        }
                       />
                     ) : (
                       <NoDishPhoto

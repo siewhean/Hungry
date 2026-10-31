@@ -440,8 +440,8 @@ test("R5-12 Surprise with nothing left says so in the sheet, not in an alert", a
 test("R5-5 the remove button and Done reach 44 pt", () => {
   const lobby = readFileSync("src/app/screens/wheel/WheelLobbyScreen.tsx", "utf8");
   const sheet = readFileSync("src/app/screens/wheel/WheelEntryAddSheet.tsx", "utf8");
-  // 32 pt of button plus 6 pt of hit slop on each side.
-  assert.match(lobby, /hitSlop=\{6\}[\s\S]*minHeight: 32,\s+minWidth: 32/);
+  assert.match(lobby, /Remove \$\{item\.label\}[\s\S]*minHeight: 44,\s+minWidth: 44/);
+  assert.match(lobby, /onPress=\{handleLeave\}\s+style=\{\{[^}]*minHeight: 44/);
   assert.match(sheet, /accessibilityLabel="Done adding options"[\s\S]*minHeight: 44/);
 });
 

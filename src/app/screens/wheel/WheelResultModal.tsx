@@ -112,6 +112,16 @@ export function WheelResultModal({ navigation, route }: Props) {
         });
   const dishes = winnerEntry ? repository.listDishesByVenue(winnerEntry.venueId) : [];
   const heroDish = dishes[0];
+  const heroPlaceholder = (
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        { backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" },
+      ]}
+    >
+      <AppSymbol name="party.popper.fill" fallback={PartyPopper} size={56} color={palette.orange} />
+    </View>
+  );
 
   // The card arrives from 95%, a strong ease-out in 250 ms. With Reduce Motion on it only fades.
   const scale = useSharedValue(reduceMotion ? 1 : WINNER_CARD_START_SCALE);
@@ -237,21 +247,10 @@ export function WheelResultModal({ navigation, route }: Props) {
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               accessibilityLabel={`${heroDish.name} photo`}
+              fallback={heroPlaceholder}
             />
           ) : (
-            <View
-              style={[
-                StyleSheet.absoluteFill,
-                { backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" },
-              ]}
-            >
-              <AppSymbol
-                name="party.popper.fill"
-                fallback={PartyPopper}
-                size={56}
-                color={palette.orange}
-              />
-            </View>
+            heroPlaceholder
           )}
           <LinearGradient
             colors={[palette.mediaScrimSoft, "transparent", palette.mediaScrimStrong]}

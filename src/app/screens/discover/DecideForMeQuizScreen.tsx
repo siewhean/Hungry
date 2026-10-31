@@ -294,18 +294,18 @@ export function DecideForMeQuizScreen() {
                   ) : null}
                 </View>
                 <View
-                  // The same height for one and two lines, so every tile in the grid matches.
+                  // One fixed height, so a two-line label never makes its row taller than the next.
                   style={{
                     justifyContent: "center",
-                    minHeight: TILE_LABEL_HEIGHT,
+                    height: TILE_LABEL_HEIGHT,
                     paddingHorizontal: spacing[2],
                     paddingVertical: spacing[2],
                   }}
                 >
                   <AppText
                     variant="bodySmallBold"
-                    // At large text sizes the label wraps as far as it needs instead of being cut.
-                    numberOfLines={columns === 3 ? 2 : undefined}
+                    // The tile's accessibility label carries the full text if a large type size cuts it.
+                    numberOfLines={2}
                     style={{ color: palette.text, textAlign: "center" }}
                   >
                     {option.label}

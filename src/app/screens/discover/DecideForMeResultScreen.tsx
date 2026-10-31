@@ -925,6 +925,15 @@ export function DecideForMeResultScreen() {
               style={StyleSheet.absoluteFill}
               contentFit="cover"
               accessibilityLabel={`${dish.name} photo`}
+              fallback={
+                <NoDishPhoto
+                  designed
+                  dishName={dish.name}
+                  logoUrl={venue?.logoUrl}
+                  style={StyleSheet.absoluteFill}
+                  iconSize={48}
+                />
+              }
             />
           ) : (
             <NoDishPhoto
@@ -1172,6 +1181,13 @@ export function DecideForMeResultScreen() {
                         style={{ borderRadius: radii.sm, height: 56, width: 56 }}
                         contentFit="cover"
                         decorative
+                        fallback={
+                          <NoDishPhoto
+                            dishName={pick.name}
+                            style={{ borderRadius: radii.sm, height: 56, width: 56 }}
+                            iconSize={20}
+                          />
+                        }
                       />
                     ) : (
                       <NoDishPhoto

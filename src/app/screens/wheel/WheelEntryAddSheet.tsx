@@ -14,7 +14,15 @@ import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-nativ
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles, Check } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 
-import { AccessibleImage, AppText, Badge, Card, EmptyState, Input } from "@/components/ui";
+import {
+  AppSymbol,
+  AccessibleImage,
+  AppText,
+  Badge,
+  Card,
+  EmptyState,
+  Input,
+} from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { searchPickerStalls } from "@/features/checklistPortfolio/pickerSearch";
 import {
@@ -138,7 +146,7 @@ function VenueRow({
               justifyContent: "center",
             }}
           >
-            <Plus size={20} color={palette.textMuted} />
+            <AppSymbol name="plus" fallback={Plus} size={20} color={palette.textMuted} />
           </View>
         )}
         {isHighMatch && (
@@ -157,7 +165,7 @@ function VenueRow({
               borderColor: palette.surface,
             }}
           >
-            <Sparkles size={10} color={palette.textOnOrange} />
+            <AppSymbol name="sparkles" fallback={Sparkles} size={10} color={palette.textOnOrange} />
           </View>
         )}
       </View>
@@ -192,9 +200,9 @@ function VenueRow({
         }}
       >
         {added ? (
-          <Check size={16} color={palette.orange} />
+          <AppSymbol name="checkmark" fallback={Check} size={16} color={palette.orange} />
         ) : (
-          <Plus size={16} color={palette.orange} />
+          <AppSymbol name="plus" fallback={Plus} size={16} color={palette.orange} />
         )}
       </View>
     </Pressable>
@@ -468,7 +476,12 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   marginTop: 2,
                 }}
               >
-                <ShieldAlert size={12} color={palette.error} />
+                <AppSymbol
+                  name="exclamationmark.shield.fill"
+                  fallback={ShieldAlert}
+                  size={12}
+                  color={palette.error}
+                />
                 <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
                   {PARTY_ENABLED ? "Group needs" : "Your needs"}:{" "}
                   {groupDietaryRestrictions.join(", ").toUpperCase()}
@@ -492,7 +505,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               justifyContent: "center",
             }}
           >
-            <X size={16} color={palette.text} />
+            <AppSymbol name="xmark" fallback={X} size={16} color={palette.text} />
             <AppText variant="bodySmallBold">Done</AppText>
           </Pressable>
         </View>
@@ -532,16 +545,36 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               >
                 <View style={{ opacity: tab === t.id ? 1 : 0.6 }}>
                   {t.id === "search" && (
-                    <Search size={14} color={tab === t.id ? palette.orange : palette.text} />
+                    <AppSymbol
+                      name="magnifyingglass"
+                      fallback={Search}
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
                   )}
                   {t.id === "random" && (
-                    <Compass size={14} color={tab === t.id ? palette.orange : palette.text} />
+                    <AppSymbol
+                      name="safari"
+                      fallback={Compass}
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
                   )}
                   {t.id === "category" && (
-                    <Plus size={14} color={tab === t.id ? palette.orange : palette.text} />
+                    <AppSymbol
+                      name="plus"
+                      fallback={Plus}
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
                   )}
                   {t.id === "favourites" && (
-                    <Heart size={14} color={tab === t.id ? palette.orange : palette.text} />
+                    <AppSymbol
+                      name="heart"
+                      fallback={Heart}
+                      size={14}
+                      color={tab === t.id ? palette.orange : palette.text}
+                    />
                   )}
                 </View>
                 <AppText
@@ -573,7 +606,14 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   value={query}
                   onChangeText={setQuery}
                   autoFocus
-                  leftIcon={<Search size={18} color={palette.textMuted} />}
+                  leftIcon={
+                    <AppSymbol
+                      name="magnifyingglass"
+                      fallback={Search}
+                      size={18}
+                      color={palette.textMuted}
+                    />
+                  }
                 />
               </View>
               <FlatList
@@ -594,7 +634,14 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                     <EmptyState
                       title="No stalls found"
                       body={`No stalls found for "${query}".`}
-                      icon={<Search size={40} color={palette.textMuted} />}
+                      icon={
+                        <AppSymbol
+                          name="magnifyingglass"
+                          fallback={Search}
+                          size={40}
+                          color={palette.textMuted}
+                        />
+                      }
                     />
                   ) : (
                     <View
@@ -604,7 +651,12 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                         gap: spacing[3],
                       }}
                     >
-                      <Search size={40} color={palette.border} />
+                      <AppSymbol
+                        name="magnifyingglass"
+                        fallback={Search}
+                        size={40}
+                        color={palette.border}
+                      />
                       <AppText tone="secondary" style={{ textAlign: "center" }}>
                         Type to search for a stall.
                       </AppText>
@@ -633,7 +685,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                   justifyContent: "center",
                 }}
               >
-                <Compass color={palette.orange} size={40} />
+                <AppSymbol name="safari" fallback={Compass} color={palette.orange} size={40} />
               </View>
               <View style={{ gap: spacing[1], alignItems: "center" }}>
                 <AppText style={{ fontSize: 20, fontWeight: "800" }}>Surprise me</AppText>
@@ -757,7 +809,9 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                         ? "No stalls in this category."
                         : "Pick a category above to browse options."
                     }
-                    icon={<Plus size={40} color={palette.textMuted} />}
+                    icon={
+                      <AppSymbol name="plus" fallback={Plus} size={40} color={palette.textMuted} />
+                    }
                   />
                 }
               />
@@ -782,7 +836,9 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 <EmptyState
                   title="No favourites yet"
                   body="Start liking some dishes to save them for this wheel."
-                  icon={<Heart size={40} color={palette.textMuted} />}
+                  icon={
+                    <AppSymbol name="heart" fallback={Heart} size={40} color={palette.textMuted} />
+                  }
                 />
               }
             />

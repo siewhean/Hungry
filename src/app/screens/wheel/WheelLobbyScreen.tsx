@@ -5,7 +5,7 @@ import { Copy, List, Trash2, Users, Plus } from "lucide-react-native";
 import * as Clipboard from "expo-clipboard";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
+import { AppSymbol, AppText, Badge, Button, Card, EmptyState, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { getWheelSliceColors } from "@/components/wheel/WheelSvg";
@@ -192,19 +192,17 @@ export function WheelLobbyScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel={`Remove ${item.label} from the wheel`}
             onPress={() => removeEntry(item.id)}
-            // 32 pt of icon button plus 6 pt each side reaches the 44 pt minimum target.
-            hitSlop={6}
             style={{
               padding: spacing[2],
-              minHeight: 32,
-              minWidth: 32,
+              minHeight: 44,
+              minWidth: 44,
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: palette.bgSoft,
               borderRadius: radii.sm,
             }}
           >
-            <Trash2 size={16} color={palette.error} />
+            <AppSymbol name="trash" fallback={Trash2} size={16} color={palette.error} />
           </Pressable>
         )}
       </View>
@@ -271,7 +269,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                     opacity: pressed ? 0.8 : 1,
                   })}
                 >
-                  <Copy size={20} color={palette.white} />
+                  <AppSymbol name="doc.on.doc" fallback={Copy} size={20} color={palette.white} />
                   <AppText
                     variant="micro"
                     style={{
@@ -296,9 +294,9 @@ export function WheelLobbyScreen({ navigation }: Props) {
                   marginBottom: spacing[3],
                 }}
               >
-                <Users size={18} color={palette.orange} />
+                <AppSymbol name="person.2.fill" fallback={Users} size={18} color={palette.orange} />
                 <AppText variant="h3">
-                  People in Room ({members.filter((m) => m.isPresent).length})
+                  People in room ({members.filter((m) => m.isPresent).length})
                 </AppText>
               </View>
               <Card
@@ -330,7 +328,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 gap: spacing[2],
               }}
             >
-              <List size={18} color={palette.orange} />
+              <AppSymbol name="list.bullet" fallback={List} size={18} color={palette.orange} />
               <AppText variant="h3">Options</AppText>
             </View>
             {/* Solo wheels are always classic, so the mode badge only shows when it says something. */}
@@ -389,7 +387,9 @@ export function WheelLobbyScreen({ navigation }: Props) {
                           ? "Add some spots to start the party."
                           : "Add some spots, then spin to decide."
                     }
-                    icon={<Plus size={36} color={palette.textMuted} />}
+                    icon={
+                      <AppSymbol name="plus" fallback={Plus} size={36} color={palette.textMuted} />
+                    }
                   />
                 )
               }
@@ -405,7 +405,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
               onPress={() => setAddSheetOpen(true)}
               variant="secondary"
               style={{ flex: 1 }}
-              leftIcon={<Plus size={20} color={palette.text} />}
+              leftIcon={<AppSymbol name="plus" fallback={Plus} size={20} color={palette.text} />}
             />
             {isHost && (
               <Button
@@ -435,7 +435,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
           <Pressable
             accessibilityRole="button"
             onPress={handleLeave}
-            style={{ padding: spacing[2] }}
+            style={{ padding: spacing[2], minHeight: 44, justifyContent: "center" }}
           >
             <AppText
               variant="bodySmallBold"
