@@ -1,11 +1,16 @@
 import { useState } from "react";
 import * as Haptics from "@/lib/haptics";
-import { Pressable, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, View, useWindowDimensions } from "react-native";
+import Animated from "react-native-reanimated";
 
 import { AppleLogo, GoogleLogo } from "@/components/icons/brand/AuthProviderLogos";
 import { AppText } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { usePressScale } from "@/lib/motion/uiMotion";
 import { useHungryTheme } from "@/theme";
 import { getAuthProviderButtonLabel, type AuthProvider, type AuthProviderIntent } from "./authCopy";
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type AuthProviderButtonProps = {
   disabled?: boolean;
@@ -19,11 +24,16 @@ export const PROVIDER_LOGO_FLOW_FONT_SCALE = 1.3;
 
 /**
  * The logo normally sits pinned at the button's left edge with the label centred. When the label
- * wraps (accessibility text sizes, 200% browser zoom) that pinned logo lands on the text, so the
- * logo joins the label in one row instead.
+ * wraps (accessibility text sizes) that pinned logo lands on the text, so the logo joins the
+ * label in one row instead. On web the browser zoom never changes the font scale and never
+ * reports a wrap, so the logo is always in the row there.
  */
-export function shouldFlowProviderLogo(fontScale: number, labelWraps: boolean): boolean {
-  return fontScale > PROVIDER_LOGO_FLOW_FONT_SCALE || labelWraps;
+export function shouldFlowProviderLogo(
+  fontScale: number,
+  labelWraps: boolean,
+  isWeb = false,
+): boolean {
+  return isWeb || fontScale > PROVIDER_LOGO_FLOW_FONT_SCALE || labelWraps;
 }
 
 export function AuthProviderButton({
@@ -37,13 +47,15 @@ export function AuthProviderButton({
   const { fontScale } = useWindowDimensions();
   // Once a label has wrapped the logo stays in the row; flipping back would wrap it again.
   const [labelWraps, setLabelWraps] = useState(false);
-  const inFlow = shouldFlowProviderLogo(fontScale, labelWraps);
+  const inFlow = shouldFlowProviderLogo(fontScale, labelWraps, Platform.OS === "web");
+  const [pressed, setPressed] = useState(false);
+  const press = usePressScale(useReduceMotion());
   const icon = provider === "google" ? <GoogleLogo /> : <AppleLogo />;
   // Disabled only while another auth request runs; unavailable providers are not rendered.
   const label = getAuthProviderButtonLabel(provider, intent);
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityState={{ disabled }}
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -51,9 +63,15 @@ export function AuthProviderButton({
       onPress={onPress}
       onPressIn={() => {
         if (disabled) return;
+        setPressed(true);
+        press.onPressIn();
         void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
-      style={({ pressed }) => [
+      onPressOut={() => {
+        setPressed(false);
+        press.onPressOut();
+      }}
+      style={[
         {
           alignItems: "center",
           backgroundColor: palette.surface,
@@ -68,11 +86,11 @@ export function AuthProviderButton({
           paddingHorizontal: spacing[4],
           paddingVertical: inFlow ? spacing[2] : 0,
           position: "relative",
-          transform: [{ translateY: pressed && !disabled ? 1 : 0 }],
           width: "100%",
         },
         pressed && !disabled ? { backgroundColor: palette.surfaceRaised } : null,
         disabled ? { opacity: 0.6 } : null,
+        press.animatedStyle,
       ]}
     >
       <View
@@ -100,6 +118,6 @@ export function AuthProviderButton({
       >
         {label}
       </AppText>
-    </Pressable>
+    </AnimatedPressable>
   );
 }

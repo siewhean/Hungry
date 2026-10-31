@@ -24,7 +24,7 @@ test("P2-1: every new-password field shows the live requirements checklist", () 
   assert.match(checklist, /getPasswordRuleStatuses\(/);
   assert.match(checklist, /accessibilityLabel=\{`Password requirements/);
   // Met state is shape + text, not colour alone.
-  assert.match(checklist, /<CheckCircle2[\s\S]*<Circle /);
+  assert.match(checklist, /name="done"[\s\S]*name="notDone"/);
 });
 
 test("P2-2: search clear works on the first tap with the keyboard up and keeps focus", () => {

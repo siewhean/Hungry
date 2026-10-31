@@ -17,7 +17,7 @@ test("fresh users cannot enter the app without completing mandatory account auth
   // Sign-in leads with an emailed code; the password form is one tap away.
   await expect(page.getByLabel("Email address", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Email me a code", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Use a password instead" }).click();
   await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
@@ -29,7 +29,9 @@ test("protected web deep links return an onboarded signed-out user to login", as
   await openLoginAfterLocalOnboarding(page);
 
   await page.goto("/dish/dish-chicken-rice");
-  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(page.getByText("Chicken Rice", { exact: true })).toHaveCount(0);
 });
 

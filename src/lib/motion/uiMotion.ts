@@ -72,3 +72,27 @@ export function useScaleIn(reduceMotion: boolean) {
     transform: [{ scale: 0.9 + progress.get() * 0.1 }],
   }));
 }
+
+/** Shared by step changes and screen entrances; see useFadeRiseIn. */
+export const STEP_MS = 200;
+export const REDUCED_FADE_MS = 150;
+
+/**
+ * A fade-and-rise entrance for a step or screen, on mount. Under Reduce Motion the slide goes
+ * and a short opacity fade stays: reduced motion means gentler, not none.
+ */
+export function useFadeRiseIn(
+  reduceMotion: boolean,
+  { duration = STEP_MS, distance = 8 }: { duration?: number; distance?: number } = {},
+) {
+  const progress = useSharedValue(0);
+  useEffect(() => {
+    progress.set(
+      withTiming(1, { duration: reduceMotion ? REDUCED_FADE_MS : duration, easing: EASE_OUT }),
+    );
+  }, [duration, progress, reduceMotion]);
+  return useAnimatedStyle(() => ({
+    opacity: progress.get(),
+    transform: [{ translateY: reduceMotion ? 0 : (1 - progress.get()) * distance }],
+  }));
+}
