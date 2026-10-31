@@ -1,11 +1,11 @@
 import { Pressable, StyleSheet, View, ScrollView } from "react-native";
-import { Camera, Video, X } from "lucide-react-native";
+import { Video } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
-import { AccessibleImage, AppText, Card } from "../ui";
+import { AccessibleImage, AppSymbol, AppText, Card } from "../ui";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 
 interface MediaPickerProps {
@@ -109,7 +109,7 @@ export function MediaPicker({
               contentFit="cover"
             />
             <View style={[styles.badge, { backgroundColor: palette.mediaScrim }]}>
-              <Video size={12} color={palette.white} />
+              <AppSymbol name="video.fill" fallback={Video} size={12} color={palette.white} />
             </View>
             <Pressable
               accessibilityRole="button"
@@ -117,7 +117,7 @@ export function MediaPicker({
               onPress={() => onSetVideo?.(undefined)}
               style={[styles.actionBtn, styles.removeAction, { backgroundColor: palette.error }]}
             >
-              <X size={16} color={palette.white} />
+              <AppSymbol name="close" size={16} color={palette.white} />
             </Pressable>
           </View>
         ) : (
@@ -134,7 +134,7 @@ export function MediaPicker({
               },
             ]}
           >
-            <Video size={24} color={palette.orange} />
+            <AppSymbol name="video" fallback={Video} size={24} color={palette.orange} />
             <AppText variant="micro" style={{ color: palette.accentText }}>
               Add Reel
             </AppText>
@@ -159,7 +159,7 @@ export function MediaPicker({
               onPress={() => onRemovePhoto(uri)}
               style={[styles.actionBtn, styles.removeAction, { backgroundColor: palette.error }]}
             >
-              <X size={16} color={palette.white} />
+              <AppSymbol name="close" size={16} color={palette.white} />
             </Pressable>
           </View>
         ))}
@@ -178,7 +178,7 @@ export function MediaPicker({
               },
             ]}
           >
-            <Camera size={24} color={palette.textMuted} />
+            <AppSymbol name="camera" size={24} color={palette.textMuted} />
             <AppText variant="micro" tone="secondary">
               Add photo
             </AppText>

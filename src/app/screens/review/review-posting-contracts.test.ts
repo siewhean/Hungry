@@ -184,7 +184,7 @@ test("review tab loads one paginated page with refresh, error and empty states",
   assert.match(feed, /<RefreshControl/);
   assert.match(feed, /title="Couldn't load reviews"[\s\S]*ctaLabel="Try again"/);
   // Writing a review starts from the centre tab button, not the feed.
-  assert.match(feed, /title="No photo reviews yet"/);
+  assert.match(feed, /title="Be the first to review a dish"/);
 });
 
 test("review medium/low fixes: sign-out clears the draft, feed pages by (created_at, id)", () => {

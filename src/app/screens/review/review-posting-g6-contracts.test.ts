@@ -145,7 +145,7 @@ test("M9/M10/M11: write button, every photo, tappable reviewer", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   assert.match(tabs, /isCreateAction: true, icon: PenLine, label: "Write"/);
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");
-  assert.match(feed, /photoCount > 1 \? \([\s\S]*?<Images/);
+  assert.match(feed, /photoCount > 1 \? \([\s\S]*?square\.on\.square/);
   const detail = read("src/app/screens/review/ReviewDetailScreen.tsx");
   assert.match(detail, /<ReviewPhotoViewer/);
   assert.match(detail, /navigation\.navigate\("UserProfile", \{/);

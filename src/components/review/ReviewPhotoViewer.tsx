@@ -1,10 +1,9 @@
 import { useRef, useState } from "react";
 import { FlatList, Modal, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { X } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
-import { AccessibleImage, AppText } from "../ui";
+import { AccessibleImage, AppSymbol, AppText } from "../ui";
 
 /** Photos sit on black in both themes. */
 const VIEWER_BACKGROUND = "#000000";
@@ -60,7 +59,7 @@ export function ReviewPhotoViewer({
             onPress={onClose}
             style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
           >
-            <X color={palette.white} size={24} />
+            <AppSymbol name="close" color={palette.white} size={24} />
           </Pressable>
         </View>
         <FlatList

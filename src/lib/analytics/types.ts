@@ -136,6 +136,7 @@ export type AnalyticsEventName =
   | "review_feed_searched"
   | "review_opened"
   | "review_feed_viewed"
+  | "review_empty_state_cta_pressed"
   | "review_editor_field_completed"
   | "post_published"
   | "post_publish_failed"

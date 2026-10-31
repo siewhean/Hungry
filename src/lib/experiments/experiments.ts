@@ -460,15 +460,15 @@ export const EXPERIMENTS = {
     ],
   },
   /**
-   * Review editor with Cancel and Publish in the header, a sticky Publish bar and the optional
-   * parts (taste tags, how it tasted, recommend) under one fold (control keeps today's layout).
-   * Draft: no PostHog flag yet, so every user gets control. Exposed in ReviewScreen once a dish
-   * is chosen. Analyse review_submitted per review_started (about 1,100 per arm).
+   * Review editor with Cancel and Publish in the header and the optional parts (taste tags, how it
+   * tasted, recommend) under one fold. Concluded without a test: pre-launch traffic cannot reach
+   * the 1,100 per arm it needs, so everyone gets "compact" (the Reviews round-five audit, RA-1).
+   * The editor still sends its events, so a later test can compare against this baseline.
    */
   review_editor_compact_v1: {
     variants: ["control", "compact"],
-    fallback: "control",
-    status: "draft",
+    fallback: "compact",
+    status: "concluded",
     surface: "reviews",
     hypothesis:
       "Keeping dish, photo, stars and text above the fold with Publish always in reach lets more people who start a review finish it.",
