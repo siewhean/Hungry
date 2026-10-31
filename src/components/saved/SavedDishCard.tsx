@@ -164,7 +164,7 @@ export function SavedDishCard({
       {removing ? (
         <ActivityIndicator color={palette.orange} />
       ) : (
-        <AppSymbol name="saved" color={palette.orange} size={18} />
+        <AppSymbol name="savedMark" color={palette.orange} size={18} />
       )}
     </Pressable>
   ) : null;

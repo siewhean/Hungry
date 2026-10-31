@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpDown,
+  BadgeCheck,
   BarChart3,
   Bookmark,
   Bell,
@@ -32,6 +33,7 @@ import {
   Folder,
   Gift,
   Hand,
+  Heart,
   History,
   Info,
   KeyRound,
@@ -45,6 +47,7 @@ import {
   MailCheck,
   Map,
   MapPin,
+  MapPinOff,
   MessageSquare,
   MessageSquareHeart,
   Navigation,
@@ -56,6 +59,7 @@ import {
   Search,
   Scale,
   Settings2,
+  Share2,
   Shield,
   SlidersHorizontal,
   Smartphone,
@@ -74,6 +78,8 @@ import {
   Vibrate,
   Wallet,
   WandSparkles,
+  WifiOff,
+  X,
   Zap,
   type LucideIcon,
   type LucideProps,
@@ -139,15 +145,13 @@ const APP_SYMBOLS = {
   /** A rating star: filled, in the star colour. */
   rating: { ios: "star.fill", lucide: Star, filled: true },
   // Saved page
-  /** A saved dish or stall: the filled bookmark. */
-  saved: { ios: "bookmark.fill", lucide: Bookmark, filled: true },
+  /** A saved dish or stall on the Saved page: the filled bookmark (`saved` is the heart). */
+  savedMark: { ios: "bookmark.fill", lucide: Bookmark, filled: true },
   tried: { ios: "checkmark.circle", lucide: CircleCheck },
   triedFilled: { ios: "checkmark.circle.fill", lucide: CircleCheck },
   emptyCheckbox: { ios: "circle", lucide: Circle },
   directions: { ios: "arrow.triangle.turn.up.right.diamond.fill", lucide: Navigation },
   writeReview: { ios: "square.and.pencil", lucide: PenLine },
-  stall: { ios: "storefront", lucide: Store },
-  search: { ios: "magnifyingglass", lucide: Search },
   clearSearch: { ios: "xmark.circle.fill", lucide: CircleX },
   sort: { ios: "arrow.up.arrow.down", lucide: ArrowUpDown },
   listView: { ios: "list.bullet", lucide: List },
@@ -159,6 +163,25 @@ const APP_SYMBOLS = {
   reviewBubble: { ios: "text.bubble", lucide: MessageSquare },
   /** A dish with no photo or no result yet. */
   dish: { ios: "fork.knife", lucide: Utensils },
+  // Search
+  search: { ios: "magnifyingglass", lucide: Search },
+  /** The clear button of a search field. */
+  clear: { ios: "xmark.circle.fill", lucide: CircleX },
+  /** Dismiss or remove a chip or a row. */
+  close: { ios: "xmark", lucide: X },
+  share: { ios: "square.and.arrow.up", lucide: Share2 },
+  filters: { ios: "line.3.horizontal.decrease.circle", lucide: SlidersHorizontal },
+  nearMe: { ios: "location.fill", lucide: Navigation, filled: true },
+  price: { ios: "dollarsign.circle", lucide: CircleDollarSign },
+  halal: { ios: "checkmark.seal", lucide: BadgeCheck },
+  stall: { ios: "storefront", lucide: Store },
+  recent: { ios: "clock.arrow.circlepath", lucide: History },
+  info: { ios: "info.circle", lucide: Info },
+  offline: { ios: "wifi.slash", lucide: WifiOff },
+  locationOff: { ios: "location.slash", lucide: MapPinOff },
+  /** A dish that is not saved; `saved` is the filled one. */
+  save: { ios: "heart", lucide: Heart },
+  saved: { ios: "heart.fill", lucide: Heart, filled: true },
   // The review taste tags (REVIEW_TASTE_TAG_META in types/domain.ts names these keys).
   tasteSpicy: { ios: "flame", lucide: Flame },
   tasteSavoury: { ios: "fork.knife", lucide: Utensils },

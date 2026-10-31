@@ -1,13 +1,14 @@
-import { Pressable, View } from "react-native";
-import { X } from "lucide-react-native";
+import { View } from "react-native";
 
-import { AppText } from "@/components/ui";
+import { AppSymbol, AppText, PressableScale } from "@/components/ui";
 import type { ParsedQueryPart } from "@/features/search/queryParser";
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 
 /**
  * The filters read out of a typed search ("halal laksa under $5" -> Halal, Under S$5). Tapping one
- * removes it, and its words go back to being plain search text.
+ * removes it, and its words go back to being plain search text. One row that sits in the results
+ * header's chip rail, beside the Dishes and Stalls segment, so it never takes a line of its own.
  */
 export function ParsedQueryChips({
   onRemove,
@@ -21,16 +22,19 @@ export function ParsedQueryChips({
   return (
     <View
       accessibilityLabel="Filters from your search"
-      style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+      style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
       testID="search-parsed-chips"
     >
       {parts.map((part) => (
-        <Pressable
+        <PressableScale
           key={part.key}
           accessibilityRole="button"
           accessibilityLabel={`${part.label}, from your search. Remove it to search for "${part.source}" as text`}
           hitSlop={4}
-          onPress={() => onRemove(part)}
+          onPress={() => {
+            selectHaptic();
+            onRemove(part);
+          }}
           style={{
             alignItems: "center",
             backgroundColor: palette.surface,
@@ -44,8 +48,8 @@ export function ParsedQueryChips({
           }}
         >
           <AppText variant="bodySmall">{part.label}</AppText>
-          <X color={palette.textMuted} size={16} />
-        </Pressable>
+          <AppSymbol name="close" color={palette.textMuted} size={14} />
+        </PressableScale>
       ))}
     </View>
   );

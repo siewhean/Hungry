@@ -117,7 +117,7 @@ export function SavedStallRow({
           onPress={onRemove}
           style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
         >
-          <AppSymbol name="saved" color={palette.orange} size={18} />
+          <AppSymbol name="savedMark" color={palette.orange} size={18} />
         </Pressable>
       ) : null}
     </View>

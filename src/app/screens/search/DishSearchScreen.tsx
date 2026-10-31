@@ -1,29 +1,28 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, Pressable, ScrollView, TextInput, View, Text } from "react-native";
 import {
-  ArrowLeft,
-  ChevronRight,
-  Flame,
-  History,
-  MapPin,
-  Search as SearchIcon,
-  SlidersHorizontal,
-  Store,
-  Utensils,
-  X,
-} from "lucide-react-native";
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  TextInput,
+  View,
+  type ViewStyle,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   ChipGroup,
   IconButton,
   Input,
+  PressableScale,
   Screen,
   Skeleton,
+  type AppSymbolName,
 } from "@/components/ui";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -347,6 +346,7 @@ export function DishSearchScreen() {
   );
 
   const showRecents = allowSearchHistory && recentSearches.length > 0;
+  const rowStyle = (pressed: boolean) => rowStyleFor(palette, spacing, pressed);
 
   const quickFilter = (filter?: string) =>
     navigation.navigate("SearchResults", { browseMode: "dishes", initialFilter: filter });
@@ -371,26 +371,34 @@ export function DishSearchScreen() {
               }
               navigation.navigate("MainTabs", { screen: "Discover" });
             }}
-            icon={<ArrowLeft color={palette.text} size={18} />}
+            icon={<AppSymbol name="back" color={palette.text} size={22} />}
           />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Input
               ref={searchInputRef}
               autoFocus
-              leftIcon={<SearchIcon color={palette.textMuted} size={18} />}
+              leftIcon={
+                <AppSymbol name="search" color={palette.textMuted} size={18} weight="regular" />
+              }
               rightIcon={
                 searchText ? (
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
-                    hitSlop={12}
+                    // 44 pt square, like the system search field's clear button.
+                    style={{
+                      alignItems: "center",
+                      height: 44,
+                      justifyContent: "center",
+                      width: 44,
+                    }}
                     onPress={() => {
                       setSearchText("");
                       // Keep the user typing: clearing should not drop focus/keyboard.
                       searchInputRef.current?.focus();
                     }}
                   >
-                    <X color={palette.textMuted} size={18} />
+                    <AppSymbol name="clear" color={palette.textMuted} size={20} weight="regular" />
                   </Pressable>
                 ) : undefined
               }
@@ -428,21 +436,21 @@ export function DishSearchScreen() {
               {
                 label: "Near me",
                 filter: undefined,
-                icon: <MapPin color={palette.textOnPrimary} size={16} />,
+                icon: <AppSymbol name="nearMe" color={palette.textOnPrimary} size={16} />,
                 primary: true,
               },
               {
                 label: "Under S$6",
                 filter: "Under S$6",
-                icon: <AppText style={{ color: palette.orange }}>S$</AppText>,
+                icon: <AppSymbol name="price" color={palette.orange} size={16} />,
               },
               {
                 label: "Halal",
                 filter: "Halal",
-                icon: undefined,
+                icon: <AppSymbol name="halal" color={palette.orange} size={16} />,
               },
             ].map((item) => (
-              <Pressable
+              <PressableScale
                 key={item.label}
                 accessibilityRole="button"
                 accessibilityLabel={`Search ${item.label.toLowerCase()} dishes`}
@@ -464,7 +472,7 @@ export function DishSearchScreen() {
                 <AppText style={{ color: item.primary ? palette.textOnPrimary : palette.text }}>
                   {item.label}
                 </AppText>
-              </Pressable>
+              </PressableScale>
             ))}
           </ScrollView>
         ) : null}
@@ -474,32 +482,27 @@ export function DishSearchScreen() {
               accessibilityRole="button"
               accessibilityLabel={`Search for ${trimmedSearchText}`}
               onPress={() => openResults(searchText, "search_typed")}
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                gap: spacing[3],
-                minHeight: 44,
-              }}
+              style={({ pressed }) => rowStyle(pressed)}
             >
-              <SearchIcon color={palette.orange} size={18} />
+              <AppSymbol name="search" color={palette.orangeText} size={18} />
               <AppText
                 numberOfLines={1}
-                style={{ color: palette.orange, flex: 1 }}
+                style={{ color: palette.orangeText, flex: 1 }}
                 variant="bodyBold"
               >
                 {`Search “${trimmedSearchText}”`}
               </AppText>
-              <ChevronRight color={palette.textMuted} size={18} />
+              <AppSymbol name="chevronRight" color={palette.textMuted} size={18} />
             </Pressable>
             {suggestions.length > 0 ? (
               <View accessibilityLabel="Suggestions" style={{ gap: spacing[1] }}>
                 {suggestions.map((suggestion) => {
-                  const Icon =
+                  const iconName: AppSymbolName =
                     suggestion.kind === "food_type"
-                      ? Utensils
+                      ? "dish"
                       : suggestion.kind === "place"
-                        ? MapPin
-                        : Store;
+                        ? "nearYou"
+                        : "stall";
                   return (
                     <Pressable
                       key={`${suggestion.kind}:${suggestion.label}`}
@@ -510,14 +513,9 @@ export function DishSearchScreen() {
                           : `Search ${suggestion.label}, ${SUGGESTION_KIND_LABELS[suggestion.kind]}`
                       }
                       onPress={() => openSuggestion(suggestion, "typeahead")}
-                      style={{
-                        alignItems: "center",
-                        flexDirection: "row",
-                        gap: spacing[3],
-                        minHeight: 44,
-                      }}
+                      style={({ pressed }) => rowStyle(pressed)}
                     >
-                      <Icon color={palette.textMuted} size={18} />
+                      <AppSymbol name={iconName} color={palette.textMuted} size={18} />
                       <View style={{ flex: 1 }}>
                         <AppText numberOfLines={1}>{suggestion.label}</AppText>
                         <AppText tone="secondary" variant="micro">
@@ -557,7 +555,8 @@ export function DishSearchScreen() {
                   <TypeaheadRow
                     key={`dish:${dish.id}`}
                     accessibilityLabel={`Open ${dish.name} from ${dish.venueName}`}
-                    icon={<Utensils color={palette.textMuted} size={18} />}
+                    fallbackSymbol="dish"
+                    imageUrl={dish.imageUrl}
                     onPress={() => openMatchedDish(dish, position)}
                     subtitle={`${dish.venueName}${dish.price != null ? ` · S$${dish.price.toFixed(2)}` : ""}`}
                     title={dish.name}
@@ -576,7 +575,9 @@ export function DishSearchScreen() {
                         ? `Open ${stall.name} at ${stall.buildingName}`
                         : `Open ${stall.name}`
                     }
-                    icon={<Store color={palette.textMuted} size={18} />}
+                    fallbackSymbol="stall"
+                    imageUrl={stall.logoUrl ?? stall.imageUrl}
+                    imageFit="contain"
                     onPress={() => openMatchedStall(stall, position)}
                     subtitle={stall.buildingName ?? "Singapore"}
                     title={stall.name}
@@ -597,7 +598,7 @@ export function DishSearchScreen() {
             }}
           />
         ) : (
-          <Pressable
+          <PressableScale
             accessibilityRole="button"
             accessibilityLabel="Tune your taste profile"
             onPress={() => {
@@ -634,7 +635,7 @@ export function DishSearchScreen() {
                 padding: spacing[3],
               }}
             >
-              <SlidersHorizontal color={palette.orange} size={24} />
+              <AppSymbol name="yourTaste" color={palette.orange} size={24} />
             </View>
             <View style={{ flex: 1 }}>
               <AppText variant="h3">Tune your palate</AppText>
@@ -642,8 +643,8 @@ export function DishSearchScreen() {
                 Set how much spice, sweetness and richness you enjoy
               </AppText>
             </View>
-            <ChevronRight color={palette.textMuted} size={20} />
-          </Pressable>
+            <AppSymbol name="chevronRight" color={palette.textMuted} size={20} />
+          </PressableScale>
         )}
         {showRecents ? (
           <View style={{ gap: spacing[2] }}>
@@ -697,7 +698,7 @@ export function DishSearchScreen() {
                       minHeight: 44,
                     }}
                   >
-                    <History color={palette.textMuted} size={18} />
+                    <AppSymbol name="recent" color={palette.textMuted} size={18} />
                     <AppText numberOfLines={1}>{query}</AppText>
                   </Pressable>
                   <Pressable
@@ -712,7 +713,7 @@ export function DishSearchScreen() {
                       width: 44,
                     }}
                   >
-                    <X color={palette.textMuted} size={16} />
+                    <AppSymbol name="close" color={palette.textMuted} size={16} />
                   </Pressable>
                 </View>
               ))}
@@ -735,7 +736,7 @@ export function DishSearchScreen() {
               contentContainerStyle={{ gap: spacing[2] }}
             >
               {popularFoodTypes.slice(0, 6).map((item) => (
-                <Pressable
+                <PressableScale
                   key={item.label}
                   accessibilityRole="button"
                   accessibilityLabel={`Search ${item.label}`}
@@ -760,10 +761,10 @@ export function DishSearchScreen() {
                       padding: spacing[2],
                     }}
                   >
-                    <Utensils color={palette.orange} size={20} />
+                    <AppSymbol name="dish" color={palette.orange} size={20} />
                   </View>
                   <AppText variant="bodyBold">{item.label}</AppText>
-                </Pressable>
+                </PressableScale>
               ))}
             </ScrollView>
           </View>
@@ -777,12 +778,9 @@ export function DishSearchScreen() {
                 justifyContent: "space-between",
               }}
             >
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                <Flame color={palette.orange} size={20} />
-                <AppText variant="h2" accessibilityRole="header">
-                  Dishes to Discover
-                </AppText>
-              </View>
+              <AppText variant="h2" accessibilityRole="header">
+                Dishes to Discover
+              </AppText>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="See all dishes"
@@ -795,11 +793,11 @@ export function DishSearchScreen() {
                   minWidth: 44,
                 }}
               >
-                <ChevronRight color={palette.textMuted} size={20} />
+                <AppSymbol name="chevronRight" color={palette.textMuted} size={20} />
               </Pressable>
             </View>
             {featuredDishes.map((dish, position) => (
-              <Pressable
+              <PressableScale
                 key={dish.id}
                 accessibilityRole="button"
                 accessibilityLabel={`View ${dish.name} from ${dish.venueName}`}
@@ -861,21 +859,29 @@ export function DishSearchScreen() {
                       ? ` · ${formatBrowseDistance(dish.distanceMeters)}`
                       : ""}
                   </AppText>
-                  {/* A rating with no reviews behind it is not a rating (no "★ 0.0"). */}
-                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                  {/* A rating with no reviews behind it is not a rating (no "0.0" star). */}
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
                     {dish.rating != null && (dish.reviewCount ?? 0) > 0 ? (
                       <>
-                        <Text style={{ color: palette.starFill }}>★</Text>
-                        {` ${dish.rating.toFixed(1)} (${dish.reviewCount})`}
+                        <AppSymbol name="rating" color={palette.ratingStar} size={12} />
+                        <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                          {`${dish.rating.toFixed(1)} (${dish.reviewCount})`}
+                        </AppText>
                       </>
                     ) : null}
-                    {dish.rating != null && (dish.reviewCount ?? 0) > 0 && dish.price != null
-                      ? " · "
-                      : ""}
-                    {dish.price != null ? `S$${dish.price.toFixed(2)}` : ""}
-                  </AppText>
+                    {dish.rating != null && (dish.reviewCount ?? 0) > 0 && dish.price != null ? (
+                      <AppText variant="micro" tone="secondary">
+                        ·
+                      </AppText>
+                    ) : null}
+                    {dish.price != null ? (
+                      <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                        {`S$${dish.price.toFixed(2)}`}
+                      </AppText>
+                    ) : null}
+                  </View>
                 </View>
-              </Pressable>
+              </PressableScale>
             ))}
           </View>
         ) : null}
@@ -898,7 +904,7 @@ function FeaturedDishPlaceholder() {
         width: 88,
       }}
     >
-      <Utensils color={palette.orange} size={28} />
+      <AppSymbol name="dish" color={palette.orange} size={28} />
     </View>
   );
 }
@@ -914,28 +920,64 @@ function TypeaheadSkeleton({ label, rows }: { label: string; rows: number }) {
   );
 }
 
+const TYPEAHEAD_THUMB = 40;
+
 function TypeaheadRow({
   accessibilityLabel,
-  icon,
+  fallbackSymbol,
+  imageFit = "cover",
+  imageUrl,
   onPress,
   subtitle,
   title,
 }: {
   accessibilityLabel: string;
-  icon: ReactNode;
+  fallbackSymbol: AppSymbolName;
+  /** "contain" for a logo, which must not be cropped. */
+  imageFit?: "cover" | "contain";
+  imageUrl?: string;
   onPress: () => void;
   subtitle: string;
   title: string;
 }) {
-  const { spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
+  const tile = (
+    <View
+      style={{
+        alignItems: "center",
+        backgroundColor: palette.bgSoft,
+        borderRadius: radii.md,
+        height: TYPEAHEAD_THUMB,
+        justifyContent: "center",
+        width: TYPEAHEAD_THUMB,
+      }}
+    >
+      <AppSymbol name={fallbackSymbol} color={palette.textMuted} size={18} />
+    </View>
+  );
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={{ alignItems: "center", flexDirection: "row", gap: spacing[3], minHeight: 48 }}
+      style={({ pressed }) => ({ ...rowStyleFor(palette, spacing, pressed), minHeight: 56 })}
     >
-      {icon}
+      {imageUrl ? (
+        <AccessibleImage
+          source={{ uri: imageUrl }}
+          decorative
+          contentFit={imageFit}
+          fallback={tile}
+          style={{
+            backgroundColor: palette.bgSoft,
+            borderRadius: radii.md,
+            height: TYPEAHEAD_THUMB,
+            width: TYPEAHEAD_THUMB,
+          }}
+        />
+      ) : (
+        tile
+      )}
       <View style={{ flex: 1 }}>
         <AppText numberOfLines={1}>{title}</AppText>
         <AppText numberOfLines={1} tone="secondary" variant="micro">
@@ -944,4 +986,20 @@ function TypeaheadRow({
       </View>
     </Pressable>
   );
+}
+
+/** A list row: highlights while pressed (a row does not scale; HIG lists). */
+function rowStyleFor(
+  palette: ReturnType<typeof useHungryTheme>["palette"],
+  spacing: ReturnType<typeof useHungryTheme>["spacing"],
+  pressed: boolean,
+): ViewStyle {
+  return {
+    alignItems: "center",
+    backgroundColor: pressed ? palette.surfaceRaised : "transparent",
+    borderRadius: 12,
+    flexDirection: "row",
+    gap: spacing[3],
+    minHeight: 44,
+  };
 }

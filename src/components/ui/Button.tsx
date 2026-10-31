@@ -10,7 +10,7 @@ import {
   type PressableProps,
 } from "react-native";
 import Animated from "react-native-reanimated";
-import * as Haptics from "@/lib/haptics";
+import { tapHaptic } from "@/lib/haptics";
 
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { usePressScale } from "@/lib/motion/uiMotion";
@@ -55,6 +55,7 @@ export function Button({
   labelEllipsizeMode,
   leftIcon,
   rightIcon,
+  onPress,
   onPressIn,
   onPressOut,
   accessibilityLabel,
@@ -146,9 +147,13 @@ export function Button({
         if (!isDisabled) {
           setPressed(true);
           press.onPressIn();
-          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPressIn?.(event);
         }
+      }}
+      // One light tap when the press commits, not when the finger lands (a drag off cancels it).
+      onPress={(event) => {
+        tapHaptic();
+        onPress?.(event);
       }}
       onPressOut={(event) => {
         setPressed(false);
