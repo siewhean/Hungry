@@ -37,6 +37,7 @@ export type AnalyticsEventName =
   | "search_parse_applied"
   | "search_parse_removed"
   | "search_parse_relaxed"
+  | "search_mood_applied"
   | "search_mode_changed"
   | "search_suggestion_opened"
   | "search_typeahead_opened"
