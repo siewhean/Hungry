@@ -396,9 +396,7 @@ test("R4-STALL-3: Mark visited is one tap: the page stays, the box is ticked, no
   await view.settle();
   await view.press(view.findByLabel("Mark this stall visited"));
   assert.deepEqual(
-    view.navigation.calls
-      .filter((call) => call.method === "navigate")
-      .map((call) => call.args[0]),
+    view.navigation.calls.filter((call) => call.method === "navigate").map((call) => call.args[0]),
     ["StallVisited"],
     "pressing Mark visited only offers the optional sheet: no review is opened first",
   );
