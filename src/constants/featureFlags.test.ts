@@ -15,7 +15,12 @@ const SHIPPED_SURFACE_FLAGS = [
 ] as const;
 
 // Archived surfaces (owner decision 2026-10-24): off everywhere unless a build opts in.
-const ARCHIVED_FLAGS = ["socialFeedEnabled", "activityEnabled", "directMessagesEnabled"] as const;
+const ARCHIVED_FLAGS = [
+  "socialFeedEnabled",
+  "activityEnabled",
+  "directMessagesEnabled",
+  "followConnectionsEnabled",
+] as const;
 
 // Surfaces that stay out of production (mock-backed or not launch-ready).
 const NON_PRODUCTION_FLAGS = [
@@ -54,6 +59,7 @@ test("the archived social feed, Activity and Messages are off until a build opts
     EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
     EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
     EXPO_PUBLIC_ENABLE_MESSAGES: "1",
+    EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS: "1",
   });
   for (const flag of ARCHIVED_FLAGS) {
     assert.equal(optedIn[flag], true, `${flag} can be opted back in`);

@@ -226,7 +226,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
       ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: "Feed" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Write" }]
+      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Post" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
       ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Reviews" }]
@@ -297,7 +297,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         return (
           <AppBottomTabItem
             key={routeKey}
-            accessibilityLabel={isCreateAction ? "Write a review" : item.label}
+            accessibilityLabel={isCreateAction ? "Post a review" : item.label}
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}

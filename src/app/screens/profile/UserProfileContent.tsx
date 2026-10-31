@@ -450,22 +450,24 @@ export function UserProfileContent({
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
   const activeItemsCount = activeTab === "posts" ? posts.length : reviews.length;
 
-  const followStats: ProfileStat[] = [
-    {
-      key: "followers",
-      label: pluralLabel(followersCount, "Follower"),
-      value: followersCount,
-      accessibilityHint: `Opens ${authorName}'s followers`,
-      onPress: () => openProfileConnections("UserFollowers"),
-    },
-    {
-      key: "following",
-      label: "Following",
-      value: followingCount,
-      accessibilityHint: `Opens the people ${authorName} follows`,
-      onPress: () => openProfileConnections("UserFollowing"),
-    },
-  ];
+  const followStats: ProfileStat[] = FEATURE_FLAGS.followConnectionsEnabled
+    ? [
+        {
+          key: "followers",
+          label: pluralLabel(followersCount, "Follower"),
+          value: followersCount,
+          accessibilityHint: `Opens ${authorName}'s followers`,
+          onPress: () => openProfileConnections("UserFollowers"),
+        },
+        {
+          key: "following",
+          label: "Following",
+          value: followingCount,
+          accessibilityHint: `Opens the people ${authorName} follows`,
+          onPress: () => openProfileConnections("UserFollowing"),
+        },
+      ]
+    : [];
   // A private account you do not follow shows only the follow counts.
   const stats: ProfileStat[] = isPrivateLocked
     ? followStats
