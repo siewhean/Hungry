@@ -8,6 +8,8 @@ import {
   PROVIDER_LOGO_FLOW_FONT_SCALE,
   shouldFlowProviderLogo,
 } from "@/app/screens/auth/AuthProviderButton";
+import { welcomeBackMessage } from "@/app/screens/auth/EmailCodeEntry";
+import { getAppleLogoColor } from "@/components/icons/brand/AuthProviderLogos";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { cleanup, render, type RenderResult } from "@/test/render";
@@ -100,11 +102,13 @@ test("the field says what it wants and has no event without a screen", async () 
   assert.equal(submittedEvents().length, 0);
 });
 
-test("the provider logo stays pinned in a normal row and joins the label when it cannot fit", async () => {
+test("the provider logo stays pinned in a normal native row and joins the label when it cannot fit", async () => {
   assert.equal(shouldFlowProviderLogo(1, false), false);
   assert.equal(shouldFlowProviderLogo(PROVIDER_LOGO_FLOW_FONT_SCALE, false), false);
   assert.equal(shouldFlowProviderLogo(PROVIDER_LOGO_FLOW_FONT_SCALE + 0.1, false), true);
   assert.equal(shouldFlowProviderLogo(1, true), true);
+  // Web zoom changes neither the font scale nor reports a wrap, so web is always in the row.
+  assert.equal(shouldFlowProviderLogo(1, false, true), true);
 
   const view = await render(
     createElement(AuthProviderButton, {
@@ -113,8 +117,8 @@ test("the provider logo stays pinned in a normal row and joins the label when it
       onPress: () => undefined,
     }),
   );
-  assert.ok(view.findByTestId("provider-logo-pinned"));
-  assert.equal(view.findByTestId("provider-logo-in-flow"), null);
+  assert.ok(view.findByTestId("provider-logo-in-flow"));
+  assert.equal(view.findByTestId("provider-logo-pinned"), null);
 });
 
 test("the resend countdown reads m:ss, the same as Forgot password's", async () => {
@@ -126,4 +130,17 @@ test("the resend countdown reads m:ss, the same as Forgot password's", async () 
   );
   assert.match(view.text(), /Resend code in \d:\d\d/);
   assert.doesNotMatch(view.text(), /Resend code in \d+s/);
+});
+
+test("the Apple logo is black on the light provider button and white on the dark one", () => {
+  assert.equal(getAppleLogoColor("light"), "#000000");
+  assert.equal(getAppleLogoColor("dark"), "#FFFFFF");
+});
+
+test("an account with no name is welcomed without a dangling comma", () => {
+  assert.equal(welcomeBackMessage("Sam"), "Welcome back, Sam");
+  assert.equal(welcomeBackMessage("  Sam  "), "Welcome back, Sam");
+  assert.equal(welcomeBackMessage(""), "Welcome back");
+  assert.equal(welcomeBackMessage("   "), "Welcome back");
+  assert.equal(welcomeBackMessage(undefined), "Welcome back");
 });
