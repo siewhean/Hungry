@@ -4,17 +4,9 @@
  * newest first, filtered by the diner's taste, a kind of food or an area.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Keyboard,
-  Pressable,
-  RefreshControl,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Alert, FlatList, Keyboard, RefreshControl, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Images, Star } from "lucide-react-native";
+import { Images } from "lucide-react-native";
 import {
   useFocusEffect,
   useIsFocused,
@@ -29,10 +21,12 @@ import type { RecentReviewFeedEntry } from "@/lib/services/types";
 import {
   AccessibleImage,
   AppHeader,
+  AppSymbol,
   AppText,
   EmptyState,
   ExpandableSearchLauncher,
   FilterChipRail,
+  PressableScale,
   Skeleton,
 } from "@/components/ui";
 import {
@@ -49,6 +43,8 @@ import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSessionStore } from "@/store/useSessionStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
+import { getDistanceMetersFromCoordinates } from "@/lib/geo/distance";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import {
@@ -187,7 +183,7 @@ const ReviewTile = memo(function ReviewTile({
   const holdLabel = holdAction === "manage" ? "Edit or delete" : "Report or block";
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, rated ${item.review.rating} of 5, ${dateLabel}`}
       accessibilityHint={
@@ -204,7 +200,7 @@ const ReviewTile = memo(function ReviewTile({
       testID={`review-tile-${item.review.id}`}
       onPress={() => onPress(item, index)}
       onLongPress={holdAction ? () => onLongPress(item) : undefined}
-      style={({ pressed }) => ({ height: size, opacity: pressed ? 0.85 : 1, width: size })}
+      style={{ height: size, width: size }}
     >
       <AccessibleImage
         // The small copy keeps a 3-column grid light; older reviews have only the full photo.
@@ -215,7 +211,7 @@ const ReviewTile = memo(function ReviewTile({
       />
       {photoCount > 1 ? (
         <View style={{ position: "absolute", right: spacing[1.5], top: spacing[1.5] }}>
-          <Images color={palette.white} size={16} />
+          <AppSymbol name="square.on.square" fallback={Images} color={palette.white} size={16} />
         </View>
       ) : null}
       {showLabels ? (
@@ -240,7 +236,7 @@ const ReviewTile = memo(function ReviewTile({
             {item.dishName}
           </AppText>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-            <Star size={10} color={palette.starStroke} fill={palette.starFill} />
+            <AppSymbol name="rating" size={10} color={palette.starStroke} />
             <AppText variant="micro" numberOfLines={1} style={{ color: palette.white }}>
               {`${item.review.rating}${dateLabel ? ` · ${dateLabel}` : ""}`}
             </AppText>
@@ -263,7 +259,7 @@ const ReviewTile = memo(function ReviewTile({
           </AppText>
         </View>
       )}
-    </Pressable>
+    </PressableScale>
   );
 });
 
@@ -599,6 +595,33 @@ export function ReviewFeedScreen() {
     (item: ReviewFeedItem) => (item.dish ? buildingNames.get(item.dish.buildingId) : undefined),
     [buildingNames],
   );
+  // "Near you" needs a real fix (GPS or a picked place), not the built-in default point.
+  const permission = useLocationStore((state) => state.permission);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const viewerOrigin = useMemo(() => {
+    const { coordinate, isApproximate } = getEffectiveLocation({
+      permission,
+      currentLocation,
+      manualCoordinate,
+    });
+    return isApproximate ? undefined : coordinate;
+  }, [currentLocation, manualCoordinate, permission]);
+  const buildingCoordinates = useMemo(
+    () => new Map(repository.listBuildings().map((building) => [building.id, building.coordinate])),
+    [repository],
+  );
+  const distanceMetersOf = useMemo(
+    () =>
+      viewerOrigin
+        ? (item: ReviewFeedItem) =>
+            getDistanceMetersFromCoordinates(
+              viewerOrigin,
+              item.dish ? buildingCoordinates.get(item.dish.buildingId) : undefined,
+            )
+        : undefined,
+    [buildingCoordinates, viewerOrigin],
+  );
 
   // Every review with a photo, newest first.
   const gridReviews = useCallback(
@@ -639,10 +662,14 @@ export function ReviewFeedScreen() {
   const chips = useMemo(
     () =>
       withSelectedReviewChip(
-        buildReviewExploreChips(allReviews, { userVector: tasteVector, areaOf }),
+        buildReviewExploreChips(allReviews, {
+          userVector: tasteVector,
+          areaOf,
+          distanceMetersOf,
+        }),
         chipId,
       ),
-    [allReviews, areaOf, chipId, tasteVector],
+    [allReviews, areaOf, chipId, distanceMetersOf, tasteVector],
   );
   const activeChip = resolveActiveReviewChip(chips, chipId);
 
@@ -650,11 +677,20 @@ export function ReviewFeedScreen() {
     const byChip = filterReviewExplore(serverSearchItems ?? allReviews, activeChip, {
       userVector: tasteVector,
       areaOf,
+      distanceMetersOf,
     });
     // The server already matched its results; the loaded pages are matched here.
     if (serverSearchItems || !trimmedQuery) return byChip;
     return byChip.filter((item) => reviewMatchesQuery(item, trimmedQuery));
-  }, [activeChip, allReviews, areaOf, serverSearchItems, tasteVector, trimmedQuery]);
+  }, [
+    activeChip,
+    allReviews,
+    areaOf,
+    distanceMetersOf,
+    serverSearchItems,
+    tasteVector,
+    trimmedQuery,
+  ]);
   const searchHasMore = Boolean(serverSearchItems && searchState?.hasMore);
 
   // review_tile_labels_v1: exposure only once a focused, non-empty live grid is on screen (the
@@ -784,6 +820,10 @@ export function ReviewFeedScreen() {
   );
 
   const keyExtractor = useCallback((item: ReviewFeedItem) => item.interactionId, []);
+  const handleWriteReview = useCallback(() => {
+    trackAnalyticsEvent("review_empty_state_cta_pressed", {});
+    navigation.navigate("ReviewStack", { screen: "ReviewMain" });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -900,20 +940,26 @@ export function ReviewFeedScreen() {
                 title={
                   activeChip.kind === "taste"
                     ? "No reviews for your taste yet"
-                    : `No ${activeChip.label} reviews here`
+                    : activeChip.kind === "near"
+                      ? "No reviews near you yet"
+                      : `No ${activeChip.label} reviews here`
                 }
                 body={
                   activeChip.kind === "taste"
                     ? "None of the latest photo reviews match your palette. See them all instead."
-                    : "Try another filter, or see every review."
+                    : activeChip.kind === "near"
+                      ? "None of the latest photo reviews are within 2 km of you. See them all instead."
+                      : "Try another filter, or see every review."
                 }
                 ctaLabel="Show all reviews"
                 onPress={() => setChipId("all")}
               />
             ) : (
               <EmptyState
-                title="No photo reviews yet"
-                body="Reviews with a photo show here. Tap the pen button below to write one."
+                title="Be the first to review a dish"
+                body="Snap your next meal and rate it. Reviews with a photo show here."
+                ctaLabel="Write a review"
+                onPress={handleWriteReview}
               />
             )
           }

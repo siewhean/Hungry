@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { Heart, Star } from "lucide-react-native";
 
 import { HelpfulSymbol } from "@/components/dish/dishSymbols";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
@@ -18,7 +17,7 @@ import type { PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
-import { AppText } from "../ui";
+import { AppSymbol, AppText } from "../ui";
 
 /**
  * One queue for every like button: a review's votes go to the server one at a time, so a
@@ -123,11 +122,11 @@ export function ReviewReaderActions({
           style={{ alignItems: "center", flexDirection: "row", gap: 2 }}
         >
           {Array.from({ length: 5 }).map((_, index) => (
-            <Star
+            <AppSymbol
               key={index}
+              name={index < rating ? "rating" : "ratingEmpty"}
               size={14}
-              color={index < rating ? palette.starStroke : palette.border}
-              fill={index < rating ? palette.starFill : "transparent"}
+              color={index < rating ? palette.starFill : palette.border}
             />
           ))}
         </View>
@@ -170,7 +169,7 @@ export function ReviewReaderActions({
           {isHelpfulVariant ? (
             <HelpfulSymbol color={color} fill={liked.helpful ? palette.orange : "none"} size={18} />
           ) : (
-            <Heart color={color} fill={liked.helpful ? palette.orange : "transparent"} size={20} />
+            <AppSymbol name={liked.helpful ? "saved" : "save"} color={color} size={20} />
           )}
           {isHelpfulVariant ? (
             <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
