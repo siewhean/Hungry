@@ -149,7 +149,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "StallVisitedScreen",
     file: "src/app/screens/detail/StallVisitedScreen.tsx",
     scenario: "user",
-    expect: /Visited\. What did you have\?/,
+    expect: /Visited/,
     params: "stallVisited",
   },
   {

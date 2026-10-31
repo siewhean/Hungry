@@ -91,10 +91,8 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import { formatDishPrice } from "@/features/detail/dishPrice";
 import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { formatSgPhone } from "@/features/detail/formatSgPhone";
-import { pickVisitedSheetDishes } from "@/features/detail/stallVisited";
 import type {
   MerchantClaimStatus,
   RecentReviewFeedEntry,
@@ -1043,17 +1041,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
 
-  // "What did you have?" is a system form sheet: the dishes travel as plain route params.
-  const openVisitedSheet = () =>
-    navigation.navigate("StallVisited", {
-      venueId: venue.id,
-      stallName: displayName,
-      dishes: pickVisitedSheetDishes(dishes, reviewedDishIds).map((dish) => ({
-        id: dish.id,
-        name: dish.name,
-        priceLabel: formatDishPrice(dish),
-      })),
-    });
+  // "What did you have?" is a system form sheet. Only the id travels: on web the params
+  // become the URL, and the sheet reads the menu and the diner's reviews itself.
+  const openVisitedSheet = () => navigation.navigate("StallVisited", { venueId: venue.id });
 
   const openReportHours = () => {
     const params = {

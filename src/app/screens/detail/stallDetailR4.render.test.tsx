@@ -408,8 +408,8 @@ test("R4-STALL-3: Mark visited is one tap: the page stays, the box is ticked, no
   );
 });
 
-test("R5-STALL-3: Mark visited opens 'What did you have?' as a system form sheet carrying the stall's dishes", async () => {
-  const dishes = useUnreviewedStall();
+test("R5-STALL-3: Mark visited opens 'What did you have?' as a system form sheet, with only the stall id as a param", async () => {
+  useUnreviewedStall();
   const view = await openStall(UNSAVED_STALL);
   await view.settle();
   assert.deepEqual(
@@ -419,16 +419,7 @@ test("R5-STALL-3: Mark visited opens 'What did you have?' as a system form sheet
   );
   await view.press(view.findByLabel("Mark this stall visited"));
   const call = view.navigation.calls.find((entry) => entry.method === "navigate");
-  assert.equal(call?.args[0], "StallVisited");
-  const params = call?.args[1] as {
-    venueId: string;
-    stallName: string;
-    dishes: { id: string; name: string; priceLabel: string }[];
-  };
-  assert.equal(params.venueId, UNSAVED_STALL);
-  assert.ok(params.dishes.length > 0 && params.dishes.length <= 4, "up to four dishes are offered");
-  assert.ok(dishes.some((dish) => dish.id === params.dishes[0].id));
-  assert.match(params.dishes[0].priceLabel, /^S\$/);
+  assert.deepEqual(call?.args, ["StallVisited", { venueId: UNSAVED_STALL }]);
   assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, true);
 });
 
@@ -440,36 +431,47 @@ test("R5-STALL-3: the Visited route is a formSheet with a grabber and a half-hei
   assert.match(route, /sheetAllowedDetents: \[0\.5, 1\]/);
 });
 
-test("R5-STALL-3: the Visited sheet screen skips back, and picking a dish replaces itself with the composer", async () => {
-  const dishes = [{ id: "dish-a", name: "Laksa", priceLabel: "S$5.00" }];
+test("R5-STALL-3: the Visited sheet reads the stall's dishes, skips back, and picking a dish replaces it with the composer", async () => {
+  const dishes = useUnreviewedStall();
   let view = await renderScreen(StallVisitedScreen as never, {
     name: "StallVisited",
-    params: { venueId: STALL, stallName: "Tian Tian", dishes },
+    params: { venueId: UNSAVED_STALL },
   });
+  await view.settle();
   assert.ok(view.findByTestId("stall-visited-sheet"));
+  assert.match(view.text(), /Visited\. What did you have\?/);
   await view.press(view.findByText("Skip"));
   assert.ok(view.navigation.calls.some((entry) => entry.method === "goBack"));
   await cleanup();
   view = await renderScreen(StallVisitedScreen as never, {
     name: "StallVisited",
-    params: { venueId: STALL, stallName: "Tian Tian", dishes },
+    params: { venueId: UNSAVED_STALL },
   });
-  await view.press(view.findByLabel("Review Laksa"));
+  await view.settle();
+  await view.press(view.findByLabel(/^Review /));
   const replaced = view.navigation.calls.find((entry) => entry.method === "replace");
-  assert.deepEqual(replaced?.args, [
-    "ReviewStack",
-    { screen: "ReviewMain", params: { venueId: STALL, dishId: "dish-a" } },
-  ]);
-  await cleanup();
-  view = await renderScreen(StallVisitedScreen as never, {
+  assert.equal(replaced?.args[0], "ReviewStack");
+  const params = (replaced?.args[1] as { params: { venueId: string; dishId?: string } }).params;
+  assert.equal(params.venueId, UNSAVED_STALL);
+  assert.ok(
+    dishes.some((dish) => dish.id === params.dishId),
+    "the composer starts on that dish",
+  );
+});
+
+test("R5-STALL-3: a stall with an empty menu offers 'Write a review' in the sheet", async () => {
+  useEmptyStall();
+  const view = await renderScreen(StallVisitedScreen as never, {
     name: "StallVisited",
-    params: { venueId: STALL, stallName: "Tian Tian", dishes: [] },
+    params: { venueId: EMPTY_STALL },
   });
+  await view.settle();
+  assert.ok(!view.findByLabel(/^Review /), "no dishes to offer");
   await view.press(view.findByText("Write a review"));
   const bare = view.navigation.calls.find((entry) => entry.method === "replace");
   assert.deepEqual(bare?.args, [
     "ReviewStack",
-    { screen: "ReviewMain", params: { venueId: STALL } },
+    { screen: "ReviewMain", params: { venueId: EMPTY_STALL } },
   ]);
 });
 
@@ -487,16 +489,6 @@ test("R4-STALL-3: unmarking a visit clears it without opening the sheet", async 
     "clearing a visit opens nothing",
   );
   assert.match(useUIStore.getState().toast?.message ?? "", /Removed from visited/);
-});
-
-test("R5-STALL-3: a stall with an empty menu opens the sheet with no dishes to offer", async () => {
-  useEmptyStall();
-  const view = await openStall(EMPTY_STALL);
-  await view.settle();
-  await view.press(view.findByLabel("Mark this stall visited"));
-  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
-  assert.equal(call?.args[0], "StallVisited");
-  assert.deepEqual((call?.args[1] as { dishes: unknown[] }).dishes, []);
 });
 
 // Food Cred for a visit needs a review.

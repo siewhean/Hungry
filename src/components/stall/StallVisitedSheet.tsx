@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TriedOnSymbol } from "@/components/dish/dishSymbols";
@@ -6,7 +6,7 @@ import { ChevronRightSymbol } from "@/components/stall/stallSymbols";
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
-/** A dish the sheet offers. Plain data, so it can travel as a navigation param. */
+/** A dish the sheet offers. */
 export type VisitedSheetDish = { id: string; name: string; priceLabel: string };
 
 type Props = {
@@ -18,6 +18,8 @@ type Props = {
   /** No dish fits (an empty menu, or all done): the review starts without one. */
   onWriteReview: () => void;
   onSkip: () => void;
+  /** The menu is still being read: the dishes (or the review button) follow. */
+  loading?: boolean;
 };
 
 /**
@@ -26,10 +28,17 @@ type Props = {
  * (grabber, swipe to dismiss, detents) is the route's formSheet presentation. Skipping costs
  * nothing and nothing here is required.
  */
-export function StallVisitedSheet({ stallName, dishes, onPickDish, onWriteReview, onSkip }: Props) {
+export function StallVisitedSheet({
+  stallName,
+  dishes,
+  onPickDish,
+  onWriteReview,
+  onSkip,
+  loading = false,
+}: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
-  const hasDishes = dishes.length > 0;
+  const hasDishes = !loading && dishes.length > 0;
 
   return (
     <View
@@ -48,10 +57,14 @@ export function StallVisitedSheet({ stallName, dishes, onPickDish, onWriteReview
           <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
             {hasDishes
               ? `Pick a dish at ${stallName} to rate it. Optional.`
-              : `Saved to your visited stalls. Want to write the first review of ${stallName}?`}
+              : loading
+                ? "Saved to your visited stalls."
+                : `Saved to your visited stalls. Want to write the first review of ${stallName}?`}
           </AppText>
         </View>
-        {hasDishes ? (
+        {loading ? (
+          <ActivityIndicator accessibilityLabel="Loading dishes" color={palette.orange} />
+        ) : hasDishes ? (
           <View style={{ gap: spacing[2] }}>
             {dishes.map((dish) => (
               <Pressable
