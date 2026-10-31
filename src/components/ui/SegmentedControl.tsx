@@ -22,7 +22,7 @@ type Props<T extends string> = {
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-  /** Tighter segments, for a control that shares a row with others. */
+  /** Tighter segments sized by their label, for a control that shares a row with others. */
   compact?: boolean;
 };
 
@@ -76,7 +76,8 @@ export function SegmentedControl<T extends string>({
               borderColor: selected ? palette.border : "transparent",
               borderRadius: componentRadii.button - 2,
               borderWidth: 1,
-              flex: 1,
+              // Compact segments share the row by content, so a long label is not cut short.
+              ...(compact ? { flexBasis: "auto", flexGrow: 1, flexShrink: 1 } : { flex: 1 }),
               justifyContent: "center",
               minHeight: 44 - 4,
               minWidth: option.icon ? 40 : undefined,
