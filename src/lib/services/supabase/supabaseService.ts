@@ -733,6 +733,32 @@ export class StallSubmissionUnconfirmedError extends Error {
   }
 }
 
+/** A photo failed the explicit-content check; the review is not posted (App Store 1.2). */
+export class ReviewPhotoRejectedError extends Error {
+  readonly code = "photo_rejected";
+  constructor() {
+    super("One of your photos can't be posted.");
+    this.name = "ReviewPhotoRejectedError";
+  }
+}
+
+/**
+ * Asks check-photo-safety about photos just uploaded, before the review exists. Only an
+ * explicit "blocked" stops the post: a missing key, an outage or a bad answer lets it through
+ * (the function reports those), so posting never depends on Google being up.
+ */
+async function photosAreBlocked(client: SupabaseClient, paths: string[]): Promise<boolean> {
+  if (paths.length === 0) return false;
+  try {
+    const { data, error } = await client.functions.invoke("check-photo-safety", {
+      body: { paths },
+    });
+    return !error && (data as Row | null)?.status === "blocked";
+  } catch {
+    return false;
+  }
+}
+
 function mapPushPreferencesRow(row: {
   stall_updates: boolean;
   weekly_picks: boolean;
@@ -4637,6 +4663,15 @@ export const supabaseService: HungryService = {
       const discardUploadedPhotos = () =>
         removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
 
+      // Explicit or violent photos are stopped here, before anyone can see them.
+      const photoPaths = uploadedPhotos.flatMap((photo) =>
+        asString(photo.storage_path) ? [asString(photo.storage_path) as string] : [],
+      );
+      if (await photosAreBlocked(client, photoPaths)) {
+        await discardUploadedPhotos();
+        throw new ReviewPhotoRejectedError();
+      }
+
       // One transaction: the review and its photo rows go in together, or neither does. The
       // server refuses a review with no photo and resumes the same review on a retry.
       const { data, error } = await client.rpc("submit_review", {
@@ -6863,12 +6898,15 @@ export const supabaseService: HungryService = {
         throw rpcError ?? new Error("Failed to submit menu photo metadata.");
       }
 
-      // Developer-only: kick off OCR asynchronously; draft extraction is service-role only.
-      void client.functions
-        .invoke("ingest-menu-photo", {
-          body: { submissionId },
-        })
-        .catch(() => undefined);
+      // Kick off OCR asynchronously; draft extraction is service-role only. The photo goes to
+      // Google only when the person allowed AI features (the function checks it again).
+      if (input.allowAiReading) {
+        void client.functions
+          .invoke("ingest-menu-photo", {
+            body: { submissionId },
+          })
+          .catch(() => undefined);
+      }
 
       return {
         submissionId: String(submissionId),

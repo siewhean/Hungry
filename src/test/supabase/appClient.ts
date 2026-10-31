@@ -16,6 +16,13 @@ export interface AppAuthFake {
   failures: Record<string, { message: string } | undefined>;
 }
 
+export interface AppFunctionsFake {
+  /** Every `client.functions.invoke(name, options)` the service made, in order. */
+  calls: { name: string; body: unknown }[];
+  /** What an invoke answers, by function name; a function with no entry answers `{ data: null, error: null }`. */
+  results: Record<string, () => { data: unknown; error: { message: string } | null }>;
+}
+
 export function installFakeSupabase() {
   process.env.EXPO_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
@@ -28,6 +35,7 @@ export function installFakeSupabase() {
     calls: [],
     failures: {},
   };
+  const functions: AppFunctionsFake = { calls: [], results: {} };
   const base = fake.client();
 
   const record =
@@ -40,6 +48,12 @@ export function installFakeSupabase() {
 
   const client = {
     ...base,
+    functions: {
+      invoke: async (name: string, options?: { body?: unknown }) => {
+        functions.calls.push({ name, body: options?.body });
+        return functions.results[name]?.() ?? { data: null, error: null };
+      },
+    },
     auth: {
       ...base.auth,
       getSession: async () => ({
@@ -73,5 +87,5 @@ export function installFakeSupabase() {
     return originalLoad.call(this, request, ...rest);
   };
 
-  return { fake, auth };
+  return { fake, auth, functions };
 }

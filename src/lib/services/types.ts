@@ -670,6 +670,11 @@ export interface SubmitMenuPhotoInput {
   photoFileSizeBytes?: number;
   dishId?: string;
   reviewText?: string;
+  /**
+   * The person allowed AI features, so the photo may be sent to Google to read the menu.
+   * Without it the photo is stored but not sent (App Review 5.1.2(i)).
+   */
+  allowAiReading?: boolean;
 }
 
 export type CatalogCorrectionKind =

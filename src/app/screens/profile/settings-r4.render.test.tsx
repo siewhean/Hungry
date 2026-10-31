@@ -549,20 +549,12 @@ test("R5: the analytics switch saves the choice on the account", async () => {
   assert.equal((await getHungryService().privacy.getConsents()).analytics, true);
 });
 
-test("R5: the AI search switch is hidden until AI search ships, then saves before it moves", async () => {
-  let view = await settingsScreen();
-  assert.equal(
-    view.findByLabel("AI search"),
-    null,
-    "no switch for a feature that is not in the app",
-  );
-  await view.unmount();
-
-  stub(FEATURE_FLAGS as { aiSearchEnabled: boolean }, "aiSearchEnabled", true);
-  view = await settingsScreen();
-  const row = view.findByLabel("AI search");
+test("R5: the AI features switch saves before it moves", async () => {
+  const view = await settingsScreen();
+  const row = view.findByLabel("AI features");
   assert.ok(row);
   assert.match(view.text(), /send the words you type in search to Anthropic/);
+  assert.match(view.text(), /menu photo you add to Google/);
   assert.match(view.text(), /name and account details are not sent/);
 
   await view.press(row);
@@ -574,7 +566,7 @@ test("R5: the AI search switch is hidden until AI search ships, then saves befor
     throw new Error("offline");
   });
   const reports = captureReports();
-  await view.press(view.findByLabel("AI search"));
+  await view.press(view.findByLabel("AI features"));
   await view.settle();
   assert.equal(useConsentStore.getState().aiSearchAllowed, true, "the switch did not move");
   assert.equal(useUIStore.getState().toast?.tone, "error");

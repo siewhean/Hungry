@@ -314,6 +314,21 @@ serveWithSentry("ingest-menu-photo", async (request) => {
     return toJson(429, { error: "rate_limited" }, allowedOrigin);
   }
 
+  // The photo is sent to Google (Cloud Vision, then Gemini), so the person must have allowed AI
+  // features in the app (App Review 5.1.2(i)). Checked here as well as in the app so an old or
+  // modified build cannot send a photo without it.
+  const { data: consentRow, error: consentError } = await client
+    .from("privacy_settings")
+    .select("ai_search_consent")
+    .eq("user_id", callerUserId)
+    .maybeSingle();
+  if (consentError) {
+    return toJson(500, { error: "consent_lookup_failed" }, allowedOrigin);
+  }
+  if (consentRow?.ai_search_consent !== true) {
+    return toJson(403, { error: "ai_search_consent_required" }, allowedOrigin);
+  }
+
   const ocrJobId = crypto.randomUUID();
   // race-ok: compare-and-set below, the UPDATE only matches the status and attempt count just read
   const { data: processingSubmission, error: claimError } = await client
