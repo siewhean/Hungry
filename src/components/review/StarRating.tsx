@@ -1,8 +1,7 @@
 import { Pressable, StyleSheet, View, type AccessibilityActionEvent } from "react-native";
-import { Star } from "lucide-react-native";
-
+import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
-import { AppText } from "../ui";
+import { AppSymbol, AppText } from "../ui";
 
 /** What each star count means, shown under the stars in the review editor. */
 export const STAR_DESCRIPTORS = ["Not good", "Could be better", "Okay", "Good", "Amazing"] as const;
@@ -75,10 +74,10 @@ export function StarRating({
               importantForAccessibility="no-hide-descendants"
               accessibilityElementsHidden
             >
-              <Star
+              <ReviewStar
                 size={24}
-                color={active ? palette.starStroke : palette.textMuted}
-                fill={active ? palette.starFill : "transparent"}
+                active={active}
+                color={active ? palette.starFill : palette.textMuted}
               />
             </View>
           );
@@ -90,14 +89,17 @@ export function StarRating({
             testID={`star-${starValue}`}
             importantForAccessibility="no-hide-descendants"
             accessibilityElementsHidden
-            onPress={() => onChange?.(starValue)}
+            onPress={() => {
+              if (starValue !== value) selectHaptic();
+              onChange?.(starValue);
+            }}
             hitSlop={8}
             style={styles.hitArea}
           >
-            <Star
+            <ReviewStar
               size={STAR_ICON_SIZE}
-              color={active ? palette.starStroke : palette.textMuted}
-              fill={active ? palette.starFill : "transparent"}
+              active={active}
+              color={active ? palette.starFill : palette.textMuted}
             />
           </Pressable>
         );
@@ -120,6 +122,11 @@ export function StarRating({
       </AppText>
     </View>
   );
+}
+
+/** One star: the filled SF Symbol when chosen, the outline when not. */
+function ReviewStar({ size, active, color }: { size: number; active: boolean; color: string }) {
+  return <AppSymbol name={active ? "rating" : "ratingEmpty"} size={size} color={color} />;
 }
 
 /** Star icon size; each star's tap area is at least 44pt wide and tall, plus 8pt of slop. */

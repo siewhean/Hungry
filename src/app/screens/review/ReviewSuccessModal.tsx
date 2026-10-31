@@ -1,9 +1,8 @@
 import { useEffect } from "react";
 import { Modal, Pressable, View } from "react-native";
-import { CheckCircle2 } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 
-import { AppText, Badge, Button, Card } from "@/components/ui";
+import { AppSymbol, AppText, Badge, Button, Card } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
 import { shareLink } from "@/features/share/messagingShare";
@@ -64,7 +63,7 @@ export function ReviewSuccessModal({ onOpenHistory, onOpenReview }: ReviewSucces
                   backgroundColor: palette.successSoft,
                 }}
               >
-                <CheckCircle2 color={palette.success} size={28} />
+                <AppSymbol name="done" color={palette.success} size={28} />
               </View>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h3">Review posted</AppText>

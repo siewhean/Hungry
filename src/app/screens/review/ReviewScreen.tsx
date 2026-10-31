@@ -14,10 +14,17 @@ import type {
 } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Search, Utensils, ChevronRight, ChevronDown, Check, Music } from "lucide-react-native";
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Button,
   Card,
@@ -33,7 +40,8 @@ import { TRENDING_MUSIC } from "@/features/review/musicData";
 import { REVIEW_EDITOR_TAGS, REVIEW_MAX_TAGS, TASTE_DIMENSIONS } from "@/constants/taste";
 import { perceivedTasteLevel, standardTasteRating } from "@/features/detail/perceivedTaste";
 import { reportError } from "@/lib/monitoring/reportError";
-import { useExperimentVariant } from "@/lib/experiments/experiments";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
@@ -68,6 +76,26 @@ import {
 import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { DishDetail, TasteKey } from "@/types/domain";
 
+/** The optional fold opens and closes in 200ms: the chevron turns and the content fades in. */
+const FOLD_MS = 200;
+function FoldChevron({ open, color }: { open: boolean; color: string }) {
+  const reduceMotion = useReduceMotion();
+  const turn = useSharedValue(open ? 1 : 0);
+  useEffect(() => {
+    turn.value = reduceMotion
+      ? open
+        ? 1
+        : 0
+      : withTiming(open ? 1 : 0, { duration: FOLD_MS, easing: Easing.bezier(0.23, 1, 0.32, 1) });
+  }, [open, reduceMotion, turn]);
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value * 180}deg` }] }));
+  return (
+    <Animated.View style={style}>
+      <AppSymbol name="chevronDown" size={20} color={color} />
+    </Animated.View>
+  );
+}
+
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 
 type PickerListItem = { type: "header"; title: string } | { type: "row"; row: PickerRow };
@@ -78,6 +106,7 @@ const reviewMusicEnabled = false;
 const reviewVideoEnabled = false;
 
 export function ReviewScreen({ navigation, route }: Props) {
+  const reduceMotion = useReduceMotion();
   const repository = getDataRepository();
   const { palette, radii, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
@@ -128,10 +157,6 @@ export function ReviewScreen({ navigation, route }: Props) {
       (remoteDish?.id === selectedDishId ? remoteDish : undefined)
     );
   }, [repository, selectedDishId, remoteDish]);
-  // Compact editor test: exposed only once a dish is chosen (the editor is then really in use).
-  const compact =
-    useExperimentVariant("review_editor_compact_v1", { enabled: Boolean(selectedDish) }) ===
-    "compact";
   // Each main field is reported once, the first time it is filled, so drop-off can be placed.
   const filledFields = {
     dish: Boolean(selectedDish),
@@ -152,10 +177,10 @@ export function ReviewScreen({ navigation, route }: Props) {
       trackAnalyticsEvent("review_editor_field_completed", {
         field,
         dish_id: selectedDishId,
-        variant: compact ? "compact" : "control",
+        variant: "compact",
       });
     }
-  }, [draftHydrated, filledKey, selectedDishId, compact]);
+  }, [draftHydrated, filledKey, selectedDishId]);
 
   // Optional "How did it taste?": what the reviewer felt, per taste, on the 0-10 scale.
   // Saved with the draft and kept per dish, so picking another dish starts blank.
@@ -571,7 +596,7 @@ export function ReviewScreen({ navigation, route }: Props) {
   const dishSection = (
     <View style={{ gap: spacing[3] }} onLayout={rememberSectionY("dish")}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-        <Utensils size={18} color={palette.orange} />
+        <AppSymbol name="dish" size={18} color={palette.orange} />
         <AppText variant="h3">What did you eat?</AppText>
       </View>
 
@@ -584,11 +609,27 @@ export function ReviewScreen({ navigation, route }: Props) {
           }}
         >
           <View style={{ flexDirection: "row", gap: spacing[3], alignItems: "center" }}>
-            <AccessibleImage
-              source={{ uri: selectedDish.imageUrl }}
-              style={{ width: 60, height: 60, borderRadius: radii.md }}
-              accessibilityLabel={`${selectedDish.name} photo`}
-            />
+            {selectedDish.imageUrl ? (
+              <AccessibleImage
+                source={{ uri: selectedDish.imageUrl }}
+                style={{ width: 60, height: 60, borderRadius: radii.md }}
+                accessibilityLabel={`${selectedDish.name} photo`}
+              />
+            ) : (
+              // Most dishes have no photo yet: a tile, not a blank gap.
+              <View
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: radii.md,
+                  backgroundColor: palette.surface,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <AppSymbol name="dish" size={22} color={palette.textMuted} />
+              </View>
+            )}
             <View style={{ flex: 1 }}>
               <AppText style={{ fontWeight: "700" }}>{selectedDish.name}</AppText>
               <AppText variant="bodySmall" tone="secondary">
@@ -617,7 +658,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           label="Select stall & dish"
           variant="secondary"
           onPress={openPicker}
-          leftIcon={<Search size={18} color={palette.text} />}
+          leftIcon={<AppSymbol name="search" size={18} color={palette.text} />}
         />
       )}
     </View>
@@ -630,7 +671,10 @@ export function ReviewScreen({ navigation, route }: Props) {
         title="Photo (required)"
         photos={draft.photos}
         videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
-        onAddPhoto={addPhoto}
+        onAddPhoto={(uri) => {
+          tapHaptic();
+          addPhoto(uri);
+        }}
         onRemovePhoto={removePhoto}
         onSetVideo={reviewVideoEnabled ? setVideoUri : undefined}
       />
@@ -668,10 +712,7 @@ export function ReviewScreen({ navigation, route }: Props) {
   // Music Picker (Navigation Button)
   const musicSection = reviewMusicEnabled ? (
     <View style={{ gap: spacing[3] }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-        <Music size={18} color={palette.orange} />
-        <AppText variant="h3">Music</AppText>
-      </View>
+      <AppText variant="h3">Music</AppText>
 
       {draft.musicId ? (
         <Card
@@ -709,7 +750,6 @@ export function ReviewScreen({ navigation, route }: Props) {
           label="Add music"
           variant="secondary"
           onPress={() => navigation.navigate("MusicSelection" as any)}
-          leftIcon={<Music size={18} color={palette.text} />}
         />
       )}
     </View>
@@ -745,7 +785,9 @@ export function ReviewScreen({ navigation, route }: Props) {
         values={feltTaste}
         suggestions={tasteSuggestions}
         onChange={(key, value) => {
-          if (selectedDishId) setFeltTaste(selectedDishId, key, value);
+          if (!selectedDishId) return;
+          selectHaptic();
+          setFeltTaste(selectedDishId, key, value);
         }}
       />
     </View>
@@ -774,33 +816,24 @@ export function ReviewScreen({ navigation, route }: Props) {
     </View>
   );
 
-  const publishBlock = (
-    <View style={{ gap: spacing[2] }}>
-      <Button
-        label="Publish review"
-        onPress={handleSubmit}
-        loading={isSubmitting}
-        disabled={Boolean(publishBlockedReason)}
-      />
-      {missingField ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityHint="Scrolls to the missing field"
-          onPress={() => scrollToSection(missingField.field)}
-          style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
-        >
-          <AppText
-            variant="bodySmall"
-            tone="secondary"
-            accessibilityLiveRegion="polite"
-            style={{ textAlign: "center", textDecorationLine: "underline" }}
-          >
-            {missingField.message}
-          </AppText>
-        </Pressable>
-      ) : null}
-    </View>
-  );
+  // The header Publish is the only one; the footer says why it is off and scrolls to the gap.
+  const publishBlockedHint = missingField ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Scrolls to the missing field"
+      onPress={() => scrollToSection(missingField.field)}
+      style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
+    >
+      <AppText
+        variant="bodySmall"
+        tone="secondary"
+        accessibilityLiveRegion="polite"
+        style={{ textAlign: "center", textDecorationLine: "underline" }}
+      >
+        {missingField.message}
+      </AppText>
+    </Pressable>
+  ) : null;
 
   return (
     <Screen
@@ -810,84 +843,70 @@ export function ReviewScreen({ navigation, route }: Props) {
       scroll
       scrollRef={scrollRef}
       headerLeft={
-        compact ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cancel"
-            accessibilityHint="Closes the editor and keeps your draft"
-            onPress={cancelEditor}
-            style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}
-          >
-            <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-              Cancel
-            </AppText>
-          </Pressable>
-        ) : undefined
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Cancel"
+          accessibilityHint="Closes the editor and keeps your draft"
+          onPress={cancelEditor}
+          style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}
+        >
+          <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+            Cancel
+          </AppText>
+        </Pressable>
       }
       headerRight={
-        compact ? (
-          <Button
-            label="Publish"
-            size="sm"
-            fullWidth={false}
-            onPress={handleSubmit}
-            loading={isSubmitting}
-            disabled={Boolean(publishBlockedReason)}
-            accessibilityHint={publishBlockedReason ?? "Posts your review"}
-          />
-        ) : undefined
+        <Button
+          label="Publish"
+          size="sm"
+          fullWidth={false}
+          onPress={handleSubmit}
+          loading={isSubmitting}
+          disabled={Boolean(publishBlockedReason)}
+          accessibilityHint={publishBlockedReason ?? "Posts your review"}
+        />
       }
-      footer={compact ? publishBlock : undefined}
+      footer={publishBlockedHint ?? undefined}
     >
       <FeedErrorBoundary
         title="Review editor failed"
         body="We hit a snag loading the editor. Please try again."
       >
-        <View style={{ gap: spacing[6], paddingBottom: compact ? spacing[8] : spacing[20] }}>
+        <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
           {dishSection}
           {photoSection}
           {ratingSection}
           {textSection}
           {musicSection}
-          {compact ? (
-            <View style={{ gap: spacing[4] }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: detailOpen }}
-                accessibilityLabel="Add more detail (optional)"
-                onPress={() => setDetailOpen((open) => !open)}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  minHeight: 44,
-                }}
+          <View style={{ gap: spacing[4] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ expanded: detailOpen }}
+              accessibilityLabel="Add more detail (optional)"
+              onPress={() => setDetailOpen((open) => !open)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                minHeight: 44,
+              }}
+            >
+              <AppText variant="h3">
+                Add more detail (optional){optionalCount > 0 ? ` · ${optionalCount}` : ""}
+              </AppText>
+              <FoldChevron open={detailOpen} color={palette.textMuted} />
+            </Pressable>
+            {detailOpen ? (
+              <Animated.View
+                entering={reduceMotion ? undefined : FadeIn.duration(FOLD_MS)}
+                style={{ gap: spacing[6] }}
               >
-                <AppText variant="h3">
-                  Add more detail (optional){optionalCount > 0 ? ` · ${optionalCount}` : ""}
-                </AppText>
-                <ChevronDown
-                  size={20}
-                  color={palette.textMuted}
-                  style={{ transform: [{ rotate: detailOpen ? "180deg" : "0deg" }] }}
-                />
-              </Pressable>
-              {detailOpen ? (
-                <View style={{ gap: spacing[6] }}>
-                  {tagsSection}
-                  {tasteSection}
-                  {recommendSection}
-                </View>
-              ) : null}
-            </View>
-          ) : (
-            <>
-              {tagsSection}
-              {tasteSection}
-              {recommendSection}
-              {publishBlock}
-            </>
-          )}
+                {tagsSection}
+                {tasteSection}
+                {recommendSection}
+              </Animated.View>
+            ) : null}
+          </View>
         </View>
       </FeedErrorBoundary>
 
@@ -982,7 +1001,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                   >
                     <AppText style={{ fontWeight: "600", flex: 1 }}>{item.name}</AppText>
                     {draft.selectedDishId === item.id ? (
-                      <Check size={18} color={palette.orange} />
+                      <AppSymbol name="selected" size={18} color={palette.orange} />
                     ) : null}
                   </View>
                 </Pressable>
@@ -1063,7 +1082,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                             justifyContent: "center",
                           }}
                         >
-                          <Utensils size={18} color={palette.textMuted} />
+                          <AppSymbol name="dish" size={18} color={palette.textMuted} />
                         </View>
                       )}
                       <View style={{ flex: 1 }}>
@@ -1074,7 +1093,9 @@ export function ReviewScreen({ navigation, route }: Props) {
                           </AppText>
                         ) : null}
                       </View>
-                      {isDish ? null : <ChevronRight size={18} color={palette.textMuted} />}
+                      {isDish ? null : (
+                        <AppSymbol name="chevronRight" size={18} color={palette.textMuted} />
+                      )}
                     </View>
                   </Pressable>
                 );
