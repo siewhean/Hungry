@@ -60,6 +60,11 @@ before(async () => {
     socialGrid: { type: "saved" },
     socialPost: { postId: post.id, type: "saved" },
     stall: { id: dish.venueId, venueId: dish.venueId },
+    stallVisited: {
+      venueId: dish.venueId,
+      stallName: "Tian Tian",
+      dishes: [{ id: dish.id, name: dish.name, priceLabel: "S$5.00" }],
+    },
     story: { initialStoryId: stories[0]?.id ?? "story-1" },
     otherUser: { authorId: "user-emma", authorName: "Emma" },
   };

@@ -1,7 +1,7 @@
 // DetailCollapsingHeader: the stall and dish pages' title bar. Run with `npm run test:render`.
 import assert from "node:assert/strict";
 import { createElement } from "react";
-import { Animated } from "react-native";
+import { makeMutable } from "react-native-reanimated";
 import test, { afterEach } from "node:test";
 
 import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
@@ -14,7 +14,7 @@ test("R4-STALL-2: Back and Share sit inside the bar's wrapper, with the name in 
   const pressed: string[] = [];
   const view = await render(
     createElement(DetailCollapsingHeader, {
-      scrollY: new Animated.Value(0),
+      scrollY: makeMutable(0),
       heroHeight: 190,
       title: "Tian Tian Chicken Rice",
       onBack: () => pressed.push("back"),
@@ -39,36 +39,51 @@ test("R4-STALL-2: Back and Share sit inside the bar's wrapper, with the name in 
 });
 
 test("R4-STALL-2: the bar's name is hidden from screen readers until the bar shows, then a heading", async () => {
-  const scrollY = new Animated.Value(0);
-  const view = await render(
+  const titleOf = (view: Awaited<ReturnType<typeof render>>) =>
+    Array.from(view.container.querySelectorAll("[role='heading']")).find((node) =>
+      /Laksa/.test(node.textContent ?? ""),
+    ) as HTMLElement | undefined;
+  const top = await render(
     createElement(DetailCollapsingHeader, {
-      scrollY,
+      scrollY: makeMutable(0),
       heroHeight: 200,
       title: "Laksa",
       onBack: () => undefined,
     }),
   );
-  const title = () =>
-    Array.from(view.container.querySelectorAll("[role='heading']")).find((node) =>
-      /Laksa/.test(node.textContent ?? ""),
-    ) as HTMLElement | undefined;
-  assert.ok(title(), "the name renders");
+  assert.ok(titleOf(top), "the name renders");
   assert.equal(
-    title()?.getAttribute("aria-hidden"),
+    titleOf(top)?.getAttribute("aria-hidden"),
     "true",
     "hidden while the page's own title shows",
   );
-  const { act } = await import("react");
-  await act(async () => {
-    scrollY.setValue(400);
-  });
-  assert.notEqual(title()?.getAttribute("aria-hidden"), "true", "read as a heading once collapsed");
+  await cleanup();
+  // The render stub runs the header's scroll reaction once, at mount, with the first value.
+  const scrolled = await render(
+    createElement(DetailCollapsingHeader, {
+      scrollY: makeMutable(400),
+      heroHeight: 200,
+      title: "Laksa",
+      onBack: () => undefined,
+    }),
+  );
+  assert.notEqual(
+    titleOf(scrolled)?.getAttribute("aria-hidden"),
+    "true",
+    "read as a heading once collapsed",
+  );
 });
 
-test("R4-STALL-2: the bar's opacity is driven by the scroll value (source contract)", () => {
+test("R5-STALL-4: the bar and the buttons' chips are driven on the UI thread by the scroll value (source contract)", () => {
   const source = readRepoFile("src/components/detail/DetailCollapsingHeader.tsx");
-  assert.match(source, /scrollY\.interpolate\(/);
-  assert.match(source, /opacity: barOpacity/);
+  assert.match(source, /useAnimatedStyle\(/);
+  assert.match(source, /interpolate\(scrollY\.value, \[0, start, end\], \[0, 0, 1\]/);
+  assert.match(source, /interpolate\(scrollY\.value, \[0, start, end\], \[1, 1, 0\]/);
   assert.match(source, /heroHeight \* 0\.6/);
   assert.match(source, /accessibilityRole="header"/);
+  // No React state per scroll event: one flip through a reaction, and no JS scroll listener.
+  assert.match(source, /useAnimatedReaction\(/);
+  assert.doesNotMatch(source, /addListener|Animated\.Value|useEffect/);
+  const back = readRepoFile("src/components/detail/FloatingBackButton.tsx");
+  assert.match(back, /chipStyle/, "the round chip fades on its own, so no ring is left on the bar");
 });

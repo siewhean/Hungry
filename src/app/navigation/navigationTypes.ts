@@ -159,6 +159,12 @@ export type RootStackParamList = {
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
+  /** "What did you have?" after a stall is marked visited; a system form sheet. */
+  StallVisited: {
+    venueId: string;
+    stallName: string;
+    dishes: { id: string; name: string; priceLabel: string }[];
+  };
   ReportProblem: {
     venueId: string;
     dishId?: string;

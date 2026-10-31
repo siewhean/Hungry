@@ -5,6 +5,7 @@ import { createElement, Fragment } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
+import { StallVisitedScreen } from "@/app/screens/detail/StallVisitedScreen";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { FloatingToast } from "@/components/ui/FloatingToast";
 import { resetExperimentSession, setExperimentFlagSource } from "@/lib/experiments/experiments";
@@ -21,6 +22,7 @@ import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
+import { readRepoFile } from "@/test/sourceContracts";
 
 const STALL = "venue-tian-tian";
 const baseProvider = getServiceProvider();
@@ -284,7 +286,7 @@ test("R4-STALL-1: an empty stall shows one 'Help us fill this in' card, not thre
   const view = await openStall(EMPTY_STALL);
   assert.ok(view.container.querySelector('[data-testid="stall-help-fill-card"]'), "the card");
   assert.match(view.text(), /Help us fill this in/);
-  assert.match(view.text(), /No menu, hours and reviews yet/);
+  assert.match(view.text(), /No menu, hours or reviews yet/);
   assert.doesNotMatch(view.text(), /No menu available for this stall yet/);
   assert.doesNotMatch(view.text(), /No community reviews yet/);
   assert.ok(!view.findByText("Menu"), "no empty Menu heading");
@@ -293,14 +295,18 @@ test("R4-STALL-1: an empty stall shows one 'Help us fill this in' card, not thre
   assert.ok(view.findByText("Add opening hours"));
 });
 
-test("R4-STALL-1: an ALL CAPS name is shown in title case and the hero is the brand fallback", async () => {
+test("R4-STALL-1 / R5-STALL-5: an ALL CAPS name is shown in title case; with no photo there is no hero, a compact header instead", async () => {
   useEmptyStall();
   const view = await openStall(EMPTY_STALL);
   const heading = view.container.querySelector("h1");
   assert.equal(heading?.textContent, "Tian Tian Hainanese Chicken Rice");
   assert.ok(
-    view.findByLabel("Tian Tian Hainanese Chicken Rice photo unavailable"),
-    "the hero fallback is labelled",
+    !view.findByLabel("Tian Tian Hainanese Chicken Rice photo unavailable"),
+    "no 96pt monogram band when there is no photo",
+  );
+  assert.ok(
+    view.findByLabel("Tian Tian Hainanese Chicken Rice stall logo unavailable"),
+    "the monogram sits beside the name instead",
   );
 });
 
@@ -390,9 +396,11 @@ test("R4-STALL-3: Mark visited is one tap: the page stays, the box is ticked, no
   await view.settle();
   await view.press(view.findByLabel("Mark this stall visited"));
   assert.deepEqual(
-    view.navigation.calls.filter((call) => call.method === "navigate"),
-    [],
-    "pressing Mark visited does not navigate",
+    view.navigation.calls
+      .filter((call) => call.method === "navigate")
+      .map((call) => call.args[0]),
+    ["StallVisited"],
+    "pressing Mark visited only offers the optional sheet: no review is opened first",
   );
   assert.ok(view.findByLabel("Visited"), "the checkbox is now ticked");
   assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, true);
@@ -402,39 +410,69 @@ test("R4-STALL-3: Mark visited is one tap: the page stays, the box is ticked, no
   );
 });
 
-test("R4-STALL-3: the 'What did you have?' sheet opens in place with the stall's dishes, and Skip closes it", async () => {
+test("R5-STALL-3: Mark visited opens 'What did you have?' as a system form sheet carrying the stall's dishes", async () => {
   const dishes = useUnreviewedStall();
   const view = await openStall(UNSAVED_STALL);
   await view.settle();
-  assert.ok(!view.findByTestId("stall-visited-sheet"), "closed until a visit is marked");
-  await view.press(view.findByLabel("Mark this stall visited"));
-  assert.ok(view.findByTestId("stall-visited-sheet"), "the sheet opens in place");
-  assert.match(view.text(), /Visited\. What did you have\?/);
-  assert.ok(view.findByLabel(`Review ${dishes[0].name}`) || view.findByLabel(/^Review /));
-  await view.press(view.findByText("Skip"));
-  assert.ok(!view.findByTestId("stall-visited-sheet"), "Skip closes it");
   assert.deepEqual(
     view.navigation.calls.filter((call) => call.method === "navigate"),
     [],
-    "skipping leaves the visit saved and goes nowhere",
+    "nothing opens until a visit is marked",
   );
+  await view.press(view.findByLabel("Mark this stall visited"));
+  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
+  assert.equal(call?.args[0], "StallVisited");
+  const params = call?.args[1] as {
+    venueId: string;
+    stallName: string;
+    dishes: { id: string; name: string; priceLabel: string }[];
+  };
+  assert.equal(params.venueId, UNSAVED_STALL);
+  assert.ok(params.dishes.length > 0 && params.dishes.length <= 4, "up to four dishes are offered");
+  assert.ok(dishes.some((dish) => dish.id === params.dishes[0].id));
+  assert.match(params.dishes[0].priceLabel, /^S\$/);
   assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, true);
 });
 
-test("R4-STALL-3: picking a dish in the sheet opens the review composer on that dish", async () => {
-  useUnreviewedStall();
-  const view = await openStall(UNSAVED_STALL);
-  await view.settle();
-  await view.press(view.findByLabel("Mark this stall visited"));
-  const row = view.findByLabel(/^Review /);
-  assert.ok(row, "a dish row is offered");
-  await view.press(row);
-  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
-  assert.equal(call?.args[0], "ReviewStack");
-  const params = (call?.args[1] as { params?: { venueId?: string; dishId?: string } }).params;
-  assert.equal(params?.venueId, UNSAVED_STALL);
-  assert.ok(params?.dishId, "the composer starts on the picked dish");
-  assert.ok(!view.findByTestId("stall-visited-sheet"), "the sheet closed");
+test("R5-STALL-3: the Visited route is a formSheet with a grabber and a half-height detent (source contract)", () => {
+  const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
+  const route = navigator.slice(navigator.indexOf('name="StallVisited"'));
+  assert.match(route, /presentation: "formSheet"/);
+  assert.match(route, /sheetGrabberVisible: true/);
+  assert.match(route, /sheetAllowedDetents: \[0\.5, 1\]/);
+});
+
+test("R5-STALL-3: the Visited sheet screen skips back, and picking a dish replaces itself with the composer", async () => {
+  const dishes = [{ id: "dish-a", name: "Laksa", priceLabel: "S$5.00" }];
+  let view = await renderScreen(StallVisitedScreen as never, {
+    name: "StallVisited",
+    params: { venueId: STALL, stallName: "Tian Tian", dishes },
+  });
+  assert.ok(view.findByTestId("stall-visited-sheet"));
+  await view.press(view.findByText("Skip"));
+  assert.ok(view.navigation.calls.some((entry) => entry.method === "goBack"));
+  await cleanup();
+  view = await renderScreen(StallVisitedScreen as never, {
+    name: "StallVisited",
+    params: { venueId: STALL, stallName: "Tian Tian", dishes },
+  });
+  await view.press(view.findByLabel("Review Laksa"));
+  const replaced = view.navigation.calls.find((entry) => entry.method === "replace");
+  assert.deepEqual(replaced?.args, [
+    "ReviewStack",
+    { screen: "ReviewMain", params: { venueId: STALL, dishId: "dish-a" } },
+  ]);
+  await cleanup();
+  view = await renderScreen(StallVisitedScreen as never, {
+    name: "StallVisited",
+    params: { venueId: STALL, stallName: "Tian Tian", dishes: [] },
+  });
+  await view.press(view.findByText("Write a review"));
+  const bare = view.navigation.calls.find((entry) => entry.method === "replace");
+  assert.deepEqual(bare?.args, [
+    "ReviewStack",
+    { screen: "ReviewMain", params: { venueId: STALL } },
+  ]);
 });
 
 test("R4-STALL-3: unmarking a visit clears it without opening the sheet", async () => {
@@ -442,24 +480,25 @@ test("R4-STALL-3: unmarking a visit clears it without opening the sheet", async 
   const view = await openStall(UNSAVED_STALL);
   await view.settle();
   await view.press(view.findByLabel("Mark this stall visited"));
-  await view.press(view.findByText("Skip"));
+  const opened = view.navigation.calls.filter((entry) => entry.method === "navigate").length;
   await view.press(view.findByLabel("Visited"));
   assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, false);
-  assert.ok(!view.findByTestId("stall-visited-sheet"), "not rendered");
+  assert.equal(
+    view.navigation.calls.filter((entry) => entry.method === "navigate").length,
+    opened,
+    "clearing a visit opens nothing",
+  );
   assert.match(useUIStore.getState().toast?.message ?? "", /Removed from visited/);
 });
 
-test("R4-STALL-3: a stall with an empty menu offers 'Write a review' in the sheet", async () => {
+test("R5-STALL-3: a stall with an empty menu opens the sheet with no dishes to offer", async () => {
   useEmptyStall();
   const view = await openStall(EMPTY_STALL);
   await view.settle();
   await view.press(view.findByLabel("Mark this stall visited"));
-  assert.ok(view.findByTestId("stall-visited-sheet"));
-  assert.ok(!view.findByLabel(/^Review /), "no dishes to offer");
-  const buttons = Array.from(
-    document.body.querySelectorAll('[data-testid="stall-visited-sheet"] [role="button"]'),
-  );
-  assert.ok(buttons.some((node) => node.textContent?.trim() === "Write a review"));
+  const call = view.navigation.calls.find((entry) => entry.method === "navigate");
+  assert.equal(call?.args[0], "StallVisited");
+  assert.deepEqual((call?.args[1] as { dishes: unknown[] }).dishes, []);
 });
 
 // Food Cred for a visit needs a review.
@@ -568,9 +607,9 @@ test("R4-STALL-19: a claim refused for an expired session opens sign-in and retu
   });
   const view = await openStall();
   const claim = Array.from(view.container.querySelectorAll("[role='button']")).find((node) =>
-    /Claim this stall/.test(node.textContent ?? ""),
+    /Own this stall\? Claim it/.test(node.textContent ?? ""),
   ) as HTMLElement | undefined;
-  assert.ok(claim, "the claim button renders for a signed-in diner");
+  assert.ok(claim, "the claim row renders for a signed-in diner");
   await view.press(claim);
   await view.settle();
   assert.match(useUIStore.getState().signInPrompt?.title ?? "", /Sign in before claiming/);

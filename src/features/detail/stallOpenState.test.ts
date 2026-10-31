@@ -129,3 +129,29 @@ test("R4-STALL-7: a stall with no readable hours still says 'Hours not listed'",
   });
   assert.equal(info.statusLabel, "Hours not listed");
 });
+
+test("R5-STALL-13: a false is_open flag with no closure notice lets the listed hours decide", () => {
+  // Noon on a Monday in Singapore, hours say open.
+  const info = resolveStallOpenInfo({
+    venue: { isOpen: false, operatingHours: "Mon-Sun 10am - 11pm" },
+    now: mondayNoon,
+  });
+  assert.equal(info.isOpen, true);
+  assert.match(info.statusLabel, /^Open now/);
+  // The hours still win when they say closed.
+  const closedByHours = resolveStallOpenInfo({
+    venue: { isOpen: false, operatingHours: "Mon-Sun 6pm - 8pm" },
+    now: mondayNoon,
+  });
+  assert.equal(closedByHours.isOpen, false);
+  assert.match(closedByHours.statusLabel, /^Closed now/);
+});
+
+test("R5-STALL-13: a false is_open flag with a closure notice stays closed", () => {
+  const info = resolveStallOpenInfo({
+    venue: { isOpen: false, operatingHours: "Mon-Sun 10am - 11pm", closureNotice: "Renovating" },
+    now: mondayNoon,
+  });
+  assert.equal(info.isOpen, false);
+  assert.equal(info.statusLabel, "Renovating");
+});
