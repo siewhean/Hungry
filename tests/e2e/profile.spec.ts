@@ -46,7 +46,7 @@ test.describe("profile page walk", () => {
     }) => {
       await openProfile(page, width);
       const row = page.getByTestId("profile-follow-counts");
-      for (const label of ["Saved", "Followers", "Following"]) {
+      for (const label of ["Saved"]) {
         const text = row.getByText(label, { exact: true });
         const box = await text.boundingBox();
         expect(box, `${label} is on screen`).not.toBeNull();
@@ -59,12 +59,10 @@ test.describe("profile page walk", () => {
     });
   }
 
-  test("Followers opens a searchable list", async ({ page }) => {
+  test("Followers and Following are archived: no tiles on the own profile", async ({ page }) => {
     await openProfile(page, 375);
-    await page.getByRole("button", { name: /^Followers/ }).click();
-    await expect(
-      page.getByLabel("Search followers").filter({ visible: true }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Followers/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Following/ })).toHaveCount(0);
   });
 
   test("the quick access menu has one close control and a sign-out that asks first", async ({

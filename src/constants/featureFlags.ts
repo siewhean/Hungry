@@ -44,6 +44,9 @@ export function resolveFeatureFlags(
   const postCreationEnabled = surface("EXPO_PUBLIC_ENABLE_POSTS", true);
   const reviewCreationEnabled = surface("EXPO_PUBLIC_ENABLE_REVIEWS", true);
   const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", false);
+  // Archived (owner decision 2026-10-31): the Followers and Following counts and lists on
+  // profiles. The code stays so a build can opt back in with `=1`.
+  const followConnectionsEnabled = surface("EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS", false);
   const mapEnabled = surface("EXPO_PUBLIC_ENABLE_MAP", true);
   // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join
   // link can't reach another phone), so hosting/joining stays out of production.
@@ -63,6 +66,7 @@ export function resolveFeatureFlags(
     postCreationEnabled,
     reviewCreationEnabled,
     activityEnabled,
+    followConnectionsEnabled,
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,

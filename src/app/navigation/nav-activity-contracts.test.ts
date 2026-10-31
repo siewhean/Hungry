@@ -19,7 +19,7 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   // the round middle button writes a review.
   assert.match(
     tabs,
-    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Post"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   assert.match(
     tabs,

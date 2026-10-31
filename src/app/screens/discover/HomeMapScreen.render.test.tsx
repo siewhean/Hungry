@@ -354,6 +354,6 @@ test("R5-2 the sheet is a bottom sheet with detents, not a hand-rolled PanRespon
   assert.match(src, /snapPoints=\{snapPoints\}/);
   assert.match(src, /animatedPosition=\{sheetPosition\}/);
   assert.doesNotMatch(src, /Animated\.spring|Animated\.Value|useNativeDriver/);
-  // The only PanResponder left is the left-edge swipe back.
-  assert.equal(src.match(/PanResponder\.create/g)?.length, 1);
+  // No swipe-back handler: a pan to the left side of the map must never close the map.
+  assert.doesNotMatch(src, /PanResponder/);
 });

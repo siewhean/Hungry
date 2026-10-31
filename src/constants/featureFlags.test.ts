@@ -19,6 +19,7 @@ const ARCHIVED_FLAGS = [
   "socialFeedEnabled",
   "activityEnabled",
   "directMessagesEnabled",
+  "followConnectionsEnabled",
   "stallFollowEnabled",
 ] as const;
 
@@ -59,6 +60,7 @@ test("the archived social feed, Activity, Messages and Follow stall are off unti
     EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
     EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
     EXPO_PUBLIC_ENABLE_MESSAGES: "1",
+    EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS: "1",
     EXPO_PUBLIC_ENABLE_STALL_FOLLOW: "1",
   });
   for (const flag of ARCHIVED_FLAGS) {

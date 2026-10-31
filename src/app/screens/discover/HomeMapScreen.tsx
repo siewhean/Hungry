@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ElementRef } from "react";
 import {
   type LayoutChangeEvent,
-  PanResponder,
   Pressable,
   StyleSheet,
   View,
@@ -56,7 +55,6 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useSearchStore } from "@/store/useSearchStore";
 import { useUIStore } from "@/store/useUIStore";
 import { getVenueOpenStateNow } from "@/features/discovery/decideForMeCandidates";
-import { isMapEdgeBackSwipe } from "@/features/discovery/mapEdgeBack";
 import {
   formatMapCardDetail,
   formatMapCardDish,
@@ -324,8 +322,6 @@ export function HomeMapScreen() {
   );
   const snapPointsRef = useRef(snapPoints);
   snapPointsRef.current = snapPoints;
-  // Where the sheet is (or is heading); the edge-back swipe only starts above it.
-  const sheetTargetHeightRef = useRef(CAROUSEL_HEIGHT);
   const sheetIndexRef = useRef(CARDS_SNAP_INDEX);
   // The sheet's top edge and the container height, read by the floating buttons on the UI thread.
   const sheetPosition = useSharedValue(screenHeight);
@@ -608,30 +604,6 @@ export function HomeMapScreen() {
     navigation.popTo("MainTabs", { screen: "Discover" });
   }, [navigation]);
 
-  // Left-edge swipe back without an overlay strip: the root view only captures a
-  // horizontal move that began at the edge above the sheet, so taps on the map, legend and
-  // cards pass through and the card carousel still scrolls.
-  const edgeBackZoneWidth = Math.max(28, insets.left + 24);
-  const edgeBackPanResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => false,
-        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
-          isMapEdgeBackSwipe(gestureState, {
-            edgeZoneWidth: edgeBackZoneWidth,
-            screenHeight,
-            sheetHeight: sheetTargetHeightRef.current,
-          }),
-        onPanResponderRelease: (_, gestureState) => {
-          // Same place as the List toggle, not whatever screen happens to be below.
-          if (gestureState.dx > 64 || gestureState.vx > 0.35) {
-            backToList();
-          }
-        },
-      }),
-    [backToList, edgeBackZoneWidth, screenHeight],
-  );
-
   useEffect(() => {
     // The list opens half-way so it shows several rows, not one.
     snapToIndex(displayMode === "list" ? LIST_SNAP_INDEX : CARDS_SNAP_INDEX);
@@ -750,11 +722,7 @@ export function HomeMapScreen() {
   );
 
   return (
-    <View
-      style={{ flex: 1, backgroundColor: palette.bg }}
-      onLayout={handleContainerLayout}
-      {...edgeBackPanResponder.panHandlers}
-    >
+    <View style={{ flex: 1, backgroundColor: palette.bg }} onLayout={handleContainerLayout}>
       <FeedErrorBoundary
         title="Map currently unavailable"
         body="We hit a rendering issue with the map. Please try again."
@@ -1071,7 +1039,6 @@ export function HomeMapScreen() {
         handleComponent={renderSheetHandle}
         onAnimate={(_from, to) => {
           sheetIndexRef.current = to;
-          sheetTargetHeightRef.current = snapPointsRef.current[to] ?? CAROUSEL_HEIGHT;
         }}
         backgroundStyle={{
           backgroundColor: palette.surface,

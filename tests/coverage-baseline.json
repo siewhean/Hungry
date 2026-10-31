@@ -85,7 +85,6 @@
     "src/features/discovery/decideQuiz.ts": 99.4,
     "src/features/discovery/distanceLabel.ts": 94.4,
     "src/features/discovery/mapCardText.ts": 100,
-    "src/features/discovery/mapEdgeBack.ts": 100,
     "src/features/discovery/venueDescriptor.ts": 100,
     "src/features/home/activity.ts": 95.5,
     "src/features/home/bites.ts": 100,

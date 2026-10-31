@@ -128,6 +128,7 @@ afterEach(async () => {
 });
 
 test("own profile in production: no dead Badges tile or post loads, follower lists reachable", async () => {
+  flags.followConnectionsEnabled = true;
   const social = getHungryService().social;
   let postReads = 0;
   stub(social, "listUserPosts", async () => {
@@ -165,6 +166,7 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
 });
 
 test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not loading, and reports it", async () => {
+  flags.followConnectionsEnabled = true;
   const social = getHungryService().social;
   stub(social, "getFollowCounts", async () => {
     throw new Error("rate limited");
@@ -198,6 +200,20 @@ test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not 
     console.error = originalConsoleError;
     globals.__DEV__ = previousDev;
   }
+});
+
+test("Followers and Following are archived: no tiles and no count read until a build opts in", async () => {
+  let countReads = 0;
+  stub(getHungryService().social, "getFollowCounts", async () => {
+    countReads += 1;
+    return { followersCount: 3, followingCount: 5 };
+  });
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  await view.settle();
+  assert.equal(view.findByLabel("Followers 3"), null);
+  assert.equal(view.findByLabel("Following 5"), null);
+  assert.equal(view.findByText("Following"), null);
+  assert.equal(countReads, 0);
 });
 
 test("own profile shows the Passport card only with the Passport", async () => {

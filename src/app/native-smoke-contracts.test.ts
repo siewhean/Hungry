@@ -196,10 +196,9 @@ test("native source-smoke coverage still includes gestures and keyboard-aware sh
 
   assert.match(
     rootNavigator,
-    /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*gestureEnabled: true/,
+    /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*gestureEnabled: false/,
   );
-  assert.match(homeMap, /edgeBackPanResponder/);
-  assert.match(homeMap, /gestureState\.dx > 64 \|\| gestureState\.vx > 0\.35/);
+  assert.doesNotMatch(homeMap, /PanResponder/);
   assert.match(homeFeed, /<BottomSheetModal/);
   assert.match(homeFeed, /<BottomSheetFooter/);
   assert.match(reviewComments, /<BottomSheetModal/);

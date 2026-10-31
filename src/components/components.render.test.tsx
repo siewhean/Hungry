@@ -1011,7 +1011,7 @@ test("AchievementsSection shows levels, progress and a completed goal", async ()
   assert.match(view.text(), /3 of 8 started/);
 });
 
-test("the Write button in the bottom bar has the same slot, label colour and weight as other tabs", async () => {
+test("the Post button in the bottom bar has the same slot, label colour and weight as other tabs", async () => {
   // Icon glyph size and colour are pinned in nav-activity-contracts; the render shows the
   // slot around it and the label are identical, so nothing about the button stands out.
   const styles = async (props: Record<string, unknown>) => {
@@ -1019,7 +1019,7 @@ test("the Write button in the bottom bar has the same slot, label colour and wei
     const result = {
       slot: view.container.querySelector("[aria-label] > div")?.getAttribute("style"),
       label: view.container.querySelector('[aria-label] > div[dir="auto"]')?.getAttribute("style"),
-      labelled: view.findByLabel("Write a review") !== null,
+      labelled: view.findByLabel("Post a review") !== null,
     };
     await view.unmount();
     return result;
@@ -1027,8 +1027,8 @@ test("the Write button in the bottom bar has the same slot, label colour and wei
   const write = await styles({
     createAction: true,
     icon: PenLine,
-    label: "Write",
-    accessibilityLabel: "Write a review",
+    label: "Post",
+    accessibilityLabel: "Post a review",
     onPress: () => {},
   });
   const other = await styles({ icon: BookOpenText, label: "Reviews", onPress: () => {} });

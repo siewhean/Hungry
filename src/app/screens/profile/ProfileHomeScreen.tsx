@@ -472,7 +472,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
   useEffect(() => {
     // Refetched on focus so a follow or a removed follower shows on return.
-    if (!hasAccountProfile || !isFocused) return;
+    // Archived with the tiles: no point reading counts nothing shows.
+    if (!hasAccountProfile || !isFocused || !FEATURE_FLAGS.followConnectionsEnabled) return;
     let isActive = true;
     void getHungryService()
       .social.getFollowCounts(profile.id)
@@ -774,25 +775,29 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           onPress: handleReviewsCardPress,
         }
       : null,
-    {
-      key: "followers",
-      label: pluralLabel(followersValue, "Follower"),
-      value: followersValue,
-      onPressIn: () => preloadRoute(navigation, "Followers"),
-      onPress: () => navigation.navigate("Followers"),
-    },
-    {
-      key: "following",
-      label: "Following",
-      value:
-        followCounts === "unavailable"
-          ? STAT_UNAVAILABLE
-          : followCounts
-            ? followCounts.followingCount
-            : null,
-      onPressIn: () => preloadRoute(navigation, "Following"),
-      onPress: () => navigation.navigate("Following"),
-    },
+    FEATURE_FLAGS.followConnectionsEnabled
+      ? {
+          key: "followers",
+          label: pluralLabel(followersValue, "Follower"),
+          value: followersValue,
+          onPressIn: () => preloadRoute(navigation, "Followers"),
+          onPress: () => navigation.navigate("Followers"),
+        }
+      : null,
+    FEATURE_FLAGS.followConnectionsEnabled
+      ? {
+          key: "following",
+          label: "Following",
+          value:
+            followCounts === "unavailable"
+              ? STAT_UNAVAILABLE
+              : followCounts
+                ? followCounts.followingCount
+                : null,
+          onPressIn: () => preloadRoute(navigation, "Following"),
+          onPress: () => navigation.navigate("Following"),
+        }
+      : null,
   ].filter((stat): stat is NonNullable<typeof stat> => stat !== null);
 
   const tasteCard = (
@@ -1119,7 +1124,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 fullWidth={false}
                 leftIcon={<AppSymbol name="compose" size={16} color={palette.textOnOrange} />}
                 onPress={openReviewComposer}
-                style={{ alignSelf: "flex-start", minHeight: 44 }}
+                style={{ alignSelf: "flex-end", minHeight: 44 }}
               />
             </View>
           ) : null}

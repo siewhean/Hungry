@@ -792,7 +792,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               <RootStack.Screen
                 getComponent={loadHomeMapScreen}
                 name="DiscoverMap"
-                options={{ gestureEnabled: true }}
+                options={{ gestureEnabled: false }}
               />
               <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
             </>
