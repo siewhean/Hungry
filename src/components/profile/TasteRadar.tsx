@@ -1,4 +1,5 @@
-import { Platform, View } from "react-native";
+import { useState } from "react";
+import { Platform, Pressable, View } from "react-native";
 import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 
 import { AppText } from "@/components/ui";
@@ -12,12 +13,20 @@ const CENTER = 130;
 const RING = 70;
 const LABEL_RADIUS = RING + 14;
 
+/** The radar's drawn size, at most; never wider than the card. */
+const RADAR_MAX_WIDTH = 260;
+/** The viewBox is cropped to the hexagon and its labels, so no empty band sits above or below. */
+const VIEW_TOP = 32;
+const VIEW_HEIGHT = 200;
+
 /**
  * Your six tastes as a radar. Axes and chips follow TASTE_DIMENSIONS, each axis is labelled on
  * the chart, and the chips say Low / Medium / High instead of a percentage.
  */
 export function TasteRadar({ vector }: { vector: TasteVector }) {
   const { palette, radii, spacing, typography } = useHungryTheme();
+  // The chart carries the result; the six Low / Medium / High chips sit behind a disclosure.
+  const [showAll, setShowAll] = useState(false);
   const point = (index: number, radius: number) => {
     const angle = -Math.PI / 2 + (index * 2 * Math.PI) / TASTE_DIMENSIONS.length;
     return { x: CENTER + Math.cos(angle) * radius, y: CENTER + Math.sin(angle) * radius };
@@ -33,15 +42,22 @@ export function TasteRadar({ vector }: { vector: TasteVector }) {
 
   return (
     <View style={{ alignItems: "center", width: "100%", gap: spacing[3] }}>
-      {/* Up to 260pt, never wider than the card: a 320-360pt phone leaves less than that. */}
-      <View testID="profile-taste-radar" style={{ aspectRatio: 1, maxWidth: 260, width: "100%" }}>
+      {/* Never wider than the card: a 320-360pt phone leaves less than the maximum. */}
+      <View
+        testID="profile-taste-radar"
+        style={{
+          aspectRatio: RADAR_MAX_WIDTH / VIEW_HEIGHT,
+          maxWidth: RADAR_MAX_WIDTH,
+          width: "100%",
+        }}
+      >
         <Svg
           accessible={Platform.OS === "web" ? undefined : true}
           accessibilityRole="image"
           accessibilityLabel={describeTasteVector(vector)}
           width="100%"
           height="100%"
-          viewBox="0 0 260 260"
+          viewBox={`0 ${VIEW_TOP} 260 ${VIEW_HEIGHT}`}
         >
           {[RING, RING * 0.67, RING * 0.34].map((radius) => (
             <Polygon
@@ -68,9 +84,10 @@ export function TasteRadar({ vector }: { vector: TasteVector }) {
           })}
           <Polygon
             points={values.map(({ x, y }) => `${x},${y}`).join(" ")}
-            fill={palette.orangeLight}
+            fill={palette.orange}
+            fillOpacity={0.18}
             stroke={palette.orange}
-            strokeWidth={2.5}
+            strokeWidth={2}
           />
           {values.map(({ x, y }, index) => (
             <Circle key={TASTE_DIMENSIONS[index].key} cx={x} cy={y} r={4} fill={palette.orange} />
@@ -95,33 +112,47 @@ export function TasteRadar({ vector }: { vector: TasteVector }) {
           })}
         </Svg>
       </View>
-      <View
-        style={{
-          flexDirection: "row",
-          flexWrap: "wrap",
-          gap: spacing[2],
-          justifyContent: "center",
-        }}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={showAll ? "Hide all six tastes" : "See all six tastes"}
+        accessibilityState={{ expanded: showAll }}
+        onPress={() => setShowAll((current) => !current)}
+        style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[2] }}
       >
-        {TASTE_DIMENSIONS.map(({ key, label }) => (
-          <View
-            key={key}
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.bgSoft,
-              borderRadius: radii.pill,
-              flexDirection: "row",
-              gap: spacing[1],
-              paddingHorizontal: spacing[2],
-              paddingVertical: spacing[1],
-            }}
-          >
-            <AppText variant="micro" style={{ color: palette.text }}>
-              {label} · {tasteLevelLabel(vector[key])}
-            </AppText>
-          </View>
-        ))}
-      </View>
+        <AppText variant="bodySmall" style={{ color: palette.accentText, fontWeight: "700" }}>
+          {showAll ? "Hide" : "See all six"}
+        </AppText>
+      </Pressable>
+      {showAll ? (
+        <View
+          testID="profile-taste-chips"
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: spacing[2],
+            justifyContent: "center",
+          }}
+        >
+          {TASTE_DIMENSIONS.map(({ key, label }) => (
+            <View
+              key={key}
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.bgSoft,
+                borderRadius: radii.pill,
+                flexDirection: "row",
+                gap: spacing[1],
+                paddingHorizontal: spacing[2],
+                paddingVertical: spacing[1],
+              }}
+            >
+              <AppText variant="micro" style={{ color: palette.text }}>
+                {label} · {tasteLevelLabel(vector[key])}
+              </AppText>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

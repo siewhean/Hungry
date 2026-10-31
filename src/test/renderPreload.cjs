@@ -341,6 +341,7 @@ const STUBS = [
   [/^react-native-svg$/, {}],
   [/^lucide-react-native$/, {}],
   [/^expo-symbols$/, {}],
+  [/^@react-native-menu\/menu$/, {}],
   [/^@expo\/vector-icons/, {}],
   [
     /^expo-image$/,

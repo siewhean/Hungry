@@ -2,11 +2,11 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
-import { PenLine, Star } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
-import { AppText, Button, EmptyState } from "@/components/ui";
+import { AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
+import { pluralLabel } from "@/features/profile/plural";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
   getDataRepository,
@@ -82,6 +82,18 @@ export function ReviewHistoryScreen({ navigation }: Props) {
     if (serviceProviderMode === "mock" || !profile.id || profile.id === "guest-user") {
       setRemoteReviews([]);
       setRemoteLoaded(true);
+      // Mock mode has the same review rows the profile shows, with the rating and the note; the
+      // on-device entries below are only the fallback when it has none.
+      if (serviceProviderMode === "mock" && profile.id && profile.id !== "guest-user") {
+        void getHungryService()
+          .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: 0 })
+          .then((reviews) => {
+            if (active) setRemoteReviews(reviews);
+          })
+          .catch((error) => {
+            reportError(error, { screen: "ReviewHistory", action: "load_mock_reviews" });
+          });
+      }
       return () => {
         active = false;
       };
@@ -226,7 +238,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 {reviewedCount}
               </AppText>
               <AppText variant="micro" tone="secondary">
-                Reviews
+                {pluralLabel(reviewedCount, "Review")}
               </AppText>
             </View>
             {averageRating ? (
@@ -234,7 +246,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 <View style={{ width: 1, height: spacing[8], backgroundColor: palette.border }} />
                 <View style={{ alignItems: "center", gap: spacing[1] }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                    <Star size={18} color={palette.starStroke} fill={palette.starFill} />
+                    <AppSymbol name="rating" size={18} color={palette.starStroke} />
                     <AppText variant="h1">{averageRating}</AppText>
                   </View>
                   <AppText variant="micro" tone="secondary">
@@ -259,9 +271,19 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 key={star}
                 style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
               >
-                <AppText variant="micro" tone="secondary" style={{ width: spacing[6] }}>
-                  {star}★
-                </AppText>
+                <View
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: 2,
+                    width: spacing[8],
+                  }}
+                >
+                  <AppText variant="micro" tone="secondary">
+                    {star}
+                  </AppText>
+                  <AppSymbol name="rating" size={10} color={palette.starStroke} />
+                </View>
                 <View
                   style={{
                     backgroundColor: palette.bgSoft,
@@ -295,9 +317,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
           <ProfileReviewsSkeleton />
         ) : hasHistory ? (
           <>
-            {historyReviews.map((review) => (
+            {historyReviews.map((review, index) => (
               <ProfileReviewCard
                 key={review.id}
+                variant="row"
+                first={index === 0}
                 review={review}
                 dish={infoFor(review.dishId)}
                 showTags
@@ -352,7 +376,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
           },
         ]}
       >
-        <PenLine size={24} color={palette.textOnPrimary} />
+        <AppSymbol name="compose" size={24} color={palette.textOnPrimary} />
       </Pressable>
     </View>
   );

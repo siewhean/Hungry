@@ -20,6 +20,7 @@ import {
   Fraunces_900Black,
 } from "@expo-google-fonts/fraunces";
 
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useUIStore } from "@/store/useUIStore";
 import {
   colors,
@@ -56,6 +57,8 @@ export type HungryTheme = {
   contrastRatios: typeof contrastRatios;
   opacity: typeof opacity;
   fontsLoaded: boolean;
+  /** Reduce Motion is on (system or the in-app setting): skip loops, slides and springs. */
+  reducedMotion: boolean;
 };
 
 type AppColorScheme = "light" | "dark";
@@ -64,6 +67,7 @@ const ThemeContext = createContext<HungryTheme | null>(null);
 
 export function HungryThemeProvider({ children }: PropsWithChildren) {
   const themePreference = useUIStore((state) => state.themePreference);
+  const reducedMotion = useReduceMotion();
   const hookScheme = useColorScheme();
 
   // Track system color scheme via Appearance API for maximum reliability
@@ -177,8 +181,18 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
       contrastRatios,
       opacity,
       fontsLoaded: nunitoLoaded && monoLoaded && frauncesLoaded,
+      reducedMotion,
     }),
-    [colorScheme, theme, palette, themedShadows, nunitoLoaded, monoLoaded, frauncesLoaded],
+    [
+      colorScheme,
+      theme,
+      palette,
+      themedShadows,
+      nunitoLoaded,
+      monoLoaded,
+      frauncesLoaded,
+      reducedMotion,
+    ],
   );
 
   return (

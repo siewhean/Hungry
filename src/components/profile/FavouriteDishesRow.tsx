@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { AccessibleImage, AppText, Button, Card } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Button, Card } from "@/components/ui";
+import { confirmHaptic } from "@/lib/haptics";
 import { PROFILE_FAVOURITE_DISHES_MAX } from "@/features/profile/useProfileFavouriteDishes";
 import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { useHungryTheme } from "@/theme";
@@ -63,8 +64,10 @@ export function FavouriteDishesRow({
     setSaveFailed(false);
     const saved = await onSave(draft);
     setIsSaving(false);
-    if (saved) setIsEditing(false);
-    else setSaveFailed(true);
+    if (saved) {
+      confirmHaptic();
+      setIsEditing(false);
+    } else setSaveFailed(true);
   };
 
   const nameFor = (dishId: string) => {
@@ -88,6 +91,7 @@ export function FavouriteDishesRow({
             variant="ghost"
             size="sm"
             fullWidth={false}
+            labelColor={palette.accentText}
             accessibilityLabel={dishIds.length ? "Edit favourite dishes" : "Pin favourite dishes"}
             onPress={startEditing}
           />
@@ -96,7 +100,10 @@ export function FavouriteDishesRow({
       {isEditing ? (
         <View style={{ gap: spacing[2] }}>
           <AppText variant="bodySmall" tone="secondary">
-            Pick up to {PROFILE_FAVOURITE_DISHES_MAX} from the dishes you saved or reviewed.
+            Pick up to {PROFILE_FAVOURITE_DISHES_MAX} from the dishes you saved or reviewed.{" "}
+            <AppText variant="bodySmallBold" testID="favourite-dishes-counter">
+              {draft.length} of {PROFILE_FAVOURITE_DISHES_MAX}
+            </AppText>
           </AppText>
           {(candidateDishIds ?? []).map((dishId) => {
             const checked = draft.includes(dishId);
@@ -117,27 +124,15 @@ export function FavouriteDishesRow({
                   opacity: disabled ? 0.5 : 1,
                 }}
               >
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: checked ? palette.orange : "transparent",
-                    borderColor: checked ? palette.orange : palette.border,
-                    borderRadius: radii.sm,
-                    borderWidth: 2,
-                    height: spacing[6],
-                    justifyContent: "center",
-                    width: spacing[6],
-                  }}
-                >
-                  {checked ? (
-                    <AppText variant="micro" tone="inverse">
-                      ✓
-                    </AppText>
-                  ) : null}
-                </View>
                 <AppText style={{ flex: 1 }} numberOfLines={2}>
                   {nameFor(dishId)}
                 </AppText>
+                {/* iOS marks a chosen row with a trailing checkmark, not a box. */}
+                <View style={{ height: spacing[6], width: spacing[6] }}>
+                  {checked ? (
+                    <AppSymbol name="selected" size={spacing[6]} color={palette.accentText} />
+                  ) : null}
+                </View>
               </Pressable>
             );
           })}

@@ -81,6 +81,16 @@ import {
   WifiOff,
   X,
   Zap,
+  Camera,
+  Copy,
+  ImagePlus,
+  MessageCircleMore,
+  MoreHorizontal,
+  Send,
+  Settings,
+  UserCheck,
+  Users,
+  FlaskConical,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react-native";
@@ -163,6 +173,21 @@ const APP_SYMBOLS = {
   reviewBubble: { ios: "text.bubble", lucide: MessageSquare },
   /** A dish with no photo or no result yet. */
   dish: { ios: "fork.knife", lucide: Utensils },
+  // Profile
+  /** The "more" control: a native menu opens from it. */
+  moreActions: { ios: "ellipsis.circle", lucide: MoreHorizontal },
+  /** A row's own "..." (remove a follower, edit a review). */
+  rowActions: { ios: "ellipsis", lucide: MoreHorizontal },
+  compose: { ios: "square.and.pencil", lucide: PenLine },
+  settings: { ios: "gearshape", lucide: Settings },
+  following: { ios: "person.crop.circle.badge.checkmark", lucide: UserCheck },
+  people: { ios: "person.2", lucide: Users },
+  tasteFingerprint: { ios: "circle.hexagongrid", lucide: FlaskConical },
+  camera: { ios: "camera.fill", lucide: Camera, filled: false },
+  send: { ios: "paperplane", lucide: Send },
+  copy: { ios: "doc.on.doc", lucide: Copy },
+  noPosts: { ios: "ellipsis.bubble", lucide: MessageCircleMore },
+  addStall: { ios: "plus.rectangle.on.rectangle", lucide: ImagePlus },
   // Search
   search: { ios: "magnifyingglass", lucide: Search },
   /** The clear button of a search field. */
@@ -212,6 +237,11 @@ const APP_SYMBOLS = {
   Record<ReviewTasteTagSymbol, unknown>;
 
 export type AppSymbolName = keyof typeof APP_SYMBOLS;
+
+/** The SF Symbol an app symbol draws on iOS; native menus take the name, not a view. */
+export function appSymbolIosName(name: AppSymbolName): string {
+  return APP_SYMBOLS[name].ios;
+}
 
 type SymbolWeight = "regular" | "medium" | "semibold" | "bold";
 const LUCIDE_STROKE: Record<SymbolWeight, number> = {

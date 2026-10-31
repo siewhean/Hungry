@@ -358,8 +358,9 @@ test("advanced liked-content social collection is gated out of MVP production", 
   assert.match(profileStack, /name="SocialGrid" getComponent=\{loadSocialGridScreen\}/);
   assert.match(profileStack, /name="SocialPostDetail" getComponent=\{loadSocialPostDetailScreen\}/);
   assert.doesNotMatch(profileStack, /SocialGridScreen\} from "\.\/SocialGridScreen"/);
-  assert.match(profileHome, /isAuthenticated && FEATURE_FLAGS\.collectionsEnabled && \(/);
-  assert.match(profileHome, /label="Liked content"/);
+  // The menu item exists only when the flag is on.
+  assert.match(profileHome, /FEATURE_FLAGS\.collectionsEnabled\s*\?\s*\{\s*id: "liked-content"/);
+  assert.match(profileHome, /title: "Liked content"/);
 });
 
 test("Search results route reads the paged catalog service, never the repository cache", () => {
