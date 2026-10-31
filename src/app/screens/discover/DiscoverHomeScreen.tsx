@@ -1381,7 +1381,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               accessibilityHint="Shows stalls near you instead of picks across Singapore"
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={() => void handleUseCurrentLocation()}
-              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, paddingVertical: spacing[1] })}
+              style={({ pressed }) => ({
+                justifyContent: "center",
+                minHeight: 44,
+                opacity: pressed ? 0.7 : 1,
+              })}
             >
               <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 Turn on location for stalls near you

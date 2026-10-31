@@ -537,7 +537,7 @@ test("H4-16: a stall's rating sits in its own pill, apart from the open state", 
   serveLiveFeed([feedRow(1, { operating_hours: "Mon-Sun 24 hours" }), feedRow(2), feedRow(3)]);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   assert.ok(view.findByLabel("Rated 4.5"), "a rating pill is on the stall row");
-  assert.doesNotMatch(view.text(), /Open · Open 24 hours ·\s*★/);
+  assert.doesNotMatch(view.text(), /Open · Open 24 hours ·\s*(★|Rated)/);
 });
 
 test("R4-B5: 'No matching results' is one page-level state with a one-tap way to clear the filters", async () => {

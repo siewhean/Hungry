@@ -1,6 +1,7 @@
 import { SymbolView, type SFSymbol, type SymbolViewProps } from "expo-symbols";
 import type { ComponentType } from "react";
 import {
+  CakeSlice,
   Check,
   CircleDollarSign,
   Droplet,
@@ -12,11 +13,10 @@ import {
   SlidersHorizontal,
   Snowflake,
   Soup,
-  Sparkles,
   Star,
   Thermometer,
   Utensils,
-  Waves,
+  UtensilsCrossed,
   Zap,
   type LucideIcon,
   type LucideProps,
@@ -45,14 +45,14 @@ const APP_SYMBOLS = {
   // The review taste tags (REVIEW_TASTE_TAG_META in types/domain.ts names these keys).
   tasteSpicy: { ios: "flame", lucide: Flame },
   tasteSavoury: { ios: "fork.knife", lucide: Utensils },
-  tasteSweet: { ios: "sparkles", lucide: Sparkles },
+  tasteSweet: { ios: "birthday.cake", lucide: CakeSlice },
   tasteSour: { ios: "drop", lucide: Droplet },
   tasteGenerous: { ios: "gift", lucide: Gift },
   tasteFresh: { ios: "leaf", lucide: Leaf },
   tasteWorthIt: { ios: "dollarsign.circle", lucide: CircleDollarSign },
   tasteCold: { ios: "snowflake", lucide: Snowflake },
   tasteRichBroth: { ios: "cup.and.saucer", lucide: Soup },
-  tasteChewyNoodles: { ios: "scribble", lucide: Waves },
+  tasteChewyNoodles: { ios: "fork.knife.circle", lucide: UtensilsCrossed },
   tasteHotFresh: { ios: "thermometer.medium", lucide: Thermometer },
   tasteQuick: { ios: "bolt", lucide: Zap },
 } as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon; filled?: boolean }> &
