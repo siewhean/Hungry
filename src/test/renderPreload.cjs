@@ -164,7 +164,13 @@ function reanimatedOverrides() {
     },
     useAnimatedScrollHandler: () => () => undefined,
     useAnimatedRef: () => ({ current: null }),
-    useAnimatedReaction: () => undefined,
+    // Runs once at mount with the first value (there is no UI thread to watch a value change).
+    useAnimatedReaction: (prepare, react) => {
+      React.useEffect(() => {
+        const value = prepare();
+        if (react) react(value, null);
+      }, []);
+    },
     useReducedMotion: () => false,
     useScrollViewOffset: () => ({ value: 0 }),
     useAnimatedKeyboard: () => ({ height: { value: 0 }, state: { value: 0 } }),

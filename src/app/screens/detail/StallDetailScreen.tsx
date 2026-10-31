@@ -1,17 +1,18 @@
 import {
   Alert,
-  Animated,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
   type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   useWindowDimensions,
-  Text,
 } from "react-native";
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
@@ -19,22 +20,6 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo, type ReactNode } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Bookmark,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  CircleHelp,
-  Clock3,
-  Globe,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-  MessageCircleMore,
-  Share as ShareIos,
-  Share2,
-} from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -49,6 +34,20 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { PhotoPager } from "@/components/dish/PhotoPager";
+import { RatingStarSymbol, ShareSymbol } from "@/components/dish/dishSymbols";
+import {
+  ChevronDownSymbol,
+  ChevronRightSymbol,
+  ChevronUpSymbol,
+  EmailSymbol,
+  HelpSymbol,
+  HoursSymbol,
+  NoReviewsSymbol,
+  PhoneSymbol,
+  SavedCountSymbol,
+  WebsiteSymbol,
+} from "@/components/stall/stallSymbols";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
 import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
@@ -67,7 +66,6 @@ import { StallReviewCard } from "@/components/stall/StallReviewCard";
 import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
 import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
-import { StallVisitedSheet } from "@/components/stall/StallVisitedSheet";
 import {
   getStallDishPhotos,
   shouldUseMenuList,
@@ -93,9 +91,8 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import { formatDishPrice } from "@/features/detail/dishPrice";
 import { toDisplayName } from "@/features/detail/stallDisplayName";
-import { pickVisitedSheetDishes } from "@/features/detail/stallVisited";
+import { formatSgPhone } from "@/features/detail/formatSgPhone";
 import type {
   MerchantClaimStatus,
   RecentReviewFeedEntry,
@@ -112,8 +109,6 @@ import {
 import {
   buildStallMapsUrl,
   formatDistanceFromUser,
-  formatFullStallAddress,
-  formatShortStallAddress,
   formatStallPriceBand,
   getStallPin,
   summarizeStallRating,
@@ -144,9 +139,12 @@ import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveAc
 import { webShareUrl } from "@/constants/links";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-/** The platform's own share glyph: the box-and-arrow on iOS, the three dots on Android. */
-const ShareIcon = Platform.OS === "ios" ? ShareIos : Share2;
+/** Room under the status bar for Back and Share when the page has no photo to sit over. */
+const BUTTONS_ROW_HEIGHT = 56;
+/** Scroll distance over which the title bar fades in on a page with no photo. */
+const COMPACT_HEADER_FADE_HEIGHT = 110;
+/** The logo or monogram beside the name when there is no photo. */
+const COMPACT_LOGO_SIZE = 56;
 const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
   none: "Claim this stall",
   submitted: "Claim submitted",
@@ -237,7 +235,7 @@ function ContactRow({
           {value}
         </AppText>
       </View>
-      <ChevronRight color={palette.textMuted} size={18} />
+      <ChevronRightSymbol color={palette.textMuted} size={18} />
     </Pressable>
   );
 }
@@ -287,8 +285,22 @@ function formatWebsiteLabel(url: string) {
 }
 
 export function StallDetailScreen({ navigation, route }: Props) {
-  // Drives the photo fading out as the page scrolls.
-  const [heroScrollY] = useState(() => new Animated.Value(0));
+  // The scroll offset, written on the UI thread: the photo fades and the title bar fades in
+  // from it without a React render per scroll event. Loading the next batch of menu items is
+  // the only thing that reaches back to JS, once, when the diner nears the end of the menu.
+  const heroScrollY = useSharedValue(0);
+  const menuLoadAt = useSharedValue(Number.POSITIVE_INFINITY);
+  const nearMenuEnd = useSharedValue(false);
+  const loadMoreMenuItemsRef = useRef<() => void>(() => undefined);
+  const loadMoreMenuItems = useCallback(() => loadMoreMenuItemsRef.current(), []);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    heroScrollY.value = event.contentOffset.y;
+    const reached = event.contentOffset.y + event.layoutMeasurement.height >= menuLoadAt.value;
+    if (reached !== nearMenuEnd.value) {
+      nearMenuEnd.value = reached;
+      if (reached) runOnJS(loadMoreMenuItems)();
+    }
+  });
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
@@ -473,8 +485,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
   const [activeDietaryFlags, setActiveDietaryFlags] = useState<string[]>([]);
   const [hoursExpanded, setHoursExpanded] = useState(false);
-  // "Visited. What did you have?" opens in place after Mark visited.
-  const [visitedSheetOpen, setVisitedSheetOpen] = useState(false);
   const [menuQuery, setMenuQuery] = useState("");
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
   const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
@@ -498,11 +508,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
     address: venue?.address ?? (building as { address?: string } | undefined)?.address,
     postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
   };
-  const stallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
   // ALL CAPS licence names read as shouting; display only, the stored name is what is copied.
   const displayName = toDisplayName(venue?.name ?? "Stall");
-  // The card reads "#01-23, NUS UTown"; the street and postcode only go to Google Maps.
-  const shortStallAddress = venue ? formatShortStallAddress(venue, buildingLocation) : "";
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
@@ -974,9 +981,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
-  // 4:3 when there are photos, so they show whole; a short branded header otherwise.
-  const heroHeight =
-    heroPhotos.length > 0 ? Math.min(screenWidth * 0.75, 420) : Math.min(screenWidth * 0.45, 190);
+  // 4:3 when there are photos, so they show whole. With none (every stall today) there is no
+  // hero at all: the name, logo and rating start right under Back and Share (R5-STALL-5).
+  const hasHero = heroPhotos.length > 0;
+  const heroHeight = hasHero ? Math.min(screenWidth * 0.75, 420) : 0;
+  const headerFadeHeight = hasHero ? heroHeight : COMPACT_HEADER_FADE_HEIGHT;
+  const subtitle = [buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
+    .filter(Boolean)
+    .join(" · ");
+  // The street and postcode are the only address facts the subtitle lacks (R5-STALL-6).
+  const streetAddress = [
+    buildingLocation.address?.trim(),
+    buildingLocation.postalCode ? `Singapore ${buildingLocation.postalCode}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(", ");
   const hoursRows = openInfo.weekRows;
   // A single listed "Hours" line that today's row already repeats has nothing more to expand.
   const hoursExpandable = hoursRows.some(
@@ -984,7 +1003,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   );
   const hoursHeader = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-      <Clock3 color={palette.orange} size={18} />
+      <HoursSymbol color={palette.orange} size={18} />
       <AppText
         variant="bodyBold"
         tone={openInfo.isOpen ? "success" : "default"}
@@ -996,9 +1015,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
       </AppText>
       {hoursExpandable ? (
         hoursExpanded ? (
-          <ChevronUp color={palette.orange} size={20} />
+          <ChevronUpSymbol color={palette.orange} size={20} />
         ) : (
-          <ChevronDown color={palette.orange} size={20} />
+          <ChevronDownSymbol color={palette.orange} size={20} />
         )
       ) : null}
     </View>
@@ -1022,18 +1041,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
 
-  const visitedSheetDishes = visitedSheetOpen
-    ? pickVisitedSheetDishes(dishes, reviewedDishIds)
-    : EMPTY_DISHES;
-  const closeVisitedSheet = () => setVisitedSheetOpen(false);
-  const pickVisitedDish = (dish: DishDetail) => {
-    closeVisitedSheet();
-    trackAnalyticsEvent("stall_visited_dish_picked", { stall_id: venue.id, dish_id: dish.id });
-    navigation.navigate("ReviewStack", {
-      screen: "ReviewMain",
-      params: { venueId: venue.id, dishId: dish.id },
-    });
-  };
+  // "What did you have?" is a system form sheet. Only the id travels: on web the params
+  // become the URL, and the sheet reads the menu and the diner's reviews itself.
+  const openVisitedSheet = () => navigation.navigate("StallVisited", { venueId: venue.id });
 
   const openReportHours = () => {
     const params = {
@@ -1117,9 +1127,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
     void openMerchantProfileLink("web", url);
   };
 
+  // The scroll offset at which the next batch of menu items is wanted, for the UI-thread handler.
+  const syncMenuLoadAt = () => {
+    const body = contentBodyLayoutRef.current;
+    const menu = menuSectionLayoutRef.current;
+    if (!body || !menu) return;
+    menuLoadAt.value = body.y + menu.y + menu.height - MENU_LOAD_THRESHOLD_PX;
+    // Re-check on the next scroll event against the new end of the menu.
+    nearMenuEnd.value = false;
+  };
+
   const handleContentBodyLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     contentBodyLayoutRef.current = { y, height };
+    syncMenuLoadAt();
   };
 
   const handleReviewsSectionLayout = (event: LayoutChangeEvent) => {
@@ -1139,17 +1160,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const handleMenuSectionLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     menuSectionLayoutRef.current = { y, height };
+    syncMenuLoadAt();
   };
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  // Called from the scroll handler when the diner nears the end of the loaded menu.
+  loadMoreMenuItemsRef.current = () => {
     if (!hasMoreMenuItems) return;
-    const contentBodyLayout = contentBodyLayoutRef.current;
-    const menuSectionLayout = menuSectionLayoutRef.current;
-    if (!contentBodyLayout || !menuSectionLayout) return;
-    const { contentOffset, layoutMeasurement } = event.nativeEvent;
-    const viewportBottom = contentOffset.y + layoutMeasurement.height;
-    const menuSectionBottom = contentBodyLayout.y + menuSectionLayout.y + menuSectionLayout.height;
-    if (viewportBottom < menuSectionBottom - MENU_LOAD_THRESHOLD_PX) return;
     setVisibleMenuItemCount((current) =>
       current !== visibleMenuItemCount
         ? current
@@ -1264,29 +1280,27 @@ export function StallDetailScreen({ navigation, route }: Props) {
               Once the photo has faded, a bar with the stall name fades in behind them. */}
           <DetailCollapsingHeader
             scrollY={heroScrollY}
-            heroHeight={heroHeight}
+            heroHeight={headerFadeHeight}
             title={displayName}
             onBack={goBackOrHome}
             onShare={showDeferredDetailControls ? openShareSheet : undefined}
             shareLabel="Share stall"
-            shareIcon={ShareIcon}
+            shareIcon={ShareSymbol}
             chromeTestID="stall-detail-top-chrome"
           />
           <Animated.ScrollView
             ref={scrollRef as never}
             showsVerticalScrollIndicator={false}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
-              listener: handleScroll,
-              useNativeDriver: Platform.OS !== "web",
-            })}
+            onScroll={onScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
               paddingBottom: insets.bottom + 96,
             }}
           >
-            {/* Hero: swipeable photos (owner cover, stall, dishes, reviews), else a short branded header */}
-            <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
-              {heroPhotos.length > 0 ? (
+            {/* Hero: swipeable photos (owner cover, stall, dishes, reviews). With none there is no
+                hero: a gap for Back and Share, then the compact header below. */}
+            {hasHero ? (
+              <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
                 <PhotoPager
                   photos={heroPhotos}
                   width={screenWidth}
@@ -1307,10 +1321,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     }}
                   />
                 </PhotoPager>
-              ) : (
-                heroFallback
-              )}
-            </DetailHeroFade>
+              </DetailHeroFade>
+            ) : (
+              <View style={{ height: insets.top + BUTTONS_ROW_HEIGHT }} />
+            )}
 
             <View
               onLayout={handleContentBodyLayout}
@@ -1323,13 +1337,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Header Content */}
               <View style={{ gap: spacing[3] }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-                  {/* With no photo the hero already shows the logo. */}
-                  {heroPhotos.length > 0 && sanitizeCatalogImageUrl(venue.logoUrl) ? (
+                  {/* With a photo the logo only shows when the stall has one; with none, the logo or
+                      the stall's initials stand in beside the name. */}
+                  {hasHero ? (
+                    sanitizeCatalogImageUrl(venue.logoUrl) ? (
+                      <StallLogoMark
+                        logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
+                        name={displayName}
+                      />
+                    ) : null
+                  ) : (
                     <StallLogoMark
                       logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
                       name={displayName}
+                      size={COMPACT_LOGO_SIZE}
+                      borderWidth={2}
                     />
-                  ) : null}
+                  )}
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <Pressable
                       accessibilityRole="button"
@@ -1339,17 +1363,25 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     >
                       <AppText variant="h1">{displayName}</AppText>
                     </Pressable>
-                    <AppText variant="body" tone="secondary">
-                      {/* Centre · unit · distance; the full address lives in the Address card. */}
-                      {[buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </AppText>
+                    {/* Centre · unit · distance; a tap opens Directions. */}
+                    {subtitle ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Directions to ${displayName}, ${subtitle}`}
+                        accessibilityHint="Opens the stall in Google Maps"
+                        onPress={openStallMaps}
+                        hitSlop={{ bottom: 8, top: 8 }}
+                      >
+                        <AppText variant="body" tone="secondary">
+                          {subtitle}
+                        </AppText>
+                      </Pressable>
+                    ) : null}
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   {ratingSummary ? (
-                    <Pressable
+                    <PressableScale
                       accessibilityRole="button"
                       accessibilityLabel={`${ratingSummary.rating.toFixed(1)} stars from ${ratingSummary.reviewCount} dish ${ratingSummary.reviewCount === 1 ? "rating" : "ratings"}`}
                       accessibilityHint={
@@ -1358,21 +1390,24 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       disabled={!showDeferredDetailControls}
                       onPress={scrollToReviews}
                       style={{
+                        alignItems: "center",
                         backgroundColor: palette.bgSoft,
                         borderRadius: radii.pill,
+                        flexDirection: "row",
+                        gap: spacing[1],
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[1],
                       }}
                     >
+                      <RatingStarSymbol size={14} color={palette.starFill} />
                       <AppText variant="bodySmallBold">
-                        <Text style={{ color: palette.starFill }}>★</Text>{" "}
                         {ratingSummary.rating.toFixed(1)}{" "}
                         <AppText variant="bodySmall" tone="secondary">
                           · {ratingSummary.reviewCount} dish{" "}
                           {ratingSummary.reviewCount === 1 ? "rating" : "ratings"}
                         </AppText>
                       </AppText>
-                    </Pressable>
+                    </PressableScale>
                   ) : null}
                   {savedCountLabel ? (
                     <View
@@ -1388,7 +1423,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         paddingVertical: spacing[1],
                       }}
                     >
-                      <Bookmark color={palette.textSecondary} size={14} />
+                      <SavedCountSymbol color={palette.textSecondary} size={14} />
                       <AppText variant="bodySmallBold" tone="secondary">
                         {savedCountLabel}
                       </AppText>
@@ -1401,9 +1436,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </AppText>
                   ) : null}
                   {merchantProfile?.contactPhone ? (
-                    <Pressable
+                    <PressableScale
                       accessibilityRole="button"
-                      accessibilityLabel={`Call ${displayName} on ${merchantProfile.contactPhone}`}
+                      accessibilityLabel={`Call ${displayName} on ${formatSgPhone(merchantProfile.contactPhone)}`}
                       onPress={() =>
                         openMerchantContact("phone", merchantProfile.contactPhone ?? "")
                       }
@@ -1417,9 +1452,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         paddingHorizontal: spacing[3],
                       }}
                     >
-                      <Phone color={palette.orange} size={14} />
+                      <PhoneSymbol color={palette.orange} size={14} />
                       <AppText variant="bodySmallBold">Call</AppText>
-                    </Pressable>
+                    </PressableScale>
                   ) : null}
                 </View>
                 {/* Only when the hours card does not already say it. */}
@@ -1457,7 +1492,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           minHeight: 44,
                         }}
                       >
-                        <Globe color={palette.orange} size={16} />
+                        <WebsiteSymbol color={palette.orange} size={16} />
                         <AppText variant="body" tone="accent" numberOfLines={1} style={{ flex: 1 }}>
                           {formatWebsiteLabel(websiteLink.url)}
                         </AppText>
@@ -1528,32 +1563,30 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     : null}
                 </View>
 
-                <View
-                  style={{
-                    borderTopColor: palette.border,
-                    borderTopWidth: 1,
-                    gap: spacing[1.5],
-                    paddingTop: spacing[3],
-                  }}
-                >
-                  <AppText variant="bodyBold">Address</AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open maps for ${shortStallAddress || stallAddress}`}
-                    accessibilityHint="Opens the stall in Google Maps"
-                    onPress={openStallMaps}
-                    style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
+                {/* The subtitle already says centre and unit; this only adds the street and postcode. */}
+                {streetAddress ? (
+                  <View
+                    style={{
+                      borderTopColor: palette.border,
+                      borderTopWidth: 1,
+                      gap: spacing[1.5],
+                      paddingTop: spacing[3],
+                    }}
                   >
-                    <View
-                      style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+                    <AppText variant="bodyBold">Address</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open maps for ${streetAddress}`}
+                      accessibilityHint="Opens the stall in Google Maps"
+                      onPress={openStallMaps}
+                      style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
                     >
-                      <MapPin color={palette.orange} size={18} />
-                      <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
-                        {shortStallAddress || stallAddress}
+                      <AppText variant="body" tone="secondary">
+                        {streetAddress}
                       </AppText>
-                    </View>
-                  </Pressable>
-                </View>
+                    </Pressable>
+                  </View>
+                ) : null}
               </Card>
               {deliveryLinks.length > 0 ? (
                 <View style={{ gap: spacing[2] }}>
@@ -1602,7 +1635,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         />
                       ) : null}
                     </View>
-                    {filteredMenuDishes.length > 0 ? (
+                    {/* A count only says something when the list is filtered or cut off. */}
+                    {filteredMenuDishes.length > 0 &&
+                    (menuFilterActive || hasMoreMenuItems || Boolean(menuNextCursor)) ? (
                       <AppText variant="bodySmall" tone="secondary">
                         Showing {visibleMenuDishes.length} of {filteredMenuDishes.length}
                         {menuNextCursor ? "+" : ""} items
@@ -1723,7 +1758,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     <CustomerPromotionCard
                       key={promotion.id}
                       promotion={promotion}
-                      ctaLabel={promotion.targetDishId ? "View dish" : undefined}
                       onPress={
                         promotion.targetDishId
                           ? () => {
@@ -1745,31 +1779,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ))}
                 </View>
               ) : null}
-              {merchantProfile?.contactPhone || merchantProfile?.contactEmail ? (
+              {/* The phone is the Call chip under the name, so it is not repeated here. */}
+              {merchantProfile?.contactEmail ? (
                 <Card style={{ gap: spacing[1], padding: spacing[4] }}>
                   <AppText variant="bodyBold">Contact details</AppText>
-                  {merchantProfile.contactPhone ? (
-                    <ContactRow
-                      icon={<Phone color={palette.orange} size={18} />}
-                      label="Call"
-                      value={merchantProfile.contactPhone}
-                      accessibilityLabel={`Call ${displayName} on ${merchantProfile.contactPhone}`}
-                      onPress={() =>
-                        openMerchantContact("phone", merchantProfile.contactPhone ?? "")
-                      }
-                    />
-                  ) : null}
-                  {merchantProfile.contactEmail ? (
-                    <ContactRow
-                      icon={<Mail color={palette.orange} size={18} />}
-                      label="Email"
-                      value={merchantProfile.contactEmail}
-                      accessibilityLabel={`Email ${displayName}`}
-                      onPress={() =>
-                        openMerchantContact("email", merchantProfile.contactEmail ?? "")
-                      }
-                    />
-                  ) : null}
+                  <ContactRow
+                    icon={<EmailSymbol color={palette.orange} size={18} />}
+                    label="Email"
+                    value={merchantProfile.contactEmail}
+                    accessibilityLabel={`Email ${displayName}`}
+                    onPress={() => openMerchantContact("email", merchantProfile.contactEmail ?? "")}
+                  />
                 </Card>
               ) : null}
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
@@ -1862,47 +1882,69 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           ? "Be the first to review this stall."
                           : "Reviews for this stall will show here."
                       }
-                      icon={<CommentIcon size={36} color={palette.textMuted} />}
-                      {...(FEATURE_FLAGS.reviewCreationEnabled
-                        ? { ctaLabel: "Write a review", onPress: openWriteReview }
-                        : {})}
+                      icon={<NoReviewsSymbol size={36} color={palette.textMuted} />}
                     />
                   )}
                 </View>
               ) : null}
+              {/* A quiet row, not a button: the bar's "Write a review" is the page's only filled button. */}
               {showDeferredDetailControls && FEATURE_FLAGS.merchantClaimCtaEnabled ? (
-                <Card style={{ padding: spacing[4], gap: spacing[4] }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <AppText variant="h3">Own this stall?</AppText>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="View verification process"
-                      onPress={() => navigation.navigate("MerchantClaimExplainer")}
-                      hitSlop={13}
-                    >
-                      <CircleHelp color={palette.orange} size={18} />
-                    </Pressable>
-                  </View>
-                  <Button
-                    label={
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderColor: palette.border,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    flexDirection: "row",
+                    gap: spacing[2],
+                  }}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
                       isSubmittingClaim
-                        ? "Submitting..."
+                        ? "Submitting your claim"
                         : isClaimPending
                           ? CLAIM_STATUS_LABELS[claimStatus]
-                          : "Claim this stall"
+                          : "Own this stall? Claim it"
                     }
+                    accessibilityState={{ disabled: isSubmittingClaim || isClaimPending }}
+                    disabled={isSubmittingClaim || isClaimPending}
                     onPress={() => {
                       void handleClaimThisStall();
                     }}
-                    disabled={isSubmittingClaim || isClaimPending}
-                  />
-                </Card>
+                    style={({ pressed }) => ({
+                      alignItems: "center",
+                      flex: 1,
+                      flexDirection: "row",
+                      gap: spacing[2],
+                      minHeight: 52,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <AppText
+                      variant="body"
+                      tone={isClaimPending ? "secondary" : "default"}
+                      style={{ flex: 1 }}
+                    >
+                      {isSubmittingClaim
+                        ? "Submitting..."
+                        : isClaimPending
+                          ? CLAIM_STATUS_LABELS[claimStatus]
+                          : "Own this stall? Claim it"}
+                    </AppText>
+                    {isClaimPending ? null : (
+                      <ChevronRightSymbol color={palette.textMuted} size={16} />
+                    )}
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="View verification process"
+                    onPress={() => navigation.navigate("MerchantClaimExplainer")}
+                    hitSlop={13}
+                  >
+                    <HelpSymbol color={palette.orange} size={18} />
+                  </Pressable>
+                </View>
               ) : null}
               <ReportProblemLink venueId={venue.id} subjectName={displayName} />
             </View>
@@ -1950,7 +1992,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               }
               onDirections={venue ? openStallMaps : undefined}
               hasReviewedDishAtVenue={hasReviewedDishAtVenue}
-              onVisited={() => setVisitedSheetOpen(true)}
+              onVisited={openVisitedSheet}
               showVisited={showDeferredDetailControls && isAuthenticated}
               onAddToList={
                 showDeferredDetailControls && FEATURE_FLAGS.portfoliosEnabled
@@ -1981,17 +2023,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
             />
           ) : null}
           {detailSaveActions.saveToListSheet}
-          <StallVisitedSheet
-            visible={visitedSheetOpen}
-            stallName={displayName}
-            dishes={visitedSheetDishes}
-            onPickDish={pickVisitedDish}
-            onWriteReview={() => {
-              closeVisitedSheet();
-              openWriteReview();
-            }}
-            onSkip={closeVisitedSheet}
-          />
         </View>
       </SafeAreaView>
     </FeedErrorBoundary>
