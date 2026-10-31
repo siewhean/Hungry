@@ -86,7 +86,6 @@ import {
   ImagePlus,
   MessageCircleMore,
   MoreHorizontal,
-  PenLine,
   Send,
   Settings,
   UserCheck,
