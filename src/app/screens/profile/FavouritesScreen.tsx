@@ -242,6 +242,7 @@ export function FavouritesScreen({ navigation, route }: Props) {
               onOpenList={(portfolioId) => navigation.navigate("PortfolioDetail", { portfolioId })}
               onCreateList={() => navigation.navigate("PortfolioCreate")}
               onOpenSharedLists={() => navigation.navigate("PortfoliosHome")}
+              onOpenChecklists={() => navigation.navigate("ChecklistsHome")}
             />
           ) : (
             <SavedDishesSection
@@ -510,6 +511,7 @@ function SavedListsSection({
   onOpenList,
   onCreateList,
   onOpenSharedLists,
+  onOpenChecklists,
 }: {
   lists: readonly Portfolio[];
   failed: boolean;
@@ -517,6 +519,7 @@ function SavedListsSection({
   onOpenList: (portfolioId: string) => void;
   onCreateList: () => void;
   onOpenSharedLists: () => void;
+  onOpenChecklists: () => void;
 }) {
   const { spacing } = useHungryTheme();
   const { width } = useWindowDimensions();
@@ -559,6 +562,9 @@ function SavedListsSection({
       ) : null}
       {FEATURE_FLAGS.portfoliosEnabled ? (
         <Button label="Shared and followed lists" variant="secondary" onPress={onOpenSharedLists} />
+      ) : null}
+      {FEATURE_FLAGS.collectionsEnabled ? (
+        <Button label="Checklists" variant="secondary" onPress={onOpenChecklists} />
       ) : null}
     </View>
   );

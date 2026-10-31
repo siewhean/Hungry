@@ -14,11 +14,10 @@ test.describe("checklist and portfolio critical flows", () => {
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Profile", "Profile & Review");
 
-    // Saved is the one entry point (R4); its collections tab reaches the Lists area (main #91).
+    // Saved is the one entry point (R4); its Lists section reaches Checklists and the lists hub.
     await page.getByRole("button", { name: /^Saved \d+/ }).click();
     await page.getByRole("tab", { name: "Saved lists" }).click();
-    await page.getByRole("button", { name: "All lists" }).click();
-    await page.getByRole("button", { name: /^Checklists\./ }).click();
+    await page.getByRole("button", { name: "Checklists", exact: true }).click();
     await expect(page.getByText("My checklists", { exact: true }).first()).toBeVisible();
 
     await page
@@ -39,8 +38,7 @@ test.describe("checklist and portfolio critical flows", () => {
 
     await page.getByRole("button", { name: /^Saved \d+/ }).click();
     await page.getByRole("tab", { name: "Saved lists" }).click();
-    await page.getByRole("button", { name: "All lists" }).click();
-    await page.getByRole("button", { name: /^Your lists\./ }).click();
+    await page.getByRole("button", { name: "Shared and followed lists" }).click();
     await expect(
       page.getByText("Your lists", { exact: true }).filter({ visible: true }).first(),
     ).toBeVisible();
