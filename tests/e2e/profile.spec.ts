@@ -98,7 +98,8 @@ test.describe("profile page walk", () => {
       asked = dialog.message();
       await dialog.dismiss();
     });
-    await page.getByRole("button", { name: /back/i }).first().click();
+    // The form has Cancel in the header where the back arrow was.
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect.poll(() => asked).toContain("Discard changes?");
     await expect(nameInput).toHaveValue("Wei Ming Edited");
   });
