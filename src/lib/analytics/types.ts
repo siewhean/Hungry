@@ -105,6 +105,8 @@ export type AnalyticsEventName =
   | "saved_sort_changed"
   | "saved_directions_opened"
   | "saved_undo_used"
+  | "saved_map_opened"
+  | "saved_section_changed"
   | "dish_unfavourited"
   | "checklist_created"
   | "checklist_item_added"

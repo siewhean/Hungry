@@ -196,6 +196,10 @@ function clearAccountScopedStores(): void {
   useMissionStore.getState()._reset();
   usePassportStore.getState()._reset();
   useStallSubmissionStore.getState()._reset();
+  // The next account opens Saved on Dishes, not where the last one left it.
+  const { useSavedViewStore } =
+    require("./useSavedViewStore") as typeof import("./useSavedViewStore");
+  useSavedViewStore.getState().reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();

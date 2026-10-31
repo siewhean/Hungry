@@ -146,6 +146,8 @@ export interface SavedDishCard {
   postalCode?: string;
   price?: number;
   imageUrl?: string;
+  /** The stall's logo, drawn on the placeholder tile while the dish has no photo. */
+  logoUrl?: string;
   /** Absent until the dish has a review. */
   rating?: number;
   reviewCount?: number;
