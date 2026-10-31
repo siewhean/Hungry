@@ -15,6 +15,7 @@ import {
   DiscoverFoodRailLoadingSkeleton,
   DiscoverStallListLoadingSkeleton,
   PopularFoodStyleSkeleton,
+  VerticalStallShowcaseLoadingSkeleton,
 } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { DiscoverSearchPlaceholder } from "@/components/discover/home/DiscoverSearchPlaceholder";
 import { PopularFoodStyleItem } from "@/components/discover/home/PopularFoodStyleItem";
@@ -321,4 +322,99 @@ test("a food-style bowl whose picture fails shows a dish symbol, not an empty ci
     null,
     "the broken picture is gone",
   );
+});
+
+// The loading skeletons must take the room of the cards that replace them: the same frame, the
+// same padding and gaps, and text boxes as tall as the lines of text.
+const FRAME_PROPERTIES = [
+  "width",
+  "border-radius",
+  "border-top-width",
+  "overflow",
+  "background-color",
+  "box-shadow",
+] as const;
+
+function frameOf(element: Element) {
+  const style = (element as HTMLElement).style;
+  return FRAME_PROPERTIES.map((property) => `${property}: ${style.getPropertyValue(property)}`);
+}
+
+function spacingOf(element: Element) {
+  const style = (element as HTMLElement).style;
+  return ["padding-top", "padding-left", "row-gap"].map(
+    (property) => `${property}: ${style.getPropertyValue(property)}`,
+  );
+}
+
+test("a dish-card skeleton has the frame, padding, gaps and line heights of the real card", async () => {
+  const real = await render(
+    <DiscoverBiteRail
+      buttonId="b"
+      canSeeAll
+      cards={[bite()]}
+      getCardLabel={(item) => item.dishName}
+      isLoading={false}
+      isVisible
+      layout={{ cardWidth: 200, contentGap: 8, imageHeight: 130, screenWidth: 390 }}
+      onOpenBite={() => undefined}
+      onPrefetchBite={() => undefined}
+      onPrefetchCollection={() => undefined}
+      onSeeAll={() => undefined}
+      rail="quickBites"
+      seeAllLabel="See all"
+      title="Dishes near you"
+      variant="rating"
+    />,
+  );
+  const skeleton = await render(
+    <DiscoverFoodRailLoadingSkeleton cardWidth={200} imageHeight={130} />,
+  );
+
+  const realCard = real.container.querySelector<HTMLElement>("[role='button'][aria-label$='Soup']");
+  const skeletonCard = skeleton.container.querySelector<HTMLElement>("[style*='width: 200px']");
+  assert.ok(realCard && skeletonCard);
+  assert.deepEqual(frameOf(skeletonCard), frameOf(realCard), "same frame");
+
+  const realBody = realCard.lastElementChild as HTMLElement;
+  const skeletonBody = skeletonCard.lastElementChild as HTMLElement;
+  assert.deepEqual(spacingOf(skeletonBody), spacingOf(realBody), "same padding and gap");
+
+  const realLines = Array.from(realBody.querySelectorAll<HTMLElement>("div[dir]")).map((node) =>
+    parseFloat(node.style.lineHeight),
+  );
+  const skeletonLines = Array.from(
+    skeletonBody.querySelectorAll<HTMLElement>("[aria-label='Loading content']"),
+  ).map((node) => parseFloat((node.parentElement as HTMLElement).style.height));
+  // Dish name, stall, price (and the rating when there is one): the same lines, top to bottom.
+  assert.deepEqual(skeletonLines.slice(0, 3), realLines.slice(0, 3));
+});
+
+test("the palate rail's skeleton adds the reason line the real cards show", async () => {
+  const plain = await render(<DiscoverFoodRailLoadingSkeleton cardWidth={200} imageHeight={130} />);
+  const withReason = await render(
+    <DiscoverFoodRailLoadingSkeleton cardWidth={200} imageHeight={130} withReason />,
+  );
+  const lines = (view: typeof plain) =>
+    view.container
+      .querySelectorAll("[style*='width: 200px']")[0]
+      .lastElementChild?.querySelectorAll("[aria-label='Loading content']").length;
+  assert.equal((lines(withReason) ?? 0) - (lines(plain) ?? 0), 1);
+});
+
+test("the stall-list skeleton shows the logo, four text lines and a chevron, in the real row's frame", async () => {
+  const rows = await render(<DiscoverStallListLoadingSkeleton rowCount={1} />);
+  const row = rows.container.firstElementChild as HTMLElement;
+  assert.equal(row.style.getPropertyValue("flex-direction"), "row");
+  assert.equal(row.querySelectorAll("[aria-label='Loading content']").length, 6);
+});
+
+test("the stall-grid skeleton fills three rows of two cards under the real title", async () => {
+  const grid = await render(
+    <VerticalStallShowcaseLoadingSkeleton areaPhrase="near you" cardWidth={358} pageHeight={700} />,
+  );
+  assert.ok(grid.findByText("More near you"));
+  assert.equal(grid.container.querySelectorAll("[style*='min-height']").length >= 6, true);
+  // 6 photos + 6 names + 6 stall lines + the count.
+  assert.equal(grid.container.querySelectorAll("[aria-label='Loading content']").length, 19);
 });

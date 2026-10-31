@@ -1161,9 +1161,13 @@ export async function listDiscoveryFeedByLocationViaRpc(
   // page's vectors come from one batched read, alongside the flags read.
   const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
   const needsDietaryFlags = rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row);
-  const [flagsByDishId, tasteByDishId] = await Promise.all([
+  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
+  // their stored state. It needs only the stall ids, so it runs beside the taste and flag reads
+  // instead of after them (one round trip less before Home can draw).
+  const [flagsByDishId, tasteByDishId, closures] = await Promise.all([
     needsDietaryFlags ? loadDishDietaryFlagsByDishId(dishIds) : undefined,
     loadDishTasteByDishId(dishIds),
+    getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id))),
   ]);
   if (flagsByDishId) {
     rows = rows.map((row) => ({
@@ -1172,9 +1176,6 @@ export async function listDiscoveryFeedByLocationViaRpc(
     }));
   }
 
-  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
-  // their stored state.
-  const closures = await getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id)));
   const venues = rows.map(mapDiscoveryFeedVenue).map((venue) => {
     const closedUntil = closures?.get(venue.id);
     return closedUntil ? { ...venue, closedUntil } : venue;

@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { Utensils } from "lucide-react-native";
 
 import { AccessibleImage } from "@/components/ui";
+import { STALL_ROW_THUMBNAIL_SIZE } from "@/components/discover/home/homeLayout";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -84,5 +85,12 @@ export function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number
 }
 
 export function DiscoverStallThumbnail({ venue }: { venue: VenueSummary }) {
-  return <StallLogoMark borderWidth={2} logoUrl={venue.logoUrl} name={venue.name} size={56} />;
+  return (
+    <StallLogoMark
+      borderWidth={2}
+      logoUrl={venue.logoUrl}
+      name={venue.name}
+      size={STALL_ROW_THUMBNAIL_SIZE}
+    />
+  );
 }
