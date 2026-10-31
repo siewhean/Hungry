@@ -20,6 +20,7 @@ import {
   type CatalogSort,
 } from "@/lib/services/catalog";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
+import type { MoodSearchIntent } from "@/types/domain";
 import { getVenueBrandKey } from "@/features/search/venueDedupe";
 
 export type BrowseMode = "dishes" | "stalls";
@@ -100,20 +101,47 @@ interface BrowseRequestInput {
   parsed?: { dietary: readonly string[]; maxPrice?: number };
   /** Food types picked from the release's most common ones; with the Noodles and Rice chips, any may match. */
   foodTypes?: readonly string[];
+  /** What Claude read out of a plain-language query; it replaces the typed text in the request. */
+  mood?: Pick<MoodSearchIntent, "keywords" | "dietaryFlags" | "maxPrice">;
+}
+
+/** A plain-language search ("something soupy and not too spicy") has at least two words. */
+export function looksLikeMoodQuery(query: string) {
+  return query.trim().split(/\s+/).length >= 2;
+}
+
+/** Only an answer with something the catalog can filter on is worth a second search. */
+export function moodIntentIsUseful(intent: MoodSearchIntent | null): intent is MoodSearchIntent {
+  return Boolean(
+    intent && (intent.keywords.length > 0 || intent.dietaryFlags.length > 0 || intent.maxPrice),
+  );
+}
+
+/** The note under the results, in the diner's terms: what was understood and that it is nearby. */
+export function describeMoodResults(intent: Pick<MoodSearchIntent, "summary" | "keywords">) {
+  const understood = intent.summary.trim() || intent.keywords.join(", ");
+  return `We read your search as "${understood}", so these are matching dishes near you.`;
 }
 
 export function buildBrowseRequest(input: BrowseRequestInput): CatalogPageRequest {
-  const query = input.query.trim();
+  const mood = input.mood;
+  // The typed words found nothing; the dish words Claude read out of them are matched instead.
+  const query = mood ? "" : input.query.trim();
   const keywords = [
     ...input.filters.flatMap((id) => FOOD_KEYWORDS[id] ?? []),
     ...(input.foodTypes ?? []),
+    ...(mood?.keywords ?? []),
   ];
-  const dietaryFlags = new Set<string>(input.parsed?.dietary ?? []);
+  const dietaryFlags = new Set<string>([
+    ...(input.parsed?.dietary ?? []),
+    ...(mood?.dietaryFlags ?? []),
+  ]);
   if (input.filters.includes("Halal")) dietaryFlags.add("halal");
   // The Under S$6 chip and a typed cap both apply: the lower one wins.
   const caps = [
     input.filters.includes(BUDGET_FILTER) ? BUDGET_MAX_PRICE : undefined,
     input.parsed?.maxPrice,
+    mood?.maxPrice,
   ].filter((cap): cap is number => cap !== undefined);
   return {
     query: query || undefined,

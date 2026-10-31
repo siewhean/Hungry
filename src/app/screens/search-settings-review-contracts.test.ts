@@ -18,7 +18,7 @@ test("search grid: load-more retry, stable location, analytics and labelled cont
   // Sign-in only: the grid loads for a signed-in user, so loading depends on isAuthenticated.
   assert.match(
     grid,
-    /\[\s*coordinate,\s*filters,\s*isAuthenticated,\s*mode,\s*parsedFilters,\s*foodTypes,\s*place,\s*query,\s*requestKey,\s*service,\s*sort,\s*widenRadius,\s*\]/,
+    /\[\s*coordinate,\s*filters,\s*isAuthenticated,\s*mode,\s*mood,\s*parsedFilters,\s*foodTypes,\s*place,\s*query,\s*requestKey,\s*service,\s*sort,\s*widenRadius,\s*\]/,
   );
   assert.doesNotMatch(grid, /\[currentLocation, (isAuthenticated, )?mode/);
   for (const event of [
