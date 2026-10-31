@@ -232,7 +232,7 @@ export function WheelResultModal({ navigation, route }: Props) {
             }}
           >
             {/* Dark text on amber: white on #F5A623 is 2.0:1. */}
-            <Trophy size={14} color={palette.navy} />
+            <AppSymbol name="trophy.fill" fallback={Trophy} size={14} color={palette.navy} />
             <AppText variant="micro" style={{ color: palette.navy, fontWeight: "900" }}>
               Winner
             </AppText>
@@ -277,7 +277,12 @@ export function WheelResultModal({ navigation, route }: Props) {
                   marginTop: spacing[1],
                 }}
               >
-                <MapPin size={14} color={palette.orange} />
+                <AppSymbol
+                  name="mappin.and.ellipse"
+                  fallback={MapPin}
+                  size={14}
+                  color={palette.orange}
+                />
                 <AppText variant="bodySmall" tone="secondary">
                   {placeLine}
                 </AppText>
@@ -295,14 +300,23 @@ export function WheelResultModal({ navigation, route }: Props) {
             <Button
               label="Directions"
               onPress={handleDirections}
-              leftIcon={<Navigation size={18} color={palette.white} />}
+              leftIcon={
+                <AppSymbol
+                  name="arrow.triangle.turn.up.right.diamond.fill"
+                  fallback={Navigation}
+                  size={18}
+                  color={palette.white}
+                />
+              }
             />
 
             <Button
               label="View stall details"
               onPress={handleStallDetail}
               variant="secondary"
-              leftIcon={<Store size={18} color={palette.text} />}
+              leftIcon={
+                <AppSymbol name="storefront" fallback={Store} size={18} color={palette.text} />
+              }
             />
 
             {isClassic ? (
@@ -310,7 +324,14 @@ export function WheelResultModal({ navigation, route }: Props) {
                 label="Spin again"
                 onPress={handleSpinAgain}
                 variant="secondary"
-                leftIcon={<RotateCcw size={18} color={palette.text} />}
+                leftIcon={
+                  <AppSymbol
+                    name="arrow.counterclockwise"
+                    fallback={RotateCcw}
+                    size={18}
+                    color={palette.text}
+                  />
+                }
               />
             ) : null}
 
@@ -319,7 +340,14 @@ export function WheelResultModal({ navigation, route }: Props) {
                 label={`Next round (${remainingActive - 1} left)`}
                 onPress={handleSpinAgain}
                 variant="secondary"
-                leftIcon={<RotateCcw size={18} color={palette.text} />}
+                leftIcon={
+                  <AppSymbol
+                    name="arrow.counterclockwise"
+                    fallback={RotateCcw}
+                    size={18}
+                    color={palette.text}
+                  />
+                }
               />
             ) : null}
 
@@ -336,7 +364,12 @@ export function WheelResultModal({ navigation, route }: Props) {
               })}
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                <CheckCircle2 size={14} color={palette.textMuted} />
+                <AppSymbol
+                  name="checkmark.circle.fill"
+                  fallback={CheckCircle2}
+                  size={14}
+                  color={palette.textMuted}
+                />
                 <AppText variant="bodySmallBold" tone="muted" style={{ letterSpacing: 1 }}>
                   {isClassic ? "Done" : "Disband party"}
                 </AppText>
