@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react-native";
 import { AppSymbol, AppText, PressableScale } from "@/components/ui";
 import { DiscoverFoodRailLoadingSkeleton } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { DiscoverBiteImage } from "@/components/discover/home/DiscoverImages";
+import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
 import {
   DISCOVER_TEXT_LINK_HIT_SLOP,
   HOME_PRICE_STYLE,
@@ -77,8 +78,8 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   reason?: string;
   variant: DiscoverBiteCardVariant;
 }) {
-  const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
-  const isDark = colorScheme === "dark";
+  const { palette, radii, spacing } = useHungryTheme();
+  const chrome = useDiscoverCardChrome();
   const hasRating = bite.cravingCount > 0 && bite.rating > 0;
   const handlePressIn = useCallback(() => onPrefetch(bite), [bite, onPrefetch]);
   const handlePress = useCallback(() => onOpen(bite, buttonId), [bite, buttonId, onOpen]);
@@ -89,17 +90,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
       accessibilityLabel={getCardLabel(bite)}
       onPressIn={handlePressIn}
       onPress={handlePress}
-      style={[
-        shadows.card,
-        {
-          backgroundColor: palette.surface,
-          borderColor: palette.border,
-          borderRadius: componentRadii.card,
-          borderWidth: isDark ? 0 : 1,
-          overflow: "hidden",
-          width: cardWidth,
-        },
-      ]}
+      style={chrome.biteCardShell(cardWidth)}
     >
       <DiscoverBiteImage bite={bite} height={imageHeight} />
       {/* Rating badge overlay: the rail is rating-based, not curated */}
@@ -124,7 +115,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
           </AppText>
         </View>
       ) : null}
-      <View style={{ gap: spacing[1], padding: spacing[3] }}>
+      <View style={chrome.biteCardBody}>
         <AppText variant="bodySmallBold" numberOfLines={1} style={{ color: palette.text }}>
           {bite.dishName}
         </AppText>
@@ -136,13 +127,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
             {reason}
           </AppText>
         ) : null}
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            marginTop: spacing[1],
-          }}
-        >
+        <View style={chrome.biteCardPriceRow}>
           <AppText variant="bodySmallBold" style={{ color: palette.text, ...HOME_PRICE_STYLE }}>
             S${bite.price.toFixed(2)}
           </AppText>
@@ -295,6 +280,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
           <DiscoverFoodRailLoadingSkeleton
             cardWidth={layout.cardWidth}
             imageHeight={layout.imageHeight}
+            withReason={reasons !== undefined}
           />
         </ScrollView>
       ) : cards.length ? (

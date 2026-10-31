@@ -10,23 +10,18 @@ import {
 import { getStallRowOpenLabel } from "@/features/discover/homeStalls";
 import { useHungryTheme } from "@/theme";
 
-export function VerticalStallShowcaseSection({
-  cards,
-  areaPhrase,
-  pageHeight,
+/**
+ * The grid's measurements: two columns, three rows to a page. The cards and the loading skeleton
+ * both take their sizes from here, so the placeholder fills the same rows the cards will.
+ */
+export function useStallShowcaseMetrics({
   cardWidth,
-  onOpenCard,
-  onPrefetchCard,
+  pageHeight,
 }: {
-  cards: DiscoverStallShowcaseCard[];
-  areaPhrase: string;
-  pageHeight: number;
   cardWidth: number;
-  onOpenCard: (card: DiscoverStallShowcaseCard) => void;
-  onPrefetchCard: (card: DiscoverStallShowcaseCard) => void;
+  pageHeight: number;
 }) {
-  const { componentRadii, palette, radii, spacing, shadows, typography } = useHungryTheme();
-  const visibleCards = useMemo(() => cards.slice(0, STALL_SHOWCASE_CARD_LIMIT), [cards]);
+  const { spacing, typography } = useHungryTheme();
   const columnGap = spacing[2];
   const rowGap = spacing[1.5];
   const columnCardWidth = (cardWidth - columnGap) / 2;
@@ -42,6 +37,46 @@ export function VerticalStallShowcaseSection({
     spacing[0.5] +
     spacing[1];
   const cardImageHeight = Math.max(0, Math.floor(tallCardHeight - compactCardDetailsHeight));
+  return { cardImageHeight, columnCardWidth, columnGap, rowGap, tallCardHeight };
+}
+
+/** The frame of one stall card in the grid (the photo and text go inside it). */
+export function useStallShowcaseCardFrame(columnCardWidth: number, tallCardHeight: number) {
+  const { componentRadii, palette, shadows } = useHungryTheme();
+  return [
+    shadows.card,
+    {
+      backgroundColor: palette.surface,
+      borderColor: palette.border,
+      borderRadius: componentRadii.card,
+      borderWidth: 1,
+      minHeight: tallCardHeight,
+      overflow: "hidden" as const,
+      width: columnCardWidth,
+    },
+  ];
+}
+
+export function VerticalStallShowcaseSection({
+  cards,
+  areaPhrase,
+  pageHeight,
+  cardWidth,
+  onOpenCard,
+  onPrefetchCard,
+}: {
+  cards: DiscoverStallShowcaseCard[];
+  areaPhrase: string;
+  pageHeight: number;
+  cardWidth: number;
+  onOpenCard: (card: DiscoverStallShowcaseCard) => void;
+  onPrefetchCard: (card: DiscoverStallShowcaseCard) => void;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const visibleCards = useMemo(() => cards.slice(0, STALL_SHOWCASE_CARD_LIMIT), [cards]);
+  const { cardImageHeight, columnCardWidth, columnGap, rowGap, tallCardHeight } =
+    useStallShowcaseMetrics({ cardWidth, pageHeight });
+  const cardFrame = useStallShowcaseCardFrame(columnCardWidth, tallCardHeight);
   const showcaseRows = useMemo(() => {
     const rows: DiscoverStallShowcaseCard[][] = [];
     for (let index = 0; index < visibleCards.length; index += 2) {
@@ -90,18 +125,7 @@ export function VerticalStallShowcaseSection({
                   accessibilityLabel={`Open ${card.venue.name} details`}
                   onPressIn={() => onPrefetchCard(card)}
                   onPress={() => onOpenCard(card)}
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: palette.surface,
-                      borderColor: palette.border,
-                      borderRadius: componentRadii.card,
-                      borderWidth: 1,
-                      minHeight: tallCardHeight,
-                      overflow: "hidden",
-                      width: columnCardWidth,
-                    },
-                  ]}
+                  style={cardFrame}
                 >
                   <View
                     style={{

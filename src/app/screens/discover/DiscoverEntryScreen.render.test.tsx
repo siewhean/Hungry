@@ -3,6 +3,7 @@
 // supabaseService runs against a fake supabase-js client, so the feed rows below are in the shape
 // get_discovery_feed_by_location returns. Run with `node scripts/test-render.mjs <file>`.
 import assert from "node:assert/strict";
+import { clearCachedDiscoverFeed } from "@/features/discover/feedCache";
 import test, { afterEach, before, beforeEach } from "node:test";
 import { act, createElement } from "react";
 
@@ -171,6 +172,8 @@ function stubCatalog(releaseId: string) {
 }
 
 beforeEach(async () => {
+  // Every test starts as a first launch: no feed saved by an earlier visit.
+  await clearCachedDiscoverFeed();
   await m.sessions.enterScenario("user");
   m.provider.setSupabaseServiceProvider();
   fake.rpcCalls.length = 0;
@@ -375,6 +378,20 @@ test("welcome_back_v2 on the live Home: shown to the test arm once content is on
   await view.settle();
   assert.match(view.text(), /Welcome back/);
   assert.deepEqual(exposures.exposures, ["welcome_back_v2"]);
+});
+
+test("a second visit draws the feed saved by the first at once, while the live read is still out", async () => {
+  serveLiveFeed();
+  const first = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await first.settle();
+  assert.match(first.text(), /Nasi Padang/);
+  await first.unmount();
+
+  // The next launch: the live read has not answered, but the saved cards are already up.
+  fake.rpc.get_discovery_feed_by_location = () => new Promise(() => undefined);
+  const second = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await second.settle();
+  assert.match(second.text(), /Nasi Padang/);
 });
 
 test("welcome_back_v2 on the live Home: an unfocused Home (tab warm-up) exposes no one", async () => {

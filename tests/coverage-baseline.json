@@ -1,8 +1,8 @@
 {
   "global": {
     "lines": 86.2,
-    "branches": 85.6,
-    "functions": 82.7
+    "branches": 85.7,
+    "functions": 82.8
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -75,6 +75,7 @@
     "src/features/discover/biteLabel.ts": 100,
     "src/features/discover/bites.ts": 64.5,
     "src/features/discover/currentPlace.ts": 54.4,
+    "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/hawkerClassics.ts": 92.3,
     "src/features/discover/homeFilters.ts": 100,
     "src/features/discover/homeRanking.ts": 100,
@@ -218,7 +219,7 @@
     "src/lib/services/supabase/client.ts": 97.1,
     "src/lib/services/supabase/mediaUpload.ts": 67.2,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
-    "src/lib/services/supabase/supabaseRepository.ts": 73.7,
+    "src/lib/services/supabase/supabaseRepository.ts": 74,
     "src/lib/services/supabase/supabaseService.ts": 58.8,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
