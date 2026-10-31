@@ -17,7 +17,6 @@ import {
   Search,
   SearchX,
   Shuffle,
-  Star,
   Flame,
   Dices,
   Users,
@@ -34,7 +33,15 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { MaterialTopTabNavigationProp } from "@react-navigation/material-top-tabs";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState, FilterChipRail, Screen, Skeleton } from "@/components/ui";
+import {
+  AppSymbol,
+  AppText,
+  EmptyState,
+  FilterChipRail,
+  PressableScale,
+  Screen,
+  Skeleton,
+} from "@/components/ui";
 import { DiscoverModeTabs, type DiscoverMode } from "@/components/discover/DiscoverModeTabs";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { ForYouCard } from "@/components/discover/ForYouCard";
@@ -56,7 +63,11 @@ import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
 import { getDietaryChipLabel } from "@/features/discover/homeFilters";
 import { buildBiteLabel } from "@/features/discover/biteLabel";
-import { pickRailsWithoutRepeats, tasteOrderBites } from "@/features/discover/homeRanking";
+import {
+  dropDishesShownElsewhere,
+  pickRailsWithoutRepeats,
+  tasteOrderBites,
+} from "@/features/discover/homeRanking";
 import {
   compareHomeStalls,
   getStallRowOpenLabel,
@@ -317,7 +328,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     );
   }, []);
 
-  const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "Pick with friends" : "Spin the wheel";
+  const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "With friends" : "Spin the wheel";
   useEffect(() => {
     setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
   }, [discoverLocationLabel, activeDiscoverChipSignature]);
@@ -446,39 +457,53 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     [currentPlaceId, discoverDishById, profile.tasteVector, quickBitePool, rankByTaste],
   );
   // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
-  const [trendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] = useMemo(
+  const [pickedTrendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] =
+    useMemo(
+      () =>
+        pickRailsWithoutRepeats(
+          [
+            {
+              bites: isDiscoverFiltering
+                ? filterDiscoverBites(discoverBiteCollections.trending)
+                : discoverBiteCollections.trending,
+              max: TRENDING_LIST_ROWS,
+            },
+            { bites: tasteOrdered.bites, max: 6, keepWhenThin: true },
+            {
+              bites: isDiscoverFiltering
+                ? filterDiscoverBites(discoverBiteCollections.editorChoice)
+                : discoverBiteCollections.editorChoice,
+              max: 6,
+            },
+            {
+              bites: isDiscoverFiltering
+                ? filterDiscoverBites(discoverBiteCollections.budget)
+                : discoverBiteCollections.budget,
+              max: 6,
+            },
+            {
+              bites: isDiscoverFiltering
+                ? filterDiscoverBites(discoverBiteCollections.lateNight)
+                : discoverBiteCollections.lateNight,
+              max: 5,
+            },
+          ],
+          isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS,
+        ),
+      [discoverBiteCollections, filterDiscoverBites, isDiscoverFiltering, tasteOrdered.bites],
+    );
+  // The main rail keeps its dishes when it is thin, so "Most reviewed" yields the ones both would
+  // show; with fewer than a rail's worth left it is hidden rather than repeat the first rail.
+  const trendingCards = useMemo(
     () =>
-      pickRailsWithoutRepeats(
-        [
-          {
-            bites: isDiscoverFiltering
-              ? filterDiscoverBites(discoverBiteCollections.trending)
-              : discoverBiteCollections.trending,
-            max: TRENDING_LIST_ROWS,
-          },
-          { bites: tasteOrdered.bites, max: 6, keepWhenThin: true },
-          {
-            bites: isDiscoverFiltering
-              ? filterDiscoverBites(discoverBiteCollections.editorChoice)
-              : discoverBiteCollections.editorChoice,
-            max: 6,
-          },
-          {
-            bites: isDiscoverFiltering
-              ? filterDiscoverBites(discoverBiteCollections.budget)
-              : discoverBiteCollections.budget,
-            max: 6,
-          },
-          {
-            bites: isDiscoverFiltering
-              ? filterDiscoverBites(discoverBiteCollections.lateNight)
-              : discoverBiteCollections.lateNight,
-            max: 5,
-          },
-        ],
-        isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS,
-      ),
-    [discoverBiteCollections, filterDiscoverBites, isDiscoverFiltering, tasteOrdered.bites],
+      quickBiteCards.length >= (isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS)
+        ? dropDishesShownElsewhere(
+            pickedTrendingCards,
+            quickBiteCards,
+            isDiscoverFiltering ? 1 : MIN_DISCOVER_RAIL_ITEMS,
+          )
+        : pickedTrendingCards,
+    [isDiscoverFiltering, pickedTrendingCards, quickBiteCards],
   );
   // Live builds read the names of saved and reviewed dishes in one batched call (at most 200).
   const familiarDishIdsKey = [
@@ -891,7 +916,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     { building, venue, topDish }: (typeof areaStallCards)[number],
     position: number,
   ) => (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={`Open ${venue.name} ${isUserMode ? "details" : "in map zoomed view"}`}
       onPressIn={() => {
@@ -962,7 +987,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 paddingVertical: 2,
               }}
             >
-              <Star color={palette.starStroke} size={11} fill={palette.starFill} />
+              <AppSymbol name="rating" size={11} color={palette.starFill} />
               <AppText variant="micro" style={{ color: themeTints.text }}>
                 {topDish.rating.toFixed(1)}
               </AppText>
@@ -990,7 +1015,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         )}
       </View>
       <ChevronRight color={palette.textMuted} size={20} />
-    </Pressable>
+    </PressableScale>
   );
   // Filters that leave nothing anywhere on the page get one explanation and one way out,
   // not an empty block per section.
@@ -1324,14 +1349,20 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           >
             <View
               accessible
-              accessibilityLabel={`You are at ${discoverHeaderLabel}`}
+              accessibilityLabel={
+                needsDiscoverAreaChoice
+                  ? `Across ${discoverHeaderLabel}`
+                  : `You are at ${discoverHeaderLabel}`
+              }
               style={{ flex: 1 }}
             >
-              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-                You are at
-              </AppText>
+              {needsDiscoverAreaChoice ? null : (
+                <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
+                  You are at
+                </AppText>
+              )}
               <AppText variant="h2" style={{ color: themeTints.text }} numberOfLines={1}>
-                {discoverHeaderLabel}
+                {needsDiscoverAreaChoice ? `Across ${discoverHeaderLabel}` : discoverHeaderLabel}
               </AppText>
             </View>
             {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
@@ -1352,11 +1383,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               onPress={() => void handleUseCurrentLocation()}
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, paddingVertical: spacing[1] })}
             >
-              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                Location is off, so these are picks across Singapore.{" "}
-                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                  Turn on location
-                </AppText>
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                Turn on location for stalls near you
               </AppText>
             </Pressable>
           ) : null}
@@ -1676,7 +1704,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               getStallMeta={({ venue, topDish }) =>
                 [
                   getStallRowOpenLabel(venue),
-                  topDish && topDish.reviewCount > 0 ? `★ ${topDish.rating.toFixed(1)}` : undefined,
+                  topDish && topDish.reviewCount > 0
+                    ? `Rated ${topDish.rating.toFixed(1)}`
+                    : undefined,
                   venue.unitNumber,
                 ]
                   .filter(Boolean)
@@ -1781,7 +1811,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 {...discoverRailProps}
                 rail="editorChoice"
                 title="Top rated"
-                titleBadge={<DiscoverRailBadge label="★ 4.4+" tone="accent" />}
+                titleBadge={<DiscoverRailBadge label="4.4+" showStar tone="accent" />}
                 seeAllLabel="See all top rated dishes"
                 cards={editorChoiceCards}
                 variant="topRated"

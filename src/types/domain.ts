@@ -1233,20 +1233,38 @@ export type ReviewTasteTag =
   | "hot_fresh"
   | "quick_service";
 
-/** Map of review taste tag keys to display label + emoji */
-export const REVIEW_TASTE_TAG_META: Record<ReviewTasteTag, { emoji: string; label: string }> = {
-  spicy: { emoji: "🌶️", label: "Spicy" },
-  savoury: { emoji: "🧂", label: "Savoury" },
-  sweet: { emoji: "🍯", label: "Sweet" },
-  sour: { emoji: "🍋", label: "Sour" },
-  generous: { emoji: "💪", label: "Generous" },
-  fresh: { emoji: "🌿", label: "Fresh" },
-  worth_it: { emoji: "💰", label: "Worth it" },
-  cold_refreshing: { emoji: "🧊", label: "Cold & refreshing" },
-  rich_broth: { emoji: "🫙", label: "Rich broth" },
-  chewy_noodles: { emoji: "🥢", label: "Chewy noodles" },
-  hot_fresh: { emoji: "🔥", label: "Hot & fresh" },
-  quick_service: { emoji: "⚡", label: "Quick service" },
+/** Names an AppSymbol row for each review taste tag, so the UI draws a symbol and never an emoji. */
+export type ReviewTasteTagSymbol =
+  | "tasteSpicy"
+  | "tasteSavoury"
+  | "tasteSweet"
+  | "tasteSour"
+  | "tasteGenerous"
+  | "tasteFresh"
+  | "tasteWorthIt"
+  | "tasteCold"
+  | "tasteRichBroth"
+  | "tasteChewyNoodles"
+  | "tasteHotFresh"
+  | "tasteQuick";
+
+/** Map of review taste tag keys to display label + symbol (an AppSymbol name) */
+export const REVIEW_TASTE_TAG_META: Record<
+  ReviewTasteTag,
+  { symbol: ReviewTasteTagSymbol; label: string }
+> = {
+  spicy: { symbol: "tasteSpicy", label: "Spicy" },
+  savoury: { symbol: "tasteSavoury", label: "Savoury" },
+  sweet: { symbol: "tasteSweet", label: "Sweet" },
+  sour: { symbol: "tasteSour", label: "Sour" },
+  generous: { symbol: "tasteGenerous", label: "Generous" },
+  fresh: { symbol: "tasteFresh", label: "Fresh" },
+  worth_it: { symbol: "tasteWorthIt", label: "Worth it" },
+  cold_refreshing: { symbol: "tasteCold", label: "Cold & refreshing" },
+  rich_broth: { symbol: "tasteRichBroth", label: "Rich broth" },
+  chewy_noodles: { symbol: "tasteChewyNoodles", label: "Chewy noodles" },
+  hot_fresh: { symbol: "tasteHotFresh", label: "Hot & fresh" },
+  quick_service: { symbol: "tasteQuick", label: "Quick service" },
 };
 
 /** Realtime broadcast event shapes ───────────────────────────────── */

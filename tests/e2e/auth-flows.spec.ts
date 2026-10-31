@@ -22,7 +22,9 @@ test("sign in with an emailed code: email, check your email, 8 digits, signed in
 
   // The field submits itself on the eighth digit.
   await page.getByLabel("Enter the code", { exact: true }).fill("12345678");
-  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/^(You are at|Across Singapore)/).first()).toBeVisible({
+    timeout: 30_000,
+  });
 });
 
 test("Wrong email? returns to the email step with the address kept", async ({ page }) => {
@@ -103,7 +105,9 @@ test("a wrong code is announced, empties the field, and the right one then signs
   await expect(code).toHaveValue("");
 
   await code.fill("12345678");
-  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/^(You are at|Across Singapore)/).first()).toBeVisible({
+    timeout: 30_000,
+  });
 });
 
 test.describe("a 320x568 phone", () => {

@@ -173,7 +173,9 @@ test("an account made after the quiz lands on Home with the diner's picks or a w
   // The mock build opens the developer launcher after sign-in; open the normal app flow.
   await page.getByRole("button", { name: "Open normal app flow" }).click({ timeout: 60_000 });
   // Home: a signed-in diner with a halal need sees a dish or a clear next step, never a blank page.
-  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/^(You are at|Across Singapore)/).first()).toBeVisible({
+    timeout: 60_000,
+  });
   const food = page.getByRole("button", { name: /halal|Chicken Rice|Laksa|Satay/i }).first();
   const wayForward = page.getByText(/no dishes|nothing yet|check back|explore|search/i).first();
   await expect(food.or(wayForward).first()).toBeVisible({ timeout: 30_000 });

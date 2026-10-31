@@ -209,9 +209,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(discover, /type DiscoverStallShowcaseCard = \{/);
   assert.match(discover, /id: string/);
-  assert.match(discover, /imageSource: ImageSourcePropType/);
+  assert.match(discover, /imageSource: ImageSourcePropType \| null/);
   assert.match(discover, /const STALL_SHOWCASE_CARD_LIMIT = 30/);
-  assert.match(discover, /const STALL_SHOWCASE_FALLBACK_IMAGES = \[/);
+  // A stall with no photo shows its logo; a stock photo of another dish is never rotated in.
+  assert.doesNotMatch(discover, /STALL_SHOWCASE_FALLBACK_IMAGES|venueIndex %/);
   assert.match(discover, /function buildStallShowcaseCardsFromVenues/);
   assert.match(discover, /repositoryLookup: Pick<DiscoverRepositoryLookup/);
   assert.match(
@@ -219,7 +220,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /const uniqueVenues = Array\.from\(new Map\(venues\.map\(\(venue\) => \[venue\.id, venue\]\)\)\.values\(\)\)/,
   );
   // One card per stall, never padded with repeats.
-  assert.match(discover, /return uniqueVenues\.flatMap\(\(venue, venueIndex\) =>/);
+  assert.match(discover, /return uniqueVenues\.flatMap\(\(venue\) =>/);
   assert.match(
     discover,
     /const heroDish = repositoryLookup\.getDishById\(venue\.topDishId\) \?\? venueDishes\[0\]/,
@@ -229,10 +230,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /cards\[index % cards\.length\]/);
   assert.match(discover, /const image = getDiscoverCardImage\(\[/);
   assert.match(discover, /\.\.\.getDishImageCandidates\(heroDish\)/);
-  assert.match(
-    discover,
-    /STALL_SHOWCASE_FALLBACK_IMAGES\[venueIndex % STALL_SHOWCASE_FALLBACK_IMAGES\.length\]/,
-  );
+  assert.match(discover, /imageSource: image\.imageUrl \? \{ uri: image\.imageUrl \} : null/);
+  assert.match(discover, /<StallLogoMark[\s\S]*logoUrl=\{card\.venue\.logoUrl\}/);
   assert.match(discover, /function VerticalStallShowcaseSection/);
   assert.match(discover, /const unfilteredStallShowcaseCards = useMemo/);
   assert.match(discover, /const stallShowcaseCards = useMemo/);
@@ -271,12 +270,14 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /source=\{card\.imageSource\}/);
   assert.match(
     discover,
-    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<Star color=\{palette\.starStroke\} size=\{11\} fill=\{palette\.starFill\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
+    /bottom: spacing\[2\],[\s\S]*right: spacing\[2\],[\s\S]*<AppSymbol name="rating" size=\{11\} color=\{palette\.starFill\} \/>[\s\S]*\{card\.heroDish\.rating\.toFixed\(1\)\}/,
   );
   assert.match(
     discover,
-    /\{card\.venue\.name\}[\s\S]*flexShrink: 1[\s\S]*stallBuildingLabel\(card\.venue\), card\.venue\.unitNumber/,
+    /\{card\.heroDish\.name\}[\s\S]*flexShrink: 1[\s\S]*\{card\.venue\.name\}[\s\S]*S\$\$\{card\.heroDish\.price\.toFixed\(2\)\}/,
   );
+  // Two lines: the dish (up to two lines), then "Stall · S$x"; the area is the section title's job.
+  assert.match(discover, /numberOfLines=\{2\}[\s\S]*\{card\.heroDish\.name\}/);
   assert.doesNotMatch(discover, /secondaryProducts\.map/);
   assert.match(discover, /minHeight: tallCardHeight/);
   assert.match(discover, /width: columnCardWidth/);
@@ -412,15 +413,17 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   // A chip filters each full pool before the rails are cut, and a dish keeps to one rail.
   assert.match(
     discover,
-    /const \[trendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards\] = useMemo\([\s\S]*pickRailsWithoutRepeats\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.trending\)[\s\S]*tasteOrdered\.bites[\s\S]*filterDiscoverBites\(discoverBiteCollections\.editorChoice\)[\s\S]*filterDiscoverBites\(discoverBiteCollections\.budget\)[\s\S]*filterDiscoverBites\(discoverBiteCollections\.lateNight\)/,
+    /const \[pickedTrendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards\] =\s*useMemo\([\s\S]*pickRailsWithoutRepeats\([\s\S]*filterDiscoverBites\(discoverBiteCollections\.trending\)[\s\S]*tasteOrdered\.bites[\s\S]*filterDiscoverBites\(discoverBiteCollections\.editorChoice\)[\s\S]*filterDiscoverBites\(discoverBiteCollections\.budget\)[\s\S]*filterDiscoverBites\(discoverBiteCollections\.lateNight\)/,
   );
+  // The first rail wins a shared dish; "Most reviewed" yields to it (round five, H5-2).
+  assert.match(discover, /const trendingCards = useMemo\([\s\S]*dropDishesShownElsewhere\(/);
   assert.match(discover, /: "Hawker classics"/);
   assert.match(discover, /const areaStallCards = useMemo/);
   assert.match(discover, /onPress=\{\(\) => onSeeAll\(rail\)\}/);
   assert.match(discover, /onSeeAll: openDiscoverCollection/);
   assert.match(
     discover,
-    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<Star color=\{palette\.starStroke\} size=\{12\} fill=\{palette\.starFill\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
+    /S\$\{bite\.price\.toFixed\(2\)\}[\s\S]*<AppSymbol name="rating" size=\{12\} color=\{palette\.starFill\} \/>[\s\S]*\{bite\.rating\.toFixed\(1\)\}/,
   );
   assert.match(discover, /title="Budget < S\$8"[\s\S]*label="Value"/);
   assert.match(
@@ -572,7 +575,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /\{FEATURE_FLAGS\.hungryWheelEnabled \? \(\s*<Pressable/);
   assert.match(
     discover,
-    /const wheelCtaLabel = FEATURE_FLAGS\.wheelPartyEnabled \? "Pick with friends" : "Spin the wheel";/,
+    /const wheelCtaLabel = FEATURE_FLAGS\.wheelPartyEnabled \? "With friends" : "Spin the wheel";/,
   );
   assert.match(
     discover,
@@ -814,11 +817,10 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(quickBites, /item\.distance !== undefined \?/);
   assert.match(quickBites, /route\.params\?\.latitude/);
   assert.match(quickBites, /Couldn't load dishes/);
-  assert.match(quickBites, /<AppText style=\{styles\.emptyStateIcon\}>🥣<\/AppText>/);
-  assert.match(
-    quickBites,
-    /emptyStateIcon: \{[\s\S]*height: 72,[\s\S]*lineHeight: 64,[\s\S]*width: 72,/,
-  );
+  // A symbol in a fixed 72-point box, never an emoji glyph that the font can clip.
+  assert.match(quickBites, /<AppSymbol name="dish" size=\{40\}/);
+  assert.doesNotMatch(quickBites, /🥣/);
+  assert.match(quickBites, /emptyStateIcon: \{[\s\S]*height: 72,[\s\S]*width: 72,/);
 });
 
 test("Discover collapses empty rails and offers pull-to-refresh plus one error state", () => {
