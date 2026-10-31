@@ -615,6 +615,86 @@ test("removing a saved stall shows Undo, and Undo saves it again", async () => {
   assert.deepEqual(toggles, ["s1", "s1"]);
 });
 
+/** The scenario user has reviewed dishes; these tests count only the stalls they set up. */
+function clearReviewedDishes() {
+  const { profile } = useProfileStore.getState();
+  useProfileStore.setState({ profile: { ...profile, reviewedDishIds: [] } });
+}
+
+test("Saved > Stalls has Visited: stalls marked visited show there, read from the server, and open", async () => {
+  clearReviewedDishes();
+  useStallInteractionStore.setState({
+    interactions: {
+      v1: {
+        userId: "user",
+        stallId: "v1",
+        isSaved: false,
+        isTried: true,
+        isReviewed: false,
+        triedAt: "2026-10-02T00:00:00.000Z",
+      },
+      s1: {
+        userId: "user",
+        stallId: "s1",
+        isSaved: true,
+        isTried: false,
+        isReviewed: false,
+        savedAt: "2026-10-01T00:00:00.000Z",
+      },
+    },
+    isLoaded: true,
+  });
+  const asked: string[][] = [];
+  stub(getHungryService().discovery, "getVenuesByIds", async (ids: string[]) => {
+    asked.push(ids);
+    return ids.map(
+      (id) => ({ id, name: id === "v1" ? "Ah Lim Prawn Noodles" : "Nam Sing" }) as VenueSummary,
+    );
+  });
+  const view = await renderScreen(FavouritesScreen as never, {
+    name: "Favourites",
+    params: { section: "stalls" },
+  });
+  await view.settle();
+  assert.ok(view.findByText("Saved (1)"), "the saved count");
+  assert.ok(view.findByText("Visited (1)"), "the visited count, before the tab is opened");
+  assert.deepEqual(asked, [["s1"]], "visited stalls are not read until the tab is opened");
+  assert.ok(view.findByLabel("Open Nam Sing"));
+  await view.press(view.findByText("Visited (1)"));
+  await view.settle();
+  assert.equal(useSavedViewStore.getState().stallTab, "visited");
+  assert.deepEqual(asked.at(-1), ["v1"]);
+  assert.ok(view.findByLabel("Open Ah Lim Prawn Noodles"), "the visited stall is listed");
+  assert.equal(view.findByLabel("Open Nam Sing"), null, "saved-only stalls stay on Saved");
+  assert.equal(
+    view.findByLabel("Remove Ah Lim Prawn Noodles from Saved"),
+    null,
+    "a visited row has nothing to remove",
+  );
+});
+
+test("Follow stall is off: nothing on Saved or Profile offers Followed stalls", async () => {
+  const { FEATURE_FLAGS } = await import("@/constants/featureFlags");
+  assert.equal(FEATURE_FLAGS.stallFollowEnabled, false);
+  const { FollowStallButton } = await import("@/components/stall/FollowStallButton");
+  const view = await render(
+    createElement(FollowStallButton, { stallId: "s1", stallName: "Nam Sing" }),
+  );
+  assert.equal(view.findByLabel("Follow Nam Sing"), null);
+});
+
+test("Visited with nothing visited says how to add one", async () => {
+  clearReviewedDishes();
+  useStallInteractionStore.setState({ interactions: {}, isLoaded: true });
+  useSavedViewStore.setState({ stallTab: "visited" });
+  const view = await renderScreen(FavouritesScreen as never, {
+    name: "Favourites",
+    params: { section: "stalls" },
+  });
+  await view.settle();
+  assert.ok(view.findByText("No visited stalls yet"));
+});
+
 // ─── Polish (item 7) ─────────────────────────────────────────────────────────────────────────
 
 test("a list that can't be created says why in a Dialog, not an Alert", async () => {

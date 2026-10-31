@@ -6,23 +6,28 @@ import { hungryPersistStorage } from "./persistStorage";
 
 export type SavedDishTab = "want" | "tried";
 export type SavedViewMode = "list" | "map";
+/** Saved > Stalls: stalls you saved, or stalls you have been to. */
+export type SavedStallTab = "saved" | "visited";
 
 type SavedViewState = {
   section: SavedSection;
   tab: SavedDishTab;
   mode: SavedViewMode;
+  stallTab: SavedStallTab;
   setSection: (section: SavedSection) => void;
   setTab: (tab: SavedDishTab) => void;
   setMode: (mode: SavedViewMode) => void;
+  setStallTab: (stallTab: SavedStallTab) => void;
   reset: () => void;
 };
 
-const INITIAL = { section: "dishes", tab: "want", mode: "list" } as const;
+const INITIAL = { section: "dishes", tab: "want", mode: "list", stallTab: "saved" } as const;
 
 /**
  * Where the diner left the Saved page, so coming back lands in the same place. The section
- * (Dishes, Stalls, Lists) is kept on the device across launches; Want to try / Tried and
- * List / Map are kept for the session only, so a fresh launch opens on the list of dishes.
+ * (Dishes, Stalls, Lists) is kept on the device across launches; Want to try / Tried,
+ * Saved / Visited stalls and List / Map are kept for the session only, so a fresh launch opens
+ * on the list of dishes.
  */
 export const useSavedViewStore = create<SavedViewState>()(
   persist(
@@ -31,6 +36,7 @@ export const useSavedViewStore = create<SavedViewState>()(
       setSection: (section) => set({ section }),
       setTab: (tab) => set({ tab }),
       setMode: (mode) => set({ mode }),
+      setStallTab: (stallTab) => set({ stallTab }),
       reset: () => set({ ...INITIAL }),
     }),
     {

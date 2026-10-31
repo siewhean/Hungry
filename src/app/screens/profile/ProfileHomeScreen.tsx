@@ -709,13 +709,15 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             onPress: () => rootNavigation.navigate("FollowRequests"),
           }
         : null,
-      {
-        id: "followed-stalls",
-        title: "Followed stalls",
-        symbol: "stall" as const,
-        onPressIn: () => preloadRoute(navigation, "FollowedStalls"),
-        onPress: () => navigation.navigate("FollowedStalls"),
-      },
+      FEATURE_FLAGS.stallFollowEnabled
+        ? {
+            id: "followed-stalls",
+            title: "Followed stalls",
+            symbol: "stall" as const,
+            onPressIn: () => preloadRoute(navigation, "FollowedStalls"),
+            onPress: () => navigation.navigate("FollowedStalls"),
+          }
+        : null,
       {
         id: "settings",
         title: "Settings",

@@ -88,6 +88,10 @@ export function resolveFeatureFlags(
     portfoliosEnabled: true,
     // Opt-in push alerts when a followed stall's merchant changes its menu.
     stallAlertsEnabled: true,
+    // Following a stall is off for now (owner decision 2026-10-31): no Follow button, Followed
+    // stalls list or menu-change alert switch. The stall_follows table and code stay, so a build
+    // can bring it back with `EXPO_PUBLIC_ENABLE_STALL_FOLLOW=1`.
+    stallFollowEnabled: surface("EXPO_PUBLIC_ENABLE_STALL_FOLLOW", false),
     storiesEnabled: nonProductionSurfaceEnabled,
     merchantClaimCtaEnabled: nonProductionSurfaceEnabled,
     merchantCentreEnabled: nonProductionSurfaceEnabled,

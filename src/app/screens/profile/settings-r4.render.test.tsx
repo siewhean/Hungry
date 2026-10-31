@@ -593,7 +593,7 @@ test("R5: turning an alert on while the phone blocks notifications explains it i
   const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
   assert.doesNotMatch(view.text(), /Notifications are off for Hungry/);
 
-  await view.press(view.findByLabel("Menu changes at followed stalls"));
+  await view.press(view.findByLabel("Weekly picks"));
   await view.settle();
   assert.match(view.text(), /Notifications are off for Hungry/);
   assert.match(useUIStore.getState().toast?.message ?? "", /Allow notifications for Hungry/);

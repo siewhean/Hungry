@@ -174,9 +174,11 @@ test("P5-3 profile home: the badge is 11pt bold and the menu lists the account i
   assert.equal(number.style.fontSize, "11px");
   assert.equal(number.style.fontWeight, "700");
   await view.press(view.findByLabel(/^Open quick access/));
-  for (const label of ["Settings", "Followed stalls", "Sign out"]) {
+  for (const label of ["Settings", "Sign out"]) {
     assert.ok(view.findByLabel(label), `${label} is in the menu`);
   }
+  // Follow stall is off for now: no Followed stalls entry.
+  assert.equal(view.findByLabel("Followed stalls"), null);
   assert.ok(view.findByLabel("Follow requests, 3 waiting"));
 });
 

@@ -21,7 +21,8 @@ import type {
 } from "@/types/domain";
 import { useListCovers } from "./useListCovers";
 import { SAVED_SEARCH_DEBOUNCE_MS, useSavedSearch } from "./useSavedSearch";
-import { useSavedStalls } from "./useSavedStalls";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useSavedStalls, useVisitedStalls } from "./useSavedStalls";
 
 const restores: (() => void)[] = [];
 function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K]) {
@@ -55,6 +56,48 @@ function stallInteractions(count: number) {
   }
   useStallInteractionStore.setState({ interactions, isLoaded: true });
 }
+
+test("useVisitedStalls lists tried stalls newest first from the server, even ones the cache lacks", async () => {
+  const profile = useProfileStore.getState().profile;
+  useProfileStore.setState({ profile: { ...profile, reviewedDishIds: [] } });
+  const interactions: Record<string, StallInteraction> = {};
+  for (const [id, triedAt] of [
+    ["old", "2026-01-01T00:00:00.000Z"],
+    ["new", "2026-03-01T00:00:00.000Z"],
+  ] as const) {
+    interactions[id] = {
+      userId: "user",
+      stallId: id,
+      isSaved: false,
+      isTried: true,
+      isReviewed: false,
+      triedAt,
+    };
+  }
+  interactions.savedOnly = {
+    userId: "user",
+    stallId: "savedOnly",
+    isSaved: true,
+    isTried: false,
+    isReviewed: false,
+  };
+  useStallInteractionStore.setState({ interactions, isLoaded: true });
+  const asked: string[][] = [];
+  stub(getHungryService().discovery, "getVenuesByIds", async (ids: string[]) => {
+    asked.push(ids);
+    return ids.map((id) => ({ id, name: `Stall ${id}` }) as VenueSummary);
+  });
+  const Probe = ({ enabled }: { enabled: boolean }) => {
+    const state = useVisitedStalls(enabled);
+    return createElement(Text, null, `${state.status}:${state.stalls.map((s) => s.id).join(",")}`);
+  };
+  const view = await render(createElement(Probe, { enabled: false }));
+  assert.deepEqual(asked, [], "idle until the Visited tab is open");
+  await view.rerender(createElement(Probe, { enabled: true }));
+  await view.settle();
+  assert.equal(view.text(), "ready:new,old");
+  assert.equal(asked.length, 1, "one batched read");
+});
 
 test("useSavedStalls reads saved stalls in 50-id batches, newest first, and stays idle until wanted", async () => {
   stallInteractions(60);

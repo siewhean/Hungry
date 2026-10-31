@@ -129,6 +129,9 @@ export function FollowStallButton({
     }
   };
 
+  // Follow stall is off for now: no button, nothing to follow.
+  if (!FEATURE_FLAGS.stallFollowEnabled) return null;
+
   return (
     <Button
       label={
