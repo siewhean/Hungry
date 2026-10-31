@@ -7,23 +7,36 @@
  * CTA dock: "Spin again" (classic) / "Next round" (elimination).
  */
 
-import { useEffect, useRef, useState } from "react";
-import { Animated, Pressable, View, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, View, StyleSheet } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
 } from "@react-navigation/native-stack";
-import { MapPin, Navigation, Store, Trophy, RotateCcw, CheckCircle2 } from "lucide-react-native";
+import {
+  MapPin,
+  Navigation,
+  PartyPopper,
+  Store,
+  Trophy,
+  RotateCcw,
+  CheckCircle2,
+} from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { AccessibleImage, AppText, Button } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Button } from "@/components/ui";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
-import {
-  formatDistanceFromUser,
-  buildStallMapsUrl,
-  getStallPin,
-} from "@/features/detail/stallLocation";
+import { buildStallMapsUrl, getStallPin } from "@/features/detail/stallLocation";
+import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
+import { getDistanceMetersFromCoordinates } from "@/lib/geo/distance";
 import { findBuildingById } from "@/features/discovery/discovery";
 import { leaveWheelStack } from "@/features/wheel/leaveWheel";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
@@ -37,8 +50,13 @@ import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<WheelStackParamList, "WheelResult">;
 
+const WINNER_CARD_START_SCALE = 0.95;
+const WINNER_CARD_ENTER_MS = 250;
+const WINNER_CARD_EASING = Easing.bezier(0.23, 1, 0.32, 1);
+
 export function WheelResultModal({ navigation, route }: Props) {
-  const { componentRadii, palette, spacing, radii, shadows, motion } = useHungryTheme();
+  const { componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
+  const reduceMotion = useReduceMotion();
   const { winnerEntryId } = route.params;
   const repository = getDataRepository();
 
@@ -83,31 +101,31 @@ export function WheelResultModal({ navigation, route }: Props) {
   const placeLine = [buildingName, unitLine].filter(Boolean).join(" · ");
   const stallPin = venue ? getStallPin(venue, building?.coordinate) : undefined;
   // Distance from the built-in default point is not distance from the user.
-  const distanceLabel = isApproximate
-    ? undefined
-    : formatDistanceFromUser(origin, stallPin ?? building?.coordinate);
+  const distancePoint = stallPin ?? building?.coordinate;
+  const distanceLabel =
+    isApproximate ||
+    !distancePoint ||
+    (distancePoint.latitude === 0 && distancePoint.longitude === 0)
+      ? undefined
+      : formatDistanceLabel(getDistanceMetersFromCoordinates(origin, distancePoint), {
+          away: true,
+        });
   const dishes = winnerEntry ? repository.listDishesByVenue(winnerEntry.venueId) : [];
   const heroDish = dishes[0];
 
-  // Spring scale-in card entrance
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  // The card arrives from 95%, a strong ease-out in 250 ms. With Reduce Motion on it only fades.
+  const scale = useSharedValue(reduceMotion ? 1 : WINNER_CARD_START_SCALE);
+  const opacity = useSharedValue(0);
+  const cardMotion = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
+  }));
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 60,
-        friction: 10,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 1,
-        duration: motion.modalEnter,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [motion.modalEnter, opacityAnim, scaleAnim]);
+    const timing = { duration: WINNER_CARD_ENTER_MS, easing: WINNER_CARD_EASING };
+    opacity.value = withTiming(1, timing);
+    scale.value = reduceMotion ? 1 : withTiming(1, timing);
+  }, [opacity, reduceMotion, scale]);
 
   useEffect(() => {
     if (!winnerEntryId) return;
@@ -175,16 +193,19 @@ export function WheelResultModal({ navigation, route }: Props) {
       />
 
       <Animated.View
-        style={{
-          backgroundColor: palette.surface,
-          borderRadius: componentRadii.card,
-          overflow: "hidden",
-          transform: [{ scale: scaleAnim }],
-          opacity: opacityAnim,
-          ...shadows.floating,
-          borderWidth: 1,
-          borderColor: palette.orange,
-        }}
+        style={[
+          {
+            backgroundColor: palette.surface,
+            borderRadius: componentRadii.card,
+            overflow: "hidden",
+          },
+          cardMotion,
+          {
+            ...shadows.floating,
+            borderWidth: 1,
+            borderColor: palette.orange,
+          },
+        ]}
       >
         {/* Winner Header Badge */}
         <View style={{ position: "absolute", top: spacing[4], left: spacing[4], zIndex: 10 }}>
@@ -224,9 +245,12 @@ export function WheelResultModal({ navigation, route }: Props) {
                 { backgroundColor: palette.bgSoft, alignItems: "center", justifyContent: "center" },
               ]}
             >
-              <AppText variant="display" style={{ color: palette.orange }}>
-                🎉
-              </AppText>
+              <AppSymbol
+                name="party.popper.fill"
+                fallback={PartyPopper}
+                size={56}
+                color={palette.orange}
+              />
             </View>
           )}
           <LinearGradient
@@ -239,7 +263,7 @@ export function WheelResultModal({ navigation, route }: Props) {
         <View style={{ padding: spacing[5], gap: spacing[5] }}>
           <View style={{ gap: spacing[1], alignItems: "center" }}>
             <AppText variant="micro" tone="accent" style={{ fontWeight: "800", letterSpacing: 1 }}>
-              {isClassic ? "Your next stop is..." : `The Last One Standing`}
+              {isClassic ? "Your next stop is..." : "The last one standing"}
             </AppText>
             <AppText variant="h1" style={{ textAlign: "center", fontSize: 28 }}>
               {winnerEntry?.label ?? "—"}
@@ -293,7 +317,7 @@ export function WheelResultModal({ navigation, route }: Props) {
 
             {isElimination && remainingActive > 2 ? (
               <Button
-                label={`Next Round (${remainingActive - 1} left)`}
+                label={`Next round (${remainingActive - 1} left)`}
                 onPress={handleSpinAgain}
                 variant="secondary"
                 leftIcon={<RotateCcw size={18} color={palette.text} />}
@@ -306,6 +330,8 @@ export function WheelResultModal({ navigation, route }: Props) {
               onPress={handleDone}
               style={({ pressed }) => ({
                 alignItems: "center",
+                justifyContent: "center",
+                minHeight: 44,
                 paddingVertical: spacing[2],
                 opacity: pressed ? 0.7 : 1,
               })}
@@ -313,7 +339,7 @@ export function WheelResultModal({ navigation, route }: Props) {
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
                 <CheckCircle2 size={14} color={palette.textMuted} />
                 <AppText variant="bodySmallBold" tone="muted" style={{ letterSpacing: 1 }}>
-                  {isClassic ? "Done" : "Disband Party"}
+                  {isClassic ? "Done" : "Disband party"}
                 </AppText>
               </View>
             </Pressable>

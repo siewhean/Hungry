@@ -1622,3 +1622,7 @@ Use the smallest check that matches the change risk.
 - New tests: reviewsServerSide.behaviour (12), dishPicker/dishPickerSearch/reviewSearch unit tests, 8 render tests in reviews.render.test.tsx (REV-5, 10, 11, 13, 21), tests/e2e/reviews.spec.ts (editor picker and publish-with-photo pass in Chromium; the only failures here were the sandbox blocking remote dish images).
 - check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file `supabase/rehearsals/20261030120000.json` (sh runs `bash scripts/db/rehearse-pr.sh claude/project-thread-ojl079 20261030120000`).
 - Not changed: photo stays required, taste ratings still collected; no PostHog flag created.
+
+## 2026-10-31 MAP-DECIDE-R5
+- `npm run typecheck` clean; `npm test` (2,499) passes after updating the five contract tests that pinned the old sheet (`displayModeRef`, `snapTo`, stored-flag Open Now); `node scripts/test-render.mjs` (953) passes after the screen matrix expectation moved to "Your pick"; `npm run test:coverage` OK, baseline updated.
+- Not run here: a native iOS build (gorhom sheet feel, SF Symbols, haptics, VoiceOver, largest text size) and the live Mapbox map; both need a device build.

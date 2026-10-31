@@ -195,7 +195,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[4] }}>
               <View style={{ flex: 1, gap: spacing[1] }}>
                 <AppText variant="h2" style={{ color: palette.white }}>
-                  {PARTY_ENABLED ? "Host a Party" : "Spin the wheel"}
+                  {PARTY_ENABLED ? "Host a party" : "Spin the wheel"}
                 </AppText>
                 <AppText variant="bodySmall" style={{ color: palette.white }}>
                   {PARTY_ENABLED
@@ -281,7 +281,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
                 ) : null}
 
                 <Button
-                  label={joining ? "Joining..." : "Join the Room"}
+                  label={joining ? "Joining..." : "Join the room"}
                   onPress={handleJoin}
                   disabled={joining}
                   variant="secondary"

@@ -98,7 +98,7 @@ test("Home map centres on the user, wires catalog pins and keeps Mapbox attribut
   assert.match(map, /centerCoordinate=\{mapCenter\}/);
   assert.match(map, /currentLocation=\{isLocationApproximate \? undefined : currentLocation\}/);
   assert.match(map, /onMarkerPress=\{handleRawMarkerPress\}/);
-  assert.match(map, /displayModeRef\.current === "list"/);
+  assert.match(map, /displayMode === "list"\s*\?\s*\[MINIMIZED_HEIGHT, LIST_HEIGHT, FULL_HEIGHT\]/);
   assert.match(map, /"Recenter map on your location"/);
   assert.doesNotMatch(map, /Recenter map to default building/);
   assert.doesNotMatch(surface, /attributionEnabled=\{false\}|logoEnabled=\{false\}/);

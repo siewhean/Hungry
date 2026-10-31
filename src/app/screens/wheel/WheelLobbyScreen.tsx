@@ -52,6 +52,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
   // MD-W2: a new wheel starts with the nearest open stalls instead of an empty list.
   const [prefilling, setPrefilling] = useState(false);
   const [prefilledCount, setPrefilledCount] = useState(0);
+  // Stalls added while closed (late at night), by venue id, with when they open.
+  const [opensAtByVenue, setOpensAtByVenue] = useState<Record<string, string>>({});
   // The prefill ran and nothing near the diner is open: say so, rather than a bare empty wheel.
   const [prefillFoundNone, setPrefillFoundNone] = useState(false);
   const prefillStarted = useRef(false);
@@ -83,6 +85,11 @@ export function WheelLobbyScreen({ navigation }: Props) {
           addEntry(stall.venueId, stall.buildingId, stall.label, stall.imageUrl, "prefill");
         }
         setPrefilledCount(stalls.length);
+        setOpensAtByVenue(
+          Object.fromEntries(
+            stalls.flatMap((stall) => (stall.opensAt ? [[stall.venueId, stall.opensAt]] : [])),
+          ),
+        );
         setPrefillFoundNone(stalls.length === 0);
         trackAnalyticsEvent("wheel_prefilled", { party_id: partyId, count: stalls.length });
       })
@@ -117,6 +124,17 @@ export function WheelLobbyScreen({ navigation }: Props) {
     : activeEntries.length === 1
       ? "Add one more to spin"
       : "Add two to spin";
+
+  // "We added 3 open stalls", or, late at night, "We added 1 open stall and 3 that open soon".
+  const soonCount = Object.keys(opensAtByVenue).length;
+  const openCount = prefilledCount - soonCount;
+  const prefillNote = `We added ${
+    openCount === 0
+      ? `${soonCount} ${soonCount === 1 ? "stall that opens" : "stalls that open"} soon`
+      : soonCount === 0
+        ? `${openCount} open ${openCount === 1 ? "stall" : "stalls"}`
+        : `${openCount} open ${openCount === 1 ? "stall" : "stalls"} and ${soonCount} that open soon`
+  } near you. Remove any you don't fancy, or add your own.`;
 
   async function copyCode() {
     await Clipboard.setStringAsync(party!.code);
@@ -161,17 +179,27 @@ export function WheelLobbyScreen({ navigation }: Props) {
             borderWidth: 1,
           }}
         />
-        <AppText variant="bodyBold" style={{ flex: 1 }}>
-          {item.label}
-        </AppText>
+        <View style={{ flex: 1 }}>
+          <AppText variant="bodyBold">{item.label}</AppText>
+          {opensAtByVenue[item.venueId] ? (
+            <AppText variant="micro" tone="secondary">
+              {`Closed now · ${opensAtByVenue[item.venueId]}`}
+            </AppText>
+          ) : null}
+        </View>
         {canRemove && (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Remove ${item.label} from the wheel`}
             onPress={() => removeEntry(item.id)}
-            hitSlop={8}
+            // 32 pt of icon button plus 6 pt each side reaches the 44 pt minimum target.
+            hitSlop={6}
             style={{
               padding: spacing[2],
+              minHeight: 32,
+              minWidth: 32,
+              alignItems: "center",
+              justifyContent: "center",
               backgroundColor: palette.bgSoft,
               borderRadius: radii.sm,
             }}
@@ -186,7 +214,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
   return (
     <>
       <Screen
-        title={PARTY_ENABLED ? "Party Lobby" : "Your wheel"}
+        title={PARTY_ENABLED ? "Party lobby" : "Your wheel"}
         subtitle={
           PARTY_ENABLED ? "Invite friends and decide together" : "Add places, then spin to decide"
         }
@@ -336,7 +364,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                     tone="secondary"
                     style={{ padding: spacing[3], paddingBottom: 0 }}
                   >
-                    {`We added ${prefilledCount} open stalls near you. Remove any you don't fancy, or add your own.`}
+                    {prefillNote}
                   </AppText>
                 ) : null
               }
@@ -417,7 +445,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
                 letterSpacing: 1,
               }}
             >
-              {PARTY_ENABLED ? "Leave Party" : "Close wheel"}
+              {PARTY_ENABLED ? "Leave party" : "Close wheel"}
             </AppText>
           </Pressable>
         </View>

@@ -3,7 +3,6 @@ import {
   AccessibilityInfo,
   ActivityIndicator,
   Animated,
-  Easing,
   View,
   StyleSheet,
   PanResponder,
@@ -11,6 +10,12 @@ import {
   type ScrollView,
   useWindowDimensions,
 } from "react-native";
+import ReAnimated, {
+  Easing as ReEasing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ChevronLeft, Heart, Share2 } from "lucide-react-native";
@@ -26,6 +31,7 @@ import { LocationGate } from "@/components/discover/LocationGate";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Badge,
   Button,
@@ -35,6 +41,7 @@ import {
   Screen,
 } from "@/components/ui";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
+import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import {
   applyDecideAnswers,
@@ -127,57 +134,54 @@ function TasteMiniBar({
   );
 }
 
+/** The number is shown as it is: a pick that appears once does not need to count up to it. */
 function AnimatedMatchBadge({ percent }: { percent: number }) {
-  const { palette, radii, spacing, motion } = useHungryTheme();
-  const counter = useRef(new Animated.Value(0)).current;
+  const { palette, radii, spacing } = useHungryTheme();
   const reduceMotion = useReduceMotion();
-  const [displayValue, setDisplayValue] = useState(0);
+  // A new pick fades the badge in from 96% (a strong ease-out, 200 ms). Reduce Motion: no movement.
+  const entrance = useSharedValue(1);
+  const entranceStyle = useAnimatedStyle(() => ({
+    opacity: 0.4 + 0.6 * entrance.value,
+    transform: [{ scale: 0.96 + 0.04 * entrance.value }],
+  }));
 
   useEffect(() => {
     if (reduceMotion) {
-      // Reduce Motion: show the final number without counting up.
-      setDisplayValue(percent);
+      entrance.value = 1;
       return;
     }
-    counter.setValue(0);
-    const listenerId = counter.addListener(({ value }) => {
-      setDisplayValue(Math.round(value));
-    });
-
-    Animated.timing(counter, {
-      toValue: percent,
-      duration: motion.decideForMeCounter,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    return () => {
-      counter.removeListener(listenerId);
-    };
-  }, [counter, motion.decideForMeCounter, percent, reduceMotion]);
+    entrance.value = 0;
+    entrance.value = withTiming(1, { duration: 200, easing: ReEasing.bezier(0.23, 1, 0.32, 1) });
+  }, [entrance, percent, reduceMotion]);
 
   return (
-    <View
-      style={{
-        alignItems: "center",
-        alignSelf: "flex-start",
-        backgroundColor: `${palette.orange}22`,
-        borderRadius: radii.pill,
-        flexDirection: "row",
-        gap: spacing[2],
-        paddingHorizontal: spacing[3],
-        paddingVertical: spacing[4],
-      }}
+    <ReAnimated.View
+      style={[
+        {
+          alignItems: "center",
+          alignSelf: "flex-start",
+          backgroundColor: `${palette.orange}22`,
+          borderRadius: radii.pill,
+          flexDirection: "row",
+          gap: spacing[2],
+          paddingHorizontal: spacing[3],
+          paddingVertical: spacing[4],
+        },
+        entranceStyle,
+      ]}
     >
       {/* accentText, not orange: 19 px semibold orange on the tint is under 4.5:1 in light mode. */}
       <AppText variant="h3" style={{ color: palette.accentText }}>
-        {displayValue}% taste match
+        {percent}% taste match
       </AppText>
-    </View>
+    </ReAnimated.View>
   );
 }
 
 const HERO_HEIGHT_RATIO = 0.75;
+/** The hero of a pick with no photo, below the status bar. */
+const NO_PHOTO_HERO_HEIGHT = 120;
+const BACK_BUTTON_SIZE = 44;
 /** A swipe left on the photo this far (or faster) asks for another pick. */
 const SWIPE_ANOTHER_PICK_DX = -60;
 const RADIUS_STEPS_METERS = DECIDE_RADIUS_STEPS_METERS;
@@ -281,12 +285,7 @@ function joinLabels(labels: string[]) {
 }
 
 function formatDistance(distanceMeters: number) {
-  if (!Number.isFinite(distanceMeters) || distanceMeters <= 0) {
-    return undefined;
-  }
-  return distanceMeters < 1000
-    ? `${Math.round(distanceMeters)} m away`
-    : `${(distanceMeters / 1000).toFixed(1)} km away`;
+  return formatDistanceLabel(distanceMeters, { away: true });
 }
 
 const PICK_REASON_DIMS: { key: keyof TasteVector; label: string }[] = [
@@ -580,7 +579,11 @@ export function DecideForMeResultScreen() {
   const match = dish ? tasteMatchPercent(tasteVector, dish.tasteVector) : 0;
 
   // Short enough that the dish name, price and stall sit above the fold on a 390 x 844 screen.
-  const HERO_HEIGHT = screenWidth * HERO_HEIGHT_RATIO;
+  // Without a photo the hero shrinks to a slim plate under the back button, so the answer
+  // (dish, price, Directions) sits higher instead of under an empty block.
+  const HERO_HEIGHT = dish?.imageUrl
+    ? screenWidth * HERO_HEIGHT_RATIO
+    : insets.top + NO_PHOTO_HERO_HEIGHT;
 
   const heroStyle = {
     transform: [
@@ -707,7 +710,7 @@ export function DecideForMeResultScreen() {
 
   if (isLocationApproximate) {
     return (
-      <Screen title="Recommended for you">
+      <Screen title="Your pick">
         <LocationGate
           source="decide"
           title="Where are you eating?"
@@ -724,7 +727,7 @@ export function DecideForMeResultScreen() {
 
   if (loadFailed) {
     return (
-      <Screen title="Recommended for you" subtitle="Couldn't load picks.">
+      <Screen title="Your pick">
         <EmptyState title="Couldn't load picks" body="Check your connection and try again." />
         <Button label="Try again" onPress={() => setReloadCount((count) => count + 1)} />
         <Button
@@ -738,7 +741,7 @@ export function DecideForMeResultScreen() {
 
   if (!dish && isLoadingCandidates) {
     return (
-      <Screen title="Recommended for you" subtitle="Finding a dish near you…">
+      <Screen title="Your pick" subtitle="Finding a dish near you…">
         <View
           accessible
           accessibilityLabel="Finding a dish near you"
@@ -754,19 +757,15 @@ export function DecideForMeResultScreen() {
   if (!dish) {
     const upcomingRadius = nextRadius(shownRadius);
     return (
-      <Screen
-        title="Recommended for you"
-        subtitle={
-          hasSeenEveryMatch
-            ? "That's every match nearby."
-            : "No matching dish for current filters yet."
-        }
-      >
+      <Screen title="Your pick">
+        {/* One line says it once: the header and the buttons carry the rest. */}
         <EmptyState
-          title={hasSeenEveryMatch ? "That's everything nearby" : "No match found"}
+          title={
+            hasSeenEveryMatch ? `You've seen every match within ${radiusKm} km` : "No match found"
+          }
           body={
             hasSeenEveryMatch
-              ? `You've seen every match within ${radiusKm} km.`
+              ? "Widen the radius, change your answers or start over."
               : `No dish fits your current filters within ${radiusKm} km.`
           }
         />
@@ -815,6 +814,7 @@ export function DecideForMeResultScreen() {
   // Open now in Singapore time; a closed pick says when it opens.
   const openState = candidatePool?.openStateByVenueId.get(dish.venueId);
   const openLabel = formatOpenLabel(openState);
+  const isClosedPick = openState?.status === "closed";
 
   const handleDirections = () => {
     trackAnalyticsEvent("directions_opened", {
@@ -886,14 +886,22 @@ export function DecideForMeResultScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Go back"
-          hitSlop={4}
           onPress={() => navigation.goBack()}
           style={[styles.navBtn, { backgroundColor: palette.surfaceTranslucent }]}
         >
-          <ChevronLeft color={palette.text} size={24} />
+          <AppSymbol
+            name="chevron.backward"
+            fallback={ChevronLeft}
+            color={palette.text}
+            size={22}
+            weight="semibold"
+          />
         </Pressable>
-        <AppText variant="h3" style={{ flex: 1, textAlign: "center", marginRight: 40 }}>
-          Recommended
+        <AppText
+          variant="h3"
+          style={{ flex: 1, textAlign: "center", marginRight: BACK_BUTTON_SIZE }}
+        >
+          Your pick
         </AppText>
       </View>
 
@@ -919,7 +927,13 @@ export function DecideForMeResultScreen() {
               accessibilityLabel={`${dish.name} photo`}
             />
           ) : (
-            <NoDishPhoto dishName={dish.name} style={StyleSheet.absoluteFill} iconSize={56} />
+            <NoDishPhoto
+              designed
+              dishName={dish.name}
+              logoUrl={venue?.logoUrl}
+              style={StyleSheet.absoluteFill}
+              iconSize={48}
+            />
           )}
           <LinearGradient
             colors={["transparent", palette.mediaScrimSubtle, palette.bg]}
@@ -969,11 +983,8 @@ export function DecideForMeResultScreen() {
               style={{ backgroundColor: palette.bgSoft, padding: spacing[4] }}
               testID="decide-all-closed"
             >
-              <AppText variant="body" style={{ fontWeight: "800" }}>
-                {`Everything within ${radiusKm} km is closed right now`}
-              </AppText>
               <AppText variant="bodySmall" tone="secondary">
-                Here are the picks that open soonest.
+                {`Everything within ${radiusKm} km is closed right now. This one opens soonest.`}
               </AppText>
             </Card>
           ) : null}
@@ -1101,7 +1112,14 @@ export function DecideForMeResultScreen() {
             <Button
               label="Share with friends"
               variant="secondary"
-              leftIcon={<Share2 size={18} color={palette.text} />}
+              leftIcon={
+                <AppSymbol
+                  name="square.and.arrow.up"
+                  fallback={Share2}
+                  size={18}
+                  color={palette.text}
+                />
+              }
               onPress={handleShare}
             />
             <Button
@@ -1196,20 +1214,23 @@ export function DecideForMeResultScreen() {
       >
         {/* No ordering exists yet: the main actions are getting there or asking for another pick. */}
         <View style={{ flexDirection: "row", gap: spacing[3] }}>
+          {/* A pick that is closed until later: Another pick leads, Directions waits its turn. */}
           <Button
             label="Directions"
+            variant={isClosedPick ? "secondary" : "primary"}
             fullWidth={false}
             style={{ flex: 1, paddingHorizontal: spacing[2] }}
             labelNumberOfLines={1}
-            labelColor={palette.white}
+            labelColor={isClosedPick ? undefined : palette.white}
             onPress={handleDirections}
           />
           <Button
             label="Another pick"
-            variant="secondary"
+            variant={isClosedPick ? "primary" : "secondary"}
             fullWidth={false}
             style={{ flex: 1, paddingHorizontal: spacing[2] }}
             labelNumberOfLines={1}
+            labelColor={isClosedPick ? palette.white : undefined}
             accessibilityLabel={`Another pick instead of ${dish.name}`}
             onPress={handleTryAnother}
           />
@@ -1230,10 +1251,12 @@ export function DecideForMeResultScreen() {
               width: 52,
             }}
           >
-            <Heart
+            <AppSymbol
+              name={isSaved ? "heart.fill" : "heart"}
+              fallback={Heart}
+              filled={isSaved}
               size={22}
               color={isSaved ? palette.orange : palette.text}
-              fill={isSaved ? palette.orange : "transparent"}
             />
           </Pressable>
         </View>
@@ -1253,8 +1276,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   navBtn: {
-    width: 40,
-    height: 40,
+    width: BACK_BUTTON_SIZE,
+    height: BACK_BUTTON_SIZE,
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",

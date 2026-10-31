@@ -1,4 +1,7 @@
-import { getVenueOpenStateNow } from "@/features/discovery/decideForMeCandidates";
+import {
+  getVenueOpenStateNow,
+  minutesUntilOpening,
+} from "@/features/discovery/decideForMeCandidates";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
 /** A new wheel starts with this many stalls, so a spin is one tap away. */
@@ -13,12 +16,16 @@ export interface WheelPrefillStall {
   buildingId: string;
   label: string;
   imageUrl: string;
+  /** "Opens 7am", set only on a stall that is closed now and was added to fill the wheel. */
+  opensAt?: string;
 }
 
 /**
  * The nearest stalls that are open now, one per stall, for a new wheel. Stalls with no readable
- * hours follow the open ones; closed stalls are never offered. `dishes` come from the dish search
- * (distance is measured from the diner), `venueById` carries the hours.
+ * hours follow the open ones. When fewer than `count` are open (late at night) the wheel is filled
+ * with the closed stalls that open soonest, marked with when they open, so it can still spin.
+ * `dishes` come from the dish search (distance is measured from the diner), `venueById` carries
+ * the hours.
  */
 export function pickPrefillStalls(
   dishes: DishDetail[],
@@ -38,22 +45,38 @@ export function pickPrefillStalls(
       nearestByVenue.set(dish.venueId, dish);
     }
   }
-  const ranked = [...nearestByVenue.values()]
-    .map((dish) => {
-      const venue = venueById.get(dish.venueId);
-      const status = venue ? getVenueOpenStateNow(venue, now).status : "unknown";
-      return { dish, venue, status };
-    })
-    .filter((item) => item.status !== "closed")
-    .sort(
-      (a, b) =>
-        Number(b.status === "open") - Number(a.status === "open") ||
-        a.dish.distanceMeters - b.dish.distanceMeters,
-    );
-  return ranked.slice(0, count).map(({ dish, venue }) => ({
+  const ranked = [...nearestByVenue.values()].map((dish) => {
+    const venue = venueById.get(dish.venueId);
+    const state = venue ? getVenueOpenStateNow(venue, now) : { status: "unknown" as const };
+    return { dish, venue, state };
+  });
+  const toStall = (
+    { dish, venue }: (typeof ranked)[number],
+    opensAt?: string,
+  ): WheelPrefillStall => ({
     venueId: dish.venueId,
     buildingId: dish.buildingId,
     label: venue?.name || dish.venueName,
     imageUrl: dish.imageUrl,
-  }));
+    ...(opensAt ? { opensAt } : {}),
+  });
+  const openNow = ranked
+    .filter((item) => item.state.status !== "closed")
+    .sort(
+      (a, b) =>
+        Number(b.state.status === "open") - Number(a.state.status === "open") ||
+        a.dish.distanceMeters - b.dish.distanceMeters,
+    )
+    .slice(0, count)
+    .map((item) => toStall(item));
+  if (openNow.length >= count) return openNow;
+  // Only stalls with a readable opening time can be offered as "opens soon".
+  const soonest = ranked
+    .filter((item) => item.state.status === "closed")
+    .map((item) => ({ item, wait: minutesUntilOpening(item.state, now) }))
+    .filter(({ wait }) => Number.isFinite(wait))
+    .sort((a, b) => a.wait - b.wait || a.item.dish.distanceMeters - b.item.dish.distanceMeters)
+    .slice(0, count - openNow.length)
+    .map(({ item }) => toStall(item, item.state.detail));
+  return [...openNow, ...soonest];
 }

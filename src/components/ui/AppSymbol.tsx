@@ -5,6 +5,7 @@ import {
   MapPin,
   MessageSquareHeart,
   SlidersHorizontal,
+  Utensils,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react-native";
@@ -23,6 +24,7 @@ const APP_SYMBOLS = {
   nearYou: { ios: "mappin.and.ellipse", lucide: MapPin },
   yourTaste: { ios: "slider.horizontal.3", lucide: SlidersHorizontal },
   selected: { ios: "checkmark", lucide: Check },
+  noPhoto: { ios: "fork.knife", lucide: Utensils },
 } as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon }>;
 
 export type AppSymbolName = keyof typeof APP_SYMBOLS;

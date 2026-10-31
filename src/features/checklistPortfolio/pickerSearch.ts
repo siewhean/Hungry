@@ -1,4 +1,5 @@
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
@@ -39,4 +40,27 @@ export async function searchPickerVenues(query: string, limit: number): Promise<
     limit,
   });
   return venues ?? [];
+}
+
+/**
+ * Stalls that match by name, then the stalls that serve a dish matching the query ("laksa" finds
+ * the laksa stalls, not only a stall called Laksa). The dish matches are looked up in one batched
+ * read. A failed dish search leaves the name matches in place.
+ */
+export async function searchPickerStalls(query: string, limit: number): Promise<VenueSummary[]> {
+  const [venues, dishes] = await Promise.all([
+    searchPickerVenues(query, limit),
+    searchPickerDishes(query, limit).catch((error: unknown) => {
+      reportError(error, { screen: "PickerSearch", action: "search_dishes" });
+      return [] as DishDetail[];
+    }),
+  ]);
+  const seen = new Set(venues.map((venue) => venue.id));
+  const dishVenueIds = [...new Set(dishes.map((dish) => dish.venueId))].filter(
+    (id) => !seen.has(id),
+  );
+  const dishVenues = dishVenueIds.length
+    ? await getHungryService().discovery.getVenuesByIds(dishVenueIds)
+    : [];
+  return [...venues, ...dishVenues].slice(0, limit);
 }
