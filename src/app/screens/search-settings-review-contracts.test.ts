@@ -98,7 +98,7 @@ test("settings: device left-handed mode, deletion via RPC, alerts states, haptic
   assert.match(settings, /formatDeletionDate\(scheduledFor\)/);
   assert.doesNotMatch(settings, /label="Profile ID"|label="Display name"/);
   assert.match(settings, /SettingsChoiceSheet/);
-  assert.match(settings, /title="Theme"/);
+  assert.doesNotMatch(settings, /title="Theme"/);
   assert.match(alerts, /busy=\{isBusy\}/);
   assert.match(alerts, /Linking\.openSettings\(\)/);
   assert.match(section, /accessibilityRole="header"/);
