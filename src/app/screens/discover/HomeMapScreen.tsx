@@ -722,10 +722,7 @@ export function HomeMapScreen() {
   );
 
   return (
-    <View
-      style={{ flex: 1, backgroundColor: palette.bg }}
-      onLayout={handleContainerLayout}
-    >
+    <View style={{ flex: 1, backgroundColor: palette.bg }} onLayout={handleContainerLayout}>
       <FeedErrorBoundary
         title="Map currently unavailable"
         body="We hit a rendering issue with the map. Please try again."
