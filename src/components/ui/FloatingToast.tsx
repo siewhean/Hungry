@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
-import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp, FadeOut, FadeOutDown } from "react-native-reanimated";
 import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -12,7 +12,8 @@ import { AppText } from "./AppText";
 export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
-  const { componentSizes, motion, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
+  const { componentSizes, motion, palette, radii, shadows, spacing, zIndex, reducedMotion } =
+    useHungryTheme();
   const insets = useSafeAreaInsets();
   const tone = toast?.tone ?? "info";
 
@@ -60,8 +61,11 @@ export function FloatingToast() {
       style={[styles.wrapper, { bottom: toastBottom, zIndex: zIndex.toast }]}
     >
       <Animated.View
-        entering={FadeInDown.duration(motion.toast)}
-        exiting={FadeOutUp.duration(motion.toast)}
+        // It rises in from the tab bar and sinks back the way it came; with Reduce Motion it only fades.
+        entering={reducedMotion ? FadeIn.duration(motion.toast) : FadeInUp.duration(motion.toast)}
+        exiting={
+          reducedMotion ? FadeOut.duration(motion.toast) : FadeOutDown.duration(motion.toast)
+        }
       >
         {(() => {
           const toastStyle = [

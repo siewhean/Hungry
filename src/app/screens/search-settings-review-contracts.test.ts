@@ -112,7 +112,7 @@ test("edit profile: no pre-prompt, honest toast, unsaved-changes guard, labelled
   const edit = read("src/app/screens/profile/EditProfileScreen.tsx");
 
   assert.doesNotMatch(edit, /confirmGalleryAccess|requestMediaLibraryPermissionsAsync/);
-  assert.match(edit, /Photo selected\. Tap Save changes to use it\./);
+  assert.match(edit, /Photo selected\. Tap Save to use it\./);
   assert.match(edit, /addListener\("beforeRemove"/);
   assert.match(edit, /validateDisplayName\(displayName\)/);
   assert.match(read("src/features/profile/profileName.ts"), /Enter a display name\./);

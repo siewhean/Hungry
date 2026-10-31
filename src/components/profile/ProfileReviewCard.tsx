@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { AccessibleImage, AppText, Card } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Card } from "@/components/ui";
 import { ReviewModerationNotice } from "@/components/review";
 import { formatRelativeDate } from "@/features/profile/relativeDate";
 import type { ReviewDishInfo } from "@/features/profile/useReviewDishDetails";
@@ -18,6 +18,10 @@ type ProfileReviewCardProps = {
   menu?: ReactNode;
   /** Show the tags the reviewer picked (Review history). */
   showTags?: boolean;
+  /** "row" is a plain list row with a hairline above it, for the Review history list. */
+  variant?: "card" | "row";
+  /** The first row of a "row" list has no hairline above it. */
+  first?: boolean;
   testID?: string;
 };
 
@@ -31,6 +35,8 @@ export function ProfileReviewCard({
   onOpenDish,
   menu,
   showTags = false,
+  variant = "card",
+  first = false,
   testID,
 }: ProfileReviewCardProps) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -56,6 +62,22 @@ export function ProfileReviewCard({
           accessibilityLabel={review.photos[0] ? `Your photo of ${dishName}` : dishName}
           contentFit="cover"
           style={{ borderRadius: radii.md, height: spacing[20], width: spacing[20] }}
+          // A photo that will not load shows the dish tile, not a blank box pushing the name over.
+          fallback={
+            <View
+              testID="profile-review-photo-fallback"
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.bgSoft,
+                borderRadius: radii.md,
+                height: spacing[20],
+                justifyContent: "center",
+                width: spacing[20],
+              }}
+            >
+              <AppSymbol name="noPhoto" size={26} color={palette.textMuted} />
+            </View>
+          }
         />
       ) : null}
       <View style={{ flex: 1, gap: spacing[1], minWidth: 0 }}>
@@ -68,17 +90,25 @@ export function ProfileReviewCard({
           </AppText>
         ) : null}
         {rating || dateText || review.editedAt ? (
-          <AppText variant="bodySmall" tone="secondary">
+          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
             {rating ? (
               <>
-                <Text style={{ color: palette.starFill }}>★</Text> {rating}
+                {/* A drawn star in the darker amber: the yellow glyph was 1.6:1 on white. */}
+                <AppSymbol name="rating" size={13} color={palette.starStroke} />
+                <AppText variant="bodySmall" tone="secondary">
+                  {rating}
+                </AppText>
               </>
             ) : null}
-            {[dateText, review.editedAt ? "Edited" : ""]
-              .filter(Boolean)
-              .map((part, index) => `${rating || index > 0 ? " · " : ""}${part}`)
-              .join("")}
-          </AppText>
+            {[dateText, review.editedAt ? "Edited" : ""].filter(Boolean).length ? (
+              <AppText variant="bodySmall" tone="secondary">
+                {[dateText, review.editedAt ? "Edited" : ""]
+                  .filter(Boolean)
+                  .map((part, index) => `${rating || index > 0 ? " · " : ""}${part}`)
+                  .join("")}
+              </AppText>
+            ) : null}
+          </View>
         ) : null}
       </View>
     </>
@@ -91,8 +121,10 @@ export function ProfileReviewCard({
     minWidth: 0,
   };
 
+  const Wrapper = variant === "row" ? RowWrapper : CardWrapper;
+
   return (
-    <Card style={{ gap: spacing[3], padding: spacing[3] }} testID={testID}>
+    <Wrapper first={first} testID={testID}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
         {onOpenDish ? (
           <Pressable
@@ -148,6 +180,47 @@ export function ProfileReviewCard({
           </AppText>
         </View>
       ) : null}
+    </Wrapper>
+  );
+}
+
+function CardWrapper({
+  children,
+  testID,
+}: {
+  children: ReactNode;
+  first: boolean;
+  testID?: string;
+}) {
+  const { spacing } = useHungryTheme();
+  return (
+    <Card style={{ gap: spacing[3], padding: spacing[3] }} testID={testID}>
+      {children}
     </Card>
+  );
+}
+
+function RowWrapper({
+  children,
+  first,
+  testID,
+}: {
+  children: ReactNode;
+  first: boolean;
+  testID?: string;
+}) {
+  const { palette, spacing } = useHungryTheme();
+  return (
+    <View
+      testID={testID}
+      style={{
+        borderTopColor: palette.border,
+        borderTopWidth: first ? 0 : StyleSheet.hairlineWidth,
+        gap: spacing[3],
+        paddingVertical: spacing[3],
+      }}
+    >
+      {children}
+    </View>
   );
 }

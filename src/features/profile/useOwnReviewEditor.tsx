@@ -1,8 +1,7 @@
 import { useCallback, useState, type ReactElement } from "react";
-import { MoreHorizontal } from "lucide-react-native";
 
 import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
-import { IconButton } from "@/components/ui";
+import { AppSymbol, IconButton } from "@/components/ui";
 import {
   describeReviewEditError,
   isExpectedPublishError,
@@ -29,7 +28,9 @@ export function OwnReviewMenuButton({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Manage your review"
       accessibilityHint="Edit or delete this review"
       onPress={onPress}
-      icon={<MoreHorizontal color={palette.textSecondary} size={20} />}
+      icon={
+        <AppSymbol name="rowActions" size={20} weight="regular" color={palette.textSecondary} />
+      }
     />
   );
 }

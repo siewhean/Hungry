@@ -15,6 +15,15 @@ import {
   sortSavedDishes,
 } from "./savedDishes";
 
+// ─── Saved page v2: sections, layout default, map pins ───────────────────────────────────────
+
+import {
+  fitSavedPins,
+  groupSavedMapPins,
+  savedListHasPhotos,
+  visibleSavedSections,
+} from "@/features/saved/savedDishes";
+
 const dish = (id: string, over: Partial<SavedDishCard> = {}): SavedDishCard => ({
   id,
   name: id,
@@ -175,15 +184,6 @@ test("the loader reports each failed read to error tracking", async () => {
   assert.deepEqual(reported, ["read_saved_ids", "read_cards"]);
   assert.equal(result.status, "error");
 });
-
-// ─── Saved page v2: sections, layout default, map pins ───────────────────────────────────────
-
-import {
-  fitSavedPins,
-  groupSavedMapPins,
-  savedListHasPhotos,
-  visibleSavedSections,
-} from "@/features/saved/savedDishes";
 
 test("Saved sections are Dishes, Stalls and Lists; Posts only while the feed is on", () => {
   assert.deepEqual(visibleSavedSections(false), ["dishes", "stalls", "lists"]);

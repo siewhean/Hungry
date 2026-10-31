@@ -13,8 +13,10 @@ test("profile home contract: quick access lives behind the header menu", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
   assert.match(source, /headerRight=\{/);
-  assert.match(source, /<Menu color=\{palette\.text\} size=\{22\}/);
-  assert.match(source, /menuOpen\s*\? "Close quick access"/);
+  // A native menu (UIMenu on iOS) with a web dropdown fallback, opened from a "more" symbol.
+  assert.match(source, /<OverflowMenu/);
+  assert.match(source, /<AppSymbol name="moreActions"/);
+  assert.match(source, /openAccessibilityLabel="Close quick access"/);
   assert.match(source, /`Open quick access, \$\{followRequestLabel\}`/);
   assert.match(source, /: "Open quick access"/);
   assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
@@ -56,7 +58,6 @@ test("profile home contract: profile stats use dynamic profile and social store 
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
   assert.match(source, /height: headerActionSize/);
   assert.match(source, /width: headerActionSize/);
-  assert.match(source, /top: spacing\[8\] \+ spacing\[0\.5\]/);
   assert.match(source, /height: spacing\[20\]/);
   assert.match(source, /width: spacing\[20\]/);
   assert.doesNotMatch(source, /fontSize: 24/);
@@ -100,7 +101,8 @@ test("Stitch profile surfaces use account data and preserve their destinations",
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.doesNotMatch(source, /SINGAPORE FOODIE PASSPORT/);
   assert.doesNotMatch(source, /FollowRequestsRow/);
-  assert.match(source, /`Follow requests \(\$\{followRequestCount\}\)`/);
+  assert.match(source, /id: "follow-requests"/);
+  assert.match(source, /subtitle: followRequestCount \? `\$\{followRequestCount\} waiting`/);
   // Saved is the one entry point to dishes, stalls and lists; the old Collections and Badges
   // tiles are gone, and the Passport card shows the stamps.
   assert.doesNotMatch(source, /label="Collections"|label="Badges"/);
@@ -131,8 +133,8 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(source, /\.merchant\.getMerchantAccount\(\)/);
   assert.match(source, /setMerchantAccount\(account\)/);
-  assert.match(source, /label="Merchant dashboard"/);
-  assert.match(source, /label="Hungry for Business"/);
+  assert.match(source, /title: "Merchant dashboard"/);
+  assert.match(source, /title: "Hungry for Business"/);
 
   for (const file of [
     "src/app/screens/merchant/MerchantProfileScreen.tsx",
@@ -250,5 +252,6 @@ test("profile home contract: account reads wait for a real profile id, not the g
   );
   // Posts, reviews and follow requests all send profile.id to the server as a uuid.
   // ...as do the stall-submission, follow-count and gamification loads.
-  assert.equal(source.match(/!hasAccountProfile/g)?.length, 5);
+  // ...and the pull-to-refresh handler, which re-reads the same three.
+  assert.equal(source.match(/!hasAccountProfile/g)?.length, 6);
 });

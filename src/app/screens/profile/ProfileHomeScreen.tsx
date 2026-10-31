@@ -1,30 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AccessibilityInfo, Platform, Pressable, Share, StyleSheet, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Platform,
+  Pressable,
+  RefreshControl,
+  Share,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
-import {
-  ChevronRight,
-  Settings,
-  Heart,
-  Menu,
-  PencilLine,
-  Send,
-  Copy,
-  Share2,
-  LogOut,
-  Store,
-  MessageCircleMore,
-  ImagePlus,
-  UserPlus,
-  UserCheck,
-  FlaskConical,
-} from "lucide-react-native";
 
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
 import { TasteRadar } from "@/components/profile/TasteRadar";
-import { AccessibleImage, AppText, Button, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
+import { OverflowMenu, type OverflowMenuItem } from "@/components/ui/OverflowMenu";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
@@ -38,6 +31,7 @@ import {
   hasTasteSignal,
 } from "@/features/profile/tasteFingerprint";
 import { formatMemberSince } from "@/features/profile/relativeDate";
+import { pluralLabel } from "@/features/profile/plural";
 import { useProfileFavouriteDishes } from "@/features/profile/useProfileFavouriteDishes";
 import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -114,6 +108,8 @@ type ProfileHomeProps = {
 /** Your own profile. Other people's profiles are UserProfileScreen / UserProfileContent. */
 export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const { colorScheme, componentRadii, palette, spacing, radii, shadows } = useHungryTheme();
+  // On a 320pt phone the title steps down a size and Share shows its icon alone.
+  const compactTasteHeader = useWindowDimensions().width < 360;
   const headerActionSize = spacing[8] + spacing[2.5];
   const profile = useProfileStore((state) => state.profile);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -163,7 +159,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const gamificationEnabled = FEATURE_FLAGS.gamificationEnabled;
   const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   // A profile photo that fails to load falls back to initials, never a blank circle.
   const [avatarFailed, setAvatarFailed] = useState(false);
   useEffect(() => setAvatarFailed(false), [profile.avatarUrl]);
@@ -514,6 +509,34 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     };
   }, [hasAccountProfile, isFocused, profile.id]);
 
+  // Pull down to re-read your counts, requests and reviews. Each read is one call, in parallel.
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    if (!hasAccountProfile) return;
+    setIsRefreshing(true);
+    const service = getHungryService();
+    const [counts, requests, reviews] = await Promise.allSettled([
+      service.social.getFollowCounts(profile.id),
+      service.social.getFollowRequestCount(),
+      service.reviews.getUserReviews(profile.id),
+    ]);
+    if (counts.status === "fulfilled") setFollowCounts(counts.value ?? "unavailable");
+    else reportError(counts.reason, { screen: "ProfileHome", action: "refresh_follow_counts" });
+    if (requests.status === "fulfilled") setFollowRequestCount(requests.value);
+    else reportError(requests.reason, { screen: "ProfileHome", action: "refresh_requests" });
+    if (reviews.status === "fulfilled") {
+      ownReviewsLoadedRef.current = {
+        at: Date.now(),
+        key: `${profile.id}:${reviewedDishKey}:${ownReviewsReloadKey}`,
+      };
+      setOwnReviews(reviews.value);
+      setOwnReviewsFailed(false);
+    } else {
+      reportError(reviews.reason, { screen: "ProfileHome", action: "refresh_reviews" });
+    }
+    setIsRefreshing(false);
+  }, [hasAccountProfile, ownReviewsReloadKey, profile.id, reviewedDishKey]);
+
   // A skipped quiz leaves every taste at neutral: that is "not built yet", not a result.
   const hasTasteFingerprint = useMemo(
     () => hasTasteSignal(profile.tasteVector),
@@ -624,9 +647,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         : [...current, chatId],
     );
   }, []);
-  const handleMenuToggle = useCallback(() => {
-    setMenuOpen((current) => !current);
-  }, []);
 
   if (!isAuthenticated) {
     // A guest keeps their place: Sign in opens Login on top, and Back or "Not now" returns here.
@@ -635,7 +655,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         <EmptyState
           title="Your Hungry profile"
           body="Sign in to save dishes, follow people and build your Taste Fingerprint."
-          icon={<UserCheck size={36} color={palette.textSecondary} />}
+          icon={
+            <AppSymbol name="person" size={36} weight="regular" color={palette.textSecondary} />
+          }
           ctaLabel="Sign in"
           onPress={() => {
             setReturnRoute("Profile");
@@ -650,6 +672,85 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     (followRequestCount ?? 0) > 0
       ? `${followRequestCount} follow ${followRequestCount === 1 ? "request" : "requests"}`
       : null;
+  const menuItems = (
+    [
+      FEATURE_FLAGS.merchantCentreEnabled && merchantAccount !== null
+        ? {
+            id: "merchant-dashboard",
+            title: "Merchant dashboard",
+            symbol: "stall" as const,
+            onPressIn: prefetchMerchantDashboard,
+            onPress: () => rootNavigation.navigate("MerchantTabs" as any),
+          }
+        : null,
+      FEATURE_FLAGS.merchantCentreEnabled && merchantAccount === null
+        ? {
+            id: "business",
+            title: "Hungry for Business",
+            symbol: "stall" as const,
+            onPress: () => rootNavigation.navigate("MerchantClaimExplainer"),
+          }
+        : null,
+      FEATURE_FLAGS.collectionsEnabled
+        ? {
+            id: "liked-content",
+            title: "Liked content",
+            symbol: "save" as const,
+            onPressIn: () => preloadRoute(navigation, "SocialGrid", { type: "liked" }),
+            onPress: () => navigation.navigate("SocialGrid", { type: "liked" }),
+          }
+        : null,
+      (followRequestCount ?? 0) > 0 || profile.profileVisibility === "private"
+        ? {
+            id: "follow-requests",
+            title: "Follow requests",
+            subtitle: followRequestCount ? `${followRequestCount} waiting` : undefined,
+            symbol: "followRequests" as const,
+            onPress: () => rootNavigation.navigate("FollowRequests"),
+          }
+        : null,
+      {
+        id: "followed-stalls",
+        title: "Followed stalls",
+        symbol: "stall" as const,
+        onPressIn: () => preloadRoute(navigation, "FollowedStalls"),
+        onPress: () => navigation.navigate("FollowedStalls"),
+      },
+      {
+        id: "settings",
+        title: "Settings",
+        symbol: "settings" as const,
+        onPressIn: () => preloadRoute(navigation, "Settings"),
+        onPress: () => navigation.navigate("Settings"),
+      },
+      {
+        id: "sign-out",
+        title: "Sign out",
+        symbol: "signOut" as const,
+        destructive: true,
+        onPress: () =>
+          confirmAction({
+            title: "Sign out",
+            message: "You will be signed out from Hungry on this device.",
+            confirmLabel: "Sign out",
+            destructive: true,
+            onConfirm: () => {
+              signOut();
+              rootNavigation.reset({
+                index: 0,
+                routes: [{ name: "AuthStack", params: { screen: "Login" } }],
+              });
+            },
+          }),
+      },
+    ] as (OverflowMenuItem | null)[]
+  ).filter((item): item is OverflowMenuItem => item !== null);
+  const followersValue =
+    followCounts === "unavailable"
+      ? STAT_UNAVAILABLE
+      : followCounts
+        ? followCounts.followersCount
+        : null;
   const stats = [
     FEATURE_FLAGS.favouritesEnabled
       ? {
@@ -664,7 +765,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     FEATURE_FLAGS.reviewCreationEnabled
       ? {
           key: "reviews",
-          label: "Reviews",
+          label: pluralLabel(ownReviewCount, "Review"),
           value: ownReviewCount,
           accessibilityHint: "Opens your review history",
           onPressIn: () => preloadRoute(navigation, "ReviewHistory"),
@@ -673,13 +774,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       : null,
     {
       key: "followers",
-      label: "Followers",
-      value:
-        followCounts === "unavailable"
-          ? STAT_UNAVAILABLE
-          : followCounts
-            ? followCounts.followersCount
-            : null,
+      label: pluralLabel(followersValue, "Follower"),
+      value: followersValue,
       onPressIn: () => preloadRoute(navigation, "Followers"),
       onPress: () => navigation.navigate("Followers"),
     },
@@ -697,194 +793,182 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     },
   ].filter((stat): stat is NonNullable<typeof stat> => stat !== null);
 
+  const tasteCard = (
+    <View
+      style={[
+        shadows.card,
+        {
+          backgroundColor: palette.surface,
+          borderRadius: componentRadii.card,
+          gap: spacing[4],
+          padding: spacing[4],
+        },
+      ]}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: spacing[2],
+        }}
+      >
+        <View
+          style={{
+            alignItems: "center",
+            flex: 1,
+            flexDirection: "row",
+            gap: spacing[2],
+            minWidth: 0,
+          }}
+        >
+          <AppSymbol name="tasteFingerprint" size={20} color={palette.accentText} />
+          <AppText
+            variant={compactTasteHeader ? "h3" : "h2"}
+            numberOfLines={1}
+            style={{ flexShrink: 1 }}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            Taste Fingerprint
+          </AppText>
+        </View>
+        {hasTasteFingerprint ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Share Taste Fingerprint"
+            accessibilityHint="Opens sharing options for your Taste Fingerprint"
+            onPress={handleShareTaste}
+            hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              minHeight: 44,
+              minWidth: 44,
+              justifyContent: "center",
+            }}
+          >
+            <AppSymbol name="send" size={16} color={palette.accentText} />
+            {compactTasteHeader ? null : (
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                Share
+              </AppText>
+            )}
+          </Pressable>
+        ) : null}
+      </View>
+      <AppText style={{ fontWeight: "600" }}>{tastePersonaSummary}</AppText>
+      {hasTasteFingerprint ? (
+        <View style={{ gap: spacing[1] }} testID="profile-palate-summary">
+          {palate.mild.length > 0 ? (
+            <AppText variant="bodySmall" testID="profile-palate-mild">
+              You like it less {joinWithAnd(palate.mild.map((name) => name.toLowerCase()))} than
+              most.
+            </AppText>
+          ) : null}
+          <AppText variant="micro" tone="secondary">
+            A dish has one standard level for everyone. Your palate decides how strong it tastes to
+            you, and dish pages show that.
+          </AppText>
+        </View>
+      ) : null}
+      {hasTasteFingerprint ? (
+        <View style={{ alignItems: "center", gap: spacing[3] }}>
+          <TasteRadar vector={profile.tasteVector} />
+          <Button
+            label="Retake the taste quiz"
+            variant="secondary"
+            onPress={() =>
+              rootNavigation.navigate("OnboardingStack", {
+                screen: "TasteQuiz",
+                params: { mode: "profile" },
+              })
+            }
+          />
+        </View>
+      ) : (
+        <Button
+          label="Take the taste quiz"
+          variant="secondary"
+          size="sm"
+          fullWidth={false}
+          onPress={() =>
+            rootNavigation.navigate("OnboardingStack", {
+              screen: "TasteQuiz",
+              params: { mode: "profile" },
+            })
+          }
+          style={{ alignSelf: "flex-start", minHeight: 44 }}
+        />
+      )}
+    </View>
+  );
+
   return (
     <ProfileScreenShell
       title="Profile"
       showBack={false}
       testID="profile-home-screen"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={() => void handleRefresh()}
+          tintColor={palette.orange}
+          colors={[palette.orange]}
+        />
+      }
       headerRight={
-        <View style={{ position: "relative", alignItems: "flex-end", zIndex: 30, elevation: 30 }}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={
-              menuOpen
-                ? "Close quick access"
-                : followRequestLabel
-                  ? `Open quick access, ${followRequestLabel}`
-                  : "Open quick access"
-            }
-            hitSlop={10}
-            onPress={handleMenuToggle}
-            style={{
-              borderRadius: radii.pill,
-              alignItems: "center",
-              height: headerActionSize,
-              justifyContent: "center",
-              width: headerActionSize,
-            }}
-          >
-            <Menu color={palette.text} size={22} />
-            {followRequestCount ? (
-              <View
-                testID="profile-menu-badge"
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.orange,
-                  borderRadius: radii.pill,
-                  height: 16,
-                  justifyContent: "center",
-                  minWidth: 16,
-                  paddingHorizontal: 4,
-                  position: "absolute",
-                  right: 0,
-                  top: 2,
-                }}
-              >
-                <AppText
-                  variant="micro"
-                  style={{ color: palette.textOnOrange, fontSize: 10, lineHeight: 12 }}
-                >
-                  {followRequestCount > 9 ? "9+" : followRequestCount}
-                </AppText>
-              </View>
-            ) : null}
-          </Pressable>
-          {menuOpen && (
+        <OverflowMenu
+          testID="profile-menu"
+          items={menuItems}
+          accessibilityLabel={
+            followRequestLabel ? `Open quick access, ${followRequestLabel}` : "Open quick access"
+          }
+          openAccessibilityLabel="Close quick access"
+          triggerStyle={{
+            alignItems: "center",
+            height: headerActionSize,
+            justifyContent: "center",
+            width: headerActionSize,
+          }}
+        >
+          <AppSymbol name="moreActions" size={24} weight="regular" color={palette.text} />
+          {followRequestCount ? (
             <View
-              accessibilityViewIsModal
-              onAccessibilityEscape={() => setMenuOpen(false)}
+              testID="profile-menu-badge"
               style={{
+                alignItems: "center",
+                // accentText on white is 5.9:1 (the orange fill was 3.7:1 under 11pt text).
+                backgroundColor: colorScheme === "dark" ? palette.orange : palette.accentText,
+                borderRadius: radii.pill,
+                height: 18,
+                justifyContent: "center",
+                minWidth: 18,
+                paddingHorizontal: 4,
                 position: "absolute",
-                top: spacing[8] + spacing[0.5],
                 right: 0,
-                gap: StyleSheet.hairlineWidth,
-                ...shadows.floating,
-                ...(colorScheme === "dark"
-                  ? {
-                      shadowColor: palette.white,
-                      shadowOpacity: 0.24,
-                      shadowRadius: 14,
-                      shadowOffset: { width: 0, height: 10 },
-                      elevation: 18,
-                    }
-                  : {}),
-                backgroundColor: palette.border,
-                borderRadius: componentRadii.card,
-                overflow: "hidden",
-                minWidth: 230,
-                alignItems: "stretch",
-                zIndex: 20,
+                top: 0,
               }}
             >
-              {FEATURE_FLAGS.merchantCentreEnabled && merchantAccount !== null && (
-                <MenuRow
-                  label="Merchant dashboard"
-                  icon={<Store size={20} color={palette.orange} />}
-                  onPressIn={prefetchMerchantDashboard}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    rootNavigation.navigate("MerchantTabs" as any);
-                  }}
-                />
-              )}
-              {FEATURE_FLAGS.merchantCentreEnabled &&
-                isAuthenticated &&
-                merchantAccount === null && (
-                  <MenuRow
-                    label="Hungry for Business"
-                    icon={<Store size={20} color={palette.orange} />}
-                    onPress={() => {
-                      setMenuOpen(false);
-                      rootNavigation.navigate("MerchantClaimExplainer");
-                    }}
-                  />
-                )}
-              {isAuthenticated && FEATURE_FLAGS.collectionsEnabled && (
-                <MenuRow
-                  label="Liked content"
-                  icon={<Heart size={20} color={palette.error} fill={palette.error} />}
-                  onPressIn={() => preloadRoute(navigation, "SocialGrid", { type: "liked" })}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    navigation.navigate("SocialGrid", { type: "liked" });
-                  }}
-                />
-              )}
-              {(followRequestCount ?? 0) > 0 || profile.profileVisibility === "private" ? (
-                <MenuRow
-                  label={
-                    followRequestCount
-                      ? `Follow requests (${followRequestCount})`
-                      : "Follow requests"
-                  }
-                  icon={<UserPlus size={20} color={palette.orange} />}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    rootNavigation.navigate("FollowRequests");
-                  }}
-                />
-              ) : null}
-              <MenuRow
-                label="Followed stalls"
-                icon={<Store size={20} color={palette.text} />}
-                onPressIn={() => preloadRoute(navigation, "FollowedStalls")}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("FollowedStalls");
+              <AppText
+                variant="micro"
+                style={{
+                  color: palette.textOnOrange,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  lineHeight: 14,
                 }}
-              />
-              <MenuRow
-                label="Settings"
-                icon={<Settings size={20} color={palette.text} />}
-                onPressIn={() => preloadRoute(navigation, "Settings")}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("Settings");
-                }}
-              />
-              {isAuthenticated && (
-                <MenuRow
-                  label="Sign out"
-                  icon={<LogOut size={20} color={palette.error} />}
-                  onPress={() => {
-                    setMenuOpen(false);
-                    confirmAction({
-                      title: "Sign out",
-                      message: "You will be signed out from Hungry on this device.",
-                      confirmLabel: "Sign out",
-                      destructive: true,
-                      onConfirm: () => {
-                        signOut();
-                        rootNavigation.reset({
-                          index: 0,
-                          routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-                        });
-                      },
-                    });
-                  }}
-                />
-              )}
+              >
+                {followRequestCount > 9 ? "9+" : followRequestCount}
+              </AppText>
             </View>
-          )}
-        </View>
+          ) : null}
+        </OverflowMenu>
       }
     >
       <View style={{ gap: spacing[4], paddingBottom: spacing[8], position: "relative" }}>
         <PendingDeletionBanner />
-        {menuOpen && (
-          // The menu button already closes it, and Escape does too: the backdrop is not a second
-          // "close" control for a screen reader.
-          <Pressable
-            accessible={false}
-            importantForAccessibility="no"
-            onPress={() => setMenuOpen(false)}
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 5,
-            }}
-          />
-        )}
         <View
           style={[
             shadows.card,
@@ -972,7 +1056,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   variant="secondary"
                   size="sm"
                   fullWidth={false}
-                  leftIcon={<Share2 size={16} color={palette.text} />}
+                  leftIcon={<AppSymbol name="share" size={16} color={palette.text} />}
                   accessibilityHint="Shares a link to your Hungry profile"
                   onPress={() => void handleShareProfile()}
                   style={{ alignSelf: "flex-start", minHeight: 44 }}
@@ -1005,11 +1089,11 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               })}
               testID="profile-follow-requests-row"
             >
-              <UserPlus size={20} color={palette.orange} />
+              <AppSymbol name="followRequests" size={20} color={palette.accentText} />
               <AppText variant="bodyBold" style={{ flex: 1 }}>
                 {followRequestLabel}
               </AppText>
-              <ChevronRight color={palette.textMuted} size={18} />
+              <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
             </Pressable>
           ) : null}
           {firstReviewNudgeEligible && firstReviewNudge === "test" ? (
@@ -1031,7 +1115,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                 label="Write a review"
                 size="sm"
                 fullWidth={false}
-                leftIcon={<PencilLine size={16} color={palette.textOnOrange} />}
+                leftIcon={<AppSymbol name="compose" size={16} color={palette.textOnOrange} />}
                 onPress={openReviewComposer}
                 style={{ alignSelf: "flex-start", minHeight: 44 }}
               />
@@ -1057,6 +1141,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             }}
           />
         ) : null}
+
+        {/* The palate is what this page is remembered by, so its radar sits right under the stats. */}
+        {hasTasteFingerprint ? tasteCard : null}
 
         {/* What you ate comes first: your reviews, with the photos you posted. */}
         <View style={{ gap: spacing[4] }}>
@@ -1199,7 +1286,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               <EmptyState
                 title="Couldn't load posts"
                 body="Check your connection and try again."
-                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+                icon={
+                  <AppSymbol
+                    name="noPosts"
+                    size={36}
+                    weight="regular"
+                    color={palette.textSecondary}
+                  />
+                }
                 ctaLabel="Retry"
                 onPress={() => setPostsReloadKey((key) => key + 1)}
               />
@@ -1207,7 +1301,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               <EmptyState
                 title="No posts yet"
                 body="Published posts will appear here."
-                icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+                icon={
+                  <AppSymbol
+                    name="noPosts"
+                    size={36}
+                    weight="regular"
+                    color={palette.textSecondary}
+                  />
+                }
               />
             )
           ) : ownReviews === null ? (
@@ -1241,7 +1342,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             <EmptyState
               title="Couldn't load reviews"
               body="Check your connection and try again."
-              icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+              icon={
+                <AppSymbol
+                  name="noPosts"
+                  size={36}
+                  weight="regular"
+                  color={palette.textSecondary}
+                />
+              }
               ctaLabel="Retry"
               onPress={() => setOwnReviewsReloadKey((key) => key + 1)}
             />
@@ -1249,7 +1357,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             <EmptyState
               title="No reviews yet"
               body="Rate a dish you've eaten and it will show up here."
-              icon={<MessageCircleMore size={36} color={palette.textSecondary} />}
+              icon={
+                <AppSymbol
+                  name="noPosts"
+                  size={36}
+                  weight="regular"
+                  color={palette.textSecondary}
+                />
+              }
             />
           )}
           {activeShareTab === "posts" && hasMorePosts ? (
@@ -1264,90 +1379,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         </View>
 
         <View style={{ gap: spacing[4] }}>
-          {/* Taste Fingerprint Section */}
-          <View
-            style={[
-              shadows.card,
-              {
-                backgroundColor: palette.surface,
-                borderRadius: componentRadii.card,
-                gap: spacing[4],
-                padding: spacing[4],
-              },
-            ]}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                <FlaskConical color={palette.orange} size={20} />
-                <AppText variant="h2">Taste Fingerprint</AppText>
-              </View>
-              {hasTasteFingerprint ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Share Taste Fingerprint"
-                  accessibilityHint="Opens sharing options for your Taste Fingerprint"
-                  onPress={handleShareTaste}
-                  hitSlop={{ top: 14, bottom: 14, left: 8, right: 8 }}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 4, minHeight: 44 }}
-                >
-                  <Send size={16} color={palette.orange} />
-                  <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
-                    Share
-                  </AppText>
-                </Pressable>
-              ) : null}
-            </View>
-            <AppText style={{ fontWeight: "600" }}>{tastePersonaSummary}</AppText>
-            {hasTasteFingerprint ? (
-              <View style={{ gap: spacing[1] }} testID="profile-palate-summary">
-                {palate.mild.length > 0 ? (
-                  <AppText variant="bodySmall">
-                    <AppText variant="bodySmallBold">You prefer mild: </AppText>
-                    {palate.mild.join(", ")}
-                  </AppText>
-                ) : null}
-                <AppText variant="micro" tone="secondary">
-                  A dish has one standard level for everyone. Your palate decides how strong it
-                  tastes to you, and dish pages show that.
-                </AppText>
-              </View>
-            ) : null}
-            {hasTasteFingerprint ? (
-              <View style={{ alignItems: "center", gap: spacing[3] }}>
-                <TasteRadar vector={profile.tasteVector} />
-                <Button
-                  label="Retake the taste quiz"
-                  variant="secondary"
-                  onPress={() =>
-                    rootNavigation.navigate("OnboardingStack", {
-                      screen: "TasteQuiz",
-                      params: { mode: "profile" },
-                    })
-                  }
-                />
-              </View>
-            ) : (
-              <Button
-                label="Take the taste quiz"
-                variant="secondary"
-                size="sm"
-                fullWidth={false}
-                onPress={() =>
-                  rootNavigation.navigate("OnboardingStack", {
-                    screen: "TasteQuiz",
-                    params: { mode: "profile" },
-                  })
-                }
-                style={{ alignSelf: "flex-start", minHeight: 44 }}
-              />
-            )}
-          </View>
+          {hasTasteFingerprint ? null : tasteCard}
 
           {isAuthenticated && gamificationEnabled ? (
             <PassportCard
@@ -1425,14 +1457,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                     key: "copy",
                     label: "Copy link",
                     accessibilityLabel: "Copy taste fingerprint with profile link",
-                    icon: ({ color, size }) => <Copy color={color} size={size} />,
+                    icon: ({ color, size }) => <AppSymbol name="copy" color={color} size={size} />,
                     onPress: () => void copyTasteFingerprintLink(),
                   },
                   {
                     key: "share",
                     label: "Share",
                     accessibilityLabel: "Share taste fingerprint to another app",
-                    icon: ({ color, size }) => <Share2 color={color} size={size} />,
+                    icon: ({ color, size }) => <AppSymbol name="share" color={color} size={size} />,
                     onPress: () => void shareTasteProfileOutsideApp(),
                   },
                 ]}
@@ -1453,6 +1485,12 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       </View>
     </ProfileScreenShell>
   );
+}
+
+/** "spicy", "spicy and sour", "spicy, sour and sweet". */
+function joinWithAnd(parts: string[]): string {
+  if (parts.length <= 1) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
 
 /** A slim row, not a card of counters: the form is one tap away, what you sent is one more. */
@@ -1508,7 +1546,7 @@ function StallContributionRow({
             width: 40,
           }}
         >
-          <ImagePlus color={palette.orange} size={20} />
+          <AppSymbol name="addStall" size={20} color={palette.accentText} />
         </View>
         <View style={{ flex: 1, gap: spacing[0.5] }}>
           <AppText variant="bodyBold">Add a stall</AppText>
@@ -1516,7 +1554,7 @@ function StallContributionRow({
             {subtitle}
           </AppText>
         </View>
-        <ChevronRight color={palette.textMuted} size={18} />
+        <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
       </Pressable>
       {submissionCount > 0 ? (
         <Button
@@ -1529,46 +1567,5 @@ function StallContributionRow({
         />
       ) : null}
     </View>
-  );
-}
-
-function MenuRow({
-  label,
-  icon,
-  onPressIn,
-  onPress,
-}: {
-  label: string;
-  icon: ReactNode;
-  onPressIn?: () => void;
-  onPress: () => void;
-}) {
-  const { palette, spacing } = useHungryTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPressIn={onPressIn}
-      onPress={onPress}
-      style={({ pressed }) => [
-        {
-          flexDirection: "row",
-          alignItems: "center",
-          width: "100%",
-          backgroundColor: pressed ? palette.bgSoft : palette.surface,
-          padding: spacing[4],
-          gap: spacing[3],
-        },
-      ]}
-    >
-      {icon}
-      <AppText
-        numberOfLines={1}
-        style={{ flex: 1, minWidth: 0, fontWeight: "600", color: palette.text }}
-      >
-        {label}
-      </AppText>
-      <ChevronRight color={palette.textMuted} size={18} />
-    </Pressable>
   );
 }

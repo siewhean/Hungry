@@ -131,7 +131,6 @@ export function CollectionsScreen({ navigation }: Props) {
       active = false;
     };
     // wantedKey stands for `wanted`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, wantedKey]);
   const isSearchLoading = listsLoading || (!detailsFailed && details?.key !== wantedKey);
 
