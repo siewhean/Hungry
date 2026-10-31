@@ -345,7 +345,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /shouldShowPopularFoodSkeleton \? \([\s\S]*<PopularFoodStyleSkeleton \/>/);
   assert.match(
     discover,
-    /function FoodStyleButton[\s\S]*const labelGap = spacing\[1\.5\][\s\S]*const labelLineHeight = typography\.bodySmallBold\.fontSize \+ spacing\[1\][\s\S]*const buttonHeight = bowlSize \+ labelGap \+ labelLineHeight \* 2[\s\S]*style=\{\{ alignItems: "center", minHeight: buttonHeight, width: 88 \}\}[\s\S]*lineHeight: labelLineHeight[\s\S]*marginTop: labelGap[\s\S]*minHeight: labelLineHeight \* 2/,
+    /function FoodStyleButton[\s\S]*const \{ bowlSize, buttonHeight, labelGap, labelLineHeight \} = getFoodStyleButtonMetrics\(theme\)[\s\S]*style=\{\{ alignItems: "center", minHeight: buttonHeight, width: FOOD_STYLE_ITEM_WIDTH \}\}[\s\S]*lineHeight: labelLineHeight[\s\S]*marginTop: labelGap[\s\S]*minHeight: labelLineHeight \* 2/,
   );
   assert.match(
     discover,
@@ -477,7 +477,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/);
   assert.match(
     discover,
-    /<StallLogoMark[\s\S]*logoUrl=\{venue\.logoUrl\}[\s\S]*name=\{venue\.name\}[\s\S]*size=\{56\}/,
+    /<StallLogoMark[\s\S]*logoUrl=\{venue\.logoUrl\}[\s\S]*name=\{venue\.name\}[\s\S]*size=\{STALL_ROW_THUMBNAIL_SIZE\}/,
   );
   assert.match(discover, /<DiscoverStallThumbnail venue=\{venue\} \/>/);
   assert.doesNotMatch(discover, /<DiscoverStallThumbnail topDish=\{topDish\} venue=\{venue\} \/>/);
@@ -508,10 +508,15 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /Dishes/);
   assert.match(discover, /backgroundColor: palette\.imageLabelSurface/);
   assert.match(discover, /borderColor: palette\.imageLabelBorder/);
-  assert.match(discover, /const bowlSize = 72/);
+  assert.match(discover, /export const FOOD_STYLE_BOWL_SIZE = 72/);
+  assert.match(discover, /export const FOOD_STYLE_ITEM_WIDTH = 88/);
   assert.match(
     discover,
-    /style=\{\{ alignItems: "center", minHeight: buttonHeight, width: 88 \}\}/,
+    /const labelGap = theme\.spacing\[1\.5\][\s\S]*const labelLineHeight = theme\.typography\.bodySmallBold\.fontSize \+ theme\.spacing\[1\][\s\S]*buttonHeight: bowlSize \+ labelGap \+ labelLineHeight \* 2/,
+  );
+  assert.match(
+    discover,
+    /style=\{\{ alignItems: "center", minHeight: buttonHeight, width: FOOD_STYLE_ITEM_WIDTH \}\}/,
   );
   assert.doesNotMatch(discover, /fontSize: 24, lineHeight: 28/);
   assert.doesNotMatch(discover, /fontSize: 11, lineHeight: 13/);
@@ -553,8 +558,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
       /const DiscoverBiteCard = memo\(function DiscoverBiteCard[\s\S]*?\n\}\);/,
     )?.[0] ?? "";
   assert.ok(biteCard, "DiscoverBiteCard should exist");
-  assert.match(biteCard, /backgroundColor: palette\.surface/);
-  assert.match(biteCard, /borderColor: palette\.border/);
+  // The frame comes from the chrome shared with the loading skeleton.
+  assert.match(biteCard, /chrome\.biteCardShell\(cardWidth\)/);
+  assert.match(discover, /backgroundColor: palette\.surface,\s*borderColor: palette\.border/);
   assert.doesNotMatch(biteCard, /palette\.navy/);
   assert.doesNotMatch(biteCard, /tone="inverse"/);
   assert.doesNotMatch(biteCard, /opacity: 0\.85/);
@@ -620,7 +626,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /venueCountResult\.status === "fulfilled" && typeof venueCountResult\.value === "number"/,
+    /void reads\.count\.then\([\s\S]*typeof count === "number" \? count : null/,
   );
   assert.match(
     discover,
@@ -637,7 +643,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   // The count line shows a skeleton only while the feed loads, and hides on failure.
   assert.match(
     discover,
-    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<Skeleton width=\{150\} height=\{14\} borderRadius=\{radii\.sm\} \/>\s*\) : null/,
+    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<SkeletonText variant="micro" width=\{150\} \/>\s*\) : null/,
   );
   assert.match(
     discover,

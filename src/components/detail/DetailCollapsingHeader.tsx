@@ -1,5 +1,13 @@
-import { useEffect, useState, type ComponentType } from "react";
-import { Animated, StyleSheet, View } from "react-native";
+import { useState, type ComponentType } from "react";
+import { StyleSheet, View } from "react-native";
+import Animated, {
+  Extrapolation,
+  interpolate,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  type SharedValue,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText } from "@/components/ui/AppText";
@@ -7,8 +15,8 @@ import { useHungryTheme } from "@/theme";
 import { FloatingBackButton } from "./FloatingBackButton";
 
 type Props = {
-  /** The page's vertical scroll offset (the same value DetailHeroFade reads). */
-  scrollY: Animated.Value;
+  /** The page's vertical scroll offset (the same value DetailHeroFade reads), written on the UI thread. */
+  scrollY: SharedValue<number>;
   /** Height of the hero photo: the bar fades in between 60% and 100% of it. */
   heroHeight: number;
   /** The stall or dish name shown in the bar once the page's own title has scrolled away. */
@@ -54,21 +62,24 @@ export function DetailCollapsingHeader({
   const insets = useSafeAreaInsets();
   const start = Math.max(1, heroHeight * 0.6);
   const end = Math.max(start + 1, heroHeight);
-  const barOpacity = scrollY.interpolate({
-    inputRange: [0, start, end],
-    outputRange: [0, 0, 1],
-    extrapolate: "clamp",
-  });
+  // The bar fades in and the buttons' round chips fade out on the same curve, on the UI thread.
+  const barStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, start, end], [0, 0, 1], Extrapolation.CLAMP),
+  }));
+  const chipStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, start, end], [1, 1, 0], Extrapolation.CLAMP),
+  }));
 
-  // One state flip when the bar becomes visible: not a re-render per scroll event.
+  // React state changes once, when the bar becomes visible (screen readers need it): never per
+  // scroll event.
   const [collapsed, setCollapsed] = useState(false);
-  useEffect(() => {
-    const id = scrollY.addListener(({ value }) => {
-      const next = value >= (start + end) / 2;
-      setCollapsed((current) => (current === next ? current : next));
-    });
-    return () => scrollY.removeListener(id);
-  }, [end, scrollY, start]);
+  useAnimatedReaction(
+    () => scrollY.value >= (start + end) / 2,
+    (isCollapsed, previous) => {
+      if (isCollapsed !== previous) runOnJS(setCollapsed)(isCollapsed);
+    },
+    [start, end],
+  );
 
   const height = insets.top + BAR_CONTENT_HEIGHT;
   // Buttons are 44pt wide at spacing[4]: keep the name clear of both.
@@ -84,11 +95,12 @@ export function DetailCollapsingHeader({
         pointerEvents="box-none"
         style={{ ...StyleSheet.absoluteFill, elevation: 12, zIndex: 2 }}
       >
-        <FloatingBackButton onPress={onBack} icon={backIcon} />
+        <FloatingBackButton onPress={onBack} icon={backIcon} chipStyle={chipStyle} />
         {onShare ? (
           <FloatingBackButton
             accessibilityLabel={shareLabel}
             icon={shareIcon}
+            chipStyle={chipStyle}
             onPress={onShare}
             side="right"
           />
@@ -97,14 +109,16 @@ export function DetailCollapsingHeader({
       <Animated.View
         pointerEvents="none"
         testID={testID}
-        style={{
-          ...StyleSheet.absoluteFill,
-          backgroundColor: palette.surface,
-          borderBottomColor: palette.border,
-          borderBottomWidth: StyleSheet.hairlineWidth,
-          justifyContent: "flex-end",
-          opacity: barOpacity,
-        }}
+        style={[
+          {
+            ...StyleSheet.absoluteFill,
+            backgroundColor: palette.surface,
+            borderBottomColor: palette.border,
+            borderBottomWidth: StyleSheet.hairlineWidth,
+            justifyContent: "flex-end",
+          },
+          barStyle,
+        ]}
       >
         <View
           style={{

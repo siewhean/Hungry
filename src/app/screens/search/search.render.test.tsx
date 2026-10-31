@@ -26,7 +26,8 @@ import type {
   CatalogRawVenueCard,
 } from "@/lib/services/catalog";
 import { CatalogRateLimitedError, CatalogReleaseExpiredError } from "@/lib/services/catalog";
-import { getCatalogRawService } from "@/lib/services/serviceProvider";
+import { getCatalogRawService, getHungryService } from "@/lib/services/serviceProvider";
+import type { MoodSearchIntent } from "@/types/domain";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
@@ -578,7 +579,10 @@ test("a new search starts from where the diner is now (SR4-26)", async () => {
     useLocationStore.setState({ currentLocation: { latitude: 1.31, longitude: 103.87 } });
   });
   await view.type(view.findByTestId("browse-results-search-input"), "laksa");
-  await wait(600);
+  // The empty result asks, the answer reloads the grid after its own pause.
+  await wait(500);
+  await wait(500);
+  await wait(500);
   assert.equal(requests.at(-1)?.query, "laksa");
   assert.equal(requests.at(-1)?.coordinate?.latitude, 1.31);
   assert.equal(view.findByLabel("Update for new location"), null);
@@ -812,6 +816,103 @@ test("ParsedQueryChips: diet and price words become filters and removable chips 
     (event) => event.event === "search_parse_removed",
   );
   assert.equal(removed?.properties.part_kind, "dietary");
+});
+
+/** Swaps the mood-search call for the test; restored with the catalog stub after each test. */
+function stubMoodSearch(answer: (query: string) => Promise<MoodSearchIntent | null>) {
+  const ai = getHungryService().ai;
+  const original = ai.parseMoodQuery;
+  ai.parseMoodQuery = answer;
+  const restoreCatalog = restore;
+  restore = () => {
+    ai.parseMoodQuery = original;
+    restoreCatalog?.();
+  };
+}
+
+const SOUPY_INTENT: MoodSearchIntent = {
+  tasteShift: { sweet: 0, spicy: -2, sour: 0, salty: 0, rich: -1, aromatic: 0 },
+  maxPrice: 8,
+  dietaryFlags: [],
+  keywords: ["soup"],
+  summary: "soupy, light, under $8",
+};
+
+test("a plain-language search with no results is read by mood search and searched again", async () => {
+  const requests: CatalogPageRequest[] = [];
+  stubCatalog({
+    listDishes: async (request) => {
+      requests.push(request);
+      const matches = request.foodKeywords?.includes("soup") ?? false;
+      return page(matches ? [dishCard("1", { name: "Fish Soup" })] : []);
+    },
+    listPlaces: async () => [],
+  });
+  const asked: string[] = [];
+  stubMoodSearch(async (query) => {
+    asked.push(query);
+    return SOUPY_INTENT;
+  });
+  const view = await renderResults({
+    browseMode: "dishes",
+    initialQuery: "something light and soupy",
+  });
+  // The empty result asks, the answer reloads the grid after its own pause.
+  await wait(500);
+  await wait(500);
+  await wait(500);
+  assert.deepEqual(asked, ["something light and soupy"], "asked once, with the typed text");
+  const last = requests.at(-1);
+  assert.equal(last?.query, undefined, "the words that matched nothing are not searched again");
+  assert.deepEqual(last?.foodKeywords, ["soup"]);
+  assert.equal(last?.maxPrice, 8);
+  assert.match(view.text(), /Fish Soup/);
+  const note = view.findByTestId("search-mood-note");
+  assert.ok(note, "the note says what was understood");
+  assert.match(note.textContent ?? "", /soupy, light, under \$8/);
+  const applied = getTrackedAnalyticsEvents().find(
+    (event) => event.event === "search_mood_applied",
+  );
+  assert.equal(applied?.properties.dish_word_count, 1);
+  assert.equal(applied?.properties.has_price, true);
+
+  // Changing the text drops the reading: the new words are searched as typed.
+  const input = view.findByTestId("browse-results-search-input") as HTMLInputElement;
+  await view.type(input, "something light");
+  await wait(500);
+  assert.equal(view.findByTestId("search-mood-note"), null);
+  assert.equal(requests.at(-1)?.query, "something light");
+});
+
+test("mood search is never asked about a single word", async () => {
+  stubCatalog({ listDishes: async () => page<CatalogRawDishCard>([]), listPlaces: async () => [] });
+  const asked: string[] = [];
+  stubMoodSearch(async (query) => {
+    asked.push(query);
+    return SOUPY_INTENT;
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "xyzzy" });
+  await wait(500);
+  await wait(500);
+  await wait(500);
+  assert.deepEqual(asked, [], "a single word is never sent to Claude");
+  assert.match(view.text(), /No dishes/);
+});
+
+test("an answer with nothing to filter on leaves the empty state alone", async () => {
+  stubCatalog({ listDishes: async () => page<CatalogRawDishCard>([]), listPlaces: async () => [] });
+  const asked: string[] = [];
+  stubMoodSearch(async (query) => {
+    asked.push(query);
+    return { ...SOUPY_INTENT, keywords: [], maxPrice: undefined };
+  });
+  const view = await renderResults({ browseMode: "dishes", initialQuery: "something very odd" });
+  await wait(500);
+  await wait(500);
+  await wait(500);
+  assert.deepEqual(asked, ["something very odd"], "asked once, not again after the answer");
+  assert.equal(view.findByTestId("search-mood-note"), null);
+  assert.match(view.text(), /No dishes/, "the empty state stays when the reading adds nothing");
 });
 
 test("parsed filters that find nothing fall back to the whole text, with a note and the chip kept (SR4-2)", async () => {
@@ -1436,7 +1537,10 @@ test("SR5-6: an empty result offers the other tab's count, popular searches and 
           ],
   });
   const view = await renderResults({ browseMode: "dishes", initialQuery: "zzz" });
-  await wait(600);
+  // The empty result asks, the answer reloads the grid after its own pause.
+  await wait(500);
+  await wait(500);
+  await wait(500);
   assert.ok(view.findByTestId("search-empty-state"));
   assert.ok(view.findByText("2 stalls match “zzz”"), "the other tab's count");
   assert.equal(requests.at(-1)?.query, "zzz");
@@ -1462,7 +1566,10 @@ test("SR5-6: the other tab's button switches to it", async () => {
     suggest: async () => [],
   });
   const view = await renderResults({ browseMode: "dishes", initialQuery: "zzz" });
-  await wait(600);
+  // The empty result asks, the answer reloads the grid after its own pause.
+  await wait(500);
+  await wait(500);
+  await wait(500);
   await view.press(view.findByText("1 stall matches “zzz”"));
   await wait(400);
   assert.match(view.text(), /1 stall for “zzz”/, "the Stalls tab is showing");

@@ -3,6 +3,10 @@ import type { ImageSourcePropType } from "react-native";
 import { View } from "react-native";
 
 import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
+import {
+  FOOD_STYLE_ITEM_WIDTH,
+  getFoodStyleButtonMetrics,
+} from "@/components/discover/home/homeLayout";
 import type { PopularFoodStyle } from "@/features/discover/popularFoodStyles";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
@@ -24,14 +28,12 @@ function FoodStyleButton({
   onPressIn?: () => void;
   onPress: () => void;
 }) {
-  const { palette, radii, spacing, shadows, typography } = useHungryTheme();
+  const theme = useHungryTheme();
+  const { palette, radii, shadows } = theme;
   // A bowl whose art fails to load shows a dish symbol, not an empty circle.
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [imageSource]);
-  const bowlSize = 72;
-  const labelGap = spacing[1.5];
-  const labelLineHeight = typography.bodySmallBold.fontSize + spacing[1];
-  const buttonHeight = bowlSize + labelGap + labelLineHeight * 2;
+  const { bowlSize, buttonHeight, labelGap, labelLineHeight } = getFoodStyleButtonMetrics(theme);
 
   return (
     <PressableScale
@@ -39,7 +41,7 @@ function FoodStyleButton({
       accessibilityLabel={`Search for ${label}`}
       onPressIn={onPressIn}
       onPress={onPress}
-      style={{ alignItems: "center", minHeight: buttonHeight, width: 88 }}
+      style={{ alignItems: "center", minHeight: buttonHeight, width: FOOD_STYLE_ITEM_WIDTH }}
     >
       <View
         style={[

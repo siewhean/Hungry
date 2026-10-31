@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useMemo } from "react";
 
 import { AccessibleImage, AppText } from "@/components/ui";
+import { RatingStarSymbol } from "@/components/dish/dishSymbols";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { isSoldOut, isStallsPick } from "@/features/merchant/menuSections";
@@ -46,6 +47,23 @@ export function menuDishAccessibilityLabel(dish: DishDetail) {
   ]
     .filter(Boolean)
     .join(", ");
+}
+
+/** The dish's rating: a filled star symbol and the number, never a typed glyph. */
+function MenuDishRating({ rating }: { rating: number }) {
+  const { palette, spacing } = useHungryTheme();
+  return (
+    <View
+      accessible
+      accessibilityLabel={`${rating.toFixed(1)} stars`}
+      style={{ alignItems: "center", flexDirection: "row", gap: spacing[0.5] }}
+    >
+      <RatingStarSymbol size={11} color={palette.starFill} />
+      <AppText variant="micro" tone="secondary">
+        {rating.toFixed(1)}
+      </AppText>
+    </View>
+  );
 }
 
 type MenuDishProps = {
@@ -143,11 +161,7 @@ export function StallMenuDishCard({
                 {formatDishPrice(dish)}
               </AppText>
             )}
-            {dish.reviewCount > 0 ? (
-              <AppText variant="micro" tone="secondary">
-                <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
-              </AppText>
-            ) : null}
+            {dish.reviewCount > 0 ? <MenuDishRating rating={dish.rating} /> : null}
           </View>
         </View>
       </View>
@@ -208,11 +222,7 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
                 MUST ORDER
               </AppText>
             ) : null}
-            {dish.reviewCount > 0 ? (
-              <AppText variant="micro" tone="secondary">
-                <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
-              </AppText>
-            ) : null}
+            {dish.reviewCount > 0 ? <MenuDishRating rating={dish.rating} /> : null}
           </View>
         ) : null}
       </View>

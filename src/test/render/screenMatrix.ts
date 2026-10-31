@@ -36,6 +36,7 @@ export type ParamKey =
   | "socialGrid"
   | "socialPost"
   | "stall"
+  | "stallVisited"
   | "story"
   | "otherUser";
 
@@ -143,6 +144,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     file: "src/app/screens/detail/MerchantClaimExplainerScreen.tsx",
     scenario: "user",
     expect: /Claim Verification/,
+  },
+  {
+    name: "StallVisitedScreen",
+    file: "src/app/screens/detail/StallVisitedScreen.tsx",
+    scenario: "user",
+    expect: /Visited/,
+    params: "stallVisited",
   },
   {
     name: "NotFoundScreen",

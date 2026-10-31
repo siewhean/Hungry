@@ -3,7 +3,8 @@
 
 import assert from "node:assert/strict";
 import { act, createElement } from "react";
-import { Animated, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { makeMutable } from "react-native-reanimated";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
@@ -639,7 +640,7 @@ test("DetailHeroFade shows the photo it holds", async () => {
   const view = await render(
     createElement(
       DetailHeroFade,
-      { scrollY: new Animated.Value(0), height: 200 },
+      { scrollY: makeMutable(0), height: 200 },
       createElement(Text, null, "Hero photo"),
     ),
   );

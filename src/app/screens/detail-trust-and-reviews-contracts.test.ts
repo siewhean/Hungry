@@ -93,7 +93,10 @@ test("stall header shows rating, price, status, actions and delivery links", () 
   assert.match(read("src/components/stall/StallInteractionBar.tsx"), /label: "Directions"/);
   // Phone and email sit in a Contact details card; delivery uses the wide button row.
   assert.match(stallDetail, /Contact details/);
-  assert.match(stallDetail, /label="Call"/);
+  // The phone is the Call chip under the name (formatted), so the card only holds the email.
+  assert.match(stallDetail, /formatSgPhone\(merchantProfile\.contactPhone\)/);
+  assert.match(stallDetail, /label="Email"/);
+  assert.doesNotMatch(stallDetail, /label="Call"/);
   assert.match(stallDetail, /<DeliveryButtonRow/);
   assert.match(stallDetail, /cachedVenue && serviceProviderMode !== "supabase"/);
   assert.match(stallDetail, /merchantProfile\?\.coverPhotoUrl,\s*venue\?\.imageUrl/);

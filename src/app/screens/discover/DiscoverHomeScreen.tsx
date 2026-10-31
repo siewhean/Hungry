@@ -41,6 +41,7 @@ import {
   PressableScale,
   Screen,
   Skeleton,
+  SkeletonText,
 } from "@/components/ui";
 import { DiscoverModeTabs, type DiscoverMode } from "@/components/discover/DiscoverModeTabs";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
@@ -106,7 +107,9 @@ import { DiscoverStallThumbnail } from "@/components/discover/home/DiscoverImage
 import {
   DiscoverStallListLoadingSkeleton,
   PopularFoodStyleSkeleton,
+  VerticalStallShowcaseLoadingSkeleton,
 } from "@/components/discover/home/DiscoverLoadingSkeletons";
+import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
 import {
   DiscoverSearchPlaceholder,
   NARROW_SEARCH_WIDTH,
@@ -240,6 +243,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     colorScheme,
     typography,
   } = useHungryTheme();
+  const discoverCardChrome = useDiscoverCardChrome();
   const insets = useSafeAreaInsets();
   const [discoverViewportHeight, setDiscoverViewportHeight] = useState(0);
   const discoverSectionGap = spacing[4];
@@ -942,23 +946,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         });
       }}
       style={[
-        shadows.card,
-        {
-          backgroundColor: themeTints.cardBg,
-          borderRadius: componentRadii.card,
-          padding: spacing[3],
-          flexDirection: "row",
-          gap: spacing[3],
-          alignItems: "center",
-          borderWidth: themeTints.isDark ? 0 : 1,
-          borderColor: palette.border,
-          // Closed stalls are dimmed, not hidden: they still open.
-          opacity: isStallClosed(venue) ? 0.7 : 1,
-        },
+        discoverCardChrome.stallRowShell,
+        // Closed stalls are dimmed, not hidden: they still open.
+        { opacity: isStallClosed(venue) ? 0.7 : 1 },
       ]}
     >
       <DiscoverStallThumbnail venue={venue} />
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={discoverCardChrome.stallRowText}>
         <View
           style={{
             alignItems: "center",
@@ -1396,7 +1390,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             needsDiscoverAreaChoice ? null : isFeedFallbackEmpty ||
               discoverAreaCountLabel === null ? (
               isSupabaseDiscoveryFeedLoading ? (
-                <Skeleton width={150} height={14} borderRadius={radii.sm} />
+                <SkeletonText variant="micro" width={150} />
               ) : null
             ) : discoverAreaCountLabel !== "0" ? (
               <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
@@ -1975,7 +1969,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               </View>
             ) : null}
 
-            {stallShowcaseCards.length ? (
+            {showDiscoverFilterRailSkeleton ? (
+              <VerticalStallShowcaseLoadingSkeleton
+                areaPhrase={discoverAreaPhrase}
+                cardWidth={stallShowcaseCardWidth}
+                pageHeight={stallShowcasePageHeight}
+              />
+            ) : stallShowcaseCards.length ? (
               <VerticalStallShowcaseSection
                 cards={stallShowcaseCards}
                 areaPhrase={discoverAreaPhrase}

@@ -27,7 +27,8 @@ test("detail screens hydrate specific Supabase records before showing not-found 
     stallDetail,
     /\[buildingLocation\.name, venue\.unitNumber\?\.trim\(\), distanceLabel\]/,
   );
-  assert.match(stallDetail, /formatFullStallAddress\(venue, buildingLocation\)/);
+  // The subtitle names centre and unit; the Address row only adds street and postcode (R5-STALL-6).
+  assert.match(stallDetail, /const streetAddress = \[/);
   assert.match(stallDetail, /const EMPTY_DISHES: DishDetail\[\] = \[\]/);
   assert.match(stallDetail, /serviceProviderMode === "supabase" \? EMPTY_DISHES : cachedDishes/);
   assert.match(stallDetail, /!venue && !hasLoadedVenueDetail/);

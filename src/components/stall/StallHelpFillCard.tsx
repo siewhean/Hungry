@@ -15,10 +15,10 @@ type Props = {
   onWriteReview?: () => void;
 };
 
-/** "menu", "menu and reviews", "menu, hours and reviews". */
+/** "menu", "menu or reviews", "menu, hours or reviews". */
 function joinParts(parts: readonly string[]) {
   if (parts.length <= 1) return parts.join("");
-  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+  return `${parts.slice(0, -1).join(", ")} or ${parts[parts.length - 1]}`;
 }
 
 /**
@@ -55,7 +55,9 @@ export function StallHelpFillCard({
         {onAddHours ? (
           <Button label="Add opening hours" variant="secondary" onPress={onAddHours} />
         ) : null}
-        {onWriteReview ? <Button label="Write the first review" onPress={onWriteReview} /> : null}
+        {onWriteReview ? (
+          <Button label="Write the first review" variant="secondary" onPress={onWriteReview} />
+        ) : null}
       </View>
     </Card>
   );

@@ -57,10 +57,8 @@ test("core-only builds keep detail controls read-only despite targeted feature o
     stall,
     /\{showDeferredDetailControls && !stallIsEmpty \? \(\s*<View onLayout=\{handleReviewsSectionLayout\} style=\{\{ gap: spacing\[4\] \}\}>\s*<AppText variant="h2">Reviews<\/AppText>/,
   );
-  assert.match(
-    stall,
-    /FEATURE_FLAGS\.reviewCreationEnabled\s*\? \{ ctaLabel: "Write a review", onPress: openWriteReview \}/,
-  );
+  // The bar's "Write a review" is the only filled button: the empty reviews state has no CTA.
+  assert.doesNotMatch(stall, /ctaLabel: "Write a review"/);
   assert.match(stall, /if \(!showDeferredDetailControls\) \{[\s\S]*?setActivePromotions\(\[\]\)/);
   assert.match(stall, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
 });
