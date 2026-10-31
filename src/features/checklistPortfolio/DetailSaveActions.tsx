@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { BottomSheetModal } from "@gorhom/bottom-sheet";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Check, Plus } from "lucide-react-native";
+import { Plus } from "lucide-react-native";
 import { Pressable, View } from "react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, BottomSheet, Button, Input } from "@/components/ui";
+import { AppSymbol, AppText, BottomSheet, Button, Input } from "@/components/ui";
 import {
   buildSaveToListOptions,
   DEFAULT_PORTFOLIO_NAME,
@@ -338,7 +338,12 @@ function SaveToListSheet({
                   </AppText>
                 ) : null}
               </View>
-              {selected ? <Check size={18} color={palette.orange} /> : null}
+              {/* An empty circle when not in the list, a filled tick when it is. */}
+              <AppSymbol
+                name={selected ? "triedFilled" : "emptyCheckbox"}
+                color={selected ? palette.orange : palette.textMuted}
+                size={22}
+              />
             </Pressable>
           );
         })}

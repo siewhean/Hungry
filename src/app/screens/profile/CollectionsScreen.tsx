@@ -174,9 +174,9 @@ export function CollectionsScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell title="Collections" subtitle="Your saved food, all in one place.">
+    <ProfileScreenShell title="Saved" subtitle="Search the food in your lists.">
       <Input
-        accessibilityLabel="Search your collections"
+        accessibilityLabel="Search your lists"
         value={query}
         onChangeText={setQuery}
         placeholder="Search food, captions or a place"
@@ -188,12 +188,12 @@ export function CollectionsScreen({ navigation }: Props) {
         <View style={{ gap: spacing[2] }}>
           <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
             {results.length === 0 && isSearchLoading
-              ? "Searching your collections…"
+              ? "Searching your lists…"
               : results.length === 0
                 ? detailsFailed
-                  ? "Couldn't search your collections. Check your connection and try again."
-                  : `Nothing in your collections matches "${trimmedQuery}".`
-                : `${results.length} ${results.length === 1 ? "item" : "items"} in your collections`}
+                  ? "Couldn't search your lists. Check your connection and try again."
+                  : `Nothing in your lists matches "${trimmedQuery}".`
+                : `${results.length} ${results.length === 1 ? "item" : "items"} in your lists`}
           </AppText>
           {results.map((food) => (
             <FoodRow key={food.key} food={food} onPress={() => openFood(food)} />

@@ -89,7 +89,11 @@ export function SwipeToRemove({
       }}
       style={{ overflow: "hidden", borderRadius: componentRadii.card }}
     >
+      {/* Hidden from screen readers: the row has its own Remove button and a Remove action. */}
       <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        aria-hidden
         style={{
           alignItems: "flex-end",
           backgroundColor: palette.error,
