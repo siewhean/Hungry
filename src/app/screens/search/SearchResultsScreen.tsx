@@ -34,6 +34,7 @@ import {
 } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { appendUniqueById } from "@/lib/services/catalog/paging";
+import type { MoodSearchIntent } from "@/types/domain";
 import { ParsedQueryChips } from "@/features/search/ParsedQueryChips";
 import { ResultsNotes, type ResultsNote } from "@/features/search/ResultsNotes";
 import { SaveHeartButton } from "@/features/search/SaveHeartButton";
@@ -52,11 +53,14 @@ import {
   cardAccessibilityLabel,
   cardSubtitle,
   describeMatchCount,
+  describeMoodResults,
   describeResultsSummary,
   effectiveSortLabel,
   formatBrowseDistance,
   isTooShortQuery,
+  looksLikeMoodQuery,
   mergeStallOutlets,
+  moodIntentIsUseful,
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
@@ -471,6 +475,19 @@ function RawCatalogBrowseGrid({
     // The key stands for the parts: a new array with the same parts must not reload the grid.
     [requestParsedKey],
   );
+  // Plain-language searches ("something soupy and not too spicy") match no dish name. When a
+  // submitted query finds nothing, Claude reads dish words, a price cap and dietary needs out of it
+  // and the catalog is searched again with those. It holds only while the same text is typed.
+  const [moodRead, setMoodRead] = useState<{
+    mode: BrowseMode;
+    text: string;
+    intent: MoodSearchIntent;
+  } | null>(null);
+  const mood =
+    moodRead && moodRead.mode === mode && moodRead.text === typedQuery
+      ? moodRead.intent
+      : undefined;
+  const moodKey = mood ? typedQuery : "";
   const tooShort = isTooShortQuery(query);
   const widenScope = JSON.stringify([mode, query, filters, foodTypes, place?.id, requestParsedKey]);
   const widenRadius = widenedScope === widenScope;
@@ -506,6 +523,7 @@ function RawCatalogBrowseGrid({
     requestParsedKey,
     sort,
     widenRadius,
+    moodKey,
   ]);
   const [snapshot, setSnapshot] = useState({
     scope: locationScope,
@@ -541,6 +559,7 @@ function RawCatalogBrowseGrid({
         widenRadius,
         place?.id,
         requestParsedKey,
+        moodKey,
       ]),
     [
       filters,
@@ -548,6 +567,7 @@ function RawCatalogBrowseGrid({
       latitude,
       longitude,
       mode,
+      moodKey,
       requestParsedKey,
       place?.id,
       query,
@@ -577,6 +597,7 @@ function RawCatalogBrowseGrid({
           buildingId: place?.id,
           parsed: parsedFilters,
           foodTypes,
+          mood,
         });
         if (widenRadius && !query && !place) request.radiusMeters = WIDE_RADIUS_METERS;
         const page =
@@ -651,6 +672,7 @@ function RawCatalogBrowseGrid({
             buildingId: place?.id,
             parsed: parsedFilters,
             foodTypes,
+            mood,
           });
           recordCatalogDiagnostic({
             operation:
@@ -685,6 +707,7 @@ function RawCatalogBrowseGrid({
       filters,
       isAuthenticated,
       mode,
+      mood,
       parsedFilters,
       foodTypes,
       place,
@@ -856,6 +879,39 @@ function RawCatalogBrowseGrid({
       search_id: searchIdRef.current,
     });
   }, [mode, parsed.parts.length, relaxScope, willRelax]);
+
+  // A submitted plain-language query with no results: ask Claude what it means, once per text.
+  // Typing pauses never ask (the daily allowance is small); Enter or a suggestion does.
+  const moodAskedRef = useRef("");
+  const moodAskable =
+    hasNoResults &&
+    !willRelax &&
+    !mood &&
+    isAuthenticated &&
+    filterCount === 0 &&
+    looksLikeMoodQuery(typedQuery) &&
+    committedQuery.toLowerCase() === typedQuery.toLowerCase();
+  useEffect(() => {
+    if (!moodAskable) return;
+    const askedKey = `${mode}|${typedQuery.toLowerCase()}`;
+    if (moodAskedRef.current === askedKey) return;
+    moodAskedRef.current = askedKey;
+    getHungryService()
+      .ai.parseMoodQuery(typedQuery)
+      .then((intent) => {
+        // A different text or tab by now makes `mood` ignore the answer, so no cancel is needed.
+        if (!moodIntentIsUseful(intent)) return;
+        setMoodRead({ mode, text: typedQuery, intent });
+        trackAnalyticsEvent("search_mood_applied", {
+          mode,
+          dish_word_count: intent.keywords.length,
+          has_price: Boolean(intent.maxPrice),
+          has_dietary: intent.dietaryFlags.length > 0,
+          search_id: searchIdRef.current,
+        });
+      })
+      .catch((moodError) => reportError(moodError, { surface: "mood_search", mode }));
+  }, [mode, moodAskable, typedQuery]);
 
   // Results load while the user types, so a typed query that stays on screen is a search too,
   // not only one submitted with Enter. Not saved as a recent and not a taste signal.
@@ -1204,6 +1260,13 @@ function RawCatalogBrowseGrid({
       id: "relaxed",
       testID: "search-parsed-relaxed-note",
       text: `Nothing matched with ${parsed.parts.map((part) => part.label).join(", ")}, so these results are for "${query}". Remove a chip to search without it.`,
+    });
+  }
+  if (mood && loadedKey === requestKey && !isLoading && items.length > 0) {
+    notes.push({
+      id: "mood",
+      testID: "search-mood-note",
+      text: describeMoodResults(mood),
     });
   }
   if (isOfflineCopy) {

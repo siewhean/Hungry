@@ -10,11 +10,14 @@ import {
   cardAccessibilityLabel,
   cardSubtitle,
   describeMatchCount,
+  describeMoodResults,
   describeResultsSummary,
   effectiveSort,
   effectiveSortLabel,
   isTooShortQuery,
+  looksLikeMoodQuery,
   mergeStallOutlets,
+  moodIntentIsUseful,
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
@@ -461,4 +464,60 @@ test("stalls that share a logo file merge into one card with an outlet count", (
   ]);
   assert.equal(rows.length, 2);
   assert.equal(rows[0]?.extraOutlets, 1);
+});
+
+const SOUPY = {
+  tasteShift: { sweet: 0, spicy: -2, sour: 0, salty: 0, rich: -1, aromatic: 0 },
+  maxPrice: 8,
+  dietaryFlags: ["halal" as const],
+  keywords: ["soup", "noodle"],
+  summary: "soupy, mild, under $8",
+};
+
+test("buildBrowseRequest swaps the typed text for what mood search read out of it", () => {
+  const request = buildBrowseRequest({
+    query: "something soupy and mild",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    mood: SOUPY,
+  });
+  assert.equal(request.query, undefined, "the typed words are not searched");
+  assert.deepEqual(request.foodKeywords, ["soup", "noodle"]);
+  assert.deepEqual(request.dietaryFlags, ["halal"]);
+  assert.equal(request.maxPrice, 8);
+  assert.equal(request.sort, "nearby", "no text means nearest first");
+  assert.equal(request.radiusMeters, 3_000);
+});
+
+test("buildBrowseRequest keeps the lower of a typed cap and the one mood search read", () => {
+  const request = buildBrowseRequest({
+    query: "cheap and soupy",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: [], maxPrice: 5 },
+    mood: SOUPY,
+  });
+  assert.equal(request.maxPrice, 5);
+});
+
+test("looksLikeMoodQuery needs two words, and moodIntentIsUseful needs something to filter on", () => {
+  assert.equal(looksLikeMoodQuery("laksa"), false);
+  assert.equal(looksLikeMoodQuery("  something soupy "), true);
+  assert.equal(moodIntentIsUseful(null), false);
+  assert.equal(
+    moodIntentIsUseful({ ...SOUPY, keywords: [], dietaryFlags: [], maxPrice: undefined }),
+    false,
+  );
+  assert.equal(moodIntentIsUseful({ ...SOUPY, keywords: [], dietaryFlags: [] }), true);
+  assert.equal(moodIntentIsUseful(SOUPY), true);
+});
+
+test("describeMoodResults says what was understood, falling back to the dish words", () => {
+  assert.match(describeMoodResults(SOUPY), /"soupy, mild, under \$8"/);
+  assert.match(
+    describeMoodResults({ summary: " ", keywords: ["soup", "noodle"] }),
+    /"soup, noodle"/,
+  );
 });
