@@ -2,6 +2,7 @@
 // Run with `node scripts/test-render.mjs src/app/screens/wheel/wheel.render.test.tsx`.
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test, { afterEach, beforeEach } from "node:test";
 import { Linking } from "react-native";
 
@@ -271,7 +272,7 @@ test("MD-W3 the winner card shows the building and distance, and Directions open
     view.text(),
     new RegExp((venue.buildingName ?? building.name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
   );
-  assert.match(view.text(), /\d+(\.\d)?km away|\d+m away/);
+  assert.match(view.text(), /\d+(\.\d)? km away|\d+ m away/);
   const html = view.html();
   assert.ok(html.indexOf("Directions") < html.indexOf("View stall details"), "Directions leads");
 
@@ -314,7 +315,173 @@ test("MD-W7 a failed create or join is reported and says so", async () => {
   const inputs = view.container.querySelectorAll("input");
   await view.type(inputs[0] as HTMLElement, "MAKAN7");
   await view.type(inputs[1] as HTMLElement, "Sam");
-  await view.press(view.findByText("Join the Room"));
+  await view.press(view.findByText("Join the room"));
   assert.match(view.text(), /Couldn't join the party/);
   assert.ok(reported.some((report) => report.action === "join_party"));
+});
+
+/** "7am" / "12am" for an hour 0-23, as the hours text writes it. */
+function hourText(hour: number) {
+  const h = ((hour % 24) + 24) % 24;
+  return `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? "am" : "pm"}`;
+}
+
+test("R5-3 late at night the wheel is filled with stalls that open soon, and still spins", async () => {
+  const sgtHour = (new Date().getUTCHours() + 8) % 24;
+  // v1 is open all day; the others open 3, 4 and 5 hours from now, so they are closed at any time.
+  const opensLater = (offset: number) =>
+    `Daily ${hourText(sgtHour + offset)}-${hourText(sgtHour + offset + 1)}`;
+  const hours: Record<string, string> = {
+    v1: "Daily 12am-11:59pm",
+    v2: opensLater(3),
+    v3: opensLater(4),
+    v4: opensLater(5),
+  };
+  serve([
+    dish("d1", "v1", 100),
+    dish("d2", "v2", 200),
+    dish("d3", "v3", 300),
+    dish("d4", "v4", 400),
+  ]);
+  const base = discovery.getVenuesByIds;
+  discovery.getVenuesByIds = (async (ids: string[]) =>
+    (await base(ids)).map((venue) => ({
+      ...venue,
+      operatingHours: hours[venue.id],
+    }))) as typeof discovery.getVenuesByIds;
+  const party = await startWheel();
+  const view = await renderLobby(party);
+  await view.settle();
+  assert.equal(useWheelStore.getState().entries.length, 4, "a wheel of four, not one");
+  assert.match(view.text(), /We added 1 open stall and 3 that open soon near you/);
+  assert.match(view.text(), /Closed now · Opens/);
+  assert.ok(view.findByText("Spin wheel"), "it can spin");
+});
+
+test("R5-3 one open stall reads '1 open stall', not '1 open stalls'", async () => {
+  serve([dish("d1", "v1", 100)]);
+  const party = await startWheel();
+  const view = await renderLobby(party);
+  await view.settle();
+  assert.match(view.text(), /We added 1 open stall near you/);
+  assert.doesNotMatch(view.text(), /1 open stalls/);
+});
+
+test("R5-4 the add sheet's search finds a stall by a dish it serves", async () => {
+  await startWheel();
+  discovery.searchVenuesByLocation = (async () => []) as typeof discovery.searchVenuesByLocation;
+  discovery.searchDishes = (async () => [
+    { dish: dish("Laksa", "v9", 100), score: 1 },
+  ]) as typeof discovery.searchDishes;
+  discovery.getVenuesByIds = (async (ids: string[]) =>
+    ids.map((id) => ({
+      id,
+      buildingId: "b",
+      name: "Sungei Road Stall",
+      unitNumber: "01-01",
+      floor: "L1",
+      isOpen: true,
+      topDishId: "",
+      operatingHours: "",
+      deliveryLinks: [],
+    }))) as typeof discovery.getVenuesByIds;
+  const view = await render(
+    createElement(WheelEntryAddSheet as never, { visible: true, onClose: () => undefined }),
+  );
+  await view.type(view.findByLabel("Search stalls or dishes"), "laksa");
+  await new Promise((resolve) => setTimeout(resolve, 320));
+  await view.settle();
+  assert.ok(view.findByLabel("Add Sungei Road Stall to wheel"), "the laksa stall is listed");
+  assert.doesNotMatch(view.text(), /No stalls found/);
+});
+
+test("R5-11 the Wheel uses sentence case", async () => {
+  await startWheel();
+  const view = await render(
+    createElement(WheelEntryAddSheet as never, { visible: true, onClose: () => undefined }),
+  );
+  assert.match(view.text(), /Add an option/);
+  await view.press(view.findByText("Surprise"));
+  assert.match(view.text(), /Surprise me/);
+  assert.match(view.text(), /Pick for me/);
+  assert.doesNotMatch(view.text(), /Add an Option|Surprise Me!|Pick for Me/);
+});
+
+test("R5-12 Surprise with nothing left says so in the sheet, not in an alert", async () => {
+  await startWheel();
+  const repository = getDataRepository();
+  const view = await render(
+    createElement(WheelEntryAddSheet as never, { visible: true, onClose: () => undefined }),
+  );
+  // Put every stall on the wheel.
+  const everyStall = repository
+    .listBuildings()
+    .flatMap((b) => repository.listVenuesByBuilding(b.id));
+  useWheelStore.setState({
+    entries: everyStall.map((stall, position) => ({
+      id: `e-${stall.id}`,
+      partyId: "p1",
+      addedByMemberId: "m1",
+      venueId: stall.id,
+      buildingId: stall.buildingId,
+      label: stall.name,
+      imageUrl: "",
+      isEliminated: false,
+      position,
+      addedAt: new Date().toISOString(),
+    })),
+  });
+  await view.press(view.findByText("Surprise"));
+  assert.match(view.text(), /Every stall is already on the wheel/);
+  const button = view.findByLabel(/Pick a random stall/) as HTMLElement;
+  assert.equal(button.getAttribute("aria-disabled"), "true");
+});
+
+test("R5-5 the remove button and Done reach 44 pt", () => {
+  const lobby = readFileSync("src/app/screens/wheel/WheelLobbyScreen.tsx", "utf8");
+  const sheet = readFileSync("src/app/screens/wheel/WheelEntryAddSheet.tsx", "utf8");
+  assert.match(lobby, /Remove \$\{item\.label\}[\s\S]*minHeight: 44,\s+minWidth: 44/);
+  assert.match(lobby, /onPress=\{handleLeave\}\s+style=\{\{[^}]*minHeight: 44/);
+  assert.match(sheet, /accessibilityLabel="Done adding options"[\s\S]*minHeight: 44/);
+});
+
+test("R5-6 the winner card has a Reduce Motion branch, starts at 95% and uses a symbol, not an emoji", async () => {
+  const src = readFileSync("src/app/screens/wheel/WheelResultModal.tsx", "utf8");
+  assert.match(src, /WINNER_CARD_START_SCALE = 0\.95/);
+  assert.match(src, /useSharedValue\(reduceMotion \? 1 : WINNER_CARD_START_SCALE\)/);
+  assert.match(src, /scale\.value = reduceMotion \? 1 : withTiming\(1, timing\)/);
+  assert.doesNotMatch(src, /🎉/);
+  useWheelStore.setState({
+    entries: [
+      {
+        id: "entry-1",
+        partyId: "p1",
+        addedByMemberId: "m1",
+        venueId: "no-such-venue",
+        buildingId: "b",
+        label: "Mystery Stall",
+        imageUrl: "",
+        isEliminated: false,
+        position: 0,
+        addedAt: new Date().toISOString(),
+      },
+    ],
+  });
+  const view = await renderScreen(WheelResultModal as never, {
+    name: "WheelResult",
+    params: { winnerEntryId: "entry-1" },
+  });
+  await view.settle();
+  assert.doesNotMatch(view.text(), /🎉/);
+  assert.equal(
+    view.container.querySelectorAll('[data-stub="lucide-react-native.PartyPopper"]').length,
+    1,
+  );
+});
+
+test("R5-7 the spin ticks with selection haptics and ends with a success notification", () => {
+  const src = readFileSync("src/app/screens/wheel/WheelSpinScreen.tsx", "utf8");
+  assert.match(src, /Haptics\.selectionAsync\(\)/);
+  assert.match(src, /Haptics\.notificationAsync\(Haptics\.NotificationFeedbackType\.Success\)/);
+  assert.doesNotMatch(src, /ImpactFeedbackStyle/);
 });

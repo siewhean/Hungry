@@ -191,7 +191,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DecideForMeResultScreen",
     file: "src/app/screens/discover/DecideForMeResultScreen.tsx",
     scenario: "user",
-    expect: /Recommended for you/,
+    expect: /Your pick/,
   },
   {
     name: "DiscoverHomeScreen",
