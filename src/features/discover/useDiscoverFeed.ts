@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DISCOVER_FEED_LIMIT, searchResultToDiscoverBite } from "@/features/discover/bites";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
@@ -17,6 +17,7 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 import { type DiscoverRepositoryLookup } from "@/features/discover/stallShowcase";
+import { readCachedDiscoverFeed, writeCachedDiscoverFeed } from "@/features/discover/feedCache";
 
 /** Stable empties so memos keyed on the feed do not rerun every render. */
 const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
@@ -26,6 +27,12 @@ const DISCOVER_AREA_RADIUS_METERS = 3000;
 const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
 /** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
 const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
+
+/** The two reads one Home load makes: the area's stall count and its feed. */
+type DiscoverReads = {
+  count: Promise<number | undefined>;
+  feed: Promise<DiscoveryLocationFeed | undefined>;
+};
 
 /**
  * Home's data: where the diner is, the feed read for that place (live or local), and the lists of
@@ -44,6 +51,9 @@ export function useDiscoverFeed() {
   const [isDiscoverRefreshing, setIsDiscoverRefreshing] = useState(false);
   // The area the cards on screen were read for: a reload of the same area keeps them.
   const [loadedDiscoverFeedKey, setLoadedDiscoverFeedKey] = useState<string | null>(null);
+  const loadedFeedKeyRef = useRef<string | null>(null);
+  // Reads begun while the place lookup is still out (see the feed effect).
+  const speculativeReadsRef = useRef<{ key: string; reads: DiscoverReads } | null>(null);
 
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
@@ -224,49 +234,105 @@ export function useDiscoverFeed() {
     }
 
     let isActive = true;
+    let liveFeedLanded = false;
     // Keep the current feed on screen while a new area or GPS fix loads.
     setIsSupabaseDiscoveryFeedLoading(true);
     setDiscoverLoadError(false);
+
+    // Last launch's feed for this area draws at once; the live read replaces it when it lands.
+    if (discoverReloadKey === 0 && loadedFeedKeyRef.current !== discoverFeedKey) {
+      void readCachedDiscoverFeed(discoverFeedKey).then((cachedFeed) => {
+        if (!isActive || liveFeedLanded || !cachedFeed) return;
+        setSupabaseDiscoveryFeed(cachedFeed);
+        loadedFeedKeyRef.current = discoverFeedKey;
+        setLoadedDiscoverFeedKey(discoverFeedKey);
+      });
+    }
+
+    const readKey = `${discoverFeedKey}#${discoverReloadKey}`;
+    const startReads = (): DiscoverReads => {
+      const discoveryService = getHungryService().discovery;
+      const reads = {
+        count: discoveryService.countVenuesInArea(
+          discoverGeoCellLatitude,
+          discoverGeoCellLongitude,
+          discoverRadiusMeters,
+          discoverAreaRequest,
+        ),
+        feed: discoveryService.listDiscoveryFeedByLocation({
+          areaName: discoverAreaRequest,
+          lat: discoverGeoCellLatitude,
+          lng: discoverGeoCellLongitude,
+          radiusMeters: discoverRadiusMeters,
+          limit: DISCOVER_FEED_LIMIT,
+          buildingId: currentPlaceId,
+        }),
+      };
+      // A read nobody ends up waiting for must not surface as an unhandled rejection.
+      reads.count.catch(() => undefined);
+      reads.feed.catch(() => undefined);
+      return reads;
+    };
+
     // The feed asks for the place's stalls first, so it waits for the place lookup (3 s at most).
+    // The read for "no place" starts now, beside the lookup: most diners are not inside a mall,
+    // and for them the answer is already there when the lookup ends.
     if (isCurrentPlaceResolving) {
+      if (speculativeReadsRef.current?.key !== readKey) {
+        speculativeReadsRef.current = { key: readKey, reads: startReads() };
+      }
       return () => {
         isActive = false;
       };
     }
-    const discoveryService = getHungryService().discovery;
-    void Promise.allSettled([
-      discoveryService.countVenuesInArea(
-        discoverGeoCellLatitude,
-        discoverGeoCellLongitude,
-        discoverRadiusMeters,
-        discoverAreaRequest,
-      ),
-      discoveryService.listDiscoveryFeedByLocation({
-        areaName: discoverAreaRequest,
-        lat: discoverGeoCellLatitude,
-        lng: discoverGeoCellLongitude,
-        radiusMeters: discoverRadiusMeters,
-        limit: DISCOVER_FEED_LIMIT,
-        buildingId: currentPlaceId,
-      }),
-    ]).then(([venueCountResult, discoveryFeedResult]) => {
-      if (!isActive) return;
-      // A failed count never throws away a good feed.
-      setSupabaseDiscoverAreaCount(
-        venueCountResult.status === "fulfilled" && typeof venueCountResult.value === "number"
-          ? venueCountResult.value
-          : null,
-      );
-      if (discoveryFeedResult.status === "fulfilled") {
-        setSupabaseDiscoveryFeed(discoveryFeedResult.value ?? null);
+
+    const speculative = speculativeReadsRef.current;
+    speculativeReadsRef.current = null;
+    const reads = speculative?.key === readKey ? speculative.reads : startReads();
+
+    let isFeedSettled = false;
+    let isCountSettled = false;
+    const finishIfSettled = () => {
+      if (isActive && isFeedSettled && isCountSettled) setIsSupabaseDiscoveryFeedLoading(false);
+    };
+    // The feed draws the page as soon as it lands; the area count fills its line when it does.
+    void reads.feed.then(
+      (feed) => {
+        liveFeedLanded = true;
+        if (feed) void writeCachedDiscoverFeed(discoverFeedKey, feed);
+        if (!isActive) return;
+        setSupabaseDiscoveryFeed(feed ?? null);
+        loadedFeedKeyRef.current = discoverFeedKey;
         setLoadedDiscoverFeedKey(discoverFeedKey);
-      } else {
-        reportError(discoveryFeedResult.reason, { surface: "discover_home_feed" });
+        setIsDiscoverRefreshing(false);
+        isFeedSettled = true;
+        finishIfSettled();
+      },
+      (reason: unknown) => {
+        liveFeedLanded = true;
+        if (!isActive) return;
+        reportError(reason, { surface: "discover_home_feed" });
         setDiscoverLoadError(true);
-      }
-      setIsSupabaseDiscoveryFeedLoading(false);
-      setIsDiscoverRefreshing(false);
-    });
+        setIsDiscoverRefreshing(false);
+        isFeedSettled = true;
+        finishIfSettled();
+      },
+    );
+    // A failed count never throws away a good feed.
+    void reads.count.then(
+      (count) => {
+        if (!isActive) return;
+        setSupabaseDiscoverAreaCount(typeof count === "number" ? count : null);
+        isCountSettled = true;
+        finishIfSettled();
+      },
+      () => {
+        if (!isActive) return;
+        setSupabaseDiscoverAreaCount(null);
+        isCountSettled = true;
+        finishIfSettled();
+      },
+    );
 
     return () => {
       isActive = false;

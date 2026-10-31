@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 86.1,
+    "lines": 86.2,
     "branches": 85.6,
-    "functions": 82.6
+    "functions": 82.7
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -74,6 +74,7 @@
     "src/features/discover/biteLabel.ts": 100,
     "src/features/discover/bites.ts": 64.5,
     "src/features/discover/currentPlace.ts": 54.4,
+    "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/hawkerClassics.ts": 92.3,
     "src/features/discover/homeFilters.ts": 100,
     "src/features/discover/homeRanking.ts": 100,
@@ -126,6 +127,7 @@
     "src/features/profile/exportMyData.ts": 93.3,
     "src/features/profile/loadVenuesByIds.ts": 100,
     "src/features/profile/pendingQuizResponse.ts": 100,
+    "src/features/profile/plural.ts": 100,
     "src/features/profile/profileBio.ts": 100,
     "src/features/profile/profileName.ts": 100,
     "src/features/profile/relativeDate.ts": 100,
@@ -210,13 +212,13 @@
     "src/lib/services/postTransforms.ts": 98,
     "src/lib/services/realtime/MockRealtimeChannel.ts": 99,
     "src/lib/services/searchCategoryMatch.ts": 100,
-    "src/lib/services/serviceProvider.ts": 86,
+    "src/lib/services/serviceProvider.ts": 87,
     "src/lib/services/storyGalleryAssets.ts": 95,
     "src/lib/services/supabase/authStorage.ts": 97.9,
     "src/lib/services/supabase/client.ts": 97.1,
     "src/lib/services/supabase/mediaUpload.ts": 66.9,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
-    "src/lib/services/supabase/supabaseRepository.ts": 73.5,
+    "src/lib/services/supabase/supabaseRepository.ts": 74,
     "src/lib/services/supabase/supabaseService.ts": 58.8,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,

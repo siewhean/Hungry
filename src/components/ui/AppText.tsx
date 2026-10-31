@@ -3,7 +3,7 @@ import { Text, type TextProps, type TextStyle } from "react-native";
 
 import { useHungryTheme } from "@/theme";
 
-type Variant =
+export type TextVariant =
   | "display"
   | "displayBold"
   | "displaySm"
@@ -20,9 +20,22 @@ type Variant =
   | "code";
 
 interface AppTextProps extends TextProps {
-  variant?: Variant;
+  variant?: TextVariant;
   tone?: "default" | "secondary" | "muted" | "accent" | "inverse" | "success";
   style?: TextStyle | TextStyle[];
+}
+
+type FontScaling = ReturnType<typeof useHungryTheme>["fontScaling"];
+
+/** How far a text variant may grow with the phone's text-size setting. */
+export function getTextMaxFontSizeMultiplier(variant: TextVariant, fontScaling: FontScaling) {
+  return variant === "display" || variant === "displayBold" || variant === "displaySm"
+    ? fontScaling.displayMaxMultiplier
+    : variant === "h1" || variant === "h2" || variant === "h3"
+      ? fontScaling.headingMaxMultiplier
+      : variant === "micro" || variant === "price" || variant === "code"
+        ? fontScaling.compactMaxMultiplier
+        : fontScaling.bodyMaxMultiplier;
 }
 
 export function AppText({
@@ -48,14 +61,7 @@ export function AppText({
             : tone === "success"
               ? palette.successText
               : palette.text;
-  const defaultMaxFontSizeMultiplier =
-    variant === "display" || variant === "displayBold" || variant === "displaySm"
-      ? fontScaling.displayMaxMultiplier
-      : variant === "h1" || variant === "h2" || variant === "h3"
-        ? fontScaling.headingMaxMultiplier
-        : variant === "micro" || variant === "price" || variant === "code"
-          ? fontScaling.compactMaxMultiplier
-          : fontScaling.bodyMaxMultiplier;
+  const defaultMaxFontSizeMultiplier = getTextMaxFontSizeMultiplier(variant, fontScaling);
 
   return (
     <Text
