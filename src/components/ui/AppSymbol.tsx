@@ -1,6 +1,8 @@
 import { SymbolView, type SFSymbol, type SymbolViewProps } from "expo-symbols";
 import type { ComponentType } from "react";
 import {
+  ArrowLeft,
+  ArrowRight,
   BadgeCheck,
   BarChart3,
   Bell,
@@ -8,9 +10,11 @@ import {
   BellRing,
   CakeSlice,
   Check,
+  CheckCircle2,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
+  Circle,
+  CircleAlert,
   CircleDollarSign,
   CircleX,
   Compass,
@@ -19,6 +23,7 @@ import {
   Droplet,
   ExternalLink,
   Eye,
+  EyeOff,
   FileText,
   Flame,
   Gift,
@@ -30,8 +35,10 @@ import {
   Leaf,
   LocateFixed,
   Lock,
+  LockKeyhole,
   LogOut,
   Mail,
+  MailCheck,
   MapPin,
   MapPinOff,
   MessageSquareHeart,
@@ -53,6 +60,7 @@ import {
   Store,
   Thermometer,
   Trash2,
+  User,
   UserPlus,
   UserX,
   Utensils,
@@ -134,7 +142,6 @@ const APP_SYMBOLS = {
   clear: { ios: "xmark.circle.fill", lucide: CircleX },
   /** Dismiss or remove a chip or a row. */
   close: { ios: "xmark", lucide: X },
-  back: { ios: "chevron.backward", lucide: ChevronLeft },
   share: { ios: "square.and.arrow.up", lucide: Share2 },
   filters: { ios: "line.3.horizontal.decrease.circle", lucide: SlidersHorizontal },
   nearMe: { ios: "location.fill", lucide: Navigation, filled: true },
@@ -161,6 +168,19 @@ const APP_SYMBOLS = {
   tasteChewyNoodles: { ios: "fork.knife.circle", lucide: UtensilsCrossed },
   tasteHotFresh: { ios: "thermometer.medium", lucide: Thermometer },
   tasteQuick: { ios: "bolt", lucide: Zap },
+  // Sign-in and account screens
+  email: { ios: "envelope", lucide: Mail },
+  emailSent: { ios: "envelope.badge", lucide: MailCheck },
+  password: { ios: "lock", lucide: Lock },
+  resetPassword: { ios: "lock.rotation", lucide: LockKeyhole },
+  person: { ios: "person", lucide: User },
+  showPassword: { ios: "eye", lucide: Eye },
+  hidePassword: { ios: "eye.slash", lucide: EyeOff },
+  back: { ios: "chevron.backward", lucide: ArrowLeft },
+  forward: { ios: "arrow.right", lucide: ArrowRight },
+  done: { ios: "checkmark.circle.fill", lucide: CheckCircle2 },
+  notDone: { ios: "circle", lucide: Circle },
+  problem: { ios: "exclamationmark.circle", lucide: CircleAlert },
 } as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon; filled?: boolean }> &
   Record<ReviewTasteTagSymbol, unknown>;
 

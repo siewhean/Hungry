@@ -41,6 +41,7 @@
     "src/features/auth/mockAuth.ts": 95,
     "src/features/auth/pendingDishSave.ts": 99.2,
     "src/features/auth/pendingEmailVerification.ts": 100,
+    "src/features/auth/returningAccount.ts": 100,
     "src/features/auth/useResendCooldown.ts": 90,
     "src/features/auth/validation.ts": 99.2,
     "src/features/checklistPortfolio/listItemScore.ts": 100,

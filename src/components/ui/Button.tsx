@@ -65,6 +65,9 @@ export function Button({
   const { componentCornerCurve, componentRadii, componentSizes, opacity, palette, spacing } =
     useHungryTheme();
   const isDisabled = disabled || loading;
+  // A disabled primary button goes neutral: the faded orange read as a broken enabled button,
+  // above all in dark mode. Loading keeps the brand colour, since the control is working.
+  const neutralDisabled = Boolean(disabled) && !loading && variant === "primary";
   const [pressed, setPressed] = useState(false);
   const press = usePressScale(useReduceMotion());
 
@@ -113,8 +116,9 @@ export function Button({
       paddingHorizontal: spacing[6],
     },
   };
-  const foregroundColor =
-    variant === "primary"
+  const foregroundColor = neutralDisabled
+    ? palette.textMuted
+    : variant === "primary"
       ? palette.textOnOrange
       : variant === "destructive"
         ? palette.textOnDestructive
@@ -163,9 +167,12 @@ export function Button({
         {
           borderRadius: componentRadii.button,
           borderCurve: componentCornerCurve.borderCurve,
-          opacity: isDisabled ? opacity.disabled : 1,
+          opacity: isDisabled && !neutralDisabled ? opacity.disabled : 1,
           width: fullWidth ? "100%" : undefined,
         },
+        neutralDisabled
+          ? { backgroundColor: palette.surfaceRaised, borderColor: palette.border }
+          : null,
         pressed && variant === "secondary" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "ghost" ? { backgroundColor: palette.surfaceRaised } : null,
         pressed && variant === "glass" ? { backgroundColor: palette.surfaceTranslucent } : null,

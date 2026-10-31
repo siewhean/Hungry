@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { View, type TextInput } from "react-native";
 
 import { AppText, Button, Input } from "@/components/ui";
+import * as Haptics from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { trackEmailCodeSubmitted, type AuthFunnelScreen } from "./authAnalytics";
 import { getAuthFailureMessage } from "./authErrors";
@@ -102,6 +103,7 @@ export function EmailCodeField({
       await onSubmit(value);
     } catch (error) {
       setFailure(getAuthFailureMessage(error, errorText));
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => undefined);
       // The wrong digits go, so a retry starts from an empty field.
       setCode("");
       autoSubmittedRef.current = null;
