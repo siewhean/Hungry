@@ -1,5 +1,6 @@
-import { useMemo, useRef, type ReactNode } from "react";
-import { PanResponder, Pressable, View } from "react-native";
+import type { ReactNode } from "react";
+import { Pressable, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   FadeOut,
   LinearTransition,
@@ -43,34 +44,30 @@ export function SwipeToRemove({
   const { componentRadii, palette, spacing } = useHungryTheme();
   const reduceMotion = useReduceMotion();
   const offset = useSharedValue(0);
-  const opened = useRef(false);
+  const startX = useSharedValue(0);
 
   const moveTo = (value: number) => {
     offset.set(reduceMotion ? value : withTiming(value, { duration: 200, easing: EASE_OUT }));
   };
 
-  const responder = useMemo(
-    () =>
-      PanResponder.create({
-        // Only a mostly-horizontal drag takes over, so vertical scrolling is untouched.
-        onMoveShouldSetPanResponder: (_event, gesture) =>
-          Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 2,
-        onPanResponderMove: (_event, gesture) => {
-          const base = opened.current ? -SWIPE_ACTION_WIDTH : 0;
-          offset.set(Math.min(0, Math.max(-SWIPE_ACTION_WIDTH * 1.2, base + gesture.dx)));
-        },
-        onPanResponderRelease: (_event, gesture) => {
-          const base = opened.current ? -SWIPE_ACTION_WIDTH : 0;
-          const end = base + gesture.dx;
-          opened.current = end < -SWIPE_OPEN_THRESHOLD;
-          moveTo(opened.current ? -SWIPE_ACTION_WIDTH : 0);
-        },
-        onPanResponderTerminate: () => moveTo(opened.current ? -SWIPE_ACTION_WIDTH : 0),
-      }),
-    // moveTo reads reduceMotion; offset is stable.
-
-    [reduceMotion],
-  );
+  // The drag runs on the UI thread, so it stays smooth while the list re-renders. Only a mostly
+  // horizontal drag takes over (a vertical one fails the gesture), so scrolling is untouched.
+  const pan = Gesture.Pan()
+    .activeOffsetX([-12, 12])
+    .failOffsetY([-12, 12])
+    .onStart(() => {
+      startX.set(offset.get());
+    })
+    .onUpdate((event) => {
+      offset.set(
+        Math.min(0, Math.max(-SWIPE_ACTION_WIDTH * 1.2, startX.get() + event.translationX)),
+      );
+    })
+    .onEnd((event) => {
+      const open = startX.get() + event.translationX < -SWIPE_OPEN_THRESHOLD;
+      const target = open ? -SWIPE_ACTION_WIDTH : 0;
+      offset.set(reduceMotion ? target : withTiming(target, { duration: 200, easing: EASE_OUT }));
+    });
 
   const slideStyle = useAnimatedStyle(() => ({ transform: [{ translateX: offset.get() }] }));
   const motion = reduceMotion
@@ -111,7 +108,6 @@ export function SwipeToRemove({
           accessibilityLabel={`Remove ${label} from Saved`}
           disabled={removing}
           onPress={() => {
-            opened.current = false;
             moveTo(0);
             onRemove();
           }}
@@ -129,9 +125,9 @@ export function SwipeToRemove({
           </AppText>
         </Pressable>
       </View>
-      <Animated.View {...responder.panHandlers} style={slideStyle}>
-        {children}
-      </Animated.View>
+      <GestureDetector gesture={pan}>
+        <Animated.View style={slideStyle}>{children}</Animated.View>
+      </GestureDetector>
     </Animated.View>
   );
 }

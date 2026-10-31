@@ -2,6 +2,7 @@ import { Pressable, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol, type AppSymbolName } from "./AppSymbol";
 import { AppText } from "./AppText";
 
 export type SegmentedOption<T extends string> = {
@@ -9,6 +10,8 @@ export type SegmentedOption<T extends string> = {
   label: string;
   /** Read by screen readers instead of the label, e.g. "Want to try, 12 dishes". */
   accessibilityLabel?: string;
+  /** Draws this symbol instead of the label (the label still names it for screen readers). */
+  icon?: AppSymbolName;
 };
 
 type Props<T extends string> = {
@@ -19,6 +22,8 @@ type Props<T extends string> = {
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  /** Tighter segments, for a control that shares a row with others. */
+  compact?: boolean;
 };
 
 /**
@@ -33,6 +38,7 @@ export function SegmentedControl<T extends string>({
   accessibilityLabel,
   style,
   testID,
+  compact = false,
 }: Props<T>) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
@@ -73,16 +79,25 @@ export function SegmentedControl<T extends string>({
               flex: 1,
               justifyContent: "center",
               minHeight: 44 - 4,
-              paddingHorizontal: spacing[2],
+              minWidth: option.icon ? 40 : undefined,
+              paddingHorizontal: compact ? spacing[1] : spacing[2],
             }}
           >
-            <AppText
-              variant={selected ? "bodySmallBold" : "bodySmall"}
-              numberOfLines={1}
-              style={{ color: selected ? palette.text : palette.textSecondary }}
-            >
-              {option.label}
-            </AppText>
+            {option.icon ? (
+              <AppSymbol
+                name={option.icon}
+                color={selected ? palette.orange : palette.textSecondary}
+                size={18}
+              />
+            ) : (
+              <AppText
+                variant={selected ? "bodySmallBold" : "bodySmall"}
+                numberOfLines={1}
+                style={{ color: selected ? palette.text : palette.textSecondary }}
+              >
+                {option.label}
+              </AppText>
+            )}
           </Pressable>
         );
       })}

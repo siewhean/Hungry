@@ -133,14 +133,14 @@ export function visibleSavedSections(socialFeedEnabled: boolean): SavedSection[]
 export type SavedLayout = "card" | "row";
 
 /**
- * Photo cards only pay off when most saved dishes have a photo; otherwise a card is a 180pt grey
+ * Photo cards only pay off when at least three in four saved dishes have a photo; otherwise a card is a 180pt grey
  * box and a screen shows two and a half dishes. The list decides, so the density experiment only
  * moves lists that can show either layout.
  */
 export function savedListHasPhotos(dishes: readonly SavedDishCard[]): boolean {
   if (dishes.length === 0) return false;
   const withPhoto = dishes.filter((dish) => Boolean(dish.imageUrl)).length;
-  return withPhoto * 2 >= dishes.length;
+  return withPhoto * 4 >= dishes.length * 3;
 }
 
 /** One pin on the Saved map: every saved dish at the same stall shares it. */

@@ -4,3 +4,4 @@ export { SavedStallRow } from "./SavedStallRow";
 export { SwipeToRemove } from "./SwipeToRemove";
 export { SavedSortMenu } from "./SavedSortMenu";
 export { SavedSearchBox, SavedSearchResults } from "./SavedSearchResults";
+export { SavedViewSwitch } from "./SavedViewSwitch";

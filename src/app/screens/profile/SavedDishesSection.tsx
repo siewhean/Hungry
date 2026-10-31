@@ -6,10 +6,12 @@ import {
   SavedDishCard,
   SavedMapView,
   SavedSortMenu,
+  SavedViewSwitch,
   SwipeToRemove,
   type SavedMapViewPin,
 } from "@/components/saved";
-import { AppSymbol, AppText, EmptyState, SegmentedControl, Skeleton } from "@/components/ui";
+import { isLiveMapAvailable } from "@/components/map/mapAvailability";
+import { AppText, EmptyState, SegmentedControl, Skeleton } from "@/components/ui";
 import { prefetchDishDetail, preloadRoute } from "@/features/navigation/prefetch";
 import {
   buildSavedDirectionsUrl,
@@ -59,7 +61,7 @@ export function SavedDishesSection({
   saved,
   tab,
   onTabChange,
-  mode,
+  mode: requestedMode,
   onModeChange,
 }: Props) {
   const { palette, spacing } = useHungryTheme();
@@ -75,6 +77,9 @@ export function SavedDishesSection({
     () => getSavedOrigin({ permission, currentLocation, manualCoordinate }),
     [currentLocation, manualCoordinate, permission],
   );
+  // A remembered Map choice falls back to the list in a build that cannot draw a map.
+  const mapAvailable = isLiveMapAvailable();
+  const mode: SavedViewMode = mapAvailable ? requestedMode : "list";
   const [sort, setSort] = useState<SavedSort>("recent");
   const [pendingDishId, setPendingDishId] = useState<string | null>(null);
   const undoing = useRef(new Set<string>());
@@ -322,34 +327,30 @@ export function SavedDishesSection({
   const hasDishes = tabDishes.length > 0;
   return (
     <View style={{ gap: spacing[3] }}>
-      <SegmentedControl
-        accessibilityLabel="Show dishes you want to try or have tried"
-        value={tab}
-        onChange={onTabChange}
-        options={[
-          { value: "want", label: `Want to try (${wantCount})` },
-          { value: "tried", label: `Tried (${triedCount})` },
-        ]}
-      />
-      {hasDishes ? (
-        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-          <View style={{ flex: 1, maxWidth: 200 }}>
-            <SegmentedControl
-              accessibilityLabel="Show saved dishes as a list or on a map"
-              value={mode}
-              onChange={chooseMode}
-              options={[
-                { value: "list", label: "List", accessibilityLabel: "List view" },
-                { value: "map", label: "Map", accessibilityLabel: "Map view" },
-              ]}
-            />
-          </View>
-          <View style={{ flex: 1 }} />
-          {mode === "list" && tabDishes.length > 1 ? (
-            <SavedSortMenu value={sort} hasLocation={origin !== undefined} onChange={chooseSort} />
-          ) : null}
-        </View>
-      ) : null}
+      {/* One row of controls: Want to try / Tried, then List / Map and Sort as icons. */}
+      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], zIndex: 20 }}>
+        <SegmentedControl
+          compact
+          accessibilityLabel="Show dishes you want to try or have tried"
+          style={{ flex: 1 }}
+          value={tab}
+          onChange={onTabChange}
+          options={[
+            { value: "want", label: `Want to try (${wantCount})` },
+            { value: "tried", label: `Tried (${triedCount})` },
+          ]}
+        />
+        {hasDishes && mapAvailable ? (
+          <SavedViewSwitch
+            accessibilityLabel="Show saved dishes as a list or on a map"
+            value={mode}
+            onChange={chooseMode}
+          />
+        ) : null}
+        {hasDishes && mode === "list" && tabDishes.length > 1 ? (
+          <SavedSortMenu value={sort} hasLocation={origin !== undefined} onChange={chooseSort} />
+        ) : null}
+      </View>
       {hasDishes && mode === "map" ? (
         <SavedMapView
           pins={viewPins}

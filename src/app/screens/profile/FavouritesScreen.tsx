@@ -10,15 +10,10 @@ import {
   SavedStallRow,
   SwipeToRemove,
   type SavedMapViewPin,
+  SavedViewSwitch,
 } from "@/components/saved";
-import {
-  AccessibleImage,
-  AppText,
-  Button,
-  Chip,
-  EmptyState,
-  SegmentedControl,
-} from "@/components/ui";
+import { AccessibleImage, AppText, Button, Chip, EmptyState } from "@/components/ui";
+import { isLiveMapAvailable } from "@/components/map/mapAvailability";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
@@ -339,8 +334,11 @@ function SavedStallsSection({
   const userId = useProfileStore((store) => store.profile.id);
   const toggleSaved = useStallInteractionStore((store) => store.toggleSaved);
   const showToast = useUIStore((store) => store.showToast);
-  const mode = useSavedViewStore((store) => store.mode);
+  const requestedMode = useSavedViewStore((store) => store.mode);
   const setMode = useSavedViewStore((store) => store.setMode);
+  // A remembered Map choice falls back to the list in a build that cannot draw a map.
+  const mapAvailable = isLiveMapAvailable();
+  const mode = mapAvailable ? requestedMode : "list";
   const permission = useLocationStore((store) => store.permission);
   const currentLocation = useLocationStore((store) => store.currentLocation);
   const manualCoordinate = useLocationStore((store) => store.manualCoordinate);
@@ -464,17 +462,15 @@ function SavedStallsSection({
 
   return (
     <View style={{ gap: spacing[3] }}>
-      <View style={{ maxWidth: 200 }}>
-        <SegmentedControl
-          accessibilityLabel="Show saved stalls as a list or on a map"
-          value={mode}
-          onChange={chooseMode}
-          options={[
-            { value: "list", label: "List", accessibilityLabel: "List view" },
-            { value: "map", label: "Map", accessibilityLabel: "Map view" },
-          ]}
-        />
-      </View>
+      {mapAvailable ? (
+        <View style={{ alignSelf: "flex-start" }}>
+          <SavedViewSwitch
+            accessibilityLabel="Show saved stalls as a list or on a map"
+            value={mode}
+            onChange={chooseMode}
+          />
+        </View>
+      ) : null}
       {mode === "map" ? (
         <SavedMapView
           pins={pins}

@@ -36,12 +36,17 @@ function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K
   });
 }
 
+const originalMapboxToken = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+
 beforeEach(async () => {
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN = "test-token"; // a build that can draw the map
   await enterScenario("user");
   useSavedViewStore.getState().reset();
   clearTrackedAnalyticsEvents();
 });
 afterEach(async () => {
+  if (originalMapboxToken === undefined) delete process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  else process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN = originalMapboxToken;
   await cleanup();
   while (restores.length) restores.pop()?.();
   setExperimentFlagSource(undefined);

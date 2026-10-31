@@ -24,7 +24,7 @@ export function SavedSearchBox({ value, onChangeText }: Props) {
   const { palette } = useHungryTheme();
   return (
     <Input
-      placeholder="Search dishes, stalls, lists and reviews"
+      placeholder="Search everything you saved"
       accessibilityLabel="Search everything you saved"
       value={value}
       onChangeText={onChangeText}

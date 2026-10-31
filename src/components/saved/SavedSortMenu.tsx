@@ -13,14 +13,15 @@ type Props = {
 };
 
 /**
- * Sort as a pull-down button (arrow.up.arrow.down) instead of a row of chips. The menu opens
- * under the button as three radio rows with a check on the current one.
+ * Sort as an icon button (arrow.up.arrow.down) instead of a row of chips. The menu floats over
+ * the page under the button (absolute, so opening it never reflows the row) as three radio
+ * rows with a check on the current one. The current choice is in the button's label.
  */
 export function SavedSortMenu({ value, hasLocation, onChange }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const [open, setOpen] = useState(false);
   return (
-    <View style={{ alignItems: "flex-end", gap: spacing[1] }}>
+    <View style={{ zIndex: 20 }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Sort: ${SAVED_SORT_LABELS[value]}`}
@@ -29,16 +30,12 @@ export function SavedSortMenu({ value, hasLocation, onChange }: Props) {
         onPress={() => setOpen((current) => !current)}
         style={{
           alignItems: "center",
-          flexDirection: "row",
-          gap: spacing[1],
+          justifyContent: "center",
           minHeight: 44,
-          paddingHorizontal: spacing[2],
+          minWidth: 44,
         }}
       >
-        <AppSymbol name="sort" color={palette.orange} size={18} />
-        <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-          {SAVED_SORT_LABELS[value]}
-        </AppText>
+        <AppSymbol name="sort" color={palette.orange} size={20} />
       </Pressable>
       {open ? (
         <View
@@ -49,8 +46,17 @@ export function SavedSortMenu({ value, hasLocation, onChange }: Props) {
             borderColor: palette.border,
             borderRadius: componentRadii.card,
             borderWidth: 1,
+            elevation: 6,
             minWidth: 200,
             overflow: "hidden",
+            position: "absolute",
+            right: 0,
+            shadowColor: palette.text,
+            shadowOffset: { height: 4, width: 0 },
+            shadowOpacity: 0.12,
+            shadowRadius: 12,
+            top: 48,
+            zIndex: 20,
           }}
         >
           {SAVED_SORTS.map((key) => {

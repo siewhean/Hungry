@@ -15,6 +15,7 @@ import {
   SavedSearchResults,
   SavedSortMenu,
   SavedStallRow,
+  SavedViewSwitch,
   SwipeToRemove,
 } from "@/components/saved";
 import { SegmentedControl } from "@/components/ui";
@@ -97,13 +98,21 @@ function stubCards(cards: SavedDishCard[]) {
 const eventsNamed = (name: string) =>
   getTrackedAnalyticsEvents().filter((event) => event.event === name);
 
+const originalMapboxToken = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+function setMapboxToken(token: string | undefined) {
+  if (token === undefined) delete process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  else process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN = token;
+}
+
 beforeEach(async () => {
+  setMapboxToken("test-token"); // a build that can draw the map; individual tests remove it
   await enterScenario("user");
   useSavedViewStore.getState().reset();
   clearTrackedAnalyticsEvents();
   useLocationStore.setState({ permission: "denied", manualCoordinate: undefined });
 });
 afterEach(async () => {
+  setMapboxToken(originalMapboxToken);
   await cleanup();
   while (restores.length) restores.pop()?.();
   useUIStore.getState().hideToast?.();
@@ -132,6 +141,24 @@ test("SegmentedControl shows the chosen segment as checked and only reports a ch
   assert.deepEqual(changes, ["b"]);
 });
 
+// ─── SavedViewSwitch ─────────────────────────────────────────────────────────────────────────
+
+test("SavedViewSwitch is two icon radios named List view and Map view, and reports a change", async () => {
+  const changes: string[] = [];
+  const view = await render(
+    createElement(SavedViewSwitch, {
+      value: "list",
+      accessibilityLabel: "Show things as a list or on a map",
+      onChange: (mode: string) => changes.push(mode),
+    } as never),
+  );
+  assert.equal(view.findByLabel("List view")?.getAttribute("aria-checked"), "true");
+  assert.equal(view.findByLabel("Map view")?.getAttribute("role"), "radio");
+  assert.equal(view.findByText("Map"), null, "icons only, no text label");
+  await view.press(view.findByLabel("Map view"));
+  assert.deepEqual(changes, ["map"]);
+});
+
 // ─── SavedSortMenu ───────────────────────────────────────────────────────────────────────────
 
 test("SavedSortMenu opens as radio rows, checks the current sort and closes on a choice", async () => {
@@ -157,12 +184,11 @@ test("SavedSortMenu opens as radio rows, checks the current sort and closes on a
 test("SwipeToRemove offers Remove behind the row, and not at all when disabled", async () => {
   let removed = 0;
   const row = (enabled: boolean) =>
-    createElement(SwipeToRemove, {
-      label: "Laksa",
-      enabled,
-      onRemove: () => (removed += 1),
-      children: createElement(Text, null, "Laksa row"),
-    });
+    createElement(
+      SwipeToRemove,
+      { label: "Laksa", enabled, onRemove: () => (removed += 1) } as never,
+      createElement(Text, null, "Laksa row"),
+    );
   const view = await render(row(true));
   assert.ok(view.findByText("Laksa row"));
   await view.press(view.findByLabel("Remove Laksa from Saved"));
@@ -447,6 +473,37 @@ test("the map view pins saved dishes by stall, opens a card with directions, and
   await view.press(view.findByLabel("List view"));
   assert.equal(view.findByTestId("saved-map"), null);
   assert.equal(useSavedViewStore.getState().mode, "list");
+});
+
+test("a build with no map token hides the Map switch and shows the list, for dishes and stalls", async () => {
+  setMapboxToken(undefined);
+  saveDishes([LAKSA.id, LAKSA_2.id]);
+  stubCards([LAKSA, LAKSA_2]);
+  // Even when Map was the remembered choice.
+  useSavedViewStore.getState().setMode("map");
+  const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
+  assert.equal(view.findByLabel("Map view"), null);
+  assert.equal(view.findByLabel("List view"), null);
+  assert.equal(view.findByTestId("saved-map"), null);
+  assert.ok(view.findByText("Get directions"), "the dishes are listed");
+  await view.press(view.findByLabel("Saved stalls"));
+  await view.settle();
+  assert.equal(view.findByLabel("Map view"), null);
+  assert.equal(view.findByTestId("saved-map"), null);
+});
+
+test("the sort menu floats over the page: the List / Map switch stays on the Want to try row", async () => {
+  saveDishes([LAKSA.id, LAKSA_2.id]);
+  stubCards([LAKSA, LAKSA_2]);
+  const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
+  const before = view.findByLabel("Map view");
+  assert.ok(before);
+  await view.press(view.findByLabel("Sort: Recent"));
+  const menu = view.findByLabel("Sort saved dishes");
+  assert.ok(menu, "the menu is open");
+  assert.ok(menu?.style.position === "absolute", "drawn over the row, not in it");
+  assert.equal(view.findByLabel("Map view")?.getAttribute("aria-checked"), "false");
+  assert.equal(view.findByLabel("List view")?.getAttribute("aria-checked"), "true");
 });
 
 test("the section is remembered, and a route section wins", async () => {

@@ -195,7 +195,8 @@ test("photo cards only when most saved dishes have a photo", () => {
   const without = { id: "b", name: "B" };
   assert.equal(savedListHasPhotos([]), false);
   assert.equal(savedListHasPhotos([without, without, withPhoto]), false);
-  assert.equal(savedListHasPhotos([withPhoto, without]), true);
+  assert.equal(savedListHasPhotos([withPhoto, without]), false, "half photographed stays rows");
+  assert.equal(savedListHasPhotos([withPhoto, withPhoto, withPhoto, without]), true);
 });
 
 test("dishes at one stall share a pin; dishes with no point are counted apart", () => {

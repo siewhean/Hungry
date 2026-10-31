@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 85.9,
+    "lines": 86.1,
     "branches": 85.5,
-    "functions": 82.1
+    "functions": 82.6
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -21,6 +21,7 @@
     "src/app/screens/onboarding/singaporeAreas.ts": 97.9,
     "src/app/screens/onboarding/tasteQuizAnswers.ts": 100,
     "src/app/screens/profile/profileGuards.ts": 100,
+    "src/components/map/mapAvailability.ts": 100,
     "src/components/ui/badgeTones.ts": 100,
     "src/constants/featureFlags.ts": 100,
     "src/constants/foodCredConfig.ts": 99,

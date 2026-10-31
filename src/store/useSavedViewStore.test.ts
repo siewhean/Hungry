@@ -36,3 +36,15 @@ test("a different account starts Saved on Dishes (the session clears the view st
   useSessionStore.getState().signOut();
   assert.equal(useSavedViewStore.getState().section, "dishes");
 });
+
+test("only the section is kept on the device; Want to try and List / Map are session-only", () => {
+  const options = useSavedViewStore.persist.getOptions();
+  assert.equal(options.name, "hungry-saved-view-v1");
+  const saved = options.partialize?.({
+    ...useSavedViewStore.getState(),
+    section: "lists",
+    tab: "tried",
+    mode: "map",
+  });
+  assert.deepEqual(saved, { section: "lists" });
+});
