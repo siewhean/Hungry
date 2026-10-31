@@ -13,7 +13,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
-import { AccessibleImage, AppText, Button, EmptyState, Skeleton } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Button, EmptyState, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isRelease01BlockedImageUrl } from "@/constants/release01";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -240,10 +240,13 @@ function RawDishCard({
             {item.venueName}
           </AppText>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <AppText tone="muted" variant="micro" numberOfLines={1} style={{ flexShrink: 1 }}>
-              {rated ? `★ ${item.rating!.toFixed(1)} (${item.reviewCount}) · ` : ""}
-              {place}
-            </AppText>
+            <View style={{ alignItems: "center", flexDirection: "row", flexShrink: 1, gap: 2 }}>
+              {rated ? <AppSymbol name="rating" size={11} color={palette.starFill} /> : null}
+              <AppText tone="muted" variant="micro" numberOfLines={1} style={{ flexShrink: 1 }}>
+                {rated ? `${item.rating!.toFixed(1)} (${item.reviewCount}) · ` : ""}
+                {place}
+              </AppText>
+            </View>
             {item.price !== undefined ? (
               <AppText style={{ color: palette.text }} variant="price">
                 S${item.price.toFixed(2)}

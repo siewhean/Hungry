@@ -1,9 +1,8 @@
 import { useMemo } from "react";
-import { Pressable, View } from "react-native";
-import { ChevronRight, Star } from "lucide-react-native";
+import { View } from "react-native";
 
-import { AccessibleImage, AppText } from "@/components/ui";
-import { stallBuildingLabel } from "@/features/detail/stallLocation";
+import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
 import {
   STALL_SHOWCASE_CARD_LIMIT,
   type DiscoverStallShowcaseCard,
@@ -36,7 +35,12 @@ export function VerticalStallShowcaseSection({
   const availableRowHeight = (showcaseViewportHeight - rowGap * 2) / 3;
   const maxTallCardHeight = columnCardWidth * 1.1;
   const tallCardHeight = Math.max(0, Math.floor(Math.min(availableRowHeight, maxTallCardHeight)));
-  const compactCardDetailsHeight = typography.bodySmall.lineHeight * 2 + spacing[0.5] + spacing[1];
+  // Dish name (up to two lines), then the stall and price on one line.
+  const compactCardDetailsHeight =
+    typography.bodySmallBold.lineHeight * 2 +
+    typography.micro.lineHeight +
+    spacing[0.5] +
+    spacing[1];
   const cardImageHeight = Math.max(0, Math.floor(tallCardHeight - compactCardDetailsHeight));
   const showcaseRows = useMemo(() => {
     const rows: DiscoverStallShowcaseCard[][] = [];
@@ -80,7 +84,7 @@ export function VerticalStallShowcaseSection({
             {rowCards.map((card) => {
               const openLabel = getStallRowOpenLabel(card.venue);
               return (
-                <Pressable
+                <PressableScale
                   key={card.id}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${card.venue.name} details`}
@@ -107,14 +111,32 @@ export function VerticalStallShowcaseSection({
                       width: "100%",
                     }}
                   >
-                    <AccessibleImage
-                      source={card.imageSource}
-                      style={{ height: "100%", width: "100%" }}
-                      contentFit="cover"
-                      cachePolicy="memory-disk"
-                      transition={120}
-                      decorative
-                    />
+                    {card.imageSource ? (
+                      <AccessibleImage
+                        source={card.imageSource}
+                        style={{ height: "100%", width: "100%" }}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={120}
+                        decorative
+                      />
+                    ) : (
+                      // No photo of this stall's food yet: its logo, never a picture of another dish.
+                      <View
+                        style={{
+                          alignItems: "center",
+                          flex: 1,
+                          justifyContent: "center",
+                        }}
+                      >
+                        <StallLogoMark
+                          borderWidth={2}
+                          logoUrl={card.venue.logoUrl}
+                          name={card.venue.name}
+                          size={Math.min(64, Math.max(40, cardImageHeight - spacing[8]))}
+                        />
+                      </View>
+                    )}
                     {openLabel ? (
                       <View
                         style={{
@@ -154,7 +176,7 @@ export function VerticalStallShowcaseSection({
                           right: spacing[2],
                         }}
                       >
-                        <Star color={palette.starStroke} size={11} fill={palette.starFill} />
+                        <AppSymbol name="rating" size={11} color={palette.starFill} />
                         <AppText
                           variant="micro"
                           style={{ color: palette.textOnDark, fontWeight: "900" }}
@@ -173,65 +195,36 @@ export function VerticalStallShowcaseSection({
                       paddingVertical: spacing[0.5],
                     }}
                   >
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                      <View
-                        style={{
-                          alignItems: "center",
-                          flex: 1,
-                          flexDirection: "row",
-                          gap: spacing[1],
-                        }}
-                      >
-                        <AppText
-                          variant="bodySmall"
-                          numberOfLines={1}
-                          style={{ color: palette.text, flex: 1, fontWeight: "900" }}
-                        >
-                          {card.venue.name}
-                        </AppText>
-                        <AppText
-                          variant="micro"
-                          numberOfLines={1}
-                          style={{ color: palette.textSecondary, flexShrink: 1, maxWidth: "55%" }}
-                        >
-                          {[stallBuildingLabel(card.venue), card.venue.unitNumber]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </AppText>
-                      </View>
-                      <ChevronRight color={palette.textMuted} size={16} />
-                    </View>
-                    <View
-                      style={{
-                        alignItems: "center",
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                      }}
+                    <AppText
+                      variant="bodySmallBold"
+                      numberOfLines={2}
+                      style={{ color: palette.text }}
                     >
+                      {card.heroDish.name}
+                    </AppText>
+                    <View style={{ alignItems: "center", flexDirection: "row" }}>
                       <AppText
-                        variant="bodySmall"
+                        variant="micro"
                         numberOfLines={1}
-                        style={{ color: palette.text, flex: 1, fontWeight: "800" }}
+                        style={{ color: palette.textSecondary, flexShrink: 1 }}
                       >
-                        {card.heroDish.name}
+                        {card.venue.name}
                       </AppText>
                       {card.heroDish.price > 0 ? (
                         <AppText
-                          variant="price"
+                          variant="micro"
                           style={{
-                            color: palette.text,
-                            fontSize: typography.bodySmallBold.fontSize,
-                            fontWeight: "800",
-                            lineHeight: typography.bodySmallBold.lineHeight,
-                            marginLeft: spacing[1],
+                            color: palette.textSecondary,
+                            flexShrink: 0,
+                            fontVariant: ["tabular-nums"],
                           }}
                         >
-                          S${card.heroDish.price.toFixed(2)}
+                          {` · S$${card.heroDish.price.toFixed(2)}`}
                         </AppText>
                       ) : null}
                     </View>
                   </View>
-                </Pressable>
+                </PressableScale>
               );
             })}
           </View>

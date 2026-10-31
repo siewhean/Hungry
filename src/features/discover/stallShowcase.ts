@@ -1,12 +1,6 @@
 import type { ImageSourcePropType } from "react-native";
 
 import { getDiscoverCardImage, getDishImageCandidates } from "@/features/discover/bites";
-import {
-  POPULAR_BAK_CHOR_MEE_GRAPHIC,
-  POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-  POPULAR_CHICKEN_RICE_GRAPHIC,
-  POPULAR_LAKSA_GRAPHIC,
-} from "@/features/discover/popularFoodStyles";
 import type { DataRepository } from "@/lib/services/types";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 
@@ -14,7 +8,8 @@ export type DiscoverStallShowcaseCard = {
   id: string;
   venue: VenueSummary;
   heroDish: DishDetail;
-  imageSource: ImageSourcePropType;
+  /** The stall's or hero dish's own photo; null shows the stall logo instead, never another dish. */
+  imageSource: ImageSourcePropType | null;
   products: DishDetail[];
 };
 
@@ -24,12 +19,6 @@ export type DiscoverRepositoryLookup = Pick<
 >;
 
 export const STALL_SHOWCASE_CARD_LIMIT = 30;
-const STALL_SHOWCASE_FALLBACK_IMAGES = [
-  POPULAR_LAKSA_GRAPHIC,
-  POPULAR_CHICKEN_RICE_GRAPHIC,
-  POPULAR_CHAR_KWAY_TEOW_GRAPHIC,
-  POPULAR_BAK_CHOR_MEE_GRAPHIC,
-] as const;
 
 export function buildStallShowcaseCardsFromVenues(
   venues: VenueSummary[],
@@ -38,7 +27,7 @@ export function buildStallShowcaseCardsFromVenues(
   const uniqueVenues = Array.from(new Map(venues.map((venue) => [venue.id, venue])).values());
 
   // One card per stall: the stall's top dish (or first listed dish) is the hero.
-  return uniqueVenues.flatMap((venue, venueIndex) => {
+  return uniqueVenues.flatMap((venue) => {
     const venueDishes = repositoryLookup.listDishesByVenue(venue.id);
     const heroDish = repositoryLookup.getDishById(venue.topDishId) ?? venueDishes[0];
     if (!heroDish) {
@@ -59,9 +48,7 @@ export function buildStallShowcaseCardsFromVenues(
         id: venue.id,
         venue,
         heroDish,
-        imageSource: image.imageUrl
-          ? { uri: image.imageUrl }
-          : STALL_SHOWCASE_FALLBACK_IMAGES[venueIndex % STALL_SHOWCASE_FALLBACK_IMAGES.length],
+        imageSource: image.imageUrl ? { uri: image.imageUrl } : null,
         products,
       },
     ];

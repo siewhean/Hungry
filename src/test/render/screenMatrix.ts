@@ -197,7 +197,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DiscoverHomeScreen",
     file: "src/app/screens/discover/DiscoverHomeScreen.tsx",
     scenario: "user",
-    expect: /Choose where you are|You are at/,
+    expect: /Choose where you are|You are at|Across Singapore/,
   },
   {
     name: "DiscoverEntryScreen",
@@ -205,7 +205,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     scenario: "user",
     // Mock mode renders DiscoverHomeScreen; the Supabase branch (live feed, offline hand-off)
     // is covered in src/app/screens/discover/DiscoverEntryScreen.render.test.tsx.
-    expect: /Choose where you are|You are at/,
+    expect: /Choose where you are|You are at|Across Singapore/,
   },
   {
     name: "HomeMapScreen",

@@ -39,10 +39,10 @@ test("Discover follows the phone's location and offers to turn it on when it is 
     /getNearestSingaporeArea\(discoverLocationLatitude, discoverLocationLongitude\)/,
   );
   assert.match(screen, /You are at\s*<\/AppText>/);
-  assert.match(
-    screen,
-    /style=\{\{ color: themeTints\.text \}\} numberOfLines=\{1\}>\s*\{discoverHeaderLabel\}/,
-  );
+  // Round five: with location off the title is "Across Singapore", not "You are at Singapore".
+  assert.match(screen, /`Across \$\{discoverHeaderLabel\}`/);
+  assert.match(screen, /Turn on location for stalls near you/);
+  assert.doesNotMatch(screen, /Location is off, so these are picks across Singapore/);
   assert.match(screen, /accessibilityLabel="Turn on location"/);
   assert.doesNotMatch(screen, /ManualLocationPicker|handleChangeArea/);
 });

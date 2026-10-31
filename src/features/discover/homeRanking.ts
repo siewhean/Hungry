@@ -66,3 +66,19 @@ export function pickRailsWithoutRepeats(
     return shown;
   });
 }
+
+/**
+ * Drops from a rail the dishes another rail on the page already shows, so two rails do not open
+ * with the same dishes. When fewer than `minItems` new dishes remain the rail is hidden (empty).
+ * A rail that shares nothing with the other one is returned as it is.
+ */
+export function dropDishesShownElsewhere(
+  bites: readonly Bite[],
+  shown: readonly Bite[],
+  minItems: number,
+): Bite[] {
+  const shownDishIds = new Set(shown.map((bite) => bite.dishId));
+  const fresh = bites.filter((bite) => !shownDishIds.has(bite.dishId));
+  if (fresh.length === bites.length) return [...bites];
+  return fresh.length >= minItems ? fresh : [];
+}

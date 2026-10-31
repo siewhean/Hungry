@@ -5,19 +5,25 @@ import {
   Bell,
   BellOff,
   BellRing,
+  CakeSlice,
   Check,
   ChevronDown,
   ChevronRight,
+  CircleDollarSign,
   Compass,
   Database,
   Download,
+  Droplet,
   ExternalLink,
   Eye,
   FileText,
+  Flame,
+  Gift,
   Hand,
   History,
   Info,
   KeyRound,
+  Leaf,
   LocateFixed,
   Lock,
   LogOut,
@@ -32,19 +38,27 @@ import {
   Shield,
   SlidersHorizontal,
   Smartphone,
+  Snowflake,
+  Soup,
   Sparkles,
+  Star,
   Store,
+  Thermometer,
   Trash2,
   UserPlus,
   UserX,
   Utensils,
+  UtensilsCrossed,
   Vibrate,
   Wallet,
   WandSparkles,
+  Zap,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react-native";
 import { Platform, View } from "react-native";
+
+import type { ReviewTasteTagSymbol } from "@/types/domain";
 
 type SFSymbolName = Extract<SymbolViewProps["name"], string>;
 
@@ -100,7 +114,25 @@ const APP_SYMBOLS = {
   chevronRight: { ios: "chevron.right", lucide: ChevronRight },
   chevronDown: { ios: "chevron.down", lucide: ChevronDown },
   external: { ios: "arrow.up.right.square", lucide: ExternalLink },
-} as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon }>;
+  /** A rating star: filled, in the star colour. */
+  rating: { ios: "star.fill", lucide: Star, filled: true },
+  /** A dish with no photo or no result yet. */
+  dish: { ios: "fork.knife", lucide: Utensils },
+  // The review taste tags (REVIEW_TASTE_TAG_META in types/domain.ts names these keys).
+  tasteSpicy: { ios: "flame", lucide: Flame },
+  tasteSavoury: { ios: "fork.knife", lucide: Utensils },
+  tasteSweet: { ios: "birthday.cake", lucide: CakeSlice },
+  tasteSour: { ios: "drop", lucide: Droplet },
+  tasteGenerous: { ios: "gift", lucide: Gift },
+  tasteFresh: { ios: "leaf", lucide: Leaf },
+  tasteWorthIt: { ios: "dollarsign.circle", lucide: CircleDollarSign },
+  tasteCold: { ios: "snowflake", lucide: Snowflake },
+  tasteRichBroth: { ios: "cup.and.saucer", lucide: Soup },
+  tasteChewyNoodles: { ios: "fork.knife.circle", lucide: UtensilsCrossed },
+  tasteHotFresh: { ios: "thermometer.medium", lucide: Thermometer },
+  tasteQuick: { ios: "bolt", lucide: Zap },
+} as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon; filled?: boolean }> &
+  Record<ReviewTasteTagSymbol, unknown>;
 
 export type AppSymbolName = keyof typeof APP_SYMBOLS;
 
@@ -158,6 +190,7 @@ export function AppSymbol(props: AppSymbolProps) {
     const size = props.size ?? 22;
     const weight = props.weight ?? "semibold";
     const Icon = symbol.lucide;
+    const filled = "filled" in symbol && symbol.filled;
     return (
       <View
         testID={testID}
@@ -178,7 +211,12 @@ export function AppSymbol(props: AppSymbolProps) {
             style={{ height: size, width: size }}
           />
         ) : (
-          <Icon color={color} size={size} strokeWidth={LUCIDE_STROKE[weight]} />
+          <Icon
+            color={color}
+            size={size}
+            strokeWidth={LUCIDE_STROKE[weight]}
+            fill={filled ? color : "none"}
+          />
         )}
       </View>
     );
