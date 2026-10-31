@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
 import { Eye, EyeOff } from "lucide-react-native";
 
-import { AppText, Button, Card, Input } from "@/components/ui";
+import { AppText, Button, Card, Dialog, Input } from "@/components/ui";
 import { AUTH_EYE_BUTTON_STYLE } from "@/app/screens/auth/authEyeButton";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { getAuthFailureMessage, isUnexpectedAuthError } from "@/features/auth/authErrors";
@@ -37,6 +37,7 @@ export function ChangePasswordScreen() {
   const accountEmail = useProfileStore((state) => state.profile?.email) || undefined;
   const [isSaving, setIsSaving] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
+  const [offerSignOutOthers, setOfferSignOutOthers] = useState(false);
   const {
     control,
     handleSubmit,
@@ -66,32 +67,17 @@ export function ChangePasswordScreen() {
   );
 
   // Changing a password does not end sessions already signed in elsewhere.
-  const offerSignOutOfOtherDevices = () => {
-    Alert.alert(
-      "Sign out other devices?",
-      "Your old password no longer works, but phones already signed in to Hungry stay signed in. Sign them out now if someone else may have had access.",
-      [
-        { text: "Not now", style: "cancel", onPress: () => navigation.goBack() },
-        {
-          text: "Sign out other devices",
-          onPress: () => {
-            void getHungryService()
-              .auth.signOut({ scope: "others" })
-              .then(() => showToast({ message: "Other devices signed out.", tone: "success" }))
-              .catch((error: unknown) => {
-                reportError(error, { area: "change_password_sign_out_others" });
-                showToast({
-                  message:
-                    "Couldn't sign out other devices. Try Sign out of all devices in Settings.",
-                  tone: "error",
-                });
-              });
-            navigation.goBack();
-          },
-        },
-      ],
-      { cancelable: false },
-    );
+  const signOutOtherDevices = () => {
+    void getHungryService()
+      .auth.signOut({ scope: "others" })
+      .then(() => showToast({ message: "Other devices signed out.", tone: "success" }))
+      .catch((error: unknown) => {
+        reportError(error, { area: "change_password_sign_out_others" });
+        showToast({
+          message: "Couldn't sign out other devices. Try Sign out of all devices in Settings.",
+          tone: "error",
+        });
+      });
   };
 
   const handleChange = handleSubmit(async ({ currentPassword, newPassword }) => {
@@ -103,7 +89,7 @@ export function ChangePasswordScreen() {
     try {
       await getHungryService().auth.changePassword(currentPassword, newPassword);
       showToast({ message: "Password updated.", tone: "success" });
-      offerSignOutOfOtherDevices();
+      setOfferSignOutOthers(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (message === "Current password is incorrect.") {
@@ -209,6 +195,20 @@ export function ChangePasswordScreen() {
         </View>
       </Card>
       <Button label="Update password" loading={isSaving} onPress={handleChange} />
+      {/* Any way out of the question (a button or the backdrop) leaves the finished form. */}
+      <Dialog
+        visible={offerSignOutOthers}
+        title="Sign out other devices?"
+        message="Your old password no longer works, but phones already signed in to Hungry stay signed in. Sign them out now if someone else may have had access."
+        buttons={[
+          { text: "Sign out other devices", style: "default", onPress: signOutOtherDevices },
+          { text: "Not now", style: "cancel" },
+        ]}
+        onClose={() => {
+          setOfferSignOutOthers(false);
+          navigation.goBack();
+        }}
+      />
     </ProfileScreenShell>
   );
 }

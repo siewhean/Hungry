@@ -1626,3 +1626,9 @@ Use the smallest check that matches the change risk.
 ## 2026-10-31 MAP-DECIDE-R5
 - `npm run typecheck` clean; `npm test` (2,499) passes after updating the five contract tests that pinned the old sheet (`displayModeRef`, `snapTo`, stored-flag Open Now); `node scripts/test-render.mjs` (953) passes after the screen matrix expectation moved to "Your pick"; `npm run test:coverage` OK, baseline updated.
 - Not run here: a native iOS build (gorhom sheet feel, SF Symbols, haptics, VoiceOver, largest text size) and the live Mapbox map; both need a device build.
+### SETTINGS-R5, 2026-10-30
+
+- Local Postgres 16 stand-in: migration 20261030130000, its down file (archives consents first) and the smoke `supabase/smoke/consents_and_weekly_picks_off.sql` pass; up, down, up again round-trips.
+- npm test 2491 pass, npm run test:render 933 pass, typecheck, lint (0 errors), check:rate-limits, audit:races, check:n-plus-one, check:edge-functions and test:coverage OK (baseline updated for the two new modules).
+- New tests: privacy-consents.behaviour (5), features/privacy consent.test (9) and consent.render (6), mood-search consent cases (3), send-notifications weekly picks skips (2), eight R5 cases in settings-r4.render.test.tsx. tests/e2e/settings.spec.ts edited for the removed Theme row and renamed section; not run here.
+- audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file `supabase/rehearsals/20261030130000.json` (sh runs `bash scripts/db/rehearse-pr.sh claude/project-thread-coxv1k 20261030130000`).

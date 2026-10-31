@@ -10,7 +10,7 @@ import test from "node:test";
 const dir = path.join(process.cwd(), "src/app/screens/profile");
 
 /** Screens that still call Alert.alert; remove a file here when it is swept. */
-const NOT_YET_SWEPT = new Set(["ChangePasswordScreen.tsx"]);
+const NOT_YET_SWEPT = new Set<string>();
 
 const screens = readdirSync(dir).filter(
   (file) => file.endsWith(".tsx") && !file.includes(".test."),

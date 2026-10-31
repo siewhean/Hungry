@@ -24,7 +24,7 @@ test("Settings follows the Stitch groups with working account and privacy contro
     "<StallAlertsSettings",
     'title="Privacy & data"',
     'title="Account & security"',
-    'title="Display & accessibility"',
+    'title="On this phone"',
     'title="Help & legal"',
   ];
 

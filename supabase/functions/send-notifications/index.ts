@@ -20,10 +20,11 @@ import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 type JsonObject = Record<string, unknown>;
 
 // Matches the column defaults in notification_preferences; used when a user
-// has a push token but never saved preferences (weekly picks is on by default).
+// has a push token but never saved preferences (everything is off until turned on, except
+// follow requests).
 const DEFAULT_PREFERENCES = {
   stall_updates: false,
-  weekly_picks: true,
+  weekly_picks: false,
   mealtime_suggestions: false,
   // Likes, follows and follow requests: on by default, one switch.
   social_activity: true,

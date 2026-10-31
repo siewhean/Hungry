@@ -5167,6 +5167,39 @@ export const supabaseService: HungryService = {
     },
   },
 
+  privacy: {
+    async getConsents() {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return { analytics: null, aiSearch: false };
+      const { data, error } = await client
+        .from("privacy_settings")
+        .select("analytics_consent,ai_search_consent")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return {
+        analytics: typeof data?.analytics_consent === "boolean" ? data.analytics_consent : null,
+        aiSearch: data?.ai_search_consent === true,
+      };
+    },
+
+    async saveConsents(updates) {
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) throw new Error("You must be signed in to save privacy choices.");
+      // Only the consents being changed go in the upsert, so a choice made on another phone is
+      // never written back with a stale value. The database stamps the time.
+      const row: Record<string, unknown> = { user_id: userId };
+      if (updates.analytics !== undefined) row.analytics_consent = updates.analytics;
+      if (updates.aiSearch !== undefined) row.ai_search_consent = updates.aiSearch;
+      const { error } = await client
+        .from("privacy_settings")
+        .upsert(row, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+  },
+
   push: {
     async getPreferences() {
       const client = requireSupabaseClient();

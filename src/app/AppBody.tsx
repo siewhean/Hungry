@@ -16,6 +16,9 @@ import { SafetyActionsSheet } from "@/features/safety/SafetyActionsSheet";
 import { reportError } from "@/lib/monitoring/reportError";
 import { registerForStallAlerts } from "@/lib/notifications/push";
 import { subscribePushTokenSync } from "@/lib/notifications/pushTokenSync";
+import { AiSearchConsentPrompt } from "@/features/privacy/AiSearchConsentPrompt";
+import { AnalyticsConsentPrompt } from "@/features/privacy/AnalyticsConsentPrompt";
+import { enforcePreConsentAnalytics, subscribeConsentSync } from "@/features/privacy/consent";
 
 const APP_SHELL_FONT_GRACE_MS = 900;
 
@@ -46,6 +49,14 @@ export function AppBody() {
         () => registerForStallAlerts({ askPermission: false }),
         (error) => reportError(error, { area: "push_token_sync" }),
       ),
+    [],
+  );
+
+  // No analytics until the one-time question is answered; the account's privacy choices
+  // (analytics, AI search) follow the person to this phone.
+  useEffect(() => enforcePreConsentAnalytics(), []);
+  useEffect(
+    () => subscribeConsentSync((error) => reportError(error, { area: "consent_sync" })),
     [],
   );
 
@@ -104,6 +115,8 @@ export function AppBody() {
         {/* Backstop only: the app is sign-in only, but a session can expire mid-use. */}
         <SignInPromptSheet />
         <SafetyActionsSheet />
+        <AnalyticsConsentPrompt />
+        <AiSearchConsentPrompt />
       </BottomSheetModalProvider>
     </View>
   );
