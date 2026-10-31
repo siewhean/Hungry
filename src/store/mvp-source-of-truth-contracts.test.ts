@@ -54,21 +54,17 @@ test("MVP settings split keeps device-only preferences in local UI storage", () 
   const uiStore = read("src/store/useUIStore.ts");
   const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
 
-  for (const key of [
-    "themePreference",
-    "hapticFeedbackEnabled",
-    "reducedMotionEnabled",
-    "allowSearchHistory",
-  ]) {
+  // Theme and Reduce motion follow iOS (no app switch), so they are no longer saved here.
+  for (const key of ["hapticFeedbackEnabled", "allowSearchHistory"]) {
     assert.match(uiStore, new RegExp(`${key}: state\\.${key}`));
   }
 
   assert.match(uiStore, /leftHandedMode: state\.leftHandedMode/);
   assert.match(settingsScreen, /hapticFeedbackEnabled: state\.hapticFeedbackEnabled/);
-  assert.match(settingsScreen, /reducedMotionEnabled: state\.reducedMotionEnabled/);
   assert.match(settingsScreen, /leftHandedMode: state\.leftHandedMode/);
   assert.match(settingsScreen, /value: "private" as const/);
-  assert.match(settingsScreen, /label="Reduce motion"/);
+  assert.doesNotMatch(settingsScreen, /label="Reduce motion"|label="Theme"/);
+  assert.doesNotMatch(uiStore, /(?:themePreference|reducedMotionEnabled): state\./);
   assert.doesNotMatch(settingsScreen, /label="Analytics sharing"/);
 });
 
@@ -79,7 +75,6 @@ test("every Settings switch backed by useUIStore has a consumer outside Settings
     // Every haptic goes through the wrapper (expo-haptics is lint-banned elsewhere).
     hapticFeedbackEnabled: "src/lib/haptics.ts",
     leftHandedMode: "src/components/ui/FAB.tsx",
-    reducedMotionEnabled: "src/hooks/useReduceMotion.ts",
     allowSearchHistory: "src/store/useSearchStore.ts",
     // "Share usage analytics" gates trackAnalyticsEvent.
     analyticsEnabled: "src/lib/analytics/mockAnalytics.ts",

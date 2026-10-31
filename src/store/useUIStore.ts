@@ -80,7 +80,11 @@ interface UIState {
   setReducedMotionEnabled: (enabled: boolean) => void;
   allowSearchHistory: boolean;
   setAllowSearchHistory: (enabled: boolean) => void;
-  /** "Share usage analytics": on by default, a device setting that survives sign-out. */
+  /**
+   * "Share usage analytics", a device setting that survives sign-out. It reads on here, but the
+   * app holds it off until the person has answered the one-time question
+   * (`enforcePreConsentAnalytics`, features/privacy/consent.ts).
+   */
   analyticsEnabled: boolean;
   setAnalyticsEnabled: (enabled: boolean) => void;
   /** Device setting: kept across sign-outs and never overwritten by a server profile. */
@@ -184,10 +188,19 @@ export const useUIStore = create<UIState>()(
     {
       name: "hungry-ui-v1",
       storage: hungryPersistStorage,
+      // Version 1: Settings no longer offers an app Theme or Reduce motion switch (iOS has both),
+      // so a value saved by an earlier build is dropped rather than leaving it stuck on.
+      version: 1,
+      migrate: (persisted) => {
+        const {
+          themePreference: _theme,
+          reducedMotionEnabled: _motion,
+          ...rest
+        } = (persisted ?? {}) as Record<string, unknown>;
+        return rest as never;
+      },
       partialize: (state) => ({
-        themePreference: state.themePreference,
         hapticFeedbackEnabled: state.hapticFeedbackEnabled,
-        reducedMotionEnabled: state.reducedMotionEnabled,
         allowSearchHistory: state.allowSearchHistory,
         analyticsEnabled: state.analyticsEnabled,
         leftHandedMode: state.leftHandedMode,

@@ -31,6 +31,9 @@ const progressLabel = (page: Page) => page.getByRole("progressbar").first();
 async function startOnboarding(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Get started" }).click({ timeout: 60_000 });
+  // The one-time analytics question comes first; either answer moves on.
+  await expect(page.getByRole("heading", { name: "Help improve Hungry?" })).toBeVisible();
+  await page.getByRole("button", { name: "Don't share" }).click();
   await page.getByRole("button", { name: "Allow location" }).click();
   await expect(progressLabel(page)).toHaveAttribute("aria-label", /Step 2 of 5/);
 }

@@ -1367,10 +1367,21 @@ export interface WelcomeBackDish {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
+/**
+ * What the signed-in person has agreed to, saved on their account (privacy_settings).
+ * `analytics` is null until they have been asked.
+ */
+export interface PrivacyConsents {
+  /** Shares usage analytics (PostHog). Null = never asked. */
+  analytics: boolean | null;
+  /** Their typed AI-search text may be sent to the AI provider (Anthropic). Off until allowed. */
+  aiSearch: boolean;
+}
+
 /** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
 export interface PushPreferences {
   stallUpdates: boolean;
-  /** Weekly "Your new picks are ready" push. On unless the user opts out. */
+  /** Weekly "Your new picks are ready" push. Off until the user turns it on (App Review 4.5.4). */
   weeklyPicks: boolean;
   /** Lunch (11:30) and dinner (17:30) suggestion pushes. Off unless the user turns them on. */
   mealtimeSuggestions: boolean;
@@ -1383,7 +1394,7 @@ export interface PushPreferences {
 
 export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
-  weeklyPicks: true,
+  weeklyPicks: false,
   mealtimeSuggestions: false,
   socialActivity: true,
   quietStartHour: 22,

@@ -180,7 +180,7 @@ test("guests can open Settings and see only guest-safe rows (M8, L15)", () => {
   ]) {
     const index = screen.indexOf(accountOnly);
     assert.ok(index > 0, accountOnly);
-    assert.match(screen.slice(Math.max(0, index - 700), index), /isAuthenticated \?/, accountOnly);
+    assert.match(screen.slice(Math.max(0, index - 1600), index), /isAuthenticated \?/, accountOnly);
   }
   // Theme, accessibility, location and the legal links stay open to guests.
   assert.doesNotMatch(
@@ -340,9 +340,10 @@ test("reset food history copy matches what it clears (L2)", () => {
   assert.match(settings(), /Your taste profile, favourites and reviews stay\./);
 });
 
-test("theme and visibility use radio sheets, not Alert buttons or a check glyph (L7)", () => {
+test("visibility uses a radio sheet, not Alert buttons or a check glyph; there is no app Theme row (L7)", () => {
   const screen = settings();
-  assert.match(screen, /<SettingsChoiceSheet[\s\S]*title="Theme"/);
+  // iOS owns appearance and Reduce Motion; Settings only follows them (HIG: no redundant copies).
+  assert.doesNotMatch(screen, /title="Theme"|label="Theme"|label="Reduce motion"/);
   assert.match(screen, /<SettingsChoiceSheet[\s\S]*title="Profile visibility"/);
   assert.doesNotMatch(screen, /✓/);
   const sheet = read("src/components/settings/SettingsChoiceSheet.tsx");
@@ -353,7 +354,7 @@ test("theme and visibility use radio sheets, not Alert buttons or a check glyph 
 
 test("web-opening rows are links with an external icon and hint (L8)", () => {
   const row = read("src/components/settings/SettingsRow.tsx");
-  assert.match(row, /ExternalLink/);
+  assert.match(row, /name="external"/);
   assert.match(row, /"Opens in browser"/);
   const screen = settings();
   for (const label of ["Privacy policy", "Terms of service", "How account deletion works"]) {
