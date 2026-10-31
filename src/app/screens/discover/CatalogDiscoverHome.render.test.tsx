@@ -174,7 +174,8 @@ test("with a manual pick it names the area, formats km and offers current locati
   assert.match(view.text(), /You are atTanjong Pagar/);
   assert.match(view.text(), /1\.2 km/);
   assert.match(view.text(), /420 m away/);
-  assert.match(view.text(), /★ 4\.6 \(12\)/);
+  assert.match(view.text(), /4\.6 \(12\)/);
+  assert.doesNotMatch(view.text(), /★/);
   assert.ok(view.findByLabel("Use current location"));
 });
 

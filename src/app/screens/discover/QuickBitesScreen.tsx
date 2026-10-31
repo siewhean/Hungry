@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
+  AppSymbol,
   AppText,
   Button,
   ExpandableSearchLauncher,
@@ -561,7 +562,9 @@ export function QuickBitesScreen() {
                   width: "100%",
                 }}
               >
-                <AppText style={styles.emptyStateIcon}>🥣</AppText>
+                <View style={styles.emptyStateIcon}>
+                  <AppSymbol name="dish" size={40} color={palette.textMuted} />
+                </View>
                 <View
                   style={{ alignItems: "center", gap: spacing[1], paddingHorizontal: spacing[8] }}
                 >
@@ -594,10 +597,9 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 32, height: 40, alignItems: "center", justifyContent: "center" },
   emptyStateIcon: {
-    fontSize: 48,
+    alignItems: "center",
     height: 72,
-    lineHeight: 64,
-    textAlign: "center",
+    justifyContent: "center",
     width: 72,
   },
   cardContent: { ...StyleSheet.absoluteFill, padding: 10, justifyContent: "flex-end" },

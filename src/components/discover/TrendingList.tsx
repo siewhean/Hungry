@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { ChevronRight, Star, Utensils } from "lucide-react-native";
+import { ChevronRight, Utensils } from "lucide-react-native";
 
-import { AccessibleImage, AppText } from "@/components/ui";
+import { HOME_PRICE_STYLE } from "@/components/discover/home/homeLayout";
+import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
 import { buildBiteLabel, formatBiteDistance } from "@/features/discover/biteLabel";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -76,7 +77,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
       {bites.slice(0, MAX_ROWS).map((bite) => {
         const distance = formatBiteDistance(bite.distanceMeters);
         return (
-          <Pressable
+          <PressableScale
             key={bite.id}
             accessibilityRole="button"
             accessibilityLabel={buildBiteLabel(bite)}
@@ -105,7 +106,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
                 {bite.rating > 0 ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-                    <Star size={12} color={palette.starStroke} fill={palette.starFill} />
+                    <AppSymbol name="rating" size={12} color={palette.starFill} />
                     <AppText variant="micro">{bite.rating.toFixed(1)}</AppText>
                   </View>
                 ) : null}
@@ -115,14 +116,17 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
                   </AppText>
                 ) : null}
                 {bite.price > 0 ? (
-                  <AppText variant="price" style={{ color: palette.text }}>
+                  <AppText
+                    variant="bodySmallBold"
+                    style={{ color: palette.text, ...HOME_PRICE_STYLE }}
+                  >
                     S${bite.price.toFixed(2)}
                   </AppText>
                 ) : null}
               </View>
             </View>
             <ChevronRight size={20} color={palette.textMuted} />
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>

@@ -4,7 +4,9 @@
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 
-import { DiscoverBiteRail } from "@/components/discover/home/DiscoverBiteRail";
+import { act } from "react";
+
+import { DiscoverBiteRail, DiscoverRailBadge } from "@/components/discover/home/DiscoverBiteRail";
 import {
   DiscoverBiteImage,
   DiscoverStallThumbnail,
@@ -80,7 +82,7 @@ test("popularFoodStyles lists unique, searchable dishes that each carry a bowl p
   }
 });
 
-test("stallShowcase gives each stall one card led by its top dish, with a bundled picture as fallback", () => {
+test("stallShowcase gives each stall one card led by its top dish; no photo leaves the image empty, never another dish", () => {
   const dishes: Record<string, DishDetail[]> = {
     v1: ["d1", "d2", "d3", "d4", "d5", "d6"].map((id) => dish(id)),
     v2: [dish("d9", { imageUrl: "https://example.test/d9.jpg" })],
@@ -106,7 +108,7 @@ test("stallShowcase gives each stall one card led by its top dish, with a bundle
   );
   assert.equal(cards[0].heroDish.id, "d1");
   assert.equal(cards[0].products.length, 4, "at most four dishes per card");
-  assert.ok(cards[0].imageSource, "no photo falls back to a bundled picture");
+  assert.equal(cards[0].imageSource, null, "no photo: the card shows the stall logo (H5-1)");
   assert.deepEqual(cards[1].imageSource, { uri: "https://example.test/d9.jpg" });
 });
 
@@ -208,4 +210,115 @@ test("VerticalStallShowcaseSection shows the stall grid and opens a stall", asyn
   assert.match(view.text(), /1 stall/);
   await view.press(view.findByLabel("Open Ah Seng Fish Soup details"));
   assert.deepEqual(opened, ["v1"]);
+});
+
+test("a stall with no photo shows its own logo mark, not a picture of another dish (H5-1)", async () => {
+  const cards = buildStallShowcaseCardsFromVenues(
+    [
+      venue({ id: "v1", name: "Ah Seng Fish Soup" }),
+      venue({ id: "v2", name: "Lao Ban Beancurd", topDishId: "d2" }),
+      venue({ id: "v3", name: "Tian Tian Chicken Rice", topDishId: "d3" }),
+    ],
+    {
+      getDishById: (id) => dish(id),
+      listDishesByVenue: (venueId) => [
+        dish(venueId === "v1" ? "d1" : venueId === "v2" ? "d2" : "d3"),
+      ],
+    },
+  );
+  assert.ok(cards.every((card) => card.imageSource === null));
+  const view = await render(
+    <VerticalStallShowcaseSection
+      cards={cards}
+      areaPhrase="across Singapore"
+      pageHeight={700}
+      cardWidth={358}
+      onOpenCard={() => undefined}
+      onPrefetchCard={() => undefined}
+    />,
+  );
+  for (const name of ["Ah Seng Fish Soup", "Lao Ban Beancurd", "Tian Tian Chicken Rice"]) {
+    assert.ok(view.findByLabel(`${name} stall logo unavailable`), `${name} shows its logo mark`);
+  }
+  assert.equal(
+    view.container.querySelectorAll('[data-stub="expo-image.Image"]').length,
+    0,
+    "no stock photo is drawn",
+  );
+});
+
+test("a showcase card reads dish first, then stall and price, and drops the area (H5-6)", async () => {
+  const cards = buildStallShowcaseCardsFromVenues(
+    [venue({ name: "Pasta Express", unitNumber: "#01-12" })],
+    {
+      getDishById: () => dish("d1", { name: "Wild Truffle Mushroom Tagliatelle", price: 14 }),
+      listDishesByVenue: () => [
+        dish("d1", { name: "Wild Truffle Mushroom Tagliatelle", price: 14 }),
+      ],
+    },
+  );
+  const view = await render(
+    <VerticalStallShowcaseSection
+      cards={cards}
+      areaPhrase="across Singapore"
+      pageHeight={700}
+      cardWidth={358}
+      onOpenCard={() => undefined}
+      onPrefetchCard={() => undefined}
+    />,
+  );
+  const text = view.text();
+  assert.match(text, /Wild Truffle Mushroom TagliatellePasta Express · S\$14\.00/);
+  assert.doesNotMatch(text, /#01-12/, "the unit and area are left to the stall page");
+});
+
+test("the rating shows a star symbol, never a text glyph (H5 icons)", async () => {
+  const layout = { cardWidth: 160, contentGap: 12, imageHeight: 100, screenWidth: 390 };
+  const view = await render(
+    <DiscoverBiteRail
+      buttonId="rail"
+      canSeeAll
+      cards={[bite()]}
+      getCardLabel={(card) => `Open ${card.dishName}`}
+      isLoading={false}
+      isVisible={false}
+      layout={layout}
+      onOpenBite={() => undefined}
+      onPrefetchBite={() => undefined}
+      onPrefetchCollection={() => undefined}
+      onSeeAll={() => undefined}
+      rail="editorChoice"
+      seeAllLabel="See all top rated dishes"
+      title="Top rated"
+      titleBadge={<DiscoverRailBadge label="4.4+" showStar tone="accent" />}
+      variant="topRated"
+    />,
+  );
+  assert.match(view.text(), /Top rated4\.4\+/);
+  assert.match(view.text(), /4\.6/);
+  assert.doesNotMatch(view.text(), /★/);
+});
+
+test("a food-style bowl whose picture fails shows a dish symbol, not an empty circle (H5-9)", async () => {
+  const item = {
+    ...POPULAR_FOOD_STYLES[0],
+    dish: undefined,
+    imageSource: POPULAR_FOOD_STYLES[0].imageSource as number,
+    imageUrl: undefined,
+  };
+  const view = await render(
+    <PopularFoodStyleItem item={item} onPress={() => undefined} onPrefetch={() => undefined} />,
+  );
+  const image = view.container.querySelector<HTMLElement & { __triggerError?: () => void }>(
+    '[data-stub="expo-image.Image"]',
+  );
+  assert.ok(image?.__triggerError, "the bowl starts with its picture");
+  await act(async () => {
+    image.__triggerError?.();
+  });
+  assert.equal(
+    view.container.querySelector('[data-stub="expo-image.Image"]'),
+    null,
+    "the broken picture is gone",
+  );
 });
