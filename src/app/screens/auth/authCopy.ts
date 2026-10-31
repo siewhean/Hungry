@@ -69,6 +69,7 @@ export const AUTH_COPY = {
     suggestionAccept: "Use this address",
     nameCounter: "{count}/{max}",
     welcomeBack: "Welcome back, {name}",
+    welcomeBackNoName: "Welcome back",
   },
   forgotPassword: {
     errorTitle: "Password recovery unavailable",

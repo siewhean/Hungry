@@ -1,6 +1,5 @@
 import { Fragment, useState, useRef, useEffect } from "react";
 import {
-  Animated,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -111,16 +110,8 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
     trackOnboardingStepViewed("account");
   }, []);
 
-  // Animate tab switch
-  const tabAnim = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    tabAnim.setValue(0);
-    Animated.timing(tabAnim, {
-      toValue: 1,
-      duration: reduceMotion ? 0 : 200,
-      useNativeDriver: true,
-    }).start();
-  }, [reduceMotion, tab, tabAnim]);
+  // Animate tab switch: a short rise and fade on the UI thread; Reduce Motion keeps the fade.
+  const tabStyle = useFadeRiseIn(reduceMotion, { distance: 6, resetKey: tab });
 
   const signUpForm = useForm<SignUpValues>({
     defaultValues: { displayName: "", email: "", password: "" },
@@ -450,20 +441,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
           ) : null}
 
           {/* Form */}
-          <Animated.View
-            style={{
-              gap: spacing[2],
-              opacity: tabAnim,
-              transform: [
-                {
-                  translateY: tabAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [6, 0],
-                  }),
-                },
-              ],
-            }}
-          >
+          <ReAnimated.View style={[{ gap: spacing[2] }, tabStyle]}>
             {/* Keyed: the two forms must not share Controller instances, or typing on Sign in
                 after Create account would write into the sign-up form (useController keeps
                 the control it first registered with). */}
@@ -752,7 +730,7 @@ export function OnboardingAuthScreen({ navigation, route }: Props) {
                 ) : null}
               </Fragment>
             )}
-          </Animated.View>
+          </ReAnimated.View>
         </ReAnimated.View>
       </ScrollView>
     </KeyboardAvoidingView>

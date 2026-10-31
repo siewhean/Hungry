@@ -83,14 +83,20 @@ export const REDUCED_FADE_MS = 150;
  */
 export function useFadeRiseIn(
   reduceMotion: boolean,
-  { duration = STEP_MS, distance = 8 }: { duration?: number; distance?: number } = {},
+  {
+    duration = STEP_MS,
+    distance = 8,
+    resetKey,
+  }: { duration?: number; distance?: number; resetKey?: unknown } = {},
 ) {
   const progress = useSharedValue(0);
+  // A changed `resetKey` plays the entrance again (a tab switch on the same screen).
   useEffect(() => {
+    progress.set(0);
     progress.set(
       withTiming(1, { duration: reduceMotion ? REDUCED_FADE_MS : duration, easing: EASE_OUT }),
     );
-  }, [duration, progress, reduceMotion]);
+  }, [duration, progress, reduceMotion, resetKey]);
   return useAnimatedStyle(() => ({
     opacity: progress.get(),
     transform: [{ translateY: reduceMotion ? 0 : (1 - progress.get()) * distance }],

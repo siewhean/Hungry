@@ -8,6 +8,8 @@ import {
   PROVIDER_LOGO_FLOW_FONT_SCALE,
   shouldFlowProviderLogo,
 } from "@/app/screens/auth/AuthProviderButton";
+import { welcomeBackMessage } from "@/app/screens/auth/EmailCodeEntry";
+import { getAppleLogoColor } from "@/components/icons/brand/AuthProviderLogos";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { cleanup, render, type RenderResult } from "@/test/render";
@@ -128,4 +130,17 @@ test("the resend countdown reads m:ss, the same as Forgot password's", async () 
   );
   assert.match(view.text(), /Resend code in \d:\d\d/);
   assert.doesNotMatch(view.text(), /Resend code in \d+s/);
+});
+
+test("the Apple logo is black on the light provider button and white on the dark one", () => {
+  assert.equal(getAppleLogoColor("light"), "#000000");
+  assert.equal(getAppleLogoColor("dark"), "#FFFFFF");
+});
+
+test("an account with no name is welcomed without a dangling comma", () => {
+  assert.equal(welcomeBackMessage("Sam"), "Welcome back, Sam");
+  assert.equal(welcomeBackMessage("  Sam  "), "Welcome back, Sam");
+  assert.equal(welcomeBackMessage(""), "Welcome back");
+  assert.equal(welcomeBackMessage("   "), "Welcome back");
+  assert.equal(welcomeBackMessage(undefined), "Welcome back");
 });

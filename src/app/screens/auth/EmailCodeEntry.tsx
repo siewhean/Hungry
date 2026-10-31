@@ -49,6 +49,14 @@ interface EmailCodeEntryProps {
   compact?: boolean;
 }
 
+/** "Welcome back, Sam"; an account with no name is greeted without the comma. */
+export function welcomeBackMessage(displayName?: string): string {
+  const name = displayName?.trim();
+  return name
+    ? AUTH_COPY.emailCode.welcomeBack.replace("{name}", name)
+    : AUTH_COPY.emailCode.welcomeBackNoName;
+}
+
 /** One step of the form fades in with a short rise, so the change from email to code is seen. */
 function StepFade({ children }: { children: ReactNode }) {
   const style = useFadeRiseIn(useReduceMotion());
@@ -146,7 +154,7 @@ export function EmailCodeEntry({
         // "Create account" with an address that has an account signs that account in.
         if (askName && isReturningAccount(session.profile)) {
           showToast({
-            message: AUTH_COPY.emailCode.welcomeBack.replace("{name}", session.profile.displayName),
+            message: welcomeBackMessage(session.profile.displayName),
             tone: "success",
           });
         }
