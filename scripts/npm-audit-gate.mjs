@@ -5,8 +5,6 @@
 import { execFileSync } from "node:child_process";
 
 const ALLOWLIST = {
-  // node-forge <=1.4.0: no patched release; pulled in by Expo code signing.
-  "GHSA-86w9-cpqp-85rv": "node-forge",
   // image-size: fixed only in 2.0.3, but React Native and Metro require the 0.6/1.x lines.
   "GHSA-5p2g-fcmc-qvqq": "image-size",
   "GHSA-w3rx-r6r6-pgpr": "image-size",
