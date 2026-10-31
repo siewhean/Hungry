@@ -1,6 +1,8 @@
 import { SymbolView, type SFSymbol, type SymbolViewProps } from "expo-symbols";
 import type { ComponentType } from "react";
 import {
+  ArrowLeft,
+  ArrowRight,
   ArrowUpDown,
   BarChart3,
   Bookmark,
@@ -9,10 +11,12 @@ import {
   BellRing,
   CakeSlice,
   Check,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
   ChevronUp,
   Circle,
+  CircleAlert,
   CircleCheck,
   CircleDollarSign,
   CircleX,
@@ -22,6 +26,7 @@ import {
   Droplet,
   ExternalLink,
   Eye,
+  EyeOff,
   FileText,
   Flame,
   Folder,
@@ -34,8 +39,10 @@ import {
   List,
   LocateFixed,
   Lock,
+  LockKeyhole,
   LogOut,
   Mail,
+  MailCheck,
   Map,
   MapPin,
   MessageSquare,
@@ -59,6 +66,7 @@ import {
   Store,
   Thermometer,
   Trash2,
+  User,
   UserPlus,
   UserX,
   Utensils,
@@ -164,6 +172,19 @@ const APP_SYMBOLS = {
   tasteChewyNoodles: { ios: "fork.knife.circle", lucide: UtensilsCrossed },
   tasteHotFresh: { ios: "thermometer.medium", lucide: Thermometer },
   tasteQuick: { ios: "bolt", lucide: Zap },
+  // Sign-in and account screens
+  email: { ios: "envelope", lucide: Mail },
+  emailSent: { ios: "envelope.badge", lucide: MailCheck },
+  password: { ios: "lock", lucide: Lock },
+  resetPassword: { ios: "lock.rotation", lucide: LockKeyhole },
+  person: { ios: "person", lucide: User },
+  showPassword: { ios: "eye", lucide: Eye },
+  hidePassword: { ios: "eye.slash", lucide: EyeOff },
+  back: { ios: "chevron.backward", lucide: ArrowLeft },
+  forward: { ios: "arrow.right", lucide: ArrowRight },
+  done: { ios: "checkmark.circle.fill", lucide: CheckCircle2 },
+  notDone: { ios: "circle", lucide: Circle },
+  problem: { ios: "exclamationmark.circle", lucide: CircleAlert },
 } as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon; filled?: boolean }> &
   Record<ReviewTasteTagSymbol, unknown>;
 

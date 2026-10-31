@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { Heart, Star } from "lucide-react-native";
 
+import { HelpfulSymbol } from "@/components/dish/dishSymbols";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import {
   createHelpfulVoteQueue,
@@ -38,6 +39,11 @@ interface ReviewReaderActionsProps {
   onRemoved: () => void;
   /** The review's stars, shown on the same line as the like, at the left. */
   rating?: number;
+  /**
+   * "heart" (stall pages): a heart and the count. "helpful" (dish pages): a thumbs-up with the word
+   * "Helpful", which says what a vote means. Both write the review's helpful vote.
+   */
+  variant?: "heart" | "helpful";
 }
 
 /**
@@ -51,6 +57,7 @@ export function ReviewReaderActions({
   returnRoute,
   onRemoved,
   rating,
+  variant = "heart",
 }: ReviewReaderActionsProps) {
   const { palette, spacing } = useHungryTheme();
   const requireAccount = useRequireAccount();
@@ -104,6 +111,7 @@ export function ReviewReaderActions({
   };
 
   const color = liked.helpful ? palette.orange : palette.textSecondary;
+  const isHelpfulVariant = variant === "helpful";
 
   return (
     <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
@@ -129,7 +137,15 @@ export function ReviewReaderActions({
       {isOwn ? null : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={liked.count === 1 ? "Like, 1 like" : `Like, ${liked.count} likes`}
+          accessibilityLabel={
+            isHelpfulVariant
+              ? liked.count === 0
+                ? "Helpful"
+                : `Helpful, ${liked.count} ${liked.count === 1 ? "person" : "people"} found this helpful`
+              : liked.count === 1
+                ? "Like, 1 like"
+                : `Like, ${liked.count} likes`
+          }
           accessibilityHint="Hold to report this review or block its author"
           accessibilityState={{ selected: liked.helpful }}
           accessibilityActions={[{ name: "longpress", label: "Report or block" }]}
@@ -139,19 +155,28 @@ export function ReviewReaderActions({
           delayLongPress={320}
           onLongPress={openSafetyActions}
           onPress={onLikePress}
-          hitSlop={4}
+          hitSlop={isHelpfulVariant ? 6 : 4}
           style={({ pressed }) => ({
             alignItems: "center",
             flexDirection: "row",
             gap: spacing[1],
             justifyContent: "center",
-            minHeight: 44,
+            // The thumbs-up sits on the date's line: 32pt tall plus 6pt of hit slop on each side.
+            minHeight: isHelpfulVariant ? 32 : 44,
             minWidth: 44,
-            transform: [{ scale: pressed ? 0.88 : 1 }],
+            transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          <Heart color={color} fill={liked.helpful ? palette.orange : "transparent"} size={20} />
-          {liked.count > 0 ? (
+          {isHelpfulVariant ? (
+            <HelpfulSymbol color={color} fill={liked.helpful ? palette.orange : "none"} size={18} />
+          ) : (
+            <Heart color={color} fill={liked.helpful ? palette.orange : "transparent"} size={20} />
+          )}
+          {isHelpfulVariant ? (
+            <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
+              {liked.count > 0 ? `Helpful · ${liked.count}` : "Helpful"}
+            </AppText>
+          ) : liked.count > 0 ? (
             <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
               {liked.count}
             </AppText>

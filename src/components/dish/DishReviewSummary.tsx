@@ -1,7 +1,7 @@
 import { View } from "react-native";
-import { Star } from "lucide-react-native";
 
 import { AppText, Chip } from "@/components/ui";
+import { RatingStarSymbol } from "./dishSymbols";
 import {
   MIN_REVIEWS_FOR_SUMMARY,
   REVIEW_SORT_OPTIONS,
@@ -58,7 +58,7 @@ export function DishReviewSummary({
       <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
         {ratingCount > 0 ? (
           <>
-            <Star color={palette.starStroke} fill={palette.starFill} size={18} />
+            <RatingStarSymbol color={palette.starStroke} size={18} />
             <AppText variant="h3">{rating.toFixed(1)}</AppText>
           </>
         ) : null}

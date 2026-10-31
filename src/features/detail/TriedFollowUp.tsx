@@ -3,17 +3,38 @@ import { Modal, ScrollView, View, useWindowDimensions } from "react-native";
 
 import { StarRating, TasteRatingInput } from "@/components/review";
 import { AppText, Button } from "@/components/ui";
+import { TASTE_DIMENSIONS } from "@/constants/taste";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { TasteKey } from "@/types/domain";
+import type { TasteKey, TasteVector } from "@/types/domain";
 
 /** How strong each taste felt, in the review editor's 0-10 steps. Axes left out were not rated. */
 export type FeltTaste = Partial<Record<TasteKey, number>>;
 
+/** How many taste questions the short popup asks before "More tastes". */
+const TOP_TASTE_COUNT = 3;
+
+/** The dish's strongest tastes, strongest first; equal levels keep the list's usual order. */
+export function strongestTasteKeys(vector: TasteVector, count = TOP_TASTE_COUNT): TasteKey[] {
+  return TASTE_DIMENSIONS.map((dimension, order) => ({
+    key: dimension.key,
+    level: vector[dimension.key] ?? 0,
+    order,
+  }))
+    .sort((a, b) => b.level - a.level || a.order - b.order)
+    .slice(0, count)
+    .map((entry) => entry.key);
+}
+
 type Props = {
   dish: { id: string; name: string; venueId: string };
+  /**
+   * The dish's catalog taste estimate, when it has one. It picks the tastes the short popup asks
+   * about; without it the popup asks about all six.
+   */
+  tasteVector?: TasteVector;
   /** "Write a review" in the popup: the review starts with these stars and taste levels. */
   onWriteReview: (rating: number, felt: FeltTaste) => void;
   /** "Not now" after picking stars or taste levels: they are kept as a review draft. */
@@ -30,12 +51,18 @@ type Props = {
  */
 export function TriedFollowUp({
   dish,
+  tasteVector,
   onWriteReview,
   onKeepAnswers,
   onShowRateIt,
   onClose,
 }: Props) {
   const variant = useExperimentVariant("dish_tried_prompt_v1", { enabled: true });
+  // Only a diner who sees the popup, on a dish with an estimate to pick the three tastes from.
+  const axesVariant = useExperimentVariant("dish_tried_taste_axes_v1", {
+    enabled: variant !== "toast_cta" && Boolean(tasteVector),
+  });
+  const [showAllTastes, setShowAllTastes] = useState(false);
   const { componentRadii, palette, spacing } = useHungryTheme();
   const { height } = useWindowDimensions();
   const [rating, setRating] = useState(0);
@@ -60,6 +87,8 @@ export function TriedFollowUp({
   }, [variant]);
 
   if (variant === "toast_cta") return null;
+
+  const shortList = axesVariant === "top3" && Boolean(tasteVector) && !showAllTastes;
 
   const dismiss = () => {
     trackAnalyticsEvent("tried_prompt_dismissed", {
@@ -122,6 +151,7 @@ export function TriedFollowUp({
                 How did it taste?
               </AppText>
               <TasteRatingInput
+                only={shortList && tasteVector ? strongestTasteKeys(tasteVector) : undefined}
                 values={felt}
                 onChange={(key, value) =>
                   setFelt((current) => {
@@ -132,6 +162,15 @@ export function TriedFollowUp({
                   })
                 }
               />
+              {shortList ? (
+                <Button
+                  label="More tastes"
+                  variant="ghost"
+                  size="sm"
+                  accessibilityHint="Shows the other taste questions"
+                  onPress={() => setShowAllTastes(true)}
+                />
+              ) : null}
             </View>
             <View style={{ gap: spacing[2] }}>
               <Button label="Write a review" onPress={() => onWriteReview(rating, felt)} />

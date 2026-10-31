@@ -8,23 +8,11 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import type { ColorValue } from "react-native";
+import type { ColorValue, TextStyle } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  ArrowLeft,
-  Bookmark,
-  ChevronRight,
-  Circle,
-  FolderPlus,
-  CheckCircle,
-  MapPin,
-  Send,
-  Star,
-  Utensils,
-} from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
@@ -60,6 +48,18 @@ import { DishLoadingPreview } from "@/components/dish/DishLoadingPreview";
 import { DishReviewCard } from "@/components/dish/DishReviewCard";
 import { DishReviewSummary } from "@/components/dish/DishReviewSummary";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { DishHeroPlaceholder } from "@/components/dish/DishHeroPlaceholder";
+import {
+  AddToListSymbol,
+  BackSymbol,
+  BookmarkSymbol,
+  ChevronForwardSymbol,
+  RatingStarSymbol,
+  ShareSymbol,
+  StallPinSymbol,
+  TriedOffSymbol,
+  TriedOnSymbol,
+} from "@/components/dish/dishSymbols";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { ReviewPhotoStrip } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
@@ -121,8 +121,12 @@ const DESCRIPTION_EXPANDABLE_CHARS = 160;
 const DISH_REVIEW_PAGE_SIZE = 50;
 /** Below this confidence a dish's taste vector is too weak to show as fact. */
 const MIN_DISPLAY_TASTE_CONFIDENCE = 0.3;
-/** Other dishes from the same stall shown under "More from {stall}". */
+/** Other dishes from the same stall shown under "More from this stall". */
 const MORE_FROM_STALL_COUNT = 4;
+/** The hero's height, below the status bar, for a dish with no photo. */
+const COMPACT_HERO_HEIGHT = 120;
+/** Prices read as a menu, not as code: the body font, with digits of equal width so they line up. */
+const DISH_PRICE_FONT: TextStyle = { fontFamily: "Nunito_700Bold", fontVariant: ["tabular-nums"] };
 
 type Props = NativeStackScreenProps<RootStackParamList, "DishDetail">;
 
@@ -580,7 +584,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               onPress={leaveDetail}
               style={{ alignSelf: "flex-start" }}
             >
-              <ArrowLeft color={palette.text} size={24} />
+              <BackSymbol color={palette.text} size={24} />
             </Pressable>
           </View>
           {dishLoadFailed ? (
@@ -645,7 +649,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
   // 4:3, so a typical food photo shows whole instead of a cropped strip. The no-photo
   // placeholder keeps the same height, so the page does not jump when a photo loads.
-  const heroHeight = Math.min(width * 0.75, 420);
+  const heroPhotoHeight = Math.min(width * 0.75, 420);
+  // No photo listed (none do in production yet): a compact header under the status bar, not a
+  // 300pt empty tile. A photo that fails after the page opened keeps its height, so nothing jumps.
+  const heroHeight = heroPhotos.length > 0 ? heroPhotoHeight : insets.top + COMPACT_HERO_HEIGHT;
   const signatureGridItemWidth = Math.min(width * 0.56, 220);
   const canonicalDishUrl = webShareUrl("dish", dish.id);
   const heroGradientColors: readonly [ColorValue, ColorValue, ColorValue] = [
@@ -897,7 +904,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           // The same short caption in both states keeps the call to action from truncating.
           caption: "Tried",
           // Not tried: a plain grey circle. Tried: an orange tick.
-          icon: isDishTried ? CheckCircle : Circle,
+          icon: isDishTried ? TriedOnSymbol : TriedOffSymbol,
           active: isDishTried,
           mutedWhenInactive: true,
           role: "checkbox" as const,
@@ -909,14 +916,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             {
               id: "tried",
               label: "Tried",
-              icon: CheckCircle,
+              icon: TriedOnSymbol,
               selected: isDishTried,
               onPress: () => setTried(true),
             },
             {
               id: "not-tried",
               label: "Not tried",
-              icon: Circle,
+              icon: TriedOffSymbol,
               selected: !isDishTried,
               onPress: () => setTried(false),
             },
@@ -927,7 +934,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               {
                 id: "save",
                 label: isSaved ? "Saved" : "Save",
-                icon: Bookmark,
+                icon: BookmarkSymbol,
                 active: isSaved,
                 fillWhenActive: true,
                 onPress: () => void handleSave(),
@@ -945,7 +952,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           id: "want-to-try",
                           // The row toggles, so when it is saved it says what a press does.
                           label: isSaved ? "Remove from Want to try" : "Want to try",
-                          icon: Bookmark,
+                          icon: BookmarkSymbol,
                           onPress: () => void handleSave(),
                         },
                         ...(collectionsLoading
@@ -953,14 +960,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           : collectionOptions.map(({ option, selected }) => ({
                               id: option.key,
                               label: option.name,
-                              icon: FolderPlus,
+                              icon: AddToListSymbol,
                               selected,
                               onPress: () => void togglePortfolio(option),
                             }))),
                         {
                           id: "all-lists",
                           label: isAddingToPortfolio ? "Adding..." : "New collection",
-                          icon: FolderPlus,
+                          icon: AddToListSymbol,
                           onPress: () => void addToPortfolio(),
                           accessibilityLabel: "Save to a new collection",
                         },
@@ -985,7 +992,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             onBack={leaveDetail}
             onShare={showDeferredDetailControls ? openShareSheet : undefined}
             shareLabel={`Share ${dish.name}`}
-            shareIcon={Send}
+            shareIcon={ShareSymbol}
+            backIcon={BackSymbol}
           />
           <Animated.ScrollView
             showsVerticalScrollIndicator={false}
@@ -1012,6 +1020,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       photo_count: heroPhotos.length,
                     })
                   }
+                  // Every photo failed to load: the same tile as a dish with no photo, never a blank block.
+                  fallback={<DishHeroPlaceholder dishName={dish.name} height={heroHeight} />}
                 >
                   <LinearGradient
                     colors={heroGradientColors}
@@ -1026,32 +1036,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   />
                 </PhotoPager>
               ) : (
-                <>
-                  <View
-                    accessibilityRole="image"
-                    accessibilityLabel={`${dish.name} photo unavailable`}
-                    style={{
-                      alignItems: "center",
-                      backgroundColor: palette.surfaceRaised,
-                      flex: 1,
-                      justifyContent: "center",
-                      padding: spacing[6],
-                    }}
-                  >
-                    <Utensils color={palette.orange} size={48} />
-                  </View>
-                  <LinearGradient
-                    colors={heroGradientColors}
-                    locations={[0, 0.58, 1]}
-                    style={{
-                      bottom: 0,
-                      height: heroHeight * 0.45,
-                      left: 0,
-                      position: "absolute",
-                      right: 0,
-                    }}
-                  />
-                </>
+                <DishHeroPlaceholder dishName={dish.name} height={heroHeight} />
               )}
             </DetailHeroFade>
 
@@ -1091,11 +1076,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </AppText>
                   <AppText
                     variant="price"
-                    style={
+                    style={[
+                      DISH_PRICE_FONT,
                       dish.price > 0
                         ? { color: palette.orange, fontSize: 24, lineHeight: 34 }
-                        : { color: palette.textSecondary, fontSize: 16, lineHeight: 34 }
-                    }
+                        : { color: palette.textSecondary, fontSize: 16, lineHeight: 34 },
+                    ]}
                   >
                     {dishPrice}
                   </AppText>
@@ -1138,7 +1124,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                     >
                       {/* One star and the exact score: five rounded stars hid 4.4 vs 3.6. */}
-                      <Star color={palette.starStroke} fill={palette.starFill} size={17} />
+                      <RatingStarSymbol color={palette.starStroke} size={17} />
                       <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
                         {dish.rating.toFixed(1)}
                       </AppText>
@@ -1158,7 +1144,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       accessibilityLabel={savedCountLabel}
                       style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}
                     >
-                      <Bookmark color={palette.textSecondary} size={15} />
+                      <BookmarkSymbol color={palette.textSecondary} size={15} />
                       <AppText variant="bodySmall" tone="secondary">
                         {savedCountLabel}
                       </AppText>
@@ -1252,7 +1238,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     width: 44,
                   }}
                 >
-                  <MapPin color={palette.orange} size={20} />
+                  <StallPinSymbol color={palette.orange} size={20} />
                 </View>
                 <View style={{ flex: 1, gap: spacing[0.5] }}>
                   <AppText variant="bodyBold" numberOfLines={2}>
@@ -1272,7 +1258,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     </AppText>
                   ) : null}
                 </View>
-                <ChevronRight color={palette.textMuted} size={20} />
+                <ChevronForwardSymbol color={palette.textMuted} size={20} />
               </Pressable>
 
               {venue && deliveryLinks.length > 0 ? (
@@ -1315,17 +1301,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
               {moreFromStall.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
-                  <View
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      gap: spacing[2],
-                      marginHorizontal: 0,
-                    }}
-                  >
-                    <Utensils color={palette.orange} size={20} />
-                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={1}>
-                      More from {venueName}
+                  <View style={{ gap: spacing[0.5] }}>
+                    <AppText variant="h2" numberOfLines={1}>
+                      More from this stall
+                    </AppText>
+                    <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
+                      {venueName}
                     </AppText>
                   </View>
                   <ScrollView
@@ -1383,7 +1364,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                           <AppText variant="bodyBold" numberOfLines={1}>
                             {item.name}
                           </AppText>
-                          <AppText variant="price" style={{ color: palette.text }}>
+                          <AppText
+                            variant="price"
+                            style={[DISH_PRICE_FONT, { color: palette.text }]}
+                          >
                             {formatDishPrice(item)}
                           </AppText>
                         </View>
@@ -1396,12 +1380,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
               {similarNearby.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
                   {/* Under "More from": the same food at other stalls near this one. */}
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                    <MapPin color={palette.orange} size={20} />
-                    <AppText variant="h2" style={{ flex: 1 }} numberOfLines={2}>
-                      {`Other ${similarDishHeading} stalls nearby`}
-                    </AppText>
-                  </View>
+                  <AppText variant="h2" numberOfLines={2}>
+                    {`Other ${similarDishHeading} stalls nearby`}
+                  </AppText>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -1483,22 +1464,29 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                             <AppText variant="micro" tone="secondary" numberOfLines={1}>
                               {[item.name, item.buildingName].filter(Boolean).join(" · ")}
                             </AppText>
-                            <AppText variant="price" style={{ color: palette.text }}>
+                            <AppText
+                              variant="price"
+                              style={[DISH_PRICE_FONT, { color: palette.text }]}
+                            >
                               {formatDishPrice({
                                 price: item.price ?? 0,
                                 priceRange: item.priceRange ?? "",
                               })}
                             </AppText>
                             {item.reviewCount && item.rating ? (
-                              <AppText
-                                variant="micro"
-                                tone="secondary"
+                              <View
+                                accessible
+                                accessibilityRole="text"
                                 accessibilityLabel={`Rated ${item.rating.toFixed(1)} from ${
                                   item.reviewCount
                                 } ${item.reviewCount === 1 ? "review" : "reviews"}`}
+                                style={{ alignItems: "center", flexDirection: "row", gap: 3 }}
                               >
-                                {`★ ${item.rating.toFixed(1)} (${item.reviewCount})`}
-                              </AppText>
+                                <RatingStarSymbol color={palette.starStroke} size={11} />
+                                <AppText variant="micro" tone="secondary">
+                                  {`${item.rating.toFixed(1)} (${item.reviewCount})`}
+                                </AppText>
+                              </View>
                             ) : null}
                           </View>
                         </Pressable>
@@ -1544,16 +1532,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       showBreakdown={summaryVariant === "summary"}
                     />
                     {reviewPhotos.length > 0 ? (
-                      <View style={{ gap: spacing[2] }}>
-                        <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
-                          Photos from reviews
-                        </AppText>
-                        <ReviewPhotoStrip
-                          photos={reviewPhotos}
-                          subject={`${dish.name}, from reviews`}
-                          size={96}
-                        />
-                      </View>
+                      <ReviewPhotoStrip
+                        heading="Photos from reviews"
+                        photos={reviewPhotos}
+                        subject={`${dish.name}, from reviews`}
+                        size={96}
+                      />
                     ) : null}
                     {dishReviews.slice(0, DISH_REVIEW_PREVIEW_COUNT).map((review) => (
                       <DishReviewCard
@@ -1594,7 +1578,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ? "Be the first to add one."
                         : "Reviews from diners will appear here when available."
                     }
-                    icon={<Star size={36} color={palette.textMuted} />}
+                    icon={<RatingStarSymbol size={36} color={palette.textMuted} />}
                     ctaLabel={
                       showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
                         ? "Write a review"
@@ -1633,6 +1617,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   }
                 : undefined
             }
+            highContrastCta
             testID="dish-action-bar"
           />
 
@@ -1655,6 +1640,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           {triedFollowUpPending ? (
             <TriedFollowUp
               dish={dish}
+              tasteVector={hasTasteSignal ? dish.tasteVector : undefined}
               onWriteReview={continueTriedReview}
               onKeepAnswers={keepTriedAnswers}
               onShowRateIt={() => {

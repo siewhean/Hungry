@@ -1,16 +1,19 @@
 import { useEffect, useState, type ComponentType } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import Animated, {
+  ReduceMotion,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Check } from "lucide-react-native";
 
+import { CheckmarkSymbol } from "@/components/dish/dishSymbols";
 import { AppText } from "@/components/ui/AppText";
+import { PressableScale } from "@/components/ui/PressableScale";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { confirmHaptic, selectHaptic, tapHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 
@@ -69,6 +72,11 @@ type Props = {
   actions: DetailAction[];
   /** The orange button at the left end, e.g. "Write a review". */
   cta?: DetailCallToAction;
+  /**
+   * Draws the call to action in the darker control orange. The brand orange under white text
+   * measures 3.7:1 and passes only because the label is bold; this measures 5.9:1.
+   */
+  highContrastCta?: boolean;
   testID?: string;
 };
 
@@ -77,6 +85,11 @@ const TARGET_SIZE = 48;
 /** Icon buttons sit close together: narrower than tall, with hit slop making up the rest. */
 const ICON_BUTTON_MIN_WIDTH = 44;
 const LONG_PRESS_MS = 320;
+/** Apple's two spring parameters: how long it takes to settle, and how bouncy it is (1 = none). */
+const MENU_SPRING = { duration: 300, dampingRatio: 0.8 } as const;
+const MENU_SPRING_MS = 300;
+/** Under Reduce Motion the menu only fades: no travel, no scale. */
+const MENU_FADE_MS = 150;
 /** At or above this text size the orange button may wrap to two lines instead of truncating. */
 const LARGE_TEXT_SCALE = 1.3;
 /** Above the page and the floating back button while a hold menu is open. */
@@ -96,13 +109,14 @@ function playToggleHaptic(action: DetailAction) {
  * captioned icon buttons on the right. Holding a button that has options (tried / not tried,
  * collections) dims the page and opens a small menu above it; only that button stays lit.
  */
-export function DetailActionBar({ actions, cta, testID }: Props) {
+export function DetailActionBar({ actions, cta, highContrastCta = false, testID }: Props) {
   const { componentRadii, palette, shadows, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   // The last menu shown, kept while it animates closed.
   const [shownMenuId, setShownMenuId] = useState<string | null>(null);
-  const [menuProgress] = useState(() => new Animated.Value(0));
+  const reduceMotion = useReduceMotion();
+  const menuProgress = useSharedValue(0);
   const [barWidth, setBarWidth] = useState(0);
   const [buttonFrames, setButtonFrames] = useState<Record<string, { x: number; width: number }>>(
     {},
@@ -111,19 +125,29 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
   const { fontScale } = useWindowDimensions();
   const ctaLines = fontScale >= LARGE_TEXT_SCALE ? 2 : 1;
   const menuOpen = openMenuId !== null;
+  const ctaTextColor = highContrastCta ? palette.textOnPrimary : palette.textOnOrange;
 
   useEffect(() => {
-    Animated.spring(menuProgress, {
-      toValue: menuOpen ? 1 : 0,
-      damping: 18,
-      mass: 0.6,
-      stiffness: 260,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      // Unmount the closed menu so its rows can't be focused or activated while invisible.
-      if (finished && !menuOpen) setShownMenuId(null);
-    });
-  }, [menuOpen, menuProgress]);
+    menuProgress.value = reduceMotion
+      ? withTiming(menuOpen ? 1 : 0, { duration: MENU_FADE_MS })
+      : withSpring(menuOpen ? 1 : 0, { ...MENU_SPRING, reduceMotion: ReduceMotion.System });
+    if (menuOpen) return;
+    // Unmount the closed menu once it has settled, so its rows can't be focused or activated
+    // while invisible. A timer, not an animation callback: it also covers the stubbed test run.
+    const id = setTimeout(() => setShownMenuId(null), reduceMotion ? MENU_FADE_MS : MENU_SPRING_MS);
+    return () => clearTimeout(id);
+  }, [menuOpen, menuProgress, reduceMotion]);
+
+  // A popover grows out of the button that opened it (its bottom right corner), from 0.95.
+  const menuAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: menuProgress.value,
+    transform: reduceMotion
+      ? []
+      : [
+          { translateY: interpolate(menuProgress.value, [0, 1], [12, 0]) },
+          { scale: interpolate(menuProgress.value, [0, 1], [0.95, 1]) },
+        ],
+  }));
 
   const openMenu = (id: string) => {
     selectHaptic();
@@ -163,16 +187,16 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
       }}
     >
       {cta ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={cta.accessibilityLabel ?? cta.label}
           onPress={() => {
             tapHaptic();
             cta.onPress();
           }}
-          style={({ pressed }) => ({
+          style={{
             alignItems: "center",
-            backgroundColor: palette.orange,
+            backgroundColor: highContrastCta ? palette.orangeControl : palette.orange,
             borderRadius: componentRadii.button,
             flexDirection: "row",
             flexShrink: 1,
@@ -180,18 +204,17 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
             minHeight: 44,
             justifyContent: "center",
             paddingHorizontal: spacing[3],
-            transform: [{ scale: pressed ? 0.97 : 1 }],
-          })}
+          }}
         >
-          {cta.icon ? <cta.icon color={palette.textOnOrange} size={18} /> : null}
+          {cta.icon ? <cta.icon color={ctaTextColor} size={18} /> : null}
           <AppText
             variant="bodyBold"
             numberOfLines={ctaLines}
-            style={{ color: palette.textOnOrange, textAlign: "center" }}
+            style={{ color: ctaTextColor, textAlign: "center" }}
           >
             {cta.label}
           </AppText>
-        </Pressable>
+        </PressableScale>
       ) : null}
       <View style={{ flex: 1 }} />
       {actions.map((action) => {
@@ -208,7 +231,7 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
           openMenu(action.id);
         };
         return (
-          <Pressable
+          <PressableScale
             key={action.id}
             onLayout={(event) => {
               const { x, width } = event.nativeEvent.layout;
@@ -243,7 +266,7 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
               playToggleHaptic(action);
               action.onPress();
             }}
-            style={({ pressed }) => ({
+            style={{
               alignItems: "center",
               borderRadius: componentRadii.button,
               justifyContent: "center",
@@ -251,8 +274,7 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
               minWidth: ICON_BUTTON_MIN_WIDTH,
               opacity: action.disabled ? 0.5 : 1,
               paddingHorizontal: spacing[1],
-              transform: [{ scale: pressed ? 0.9 : 1 }],
-            })}
+            }}
           >
             {action.loading ? (
               <ActivityIndicator color={palette.orange} size="small" />
@@ -274,7 +296,7 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
             >
               {action.caption ?? action.label}
             </AppText>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </View>
@@ -317,23 +339,13 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
               elevation: OVERLAY_Z + 1,
               maxWidth: 280,
               minWidth: 200,
-              opacity: menuProgress,
               paddingVertical: spacing[1],
               position: "absolute",
               right: menuRight,
+              transformOrigin: "right bottom",
               zIndex: OVERLAY_Z + 1,
-              transform: [
-                {
-                  translateY: menuProgress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [12, 0],
-                  }),
-                },
-                {
-                  scale: menuProgress.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }),
-                },
-              ],
             },
+            menuAnimatedStyle,
           ]}
         >
           {menuTitle ? (
@@ -388,7 +400,7 @@ export function DetailActionBar({ actions, cta, testID }: Props) {
                 </AppText>
                 {row.selected ? (
                   <View style={{ marginLeft: "auto" }}>
-                    <Check color={palette.orange} size={18} />
+                    <CheckmarkSymbol color={palette.orange} size={18} />
                   </View>
                 ) : null}
               </Pressable>

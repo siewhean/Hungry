@@ -175,7 +175,7 @@ test("without a palate the heading is 'How it tastes' and the quiz line is a but
   const { view } = await open();
   assert.ok(view.findByText("How it tastes"));
   assert.equal(view.findByText("How it tastes to you"), null);
-  const quiz = view.findByLabel("Take the taste quiz to see how it tastes to you");
+  const quiz = view.findByLabel("Take the taste quiz");
   assert.ok(quiz, "the quiz line is a real button");
   await view.press(quiz);
   assert.deepEqual(view.navigation.calls.find((call) => call.args[0] === "OnboardingStack")?.args, [
