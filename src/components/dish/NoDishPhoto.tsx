@@ -1,5 +1,4 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
-import { Utensils } from "lucide-react-native";
 
 import { AccessibleImage, AppSymbol } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
@@ -65,7 +64,11 @@ export function NoDishPhoto({
         style,
       ]}
     >
-      <Utensils color={palette.textMuted} size={Math.min(iconSize, MAX_ICON_SIZE)} />
+      <AppSymbol
+        name="noPhoto"
+        color={palette.textMuted}
+        size={Math.min(iconSize, MAX_ICON_SIZE)}
+      />
     </View>
   );
 }

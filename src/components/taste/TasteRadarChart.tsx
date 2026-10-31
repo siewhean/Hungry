@@ -1,6 +1,7 @@
 import { Platform, View } from "react-native";
 import Svg, { Circle, Line, Polygon, Text as SvgText } from "react-native-svg";
 
+import { DashedBoxSymbol } from "@/components/dish/dishSymbols";
 import { AppText } from "@/components/ui/AppText";
 import { dinerTasteLabel } from "@/features/detail/dishTasteSummary";
 import { useHungryTheme } from "@/theme";
@@ -204,18 +205,21 @@ function LegendItem({
   const { spacing } = useHungryTheme();
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1.5] }}>
-      <View
-        style={{
-          borderColor: color,
-          borderRadius: 2,
-          borderStyle: dashed ? "dashed" : "solid",
-          borderWidth: 1.5,
-          height: 10,
-          width: 14,
-          backgroundColor: dashed ? "transparent" : color,
-          opacity: 0.85,
-        }}
-      />
+      {dashed ? (
+        <DashedBoxSymbol color={color} size={14} />
+      ) : (
+        <View
+          style={{
+            backgroundColor: color,
+            borderColor: color,
+            borderRadius: 2,
+            borderWidth: 1.5,
+            height: 10,
+            opacity: 0.85,
+            width: 14,
+          }}
+        />
+      )}
       <AppText variant="micro" tone="secondary">
         {label}
       </AppText>

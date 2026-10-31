@@ -103,6 +103,30 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1040,
   },
   /**
+   * How many taste questions the Tried popup asks: all six (control) or the dish's three strongest
+   * with a "More tastes" button (top3). A quick check-in should not feel like a form. Read in
+   * TriedFollowUp, only for a diner who sees the popup (not toast_cta) on a dish with a catalog
+   * taste estimate. Analyse as a funnel from tried_prompt_shown to review_submitted on the same
+   * dish_id in 24 h. 10% of popups end in a review; 14% is the lift worth acting on.
+   * Draft until the PostHog flag exists; the fallback is all six.
+   */
+  dish_tried_taste_axes_v1: {
+    variants: ["control", "top3"],
+    fallback: "control",
+    status: "draft",
+    surface: "dish",
+    hypothesis:
+      "Asking about the three tastes a dish is known for, with the rest one tap away, takes less effort than six questions, so more Tried marks become published reviews.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: [
+      "review_abandoned",
+      "review_started",
+      "tried_prompt_dismissed",
+      "review_cta_tapped",
+    ],
+    minSamplePerArm: 1040,
+  },
+  /**
    * The histogram and "People mention" words above a dish's reviews (summary) or only the
    * "118 ratings · 1 written review" line (control). The count line is a bug fix and ships to
    * everyone; only the breakdown is tested. Exposure fires when a dish with 3+ written reviews

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Animated, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { LucideIcon } from "lucide-react-native";
 
 import { AppText } from "@/components/ui/AppText";
 import { useHungryTheme } from "@/theme";
@@ -18,7 +17,9 @@ type Props = {
   /** Share in the opposite corner; left out when the page has no share. */
   onShare?: () => void;
   shareLabel?: string;
-  shareIcon?: LucideIcon;
+  shareIcon?: ComponentType<{ color?: string; size?: number }>;
+  /** Replaces the default back arrow (the dish page draws the system chevron). */
+  backIcon?: ComponentType<{ color?: string; size?: number }>;
   /** Test id of the wrapper that holds the buttons and the bar. */
   chromeTestID?: string;
   /** Test id of the bar itself. */
@@ -45,6 +46,7 @@ export function DetailCollapsingHeader({
   onShare,
   shareLabel = "Share",
   shareIcon,
+  backIcon,
   chromeTestID = "detail-top-chrome",
   testID = "detail-collapsing-header",
 }: Props) {
@@ -82,7 +84,7 @@ export function DetailCollapsingHeader({
         pointerEvents="box-none"
         style={{ ...StyleSheet.absoluteFill, elevation: 12, zIndex: 2 }}
       >
-        <FloatingBackButton onPress={onBack} />
+        <FloatingBackButton onPress={onBack} icon={backIcon} />
         {onShare ? (
           <FloatingBackButton
             accessibilityLabel={shareLabel}

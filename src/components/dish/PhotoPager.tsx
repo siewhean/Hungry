@@ -8,11 +8,11 @@ import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
 } from "react-native";
-import { X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useHungryTheme } from "@/theme";
 import { AccessibleImage, AppText } from "../ui";
+import { CloseSymbol } from "./dishSymbols";
 
 interface PhotoPagerProps {
   photos: readonly string[];
@@ -184,7 +184,7 @@ export function PhotoPager({
               width: 44,
             }}
           >
-            <X color={palette.white} size={22} />
+            <CloseSymbol color={palette.white} size={22} />
           </Pressable>
           {count > 1 && viewerIndex !== null ? (
             <View

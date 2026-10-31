@@ -6,8 +6,8 @@ import {
   type StyleProp,
   type ViewStyle,
 } from "react-native";
-import { ExternalLink } from "lucide-react-native";
 
+import { OpenExternalSymbol } from "./dishSymbols";
 import { BRAND_COLORS, BRAND_BUTTON_TEXT_COLORS } from "@/constants/brandColors";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openTrustedDeliveryUrl } from "@/lib/security/safeLinking";
@@ -95,7 +95,7 @@ export function DeliveryPlatformButton({
         <AppText variant="bodySmallBold" numberOfLines={1}>
           {meta.label.replace("Order on ", "")}
         </AppText>
-        <ExternalLink size={14} color={palette.textSecondary} />
+        <OpenExternalSymbol size={14} color={palette.textSecondary} />
       </Pressable>
     );
   }
@@ -132,7 +132,10 @@ export function DeliveryPlatformButton({
         >
           {meta.label.replace("Order on ", "")}
         </AppText>
-        <ExternalLink size={16} color={knownPlatform ? knownPlatform.textColor : palette.text} />
+        <OpenExternalSymbol
+          size={16}
+          color={knownPlatform ? knownPlatform.textColor : palette.text}
+        />
       </View>
     </Pressable>
   );
