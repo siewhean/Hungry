@@ -351,7 +351,15 @@ function createLazyExcelCatalogFallback(): CatalogReadService {
   return new Proxy({} as CatalogReadService, {
     get(_target, property) {
       if (property === "clearCache" && !resolved) return () => undefined;
-      resolved ??= getExcelCatalogFallbackService();
+      if (!resolved) {
+        try {
+          resolved = getExcelCatalogFallbackService();
+        } catch (error) {
+          // A release bundle cannot load the stubbed Excel data: surface the retryable
+          // unavailable error the screens handle rather than crashing the app.
+          throw new CatalogUnavailableError(undefined, error);
+        }
+      }
       const value = Reflect.get(resolved, property);
       return typeof value === "function" ? value.bind(resolved) : value;
     },

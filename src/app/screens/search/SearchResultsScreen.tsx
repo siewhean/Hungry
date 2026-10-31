@@ -182,7 +182,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
   const stall = isDish ? undefined : (item as StallRow);
   const imageUrl = stall ? stallCardImage(stall) : item.imageUrl;
   const title = item.name;
-  const stallName = dish ? dish.venueName : title;
+  const stallName = dish ? dish.venueName || title : title;
   const stallRating = ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
   // On a stall card the rating is its top dish's, which the pill says so it is not read as the
   // stall's own rating (SEARCH-V5).
