@@ -44,7 +44,12 @@ test("the dish hero fade covers part of the photo, not a fixed 260 that swallows
   const pager = dish.slice(dish.indexOf("<PhotoPager"), dish.indexOf("</PhotoPager>"));
   assert.match(pager, /height: heroHeight \* 0\.45/);
   assert.doesNotMatch(pager, /Math\.min\(260/);
-  // No photo: the placeholder is as tall as a photo hero, not a 140 pt strip.
-  assert.match(dish, /const heroHeight = Math\.min\(width \* 0\.75, 420\);/);
+  // A photo hero is 4:3. No photo listed: a compact 120 pt header (R3 of the round-five re-audit);
+  // a photo that fails after the page opened keeps the photo height.
+  assert.match(dish, /const heroPhotoHeight = Math\.min\(width \* 0\.75, 420\);/);
+  assert.match(
+    dish,
+    /heroPhotos\.length > 0\s*\?\s*heroPhotoHeight\s*:\s*insets\.top \+ COMPACT_HERO_HEIGHT/,
+  );
   assert.doesNotMatch(dish, /Math\.min\(260, heroHeight\)/);
 });
