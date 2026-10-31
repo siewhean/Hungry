@@ -263,13 +263,16 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
   );
 
   assert.match(profileHome, /const prefetchMerchantDashboard = useCallback/);
-  assert.match(profileHome, /function MenuRow[\s\S]*onPressIn\?: \(\) => void/);
+  assert.match(
+    read("src/components/ui/OverflowMenu.tsx"),
+    /export type OverflowMenuItem = \{[\s\S]*onPressIn\?: \(\) => void/,
+  );
   // The stat row (shared with other profiles) passes press-in through to its tiles.
   assert.match(read("src/components/profile/ProfileStatRow.tsx"), /onPressIn\?: \(\) => void/);
-  assert.match(profileHome, /onPressIn=\{prefetchMerchantDashboard\}/);
-  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "SocialGrid"/);
+  assert.match(profileHome, /onPressIn: prefetchMerchantDashboard/);
+  assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "SocialGrid"/);
   assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "ReviewHistory"\)/);
-  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "Settings"\)\}/);
+  assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "Settings"\)/);
 
   assert.match(developerLauncher, /onV1PressIn\?: \(\) => void/);
   assert.match(developerLauncher, /prefetchStallDetail\(sampleStallVenueId, repository\)/);

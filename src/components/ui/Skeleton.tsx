@@ -18,12 +18,18 @@ export function Skeleton({ width = "100%", height, borderRadius, style }: Skelet
     motion,
     opacity: opacityTokens,
     palette,
+    reducedMotion,
   } = useHungryTheme();
   const opacity = useRef(new Animated.Value(opacityTokens.skeletonMin)).current;
   const resolvedHeight = height ?? componentSizes.skeletonLine;
   const resolvedRadius = borderRadius ?? componentRadii.card;
 
   useEffect(() => {
+    // Reduce Motion: a still placeholder at its resting opacity, no looping pulse.
+    if (reducedMotion) {
+      opacity.setValue(opacityTokens.skeletonMin);
+      return;
+    }
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
@@ -44,7 +50,13 @@ export function Skeleton({ width = "100%", height, borderRadius, style }: Skelet
       animation.stop();
       opacity.stopAnimation();
     };
-  }, [motion.skeleton, opacity, opacityTokens.skeletonMax, opacityTokens.skeletonMin]);
+  }, [
+    motion.skeleton,
+    opacity,
+    opacityTokens.skeletonMax,
+    opacityTokens.skeletonMin,
+    reducedMotion,
+  ]);
 
   return (
     <Animated.View

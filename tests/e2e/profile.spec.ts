@@ -40,6 +40,25 @@ test.describe("profile page walk", () => {
     });
   }
 
+  for (const width of WIDTHS) {
+    test(`stat labels are whole words at ${width}pt (one line, or two by two when narrow)`, async ({
+      page,
+    }) => {
+      await openProfile(page, width);
+      const row = page.getByTestId("profile-follow-counts");
+      for (const label of ["Saved", "Followers", "Following"]) {
+        const text = row.getByText(label, { exact: true });
+        const box = await text.boundingBox();
+        expect(box, `${label} is on screen`).not.toBeNull();
+        // One line of the 12pt label is 16-18pt tall; a word broken over two lines would be 32+.
+        expect(box!.height).toBeLessThanOrEqual(20);
+        // Not cut off: the label's text fits its own box.
+        const clipped = await text.evaluate((el) => el.scrollWidth > el.clientWidth);
+        expect(clipped, `${label} is not cut to an ellipsis`).toBe(false);
+      }
+    });
+  }
+
   test("Followers opens a searchable list", async ({ page }) => {
     await openProfile(page, 375);
     await page.getByRole("button", { name: /^Followers/ }).click();

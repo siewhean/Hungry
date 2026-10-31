@@ -16,7 +16,11 @@ import { ReviewHistoryScreen } from "@/app/screens/profile/ReviewHistoryScreen";
 import { UserProfileContent } from "@/app/screens/profile/UserProfileContent";
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
-import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
+import {
+  ProfileStatRow,
+  shouldStackStats,
+  STAT_UNAVAILABLE,
+} from "@/components/profile/ProfileStatRow";
 import { TasteRadar } from "@/components/profile/TasteRadar";
 import { Avatar } from "@/components/ui";
 import { TASTE_DIMENSIONS } from "@/constants/taste";
@@ -233,6 +237,9 @@ test("stat row: number over label, dash reads as unavailable, loading shows a sk
 test("taste radar: six axis labels and chips in TASTE_DIMENSIONS order, no percent text", async () => {
   const vector = { sweet: 2, spicy: 9, sour: 3, salty: 5, rich: 8, aromatic: 7 } as never;
   const view = await render(createElement(TasteRadar, { vector }));
+  // The chips sit behind "See all six" so the chart carries the result.
+  assert.equal(view.findByTestId("profile-taste-chips"), null, "chips start collapsed");
+  await view.press(view.findByLabel("See all six tastes"));
   const text = view.text();
   let last = -1;
   for (const { label } of TASTE_DIMENSIONS) {
@@ -340,7 +347,8 @@ test("favourite dishes row: shows pins for others, limits picks to four, keeps t
   for (const id of ["a", "b", "c", "d", "e"]) {
     await editable.press(editable.findByLabel(`Dish ${id}`));
   }
-  assert.equal(editable.text().split("✓").length - 1, 4, "the fifth tap is ignored");
+  // The fifth tap is ignored: the counter stops at four.
+  assert.equal(editable.findByTestId("favourite-dishes-counter")?.textContent, "4 of 4");
   await editable.press(editable.findByText("Save"));
   assert.equal(attempts, 1);
   assert.ok(editable.text().includes("Couldn't save your favourite dishes"), "stays open");
@@ -471,7 +479,10 @@ test("followers list: 'Follow back' for someone who follows you and you do not f
   ]);
   const view = await renderScreen(FollowersScreen as never, { name: "Followers" });
   assert.ok(view.findByLabel("Follow back Ahmad"));
-  assert.ok(view.findByLabel("Remove Ahmad as a follower"));
+  // Remove sits behind the row's "..." menu, as on Instagram, not as a second button on the row.
+  assert.equal(view.findByLabel("Remove Ahmad as a follower"), null);
+  await view.press(view.findByLabel("More options for Ahmad"));
+  assert.ok(view.findByLabel("Remove follower"), "the menu offers Remove follower");
 });
 
 test("followers list: a failed load reports once and shows friendly copy", async () => {
@@ -519,7 +530,7 @@ test("edit profile: saving never sends dietary preferences", async () => {
   const view = await renderScreen(EditProfileScreen as never, { name: "EditProfile" });
   const inputs = Array.from(document.body.querySelectorAll("input")) as HTMLInputElement[];
   await view.type(inputs[0], "Wei Ming K");
-  await view.press(view.findByText("Save changes"));
+  await view.press(view.findByLabel("Save changes"));
   assert.equal(updates.length, 1);
   assert.equal("dietaryPreferences" in updates[0], false);
   assert.equal(view.findByText("Retake the taste quiz"), null, "the duplicate button is gone");
@@ -527,7 +538,7 @@ test("edit profile: saving never sends dietary preferences", async () => {
 
 // --- Re-audit follow-ups (PROF4-V2 to V7) -----------------------------------------------
 
-test("PROF4-V2: a stat label may wrap to two lines, centred, so Followers is never cut", async () => {
+test("P5-1: a stat label is one whole line that shrinks a little, never wrapping inside a word", async () => {
   const view = await render(
     createElement(ProfileStatRow, {
       stats: [
@@ -542,34 +553,63 @@ test("PROF4-V2: a stat label may wrap to two lines, centred, so Followers is nev
   assert.ok(label, "the full label is rendered");
   const style = window.getComputedStyle(label);
   assert.equal(style.textAlign, "center");
-  assert.equal(style.webkitLineClamp || style.getPropertyValue("-webkit-line-clamp"), "2");
+  assert.equal(style.whiteSpace, "nowrap", "one line, so no break inside a word");
+  assert.notEqual(style.getPropertyValue("-webkit-line-clamp"), "2");
 });
 
-test("PROF4-V3: on your Followers list the actions sit under the name, Remove at least 44pt tall", async () => {
+test("P5-1: four stats stack two by two when a column is under 72pt wide or text is large", () => {
+  assert.equal(shouldStackStats({ count: 4, width: 311, fontScale: 1 }), false, "375pt phone");
+  assert.equal(shouldStackStats({ count: 4, width: 256, fontScale: 1 }), true, "320pt phone");
+  assert.equal(shouldStackStats({ count: 4, width: 400, fontScale: 1.5 }), true, "large text");
+  assert.equal(
+    shouldStackStats({ count: 4, width: null, fontScale: 1 }),
+    false,
+    "not measured yet",
+  );
+  assert.equal(
+    shouldStackStats({ count: 2, width: 100, fontScale: 2 }),
+    false,
+    "two stats never stack",
+  );
+});
+
+test("P5-4: followers are plain rows with the Follow button and menu on the right", async () => {
   stub(getHungryService().social, "listFollowers", async () => [
     { userId: OTHER_ID, displayName: "Wei Ming Tan" },
   ]);
   const view = await renderScreen(FollowersScreen as never, { name: "Followers" });
   const name = view.findByLabel("Wei Ming Tan") as HTMLElement;
   const follow = view.findByLabel("Follow back Wei Ming Tan") as HTMLElement;
-  const remove = view.findByLabel("Remove Wei Ming Tan as a follower") as HTMLElement;
-  assert.ok(name && follow && remove);
-  assert.equal(name.parentElement?.contains(follow), false, "the name's row holds no buttons");
-  assert.equal(name.parentElement?.contains(remove), false);
-  assert.equal(follow.parentElement, remove.parentElement, "the two actions share one line");
+  const more = view.findByLabel("More options for Wei Ming Tan") as HTMLElement;
+  assert.ok(name && follow && more);
+  assert.equal(name.contains(follow), false, "the name's button holds no buttons");
+  const actions = view.findByTestId(`person-actions-${OTHER_ID}`) as HTMLElement;
+  assert.ok(actions.contains(follow) && actions.contains(more), "one trailing group");
   assert.ok(view.findByTestId(`person-actions-${OTHER_ID}`));
-  assert.ok(Number.parseFloat(window.getComputedStyle(remove).minHeight) >= 44);
 });
 
-test("PROF4-V3: on the Following list the Follow button stays beside the name", async () => {
+test("P5-4: on the Following list the Follow button stays and there is no Remove menu", async () => {
   stub(getHungryService().social, "listFollowing", async () => [
     { userId: OTHER_ID, displayName: "Ahmad" },
   ]);
   const { FollowingScreen } =
     require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen");
   const view = await renderScreen(FollowingScreen as never, { name: "Following" });
-  assert.equal(view.findByTestId(`person-actions-${OTHER_ID}`), null);
+  assert.ok(view.findByTestId(`person-actions-${OTHER_ID}`));
+  assert.equal(view.findByLabel("More options for Ahmad"), null);
   assert.equal(view.findByLabel("Remove Ahmad as a follower"), null);
+});
+
+test("P5-4: follow requests are plain rows with Confirm filled and Delete plain", async () => {
+  stub(getHungryService().social, "listFollowRequests", async () => [
+    { userId: OTHER_ID, displayName: "Ahmad", requestedAt: "2026-10-30T00:00:00Z" },
+  ]);
+  const view = await renderScreen(FollowRequestsScreen as never, { name: "FollowRequests" });
+  assert.ok(view.findByText("Wants to follow you"));
+  assert.ok(view.findByText("Confirm"));
+  assert.ok(view.findByText("Delete"));
+  assert.ok(view.findByLabel("Approve follow request from Ahmad"));
+  assert.ok(view.findByLabel("Decline follow request from Ahmad"));
 });
 
 test("PROF4-V4: radar axis labels take the app font from the theme, not the SVG default serif", () => {

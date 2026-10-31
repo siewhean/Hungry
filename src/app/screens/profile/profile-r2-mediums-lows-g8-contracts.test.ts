@@ -132,7 +132,7 @@ test("G8 own profile: signed-out view, honest taste, grouped menu, stall contrib
   assert.match(home, /Only approved followers can see your profile through the link\./);
   assert.match(home, /OWN_REVIEWS_INLINE_LIMIT/);
   assert.match(home, /textOnOrange/);
-  assert.match(home, /StyleSheet\.hairlineWidth/);
+  assert.match(read("src/components/ui/OverflowMenu.tsx"), /StyleSheet\.hairlineWidth/);
   assert.doesNotMatch(home, /Add Discovered Stall/);
 });
 

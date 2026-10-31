@@ -9,6 +9,8 @@ interface FollowPillButtonProps {
   accessibilityHint?: string;
   /** Already following or requested: a quiet surface button instead of the orange call to action. */
   muted?: boolean;
+  /** A quiet tinted pill for a list of people, so five rows are not five solid orange slabs. */
+  tinted?: boolean;
   minWidth?: number;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
@@ -20,6 +22,7 @@ export function FollowPillButton({
   accessibilityLabel,
   accessibilityHint,
   muted = false,
+  tinted = false,
   minWidth = 78,
   onPress,
   style,
@@ -36,8 +39,8 @@ export function FollowPillButton({
       style={[
         {
           alignItems: "center",
-          backgroundColor: muted ? palette.surface : palette.orange,
-          borderColor: muted ? palette.border : palette.orange,
+          backgroundColor: muted ? palette.surface : tinted ? palette.orangeLight : palette.orange,
+          borderColor: muted ? palette.border : tinted ? palette.orangeLight : palette.orange,
           borderRadius: componentRadii.button,
           borderWidth: 1,
           justifyContent: "center",
@@ -51,7 +54,10 @@ export function FollowPillButton({
       {/* Text on orange uses textOnOrange: white on orange is below 4.5:1 contrast. */}
       <AppText
         variant="micro"
-        style={{ color: muted ? palette.text : palette.textOnOrange, fontWeight: "800" }}
+        style={{
+          color: muted ? palette.text : tinted ? palette.accentText : palette.textOnOrange,
+          fontWeight: "800",
+        }}
       >
         {label}
       </AppText>

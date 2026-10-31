@@ -21,6 +21,7 @@ export * from "./FormSwitchRow";
 export * from "./AnimatedSwitch";
 export * from "./HungryLogo";
 export * from "./IconButton";
+export * from "./ListRow";
 export * from "./InlineSearchField";
 export * from "./InlineBanner";
 export * from "./Dialog";

@@ -90,7 +90,8 @@ test("20: bio is capped at 150 characters in the database, the editor and the mo
 
   const edit = read("src/app/screens/profile/EditProfileScreen.tsx");
   assert.match(edit, /maxLength=\{PROFILE_BIO_MAX_LENGTH\}/);
-  assert.match(edit, /helperText=\{`\$\{bio\.length\}\/\$\{PROFILE_BIO_MAX_LENGTH\}`\}/);
+  // The counter shows only when the limit is near (the last 30 characters).
+  assert.match(edit, /`\$\{bio\.length\}\/\$\{PROFILE_BIO_MAX_LENGTH\}`/);
   assert.match(read("src/app/screens/profile/ProfileHomeScreen.tsx"), /profile\.bio \?/);
 
   const saved = await hungryService.profile.updateProfile({ bio: "  Laksa hunter  " });
