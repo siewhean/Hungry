@@ -76,7 +76,9 @@ test("detail catalog images use the shared sanitizer and provide neutral unavail
     assert.match(
       file.includes("Stall")
         ? `${source}${read("src/components/stall/StallHeroFallback.tsx")}`
-        : source,
+        : file.includes("DishDetailScreenV2")
+          ? `${source}${read("src/components/dish/DishHeroPlaceholder.tsx")}`
+          : source,
       /photo unavailable/,
     );
   }

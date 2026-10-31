@@ -1,6 +1,6 @@
 import { Pressable } from "react-native";
-import { MoreHorizontal } from "lucide-react-native";
 
+import { EllipsisSymbol } from "@/components/dish/dishSymbols";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { selectHaptic } from "@/lib/haptics";
 import { promptReviewSafetyActions } from "@/lib/security/communitySafety";
@@ -41,7 +41,7 @@ export function ReviewMoreButton({ review, returnRoute, onRemoved }: Props) {
       }}
       style={{ alignItems: "center", justifyContent: "center", minHeight: 44, minWidth: 44 }}
     >
-      <MoreHorizontal color={palette.textSecondary} size={20} />
+      <EllipsisSymbol color={palette.textSecondary} size={20} />
     </Pressable>
   );
 }

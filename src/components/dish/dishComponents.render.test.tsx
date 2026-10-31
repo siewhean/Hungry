@@ -145,12 +145,12 @@ test("DishTasteCard says 'to you' only with a palate, and offers the quiz withou
   const view = await render(createElement(DishTasteCard, base));
   assert.match(view.text(), /How it tastes/);
   assert.doesNotMatch(view.text(), /How it tastes to you/);
-  await view.press(view.findByLabel("Take the taste quiz to see how it tastes to you"));
+  await view.press(view.findByLabel("Take the taste quiz"));
   assert.equal(quizzes, 1);
 
   await view.rerender(createElement(DishTasteCard, { ...base, palate: vector }));
   assert.match(view.text(), /How it tastes to you/);
-  assert.equal(view.findByLabel("Take the taste quiz to see how it tastes to you"), null);
+  assert.equal(view.findByLabel("Take the taste quiz"), null);
 });
 
 test("DishTasteCard names the diners behind an average", async () => {

@@ -27,7 +27,7 @@ type Props = {
   onRemoved: () => void;
 };
 
-/** One review on a dish page: who and how many stars, the text, photos, owner reply, like. */
+/** One review on a dish page: who and how many stars, the text, photos, owner reply, date and Helpful. */
 export function DishReviewCard({
   review,
   dishName,
@@ -67,12 +67,7 @@ export function DishReviewCard({
             <AppText style={{ fontWeight: "900" }} numberOfLines={1}>
               {review.authorName}
             </AppText>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-              <ReviewStars rating={review.rating} />
-              <AppText variant="micro" tone="muted">
-                {formatTimeAgo(review.createdAt)}
-              </AppText>
-            </View>
+            <ReviewStars rating={review.rating} />
           </View>
         </Pressable>
         {isOwn ? null : (
@@ -104,14 +99,26 @@ export function DishReviewCard({
           </AppText>
         </View>
       ) : null}
-      {/* Stars are under the author's name, so this line is only the like. */}
-      <ReviewReaderActions
-        key={review.id}
-        review={review}
-        isOwn={isOwn}
-        returnRoute={returnRoute}
-        onRemoved={onRemoved}
-      />
+      {/* One footer line: when it was written, and "Helpful" on someone else's review. */}
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "space-between",
+        }}
+      >
+        <AppText variant="micro" tone="muted">
+          {formatTimeAgo(review.createdAt)}
+        </AppText>
+        <ReviewReaderActions
+          key={review.id}
+          review={review}
+          isOwn={isOwn}
+          returnRoute={returnRoute}
+          onRemoved={onRemoved}
+          variant="helpful"
+        />
+      </View>
     </View>
   );
 }

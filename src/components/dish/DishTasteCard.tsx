@@ -73,16 +73,22 @@ export function DishTasteCard({ dishVector, hasEstimate, palate, diners, onTakeQ
               </AppText>
             ))
         ) : (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Take the taste quiz to see how it tastes to you"
-            onPress={onTakeQuiz}
-            style={{ alignItems: "center", minHeight: 44, justifyContent: "center" }}
-          >
-            <AppText variant="bodySmallBold" tone="accent" style={{ textAlign: "center" }}>
-              Take the taste quiz to see how it tastes to you
+          <View style={{ alignItems: "center", gap: spacing[0.5] }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Take the taste quiz"
+              accessibilityHint="See how it tastes to you"
+              onPress={onTakeQuiz}
+              style={{ alignItems: "center", minHeight: 44, justifyContent: "center" }}
+            >
+              <AppText variant="bodySmallBold" tone="accent" style={{ textAlign: "center" }}>
+                Take the taste quiz
+              </AppText>
+            </Pressable>
+            <AppText variant="micro" tone="muted" style={{ textAlign: "center" }}>
+              See how it tastes to you
             </AppText>
-          </Pressable>
+          </View>
         )}
       </View>
     </View>
