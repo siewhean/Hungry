@@ -157,11 +157,12 @@ test("SavedSortMenu opens as radio rows, checks the current sort and closes on a
 test("SwipeToRemove offers Remove behind the row, and not at all when disabled", async () => {
   let removed = 0;
   const row = (enabled: boolean) =>
-    createElement(
-      SwipeToRemove,
-      { label: "Laksa", enabled, onRemove: () => (removed += 1) },
-      createElement(Text, null, "Laksa row"),
-    );
+    createElement(SwipeToRemove, {
+      label: "Laksa",
+      enabled,
+      onRemove: () => (removed += 1),
+      children: createElement(Text, null, "Laksa row"),
+    });
   const view = await render(row(true));
   assert.ok(view.findByText("Laksa row"));
   await view.press(view.findByLabel("Remove Laksa from Saved"));

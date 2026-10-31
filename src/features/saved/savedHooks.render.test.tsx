@@ -86,17 +86,17 @@ test("useSavedStalls reports a failed read and recovers on retry", async () => {
     if (fail) throw new Error("offline");
     return ids.map((id) => ({ id, name: id }) as VenueSummary);
   });
-  let retry: () => void = () => undefined;
+  const handle: { retry: () => void } = { retry: () => undefined };
   const Probe = () => {
     const state = useSavedStalls(true);
-    retry = state.retry;
+    handle.retry = state.retry;
     return createElement(Text, null, `${state.status}:${state.stalls.length}`);
   };
   const view = await render(createElement(Probe));
   await view.settle();
   assert.equal(view.text(), "error:0");
   fail = false;
-  retry();
+  handle.retry();
   await view.settle();
   assert.equal(view.text(), "ready:2");
 });
