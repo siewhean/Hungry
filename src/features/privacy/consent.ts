@@ -4,9 +4,9 @@
  *  - Usage analytics (5.1.1(ii)): asked once. The answer takes effect on this device at once
  *    (`useUIStore.analyticsEnabled` drives PostHog) and is saved on the account, so signing in on
  *    another phone does not ask again.
- *  - AI search (5.1.2(i)): typed search text goes to Anthropic, so it needs an explicit yes. The
- *    yes is saved on the account before the app acts on it; the mood-search Edge Function checks
- *    it again.
+ *  - AI features (5.1.2(i)): typed search text goes to Anthropic and a menu photo goes to Google,
+ *    so each needs an explicit yes. One yes covers both and is saved on the account before the
+ *    app acts on it; the mood-search and ingest-menu-photo Edge Functions check it again.
  */
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";

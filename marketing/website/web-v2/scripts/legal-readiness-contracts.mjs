@@ -98,6 +98,7 @@ requireMarker(privacy, "Personal Data Protection Act", "privacy/page.tsx", "Sing
 requireMarker(privacy, "Anthropic", "privacy/page.tsx", "Third-party AI provider disclosure contract failed (App Store 5.1.2)");
 requireMarker(privacy, "Google Cloud Vision", "privacy/page.tsx", "Third-party AI provider disclosure contract failed (App Store 5.1.2)");
 requireMarker(privacy, "Google Gemini", "privacy/page.tsx", "Third-party AI provider disclosure contract failed (App Store 5.1.2)");
+requireMarker(privacy, "explicit or violent content", "privacy/page.tsx", "Photo safety check disclosure contract failed (App Store 1.2)");
 requireMarker(privacy, "Resend", "privacy/page.tsx", "Email provider disclosure contract failed");
 requireMarker(privacy, "Mapbox", "privacy/page.tsx", "Map provider disclosure contract failed");
 requireMarker(privacy, "within 24 hours", "privacy/page.tsx", "Report response time disclosure contract failed (App Store 1.2)");

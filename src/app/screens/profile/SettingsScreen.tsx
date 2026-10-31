@@ -746,11 +746,11 @@ export function SettingsScreen() {
           onToggle={handleAnalyticsToggle}
           isLast={false}
         />
-        {isAuthenticated && FEATURE_FLAGS.aiSearchEnabled ? (
+        {isAuthenticated ? (
           <SettingsRow
             {...neutralRow}
-            label="AI search"
-            description="Lets Hungry send the words you type in search to Anthropic, an AI company, to understand them. Your name and account details are not sent."
+            label="AI features"
+            description="Lets Hungry send the words you type in search to Anthropic, and a menu photo you add to Google, so they can be understood and read. Your name and account details are not sent."
             icon={<AppSymbol name="aiSearch" size={20} color={iconColor} />}
             type="toggle"
             isEnabled={aiSearchAllowed}

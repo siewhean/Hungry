@@ -29,11 +29,11 @@ Core path: sign in > Home > Search (try "laksa") > open a dish > open the stall 
 
 Location: asked only when using nearby ranking and the map. Declining is fine: the app lets you pick an area by name instead.
 
-User-generated content: reviews and photos. Each review has a "..." menu with Report and Block (Report offers four reasons). Blocked people and hidden reviews disappear from your feeds. Reviews are checked for banned terms and spam before they show. Reports are looked at within 24 hours (Terms section 3). Contact: usehungrysingapore@gmail.com.
+User-generated content: reviews and photos. Each review has a "..." menu with Report and Block (Report offers four reasons). Blocked people and hidden reviews disappear from your feeds. Reviews are checked for banned terms and spam, and review photos are checked for explicit or violent content, before they show. Reports are looked at within 24 hours (Terms section 3). Contact: usehungrysingapore@gmail.com.
 
 Account deletion: Profile > Settings > Delete account (email code confirmation; the account is hidden at once and removed after 30 days unless you sign in and choose Keep my account). Public page: https://usehungry.com/account/delete.
 
-Third-party AI: "AI search" asks permission before sending typed search words to Anthropic, and a menu photo asks permission before it is sent to Google. Both can be turned off in Settings > Privacy & data. Privacy policy: https://usehungry.com/privacy.
+Third-party AI: one prompt ("Allow AI features?") asks permission before typed search words go to Anthropic and before a menu photo goes to Google. It can be turned off in Settings > Privacy & data > AI features. Privacy policy: https://usehungry.com/privacy.
 
 Sign in with Apple: not offered. The iPhone app signs in by emailed code or password only and has no Google, Facebook or other third-party login, so guideline 4.8 does not apply.
 
@@ -49,3 +49,12 @@ Demo content note: [say how many stalls have full menus and photos in the launch
 - [ ] Built `.ipa` entitlements include `aps-environment` and `applinks:usehungry.com` (EAS pre-install hook writes them for staging and production only).
 - [ ] Built `.ipa` Info.plist has no `NSLocalNetworkUsageDescription`, `NSBonjourServices` or `NSFaceIDUsageDescription`.
 - [ ] Age rating questionnaire: user-generated content yes; moderation exists; no unrestricted web access.
+
+## Server settings that must be live before submitting (sh)
+
+- `GOOGLE_CLOUD_VISION_API_KEY` set on the Singapore project. Without it the review photo check answers "unchecked" and lets every photo through (it reports the missing key to Sentry each time). Deploy `check-photo-safety`, `report-digest` and the updated `ingest-menu-photo`.
+- Report digest: set the function secrets `REPORT_DIGEST_TOKEN`, `RESEND_API_KEY`, `RESEND_FROM` (and optionally `REPORT_DIGEST_TO`), then run once in the SQL editor:
+  `select vault.create_secret('https://frluxwpqqyomiqmjzavd.supabase.co/functions/v1/report-digest', 'report_digest_url');`
+  `select vault.create_secret('<the same REPORT_DIGEST_TOKEN>', 'report_digest_token');`
+  Until both exist the 15 minute job does nothing. Send yourself a test report and check the inbox.
+- Migration `20261031090000_content_report_digest` goes through `rehearse.sh` on staging and `ship.sh` to prod (project rule 9).

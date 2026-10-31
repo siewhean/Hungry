@@ -18,6 +18,6 @@ Source of truth: `ios/Hungry/PrivacyInfo.xcprivacy` (kept in step by `src/app/re
 
 Do not tick: Health and Fitness, Financial Info, Contacts, Browsing History, Purchases, Sensitive Info, Advertising Data.
 
-Third-party processors to mention in your own records: Supabase (database, auth, storage), Resend (email), Mapbox (map tiles), PostHog (analytics, US), Sentry (crashes), Expo (updates), Google Cloud Vision and Gemini (menu photos, after permission), Anthropic (AI search, after permission).
+Third-party processors to mention in your own records: Supabase (database, auth, storage), Resend (email), Mapbox (map tiles), PostHog (analytics, US), Sentry (crashes), Expo (updates), Google Cloud Vision (review photos, safety check before posting) and Google Gemini (menu photos, after permission), Anthropic (AI search, after permission).
 
 Other store fields: privacy policy URL `https://usehungry.com/privacy`; support URL `https://usehungry.com/contact`; account deletion page `https://usehungry.com/account/delete`; export compliance is already declared (`ITSAppUsesNonExemptEncryption` false).

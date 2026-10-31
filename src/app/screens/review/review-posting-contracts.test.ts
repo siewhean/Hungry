@@ -150,6 +150,14 @@ test("stall detail's menu photo button uploads through supply.submitMenuPhoto", 
   assert.match(stall, /"Add a menu photo"/);
   assert.match(stall, /getHungryService\(\)\.supply\.submitMenuPhoto\(\{\s*venueId: venue\.id/);
   assert.match(stall, /"Thanks, we'll add the menu soon\."/);
+  // App Review 5.1.2(i): the photo is read by Google only after the person allowed AI features.
+  assert.match(stall, /const allowAiReading = await ensureAiSearchConsent\(\)/);
+  assert.match(stall, /allowAiReading,\s*\}\)/);
+  const service = read("src/lib/services/supabase/supabaseService.ts");
+  assert.match(
+    service,
+    /if \(input\.allowAiReading\) \{\s*void client\.functions\s*\.invoke\("ingest-menu-photo"/,
+  );
   assert.match(stall, /const canSubmitMenuPhoto = isAuthenticated && Platform\.OS !== "web"/);
   // No longer a detour into a review editor with no dishes.
   assert.doesNotMatch(stall, /label="Add a menu photo"[\s\S]{0,200}ReviewMain/);
