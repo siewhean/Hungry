@@ -48,6 +48,29 @@ test("searchDishes sends the price ceiling and the requested pool size, capped a
   assert.equal(calls[2].p_max_price, null);
 });
 
+test("searchDishes sends the cursor of the last row to ask for the next page", async () => {
+  fake.rpc.search_dishes = () => ({ data: [] });
+  const filters = {
+    query: "",
+    categories: [],
+    dietaryFlags: [],
+    tasteValues: NEUTRAL,
+    radius: 1000,
+    latitude: 1.28,
+    longitude: 103.84,
+  };
+  await service.discovery.searchDishes(filters, NEUTRAL);
+  await service.discovery.searchDishes(
+    { ...filters, cursor: { score: 0.42, dishId: "dish-9" } },
+    NEUTRAL,
+  );
+  const calls = fake.callsTo("search_dishes").map((call) => call.args);
+  assert.equal(calls[0].p_cursor_score, null);
+  assert.equal(calls[0].p_cursor_id, null);
+  assert.equal(calls[1].p_cursor_score, 0.42);
+  assert.equal(calls[1].p_cursor_id, "dish-9");
+});
+
 test("searchDishes sends the quiz keywords only when asked, and maps course and cuisine tags", async () => {
   fake.rpc.search_dishes = () => ({
     data: [
