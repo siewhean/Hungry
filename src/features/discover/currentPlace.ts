@@ -6,7 +6,7 @@ import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { Coordinate } from "@/types/domain";
 
 /** Once inside a place the phone stays "in" it until it is this far from the place's centre. */
-export const CURRENT_PLACE_LEAVE_RADIUS_METERS = 160;
+export const CURRENT_PLACE_LEAVE_RADIUS_METERS = 220;
 /** A slow lookup must not hold Discover back: after this the area feed loads without a place. */
 export const CURRENT_PLACE_LOOKUP_TIMEOUT_MS = 3_000;
 /** ~11 m, so GPS jitter inside a building does not repeat the lookup. */
@@ -67,18 +67,25 @@ export function useCurrentPlace(coordinate: Coordinate | null) {
       setResolvedFor(`${latitude},${longitude}`);
     };
     const timer = setTimeout(() => finish(undefined), CURRENT_PLACE_LOOKUP_TIMEOUT_MS);
-    getCatalogRawService()
-      .listPlaces({
-        coordinate: here,
-        radiusMeters: CATALOG_PLACE_ENTER_RADIUS_METERS,
-        limit: 1,
-      })
-      .then((places) => finish(places[0]))
-      .catch(() => finish(undefined))
-      .finally(() => clearTimeout(timer));
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    const lookup = (canRetry: boolean) =>
+      getCatalogRawService()
+        .listPlaces({
+          coordinate: here,
+          radiusMeters: CATALOG_PLACE_ENTER_RADIUS_METERS,
+          limit: 1,
+        })
+        .then((places) => finish(places[0]))
+        .catch(() => {
+          // One failed read must not leave the header on the area name for the whole visit.
+          if (canRetry && active) retryTimer = setTimeout(() => void lookup(false), 2_000);
+          else finish(undefined);
+        });
+    void lookup(true).finally(() => clearTimeout(timer));
     return () => {
       active = false;
       clearTimeout(timer);
+      if (retryTimer) clearTimeout(retryTimer);
     };
   }, [latitude, longitude]);
 

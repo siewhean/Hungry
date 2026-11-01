@@ -3,6 +3,7 @@ import {
   type LayoutChangeEvent,
   Pressable,
   StyleSheet,
+  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -37,7 +38,6 @@ import {
   AppText,
   FilterChipRail,
   FeedErrorBoundary,
-  ExpandableSearchLauncher,
   PressableScale,
 } from "@/components/ui";
 import {
@@ -209,15 +209,11 @@ export function HomeMapScreen() {
   const catalogRawService = getCatalogRawService();
   // The map and its catalog pins are open to every diner, guests included.
   const insets = useSafeAreaInsets();
-  const { componentRadii, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const { componentRadii, palette, radii, shadows, spacing, typography, zIndex } = useHungryTheme();
+  const { height: screenHeight } = useWindowDimensions();
   // Raw text stays local so spaces survive typing; it is sanitised only on submit.
   const [searchText, setSearchText] = useState("");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
-  const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[3] * 2 - BACK_BUTTON_SIZE - spacing[2], 240),
-    [screenWidth, spacing],
-  );
 
   const gpsLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
@@ -806,21 +802,54 @@ export function HomeMapScreen() {
                 weight="semibold"
               />
             </Pressable>
-            <ExpandableSearchLauncher
-              query={searchText}
-              onQueryChange={setSearchText}
-              onSubmit={submitSearch}
-              onClear={clearMapSearch}
-              placeholder="Search dishes or stalls..."
-              keepOpenWithQuery
-              expandedWidth={searchBarWidth}
-              iconAlignment="left"
-              barHeight={52}
-              backgroundColor={palette.surface}
-              borderColor={palette.border}
-              textColor={palette.text}
-              placeholderColor={palette.textSecondary}
-            />
+            {/* Always showing: the search field is on the map from the start, no icon to tap. */}
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: componentRadii.search,
+                borderWidth: 1,
+                flex: 1,
+                flexDirection: "row",
+                gap: spacing[2],
+                height: 52,
+                paddingHorizontal: spacing[3],
+                ...shadows.floating,
+              }}
+            >
+              <AppSymbol name="search" size={20} color={palette.textMuted} />
+              <TextInput
+                accessibilityLabel="Search dishes or stalls"
+                autoCorrect={false}
+                clearButtonMode="never"
+                onChangeText={setSearchText}
+                onSubmitEditing={submitSearch}
+                placeholder="Search dishes or stalls..."
+                placeholderTextColor={palette.textSecondary}
+                returnKeyType="search"
+                style={{
+                  color: palette.text,
+                  flex: 1,
+                  fontFamily: typography.body.fontFamily,
+                  fontSize: typography.body.fontSize,
+                  height: 52,
+                  padding: 0,
+                }}
+                value={searchText}
+              />
+              {searchText.length > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search"
+                  accessibilityHint="Clears the current search query"
+                  hitSlop={12}
+                  onPress={clearMapSearch}
+                >
+                  <AppSymbol name="xmark" fallback={X} color={palette.textMuted} size={18} />
+                </Pressable>
+              ) : null}
+            </View>
           </View>
           <FilterChipRail
             options={filterOptions}

@@ -145,7 +145,7 @@ test("leaving a place needs the larger radius so the label does not flicker", ()
   assert.equal(isStillInPlace(place, { latitude: 1.334, longitude: 103.7434 }), true);
   // ~220 m north: outside.
   assert.equal(isStillInPlace(place, { latitude: 1.335, longitude: 103.7434 }), false);
-  assert.equal(CURRENT_PLACE_LEAVE_RADIUS_METERS, 160);
+  assert.equal(CURRENT_PLACE_LEAVE_RADIUS_METERS, 220);
   assert.equal(
     isStillInPlace({ id: "p", name: "x" } as never, { latitude: 1, longitude: 1 }),
     false,

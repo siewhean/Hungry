@@ -43,7 +43,7 @@ test("H21: map and Quick Bites keep raw text locally and open results with the q
   ]) {
     const source = read(file);
     assert.match(source, /const \[searchText, setSearchText\] = useState\(""\)/);
-    assert.match(source, /onQueryChange=\{setSearchText\}/);
+    assert.match(source, /onQueryChange=\{setSearchText\}|onChangeText=\{setSearchText\}/);
     assert.match(source, /const query = sanitizeSearchQuery\(searchText\)/);
     assert.doesNotMatch(source, /state\.filters\.query|navigate\("SearchHome"\)/);
   }

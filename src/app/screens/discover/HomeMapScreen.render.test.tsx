@@ -145,6 +145,17 @@ test("MD-M3 with no location the map asks for it, and the recentre button asks f
   );
 });
 
+test("the search field is on the map from the start, with no icon to tap", async () => {
+  const view = await renderMap();
+  const field = view.findByLabel("Search dishes or stalls");
+  assert.ok(field, "the search field is there before anything is tapped");
+  assert.equal(field.tagName, "INPUT");
+  assert.equal(field.getAttribute("placeholder"), "Search dishes or stalls...");
+  assert.equal(view.findByLabel("Clear search"), null, "no clear button while it is empty");
+  await view.type(field, "laksa");
+  assert.ok(view.findByLabel("Clear search"), "typing shows the clear button");
+});
+
 test("with a location the map shows no location prompt", async () => {
   const view = await renderMap();
   assert.equal(view.findByTestId("location-gate"), null);

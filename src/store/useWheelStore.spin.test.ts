@@ -88,5 +88,10 @@ test("spin screen resolves via completeSpin and offers a close control", () => {
   assert.match(spinScreen, /getSpinWinnerIndex\(seed, activeEntries\.length\)/);
   assert.match(spinScreen, /completeSpin\(winnerEntry\.id\)/);
   assert.match(spinScreen, /accessibilityLabel="Close wheel"/);
-  assert.match(resultModal, /resetSpin\(\);\s*triggerSpin\(\);\s*navigation\.replace\("WheelSpin"/);
+  // Spin again closes the pop-up (back to the spin screen it opened over) instead of replacing it.
+  assert.match(
+    resultModal,
+    /resetSpin\(\);\s*triggerSpin\(\);[\s\S]*navigation\.goBack\(\)[\s\S]*navigation\.replace\("WheelSpin"/,
+  );
+  assert.match(spinScreen, /navigationRef\.current\.navigate\("WheelResult"/);
 });

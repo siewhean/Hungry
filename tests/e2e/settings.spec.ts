@@ -77,11 +77,12 @@ test.describe("settings page walk", () => {
     await expect(page.getByRole("switch", { name: "Reduce motion" })).toHaveCount(0);
   });
 
-  test("Profile visibility saves from its sheet", async ({ page }) => {
+  test("Profile visibility and Blocked people are archived with followers and following", async ({
+    page,
+  }) => {
     await openSettings(page, 390);
-    await page.getByRole("button", { name: "Profile visibility" }).click();
-    await page.getByRole("radio", { name: "Private" }).click();
-    await expect(page.getByRole("button", { name: "Profile visibility" })).toContainText("Private");
+    await expect(page.getByRole("button", { name: "Profile visibility" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Blocked people" })).toHaveCount(0);
   });
 
   test("switches flip when tapped", async ({ page }) => {

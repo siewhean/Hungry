@@ -41,6 +41,10 @@ import { findBuildingById } from "@/features/discovery/discovery";
 import { leaveWheelStack } from "@/features/wheel/leaveWheel";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { useHungryTheme } from "@/theme";
 import type { WheelStackParamList } from "./WheelStack";
@@ -66,6 +70,25 @@ export function WheelResultModal({ navigation, route }: Props) {
   const triggerSpin = useWheelStore((s) => s.triggerSpin);
 
   const winnerEntry = entries.find((e) => e.id === winnerEntryId);
+
+  // Save the winning stall from the pop-up, without leaving the wheel.
+  const isAuthenticated = useSessionStore((s) => s.isAuthenticated);
+  const userId = useProfileStore((s) => s.profile.id);
+  const showToast = useUIStore((s) => s.showToast);
+  const interactionsLoaded = useStallInteractionStore((s) => s.isLoaded);
+  const loadInteractions = useStallInteractionStore((s) => s.loadInteractions);
+  const toggleSaved = useStallInteractionStore((s) => s.toggleSaved);
+  const winnerVenueIdForSave = winnerEntry?.venueId;
+  const isStallSaved = useStallInteractionStore((s) =>
+    winnerVenueIdForSave ? Boolean(s.interactions[winnerVenueIdForSave]?.isSaved) : false,
+  );
+  const [savingStall, setSavingStall] = useState(false);
+  useEffect(() => {
+    if (!isAuthenticated || interactionsLoaded) return;
+    loadInteractions(userId).catch((error) =>
+      reportError(error, { screen: "WheelResultModal", action: "load_stall_interactions" }),
+    );
+  }, [interactionsLoaded, isAuthenticated, loadInteractions, userId]);
   const cachedVenue = winnerEntry ? repository.getVenueById(winnerEntry.venueId) : undefined;
   // The catalog cache is row-capped: a stall beyond it is fetched from the server.
   const [fetchedVenue, setFetchedVenue] = useState<VenueSummary | undefined>();
@@ -165,10 +188,42 @@ export function WheelResultModal({ navigation, route }: Props) {
     );
   }
 
+  async function handleSaveStall() {
+    if (!winnerEntry || savingStall) return;
+    if (!isAuthenticated) {
+      showToast({ message: "Sign in to save this stall.", tone: "info" });
+      return;
+    }
+    if (!interactionsLoaded) {
+      showToast({
+        message: "Still loading your saved stalls. Try again in a moment.",
+        tone: "info",
+      });
+      return;
+    }
+    setSavingStall(true);
+    try {
+      await toggleSaved(userId, winnerEntry.venueId);
+      showToast({
+        message: isStallSaved ? "Removed from Saved." : "Saved. Find it under Saved.",
+        tone: "success",
+      });
+    } catch (error) {
+      reportError(error, { screen: "WheelResultModal", action: "save_winner_stall" });
+      showToast({ message: "Couldn't save that stall. Try again.", tone: "error" });
+    } finally {
+      setSavingStall(false);
+    }
+  }
+
   function handleStallDetail() {
     if (!winnerEntry) return;
     const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
-    rootNav?.navigate("StallDetail", { venueId: winnerEntry.venueId });
+    if (!rootNav) return;
+    // Close the pop-up and the wheel first, so the stall page opens over where the wheel was
+    // started and spinning again later starts a fresh wheel instead of this finished one.
+    leaveWheelStack(navigation);
+    rootNav.navigate("StallDetail", { venueId: winnerEntry.venueId });
   }
 
   function handleSpinAgain() {
@@ -176,7 +231,9 @@ export function WheelResultModal({ navigation, route }: Props) {
     // Clear the finished seed/winner, keep the options, and start the next spin right away.
     resetSpin();
     triggerSpin();
-    navigation.replace("WheelSpin", { partyId: party.id });
+    // Closing the pop-up shows the spin screen it opened over, which is already spinning.
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.replace("WheelSpin", { partyId: party.id });
   }
 
   function handleDone() {
@@ -306,6 +363,23 @@ export function WheelResultModal({ navigation, route }: Props) {
                   fallback={Navigation}
                   size={18}
                   color={palette.white}
+                />
+              }
+            />
+
+            <Button
+              label={isStallSaved ? "Saved" : "Save stall"}
+              onPress={() => void handleSaveStall()}
+              variant="secondary"
+              loading={savingStall}
+              accessibilityHint={
+                isStallSaved ? "Removes this stall from your saved stalls" : "Saves this stall"
+              }
+              leftIcon={
+                <AppSymbol
+                  name="savedMark"
+                  size={18}
+                  color={isStallSaved ? palette.orange : palette.text}
                 />
               }
             />

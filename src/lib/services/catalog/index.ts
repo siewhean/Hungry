@@ -222,8 +222,11 @@ export interface CatalogPlacesRequest {
 
 /** A building needs this many stalls to count as a place (also enforced by the RPCs). */
 export const CATALOG_PLACE_MIN_STALLS = 3;
-/** Inside a place when a stall of it is within this many metres of the phone. */
-export const CATALOG_PLACE_ENTER_RADIUS_METERS = 100;
+/**
+ * Inside a place when a stall of it is within this many metres of the phone. A big mall is
+ * wider than 200 m and indoor GPS drifts, so 100 m missed people standing inside it.
+ */
+export const CATALOG_PLACE_ENTER_RADIUS_METERS = 150;
 
 /** Suggestions need at least this many characters; shorter text gets popular food types. */
 export const CATALOG_SUGGEST_MIN_CHARS = 2;
