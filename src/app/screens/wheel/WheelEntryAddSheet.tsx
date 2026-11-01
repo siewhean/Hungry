@@ -636,6 +636,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 <FlatList
                   data={searchResults}
                   keyExtractor={(v) => v.id}
+                  keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                  keyboardShouldPersistTaps="handled"
                   renderItem={({ item }) => (
                     <VenueRow
                       venue={item}
@@ -808,6 +810,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 <FlatList
                   data={categoryResults}
                   keyExtractor={(v) => v.id}
+                  keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                  keyboardShouldPersistTaps="handled"
                   renderItem={({ item }) => (
                     <VenueRow
                       venue={item}
@@ -844,6 +848,8 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
               <FlatList
                 data={favouriteVenues}
                 keyExtractor={(v) => v.id}
+                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                keyboardShouldPersistTaps="handled"
                 renderItem={({ item }) => (
                   <VenueRow
                     venue={item}

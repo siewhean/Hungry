@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   View,
   type LayoutChangeEvent,
@@ -1013,6 +1014,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                 item.type === "header" ? `header:${item.title}` : item.row.key
               }
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
               ListEmptyComponent={
                 <AppText tone="secondary">
                   {trimmedQuery

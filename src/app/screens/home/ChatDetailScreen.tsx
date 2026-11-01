@@ -213,6 +213,7 @@ export function ChatDetailScreen({ navigation, route }: Props) {
         <View style={styles.chatContent}>
           <ScrollView
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             testID="chat-message-list"
             contentContainerStyle={{
               padding: semanticSpacing.screenEdge,

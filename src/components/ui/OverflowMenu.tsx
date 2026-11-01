@@ -1,9 +1,16 @@
-import { MenuView, type MenuAction } from "@react-native-menu/menu";
-import { useState, type ReactNode } from "react";
-import { Platform, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type ViewStyle,
+} from "react-native";
 
 import { useHungryTheme } from "@/theme";
-import { AppSymbol, appSymbolIosName, type AppSymbolName } from "./AppSymbol";
+import { AppSymbol, type AppSymbolName } from "./AppSymbol";
 import { AppText } from "./AppText";
 
 export type OverflowMenuItem = {
@@ -32,78 +39,135 @@ type OverflowMenuProps = {
 };
 
 /**
- * The "more" control of a screen. On iOS and Android it opens the system menu (a real UIMenu or
- * popup), which dims nothing, animates itself and reads out for VoiceOver. The web build has no
- * system menu, so it gets a small dropdown with the same items.
+ * The "more" control of a screen: a small menu that belongs to the app (its own card, type and
+ * icons) rather than the system's. On the phone it opens in a transparent layer under the
+ * trigger and fades in; on the web it is a dropdown with the same items.
  */
 export function OverflowMenu(props: OverflowMenuProps) {
-  return Platform.OS === "web" ? <WebMenu {...props} /> : <NativeMenu {...props} />;
+  return Platform.OS === "web" ? <WebMenu {...props} /> : <PopupMenu {...props} />;
 }
 
-function toNativeAction(item: OverflowMenuItem, errorColor: string, ios: boolean): MenuAction {
-  return {
-    id: item.id,
-    title: item.title,
-    subtitle: item.subtitle,
-    attributes: item.destructive ? { destructive: true } : undefined,
-    // Android reads this as a drawable resource name, so it is an iOS-only picture.
-    image: ios ? appSymbolIosName(item.symbol) : undefined,
-    titleColor: item.destructive ? errorColor : undefined,
-  };
+/** The rows of an open menu, shared by the phone popup and the web dropdown. */
+function MenuRows({ items, onSelect }: { items: OverflowMenuItem[]; onSelect: () => void }) {
+  const { palette, spacing } = useHungryTheme();
+  return (
+    <>
+      {items.map((item, index) => (
+        <Pressable
+          key={item.id}
+          accessibilityRole="button"
+          accessibilityLabel={item.subtitle ? `${item.title}, ${item.subtitle}` : item.title}
+          onPressIn={item.onPressIn}
+          onPress={() => {
+            onSelect();
+            item.onPress();
+          }}
+          style={({ pressed }) => ({
+            alignItems: "center",
+            backgroundColor: pressed ? palette.bgSoft : palette.surface,
+            borderTopColor: palette.border,
+            borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth,
+            flexDirection: "row",
+            gap: spacing[3],
+            minHeight: 48,
+            paddingHorizontal: spacing[4],
+            paddingVertical: spacing[2],
+          })}
+        >
+          <AppSymbol
+            name={item.symbol}
+            size={20}
+            color={item.destructive ? palette.error : palette.text}
+          />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText
+              numberOfLines={1}
+              style={{
+                color: item.destructive ? palette.error : palette.text,
+                fontWeight: "600",
+              }}
+            >
+              {item.title}
+            </AppText>
+            {item.subtitle ? (
+              <AppText variant="micro" tone="secondary">
+                {item.subtitle}
+              </AppText>
+            ) : null}
+          </View>
+        </Pressable>
+      ))}
+    </>
+  );
 }
 
-/**
- * The native menu's actions: the items in order, with the destructive ones in their own inline
- * group, which iOS draws behind a divider (Sign out is never one tap from Settings).
- */
-export function buildNativeActions(
-  items: OverflowMenuItem[],
-  options: { errorColor: string; ios: boolean },
-): MenuAction[] {
-  const toAction = (item: OverflowMenuItem) =>
-    toNativeAction(item, options.errorColor, options.ios);
-  const regular = items.filter((item) => !item.destructive).map(toAction);
-  const destructive = items.filter((item) => item.destructive).map(toAction);
-  return destructive.length
-    ? [
-        ...regular,
-        { id: "destructive-group", title: "", displayInline: true, subactions: destructive },
-      ]
-    : regular;
-}
-
-function NativeMenu({
+function PopupMenu({
   items,
   accessibilityLabel,
+  openAccessibilityLabel = "Close menu",
   children,
   triggerStyle,
   testID,
 }: OverflowMenuProps) {
-  const { palette } = useHungryTheme();
-  const actions = buildNativeActions(items, {
-    errorColor: palette.error,
-    ios: Platform.OS === "ios",
-  });
+  const { colorScheme, componentRadii, palette, shadows } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
+  const triggerRef = useRef<View>(null);
+  const [anchor, setAnchor] = useState<{ top: number; right: number } | null>(null);
+  const close = () => setAnchor(null);
+  const open = () =>
+    triggerRef.current?.measureInWindow((x, y, width, height) =>
+      setAnchor({ top: y + height + 6, right: Math.max(12, screenWidth - (x + width)) }),
+    );
 
   return (
-    <MenuView
-      testID={testID}
-      actions={actions}
-      isAnchoredToRight
-      onPressAction={({ nativeEvent }) =>
-        items.find((item) => item.id === nativeEvent.event)?.onPress()
-      }
-    >
-      <View
-        accessible
+    <View testID={testID}>
+      <Pressable
+        ref={triggerRef}
         accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={anchor ? openAccessibilityLabel : accessibilityLabel}
+        accessibilityState={{ expanded: anchor !== null }}
         hitSlop={10}
+        onPress={open}
         style={triggerStyle}
       >
         {children}
-      </View>
-    </MenuView>
+      </Pressable>
+      <Modal
+        visible={anchor !== null}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={close}
+        accessibilityViewIsModal
+      >
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={openAccessibilityLabel}
+          onPress={close}
+          style={StyleSheet.absoluteFill}
+        />
+        {anchor ? (
+          <View
+            accessibilityViewIsModal
+            style={{
+              ...shadows.floating,
+              ...(colorScheme === "dark"
+                ? { shadowColor: palette.white, shadowOpacity: 0.24, shadowRadius: 14 }
+                : {}),
+              backgroundColor: palette.surface,
+              borderRadius: componentRadii.card,
+              minWidth: 230,
+              overflow: "hidden",
+              position: "absolute",
+              right: anchor.right,
+              top: anchor.top,
+            }}
+          >
+            <MenuRows items={items} onSelect={close} />
+          </View>
+        ) : null}
+      </Modal>
+    </View>
   );
 }
 
@@ -160,51 +224,7 @@ function WebMenu({
               zIndex: 20,
             }}
           >
-            {items.map((item, index) => (
-              <Pressable
-                key={item.id}
-                accessibilityRole="button"
-                accessibilityLabel={item.subtitle ? `${item.title}, ${item.subtitle}` : item.title}
-                onPressIn={item.onPressIn}
-                onPress={() => {
-                  close();
-                  item.onPress();
-                }}
-                style={({ pressed }) => ({
-                  alignItems: "center",
-                  backgroundColor: pressed ? palette.bgSoft : palette.surface,
-                  borderTopColor: palette.border,
-                  borderTopWidth: index === 0 ? 0 : StyleSheet.hairlineWidth,
-                  flexDirection: "row",
-                  gap: spacing[3],
-                  minHeight: 48,
-                  paddingHorizontal: spacing[4],
-                  paddingVertical: spacing[2],
-                })}
-              >
-                <AppSymbol
-                  name={item.symbol}
-                  size={20}
-                  color={item.destructive ? palette.error : palette.text}
-                />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <AppText
-                    numberOfLines={1}
-                    style={{
-                      color: item.destructive ? palette.error : palette.text,
-                      fontWeight: "600",
-                    }}
-                  >
-                    {item.title}
-                  </AppText>
-                  {item.subtitle ? (
-                    <AppText variant="micro" tone="secondary">
-                      {item.subtitle}
-                    </AppText>
-                  ) : null}
-                </View>
-              </Pressable>
-            ))}
+            <MenuRows items={items} onSelect={close} />
           </View>
         </>
       ) : null}

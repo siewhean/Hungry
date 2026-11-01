@@ -1,5 +1,5 @@
 import { Check } from "lucide-react-native";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { AppSymbol, AppText } from "@/components/ui";
 import { selectHaptic } from "@/lib/haptics";
@@ -33,9 +33,12 @@ export function establishmentChipLabel(selected: readonly string[]): string {
 export function EstablishmentDropdown({
   selected,
   onChange,
+  maxHeight,
 }: {
   selected: readonly string[];
   onChange: (types: string[]) => void;
+  /** The list scrolls inside this height, so the menu never runs past the screen. */
+  maxHeight?: number;
 }) {
   const { palette, radii, shadows, spacing } = useHungryTheme();
   const toggle = (value: string) => {
@@ -57,48 +60,54 @@ export function EstablishmentDropdown({
       }}
       testID="establishment-dropdown"
     >
-      {ESTABLISHMENT_OPTIONS.map((option) => {
-        const checked = selected.includes(option.value);
-        return (
-          <Pressable
-            key={option.value}
-            accessibilityLabel={option.label}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked }}
-            onPress={() => toggle(option.value)}
-            style={{
-              alignItems: "center",
-              flexDirection: "row",
-              gap: spacing[3],
-              minHeight: 44,
-              paddingHorizontal: spacing[4],
-            }}
-          >
-            <View
+      <ScrollView
+        bounces={false}
+        showsVerticalScrollIndicator={false}
+        style={maxHeight ? { maxHeight: Math.max(maxHeight - 44, 120) } : undefined}
+      >
+        {ESTABLISHMENT_OPTIONS.map((option) => {
+          const checked = selected.includes(option.value);
+          return (
+            <Pressable
+              key={option.value}
+              accessibilityLabel={option.label}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked }}
+              onPress={() => toggle(option.value)}
               style={{
                 alignItems: "center",
-                backgroundColor: checked ? palette.orange : "transparent",
-                borderColor: checked ? palette.orange : palette.border,
-                borderRadius: 6,
-                borderWidth: 1.5,
-                height: 22,
-                justifyContent: "center",
-                width: 22,
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: 44,
+                paddingHorizontal: spacing[4],
               }}
             >
-              {checked ? (
-                <AppSymbol
-                  name="checkmark"
-                  fallback={Check}
-                  color={palette.textOnOrange}
-                  size={14}
-                />
-              ) : null}
-            </View>
-            <AppText style={{ flex: 1 }}>{option.label}</AppText>
-          </Pressable>
-        );
-      })}
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: checked ? palette.orange : "transparent",
+                  borderColor: checked ? palette.orange : palette.border,
+                  borderRadius: 6,
+                  borderWidth: 1.5,
+                  height: 22,
+                  justifyContent: "center",
+                  width: 22,
+                }}
+              >
+                {checked ? (
+                  <AppSymbol
+                    name="checkmark"
+                    fallback={Check}
+                    color={palette.textOnOrange}
+                    size={14}
+                  />
+                ) : null}
+              </View>
+              <AppText style={{ flex: 1 }}>{option.label}</AppText>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
       <Pressable
         accessibilityLabel="Clear place types"
         accessibilityRole="button"

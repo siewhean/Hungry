@@ -202,6 +202,8 @@ export type RootStackParamList = {
       }
     | undefined;
   BrowseDishes: undefined;
+  /** Every popular dish as a picture circle, opened from the Home row's arrow. */
+  FoodStyles: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
   /** `answers` pre-fills the quiz when "Change answers" reopens it from the result. */

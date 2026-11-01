@@ -63,8 +63,18 @@ test.describe("authenticated Excel fallback on a deployed staging build", () => 
       timeout: 60_000,
     });
 
-    await page.getByRole("button", { name: "Browse dishes" }).click();
-    await page.getByPlaceholder("Search all dishes").fill("zzzz-no-such-hungry-dish-2026");
+    // The classics arrow opens every food; a pick opens results, where the Dishes tab has the box.
+    await page
+      .getByRole("button", { name: /^See all dishes: / })
+      .filter({ visible: true })
+      .last()
+      .click();
+    await page
+      .getByRole("button", { name: /^Search for / })
+      .first()
+      .click();
+    await page.getByRole("tab", { name: "Dishes" }).click();
+    await page.getByTestId("browse-results-search-input").fill("zzzz-no-such-hungry-dish-2026");
     await expect(page.getByText("No matches found", { exact: true })).toBeVisible({
       timeout: 30_000,
     });

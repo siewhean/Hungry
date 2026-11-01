@@ -508,9 +508,9 @@ test("L13: stories and direct messages stay behind their flags in production", (
   assert.match(flags, /directMessagesEnabled/);
 });
 
-test("L14: the Home tab does not take pager swipes, so the photo carousel keeps them", () => {
+test("L14: no tab takes pager swipes, so the photo carousel keeps them", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  assert.match(tabs, /name="Home"[\s\S]{0,120}options=\{\{ swipeEnabled: false \}\}/);
+  assert.match(tabs, /screenOptions=\{\{[\s\S]*?swipeEnabled: false/);
 });
 
 test("L15: the empty comments copy says comment, not review", () => {

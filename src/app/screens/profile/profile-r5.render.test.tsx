@@ -12,11 +12,7 @@ import { ProfileHomeScreen } from "@/app/screens/profile/ProfileHomeScreen";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { Skeleton } from "@/components/ui";
 import { ListRow } from "@/components/ui/ListRow";
-import {
-  buildNativeActions,
-  OverflowMenu,
-  type OverflowMenuItem,
-} from "@/components/ui/OverflowMenu";
+import { OverflowMenu, type OverflowMenuItem } from "@/components/ui/OverflowMenu";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -118,24 +114,6 @@ const items: OverflowMenuItem[] = [
   },
   { id: "out", title: "Sign out", symbol: "signOut", destructive: true, onPress: () => undefined },
 ];
-
-test("P5-3 native actions: destructive items sit in their own inline group, with SF Symbols on iOS", () => {
-  const actions = buildNativeActions(items, { errorColor: "#f00", ios: true });
-  assert.deepEqual(
-    actions.map((action) => action.id),
-    ["settings", "requests", "destructive-group"],
-  );
-  assert.equal(actions[0].image, "gearshape");
-  assert.equal(actions[1].subtitle, "2 waiting");
-  const group = actions[2];
-  assert.equal(group.displayInline, true);
-  assert.equal(group.subactions?.[0].attributes?.destructive, true);
-  assert.equal(group.subactions?.[0].image, "rectangle.portrait.and.arrow.right");
-  // Android reads `image` as a drawable name, so it is left out there.
-  assert.equal(buildNativeActions(items, { errorColor: "#f00", ios: false })[0].image, undefined);
-  // No destructive item, no group.
-  assert.equal(buildNativeActions(items.slice(0, 2), { errorColor: "#f00", ios: true }).length, 2);
-});
 
 test("P5-3 web fallback: the dropdown opens, shows a red Sign out with no chevron, and closes on a pick", async () => {
   const picked: string[] = [];

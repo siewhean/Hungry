@@ -2,7 +2,7 @@
   "global": {
     "lines": 86.3,
     "branches": 85.7,
-    "functions": 82.8
+    "functions": 82.9
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -83,6 +83,7 @@
     "src/features/discover/homeRanking.ts": 100,
     "src/features/discover/homeStalls.ts": 100,
     "src/features/discover/mallMode.ts": 95.5,
+    "src/features/discover/personalRails.ts": 99.3,
     "src/features/discovery/decideForMeCandidates.ts": 96.8,
     "src/features/discovery/decideQuiz.ts": 99.4,
     "src/features/discovery/distanceLabel.ts": 94.4,
@@ -188,8 +189,9 @@
     "src/lib/geo/recommendationGeoCell.ts": 100,
     "src/lib/geo/singaporeBuildings.ts": 96.1,
     "src/lib/images/stableCacheKey.ts": 100,
+    "src/lib/monitoring/asError.ts": 100,
     "src/lib/monitoring/offlineErrorGuard.ts": 95.7,
-    "src/lib/monitoring/reportError.ts": 92.3,
+    "src/lib/monitoring/reportError.ts": 100,
     "src/lib/network/connectivity.ts": 100,
     "src/lib/notifications/notificationPermission.ts": 100,
     "src/lib/notifications/push.web.ts": 100,
@@ -202,7 +204,7 @@
     "src/lib/security/merchantLinks.ts": 100,
     "src/lib/services/catalog/excelFallback.ts": 96.3,
     "src/lib/services/catalog/favourites.ts": 100,
-    "src/lib/services/catalog/index.ts": 92.1,
+    "src/lib/services/catalog/index.ts": 92.4,
     "src/lib/services/catalog/media.ts": 100,
     "src/lib/services/catalog/paging.ts": 92.9,
     "src/lib/services/excel/excelService.ts": 70.3,
@@ -234,6 +236,7 @@
     "src/store/useAchievementTallyStore.ts": 100,
     "src/store/useActivityStore.ts": 99.1,
     "src/store/useChecklistStore.ts": 80.6,
+    "src/store/useChoiceSheetStore.ts": 95.7,
     "src/store/useConsentStore.ts": 100,
     "src/store/useDiscoveryStore.ts": 88.4,
     "src/store/useFoodCredStore.ts": 97.1,

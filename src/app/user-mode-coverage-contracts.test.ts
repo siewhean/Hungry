@@ -205,7 +205,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /navigation\.navigate\("StallDetail", \{ venueId: venue\.id \}\)/,
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,
-      /navigation\.navigate\("BrowseDishes"\)/,
+      /navigation\.navigate\("FoodStyles"\)/,
       /navigation\.navigate\("DecideForMeQuiz"\)/,
       /navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)/,
       /recordTasteInteraction\(\{[\s\S]*type: "search_query"/,

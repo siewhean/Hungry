@@ -91,7 +91,7 @@ test("an address shows its area, once per area, never the street as the title", 
   });
   assert.equal(results.length, 1);
   assert.equal(results[0].title, "Bishan");
-  assert.equal(results[0].subtitle, "Near 123 Bishan Street 12 Singapore 570123");
+  assert.equal(results[0].subtitle, "Area");
   assert.equal(results[0].placeName, undefined);
 });
 

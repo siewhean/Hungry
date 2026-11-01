@@ -1130,16 +1130,16 @@ test("H4-14: with reviews missing, the classics move under Dishes across Singapo
   assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
 });
 
-test("H4-18: All stalls and All dishes close the page instead of splitting it", async () => {
+test("H4-18: the All stalls and All dishes buttons are gone; section arrows open the full lists", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
-  assert.ok(text.indexOf("Stalls ") < text.indexOf("All stalls"), "after the stall list");
-  assert.ok(text.lastIndexOf("Zhen Zhen") < text.indexOf("All dishes"));
-  await view.press(view.findByLabel("Browse stalls and restaurants"));
-  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["BrowseStalls"]);
-  await view.press(view.findByLabel("Browse dishes"));
-  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["BrowseDishes"]);
+  assert.doesNotMatch(text, /All stalls/);
+  assert.doesNotMatch(text, /All dishes/);
+  assert.equal(view.findByLabel("Browse stalls and restaurants"), null);
+  assert.equal(view.findByLabel("Browse dishes"), null);
+  await view.press(view.findByLabel(/^See all dishes: /));
+  assert.deepEqual(view.navigation.calls.at(-1)?.args, ["FoodStyles"]);
 });
 
 test("H4-27: a dish card and a Most reviewed row read the same", async () => {

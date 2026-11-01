@@ -164,21 +164,26 @@ test.describe("home page walk", () => {
           await expect(search()).toBeHidden({ timeout: 15_000 });
           await backToHome(page);
         });
-        await test.step("10. All stalls closes the page and opens the stall list", async () => {
-          const allStalls = page
-            .getByLabel("Browse stalls and restaurants")
+        await test.step("10. The stalls section arrow opens the stall list", async () => {
+          const stallsHeader = page
+            .getByRole("button", { name: /^(See all stalls at |View stalls on map)/ })
             .filter({ visible: true })
             .last();
-          await allStalls.scrollIntoViewIfNeeded();
-          await allStalls.click();
+          await stallsHeader.scrollIntoViewIfNeeded();
+          await stallsHeader.click();
           await expect(search()).toBeHidden({ timeout: 15_000 });
           await backToHome(page);
         });
-        await test.step("11. All dishes opens the dish list", async () => {
-          const allDishes = page.getByLabel("Browse dishes").filter({ visible: true }).last();
-          await allDishes.scrollIntoViewIfNeeded();
-          await allDishes.click();
-          await expect(search()).toBeHidden({ timeout: 15_000 });
+        await test.step("11. The classics arrow opens every food to pick from", async () => {
+          const classicsHeader = page
+            .getByRole("button", { name: /^See all dishes: / })
+            .filter({ visible: true })
+            .last();
+          await classicsHeader.scrollIntoViewIfNeeded();
+          await classicsHeader.click();
+          await expect(page.getByText("Popular dishes", { exact: true }).first()).toBeVisible({
+            timeout: 15_000,
+          });
           await backToHome(page);
         });
         await test.step("12. Nothing crashed and no page error was raised", async () => {
