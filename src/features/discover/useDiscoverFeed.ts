@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DISCOVER_FEED_LIMIT, searchResultToDiscoverBite } from "@/features/discover/bites";
+import {
+  DISCOVER_FEED_LIMIT,
+  DISCOVER_FIRST_PAGE_LIMIT,
+  searchResultToDiscoverBite,
+} from "@/features/discover/bites";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   getNearestBuildings,
@@ -18,6 +22,7 @@ import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 import { type DiscoverRepositoryLookup } from "@/features/discover/stallShowcase";
 import { readCachedDiscoverFeed, writeCachedDiscoverFeed } from "@/features/discover/feedCache";
+import { mergeDiscoverFeeds } from "@/features/discover/feedMerge";
 
 /** Stable empties so memos keyed on the feed do not rerun every render. */
 const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
@@ -28,9 +33,14 @@ const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
 /** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
 const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
 
-/** The two reads one Home load makes: the area's stall count and its feed. */
+/**
+ * The reads one Home load makes: the area's stall count, a small first read of the nearest stalls
+ * and the full feed. The first read starts with the full one and lands sooner (the server ranks
+ * fewer candidates for a small limit), so the top of Home draws while the rest is still loading.
+ */
 type DiscoverReads = {
   count: Promise<number | undefined>;
+  firstPage: Promise<DiscoveryLocationFeed | undefined>;
   feed: Promise<DiscoveryLocationFeed | undefined>;
 };
 
@@ -46,6 +56,8 @@ export function useDiscoverFeed() {
     null,
   );
   const [isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading] = useState(false);
+  // True while only the small first read is on screen and the full feed is still loading.
+  const [isDiscoverFeedPartial, setIsDiscoverFeedPartial] = useState(false);
   const [discoverLoadError, setDiscoverLoadError] = useState(false);
   const [discoverReloadKey, setDiscoverReloadKey] = useState(0);
   const [isDiscoverRefreshing, setIsDiscoverRefreshing] = useState(false);
@@ -235,6 +247,8 @@ export function useDiscoverFeed() {
 
     let isActive = true;
     let liveFeedLanded = false;
+    // The small first read, once it is on screen: the full feed is merged behind it.
+    let shownFirstPage: DiscoveryLocationFeed | null = null;
     // Keep the current feed on screen while a new area or GPS fix loads.
     setIsSupabaseDiscoveryFeedLoading(true);
     setDiscoverLoadError(false);
@@ -242,7 +256,7 @@ export function useDiscoverFeed() {
     // Last launch's feed for this area draws at once; the live read replaces it when it lands.
     if (discoverReloadKey === 0 && loadedFeedKeyRef.current !== discoverFeedKey) {
       void readCachedDiscoverFeed(discoverFeedKey).then((cachedFeed) => {
-        if (!isActive || liveFeedLanded || !cachedFeed) return;
+        if (!isActive || liveFeedLanded || shownFirstPage || !cachedFeed) return;
         setSupabaseDiscoveryFeed(cachedFeed);
         loadedFeedKeyRef.current = discoverFeedKey;
         setLoadedDiscoverFeedKey(discoverFeedKey);
@@ -252,6 +266,13 @@ export function useDiscoverFeed() {
     const readKey = `${discoverFeedKey}#${discoverReloadKey}`;
     const startReads = (): DiscoverReads => {
       const discoveryService = getHungryService().discovery;
+      const feedRequest = {
+        areaName: discoverAreaRequest,
+        lat: discoverGeoCellLatitude,
+        lng: discoverGeoCellLongitude,
+        radiusMeters: discoverRadiusMeters,
+        buildingId: currentPlaceId,
+      };
       const reads = {
         count: discoveryService.countVenuesInArea(
           discoverGeoCellLatitude,
@@ -259,17 +280,18 @@ export function useDiscoverFeed() {
           discoverRadiusMeters,
           discoverAreaRequest,
         ),
+        firstPage: discoveryService.listDiscoveryFeedByLocation({
+          ...feedRequest,
+          limit: DISCOVER_FIRST_PAGE_LIMIT,
+        }),
         feed: discoveryService.listDiscoveryFeedByLocation({
-          areaName: discoverAreaRequest,
-          lat: discoverGeoCellLatitude,
-          lng: discoverGeoCellLongitude,
-          radiusMeters: discoverRadiusMeters,
+          ...feedRequest,
           limit: DISCOVER_FEED_LIMIT,
-          buildingId: currentPlaceId,
         }),
       };
       // A read nobody ends up waiting for must not surface as an unhandled rejection.
       reads.count.catch(() => undefined);
+      reads.firstPage.catch(() => undefined);
       reads.feed.catch(() => undefined);
       return reads;
     };
@@ -295,13 +317,31 @@ export function useDiscoverFeed() {
     const finishIfSettled = () => {
       if (isActive && isFeedSettled && isCountSettled) setIsSupabaseDiscoveryFeedLoading(false);
     };
-    // The feed draws the page as soon as it lands; the area count fills its line when it does.
+    // The nearest few stalls draw as soon as the small read lands, if the full feed has not. A
+    // fallback (offline copy) or empty answer waits for the full read instead.
+    void reads.firstPage.then(
+      (firstPage) => {
+        if (!isActive || liveFeedLanded || !firstPage) return;
+        if (firstPage.isFallback || firstPage.venues.length === 0) return;
+        shownFirstPage = firstPage;
+        setSupabaseDiscoveryFeed(firstPage);
+        setIsDiscoverFeedPartial(true);
+        loadedFeedKeyRef.current = discoverFeedKey;
+        setLoadedDiscoverFeedKey(discoverFeedKey);
+        setIsDiscoverRefreshing(false);
+      },
+      () => undefined,
+    );
+    // The full feed fills in the rest, behind the first page when that is on screen. The area
+    // count fills its line when it lands.
     void reads.feed.then(
       (feed) => {
         liveFeedLanded = true;
-        if (feed) void writeCachedDiscoverFeed(discoverFeedKey, feed);
+        const complete = feed && shownFirstPage ? mergeDiscoverFeeds(shownFirstPage, feed) : feed;
+        if (complete) void writeCachedDiscoverFeed(discoverFeedKey, complete);
         if (!isActive) return;
-        setSupabaseDiscoveryFeed(feed ?? null);
+        setSupabaseDiscoveryFeed(complete ?? null);
+        setIsDiscoverFeedPartial(false);
         loadedFeedKeyRef.current = discoverFeedKey;
         setLoadedDiscoverFeedKey(discoverFeedKey);
         setIsDiscoverRefreshing(false);
@@ -312,7 +352,9 @@ export function useDiscoverFeed() {
         liveFeedLanded = true;
         if (!isActive) return;
         reportError(reason, { surface: "discover_home_feed" });
-        setDiscoverLoadError(true);
+        // The stalls already on screen stay; the error state is for a Home with nothing to show.
+        if (!shownFirstPage) setDiscoverLoadError(true);
+        setIsDiscoverFeedPartial(false);
         setIsDiscoverRefreshing(false);
         isFeedSettled = true;
         finishIfSettled();
@@ -427,6 +469,7 @@ export function useDiscoverFeed() {
     supabaseDiscoverAreaCount,
     supabaseDiscoveryFeed,
     isSupabaseDiscoveryFeedLoading,
+    isDiscoverFeedPartial,
     discoverLoadError,
     isDiscoverRefreshing,
     loadedDiscoverFeedKey,

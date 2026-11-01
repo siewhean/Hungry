@@ -206,6 +206,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     supabaseDiscoverAreaCount,
     supabaseDiscoveryFeed,
     isSupabaseDiscoveryFeedLoading,
+    isDiscoverFeedPartial,
     discoverLoadError,
     isDiscoverRefreshing,
     loadedDiscoverFeedKey,
@@ -844,7 +845,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const discoverAreaCountLabel = isSupabaseDataSource
     ? getDiscoverAreaCountLabel({
         isFallback: Boolean(supabaseDiscoveryFeed?.isFallback),
-        isFeedLoaded: supabaseDiscoveryFeed !== null,
+        // The first few stalls alone are not the area's count: wait for the full feed.
+        isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,
         feedVenueCount: supabaseFeedVenues.length,
         feedLimit: DISCOVER_FEED_LIMIT,
         rpcCount: supabaseDiscoverAreaCount,
