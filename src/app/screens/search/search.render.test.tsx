@@ -448,10 +448,10 @@ test("the too-short hint is a live region (SR4-29)", async () => {
 });
 
 for (const [width, cardWidth] of [
-  [320, "148px"],
-  [390, "183px"],
+  [320, "160px"],
+  [390, "195px"],
 ] as const) {
-  test(`at ${width} wide the cards share the width between the 12pt list gutters and the search row keeps Filters (SR4-6)`, async () => {
+  test(`at ${width} wide the cells share the full width edge to edge and the search row keeps Filters (SR4-6)`, async () => {
     resizeWindow(width);
     try {
       stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
@@ -1574,6 +1574,28 @@ test("SR5-6: the other tab's button switches to it", async () => {
   await wait(400);
   assert.match(view.text(), /1 stall for “zzz”/, "the Stalls tab is showing");
   assert.ok(view.findByLabel(/^Laksa House v1/));
+});
+
+test("the browse grid is edge to edge: half-screen cells, no rounded bordered cards, equal text blocks", () => {
+  const results = readFileSync("src/app/screens/search/SearchResultsScreen.tsx", "utf8");
+  assert.match(results, /const itemWidth = width \/ 2;/);
+  assert.match(results, /const GRID_GAP = 2;/);
+  assert.match(results, /minHeight: itemWidth \* 0\.7 \+ GRID_TEXT_MIN_HEIGHT/);
+  const card = results.slice(
+    results.indexOf("const RawCatalogCard"),
+    results.indexOf("const RESERVED_LINE_HEIGHT"),
+  );
+  assert.doesNotMatch(card, /componentRadii\.card|borderRadius: componentRadii/);
+  assert.doesNotMatch(card, /borderWidth: 1/, "the cell has no card outline");
+  const list = results.slice(
+    results.indexOf("numColumns={2}"),
+    results.indexOf("renderItem={renderItem}"),
+  );
+  assert.doesNotMatch(
+    list,
+    /paddingHorizontal|contentContainerStyle/,
+    "the list has no side padding",
+  );
 });
 
 test("SR5-3: cards press down 0.97 over 120 ms (PressableScale) and list rows highlight", () => {

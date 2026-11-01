@@ -70,10 +70,12 @@ test("R5-STALL-1: the page's only filled button is the bar's Write a review (sou
   assert.doesNotMatch(stall, /label=\{[\s\S]{0,200}Claim this stall/, "not a Button");
 });
 
-test("R5-STALL-5: with no photo the page has no hero band, only a gap under Back and Share (source contract)", () => {
+test("a stall with no photo still opens on a hero band, shorter than a photo's (source contract)", () => {
   const stall = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-  assert.match(stall, /const heroHeight = hasHero \? Math\.min\(screenWidth \* 0\.75, 420\) : 0/);
-  assert.match(stall, /\{hasHero \? \(\s*<DetailHeroFade/);
+  assert.match(stall, /Math\.min\(screenWidth \* 0\.75, 420\)/);
+  assert.match(stall, /Math\.min\(screenWidth \* 0\.6, 300\)/);
+  assert.match(stall, /<DetailHeroFade scrollY=\{heroScrollY\} height=\{heroHeight\}>/);
+  assert.doesNotMatch(stall, /hasHero/, "no branch drops the hero");
 });
 
 test("R5-STALL-4: the page's scroll is a UI-thread handler; no JS scroll listener or state", () => {

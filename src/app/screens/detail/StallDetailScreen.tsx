@@ -139,12 +139,6 @@ import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveAc
 import { webShareUrl } from "@/constants/links";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
-/** Room under the status bar for Back and Share when the page has no photo to sit over. */
-const BUTTONS_ROW_HEIGHT = 56;
-/** Scroll distance over which the title bar fades in on a page with no photo. */
-const COMPACT_HEADER_FADE_HEIGHT = 110;
-/** The logo or monogram beside the name when there is no photo. */
-const COMPACT_LOGO_SIZE = 56;
 const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
   none: "Claim this stall",
   submitted: "Claim submitted",
@@ -981,11 +975,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
-  // 4:3 when there are photos, so they show whole. With none (every stall today) there is no
-  // hero at all: the name, logo and rating start right under Back and Share (R5-STALL-5).
-  const hasHero = heroPhotos.length > 0;
-  const heroHeight = hasHero ? Math.min(screenWidth * 0.75, 420) : 0;
-  const headerFadeHeight = hasHero ? heroHeight : COMPACT_HEADER_FADE_HEIGHT;
+  // 4:3 when there are photos, so they show whole. With none the page still opens on a hero: a
+  // shorter brand band with the stall's logo or initials, so a stall nobody has added to yet
+  // looks like every other stall page and not like a bare form.
+  const hasPhotos = heroPhotos.length > 0;
+  const heroHeight = hasPhotos
+    ? Math.min(screenWidth * 0.75, 420)
+    : Math.min(screenWidth * 0.6, 300);
+  const headerFadeHeight = heroHeight;
   const subtitle = [buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
     .filter(Boolean)
     .join(" · ");
@@ -1299,8 +1296,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
           >
             {/* Hero: swipeable photos (owner cover, stall, dishes, reviews). With none there is no
                 hero: a gap for Back and Share, then the compact header below. */}
-            {hasHero ? (
-              <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
+            <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
+              {hasPhotos ? (
                 <PhotoPager
                   photos={heroPhotos}
                   width={screenWidth}
@@ -1321,10 +1318,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     }}
                   />
                 </PhotoPager>
-              </DetailHeroFade>
-            ) : (
-              <View style={{ height: insets.top + BUTTONS_ROW_HEIGHT }} />
-            )}
+              ) : (
+                heroFallback
+              )}
+            </DetailHeroFade>
 
             <View
               onLayout={handleContentBodyLayout}
@@ -1337,23 +1334,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Header Content */}
               <View style={{ gap: spacing[3] }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-                  {/* With a photo the logo only shows when the stall has one; with none, the logo or
-                      the stall's initials stand in beside the name. */}
-                  {hasHero ? (
-                    sanitizeCatalogImageUrl(venue.logoUrl) ? (
-                      <StallLogoMark
-                        logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
-                        name={displayName}
-                      />
-                    ) : null
-                  ) : (
+                  {/* The logo beside the name only when the photo above is a photo; the brand band
+                      already shows the logo or initials when there is none. */}
+                  {hasPhotos && sanitizeCatalogImageUrl(venue.logoUrl) ? (
                     <StallLogoMark
                       logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
                       name={displayName}
-                      size={COMPACT_LOGO_SIZE}
-                      borderWidth={2}
                     />
-                  )}
+                  ) : null}
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <Pressable
                       accessibilityRole="button"
