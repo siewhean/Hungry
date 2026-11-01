@@ -222,8 +222,11 @@ test("Supabase builds show the redesigned Home from the live feed, with no full-
   assert.equal(view.findByTestId("catalog-discover-root"), null, "not the offline Home");
 
   const feedCalls = fake.callsTo("get_discovery_feed_by_location");
-  assert.equal(feedCalls.length, 1, "one feed read");
-  assert.equal(feedCalls[0]!.args.p_limit, 100);
+  assert.equal(feedCalls.length, 2, "a small first read and the full feed read");
+  assert.deepEqual(
+    feedCalls.map((call) => call.args.p_limit).sort((a, b) => Number(a) - Number(b)),
+    [10, 100],
+  );
   assert.deepEqual(fullTableReads(), [], "Home never asks the synchronous repository (HOME-X5)");
   // Saved-dish names for the Hawker classics order: one batched read, not one per dish.
   assert.equal(fake.callsTo("get_item_details").length, 1);
@@ -287,11 +290,12 @@ test("a halal diner's Home shows only halal dishes, also when the profile arrive
   await view.settle();
   assert.match(view.text(), /Nasi Padang/, "the halal dish (flag read in one batch) stays");
   assert.doesNotMatch(view.text(), /Chicken Rice/, "dishes without the halal flag are hidden");
-  // One batched flags read for the feed page's top dishes (`in("dish_id", ids)`).
+  // One batched flags read per feed read (the first page and the full feed), each for its own
+  // top dishes (`in("dish_id", ids)`), never one per dish.
   const batchedFlagReads = fake
     .queriesOn("dish_dietary_flags")
     .filter((query) => query.ops.some(([op]) => op === "in"));
-  assert.equal(batchedFlagReads.length, 1);
+  assert.equal(batchedFlagReads.length, 2);
 });
 
 test("without a GPS fix or a pick the header says Singapore, offers to turn location on and hides made-up distances", async () => {
@@ -348,7 +352,11 @@ test("a failed live feed hands Home to the offline catalog, and Retry tries the 
   const { act } = await import("react");
   await act(async () => control.props.onRefresh());
   await view.settle();
-  assert.equal(fake.callsTo("get_discovery_feed_by_location").length, feedReads + 1);
+  assert.equal(
+    fake.callsTo("get_discovery_feed_by_location").length,
+    feedReads + 2,
+    "a refresh reads the first page and the full feed again",
+  );
   assert.match(view.text(), /Hawker classics/, "back on the live Home");
   assert.equal(view.findByTestId("catalog-discover-root"), null);
 });
@@ -378,6 +386,28 @@ test("welcome_back_v2 on the live Home: shown to the test arm once content is on
   await view.settle();
   assert.match(view.text(), /Welcome back/);
   assert.deepEqual(exposures.exposures, ["welcome_back_v2"]);
+});
+
+test("the nearest stalls draw from the small first read while the full feed loads, then the rest fills in", async () => {
+  serveLiveFeed();
+  let releaseFull: () => void = () => undefined;
+  const fullFeedGate = new Promise<void>((resolve) => {
+    releaseFull = resolve;
+  });
+  fake.rpc.get_discovery_feed_by_location = async (args) => {
+    if (args.p_limit === 10) return { data: FEED_ROWS.slice(0, 2), error: null };
+    await fullFeedGate;
+    return { data: FEED_ROWS, error: null };
+  };
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  await view.settle();
+  assert.match(view.text(), /Hajjah Mariam/, "the first stalls are up");
+  assert.doesNotMatch(view.text(), /Lao Ban/, "the rest is still loading");
+
+  releaseFull();
+  await view.settle();
+  assert.match(view.text(), /Hajjah Mariam/, "the first stalls stay");
+  assert.match(view.text(), /Lao Ban/, "the rest fills in");
 });
 
 test("a second visit draws the feed saved by the first at once, while the live read is still out", async () => {
@@ -919,8 +949,8 @@ test("H4-2: with a palate, Dishes across Singapore follows it and says why", asy
   assert.match(rail, /Spicy, the way you like it/);
   assert.equal(
     fake.queries.filter((query) => query.table === "dish_taste_vectors").length,
-    1,
-    "the palate data is one batched read, not one per dish",
+    2,
+    "the palate data is one batched read per feed read (first page, full feed), not one per dish",
   );
 });
 
