@@ -47,6 +47,10 @@ export function resolveFeatureFlags(
   // Archived (owner decision 2026-10-31): the Followers and Following counts and lists on
   // profiles. The code stays so a build can opt back in with `=1`.
   const followConnectionsEnabled = surface("EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS", false);
+  // Archived (owner decision 2026-11-01): the Follow requests entry on Profile (the quick-access
+  // menu row, its count badge and the banner). The screen, service and route stay so a build can
+  // opt back in with `=1`.
+  const followRequestsEnabled = surface("EXPO_PUBLIC_ENABLE_FOLLOW_REQUESTS", false);
   const mapEnabled = surface("EXPO_PUBLIC_ENABLE_MAP", true);
   // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join
   // link can't reach another phone), so hosting/joining stays out of production.
@@ -67,6 +71,7 @@ export function resolveFeatureFlags(
     reviewCreationEnabled,
     activityEnabled,
     followConnectionsEnabled,
+    followRequestsEnabled,
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,

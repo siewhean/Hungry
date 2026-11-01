@@ -498,7 +498,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
   useEffect(() => {
     // Refetch on focus so approving/declining on Follow Requests updates the row.
-    if (!hasAccountProfile || !isFocused) return;
+    // Archived with the Follow requests entry: no point reading a count nothing shows.
+    if (!hasAccountProfile || !isFocused || !FEATURE_FLAGS.followRequestsEnabled) return;
 
     let isActive = true;
 
@@ -524,13 +525,16 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     const service = getHungryService();
     const [counts, requests, reviews] = await Promise.allSettled([
       service.social.getFollowCounts(profile.id),
-      service.social.getFollowRequestCount(),
+      FEATURE_FLAGS.followRequestsEnabled
+        ? service.social.getFollowRequestCount()
+        : Promise.resolve(null),
       service.reviews.getUserReviews(profile.id),
     ]);
     if (counts.status === "fulfilled") setFollowCounts(counts.value ?? "unavailable");
     else reportError(counts.reason, { screen: "ProfileHome", action: "refresh_follow_counts" });
-    if (requests.status === "fulfilled") setFollowRequestCount(requests.value);
-    else reportError(requests.reason, { screen: "ProfileHome", action: "refresh_requests" });
+    if (requests.status === "fulfilled") {
+      if (requests.value !== null) setFollowRequestCount(requests.value);
+    } else reportError(requests.reason, { screen: "ProfileHome", action: "refresh_requests" });
     if (reviews.status === "fulfilled") {
       ownReviewsLoadedRef.current = {
         at: Date.now(),
@@ -676,7 +680,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   }
 
   const followRequestLabel =
-    (followRequestCount ?? 0) > 0
+    FEATURE_FLAGS.followRequestsEnabled && (followRequestCount ?? 0) > 0
       ? `${followRequestCount} follow ${followRequestCount === 1 ? "request" : "requests"}`
       : null;
   const menuItems = (
@@ -707,7 +711,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             onPress: () => navigation.navigate("SocialGrid", { type: "liked" }),
           }
         : null,
-      (followRequestCount ?? 0) > 0 || profile.profileVisibility === "private"
+      // Archived: Follow requests is off until a build opts in (EXPO_PUBLIC_ENABLE_FOLLOW_REQUESTS=1).
+      FEATURE_FLAGS.followRequestsEnabled &&
+      ((followRequestCount ?? 0) > 0 || profile.profileVisibility === "private")
         ? {
             id: "follow-requests",
             title: "Follow requests",
@@ -947,7 +953,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           }}
         >
           <AppSymbol name="moreActions" size={24} weight="regular" color={palette.text} />
-          {followRequestCount ? (
+          {FEATURE_FLAGS.followRequestsEnabled && followRequestCount ? (
             <View
               testID="profile-menu-badge"
               style={{

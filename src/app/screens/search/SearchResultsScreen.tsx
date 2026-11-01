@@ -144,20 +144,45 @@ function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: 
         <ActivityIndicator color={palette.orange} />
         <AppText tone="secondary">{loadingLabel}…</AppText>
       </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-        {Array.from({ length: 8 }).map((_, index) => (
-          <View
-            key={`browse-grid-skeleton-${index}`}
-            style={{
-              height: itemWidth * 1.35,
-              padding: spacing[1],
-              width: itemWidth,
-            }}
-          >
-            <Skeleton width="100%" height="100%" borderRadius={0} />
-          </View>
-        ))}
-      </View>
+      {mode === "stalls" ? (
+        <View>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <View
+              key={`browse-row-skeleton-${index}`}
+              style={{
+                alignItems: "center",
+                borderBottomColor: palette.border,
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: STALL_ROW_MIN_HEIGHT,
+                paddingHorizontal: spacing[4],
+              }}
+            >
+              <Skeleton width={STALL_ROW_THUMB} height={STALL_ROW_THUMB} borderRadius={0} />
+              <View style={{ flex: 1, gap: spacing[2] }}>
+                <Skeleton width="60%" height={14} borderRadius={0} />
+                <Skeleton width="40%" height={12} borderRadius={0} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <View
+              key={`browse-grid-skeleton-${index}`}
+              style={{
+                height: itemWidth * 1.35,
+                padding: spacing[1],
+                width: itemWidth,
+              }}
+            >
+              <Skeleton width="100%" height="100%" borderRadius={0} />
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -341,6 +366,143 @@ const RawCatalogCard = memo(function RawCatalogCard({
 
 /** One line of micro text; the rating line keeps this height when a card has nothing to show. */
 const RESERVED_LINE_HEIGHT = 16;
+
+/** Stall results are a plain list, not cards: every row is this tall and runs edge to edge. */
+const STALL_ROW_MIN_HEIGHT = 80;
+const STALL_ROW_THUMB = 56;
+
+/**
+ * One stall as an edge-to-edge row: a square thumbnail, the name and where it is, one line of
+ * detail, and the distance on the right. Every text line is cut to one line and the detail line is
+ * reserved, so all rows are the same height. A hairline under the row divides it from the next.
+ */
+const StallListRow = memo(function StallListRow({
+  index,
+  item,
+  onOpen,
+}: {
+  index: number;
+  item: BrowseItem;
+  onOpen: (item: BrowseItem, index: number) => void;
+}) {
+  const { palette, spacing } = useHungryTheme();
+  const stall = item as StallRow;
+  const imageUrl = stallCardImage(stall);
+  const stallRating = ratingPillText(stall.qualityRating, stall.qualityReviewCount);
+  // The rating is the stall's top dish's; the label says so it is not read as the stall's own (SEARCH-V5).
+  const rating = stallRating ? `Top dish ${stallRating}` : undefined;
+  const outlets = stall.extraOutlets ?? 0;
+  const detail = stallCardDetail(stall);
+  const isVerified = stall.verificationStatus === "approved";
+  const placeholder = (
+    <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+      <StallLogoMark
+        logoUrl={stall.logoUrl}
+        name={stall.name}
+        size={Math.round(STALL_ROW_THUMB * 0.7)}
+      />
+    </View>
+  );
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={cardAccessibilityLabel("stalls", item)}
+      accessibilityHint="Opens the stall"
+      onPress={() => onOpen(item, index)}
+      testID={`search-card-stalls-${item.id}`}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        backgroundColor: pressed ? palette.bgSoft : palette.bg,
+        borderBottomColor: palette.border,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        flexDirection: "row",
+        gap: spacing[3],
+        minHeight: STALL_ROW_MIN_HEIGHT,
+        paddingHorizontal: spacing[4],
+        paddingVertical: spacing[2],
+        width: "100%",
+      })}
+    >
+      <View
+        style={{
+          backgroundColor: palette.bgSoft,
+          height: STALL_ROW_THUMB,
+          overflow: "hidden",
+          width: STALL_ROW_THUMB,
+        }}
+      >
+        {imageUrl ? (
+          <AccessibleImage
+            source={{ uri: imageUrl }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            decorative
+            fallback={placeholder}
+          />
+        ) : (
+          placeholder
+        )}
+      </View>
+      <View style={{ flex: 1, gap: spacing[1], minWidth: 0 }}>
+        <AppText numberOfLines={1} variant="bodyBold">
+          {item.name}
+        </AppText>
+        <AppText numberOfLines={1} tone="secondary" variant="micro">
+          {cardSubtitle("stalls", item) || " "}
+        </AppText>
+        {/* The detail line is reserved even when empty, so rows match (SR4-19). */}
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+            minHeight: RESERVED_LINE_HEIGHT,
+          }}
+        >
+          {rating ? (
+            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+              <AppSymbol name="rating" color={palette.ratingStar} size={12} />
+              <AppText numberOfLines={1} tone="secondary" variant="micro">
+                {rating}
+              </AppText>
+            </View>
+          ) : stall.menuCount > 0 ? (
+            <AppText numberOfLines={1} tone="secondary" variant="micro">
+              {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
+            </AppText>
+          ) : null}
+          {outlets > 0 ? (
+            <AppText numberOfLines={1} tone="secondary" variant="micro">
+              {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
+            </AppText>
+          ) : null}
+          {detail ? (
+            <AppText
+              numberOfLines={1}
+              style={{ color: palette.text, flexShrink: 1 }}
+              variant="micro"
+            >
+              {detail}
+            </AppText>
+          ) : null}
+        </View>
+      </View>
+      <View style={{ alignItems: "flex-end", flexShrink: 0, gap: spacing[1] }}>
+        <AppText tone="muted" variant="micro">
+          {item.distanceMeters !== undefined
+            ? formatBrowseDistance(item.distanceMeters)
+            : "Singapore"}
+        </AppText>
+        {isVerified ? (
+          <AppText tone="secondary" variant="micro">
+            Verified
+          </AppText>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+});
 
 const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
 
@@ -1213,17 +1375,20 @@ function RawCatalogBrowseGrid({
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: BrowseItem; index: number }) => (
-      <RawCatalogCard
-        index={index}
-        item={item}
-        itemWidth={itemWidth}
-        mode={mode}
-        onOpen={handleOpen}
-        onToggleSave={FEATURE_FLAGS.favouritesEnabled ? handleToggleSave : undefined}
-        saved={savedDishIds.has(item.id)}
-      />
-    ),
+    ({ item, index }: { item: BrowseItem; index: number }) =>
+      mode === "stalls" ? (
+        <StallListRow index={index} item={item} onOpen={handleOpen} />
+      ) : (
+        <RawCatalogCard
+          index={index}
+          item={item}
+          itemWidth={itemWidth}
+          mode={mode}
+          onOpen={handleOpen}
+          onToggleSave={FEATURE_FLAGS.favouritesEnabled ? handleToggleSave : undefined}
+          saved={savedDishIds.has(item.id)}
+        />
+      ),
     [handleOpen, handleToggleSave, itemWidth, mode, savedDishIds],
   );
 
@@ -1295,7 +1460,13 @@ function RawCatalogBrowseGrid({
 
   // Everything above the first card scrolls away with the list; only the search row stays put.
   const listHeader = (
-    <View style={{ gap: spacing[3], paddingHorizontal: spacing[1], paddingBottom: spacing[2] }}>
+    <View
+      style={{
+        gap: spacing[3],
+        paddingHorizontal: mode === "stalls" ? spacing[4] : spacing[1],
+        paddingBottom: spacing[2],
+      }}
+    >
       {place ? (
         <PressableScale
           accessibilityRole="button"
@@ -1601,13 +1772,15 @@ function RawCatalogBrowseGrid({
         </View>
         <View style={{ flex: 1, opacity: isRefreshing ? 0.45 : 1 }}>
           <FlashList
+            // Stalls are one full-width row each; dishes stay a two-column grid.
+            key={mode === "stalls" ? "stall-rows" : "dish-grid"}
             ref={listRef}
             data={rows}
             keyExtractor={(item) => item.id}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            numColumns={2}
-            contentContainerStyle={{ paddingHorizontal: spacing[3] }}
+            numColumns={mode === "stalls" ? 1 : 2}
+            contentContainerStyle={{ paddingHorizontal: mode === "stalls" ? 0 : spacing[3] }}
             onEndReached={() => {
               if (nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed) {
                 void loadPage(nextCursor, true);
@@ -1617,76 +1790,78 @@ function RawCatalogBrowseGrid({
             renderItem={renderItem}
             ListHeaderComponent={listHeader}
             ListEmptyComponent={
-              !isAuthenticated ? (
-                // A signed-out grid (after a session expiry and a back swipe) loads nothing.
-                <EmptyState
-                  title="Sign in to search"
-                  body="Sign in again to search dishes and stalls."
-                  ctaLabel="Sign in"
-                  onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
-                />
-              ) : isLoading ? (
-                <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
-              ) : error && retryAvailableAt !== null ? (
-                // The limiter said slow down: a connection check would not help, and Retry waits.
-                <View style={{ gap: spacing[2] }}>
+              <View style={{ paddingHorizontal: mode === "stalls" ? spacing[4] : 0 }}>
+                {!isAuthenticated ? (
+                  // A signed-out grid (after a session expiry and a back swipe) loads nothing.
                   <EmptyState
-                    title="Too many searches"
-                    body="You're searching faster than we can keep up. Wait a few seconds, then try again."
+                    title="Sign in to search"
+                    body="Sign in again to search dishes and stalls."
+                    ctaLabel="Sign in"
+                    onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
                   />
-                  <View style={{ alignItems: "center" }}>
-                    <Button
-                      label={
-                        now >= retryAvailableAt
-                          ? "Try again"
-                          : `Try again in ${Math.ceil((retryAvailableAt - now) / 1_000)}s`
-                      }
-                      disabled={now < retryAvailableAt}
-                      onPress={() => void loadPage()}
+                ) : isLoading ? (
+                  <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
+                ) : error && retryAvailableAt !== null ? (
+                  // The limiter said slow down: a connection check would not help, and Retry waits.
+                  <View style={{ gap: spacing[2] }}>
+                    <EmptyState
+                      title="Too many searches"
+                      body="You're searching faster than we can keep up. Wait a few seconds, then try again."
                     />
+                    <View style={{ alignItems: "center" }}>
+                      <Button
+                        label={
+                          now >= retryAvailableAt
+                            ? "Try again"
+                            : `Try again in ${Math.ceil((retryAvailableAt - now) / 1_000)}s`
+                        }
+                        disabled={now < retryAvailableAt}
+                        onPress={() => void loadPage()}
+                      />
+                    </View>
                   </View>
-                </View>
-              ) : error ? (
-                <EmptyState
-                  title="Catalog unavailable"
-                  body="We couldn't load the catalog. Check your connection and try again."
-                  errorMessage={error}
-                  ctaLabel="Retry"
-                  onPress={() => void loadPage()}
-                />
-              ) : (
-                <SearchEmptyState
-                  body={
-                    filterCount || parsed.parts.length
-                      ? "Try removing a filter or searching for something else."
-                      : "Try another search."
-                  }
-                  query={query}
-                  suggestedQuery={suggestedQuery}
-                  otherMode={
-                    otherModeCount &&
-                    otherModeCount.mode === otherMode &&
-                    otherModeCount.query === query &&
-                    otherModeCount.count > 0
-                      ? { mode: otherMode, count: otherModeCount.count }
-                      : undefined
-                  }
-                  onSwitchMode={() => switchMode(otherMode)}
-                  onClearFilters={filterCount ? clearFilters : undefined}
-                  onWiden={radiusInPlay ? () => setWidenedScope(widenScope) : undefined}
-                  popular={foodTypeOptions.filter(
-                    (label) => label.toLowerCase() !== query.toLowerCase(),
-                  )}
-                  onSearch={(text) => {
-                    updateSearchText(text);
-                    recordCommittedQuery(text, {
-                      recordTaste: true,
-                      remember: true,
-                      source: "results",
-                    });
-                  }}
-                />
-              )
+                ) : error ? (
+                  <EmptyState
+                    title="Catalog unavailable"
+                    body="We couldn't load the catalog. Check your connection and try again."
+                    errorMessage={error}
+                    ctaLabel="Retry"
+                    onPress={() => void loadPage()}
+                  />
+                ) : (
+                  <SearchEmptyState
+                    body={
+                      filterCount || parsed.parts.length
+                        ? "Try removing a filter or searching for something else."
+                        : "Try another search."
+                    }
+                    query={query}
+                    suggestedQuery={suggestedQuery}
+                    otherMode={
+                      otherModeCount &&
+                      otherModeCount.mode === otherMode &&
+                      otherModeCount.query === query &&
+                      otherModeCount.count > 0
+                        ? { mode: otherMode, count: otherModeCount.count }
+                        : undefined
+                    }
+                    onSwitchMode={() => switchMode(otherMode)}
+                    onClearFilters={filterCount ? clearFilters : undefined}
+                    onWiden={radiusInPlay ? () => setWidenedScope(widenScope) : undefined}
+                    popular={foodTypeOptions.filter(
+                      (label) => label.toLowerCase() !== query.toLowerCase(),
+                    )}
+                    onSearch={(text) => {
+                      updateSearchText(text);
+                      recordCommittedQuery(text, {
+                        recordTaste: true,
+                        remember: true,
+                        source: "results",
+                      });
+                    }}
+                  />
+                )}
+              </View>
             }
             ListFooterComponent={
               isLoadingMore ? (

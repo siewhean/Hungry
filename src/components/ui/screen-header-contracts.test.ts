@@ -730,7 +730,9 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
   assert.match(searchResults, /<Screen scroll=\{false\} fullWidth/);
   assert.match(searchResults, /"Search all dishes"[\s\S]*"Search all stalls"/);
   assert.doesNotMatch(searchResults, /useMovingSearchPlaceholder|movingSearchPlaceholder/);
-  assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{2\}/);
+  // Dishes are a two-column grid; stalls are one full-width row each (no cards).
+  assert.match(searchResults, /<FlashList[\s\S]*numColumns=\{mode === "stalls" \? 1 : 2\}/);
+  assert.match(searchResults, /const StallListRow = memo\(function StallListRow/);
   assert.match(searchResults, /const itemWidth = \(width - spacing\[3\] \* 2\) \/ 2/);
   assert.match(searchResults, /navigation\.navigate\("CatalogRawDetail"/);
   assert.match(searchResults, /navigation\.navigate\("StallDetail", \{ venueId: item\.id \}\)/);

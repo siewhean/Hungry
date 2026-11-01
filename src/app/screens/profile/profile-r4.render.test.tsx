@@ -273,6 +273,7 @@ test("avatar falls back to initials when the photo fails to load", async () => {
 // --- Profile home -----------------------------------------------------------------------
 
 test("menu button: badge and count in the label at 2 follow requests, none at 0", async () => {
+  flags.followRequestsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 2);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.ok(view.findByLabel("Open quick access, 2 follow requests"));
@@ -283,6 +284,24 @@ test("menu button: badge and count in the label at 2 follow requests, none at 0"
   view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.ok(view.findByLabel("Open quick access"));
   assert.equal(view.findByTestId("profile-menu-badge"), null);
+});
+
+test("Follow requests is archived: no menu row, badge, banner or count read until a build opts in", async () => {
+  assert.equal(savedFlags.followRequestsEnabled, false, "off by default");
+  flags.followRequestsEnabled = false;
+  let reads = 0;
+  stub(getHungryService().social, "getFollowRequestCount", async () => {
+    reads += 1;
+    return 4;
+  });
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(view.findByLabel("Open quick access"), "no count in the menu label");
+  assert.equal(view.findByTestId("profile-menu-badge"), null);
+  assert.equal(view.findByTestId("profile-follow-requests-row"), null);
+  await view.press(view.findByLabel(/^Open quick access/));
+  assert.ok(view.findByLabel("Settings"), "the menu still opens with Settings");
+  assert.equal(view.findByLabel(/^Follow requests/), null);
+  assert.equal(reads, 0, "the count is not read when nothing shows it");
 });
 
 test("menu open: one accessible Close quick access control, not two", async () => {

@@ -606,6 +606,37 @@ test("a card with no rating keeps the rating line's height, so a row of cards li
   }
 });
 
+test("All stalls is a plain edge-to-edge list: uniform rows, hairline dividers, no rounded cards", async () => {
+  stubCatalog({
+    listVenues: async () =>
+      page([
+        stallCard("v1", {
+          name: "A very long stall name that would wrap onto a second line and push the row taller than its neighbours",
+        }),
+        stallCard("v2", { buildingName: undefined, menuCount: 0 }),
+        stallCard("v3", { qualityRating: 4.4, qualityReviewCount: 30, mainPrice: 5 }),
+      ]),
+    listPlaces: async () => [],
+  });
+  const view = await renderResults({ browseMode: "stalls" });
+  await wait(400);
+  for (const id of ["v1", "v2", "v3"]) {
+    const row = view.findByTestId(`search-card-stalls-${id}`) as HTMLElement;
+    assert.ok(row, `row ${id}`);
+    assert.equal(row.style.minHeight, "80px", "every row has the same minimum height");
+    assert.equal(row.style.width, "100%", "runs the full width");
+    assert.equal(row.style.borderRadius, "", "no rounded corners");
+    assert.equal(row.style.borderLeftWidth, "", "no card border on the sides");
+    assert.notEqual(row.style.borderBottomWidth, "", "a hairline divider under the row");
+    assert.equal(row.style.boxShadow ?? "", "", "no shadow");
+  }
+  // Every text line is cut to one line, so a long name cannot make a row taller.
+  assert.match(view.text(), /A very long stall name/);
+  assert.match(view.text(), /Top dish 4\.4 \(30\)/);
+  // Dishes keep their grid cards.
+  assert.equal(view.findByTestId("search-card-dishes-v1"), null);
+});
+
 test("the offline copy keeps the catalog page for a stall tap", async () => {
   stubCatalog({
     listVenues: async () => ({

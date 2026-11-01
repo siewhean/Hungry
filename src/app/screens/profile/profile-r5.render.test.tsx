@@ -166,6 +166,7 @@ test("P5-3 web fallback: the dropdown opens, shows a red Sign out with no chevro
 });
 
 test("P5-3 profile home: the badge is 11pt bold and the menu lists the account items", async () => {
+  flags.followRequestsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 3);
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   const badge = view.findByTestId("profile-menu-badge") as HTMLElement;
