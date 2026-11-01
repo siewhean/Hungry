@@ -60,6 +60,35 @@ export function rankDecideCandidates(
   return withinBudget.length ? withinBudget : ranked;
 }
 
+/** No single building takes more than this share of the ranked picks before the rest get a turn. */
+export const DECIDE_BUILDING_SHARE = 0.4;
+
+/**
+ * Picks keep their order, but a building (a mall the diner stands in, say) holds at most
+ * `share` of the list ahead of everything else; its extra picks go after the other buildings'
+ * picks, not away. With one building there is nothing to spread.
+ */
+export function spreadAcrossBuildings(
+  dishes: DishDetail[],
+  share: number = DECIDE_BUILDING_SHARE,
+): DishDetail[] {
+  if (new Set(dishes.map((dish) => dish.buildingId)).size < 2) return dishes;
+  const cap = Math.max(5, Math.ceil(dishes.length * share));
+  const counts = new Map<string, number>();
+  const kept: DishDetail[] = [];
+  const deferred: DishDetail[] = [];
+  for (const dish of dishes) {
+    const taken = counts.get(dish.buildingId) ?? 0;
+    if (taken < cap) {
+      counts.set(dish.buildingId, taken + 1);
+      kept.push(dish);
+    } else {
+      deferred.push(dish);
+    }
+  }
+  return [...kept, ...deferred];
+}
+
 /**
  * Keeps a re-ordered list (the food-history mix) from putting a dish above one that matches more
  * than `band` points better: stable sort by score band, so only near-equal picks can swap.

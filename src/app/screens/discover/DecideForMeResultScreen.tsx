@@ -57,6 +57,7 @@ import {
   DECIDE_RADIUS_STEPS_METERS,
   formatOpenLabel,
   keepScoreOrder,
+  spreadAcrossBuildings,
   preferOpenStalls,
   rankDecideCandidates,
   type OpenAwareCandidates,
@@ -204,6 +205,21 @@ function nextRadius(currentRadius: number) {
 const DECIDE_POOL_SIZE = 50;
 /** Pages of that size read per search, so one busy mall cannot fill the whole pool. */
 const DECIDE_POOL_PAGES = 3;
+/**
+ * Inside a big mall the first pages can all be that mall's dishes. Reading goes on, up to this
+ * many pages, until this many dishes from other buildings are in the pool.
+ */
+const DECIDE_POOL_MAX_PAGES = 8;
+const DECIDE_POOL_OUTSIDE_TARGET = 60;
+
+/** Dishes in the pool that are not in its busiest building (the mall the diner is probably in). */
+function dishesOutsideBusiestBuilding(pool: ReadonlyMap<string, DishDetail>): number {
+  const perBuilding = new Map<string, number>();
+  for (const dish of pool.values()) {
+    perBuilding.set(dish.buildingId, (perBuilding.get(dish.buildingId) ?? 0) + 1);
+  }
+  return pool.size - Math.max(0, ...perBuilding.values());
+}
 /** Stalls whose hours are read for the open-now check: one get_venue_summaries call (max 50). */
 const MAX_OPEN_STATE_VENUES = 50;
 
@@ -238,7 +254,13 @@ async function loadCandidates(
     // that mall's dishes. A full page asks for the next one, so the area's food is in the pool too.
     const pool = new Map<string, DishDetail>();
     let cursor: { score: number; dishId: string } | undefined;
-    for (let page = 0; page < DECIDE_POOL_PAGES; page += 1) {
+    for (let page = 0; page < DECIDE_POOL_MAX_PAGES; page += 1) {
+      if (
+        page >= DECIDE_POOL_PAGES &&
+        dishesOutsideBusiestBuilding(pool) >= DECIDE_POOL_OUTSIDE_TARGET
+      ) {
+        break;
+      }
       // n-plus-one-ok: each page starts after the last row of the one before, at most three reads
       const results = await service.discovery.searchDishes(
         {
@@ -263,13 +285,17 @@ async function loadCandidates(
       if (results.length < DECIDE_POOL_SIZE || pool.size === before || !last) break;
       cursor = { score: last.score, dishId: last.dish.id };
     }
-    return rankDecideCandidates([...pool.values()], {
-      tasteVector,
-      hasTasteProfile,
-      dietaryFlags,
-      radiusMeters: searchRadius,
-      maxDishBudget,
-    });
+    // One building (the mall the diner is in) never takes more than 40% of the picks ahead of
+    // the food around it.
+    return spreadAcrossBuildings(
+      rankDecideCandidates([...pool.values()], {
+        tasteVector,
+        hasTasteProfile,
+        dietaryFlags,
+        radiusMeters: searchRadius,
+        maxDishBudget,
+      }),
+    );
   };
   let usedRadius = radius;
   let ranked = await search(radius, []);

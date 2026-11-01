@@ -681,6 +681,40 @@ test("H4-11: in a mall the chips filter 'For you' and 'What's here' too", async 
   assert.doesNotMatch(view.text(), /Tian Tian/, "What's here lists only stalls with a halal dish");
 });
 
+test("in a mall Home also lists the stalls around it, not only the mall's", async () => {
+  serveLiveFeed([
+    ...FEED_ROWS,
+    feedRow(5, {
+      venue_name: "Street Prata",
+      top_dish_name: "Roti Prata",
+      building_id: "building-2",
+      building_name: "Amoy Street",
+    }),
+  ]);
+  setLocation({ permission: "granted" });
+  const service = m.provider.getCatalogRawService() as unknown as Record<string, unknown>;
+  service.listPlaces = async () => [
+    {
+      id: "building-1",
+      name: "Maxwell Food Centre",
+      venueCount: 4,
+      latitude: DEFAULT_LOCATION.latitude,
+      longitude: DEFAULT_LOCATION.longitude,
+    },
+  ];
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /For you at Maxwell Food Centre/);
+  const around = view.findByTestId("stalls-around-place");
+  assert.ok(around, "a section lists the stalls outside the mall");
+  assert.match(around.textContent ?? "", /More near Maxwell Food Centre/);
+  assert.match(around.textContent ?? "", /Street Prata/);
+  assert.doesNotMatch(
+    around.textContent ?? "",
+    /Tian Tian/,
+    "the mall's own stalls are not repeated",
+  );
+});
+
 test("H4-22: pulling to refresh keeps the cards on screen until the new ones land", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));

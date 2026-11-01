@@ -153,7 +153,7 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
   );
   assert.equal(view.findByLabel("Show profile posts"), null, "no Posts tab with the feed archived");
   assert.equal(postReads, 0, "no post reads for an archived feed");
-  assert.deepEqual(interactionLoads, [], "tried stalls load only for the Passport");
+  assert.equal(interactionLoads.length, 1, "saved stalls load for the Saved count");
   assert.ok(view.findByText("Taste Fingerprint"), "the taste section is titled Taste Fingerprint");
   assert.equal(view.text().includes("Palate Fingerprint"), false, "the old Palate name is gone");
 
@@ -163,6 +163,36 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
     navigation.calls.filter((call) => call.method === "navigate").map((call) => call.args[0]),
     ["Followers", "Following"],
   );
+});
+
+test("Saved counts saved stalls as well as saved dishes", async () => {
+  flags.favouritesEnabled = true;
+  useProfileStore.setState({
+    profile: {
+      ...useProfileStore.getState().profile,
+      favouriteDishIds: [],
+      stats: { ...useProfileStore.getState().profile.stats, favouritesCount: 0 },
+    },
+  });
+  const interaction = (stallId: string) => ({
+    stallId,
+    isSaved: true,
+    isTried: false,
+    isReviewed: false,
+  });
+  useStallInteractionStore.setState({
+    loadInteractions: async () => undefined,
+    interactions: {
+      "stall-a": interaction("stall-a"),
+      "stall-b": interaction("stall-b"),
+      "stall-c": interaction("stall-c"),
+    } as never,
+  });
+  const view = await renderScreen(ProfileHomeScreen as never, {
+    name: "ProfileHome",
+    navigation: createFakeNavigation(),
+  });
+  assert.ok(view.findByLabel("Saved 3"), "three saved stalls and no saved dishes reads Saved 3");
 });
 
 test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not loading, and reports it", async () => {

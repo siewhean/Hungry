@@ -914,7 +914,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     matchesDiscoverChipSelection,
     unfilteredAreaStallCards,
   ]);
-  // One row of the stall list; `position` is its place in the list, for the card-opened event.
+  // Inside a mall: the nearest stalls that are not in it, so Home also shows what is around.
+  const stallsAroundPlace = useMemo(
+    () =>
+      inMallMode
+        ? unfilteredAreaStallCards
+            .filter((card) => card.venue.buildingId !== currentPlaceId)
+            .slice(0, 8)
+        : [],
+    [currentPlaceId, inMallMode, unfilteredAreaStallCards],
+  );
   // One row of the stall list; `position` is its place in the list, for the card-opened event.
   const renderAreaStallRow = (
     { building, venue, topDish }: (typeof areaStallCards)[number],
@@ -1744,6 +1753,42 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             {classicsSlot === "afterTrending" ? classicsSection : null}
           </>
         )}
+
+        {inMallMode && currentPlace ? (
+          // The food around the mall too, so being inside one never limits Home to its stalls.
+          <>
+            <TrendingList
+              title={`Most reviewed ${discoverAreaPhrase}`}
+              bites={showInitialDiscoverSkeleton ? [] : trendingListBites}
+              onOpen={(bite) => {
+                trackAnalyticsEvent("discover_card_opened", {
+                  surface: "home",
+                  rail: "trending",
+                  kind: "dish",
+                  position: Math.max(
+                    0,
+                    trendingListBites.findIndex((item) => item.id === bite.id),
+                  ),
+                });
+                openBiteDish(bite, "trending_bite_card");
+              }}
+              onPrefetch={(bite) => prefetchBiteCard(bite)}
+              onSeeAll={
+                canOpenDiscoverCollection ? () => openDiscoverCollection("trending") : undefined
+              }
+            />
+            {stallsAroundPlace.length ? (
+              <View style={{ gap: discoverContentGap }} testID="stalls-around-place">
+                <AppText variant="h2" style={{ color: themeTints.text }}>
+                  {`More near ${currentPlace.name}`}
+                </AppText>
+                {stallsAroundPlace.map((card, stallIndex) => (
+                  <Fragment key={card.venue.id}>{renderAreaStallRow(card, stallIndex)}</Fragment>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
 
         {inMallMode ? null : (
           <>

@@ -12,6 +12,7 @@ import { AddStallScreen } from "@/app/screens/profile/AddStallScreen";
 import { SettingsScreen } from "@/app/screens/profile/SettingsScreen";
 import { StallSubmissionsScreen } from "@/app/screens/profile/StallSubmissionsScreen";
 import { SettingsRow } from "@/components/settings/SettingsRow";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import {
@@ -284,7 +285,8 @@ test("Settings drops archived-posts copy, shows left-handed mode only to merchan
   assert.doesNotMatch(view.text(), /posts/i);
   assert.equal(view.findByText("Left-handed mode"), null);
   assert.equal(view.findByText("Sign in or create an account"), null);
-  assert.ok(view.findByText("Blocked people"), "hidden posts are archived, so only blocks list");
+  assert.equal(view.findByText("Blocked people"), null, "blocked people is archived with follows");
+  assert.equal(view.findByLabel("Profile visibility"), null, "profile visibility is archived too");
   const privacy = view.findByLabel("Privacy policy");
   assert.equal(privacy?.getAttribute("role"), "link");
 
@@ -292,6 +294,19 @@ test("Settings drops archived-posts copy, shows left-handed mode only to merchan
   const merchantView = await renderScreen(SettingsScreen as never, { name: "Settings" });
   assert.ok(merchantView.findByText("Left-handed mode"));
   assert.match(merchantView.text(), /add button on your merchant menu/);
+});
+
+test("Blocked people and Profile visibility come back when a build opts in to follow connections", async () => {
+  const flagValues = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = flagValues.followConnectionsEnabled;
+  flagValues.followConnectionsEnabled = true;
+  try {
+    const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
+    assert.ok(view.findByText("Blocked people"));
+    assert.ok(view.findByLabel("Profile visibility"));
+  } finally {
+    flagValues.followConnectionsEnabled = saved;
+  }
 });
 
 test("a tap on the Version row copies it", async () => {
