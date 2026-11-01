@@ -4,6 +4,7 @@
 // get_discovery_feed_by_location returns. Run with `node scripts/test-render.mjs <file>`.
 import assert from "node:assert/strict";
 import { clearCachedDiscoverFeed } from "@/features/discover/feedCache";
+import { resetSharedReads } from "@/lib/services/supabase/shareInFlight";
 import test, { afterEach, before, beforeEach } from "node:test";
 import { act, createElement } from "react";
 
@@ -172,6 +173,7 @@ function stubCatalog(releaseId: string) {
 }
 
 beforeEach(async () => {
+  resetSharedReads();
   // Every test starts as a first launch: no feed saved by an earlier visit.
   await clearCachedDiscoverFeed();
   await m.sessions.enterScenario("user");

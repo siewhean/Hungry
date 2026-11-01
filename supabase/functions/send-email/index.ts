@@ -2,6 +2,7 @@
 /* eslint-disable import/no-unresolved */
 import { Webhook } from "npm:standardwebhooks@^1";
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
+import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 type EmailAction =
   | "signup"
@@ -115,6 +116,7 @@ async function sendTemplatedEmail(args: {
   let response: Response;
   try {
     response = await fetch("https://api.resend.com/emails", {
+      signal: AbortSignal.timeout(TIMEOUT_MS.email),
       method: "POST",
       headers: {
         Authorization: `Bearer ${args.apiKey}`,

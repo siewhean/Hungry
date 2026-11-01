@@ -3,6 +3,7 @@
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
+import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 // Emails the support inbox when people have reported content (App Store 1.2: reports need a
 // timely response). Run every 15 minutes by the report-digest pg_cron job (20261031090000),
@@ -92,6 +93,7 @@ serveWithSentry("report-digest", async (request) => {
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
+      signal: AbortSignal.timeout(TIMEOUT_MS.email),
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
