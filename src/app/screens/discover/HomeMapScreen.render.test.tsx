@@ -21,7 +21,6 @@ let originalGetVenuesByIds = discovery.getVenuesByIds;
 
 const noFilters = {
   nearMe: false,
-  hawkerOnly: false,
   topRated: false,
   trendingOnly: false,
   mallOnly: false,

@@ -705,8 +705,7 @@ test("H4-11: in a mall the chips filter 'For you' and 'What's here' too", async 
   await m.renderKit.settle();
   assert.match(view.text(), /Nasi Padang/);
   assert.doesNotMatch(view.text(), /Chicken Rice/, "For you drops dishes the chip rules out");
-  await view.press(view.findByLabel(/What's here/));
-  await m.renderKit.settle();
+  // "What's here" is a section of the same page now, not a tab.
   assert.match(view.text(), /Hajjah Mariam/);
   assert.doesNotMatch(view.text(), /Tian Tian/, "What's here lists only stalls with a halal dish");
 });

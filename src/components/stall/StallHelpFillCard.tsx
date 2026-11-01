@@ -6,7 +6,7 @@ import { useHungryTheme } from "@/theme";
 type Props = {
   /** What the stall lacks, in the order the sentence names it: "menu", "hours", "reviews". */
   missing: readonly ("menu" | "hours" | "reviews")[];
-  /** Menu photo upload (a signed-in diner on a phone); left out otherwise. */
+  /** Menu or stall photo upload (a signed-in diner on a phone); left out otherwise. */
   onAddMenuPhoto?: () => void;
   isAddingMenuPhoto?: boolean;
   /** Opens the report page with "opening hours" picked. */
@@ -46,7 +46,7 @@ export function StallHelpFillCard({
       <View style={{ gap: spacing[2] }}>
         {onAddMenuPhoto ? (
           <Button
-            label={isAddingMenuPhoto ? "Uploading..." : "Add a menu photo"}
+            label={isAddingMenuPhoto ? "Uploading..." : "Add a menu/stall photo"}
             variant="secondary"
             disabled={isAddingMenuPhoto}
             onPress={onAddMenuPhoto}

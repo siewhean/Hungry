@@ -147,20 +147,22 @@ test("post composer never attaches a venue-only post to the stall's first dish",
 
 test("stall detail's menu photo button uploads through supply.submitMenuPhoto", () => {
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
-  assert.match(stall, /"Add a menu photo"/);
+  assert.match(stall, /"Add a menu\/stall photo"/);
   assert.match(stall, /getHungryService\(\)\.supply\.submitMenuPhoto\(\{\s*venueId: venue\.id/);
   assert.match(stall, /"Thanks, we'll add the menu soon\."/);
   // App Review 5.1.2(i): the photo is read by Google only after the person allowed AI features.
-  assert.match(stall, /const allowAiReading = await ensureAiSearchConsent\(\)/);
+  assert.match(stall, /kind === "menu" \? await ensureAiSearchConsent\(\) : false/);
   assert.match(stall, /allowAiReading,\s*\}\)/);
+  // A stall photo joins the same queue but is never sent to Google.
+  assert.match(stall, /photoKind: kind/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(
     service,
-    /if \(input\.allowAiReading\) \{\s*void client\.functions\s*\.invoke\("ingest-menu-photo"/,
+    /if \(input\.allowAiReading && !isStallPhoto\) \{\s*void client\.functions\s*\.invoke\("ingest-menu-photo"/,
   );
   assert.match(stall, /const canSubmitMenuPhoto = isAuthenticated && Platform\.OS !== "web"/);
   // No longer a detour into a review editor with no dishes.
-  assert.doesNotMatch(stall, /label="Add a menu photo"[\s\S]{0,200}ReviewMain/);
+  assert.doesNotMatch(stall, /label="Add a menu\/stall photo"[\s\S]{0,200}ReviewMain/);
 });
 
 test("prototype-only review features stay out of production", () => {

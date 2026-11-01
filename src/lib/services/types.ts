@@ -671,6 +671,11 @@ export interface SubmitMenuPhotoInput {
   dishId?: string;
   reviewText?: string;
   /**
+   * What the photo shows. A "stall" photo (the storefront) joins the same review queue, is never
+   * sent to Google and is named stall-<time> so a reviewer can tell it from a menu. Default "menu".
+   */
+  photoKind?: "menu" | "stall";
+  /**
    * The person allowed AI features, so the photo may be sent to Google to read the menu.
    * Without it the photo is stored but not sent (App Review 5.1.2(i)).
    */

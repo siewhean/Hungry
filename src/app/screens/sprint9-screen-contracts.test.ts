@@ -230,8 +230,8 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
-  assert.match(rootNavigator, /accessibilityLabel="Go back"/);
-  assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
+  // The floating scroll-to-reveal back button is gone app-wide: screens keep their header Back.
+  assert.doesNotMatch(rootNavigator, /GlobalScrollBackButton/);
 });
 
 test("Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share", () => {

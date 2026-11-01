@@ -10,7 +10,16 @@
  */
 
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
-import { FlatList, Modal, Pressable, ScrollView, View, Alert } from "react-native";
+import {
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  View,
+  Alert,
+} from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles, Check } from "lucide-react-native";
 import * as Haptics from "@/lib/haptics";
 
@@ -62,6 +71,9 @@ const MAX_WHEEL_ENTRIES = 12;
 
 // Without parties (production) the wheel is solo: no "party" or "group" wording.
 const PARTY_ENABLED = FEATURE_FLAGS.wheelPartyEnabled;
+
+/** Sheet height as a share of the screen. */
+const SHEET_HEIGHT = "64%";
 
 /** Stalls the server search returns for the Search tab. */
 const SEARCH_RESULT_LIMIT = 30;
@@ -427,369 +439,410 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
       onRequestClose={onClose}
       accessibilityViewIsModal
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Close add option sheet"
-        accessibilityHint="Dismisses the option picker"
-        style={{ flex: 1, backgroundColor: palette.overlay }}
-        onPress={onClose}
-      />
-      <View
-        accessibilityViewIsModal
-        style={{
-          backgroundColor: palette.bg,
-          borderTopLeftRadius: radii.xxl,
-          borderTopRightRadius: radii.xxl,
-          height: "80%",
-          ...shadows.floating,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
       >
-        {/* Header */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close add option sheet"
+          accessibilityHint="Dismisses the option picker"
+          style={{ flex: 1, backgroundColor: palette.overlay }}
+          onPress={onClose}
+        />
         <View
+          accessibilityViewIsModal
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: spacing[5],
-            borderBottomWidth: 1,
-            borderBottomColor: palette.border,
+            backgroundColor: palette.bg,
+            borderTopLeftRadius: radii.xxl,
+            borderTopRightRadius: radii.xxl,
+            // Opens lower than before (it was 80%): the keyboard stays closed until the diner
+            // taps the search box, and the sheet rises with it then.
+            height: SHEET_HEIGHT,
+            ...shadows.floating,
           }}
         >
-          <View style={{ flex: 1 }}>
-            <AppText style={{ fontSize: 20, fontWeight: "900" }}>Add an option</AppText>
-            <AppText
-              variant="micro"
-              tone="secondary"
-              accessibilityLiveRegion="polite"
-              testID="wheel-add-sheet-count"
-            >
-              {lastAdded
-                ? `Added ${lastAdded} · ${activeCount} on the wheel`
-                : `${activeCount} on the wheel`}
-            </AppText>
-            {groupDietaryRestrictions.length > 0 && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                  marginTop: 2,
-                }}
-              >
-                <AppSymbol
-                  name="exclamationmark.shield.fill"
-                  fallback={ShieldAlert}
-                  size={12}
-                  color={palette.error}
-                />
-                <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
-                  {PARTY_ENABLED ? "Group needs" : "Your needs"}:{" "}
-                  {groupDietaryRestrictions.join(", ").toUpperCase()}
-                </AppText>
-              </View>
-            )}
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Done adding options"
-            onPress={onClose}
-            hitSlop={12}
+          {/* Header */}
+          <View
             style={{
-              backgroundColor: palette.bgSoft,
-              minHeight: 44,
-              paddingHorizontal: spacing[3],
-              borderRadius: radii.pill,
-              alignItems: "center",
               flexDirection: "row",
-              gap: spacing[1],
-              justifyContent: "center",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: spacing[5],
+              borderBottomWidth: 1,
+              borderBottomColor: palette.border,
             }}
           >
-            <AppSymbol name="xmark" fallback={X} size={16} color={palette.text} />
-            <AppText variant="bodySmallBold">Done</AppText>
-          </Pressable>
-        </View>
-
-        {/* Tab bar */}
-        <View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              paddingHorizontal: spacing[3],
-              paddingVertical: spacing[4],
-              gap: spacing[2],
-            }}
-          >
-            {tabs.map((t) => (
-              <Pressable
-                key={t.id}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: tab === t.id }}
-                accessibilityLabel={`${t.label} tab`}
-                onPress={() => {
-                  setTab(t.id);
-                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                style={{
-                  paddingHorizontal: spacing[3],
-                  paddingVertical: spacing[2],
-                  borderRadius: radii.md,
-                  backgroundColor: tab === t.id ? palette.orangeLight : palette.bgSoft,
-                  borderWidth: 1,
-                  borderColor: tab === t.id ? palette.orange : palette.border,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+            <View style={{ flex: 1 }}>
+              <AppText style={{ fontSize: 20, fontWeight: "900" }}>Add an option</AppText>
+              <AppText
+                variant="micro"
+                tone="secondary"
+                accessibilityLiveRegion="polite"
+                testID="wheel-add-sheet-count"
               >
-                <View style={{ opacity: tab === t.id ? 1 : 0.6 }}>
-                  {t.id === "search" && (
-                    <AppSymbol
-                      name="magnifyingglass"
-                      fallback={Search}
-                      size={14}
-                      color={tab === t.id ? palette.orange : palette.text}
-                    />
-                  )}
-                  {t.id === "random" && (
-                    <AppSymbol
-                      name="safari"
-                      fallback={Compass}
-                      size={14}
-                      color={tab === t.id ? palette.orange : palette.text}
-                    />
-                  )}
-                  {t.id === "category" && (
-                    <AppSymbol
-                      name="plus"
-                      fallback={Plus}
-                      size={14}
-                      color={tab === t.id ? palette.orange : palette.text}
-                    />
-                  )}
-                  {t.id === "favourites" && (
-                    <AppSymbol
-                      name="heart"
-                      fallback={Heart}
-                      size={14}
-                      color={tab === t.id ? palette.orange : palette.text}
-                    />
-                  )}
-                </View>
-                <AppText
-                  variant="bodySmall"
+                {lastAdded
+                  ? `Added ${lastAdded} · ${activeCount} on the wheel`
+                  : `${activeCount} on the wheel`}
+              </AppText>
+              {groupDietaryRestrictions.length > 0 && (
+                <View
                   style={{
-                    color: tab === t.id ? palette.orange : palette.text,
-                    fontWeight: tab === t.id ? "700" : "500",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                    marginTop: 2,
                   }}
                 >
-                  {t.label}
-                </AppText>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Tab content */}
-        <View style={{ flex: 1 }}>
-          {tab === "search" && (
-            <>
-              <View
-                style={{
-                  paddingHorizontal: spacing[3],
-                  paddingBottom: spacing[4],
-                }}
-              >
-                <Input
-                  placeholder="Search stalls or dishes"
-                  value={query}
-                  onChangeText={setQuery}
-                  autoFocus
-                  leftIcon={
-                    <AppSymbol
-                      name="magnifyingglass"
-                      fallback={Search}
-                      size={18}
-                      color={palette.textMuted}
-                    />
-                  }
-                />
-              </View>
-              <FlatList
-                data={searchResults}
-                keyExtractor={(v) => v.id}
-                renderItem={({ item }) => (
-                  <VenueRow
-                    venue={item}
-                    hero={item.hero}
-                    onAdd={() => addVenue(item)}
-                    matchScore={item.matchScore}
-                    added={addedVenueIds.has(item.id)}
+                  <AppSymbol
+                    name="exclamationmark.shield.fill"
+                    fallback={ShieldAlert}
+                    size={12}
+                    color={palette.error}
                   />
-                )}
-                contentContainerStyle={{ paddingBottom: 40 }}
-                ListEmptyComponent={
-                  query.trim() ? (
-                    <EmptyState
-                      title="No stalls found"
-                      body={`No stalls found for "${query}".`}
-                      icon={
+                  <AppText variant="micro" style={{ color: palette.error, fontWeight: "700" }}>
+                    {PARTY_ENABLED ? "Group needs" : "Your needs"}:{" "}
+                    {groupDietaryRestrictions.join(", ").toUpperCase()}
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Done adding options"
+              onPress={onClose}
+              hitSlop={12}
+              style={{
+                backgroundColor: palette.bgSoft,
+                minHeight: 44,
+                paddingHorizontal: spacing[3],
+                borderRadius: radii.pill,
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[1],
+                justifyContent: "center",
+              }}
+            >
+              <AppSymbol name="xmark" fallback={X} size={16} color={palette.text} />
+              <AppText variant="bodySmallBold">Done</AppText>
+            </Pressable>
+          </View>
+
+          {/* Tab bar */}
+          <View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: spacing[3],
+                paddingVertical: spacing[4],
+                gap: spacing[2],
+              }}
+            >
+              {tabs.map((t) => (
+                <Pressable
+                  key={t.id}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: tab === t.id }}
+                  accessibilityLabel={`${t.label} tab`}
+                  onPress={() => {
+                    setTab(t.id);
+                    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={{
+                    paddingHorizontal: spacing[3],
+                    paddingVertical: spacing[2],
+                    borderRadius: radii.md,
+                    backgroundColor: tab === t.id ? palette.orangeLight : palette.bgSoft,
+                    borderWidth: 1,
+                    borderColor: tab === t.id ? palette.orange : palette.border,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <View style={{ opacity: tab === t.id ? 1 : 0.6 }}>
+                    {t.id === "search" && (
+                      <AppSymbol
+                        name="magnifyingglass"
+                        fallback={Search}
+                        size={14}
+                        color={tab === t.id ? palette.orange : palette.text}
+                      />
+                    )}
+                    {t.id === "random" && (
+                      <AppSymbol
+                        name="safari"
+                        fallback={Compass}
+                        size={14}
+                        color={tab === t.id ? palette.orange : palette.text}
+                      />
+                    )}
+                    {t.id === "category" && (
+                      <AppSymbol
+                        name="plus"
+                        fallback={Plus}
+                        size={14}
+                        color={tab === t.id ? palette.orange : palette.text}
+                      />
+                    )}
+                    {t.id === "favourites" && (
+                      <AppSymbol
+                        name="heart"
+                        fallback={Heart}
+                        size={14}
+                        color={tab === t.id ? palette.orange : palette.text}
+                      />
+                    )}
+                  </View>
+                  <AppText
+                    variant="bodySmall"
+                    style={{
+                      color: tab === t.id ? palette.orange : palette.text,
+                      fontWeight: tab === t.id ? "700" : "500",
+                    }}
+                  >
+                    {t.label}
+                  </AppText>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Tab content */}
+          <View style={{ flex: 1 }}>
+            {tab === "search" && (
+              <>
+                <View
+                  style={{
+                    paddingHorizontal: spacing[3],
+                    paddingBottom: spacing[4],
+                  }}
+                >
+                  <Input
+                    placeholder="Search stalls or dishes"
+                    value={query}
+                    onChangeText={setQuery}
+                    leftIcon={
+                      <AppSymbol
+                        name="magnifyingglass"
+                        fallback={Search}
+                        size={18}
+                        color={palette.textMuted}
+                      />
+                    }
+                  />
+                </View>
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(v) => v.id}
+                  renderItem={({ item }) => (
+                    <VenueRow
+                      venue={item}
+                      hero={item.hero}
+                      onAdd={() => addVenue(item)}
+                      matchScore={item.matchScore}
+                      added={addedVenueIds.has(item.id)}
+                    />
+                  )}
+                  contentContainerStyle={{ paddingBottom: 40 }}
+                  ListEmptyComponent={
+                    query.trim() ? (
+                      <EmptyState
+                        title="No stalls found"
+                        body={`No stalls found for "${query}".`}
+                        icon={
+                          <AppSymbol
+                            name="magnifyingglass"
+                            fallback={Search}
+                            size={40}
+                            color={palette.textMuted}
+                          />
+                        }
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          padding: spacing[8],
+                          alignItems: "center",
+                          gap: spacing[3],
+                        }}
+                      >
                         <AppSymbol
                           name="magnifyingglass"
                           fallback={Search}
+                          size={40}
+                          color={palette.border}
+                        />
+                        <AppText tone="secondary" style={{ textAlign: "center" }}>
+                          Type to search for a stall.
+                        </AppText>
+                      </View>
+                    )
+                  }
+                />
+              </>
+            )}
+
+            {tab === "random" && (
+              <View
+                style={{
+                  padding: spacing[8],
+                  gap: spacing[6],
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: radii.pill,
+                    backgroundColor: palette.bgSoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <AppSymbol name="safari" fallback={Compass} color={palette.orange} size={40} />
+                </View>
+                <View style={{ gap: spacing[1], alignItems: "center" }}>
+                  <AppText style={{ fontSize: 20, fontWeight: "800" }}>Surprise me</AppText>
+                  <AppText
+                    style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
+                    tone="secondary"
+                  >
+                    {usesLocation
+                      ? "Can't decide? We'll add a random stall close to you."
+                      : "Can't decide? Let us add a random stall to the wheel."}
+                  </AppText>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    usesLocation ? "Pick a random stall close to me" : "Pick a random stall for me"
+                  }
+                  accessibilityState={{ disabled: nothingLeftToAdd }}
+                  disabled={nothingLeftToAdd}
+                  onPress={addRandom}
+                  style={({ pressed }) => [
+                    {
+                      backgroundColor: palette.surface,
+                      borderColor: palette.orange,
+                      borderWidth: 2,
+                      paddingHorizontal: spacing[8],
+                      paddingVertical: spacing[4],
+                      borderRadius: radii.pill,
+                      opacity: nothingLeftToAdd ? 0.5 : 1,
+                      transform: [{ translateY: pressed ? 1 : 0 }],
+                      ...shadows.card,
+                    },
+                  ]}
+                >
+                  <AppText
+                    style={{
+                      color: palette.orange,
+                      fontWeight: "800",
+                      fontSize: 18,
+                    }}
+                  >
+                    Pick for me
+                  </AppText>
+                </Pressable>
+                {nothingLeftToAdd ? (
+                  <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
+                    Every stall is already on the wheel.
+                  </AppText>
+                ) : null}
+              </View>
+            )}
+
+            {tab === "category" && (
+              <>
+                <View
+                  style={{
+                    borderBottomWidth: 1,
+                    borderBottomColor: palette.border,
+                    paddingBottom: spacing[4],
+                  }}
+                >
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{
+                      paddingHorizontal: spacing[3],
+                      gap: spacing[2],
+                    }}
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <Pressable
+                        key={cat}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: selectedCategory === cat }}
+                        accessibilityLabel={`${cat} category`}
+                        onPress={() => {
+                          setSelectedCategory(selectedCategory === cat ? null : cat);
+                          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }}
+                        style={{
+                          paddingHorizontal: spacing[3],
+                          paddingVertical: spacing[2],
+                          borderRadius: radii.pill,
+                          backgroundColor: selectedCategory === cat ? palette.navy : palette.bgSoft,
+                          borderWidth: 1,
+                          borderColor: selectedCategory === cat ? palette.navy : palette.border,
+                        }}
+                      >
+                        <AppText
+                          variant="bodySmall"
+                          style={{
+                            color: selectedCategory === cat ? palette.textOnDark : palette.text,
+                            textTransform: "capitalize",
+                            fontWeight: selectedCategory === cat ? "700" : "500",
+                          }}
+                        >
+                          {cat}
+                        </AppText>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+                <FlatList
+                  data={categoryResults}
+                  keyExtractor={(v) => v.id}
+                  renderItem={({ item }) => (
+                    <VenueRow
+                      venue={item}
+                      hero={item.hero}
+                      onAdd={() => addVenue(item)}
+                      matchScore={item.matchScore}
+                      added={addedVenueIds.has(item.id)}
+                    />
+                  )}
+                  contentContainerStyle={{ paddingBottom: 40 }}
+                  ListEmptyComponent={
+                    <EmptyState
+                      title="No stalls found"
+                      body={
+                        selectedCategory
+                          ? "No stalls in this category."
+                          : "Pick a category above to browse options."
+                      }
+                      icon={
+                        <AppSymbol
+                          name="plus"
+                          fallback={Plus}
                           size={40}
                           color={palette.textMuted}
                         />
                       }
                     />
-                  ) : (
-                    <View
-                      style={{
-                        padding: spacing[8],
-                        alignItems: "center",
-                        gap: spacing[3],
-                      }}
-                    >
-                      <AppSymbol
-                        name="magnifyingglass"
-                        fallback={Search}
-                        size={40}
-                        color={palette.border}
-                      />
-                      <AppText tone="secondary" style={{ textAlign: "center" }}>
-                        Type to search for a stall.
-                      </AppText>
-                    </View>
-                  )
-                }
-              />
-            </>
-          )}
+                  }
+                />
+              </>
+            )}
 
-          {tab === "random" && (
-            <View
-              style={{
-                padding: spacing[8],
-                gap: spacing[6],
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: radii.pill,
-                  backgroundColor: palette.bgSoft,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <AppSymbol name="safari" fallback={Compass} color={palette.orange} size={40} />
-              </View>
-              <View style={{ gap: spacing[1], alignItems: "center" }}>
-                <AppText style={{ fontSize: 20, fontWeight: "800" }}>Surprise me</AppText>
-                <AppText
-                  style={{ textAlign: "center", paddingHorizontal: spacing[3] }}
-                  tone="secondary"
-                >
-                  {usesLocation
-                    ? "Can't decide? We'll add a random stall close to you."
-                    : "Can't decide? Let us add a random stall to the wheel."}
-                </AppText>
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  usesLocation ? "Pick a random stall close to me" : "Pick a random stall for me"
-                }
-                accessibilityState={{ disabled: nothingLeftToAdd }}
-                disabled={nothingLeftToAdd}
-                onPress={addRandom}
-                style={({ pressed }) => [
-                  {
-                    backgroundColor: palette.surface,
-                    borderColor: palette.orange,
-                    borderWidth: 2,
-                    paddingHorizontal: spacing[8],
-                    paddingVertical: spacing[4],
-                    borderRadius: radii.pill,
-                    opacity: nothingLeftToAdd ? 0.5 : 1,
-                    transform: [{ translateY: pressed ? 1 : 0 }],
-                    ...shadows.card,
-                  },
-                ]}
-              >
-                <AppText
-                  style={{
-                    color: palette.orange,
-                    fontWeight: "800",
-                    fontSize: 18,
-                  }}
-                >
-                  Pick for me
-                </AppText>
-              </Pressable>
-              {nothingLeftToAdd ? (
-                <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
-                  Every stall is already on the wheel.
-                </AppText>
-              ) : null}
-            </View>
-          )}
-
-          {tab === "category" && (
-            <>
-              <View
-                style={{
-                  borderBottomWidth: 1,
-                  borderBottomColor: palette.border,
-                  paddingBottom: spacing[4],
-                }}
-              >
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    paddingHorizontal: spacing[3],
-                    gap: spacing[2],
-                  }}
-                >
-                  {CATEGORIES.map((cat) => (
-                    <Pressable
-                      key={cat}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: selectedCategory === cat }}
-                      accessibilityLabel={`${cat} category`}
-                      onPress={() => {
-                        setSelectedCategory(selectedCategory === cat ? null : cat);
-                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      }}
-                      style={{
-                        paddingHorizontal: spacing[3],
-                        paddingVertical: spacing[2],
-                        borderRadius: radii.pill,
-                        backgroundColor: selectedCategory === cat ? palette.navy : palette.bgSoft,
-                        borderWidth: 1,
-                        borderColor: selectedCategory === cat ? palette.navy : palette.border,
-                      }}
-                    >
-                      <AppText
-                        variant="bodySmall"
-                        style={{
-                          color: selectedCategory === cat ? palette.textOnDark : palette.text,
-                          textTransform: "capitalize",
-                          fontWeight: selectedCategory === cat ? "700" : "500",
-                        }}
-                      >
-                        {cat}
-                      </AppText>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-              </View>
+            {tab === "favourites" && (
               <FlatList
-                data={categoryResults}
+                data={favouriteVenues}
                 keyExtractor={(v) => v.id}
                 renderItem={({ item }) => (
                   <VenueRow
@@ -803,48 +856,23 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 contentContainerStyle={{ paddingBottom: 40 }}
                 ListEmptyComponent={
                   <EmptyState
-                    title="No stalls found"
-                    body={
-                      selectedCategory
-                        ? "No stalls in this category."
-                        : "Pick a category above to browse options."
-                    }
+                    title="No favourites yet"
+                    body="Start liking some dishes to save them for this wheel."
                     icon={
-                      <AppSymbol name="plus" fallback={Plus} size={40} color={palette.textMuted} />
+                      <AppSymbol
+                        name="heart"
+                        fallback={Heart}
+                        size={40}
+                        color={palette.textMuted}
+                      />
                     }
                   />
                 }
               />
-            </>
-          )}
-
-          {tab === "favourites" && (
-            <FlatList
-              data={favouriteVenues}
-              keyExtractor={(v) => v.id}
-              renderItem={({ item }) => (
-                <VenueRow
-                  venue={item}
-                  hero={item.hero}
-                  onAdd={() => addVenue(item)}
-                  matchScore={item.matchScore}
-                  added={addedVenueIds.has(item.id)}
-                />
-              )}
-              contentContainerStyle={{ paddingBottom: 40 }}
-              ListEmptyComponent={
-                <EmptyState
-                  title="No favourites yet"
-                  body="Start liking some dishes to save them for this wheel."
-                  icon={
-                    <AppSymbol name="heart" fallback={Heart} size={40} color={palette.textMuted} />
-                  }
-                />
-              }
-            />
-          )}
+            )}
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

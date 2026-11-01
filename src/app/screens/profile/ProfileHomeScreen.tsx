@@ -995,7 +995,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         </OverflowMenu>
       }
     >
-      <View style={{ gap: spacing[4], paddingBottom: spacing[8], position: "relative" }}>
+      <View style={{ gap: spacing[4], position: "relative" }}>
         <PendingDeletionBanner />
         <View
           style={[
