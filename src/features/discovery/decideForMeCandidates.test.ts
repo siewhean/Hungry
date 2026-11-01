@@ -44,7 +44,7 @@ test("the map's open check uses the merchant's weekly schedule over the listed h
   assert.equal(isVenueOpenNow(venue("no-hours", "", false), TEN_PM_SGT), false);
 });
 
-test("Decide for Me skips a stall that closed hours ago", () => {
+test("Decide for Me puts a stall that closed hours ago after the open ones, not out of the list", () => {
   const lunchOnly = venue("lunch-stall", "Mon-Sun 11am-2pm");
   const supper = venue("supper-stall", "Mon-Sun 6pm-11:30pm");
   const result = preferOpenStalls(
@@ -57,7 +57,7 @@ test("Decide for Me skips a stall that closed hours ago", () => {
   );
   assert.deepEqual(
     result.candidates.map((candidate) => candidate.id),
-    ["supper-dish"],
+    ["supper-dish", "lunch-dish"],
   );
   assert.equal(result.onlyClosed, false);
   assert.equal(result.openStateByVenueId.get(supper.id)?.status, "open");
@@ -89,8 +89,8 @@ test("MERCH-R4 a paused stall is closed now whatever its hours say, and opens ag
   );
   assert.deepEqual(
     result.candidates.map((candidate) => candidate.id),
-    ["open-dish"],
-    "Decide for Me never sends a diner to a paused stall while another is open",
+    ["open-dish", "paused-dish"],
+    "a paused stall comes after the open one, still listed so the screen can say Closed",
   );
 });
 
@@ -107,7 +107,7 @@ test("Decide for Me keeps stalls with unknown hours after open ones", () => {
   );
 });
 
-test("Decide for Me falls back to closed stalls only when nothing is open", () => {
+test("Decide for Me lists closed stalls when nothing is open, and says so", () => {
   const lunchOnly = venue("lunch-stall", "Mon-Sun 11am-2pm");
   const result = preferOpenStalls(
     [dish("lunch-dish", lunchOnly.id)],

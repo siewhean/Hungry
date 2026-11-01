@@ -103,8 +103,9 @@ export interface OpenAwareCandidates {
 }
 
 /**
- * Prefer stalls that are open now (Singapore time). Stalls with no hours stay
- * eligible after the open ones; closed stalls are used only when nothing else is left.
+ * Stalls that are open now (Singapore time) first, then stalls with no hours, then the closed
+ * ones soonest-opening first. Closed stalls stay in the list so a diner at 1 am can still see
+ * what is around; the screen labels them Closed and "Open now" hides them.
  */
 export function preferOpenStalls(
   dishes: DishDetail[],
@@ -134,9 +135,11 @@ export function preferOpenStalls(
     .sort((a, b) => a.wait - b.wait || a.index - b.index)
     .map(({ dish }) => dish);
   const eligible = [...open, ...unknown];
-  return eligible.length
-    ? { candidates: eligible, onlyClosed: false, openStateByVenueId }
-    : { candidates: closed, onlyClosed: closed.length > 0, openStateByVenueId };
+  return {
+    candidates: [...eligible, ...closed],
+    onlyClosed: eligible.length === 0 && closed.length > 0,
+    openStateByVenueId,
+  };
 }
 
 /** "Opens 7am" / "Opens 5:30pm" as minutes from `now`; Infinity when there is no time to read. */

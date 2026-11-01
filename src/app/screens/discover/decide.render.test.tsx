@@ -159,7 +159,7 @@ test("a pick left from an earlier visit is not shown or logged while the pool lo
   let release: (dishes: DishDetail[]) => void = () => undefined;
   serve(() => new Promise<DishDetail[]>((resolve) => (release = resolve)));
   const view = await renderResult({ surface: "push" });
-  assert.match(view.text(), /Finding a dish near you/);
+  assert.ok(view.findByLabel("Finding a dish near you"));
   assert.doesNotMatch(view.text(), /Old Lunch Pick/);
   assert.equal(events("decide_for_me_result_shown").length, 0);
 
@@ -824,4 +824,103 @@ test("R5-5 the Decide back button is 44 pt, and distances read '120 m away'", as
   const src = readFileSync("src/app/screens/discover/DecideForMeResultScreen.tsx", "utf8");
   assert.match(src, /const BACK_BUTTON_SIZE = 44;/);
   assert.match(src, /width: BACK_BUTTON_SIZE,\s+height: BACK_BUTTON_SIZE/);
+});
+
+test("closed stalls stay in the picks after the open ones, labelled Closed, and Open now hides them", async () => {
+  const today = getSingaporeDay();
+  const otherDay = DAY_ORDER[(DAY_ORDER.indexOf(today) + 3) % 7];
+  // The closed stall matches best and is nearest, but an open stall still leads.
+  serve([dish("closed", "Closed Laksa", { distanceMeters: 50 }), dish("open", "Open Rice")]);
+  discovery.getVenuesByIds = (async () => [
+    {
+      id: "venue-closed",
+      name: "Closed Laksa Stall",
+      operatingHours: `${otherDay} 10am-11am`,
+      isOpen: false,
+    },
+    { id: "venue-open", name: "Open Rice Stall", operatingHours: "", isOpen: true },
+  ]) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.match(view.text(), /Open Rice/, "the open stall leads");
+  assert.equal(view.findByTestId("decide-all-closed"), null);
+
+  // Open now hides the closed stall: turning down the open pick leaves nothing to offer.
+  await view.press(view.findByLabel("Open now"));
+  await view.settle();
+  assert.match(view.text(), /Open Rice/);
+  await view.press(view.findByText("Another pick"));
+  assert.doesNotMatch(view.text(), /Closed Laksa/, "Open now hides the closed stall");
+});
+
+test("the closed stall is still offered after the open one when Open now is off", async () => {
+  const today = getSingaporeDay();
+  const otherDay = DAY_ORDER[(DAY_ORDER.indexOf(today) + 3) % 7];
+  serve([dish("closed", "Closed Laksa", { distanceMeters: 50 }), dish("open", "Open Rice")]);
+  discovery.getVenuesByIds = (async () => [
+    {
+      id: "venue-closed",
+      name: "Closed Laksa Stall",
+      operatingHours: `${otherDay} 10am-11am`,
+      isOpen: false,
+    },
+    { id: "venue-open", name: "Open Rice Stall", operatingHours: "", isOpen: true },
+  ]) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  await view.press(view.findByText("Another pick"));
+  assert.match(view.text(), /Closed Laksa/, "the closed stall is offered after the open one");
+  assert.match(view.text(), /Closed/);
+});
+
+test("with Open now on and nothing open, the screen offers the closed stalls back", async () => {
+  const today = getSingaporeDay();
+  const otherDay = DAY_ORDER[(DAY_ORDER.indexOf(today) + 3) % 7];
+  serve([dish("a", "Chicken Rice")]);
+  discovery.getVenuesByIds = (async () => [
+    {
+      id: "venue-a",
+      name: "Chicken Rice Stall",
+      operatingHours: `${otherDay} 10am-11am`,
+      isOpen: false,
+    },
+  ]) as unknown as typeof discovery.getVenuesByIds;
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  await view.press(view.findByLabel("Open now"));
+  await view.settle();
+  assert.match(view.text(), /Nothing open within 1\.0 km/);
+  await view.press(view.findByText("Show closed stalls too"));
+  await view.settle();
+  assert.match(view.text(), /Chicken Rice/);
+});
+
+test("the no-match screen is a title and buttons, with no description under it", async () => {
+  serve([]);
+  const view = await renderResult({ surface: "push" });
+  await view.settle();
+  assert.match(view.text(), /No match found/);
+  assert.doesNotMatch(view.text(), /No dish fits your current filters/);
+});
+
+test("a full page of picks asks for the next page, so one mall cannot fill the pool", async () => {
+  const mall = Array.from({ length: 50 }, (_, index) =>
+    dish(`mall-${index}`, `Mall Dish ${index}`, { buildingId: "mall", distanceMeters: 10 }),
+  );
+  const around = dish("around", "Hawker Prawn Mee", { buildingId: "hawker", distanceMeters: 700 });
+  searchCalls = [];
+  discovery.searchDishes = (async (filters: SearchFilters) => {
+    searchCalls.push(filters);
+    return filters.cursor
+      ? [{ dish: around, score: 0.5 }]
+      : mall.map((item, index) => ({ dish: item, score: 1 - index / 100 }));
+  }) as typeof discovery.searchDishes;
+  discovery.getVenuesByIds = (async () => []) as typeof discovery.getVenuesByIds;
+  discovery.getVenue = (async () => {
+    throw new Error("no venue");
+  }) as typeof discovery.getVenue;
+  await renderResult({ surface: "push" });
+  assert.equal(searchCalls.length, 2);
+  assert.equal(searchCalls[0].cursor, undefined);
+  assert.deepEqual(searchCalls[1].cursor, { score: 1 - 49 / 100, dishId: "mall-49" });
 });

@@ -16,7 +16,8 @@ const showDebugErrorDetails =
 
 interface EmptyStateProps {
   title: string;
-  body: string;
+  /** Optional: a title and its buttons often say it all. */
+  body?: string;
   icon?: ReactNode;
   ctaLabel?: string;
   onPress?: () => void;
@@ -77,9 +78,11 @@ export function EmptyState({
       <AppText variant="h3" style={{ textAlign: "center" }}>
         {title}
       </AppText>
-      <AppText tone="secondary" style={{ textAlign: "center" }}>
-        {body}
-      </AppText>
+      {body ? (
+        <AppText tone="secondary" style={{ textAlign: "center" }}>
+          {body}
+        </AppText>
+      ) : null}
       {showDebugErrorDetails && errorMessage ? (
         <AppText tone="muted" variant="bodySmall" style={{ textAlign: "center" }}>
           {errorMessage}
