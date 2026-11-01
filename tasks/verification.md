@@ -1652,3 +1652,8 @@ Use the smallest check that matches the change risk.
 - New tests: `feedMerge.test.ts` (order, dedupe, fallback, empty full), four hook cases in `useDiscoverFeed.live.render.test.tsx` (first page then merge, late first page ignored, offline or empty first page waits, full-feed failure keeps the first stalls), and a Home screen case in `DiscoverEntryScreen.render.test.tsx`.
 - Local PG16 stand-in smoke `discovery_feed_candidates_follow_limit.sql` passes: limit 10 returns 10 led by the far menu stall; limit 100 returns 100 and keeps it; the full read output is unchanged.
 - Not run: staging rehearsal (sh), prod timing of the limit-10 call (after ship), a device build.
+### PERF-CHECKLIST, 2026-11-01
+- `npm run typecheck` clean; `npm test` 2630 pass; `npm run test:render` 1126 pass; `npm run test:coverage` OK (baseline updated); migration safety, n-plus-one, races and rate-limit checks pass.
+- New tests: `shareInFlight.test.ts` (share, no cache, per client, hung request not joined, failure shared), `external-call-timeouts.test.ts` (fails on the old Edge Function code: send-email and report-digest had no signal).
+- Prod read-only: Supabase performance advisor (no missing indexes on hot tables; 74 unindexed FKs, mostly admin/staging/archived-social) and API logs (about 8 bulk table reads at start, near-empty responses).
+- Not run: Edge Functions against the real providers (redeploy by sh), a phone build, a slow-network test.

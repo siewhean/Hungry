@@ -2,6 +2,7 @@
 /* eslint-disable import/no-unresolved */
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 // Checks photos a person has just uploaded for explicit or violent content before the review
 // is published (App Store 1.2: filter objectionable material before it is posted). The app
@@ -178,7 +179,9 @@ serveWithSentry("check-photo-safety", async (request) => {
     const images = await Promise.all(
       signed.data.map(async (entry) => {
         if (!entry?.signedUrl) throw new Error("signed_url_missing");
-        const image = await fetch(entry.signedUrl);
+        const image = await fetch(entry.signedUrl, {
+          signal: AbortSignal.timeout(TIMEOUT_MS.photoDownload),
+        });
         if (!image.ok) throw new Error(`image_fetch_failed:${image.status}`);
         const bytes = new Uint8Array(await image.arrayBuffer());
         if (bytes.length > MAX_PHOTO_BYTES) throw new Error("image_too_large");
@@ -189,6 +192,7 @@ serveWithSentry("check-photo-safety", async (request) => {
     const vision = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`,
       {
+        signal: AbortSignal.timeout(TIMEOUT_MS.vision),
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -201,6 +201,9 @@ export function pathForReencodedImage(
   return dot > slash ? `${path.slice(0, dot)}.${extension}` : `${path}.${extension}`;
 }
 
+/** How long a stored photo may be cached. A path is written once, so its bytes never change. */
+export const STORED_MEDIA_CACHE_SECONDS = "31536000";
+
 async function uploadViaSignedUrl(
   client: SupabaseClient,
   bucket: string,
@@ -220,6 +223,8 @@ async function uploadViaSignedUrl(
       .from(bucket)
       .uploadToSignedUrl(path, signed.token, blob, {
         contentType,
+        // Never overwritten (upsert is off), so browsers and the CDN may keep the file for a year.
+        cacheControl: STORED_MEDIA_CACHE_SECONDS,
         upsert: false,
       });
     return !uploadError;
