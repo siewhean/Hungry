@@ -978,7 +978,7 @@ export function DecideForMeResultScreen() {
         })}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing[6] }}
       >
         {/* Parallax Hero */}
         <Animated.View

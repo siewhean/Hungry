@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
+  ChevronDown,
   ChevronRight,
   Drumstick,
   Moon,
@@ -43,7 +44,6 @@ import {
   Skeleton,
   SkeletonText,
 } from "@/components/ui";
-import { DiscoverModeTabs, type DiscoverMode } from "@/components/discover/DiscoverModeTabs";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { ForYouCard } from "@/components/discover/ForYouCard";
 import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
@@ -320,7 +320,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     navigation.navigate("SearchHome");
   }, [navigation]);
 
-  const [discoverMode, setDiscoverMode] = useState<DiscoverMode>("forYou");
   const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
     DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
   );
@@ -865,7 +864,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // Inside a mall: "For you" ranks its dishes by the diner's palate, "What's here" lists its stalls.
   const inMallMode = isUserMode && Boolean(currentPlace);
   const forYouPicks = useMemo(() => {
-    if (!inMallMode || discoverMode !== "forYou") return [];
+    if (!inMallMode) return [];
     const picks = rankForYou(areaDishPool, {
       tasteVector: profile.tasteVector,
       dietaryFlags: profile.dietaryPreferences,
@@ -878,7 +877,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [
     areaDishPool,
     currentPlaceId,
-    discoverMode,
     inMallMode,
     isDiscoverFiltering,
     matchesDiscoverChipSelection,
@@ -887,7 +885,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     profile.tasteVector,
   ]);
   const hereStalls = useMemo<HereStall[]>(() => {
-    if (!inMallMode || discoverMode !== "here") return [];
+    if (!inMallMode) return [];
     const dishesByVenueId = new Map<string, DishDetail[]>();
     for (const dish of areaDishPool) {
       const list = dishesByVenueId.get(dish.venueId);
@@ -912,7 +910,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [
     areaDishPool,
     currentPlaceId,
-    discoverMode,
     inMallMode,
     isDiscoverFiltering,
     matchesDiscoverChipSelection,
@@ -1288,11 +1285,20 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       getCardLabel={getBiteLabel}
     />
   ) : null;
-  const classicsSection = inMallMode ? null : (
+  const classicsSection = (
     <View style={{ gap: discoverContentGap }}>
-      <AppText variant="h2" style={{ color: themeTints.text }}>
-        {popularFoodTitle}
-      </AppText>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`See all dishes: ${popularFoodTitle}`}
+        hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+        onPress={() => navigation.navigate("BrowseDishes")}
+        style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+      >
+        <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
+          {popularFoodTitle}
+        </AppText>
+        <ChevronRight color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
+      </Pressable>
       {shouldShowPopularFoodSkeleton ? (
         <ScrollView
           horizontal
@@ -1320,6 +1326,23 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         </ScrollView>
       ) : null}
     </View>
+  );
+
+  // Stall cards scroll sideways in a row, one row per section.
+  const mallCardWidth = Math.min(screenWidth * 0.78, 320);
+  const renderStallRail = (cards: typeof areaStallCards) => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={edgeToEdgeHorizontalScrollStyle}
+      contentContainerStyle={{ gap: spacing[3] }}
+    >
+      {cards.map((card, stallIndex) => (
+        <View key={card.venue.id} style={{ width: mallCardWidth }}>
+          {renderAreaStallRow(card, stallIndex)}
+        </View>
+      ))}
+    </ScrollView>
   );
 
   return (
@@ -1354,24 +1377,43 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               gap: spacing[2],
             }}
           >
-            <View
-              accessible
-              accessibilityLabel={
+            {/* The place is tappable: search any area, mall or hawker centre to see its food. */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Change location. ${
                 needsDiscoverAreaChoice
                   ? `Across ${discoverHeaderLabel}`
-                  : `You are at ${discoverHeaderLabel}`
+                  : `${hasManualAreaPick ? "Showing food in" : "You are at"} ${discoverHeaderLabel}`
+              }`}
+              accessibilityHint="Opens a search for an area, mall or hawker centre"
+              hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+              onPress={() =>
+                navigation.navigate("OnboardingStack", {
+                  screen: "ManualLocationPicker",
+                  params: { mode: "settings" },
+                })
               }
-              style={{ flex: 1 }}
+              style={{ flex: 1, minHeight: 44, justifyContent: "center" }}
             >
               {needsDiscoverAreaChoice ? null : (
                 <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-                  You are at
+                  {hasManualAreaPick ? "Showing food in" : "You are at"}
                 </AppText>
               )}
-              <AppText variant="h2" style={{ color: themeTints.text }} numberOfLines={1}>
-                {needsDiscoverAreaChoice ? `Across ${discoverHeaderLabel}` : discoverHeaderLabel}
-              </AppText>
-            </View>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                <AppText
+                  variant="h2"
+                  style={{ color: themeTints.text, flexShrink: 1 }}
+                  numberOfLines={1}
+                >
+                  {needsDiscoverAreaChoice ? `Across ${discoverHeaderLabel}` : discoverHeaderLabel}
+                </AppText>
+                <ChevronDown
+                  color={themeTints.isDark ? palette.white : palette.textMuted}
+                  size={20}
+                />
+              </View>
+            </Pressable>
             {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
             {FEATURE_FLAGS.mapEnabled ? (
               <DiscoverViewToggle
@@ -1542,8 +1584,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           />
         ) : null}
 
-        {inMallMode ? <DiscoverModeTabs value={discoverMode} onChange={setDiscoverMode} /> : null}
-
         {classicsSlot === "top" ? classicsSection : null}
 
         {/* Decision action chips */}
@@ -1670,66 +1710,106 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         </View>
 
         {inMallMode && currentPlace ? (
-          discoverMode === "forYou" ? (
+          <>
+            {/* In a mall, "For you" and "What's here" are two sections of the page, not two buttons. */}
             <View style={{ gap: discoverContentGap }} testID="for-you-list">
-              <AppText variant="h2" style={{ color: themeTints.text }}>
-                {`For you at ${currentPlace.name}`}
-              </AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`See all dishes at ${currentPlace.name}`}
+                hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+                onPress={() =>
+                  navigation.navigate("SearchResults", {
+                    browseMode: "dishes",
+                    placeId: currentPlace.id,
+                    placeName: currentPlace.name,
+                  })
+                }
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[2],
+                  minHeight: 44,
+                }}
+              >
+                <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
+                  {`For you at ${currentPlace.name}`}
+                </AppText>
+                <ChevronRight
+                  color={themeTints.isDark ? palette.white : palette.textMuted}
+                  size={20}
+                />
+              </Pressable>
               {forYouPicks.length ? (
-                forYouPicks.map((pick) => (
-                  <ForYouCard
-                    key={pick.dish.id}
-                    pick={pick}
-                    onPressIn={() => prefetchDishDetail(pick.dish.id, repository)}
-                    onPress={() =>
-                      navigation.navigate("DishDetail", {
-                        dishId: pick.dish.id,
-                        source: "home_pick",
-                        prefill: dishPrefillFrom(pick.dish),
-                      })
-                    }
-                  />
-                ))
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={edgeToEdgeHorizontalScrollStyle}
+                  contentContainerStyle={{ gap: spacing[3] }}
+                >
+                  {forYouPicks.map((pick) => (
+                    <ForYouCard
+                      key={pick.dish.id}
+                      pick={pick}
+                      width={mallCardWidth}
+                      onPressIn={() => prefetchDishDetail(pick.dish.id, repository)}
+                      onPress={() =>
+                        navigation.navigate("DishDetail", {
+                          dishId: pick.dish.id,
+                          source: "home_pick",
+                          prefill: dishPrefillFrom(pick.dish),
+                        })
+                      }
+                    />
+                  ))}
+                </ScrollView>
               ) : (
                 <EmptyState
                   title="Nothing to suggest yet"
-                  body="Try What's here, or adjust your dietary needs."
+                  body="Adjust your dietary needs to see more."
                   {...(isDiscoverFiltering
                     ? { ctaLabel: "Clear filters", onPress: clearDiscoverFilters }
                     : {})}
                 />
               )}
             </View>
-          ) : isDiscoverFiltering && hereStalls.length === 0 ? (
-            <EmptyState
-              title="No matching results"
-              body="No stalls here match your filters."
-              icon={<SearchX color={palette.textSecondary} size={28} />}
-              ctaLabel="Clear filters"
-              onPress={clearDiscoverFilters}
-            />
-          ) : (
-            <WhatsHerePanel
-              placeName={currentPlace.name}
-              stalls={hereStalls}
-              getStallMeta={({ venue, topDish }) =>
-                [
-                  getStallRowOpenLabel(venue),
-                  topDish && topDish.reviewCount > 0
-                    ? `Rated ${topDish.rating.toFixed(1)}`
-                    : undefined,
-                  venue.unitNumber,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              }
-              onOpenStall={(venueId) => navigation.navigate("StallDetail", { venueId })}
-              onPrefetchStall={({ venue, topDish }) => {
-                prefetchStallDetail(venue.id, repository);
-                if (topDish?.id) prefetchDishDetail(topDish.id, repository);
-              }}
-            />
-          )
+            {isDiscoverFiltering && hereStalls.length === 0 ? (
+              <EmptyState
+                title="No matching results"
+                body="No stalls here match your filters."
+                icon={<SearchX color={palette.textSecondary} size={28} />}
+                ctaLabel="Clear filters"
+                onPress={clearDiscoverFilters}
+              />
+            ) : (
+              <WhatsHerePanel
+                placeName={currentPlace.name}
+                stalls={hereStalls}
+                onSeeAll={() =>
+                  navigation.navigate("SearchResults", {
+                    browseMode: "stalls",
+                    placeId: currentPlace.id,
+                    placeName: currentPlace.name,
+                  })
+                }
+                getStallMeta={({ venue, topDish }) =>
+                  [
+                    getStallRowOpenLabel(venue),
+                    topDish && topDish.reviewCount > 0
+                      ? `Rated ${topDish.rating.toFixed(1)}`
+                      : undefined,
+                    venue.unitNumber,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                }
+                onOpenStall={(venueId) => navigation.navigate("StallDetail", { venueId })}
+                onPrefetchStall={({ venue, topDish }) => {
+                  prefetchStallDetail(venue.id, repository);
+                  if (topDish?.id) prefetchDishDetail(topDish.id, repository);
+                }}
+              />
+            )}
+          </>
         ) : (
           <>
             {personalFirst ? nearYouRail : null}
@@ -1783,12 +1863,27 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             />
             {stallsAroundPlace.length ? (
               <View style={{ gap: discoverContentGap }} testID="stalls-around-place">
-                <AppText variant="h2" style={{ color: themeTints.text }}>
-                  {`More near ${currentPlace.name}`}
-                </AppText>
-                {stallsAroundPlace.map((card, stallIndex) => (
-                  <Fragment key={card.venue.id}>{renderAreaStallRow(card, stallIndex)}</Fragment>
-                ))}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`See more stalls near ${currentPlace.name}`}
+                  hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+                  onPress={() => navigation.navigate("BrowseStalls")}
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: spacing[2],
+                    minHeight: 44,
+                  }}
+                >
+                  <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
+                    {`More near ${currentPlace.name}`}
+                  </AppText>
+                  <ChevronRight
+                    color={themeTints.isDark ? palette.white : palette.textMuted}
+                    size={20}
+                  />
+                </Pressable>
+                {renderStallRail(stallsAroundPlace)}
               </View>
             ) : null}
           </>
@@ -1950,22 +2045,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   {showDiscoverFilterRailSkeleton ? (
                     <DiscoverStallListLoadingSkeleton />
                   ) : areaStallCards.length ? (
-                    areaStallCards.map((card, stallIndex) => (
-                      <Fragment key={card.venue.id}>
-                        {currentPlace &&
-                        placeStallCardCount > 0 &&
-                        stallIndex === placeStallCardCount ? (
-                          <AppText
-                            variant="bodySmall"
-                            tone="secondary"
-                            style={{ fontWeight: "700" }}
-                          >
-                            {`More near ${currentPlace.name}`}
-                          </AppText>
-                        ) : null}
-                        {renderAreaStallRow(card, stallIndex)}
-                      </Fragment>
-                    ))
+                    renderStallRail(areaStallCards)
                   ) : null}
                   {hasMoreAreaStalls ? (
                     <Pressable

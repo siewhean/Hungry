@@ -8,7 +8,6 @@ import { hungryPersistStorage } from "./persistStorage";
 interface MapFilters {
   nearMe: boolean;
   trendingOnly: boolean;
-  hawkerOnly: boolean;
   mallOnly: boolean;
   topRated: boolean;
   openNow: boolean;
@@ -28,6 +27,8 @@ interface DiscoveryState {
   highlightedStallVenueId?: string;
   decideForMe?: DishDetail;
   mapFilters: MapFilters;
+  /** Building types the map is limited to (hawker_centre, mall...); empty means every kind. */
+  establishmentTypes: string[];
   recommendationCache: Record<string, RecommendationCacheEntry>;
   setSelectedBuilding: (building?: BuildingSummary) => void;
   setSelectedFloor: (floor: string) => void;
@@ -37,6 +38,7 @@ interface DiscoveryState {
   getCachedRecommendationSlate: (geoCell: string) => string[] | undefined;
   pruneExpiredRecommendations: () => void;
   toggleMapFilter: (filter: keyof MapFilters) => void;
+  setEstablishmentTypes: (types: string[]) => void;
 }
 
 // "Near me" starts off and is never saved on: it only applies while the map sits
@@ -44,7 +46,6 @@ interface DiscoveryState {
 const initialFilters: MapFilters = {
   nearMe: false,
   trendingOnly: false,
-  hawkerOnly: false,
   mallOnly: false,
   topRated: false,
   openNow: false,
@@ -58,7 +59,9 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       highlightedStallVenueId: undefined,
       decideForMe: undefined,
       mapFilters: initialFilters,
+      establishmentTypes: [],
       recommendationCache: {},
+      setEstablishmentTypes: (establishmentTypes) => set({ establishmentTypes }),
       // Selecting a building is also done by code (deep links, screen mounts), so
       // map_pin_tapped is sent from the marker press handlers, not from here.
       setSelectedBuilding: (selectedBuilding) => set({ selectedBuilding }),
@@ -123,14 +126,25 @@ export const useDiscoveryStore = create<DiscoveryState>()(
       storage: hungryPersistStorage,
       partialize: (state) => ({
         mapFilters: { ...state.mapFilters, nearMe: false },
+        establishmentTypes: state.establishmentTypes,
       }),
       // Older installs saved nearMe: true; drop it on load.
       merge: (persisted, current) => {
-        const saved = (persisted as Partial<Pick<DiscoveryState, "mapFilters">> | undefined)
-          ?.mapFilters;
+        const saved = persisted as
+          | Partial<Pick<DiscoveryState, "mapFilters" | "establishmentTypes">>
+          | undefined;
+        const savedFilters = saved?.mapFilters as
+          | (MapFilters & { hawkerOnly?: boolean })
+          | undefined;
+        // The old "Hawker centres" switch becomes one chosen type.
+        const migratedTypes = savedFilters?.hawkerOnly ? ["hawker_centre"] : [];
+        if (savedFilters) delete savedFilters.hawkerOnly;
         return {
           ...current,
-          mapFilters: { ...current.mapFilters, ...saved, nearMe: false },
+          mapFilters: { ...current.mapFilters, ...savedFilters, nearMe: false },
+          establishmentTypes: Array.isArray(saved?.establishmentTypes)
+            ? saved.establishmentTypes
+            : migratedTypes,
         };
       },
     },

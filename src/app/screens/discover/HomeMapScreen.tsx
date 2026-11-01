@@ -21,7 +21,9 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import {
   ChevronLeft,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Layers,
   LocateFixed,
   Star,
@@ -35,7 +37,9 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   BuildingLegend,
   ClusterStallsSheet,
+  EstablishmentDropdown,
   MapSurface,
+  establishmentChipLabel,
   getBuildingPinColor,
   getClusterPinColor,
   type ClusterStallRow,
@@ -75,6 +79,7 @@ import {
   shortOpenLabel,
   type MapCardMatchedDish,
 } from "@/features/discovery/mapCardText";
+import { groupColocatedVenues, isColocatedCluster } from "@/features/discovery/mapPins";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
@@ -86,7 +91,7 @@ const DEFAULT_BUILDING_ID = "hc-maxwell";
 // "Open now" reads each stall's hours (the same rule as the stall page), never the catalog's stored
 // open flag, which disagrees with the hours Discover shows (M11). It narrows the cards and pins to
 // the stalls whose hours were read and are open.
-type HomeMapFilterId = "openNow" | "nearMe" | "hawkerOnly" | "topRated";
+type HomeMapFilterId = "openNow" | "nearMe" | "places" | "topRated";
 
 /** Camera moves settle before the catalog is read again. */
 const MAP_REFETCH_DEBOUNCE_MS = 350;
@@ -116,12 +121,16 @@ const CLUSTER_LIST_MIN_ZOOM = 15;
 /** Stalls in one cluster sit within this distance of its pin. */
 const CLUSTER_LIST_RADIUS_METERS = 150;
 const CLUSTER_LIST_LIMIT = 40;
+/** Stalls on one spot are within this distance of each other. */
+const COLOCATED_LIST_RADIUS_METERS = 30;
 /** The card in the carousel, top to bottom: photo, then padding, a name line and two detail lines. */
 const CARD_IMAGE_HEIGHT = 156;
 /** Name and rating, then hours and distance, then where it is: three tight lines under the photo. */
 const CARD_TEXT_PADDING = 8;
 const CARD_TEXT_HEIGHT = CARD_TEXT_PADDING * 2 + 20 + 16 * 2 + 2 * 2;
 /** Grabber and the Cards / List switch sit in this strip at the top of the sheet. */
+/** Thumbnail beside each row of the list. */
+const LIST_THUMB_SIZE = 72;
 const SHEET_HEADER_HEIGHT = 48;
 /** Clear space between the Cards / List switch and the first card. */
 const SHEET_CARD_TOP_PADDING = 14;
@@ -137,7 +146,7 @@ const TOP_RATED_MIN_RATING = 4.5;
 const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
   { id: "openNow", label: "Open now" },
   { id: "nearMe", label: "Near me" },
-  { id: "hawkerOnly", label: "Hawker centres" },
+  { id: "places", label: "Place type" },
   { id: "topRated", label: "Top rated" },
 ];
 
@@ -197,6 +206,30 @@ function SheetModeToggle({
         );
       })}
     </View>
+  );
+}
+
+/** A stall's photo, its dish photo, or its designed no-photo tile, filling its parent. */
+function MapVenueImage({ venue }: { venue: CatalogRawVenueCard }) {
+  const imageUrl = venue.imageUrl ?? venue.representativeDish?.imageUrl;
+  const fallback = (
+    <NoDishPhoto
+      designed
+      dishName={venue.name}
+      logoUrl={venue.logoUrl}
+      style={StyleSheet.absoluteFill}
+    />
+  );
+  return imageUrl ? (
+    <AccessibleImage
+      source={{ uri: imageUrl }}
+      style={StyleSheet.absoluteFill}
+      contentFit="cover"
+      accessibilityLabel={`${venue.name} image`}
+      fallback={fallback}
+    />
+  ) : (
+    fallback
   );
 }
 
@@ -301,14 +334,22 @@ export function HomeMapScreen() {
   }, []);
   const mapFilters = useDiscoveryStore((state) => state.mapFilters);
   const toggleMapFilter = useDiscoveryStore((state) => state.toggleMapFilter);
+  const establishmentTypes = useDiscoveryStore((state) => state.establishmentTypes);
+  const setEstablishmentTypes = useDiscoveryStore((state) => state.setEstablishmentTypes);
+  const [placesOpen, setPlacesOpen] = useState(false);
   // "Near me" needs a real GPS fix; the built-in default point is not the diner.
   const canUseNearMe = locationPermission === "granted" && !isLocationApproximate;
   const filterOptions = useMemo(
     () =>
-      canUseNearMe
+      (canUseNearMe
         ? HOME_MAP_FILTER_OPTIONS
-        : HOME_MAP_FILTER_OPTIONS.filter((option) => option.id !== "nearMe"),
-    [canUseNearMe],
+        : HOME_MAP_FILTER_OPTIONS.filter((option) => option.id !== "nearMe")
+      ).map((option) =>
+        option.id === "places"
+          ? { ...option, label: establishmentChipLabel(establishmentTypes) }
+          : option,
+      ),
+    [canUseNearMe, establishmentTypes],
   );
 
   const activeBuildingRecord = useMemo(() => {
@@ -324,7 +365,19 @@ export function HomeMapScreen() {
   }, [currentLocation, selectedBuilding]);
 
   const [currentZoom, setCurrentZoom] = useState(highlightedStallVenueId ? 17.1 : 15.5);
-  const [mapCenter, setMapCenter] = useState(activeBuildingRecord.coordinate);
+  // Open on the diner when their location is known; a chosen building or stall wins.
+  const opensOnBuilding = Boolean(selectedBuilding || highlightedStallVenueId);
+  const [mapCenter, setMapCenter] = useState(
+    !opensOnBuilding && !isLocationApproximate ? currentLocation : activeBuildingRecord.coordinate,
+  );
+  // The first fix can land after the map is open (cold start): move to it once, never again, so
+  // a later fix does not pull the map away from where the diner has panned.
+  const hasAutoCentredRef = useRef(!isLocationApproximate);
+  useEffect(() => {
+    if (hasAutoCentredRef.current || isLocationApproximate) return;
+    hasAutoCentredRef.current = true;
+    if (!opensOnBuilding) setMapCenter(currentLocation);
+  }, [currentLocation, isLocationApproximate, opensOnBuilding]);
   // Which sheet the map opens on is map_default_sheet_v1; read once so a late flag cannot swap it.
   const [displayMode, setDisplayMode] = useState<"carousel" | "list">(() =>
     getExperimentVariant("map_default_sheet_v1", { expose: true }) === "list" ? "list" : "carousel",
@@ -418,18 +471,23 @@ export function HomeMapScreen() {
 
   const handleFilterSelect = useCallback(
     (filter: HomeMapFilterId) => {
+      if (filter === "places") {
+        trackAnalyticsEvent("map_filter_toggled", { filter, enabled: !placesOpen });
+        setPlacesOpen((open) => !open);
+        return;
+      }
       // Turning "Near me" on brings the map back to the diner.
       if (filter === "nearMe" && !mapFilters.nearMe) setMapCenter(currentLocation);
       trackAnalyticsEvent("map_filter_toggled", { filter, enabled: !mapFilters[filter] });
       toggleMapFilter(filter);
     },
-    [currentLocation, mapFilters, toggleMapFilter],
+    [currentLocation, mapFilters, placesOpen, toggleMapFilter],
   );
 
   useEffect(() => {
     let active = true;
     const span = currentZoom >= 15 ? 0.018 : currentZoom >= 13 ? 0.08 : 0.3;
-    const buildingTypes = mapFilters.hawkerOnly ? ["hawker_centre"] : [];
+    const buildingTypes = establishmentTypes;
     const nearCoordinate = nearMeActive ? currentLocation : undefined;
     const query = mapQuery || undefined;
     // The cards read the same region as the pins, not the 24 nearest places anywhere.
@@ -498,6 +556,7 @@ export function HomeMapScreen() {
     catalogRawService,
     currentLocation,
     currentZoom,
+    establishmentTypes,
     mapCenter,
     mapFilters,
     mapQuery,
@@ -615,15 +674,17 @@ export function HomeMapScreen() {
   );
 
   const openClusterList = useCallback(
-    async (item: { count: number; latitude: number; longitude: number }) => {
+    async (item: { id: string; count: number; latitude: number; longitude: number }) => {
       const run = ++clusterPickRun.current;
       setClusterPick({ count: item.count, venues: [], hoursById: new Map(), loading: true });
       try {
         const page = await catalogRawService.listVenues({
           coordinate: { latitude: item.latitude, longitude: item.longitude },
           limit: CLUSTER_LIST_LIMIT,
-          radiusMeters: CLUSTER_LIST_RADIUS_METERS,
-          buildingTypes: mapFilters.hawkerOnly ? ["hawker_centre"] : [],
+          radiusMeters: item.id.startsWith("here-")
+            ? COLOCATED_LIST_RADIUS_METERS
+            : CLUSTER_LIST_RADIUS_METERS,
+          buildingTypes: establishmentTypes,
           query: mapQuery || undefined,
           sort: "nearby",
         });
@@ -649,19 +710,36 @@ export function HomeMapScreen() {
         showToast({ message: "Couldn't load the stalls here. Try again.", tone: "error" });
       }
     },
-    [catalogRawService, mapFilters.hawkerOnly, mapQuery, showToast],
+    [catalogRawService, establishmentTypes, mapQuery, showToast],
   );
 
+  // Stalls on one spot are one count pin, so each can be reached from the list that pin opens.
+  const mapItems = useMemo(
+    () =>
+      groupColocatedVenues(
+        openNowActive
+          ? rawMapItems.filter(
+              (item) => item.kind === "venue" && venueCards.some((card) => card.id === item.id),
+            )
+          : rawMapItems,
+      ),
+    [openNowActive, rawMapItems, venueCards],
+  );
   const handleRawMarkerPress = useCallback(
     (markerId: string) => {
-      const item = rawMapItems.find(
+      const item = mapItems.find(
         (candidate) =>
           `${candidate.kind === "venue" ? "stall" : candidate.kind}-${candidate.id}` === markerId,
       );
       if (!item) return;
       trackAnalyticsEvent("map_pin_tapped", { pin_kind: item.kind, pin_id: item.id });
       if (item.kind === "cluster") {
-        if (item.count <= CLUSTER_LIST_MAX_COUNT || currentZoom >= CLUSTER_LIST_MIN_ZOOM) {
+        // Stalls on one spot cannot be pulled apart by zooming, so their pin always lists them.
+        if (
+          isColocatedCluster(item) ||
+          item.count <= CLUSTER_LIST_MAX_COUNT ||
+          currentZoom >= CLUSTER_LIST_MIN_ZOOM
+        ) {
           void openClusterList(item);
           return;
         }
@@ -691,8 +769,8 @@ export function HomeMapScreen() {
       currentZoom,
       displayMode,
       openClusterList,
+      mapItems,
       openStall,
-      rawMapItems,
       selectedVenueId,
       snapToIndex,
       spacing,
@@ -730,32 +808,27 @@ export function HomeMapScreen() {
   // count cannot be narrowed by hours).
   const markers = useMemo<MapSurfaceMarker[]>(
     () =>
-      (openNowActive
-        ? rawMapItems.filter(
-            (item) => item.kind === "venue" && venueCards.some((card) => card.id === item.id),
-          )
-        : rawMapItems
-      )
-        .slice(0, MAX_RENDERED_MARKERS)
-        .map((item) =>
-          item.kind === "cluster"
-            ? {
-                id: `cluster-${item.id}`,
-                label: `${item.count} venues`,
-                accessibilityLabel: `${item.count} venues. Double tap to zoom in.`,
-                coordinate: { latitude: item.latitude, longitude: item.longitude },
-                accent: getClusterPinColor(palette),
-                clusterCount: item.count,
-              }
-            : {
-                id: `stall-${item.id}`,
-                label: item.label,
-                coordinate: { latitude: item.latitude, longitude: item.longitude },
-                // Colour is the building type, as the legend says.
-                accent: getBuildingPinColor(item.buildingType, palette),
-              },
-        ),
-    [openNowActive, palette, rawMapItems, venueCards],
+      mapItems.slice(0, MAX_RENDERED_MARKERS).map((item) =>
+        item.kind === "cluster"
+          ? {
+              id: `cluster-${item.id}`,
+              label: `${item.count} ${isColocatedCluster(item) ? "stalls" : "venues"}`,
+              accessibilityLabel: isColocatedCluster(item)
+                ? `${item.count} stalls here. Double tap to choose one.`
+                : `${item.count} venues. Double tap to zoom in.`,
+              coordinate: { latitude: item.latitude, longitude: item.longitude },
+              accent: getClusterPinColor(palette),
+              clusterCount: item.count,
+            }
+          : {
+              id: `stall-${item.id}`,
+              label: item.label,
+              coordinate: { latitude: item.latitude, longitude: item.longitude },
+              // Colour is the building type, as the legend says.
+              accent: getBuildingPinColor(item.buildingType, palette),
+            },
+      ),
+    [mapItems, palette],
   );
 
   const cameraPadding = useMemo(
@@ -875,6 +948,16 @@ export function HomeMapScreen() {
         />
       </FeedErrorBoundary>
 
+      {/* A tap outside the place-type dropdown closes it. */}
+      {placesOpen ? (
+        <Pressable
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+          onPress={() => setPlacesOpen(false)}
+          style={[StyleSheet.absoluteFill, { zIndex: zIndex.overlay - 1 }]}
+        />
+      ) : null}
+
       {/* Top Floating UI */}
       <SafeAreaView
         style={{
@@ -974,7 +1057,13 @@ export function HomeMapScreen() {
           <FilterChipRail
             options={filterOptions}
             selectedIds={filterOptions
-              .filter((option) => (option.id === "nearMe" ? nearMeActive : mapFilters[option.id]))
+              .filter((option) =>
+                option.id === "nearMe"
+                  ? nearMeActive
+                  : option.id === "places"
+                    ? establishmentTypes.length > 0
+                    : mapFilters[option.id],
+              )
               .map((option) => option.id)}
             onSelect={handleFilterSelect}
             gap={spacing[2]}
@@ -987,7 +1076,7 @@ export function HomeMapScreen() {
                   size={14}
                   color={selected ? palette.textOnOrange : palette.textMuted}
                 />
-              ) : option.id === "hawkerOnly" ? (
+              ) : option.id === "places" ? (
                 <AppSymbol
                   name="storefront"
                   fallback={Store}
@@ -996,7 +1085,20 @@ export function HomeMapScreen() {
                 />
               ) : null
             }
+            renderRightIcon={(option, selected) =>
+              option.id === "places" ? (
+                <AppSymbol
+                  name={placesOpen ? "chevron.up" : "chevron.down"}
+                  fallback={placesOpen ? ChevronUp : ChevronDown}
+                  size={12}
+                  color={selected ? palette.textOnOrange : palette.textMuted}
+                />
+              ) : null
+            }
           />
+          {placesOpen ? (
+            <EstablishmentDropdown selected={establishmentTypes} onChange={setEstablishmentTypes} />
+          ) : null}
           {mapQuery ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
               <Pressable
@@ -1211,20 +1313,24 @@ export function HomeMapScreen() {
         {displayMode === "list" ? (
           <BottomSheetScrollView
             ref={listRef}
-            contentContainerStyle={{
-              paddingHorizontal: spacing[4] + spacing[3],
-              gap: spacing[4],
-              paddingBottom: insets.bottom + spacing[12],
-            }}
+            contentContainerStyle={{ paddingBottom: insets.bottom + spacing[6] }}
           >
-            <AppText variant="h2" style={{ marginBottom: spacing[2] }}>
+            <AppText
+              variant="h2"
+              style={{ marginBottom: spacing[2], paddingHorizontal: spacing[4] }}
+            >
               Nearby stalls
             </AppText>
             {emptyMessage ? (
-              <AppText tone="secondary" accessibilityLiveRegion="polite">
+              <AppText
+                tone="secondary"
+                accessibilityLiveRegion="polite"
+                style={{ paddingHorizontal: spacing[4] }}
+              >
                 {emptyMessage}
               </AppText>
             ) : null}
+            {/* Edge-to-edge rows split by a hairline, like the other lists: no card, no gap. */}
             {venueCards.map((venue, index) => (
               <PressableScale
                 key={venue.id}
@@ -1236,16 +1342,26 @@ export function HomeMapScreen() {
                 }}
                 onPress={() => openCard(venue.id, index)}
                 style={{
-                  backgroundColor: palette.bgSoft,
-                  borderRadius: radii.md,
-                  padding: spacing[3],
-                  flexDirection: "row",
                   alignItems: "center",
+                  backgroundColor: venue.id === selectedVenueId ? palette.bgSoft : palette.surface,
+                  borderBottomColor: palette.border,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  flexDirection: "row",
                   gap: spacing[3],
-                  borderWidth: venue.id === selectedVenueId ? 2 : 1,
-                  borderColor: venue.id === selectedVenueId ? palette.orange : palette.border,
+                  paddingHorizontal: spacing[4],
+                  paddingVertical: spacing[3],
                 }}
               >
+                <View
+                  style={{
+                    borderRadius: radii.md,
+                    height: LIST_THUMB_SIZE,
+                    overflow: "hidden",
+                    width: LIST_THUMB_SIZE,
+                  }}
+                >
+                  <MapVenueImage venue={venue} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <MapCardLines
                     name={venue.name}
@@ -1258,7 +1374,7 @@ export function HomeMapScreen() {
                 <AppSymbol
                   name="chevron.forward"
                   fallback={ChevronRight}
-                  color={palette.orange}
+                  color={palette.textMuted}
                   size={16}
                 />
               </PressableScale>
@@ -1321,31 +1437,7 @@ export function HomeMapScreen() {
                   ]}
                 >
                   <View style={{ height: CARD_IMAGE_HEIGHT }}>
-                    {venue.imageUrl || venue.representativeDish?.imageUrl ? (
-                      <AccessibleImage
-                        source={{
-                          uri: venue.imageUrl ?? venue.representativeDish?.imageUrl ?? "",
-                        }}
-                        style={StyleSheet.absoluteFill}
-                        contentFit="cover"
-                        accessibilityLabel={`${venue.name} image`}
-                        fallback={
-                          <NoDishPhoto
-                            designed
-                            dishName={venue.name}
-                            logoUrl={venue.logoUrl}
-                            style={StyleSheet.absoluteFill}
-                          />
-                        }
-                      />
-                    ) : (
-                      <NoDishPhoto
-                        designed
-                        dishName={venue.name}
-                        logoUrl={venue.logoUrl}
-                        style={StyleSheet.absoluteFill}
-                      />
-                    )}
+                    <MapVenueImage venue={venue} />
                   </View>
                   <View style={{ padding: CARD_TEXT_PADDING }}>
                     <MapCardLines

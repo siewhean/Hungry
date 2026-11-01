@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useIsInsideMainTabs } from "@/hooks/useIsInsideMainTabs";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppHeader } from "./AppHeader";
@@ -60,6 +61,7 @@ export function Screen({
   const styles = createStyles(spacing);
   const effectiveHeaderGap = headerGap ?? spacing[5];
   const insets = useSafeAreaInsets();
+  const insideTabs = useIsInsideMainTabs();
   const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
 
   const header =
@@ -84,7 +86,8 @@ export function Screen({
         styles.content,
         !fullWidth && { alignItems: "center", paddingHorizontal: semanticSpacing.screenEdge },
         {
-          paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
+          // Under the tab bar the home indicator is already cleared, so only a small gap.
+          paddingBottom: (insideTabs ? 0 : insets.bottom) + spacing[6],
           paddingTop: spacing[3],
         },
         contentContainerStyle,

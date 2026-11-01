@@ -6880,7 +6880,8 @@ export const supabaseService: HungryService = {
       });
 
       const extension = input.photoUri.split(".").pop()?.toLowerCase() || "jpg";
-      const storagePath = `${userId}/${input.venueId}/${Date.now()}.${extension}`;
+      const isStallPhoto = input.photoKind === "stall";
+      const storagePath = `${userId}/${input.venueId}/${isStallPhoto ? "stall-" : ""}${Date.now()}.${extension}`;
       const uploaded = await uploadImageFromUri({
         client,
         bucket: "menu-photos",
@@ -6900,7 +6901,7 @@ export const supabaseService: HungryService = {
 
       // Kick off OCR asynchronously; draft extraction is service-role only. The photo goes to
       // Google only when the person allowed AI features (the function checks it again).
-      if (input.allowAiReading) {
+      if (input.allowAiReading && !isStallPhoto) {
         void client.functions
           .invoke("ingest-menu-photo", {
             body: { submissionId },

@@ -871,7 +871,7 @@ export function ReviewScreen({ navigation, route }: Props) {
         title="Review editor failed"
         body="We hit a snag loading the editor. Please try again."
       >
-        <View style={{ gap: spacing[6], paddingBottom: spacing[8] }}>
+        <View style={{ gap: spacing[6] }}>
           {dishSection}
           {photoSection}
           {ratingSection}

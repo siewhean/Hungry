@@ -240,7 +240,7 @@ export function PassportScreen({ navigation }: Props) {
 
   return (
     <ProfileScreenShell title="Achievements">
-      <View style={{ gap: spacing[5], paddingBottom: spacing[8] }}>
+      <View style={{ gap: spacing[5] }}>
         <PassportPageFlip
           pageKey={`${totalStamps}-${celebratingStampId ?? "idle"}`}
           reduceMotion={reduceMotion}

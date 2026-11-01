@@ -92,8 +92,12 @@ export function AppBody() {
     </View>
   );
 
+  // While fonts and the stored session load there is nothing to read yet: show the plain
+  // app background (the in-app splash follows) instead of a status message.
+  const blankStart = <View style={{ flex: 1, backgroundColor: palette.bg }} />;
+
   if (!fontsLoaded && !fontGraceReached) {
-    return centeredMessage("Loading fonts…");
+    return blankStart;
   }
 
   if (configurationError) {
@@ -104,7 +108,7 @@ export function AppBody() {
   }
 
   if (!isBootstrapReady || !isAuthReady) {
-    return centeredMessage("Connecting securely…");
+    return blankStart;
   }
 
   return (

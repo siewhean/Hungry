@@ -211,6 +211,61 @@ export function WheelLobbyScreen({ navigation }: Props) {
         title={PARTY_ENABLED ? "Party lobby" : "Hungry Wheel"}
         subtitle={PARTY_ENABLED ? "Invite friends and decide together" : undefined}
         scroll={false}
+        footer={
+          <View style={{ gap: spacing[3] }}>
+            <View style={{ flexDirection: "row", gap: spacing[3] }}>
+              <Button
+                label="Add option"
+                onPress={() => setAddSheetOpen(true)}
+                variant="secondary"
+                style={{ flex: 1 }}
+                leftIcon={<AppSymbol name="plus" fallback={Plus} size={20} color={palette.text} />}
+              />
+              {isHost && (
+                <Button
+                  label={spinLabel}
+                  onPress={handleSpin}
+                  disabled={!canSpin}
+                  style={{ flex: 1 }}
+                />
+              )}
+            </View>
+
+            {!isHost && (
+              <View
+                style={{
+                  backgroundColor: palette.bgSoft,
+                  padding: spacing[3],
+                  borderRadius: radii.md,
+                  alignItems: "center",
+                }}
+              >
+                <AppText variant="bodySmall" tone="secondary">
+                  Waiting for the host to start the spin…
+                </AppText>
+              </View>
+            )}
+
+            {PARTY_ENABLED ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleLeave}
+                style={{ padding: spacing[2], minHeight: 44, justifyContent: "center" }}
+              >
+                <AppText
+                  variant="bodySmallBold"
+                  tone="muted"
+                  style={{
+                    textAlign: "center",
+                    letterSpacing: 1,
+                  }}
+                >
+                  Leave party
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+        }
       >
         {PARTY_ENABLED ? (
           <>
@@ -306,7 +361,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
         ) : null}
 
         {/* Entries list with custom header */}
-        <View style={{ flex: 1, marginBottom: spacing[6] }}>
+        <View style={{ flex: 1, marginBottom: spacing[3] }}>
           <View
             style={{
               flexDirection: "row",
@@ -402,61 +457,6 @@ export function WheelLobbyScreen({ navigation }: Props) {
               }
             />
           </Card>
-        </View>
-
-        {/* Actions - Unified bottom bar */}
-        <View style={{ gap: spacing[3], paddingBottom: spacing[2] }}>
-          <View style={{ flexDirection: "row", gap: spacing[3] }}>
-            <Button
-              label="Add option"
-              onPress={() => setAddSheetOpen(true)}
-              variant="secondary"
-              style={{ flex: 1 }}
-              leftIcon={<AppSymbol name="plus" fallback={Plus} size={20} color={palette.text} />}
-            />
-            {isHost && (
-              <Button
-                label={spinLabel}
-                onPress={handleSpin}
-                disabled={!canSpin}
-                style={{ flex: 1 }}
-              />
-            )}
-          </View>
-
-          {!isHost && (
-            <View
-              style={{
-                backgroundColor: palette.bgSoft,
-                padding: spacing[3],
-                borderRadius: radii.md,
-                alignItems: "center",
-              }}
-            >
-              <AppText variant="bodySmall" tone="secondary">
-                Waiting for the host to start the spin…
-              </AppText>
-            </View>
-          )}
-
-          {PARTY_ENABLED ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={handleLeave}
-              style={{ padding: spacing[2], minHeight: 44, justifyContent: "center" }}
-            >
-              <AppText
-                variant="bodySmallBold"
-                tone="muted"
-                style={{
-                  textAlign: "center",
-                  letterSpacing: 1,
-                }}
-              >
-                Leave party
-              </AppText>
-            </Pressable>
-          ) : null}
         </View>
       </Screen>
 

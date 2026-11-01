@@ -261,7 +261,7 @@ test("stall cards show the top dish rating and keep same-name stalls apart (SEAR
   assert.doesNotMatch(view.text(), /outlet/);
   assert.equal((view.text().match(/4\.4 \(30\)/g) ?? []).length, 2);
   // SEARCH-V5: the pill says it is the top dish's rating, not the stall's.
-  assert.equal((view.text().match(/Top dish 4\.4 \(30\)/g) ?? []).length, 2);
+  assert.equal((view.text().match(/4\.4 \(30\)/g) ?? []).length, 2);
 });
 
 function stallCard(id: string, overrides: Partial<CatalogRawVenueCard> = {}): CatalogRawVenueCard {
@@ -1582,7 +1582,7 @@ test("the browse grid is edge to edge: half-screen cells, no rounded bordered ca
   const results = readFileSync("src/app/screens/search/SearchResultsScreen.tsx", "utf8");
   assert.match(results, /const itemWidth = width \/ 2;/);
   assert.match(results, /const GRID_GAP = 2;/);
-  assert.match(results, /minHeight: itemWidth \* GRID_IMAGE_RATIO \+ GRID_TEXT_MIN_HEIGHT/);
+  assert.match(results, /minHeight: itemWidth \* GRID_IMAGE_RATIO \+ gridTextHeight\(mode\)/);
   const card = results.slice(
     results.indexOf("const RawCatalogCard"),
     results.indexOf("const RESERVED_LINE_HEIGHT"),

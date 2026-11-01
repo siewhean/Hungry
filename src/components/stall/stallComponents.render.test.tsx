@@ -45,7 +45,7 @@ test("StallHelpFillCard names only what is missing and offers one button per ask
   );
   assert.match(view.container.textContent ?? "", /No menu or reviews yet\. Know this stall\?/);
   assert.ok(!view.container.textContent?.includes("Add opening hours"), "no hours ask when absent");
-  await view.press(view.findByText("Add a menu photo"));
+  await view.press(view.findByText("Add a menu/stall photo"));
   await view.press(view.findByText("Write the first review"));
   assert.deepEqual(asked, ["menu", "review"]);
 });

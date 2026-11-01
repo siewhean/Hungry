@@ -12,7 +12,7 @@ import {
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 import NetInfo from "@react-native-community/netinfo";
-import { ArrowLeft, WifiOff } from "lucide-react-native";
+import { WifiOff } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
@@ -389,55 +389,6 @@ const loadAdminPortfolioFlagsScreen = () =>
   (
     require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
   ).AdminPortfolioFlagsScreen;
-
-function GlobalScrollBackButton() {
-  const insets = useSafeAreaInsets();
-  const { componentSizes, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
-  const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
-  const resetScrollBack = useUIStore((state) => state.resetScrollBack);
-  const rootState = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
-  const rootRouteName = rootState ? rootState.routes[rootState.index]?.name : undefined;
-
-  if (
-    !scrollBackVisible ||
-    !navigationRef.isReady() ||
-    !navigationRef.canGoBack() ||
-    rootRouteName === "MainTabs" ||
-    rootRouteName === "OnboardingStack"
-  ) {
-    return null;
-  }
-
-  return (
-    <View pointerEvents="box-none" style={styles.globalBackWrap}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-        accessibilityHint="Returns to the previous screen"
-        onPress={() => {
-          navigationRef.goBack();
-          resetScrollBack();
-        }}
-        style={[
-          styles.globalBackButton,
-          {
-            ...shadows.floating,
-            backgroundColor: palette.surface,
-            borderColor: palette.border,
-            borderRadius: radii.pill,
-            height: componentSizes.bottomTabCreateButton,
-            left: spacing[4],
-            top: insets.top + spacing[1],
-            width: componentSizes.bottomTabCreateButton,
-            zIndex: zIndex.globalBack,
-          },
-        ]}
-      >
-        <ArrowLeft color={palette.text} size={18} />
-      </Pressable>
-    </View>
-  );
-}
 
 /**
  * Non-blocking offline notice. Going offline used to replace the whole app with
@@ -933,7 +884,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
         </RootStack.Navigator>
       </NavigationContainer>
-      <GlobalScrollBackButton />
       <OfflineBanner />
       {FEATURE_FLAGS.reviewCreationEnabled ? (
         <ReviewSuccessModalHost
@@ -948,13 +898,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
 }
 
 const styles = StyleSheet.create({
-  globalBackWrap: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
   offlineBannerWrap: {
     left: 0,
     position: "absolute",
@@ -964,11 +907,5 @@ const styles = StyleSheet.create({
   offlineBanner: {
     alignItems: "center",
     flexDirection: "row",
-  },
-  globalBackButton: {
-    alignItems: "center",
-    borderWidth: 1,
-    justifyContent: "center",
-    position: "absolute",
   },
 });

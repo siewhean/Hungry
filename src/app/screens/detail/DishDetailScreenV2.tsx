@@ -996,7 +996,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             onScroll={onHeroScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
-              paddingBottom: insets.bottom + 96,
+              paddingBottom: insets.bottom + spacing[6],
             }}
           >
             <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>

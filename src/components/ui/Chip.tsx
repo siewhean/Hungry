@@ -15,6 +15,8 @@ interface ChipProps {
   solid?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
+  /** After the label, e.g. a chevron on a chip that opens a menu. */
+  rightIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -26,6 +28,7 @@ export function Chip({
   solid = false,
   onPress,
   leftIcon,
+  rightIcon,
   style,
 }: ChipProps) {
   const {
@@ -74,6 +77,7 @@ export function Chip({
       >
         {label}
       </AppText>
+      {rightIcon}
     </View>
   );
 
