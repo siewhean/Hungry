@@ -67,7 +67,13 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
           accessibilityLabel={`See all: ${title}`}
           hitSlop={8}
           onPress={onSeeAll}
-          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+            justifyContent: "space-between",
+            minHeight: 44,
+          }}
         >
           <AppText variant="h2" style={{ flexShrink: 1 }}>
             {title}

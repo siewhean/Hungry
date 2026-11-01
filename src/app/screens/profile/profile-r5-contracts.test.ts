@@ -59,17 +59,16 @@ test("P5-2: the profile files draw icons with AppSymbol, not lucide directly", (
   }
 });
 
-test("P5-3: the profile menu is a native menu, with a web dropdown only for the web build", () => {
+test("P5-3: the profile menu is the app's own card, not the system menu", () => {
   const menu = read("src/components/ui/OverflowMenu.tsx");
-  assert.match(menu, /from "@react-native-menu\/menu"/);
+  assert.doesNotMatch(menu, /@react-native-menu\/menu/);
   assert.match(menu, /Platform\.OS === "web" \? <WebMenu/);
-  assert.match(menu, /displayInline: true/);
+  assert.match(menu, /measureInWindow/);
+  assert.match(menu, /<Modal/);
   const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(home, /<OverflowMenu/);
   assert.doesNotMatch(home, /<Menu color/);
   assert.match(home, /destructive: true/);
-  // Pinned to an exact version: a native module should not move on a plain install.
-  assert.match(read("package.json"), /"@react-native-menu\/menu": "2\.0\.0"/);
 });
 
 test("P5-4: lists use the plain ListRow, not a card per row", () => {

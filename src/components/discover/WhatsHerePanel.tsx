@@ -97,7 +97,13 @@ export function WhatsHerePanel({
           accessibilityLabel={`See all stalls at ${placeName}`}
           hitSlop={8}
           onPress={onSeeAll}
-          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+            justifyContent: "space-between",
+            minHeight: 44,
+          }}
         >
           <AppText variant="h2" style={{ flexShrink: 1 }}>{`Stalls at ${placeName}`}</AppText>
           <ChevronRight color={palette.textMuted} size={20} />

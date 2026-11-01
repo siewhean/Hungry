@@ -26,6 +26,8 @@ export * from "./ListRow";
 export * from "./InlineSearchField";
 export * from "./InlineBanner";
 export * from "./Dialog";
+export * from "./ChoiceSheetHost";
+export * from "./DismissibleSheet";
 export * from "./ExpandableSearchLauncher";
 export * from "./Input";
 export * from "./Screen";

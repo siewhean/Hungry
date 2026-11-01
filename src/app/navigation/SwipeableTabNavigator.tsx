@@ -5,13 +5,22 @@ import type {
   MaterialTopTabBarProps,
   MaterialTopTabNavigationProp,
 } from "@react-navigation/material-top-tabs";
-import { useFocusEffect, useNavigation, type NavigationProp } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useNavigationState,
+  useRoute,
+  type NavigationProp,
+} from "@react-navigation/native";
 import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { useFadeRiseIn } from "@/lib/motion/uiMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
@@ -20,6 +29,8 @@ import { tabBarBottomPadding } from "./tabBarMetrics";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 const MAIN_TAB_PRELOAD_DISTANCE = 2;
+const TAB_RISE_DISTANCE = 28;
+const TAB_RISE_MS = 280;
 const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
 const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
 const MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0;
@@ -134,6 +145,17 @@ function TabScreenLoadingPlaceholder() {
 function createDeferredTabScreen(loader: TabScreenLoader) {
   function DeferredTabScreen(props: object) {
     const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
+    const route = useRoute();
+    const reduceMotion = useReduceMotion();
+    // Whether this is the tab on show in the tab bar (not whether a screen is pushed over it, so
+    // coming back from a stall page does not replay the entrance).
+    const isActiveTab = useNavigationState((state) => state.routes[state.index]?.key === route.key);
+    // The page rises in from the bottom each time its tab is opened.
+    const riseStyle = useFadeRiseIn(reduceMotion, {
+      distance: TAB_RISE_DISTANCE,
+      duration: TAB_RISE_MS,
+      resetKey: isActiveTab,
+    });
 
     useEffect(() => {
       if (Component) return undefined;
@@ -145,7 +167,11 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
       };
     }, [Component, loader]);
 
-    return Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />;
+    return (
+      <Animated.View style={[styles.tabPage, riseStyle]}>
+        {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
+      </Animated.View>
+    );
   }
 
   DeferredTabScreen.displayName = "DeferredTabScreen";
@@ -327,25 +353,20 @@ export function SwipeableTabNavigator() {
       tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
-        swipeEnabled: !FEATURE_FLAGS.release01CoreOnly,
+        // The tabs open from the tab bar, each rising in from the bottom: a sideways swipe left
+        // half-drawn pages between them.
+        swipeEnabled: false,
         animationEnabled: false,
         lazy: !tabPreloadEnabled,
         lazyPlaceholder: () => <TabScreenLoadingPlaceholder />,
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
       }}
     >
-      {/* With the feed hidden, the next pager page is the Home redirect, which bounces a
-          swipe straight back here. Swiping is off on Discover then; the tab bar still works. */}
-      <Tab.Screen
-        name="Discover"
-        component={DiscoverWrapper}
-        options={{ swipeEnabled: FEATURE_FLAGS.socialFeedEnabled }}
-      />
+      <Tab.Screen name="Discover" component={DiscoverWrapper} />
       {/* The social posts feed. No pager swipe: its photo carousels own horizontal swipes. */}
       <Tab.Screen
         name="Home"
         component={FEATURE_FLAGS.socialFeedEnabled ? HomeWrapper : ReleaseLandingRedirect}
-        options={{ swipeEnabled: false }}
       />
       <Tab.Screen
         name="Review"
@@ -367,6 +388,7 @@ const createStyles = () =>
   });
 
 const styles = StyleSheet.create({
+  tabPage: { flex: 1 },
   loadingPlaceholder: {
     alignItems: "center",
     flex: 1,

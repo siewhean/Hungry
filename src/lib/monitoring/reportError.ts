@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/react-native";
 
+import { asError } from "./asError";
+
 // Sentry is only initialised in App.tsx when a DSN is configured.
 const sentryEnabled = Boolean(process.env.EXPO_PUBLIC_SENTRY_DSN);
 
@@ -19,7 +21,7 @@ export function reportError(error: unknown, context: ErrorReportContext = {}): v
   }
 
   try {
-    Sentry.captureException(error, { extra: context });
+    Sentry.captureException(asError(error), { extra: context });
   } catch {
     // Reporting must never crash the caller.
   }

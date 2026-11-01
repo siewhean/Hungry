@@ -141,7 +141,8 @@ export function buildAreaSearchResults(input: {
       key: `address:${areaName}`,
       kind: "address",
       title: areaName,
-      subtitle: `Near ${formatAddress(address.address)}`,
+      // An address resolves to its area; the row says so instead of echoing the street.
+      subtitle: "Area",
       areaName,
       coordinate: address.coordinate,
     });

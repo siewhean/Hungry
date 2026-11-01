@@ -59,6 +59,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "SearchHome",
   "SearchResults",
   "BrowseDishes",
+  "FoodStyles",
   "BrowseStalls",
   "DiscoverMap",
   "DecideForMeResult",
@@ -215,6 +216,10 @@ const loadBrowseDishesScreen = () =>
   (
     require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
   ).BrowseDishesScreen;
+const loadFoodStylesScreen = () =>
+  (
+    require("@/app/screens/discover/FoodStylesScreen") as typeof import("@/app/screens/discover/FoodStylesScreen")
+  ).FoodStylesScreen;
 const loadBrowseStallsScreen = () =>
   (
     require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
@@ -737,6 +742,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           />
           <RootStack.Screen getComponent={loadSearchResultsScreen} name="SearchResults" />
           <RootStack.Screen getComponent={loadBrowseDishesScreen} name="BrowseDishes" />
+          <RootStack.Screen getComponent={loadFoodStylesScreen} name="FoodStyles" />
           <RootStack.Screen getComponent={loadBrowseStallsScreen} name="BrowseStalls" />
           {FEATURE_FLAGS.mapEnabled ? (
             <>

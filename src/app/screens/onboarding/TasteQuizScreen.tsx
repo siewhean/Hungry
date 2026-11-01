@@ -493,6 +493,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             contentContainerStyle={{
               gap: spacing[3],
               paddingBottom: spacing[6] + accessibilityFooterReserve,

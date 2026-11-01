@@ -95,6 +95,7 @@ export function Screen({
       onScroll={onScroll}
       scrollEventThrottle={scrollEventThrottle}
       keyboardShouldPersistTaps="handled"
+      keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       refreshControl={refreshControl}
     >
       <View

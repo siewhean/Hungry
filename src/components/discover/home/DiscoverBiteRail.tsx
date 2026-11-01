@@ -249,6 +249,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
               alignItems: "center",
               flex: 1,
               flexDirection: "row",
+              justifyContent: "space-between",
               gap: spacing[2],
               minHeight: 44,
             }}

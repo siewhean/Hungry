@@ -28,7 +28,7 @@ test("root error boundary reports through reportError and offers a restart", () 
   assert.match(boundary, /Updates\.reloadAsync\(\)/);
   assert.match(boundary, />Restart</);
   assert.match(reporter, /EXPO_PUBLIC_SENTRY_DSN/);
-  assert.match(reporter, /Sentry\.captureException\(error/);
+  assert.match(reporter, /Sentry\.captureException\(asError\(error\)/);
 });
 
 test("EmptyState hides raw error text and the Send error action in production", () => {

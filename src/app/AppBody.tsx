@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 
-import { AppText } from "@/components/ui";
+import { AppText, ChoiceSheetHost } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { useAppBootstrap } from "@/hooks/useAppBootstrap";
 import { RootNavigator } from "@/app/navigation/RootNavigator";
@@ -121,6 +121,7 @@ export function AppBody() {
         <SafetyActionsSheet />
         <AnalyticsConsentPrompt />
         <AiSearchConsentPrompt />
+        <ChoiceSheetHost />
       </BottomSheetModalProvider>
     </View>
   );

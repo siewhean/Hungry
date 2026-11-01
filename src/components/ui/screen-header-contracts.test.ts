@@ -507,7 +507,6 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
   );
   assert.match(discover, /paddingTop: spacing\[1\]/);
-  assert.match(discover, /Browse stalls and restaurants/);
   assert.match(discover, /Dishes/);
   assert.match(discover, /backgroundColor: palette\.imageLabelSurface/);
   assert.match(discover, /borderColor: palette\.imageLabelBorder/);
@@ -699,12 +698,9 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
     discover,
     /<TrendingList[\s\S]*?bites=\{showInitialDiscoverSkeleton \? \[\] : trendingListBites\}/,
   );
-  assert.match(discover, /The full lists stay one tap away/);
-  assert.match(
-    discover,
-    /accessibilityLabel: "Browse stalls and restaurants"|a11y: "Browse stalls and restaurants"/,
-  );
-  assert.match(discover, /a11y: "Browse dishes"/);
+  // The "All stalls" / "All dishes" buttons gave way to section headers with an arrow on the right.
+  assert.doesNotMatch(discover, /Browse stalls and restaurants/);
+  assert.doesNotMatch(discover, /a11y: "Browse dishes"/);
   assert.doesNotMatch(discover, /function DiscoveryTargetGridPreview/);
   assert.doesNotMatch(discover, /<DiscoveryTargetGridPreview/);
   assert.doesNotMatch(discover, /STALLS_CARD_GRAPHIC|DISHES_CARD_GRAPHIC/);
@@ -713,7 +709,7 @@ test("Discover V1 contract: browse cards open the image-feed browse mode", () =>
     /stallTargetImage|dishTargetImage|stallPreviewImages|dishPreviewImages/,
   );
   assert.match(discover, /navigation\.navigate\("BrowseStalls"\)/);
-  assert.match(discover, /navigation\.navigate\("BrowseDishes"\)/);
+  assert.match(discover, /navigation\.navigate\("FoodStyles"\)/);
   assert.match(
     navigationTypes,
     /SearchResults:\s*\|\s*\{[\s\S]*browseMode\?: "dishes" \| "stalls"[\s\S]*\}\s*\|\s*undefined/,

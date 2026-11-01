@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from "react-native";
+import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ArrowLeft, Search } from "lucide-react-native";
@@ -242,6 +242,7 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
         }}
         contentContainerStyle={[styles.content, { gap: spacing[3], padding: spacing[4] }]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         ListHeaderComponent={header}
         data={collaboratorsState === "ready" && followingState === "ready" ? matches : []}
         keyExtractor={(person) => person.userId}

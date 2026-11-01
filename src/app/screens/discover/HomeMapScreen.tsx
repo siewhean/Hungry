@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ElementRef } from "react";
 import {
+  Keyboard,
   type LayoutChangeEvent,
   Pressable,
   StyleSheet,
@@ -18,7 +19,7 @@ import Animated, {
   useSharedValue,
 } from "react-native-reanimated";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
   ChevronLeft,
   ChevronDown,
@@ -409,6 +410,17 @@ export function HomeMapScreen() {
     loading: boolean;
   } | null>(null);
   const clusterPickRun = useRef(0);
+  // The list hides while a stall from it is open and comes back when the diner returns, so Back
+  // lands on the list they picked from, not on the bare map.
+  const [clusterSheetOpen, setClusterSheetOpen] = useState(false);
+  const returnToClusterRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!returnToClusterRef.current) return;
+      returnToClusterRef.current = false;
+      setClusterSheetOpen(true);
+    }, []),
+  );
   // A search typed here stays on the map: it filters the pins and the cards (M19).
   const [mapQuery, setMapQuery] = useState("");
   // The pin and the card of the same stall light up together (M10).
@@ -676,6 +688,8 @@ export function HomeMapScreen() {
   const openClusterList = useCallback(
     async (item: { id: string; count: number; latitude: number; longitude: number }) => {
       const run = ++clusterPickRun.current;
+      returnToClusterRef.current = false;
+      setClusterSheetOpen(true);
       setClusterPick({ count: item.count, venues: [], hoursById: new Map(), loading: true });
       try {
         const page = await catalogRawService.listVenues({
@@ -707,6 +721,7 @@ export function HomeMapScreen() {
         reportError(error, { screen: "HomeMapScreen", action: "load_cluster_stalls" });
         if (run !== clusterPickRun.current) return;
         setClusterPick(null);
+        setClusterSheetOpen(false);
         showToast({ message: "Couldn't load the stalls here. Try again.", tone: "error" });
       }
     },
@@ -924,6 +939,7 @@ export function HomeMapScreen() {
           markers={markers}
           cameraPadding={cameraPadding}
           onMapPress={() => {
+            Keyboard.dismiss();
             // A tap only folds the sheet. The camera stays where the diner left it.
             if (displayMode === "carousel") {
               snapToIndex(sheetIndexRef.current === 0 ? CARDS_SNAP_INDEX : 0);
@@ -954,7 +970,11 @@ export function HomeMapScreen() {
           accessibilityElementsHidden
           importantForAccessibility="no"
           onPress={() => setPlacesOpen(false)}
-          style={[StyleSheet.absoluteFill, { zIndex: zIndex.overlay - 1 }]}
+          style={[
+            StyleSheet.absoluteFill,
+            // Above the sheet and the floating buttons: the dropdown never sits under them.
+            { backgroundColor: palette.overlay, zIndex: zIndex.toast - 2 },
+          ]}
         />
       ) : null}
 
@@ -965,7 +985,7 @@ export function HomeMapScreen() {
           top: 0,
           left: 0,
           right: 0,
-          zIndex: zIndex.overlay,
+          zIndex: placesOpen ? zIndex.toast - 1 : zIndex.overlay,
         }}
         edges={["top"]}
       >
@@ -1097,7 +1117,11 @@ export function HomeMapScreen() {
             }
           />
           {placesOpen ? (
-            <EstablishmentDropdown selected={establishmentTypes} onChange={setEstablishmentTypes} />
+            <EstablishmentDropdown
+              selected={establishmentTypes}
+              onChange={setEstablishmentTypes}
+              maxHeight={Math.max(240, screenHeight - insets.top - 220 - insets.bottom)}
+            />
           ) : null}
           {mapQuery ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
@@ -1300,6 +1324,8 @@ export function HomeMapScreen() {
         enableContentPanningGesture={displayMode === "list"}
         handleComponent={renderSheetHandle}
         onAnimate={(_from, to) => {
+          // Dragging the sheet puts the search box away, like any scrolling surface.
+          Keyboard.dismiss();
           sheetIndexRef.current = to;
         }}
         backgroundStyle={{
@@ -1313,6 +1339,8 @@ export function HomeMapScreen() {
         {displayMode === "list" ? (
           <BottomSheetScrollView
             ref={listRef}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{ paddingBottom: insets.bottom + spacing[6] }}
           >
             <AppText
@@ -1456,7 +1484,7 @@ export function HomeMapScreen() {
         )}
       </BottomSheet>
       <ClusterStallsSheet
-        visible={clusterPick !== null}
+        visible={clusterSheetOpen && clusterPick !== null}
         totalCount={clusterPick?.count ?? 0}
         loading={clusterPick?.loading ?? false}
         stalls={(clusterPick?.venues ?? []).map<ClusterStallRow>((venue) => {
@@ -1473,13 +1501,18 @@ export function HomeMapScreen() {
           };
         })}
         onClose={() => {
-          clusterPickRun.current += 1;
-          setClusterPick(null);
+          const run = ++clusterPickRun.current;
+          returnToClusterRef.current = false;
+          setClusterSheetOpen(false);
+          // Cleared once the sheet has slid away, so its rows do not vanish mid-animation.
+          setTimeout(() => {
+            if (run === clusterPickRun.current) setClusterPick(null);
+          }, 260);
         }}
         onSelect={(stallId) => {
-          clusterPickRun.current += 1;
-          setClusterPick(null);
           trackAnalyticsEvent("map_cluster_stall_picked", { stall_id: stallId });
+          returnToClusterRef.current = true;
+          setClusterSheetOpen(false);
           openStall(stallId);
         }}
       />

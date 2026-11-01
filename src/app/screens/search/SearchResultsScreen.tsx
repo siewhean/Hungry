@@ -126,6 +126,8 @@ const RAW_BROWSE_FILTER_OPTIONS = [BROWSE_ALL_FILTER, ...BROWSE_FILTER_IDS]
 /** How many of the release's most common food types the Filters sheet offers. */
 const FOOD_TYPE_CHIP_COUNT = 8;
 /** A rate-limited search can be retried after this long (the limiter counts per minute). */
+/** Wait for a pause in typing before asking the server: fewer calls, each one on a settled query. */
+const SEARCH_TYPING_DEBOUNCE_MS = 400;
 const RATE_LIMIT_RETRY_MS = 10_000;
 /** "Search all Singapore" when the 3 km browse radius is empty: wide enough to cover the island. */
 const WIDE_RADIUS_METERS = 30_000;
@@ -833,6 +835,8 @@ function RawCatalogBrowseGrid({
     });
   }, [initialSearchQuery, initialSource, isAuthenticated, recordCommittedQuery]);
 
+  // The query the screen opened with (a chip tap or recent search) loads at once; only keystrokes wait.
+  const openingQueryRef = useRef(query);
   useEffect(() => {
     requestVersion.current += 1;
     releaseIdRef.current = undefined;
@@ -849,7 +853,7 @@ function RawCatalogBrowseGrid({
       () => {
         void loadPage();
       },
-      query ? 250 : 0,
+      query && query !== openingQueryRef.current ? SEARCH_TYPING_DEBOUNCE_MS : 0,
     );
     return () => clearTimeout(timer);
   }, [loadPage, query, tooShort]);
@@ -857,7 +861,9 @@ function RawCatalogBrowseGrid({
   // Typing a mall or hawker centre name offers the place itself, so its stalls can be listed
   // without the fuzzy name matches from other buildings.
   useEffect(() => {
-    if (place || tooShort || query.length < CATALOG_SUGGEST_MIN_CHARS) return;
+    // Not while the results are still loading: the place lookup is a second heavy read and
+    // would slow the one the diner is waiting for.
+    if (place || tooShort || isLoading || query.length < CATALOG_SUGGEST_MIN_CHARS) return;
     let active = true;
     const timer = setTimeout(() => {
       service
@@ -871,7 +877,7 @@ function RawCatalogBrowseGrid({
       active = false;
       clearTimeout(timer);
     };
-  }, [coordinate, place, query, service, tooShort]);
+  }, [coordinate, isLoading, place, query, service, tooShort]);
   const offeredPlaces =
     !place && placeMatches.query === query && query.length >= CATALOG_SUGGEST_MIN_CHARS
       ? placeMatches.items
@@ -1398,6 +1404,7 @@ function RawCatalogBrowseGrid({
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ alignItems: "center", gap: spacing[2] }}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
         <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
         {filters.map((filter) => (

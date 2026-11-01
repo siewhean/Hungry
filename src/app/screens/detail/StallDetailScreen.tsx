@@ -1,5 +1,4 @@
 import {
-  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -114,6 +113,8 @@ import {
   summarizeStallRating,
 } from "@/features/detail/stallLocation";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
+import { askMediaSource } from "@/lib/permissions/mediaSource";
+import { askChoice } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -457,30 +458,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [showToast, venue],
   );
 
-  const promptSourceFor = useCallback(
-    (kind: "menu" | "stall") => {
-      Alert.alert(
-        kind === "menu" ? "Menu photo" : "Stall photo",
-        kind === "menu"
-          ? "Snap or pick a photo of this stall's menu."
-          : "Snap or pick a photo of the stall front or its food.",
-        [
-          { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera", kind) },
-          { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library", kind) },
-          { text: "Cancel", style: "cancel" },
-        ],
-      );
-    },
-    [submitMenuPhotoFrom],
-  );
   // One button covers both: say what the photo shows, then where it comes from.
-  const promptMenuPhoto = useCallback(() => {
-    Alert.alert("Add a menu/stall photo", "What does your photo show?", [
-      { text: "Menu", onPress: () => promptSourceFor("menu") },
-      { text: "Stall", onPress: () => promptSourceFor("stall") },
-      { text: "Cancel", style: "cancel" },
-    ]);
-  }, [promptSourceFor]);
+  const promptMenuPhoto = useCallback(async () => {
+    const kind = await askChoice({
+      title: "Add a menu/stall photo",
+      message: "What does your photo show?",
+      options: [
+        { id: "menu", label: "The menu" },
+        { id: "stall", label: "The stall or its food" },
+      ],
+    });
+    if (kind !== "menu" && kind !== "stall") return;
+    const source = await askMediaSource(kind === "menu" ? "Menu photo" : "Stall photo");
+    if (source) void submitMenuPhotoFrom(source, kind);
+  }, [submitMenuPhotoFrom]);
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() =>
     hasPendingClaimForVenue(profile.id, venueId),

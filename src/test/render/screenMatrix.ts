@@ -672,6 +672,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Under S\$6/,
   },
   {
+    name: "FoodStylesScreen",
+    file: "src/app/screens/discover/FoodStylesScreen.tsx",
+    scenario: "user",
+    expect: /Popular dishes/,
+  },
+  {
     name: "BrowseStallsScreen",
     file: "src/app/screens/search/SearchResultsScreen.tsx",
     scenario: "user",

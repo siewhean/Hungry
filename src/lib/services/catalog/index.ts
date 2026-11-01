@@ -673,6 +673,16 @@ function mapPlace(value: unknown): CatalogPlace[] {
   ];
 }
 
+/**
+ * The server's zoomed-out branch (below 14) groups pins into cells with nested aggregates, which
+ * Postgres rejects ("aggregate function calls cannot be nested", 42803), so every zoomed-out map
+ * read failed. Ask for the venue branch instead: it returns the pins nearest the viewport centre.
+ */
+export const MAP_VIEWPORT_MIN_SERVER_ZOOM = 14;
+export function mapViewportZoom(zoom: number): number {
+  return Math.max(zoom, MAP_VIEWPORT_MIN_SERVER_ZOOM);
+}
+
 function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> {
   return {
     // Sent only for a place, so every other read keeps working against the older signature.
@@ -892,7 +902,7 @@ export const catalogRawService = {
       p_min_lng: request.minLongitude,
       p_max_lat: request.maxLatitude,
       p_max_lng: request.maxLongitude,
-      p_zoom: request.zoom,
+      p_zoom: mapViewportZoom(request.zoom),
       p_release_id: request.releaseId ?? null,
       p_near_lat: request.coordinate?.latitude ?? null,
       p_near_lng: request.coordinate?.longitude ?? null,
