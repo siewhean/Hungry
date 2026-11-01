@@ -87,6 +87,9 @@ export function resolveFeatureFlags(
     googleSignInEnabled: surface("EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN", nonProductionSurfaceEnabled),
     floorplansEnabled: false,
     gamificationEnabled: nonProductionSurfaceEnabled,
+    // The Hungry Passport (stamps for the stalls you have tried) shows on Profile in every
+    // environment; FoodCred, missions and points stay behind gamificationEnabled.
+    passportEnabled: true,
     collectionsEnabled: nonProductionSurfaceEnabled,
     // Hungry Portfolios (user lists) and their public share links ship in production.
     portfoliosEnabled: true,

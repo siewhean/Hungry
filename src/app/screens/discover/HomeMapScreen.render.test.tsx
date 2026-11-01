@@ -108,15 +108,18 @@ test("MD-M2 opening the legend leaves the List/Map and recentre buttons on scree
 test("MD-M1 the carousel sheet is tall enough for a whole card", () => {
   const src = fs.readFileSync("src/app/screens/discover/HomeMapScreen.tsx", "utf8");
   const num = (name: string) => Number(new RegExp(`const ${name} = (\\d+)`).exec(src)?.[1]);
-  // Name line 20, two detail lines 16, 4 between them, 12 padding above and below.
-  assert.match(src, /const CARD_TEXT_HEIGHT = 12 \* 2 \+ 20 \+ 16 \* 2 \+ 4 \* 2;/);
+  // Name line 20, two detail lines 16, 2 between them, 8 padding above and below.
+  assert.match(src, /const CARD_TEXT_PADDING = 8;/);
+  assert.match(src, /const CARD_TEXT_HEIGHT = CARD_TEXT_PADDING \* 2 \+ 20 \+ 16 \* 2 \+ 2 \* 2;/);
   assert.match(
     src,
     /CAROUSEL_CONTENT_HEIGHT =\s*SHEET_CARD_TOP_PADDING \+ CARD_IMAGE_HEIGHT \+ CARD_TEXT_HEIGHT \+ CARD_BORDER_ALLOWANCE/,
   );
   assert.match(src, /CAROUSEL_BASE_HEIGHT = SHEET_HEADER_HEIGHT \+ CAROUSEL_CONTENT_HEIGHT/);
   assert.match(src, /height: CAROUSEL_CONTENT_HEIGHT \+ insets\.bottom/);
-  assert.ok(num("CARD_IMAGE_HEIGHT") === 120 && num("SHEET_HEADER_HEIGHT") === 40);
+  // A big photo, and room between the Cards / List switch and the first card.
+  assert.ok(num("CARD_IMAGE_HEIGHT") === 156 && num("SHEET_HEADER_HEIGHT") === 48);
+  assert.ok(num("SHEET_CARD_TOP_PADDING") >= 12);
 });
 
 test("MD-M3 with no location the map asks for it, and the recentre button asks for the device location", async () => {
@@ -181,12 +184,16 @@ test("MD-M9 and M11 a card shows rating and open state, and a screen reader hear
   discovery.getVenuesByIds = (async () => [openStall]) as never;
   const view = await renderMap();
   await settleCatalogRead(view);
-  assert.match(view.text(), /4\.6 \(23\) · Open · 120 m · Maxwell Food Centre/);
+  // Name and rating, then hours and distance, then where it is.
+  assert.match(
+    view.text(),
+    /Tian Tian Chicken Rice4\.6 \(23\)Open · Closes 11:59pm · 120 mMaxwell Food Centre/,
+  );
   assert.ok(
     view.findByLabel(
-      "Open Tian Tian Chicken Rice. Chicken Rice · S$5.50. Rated 4.6 from 23 reviews. Open · 120 m · Maxwell Food Centre",
+      "Open Tian Tian Chicken Rice. Rated 4.6 from 23 reviews. Open · Closes 11:59pm · 120 m · Maxwell Food Centre",
     ),
-    "the card's label carries the dish, rating and distance",
+    "the card's label carries the rating, hours, distance and place",
   );
 });
 
@@ -199,14 +206,14 @@ test("MD-M9 a failed hours read leaves the word out and the card in place", asyn
   try {
     const view = await renderMap();
     await settleCatalogRead(view);
-    assert.match(view.text(), /120 m · Maxwell Food Centre/);
-    assert.doesNotMatch(view.text(), /Closed|· Open ·/);
+    assert.match(view.text(), /120 mMaxwell Food Centre/);
+    assert.doesNotMatch(view.text(), /Closed ·|Open · /);
   } finally {
     console.error = originalConsoleError;
   }
 });
 
-test("map_card_rich_v1: the control arm shows the plain card, without rating or open state", async () => {
+test("map_card_rich_v1 is concluded: every diner sees the rating and hours on the card", async () => {
   setExperimentOverride("map_card_rich_v1", "control");
   catalog.listVenues = (async () => ({
     releaseId: "r",
@@ -215,8 +222,8 @@ test("map_card_rich_v1: the control arm shows the plain card, without rating or 
   discovery.getVenuesByIds = (async () => [openStall]) as never;
   const view = await renderMap();
   await settleCatalogRead(view);
-  assert.match(view.text(), /120 m · Maxwell Food Centre/);
-  assert.doesNotMatch(view.text(), /4\.6 \(23\)|· Open ·/);
+  assert.match(view.text(), /4\.6 \(23\)/);
+  assert.match(view.text(), /Open · Closes 11:59pm/);
 });
 
 test("map_default_sheet_v1: the list arm opens the map on the list", async () => {

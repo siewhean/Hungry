@@ -84,7 +84,7 @@ export function Screen({
         styles.content,
         !fullWidth && { alignItems: "center", paddingHorizontal: semanticSpacing.screenEdge },
         {
-          paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[12],
+          paddingBottom: Math.max(insets.bottom, spacing[8]) + spacing[4],
           paddingTop: spacing[3],
         },
         contentContainerStyle,
@@ -137,7 +137,7 @@ export function Screen({
         borderTopColor: palette.border,
         backgroundColor: palette.bg,
         paddingTop: spacing[3],
-        paddingBottom: Math.max(insets.bottom, spacing[3]),
+        paddingBottom: Math.max(insets.bottom - spacing[2], spacing[3]),
         paddingHorizontal: semanticSpacing.screenEdge,
         alignItems: "center",
       }}

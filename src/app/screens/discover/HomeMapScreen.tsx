@@ -19,16 +19,26 @@ import Animated, {
 } from "react-native-reanimated";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { ChevronLeft, ChevronRight, Layers, LocateFixed, Star, X } from "lucide-react-native";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+  LocateFixed,
+  Star,
+  Store,
+  X,
+} from "lucide-react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   BuildingLegend,
+  ClusterStallsSheet,
   MapSurface,
   getBuildingPinColor,
   getClusterPinColor,
+  type ClusterStallRow,
   type MapSurfaceMarker,
 } from "@/components/map";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
@@ -55,16 +65,18 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useSearchStore } from "@/store/useSearchStore";
 import { useUIStore } from "@/store/useUIStore";
 import { getVenueOpenStateNow } from "@/features/discovery/decideForMeCandidates";
+import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import {
-  formatMapCardDetail,
   formatMapCardDish,
+  formatMapCardHours,
+  formatMapCardLocation,
   formatMapCardRating,
   mapCardAccessibilityLabel,
   shortOpenLabel,
   type MapCardMatchedDish,
 } from "@/features/discovery/mapCardText";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
+import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { useHungryTheme } from "@/theme";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -98,12 +110,21 @@ const MINIMIZED_HEIGHT = 60;
 const CARDS_SNAP_INDEX = 1;
 const LIST_SNAP_INDEX = 1;
 const CARD_WIDTH = 320;
+/** A cluster this small, or any cluster once the map is zoomed in, opens a list of its stalls. */
+const CLUSTER_LIST_MAX_COUNT = 60;
+const CLUSTER_LIST_MIN_ZOOM = 15;
+/** Stalls in one cluster sit within this distance of its pin. */
+const CLUSTER_LIST_RADIUS_METERS = 150;
+const CLUSTER_LIST_LIMIT = 40;
 /** The card in the carousel, top to bottom: photo, then padding, a name line and two detail lines. */
-const CARD_IMAGE_HEIGHT = 120;
-const CARD_TEXT_HEIGHT = 12 * 2 + 20 + 16 * 2 + 4 * 2;
+const CARD_IMAGE_HEIGHT = 156;
+/** Name and rating, then hours and distance, then where it is: three tight lines under the photo. */
+const CARD_TEXT_PADDING = 8;
+const CARD_TEXT_HEIGHT = CARD_TEXT_PADDING * 2 + 20 + 16 * 2 + 2 * 2;
 /** Grabber and the Cards / List switch sit in this strip at the top of the sheet. */
-const SHEET_HEADER_HEIGHT = 40;
-const SHEET_CARD_TOP_PADDING = 8;
+const SHEET_HEADER_HEIGHT = 48;
+/** Clear space between the Cards / List switch and the first card. */
+const SHEET_CARD_TOP_PADDING = 14;
 /** Room for the 2 pt selected-card border on top and bottom. */
 const CARD_BORDER_ALLOWANCE = 4;
 /** Tall enough for the whole card, so no detail line is cut off. */
@@ -116,7 +137,7 @@ const TOP_RATED_MIN_RATING = 4.5;
 const HOME_MAP_FILTER_OPTIONS: readonly { id: HomeMapFilterId; label: string }[] = [
   { id: "openNow", label: "Open now" },
   { id: "nearMe", label: "Near me" },
-  { id: "hawkerOnly", label: "Hawker" },
+  { id: "hawkerOnly", label: "Hawker centres" },
   { id: "topRated", label: "Top rated" },
 ];
 
@@ -179,27 +200,61 @@ function SheetModeToggle({
   );
 }
 
-/** "4.6 (23) · Open · 120 m · Maxwell Food Centre" with a star symbol before the rating. */
-function MapCardDetailLine({
+/**
+ * What a stall card says, in three lines: name with its rating, then hours and distance, then
+ * where the stall is. A line with nothing to say keeps its height only when `fillWhenEmpty`.
+ */
+function MapCardLines({
+  name,
   rating,
-  detail,
+  hours,
+  distance,
+  location,
   fillWhenEmpty = false,
 }: {
+  name: string;
   rating?: string;
-  detail: string;
+  hours?: string;
+  distance?: string;
+  location?: string;
   fillWhenEmpty?: boolean;
 }) {
-  const { palette } = useHungryTheme();
-  const text = [rating, detail].filter(Boolean).join(" · ");
-  if (!text && !fillWhenEmpty) return null;
+  const { palette, spacing } = useHungryTheme();
+  const isOpen = hours?.startsWith("Open");
   return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-      {rating ? (
-        <AppSymbol name="star.fill" fallback={Star} filled size={12} color={palette.starFill} />
+    <View style={{ gap: 2 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+        <AppText style={{ flex: 1, fontWeight: "800" }} numberOfLines={1}>
+          {name}
+        </AppText>
+        {rating ? (
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+            <AppSymbol name="star.fill" fallback={Star} filled size={12} color={palette.starFill} />
+            <AppText variant="micro" tone="secondary" numberOfLines={1}>
+              {rating}
+            </AppText>
+          </View>
+        ) : null}
+      </View>
+      {hours || distance || fillWhenEmpty ? (
+        <AppText variant="micro" tone="muted" numberOfLines={1}>
+          {hours ? (
+            <AppText
+              variant="micro"
+              style={{ color: isOpen ? palette.success : palette.textSecondary, fontWeight: "700" }}
+            >
+              {hours}
+            </AppText>
+          ) : null}
+          {hours && distance ? " · " : ""}
+          {distance ?? (hours ? "" : " ")}
+        </AppText>
       ) : null}
-      <AppText variant="micro" tone="muted" numberOfLines={1} style={{ flexShrink: 1 }}>
-        {text || " "}
-      </AppText>
+      {location || fillWhenEmpty ? (
+        <AppText variant="micro" tone="muted" numberOfLines={1}>
+          {location || " "}
+        </AppText>
+      ) : null}
     </View>
   );
 }
@@ -274,7 +329,6 @@ export function HomeMapScreen() {
   const [displayMode, setDisplayMode] = useState<"carousel" | "list">(() =>
     getExperimentVariant("map_default_sheet_v1", { expose: true }) === "list" ? "list" : "carousel",
   );
-  const richCards = useExperimentVariant("map_card_rich_v1") !== "control";
   const [showLegend, setShowLegend] = useState(false);
   const [rawMapItems, setRawMapItems] = useState<CatalogMapItem[]>([]);
   const [rawVenueCards, setRawVenueCards] = useState<CatalogRawVenueCard[]>([]);
@@ -285,6 +339,8 @@ export function HomeMapScreen() {
     ReadonlyMap<string, MapCardMatchedDish>
   >(new Map());
   const [openLabelByVenue, setOpenLabelByVenue] = useState<ReadonlyMap<string, string>>(new Map());
+  // "Open · Closes 9pm" for the card's hours line.
+  const [hoursTextByVenue, setHoursTextByVenue] = useState<ReadonlyMap<string, string>>(new Map());
   // The cards whose hours have been read (or failed to), so "Open now" never empties the map while
   // the hours are still loading, and shows every stall when the hours cannot be read.
   const [hoursReadFor, setHoursReadFor] = useState<CatalogRawVenueCard[] | undefined>();
@@ -292,6 +348,14 @@ export function HomeMapScreen() {
   const venueHoursRef = useRef(new Map<string, VenueSummary>());
   // The "Loading places…" pill waits a moment so a quick pan does not flash it (M10).
   const [showLoadingPill, setShowLoadingPill] = useState(false);
+  // The stalls behind a tapped cluster, as a list to pick from.
+  const [clusterPick, setClusterPick] = useState<{
+    count: number;
+    venues: CatalogRawVenueCard[];
+    hoursById: ReadonlyMap<string, string>;
+    loading: boolean;
+  } | null>(null);
+  const clusterPickRun = useRef(0);
   // A search typed here stays on the map: it filters the pins and the cards (M19).
   const [mapQuery, setMapQuery] = useState("");
   // The pin and the card of the same stall light up together (M10).
@@ -463,11 +527,16 @@ export function HomeMapScreen() {
     };
     const publish = () => {
       const labels = new Map<string, string>();
+      const hoursText = new Map<string, string>();
       for (const card of rawVenueCards) {
         const text = label(card.id);
         if (text) labels.set(card.id, text);
+        const venue = venueHoursRef.current.get(card.id);
+        const hours = venue ? formatMapCardHours(getVenueOpenStateNow(venue)) : undefined;
+        if (hours) hoursText.set(card.id, hours);
       }
       setOpenLabelByVenue(labels);
+      setHoursTextByVenue(hoursText);
       setHoursFailed(false);
       setHoursReadFor(rawVenueCards);
     };
@@ -545,6 +614,44 @@ export function HomeMapScreen() {
     [displayMode, openStall],
   );
 
+  const openClusterList = useCallback(
+    async (item: { count: number; latitude: number; longitude: number }) => {
+      const run = ++clusterPickRun.current;
+      setClusterPick({ count: item.count, venues: [], hoursById: new Map(), loading: true });
+      try {
+        const page = await catalogRawService.listVenues({
+          coordinate: { latitude: item.latitude, longitude: item.longitude },
+          limit: CLUSTER_LIST_LIMIT,
+          radiusMeters: CLUSTER_LIST_RADIUS_METERS,
+          buildingTypes: mapFilters.hawkerOnly ? ["hawker_centre"] : [],
+          query: mapQuery || undefined,
+          sort: "nearby",
+        });
+        // Hours come from one batched read; without them the rows just leave the word out.
+        const hoursById = new Map<string, string>();
+        try {
+          const venues = await getHungryService().discovery.getVenuesByIds(
+            page.items.map((venue) => venue.id),
+          );
+          for (const venue of venues) {
+            const hours = formatMapCardHours(getVenueOpenStateNow(venue));
+            if (hours) hoursById.set(venue.id, hours);
+          }
+        } catch (error) {
+          reportError(error, { screen: "HomeMapScreen", action: "load_cluster_hours" });
+        }
+        if (run !== clusterPickRun.current) return;
+        setClusterPick({ count: item.count, venues: page.items, hoursById, loading: false });
+      } catch (error) {
+        reportError(error, { screen: "HomeMapScreen", action: "load_cluster_stalls" });
+        if (run !== clusterPickRun.current) return;
+        setClusterPick(null);
+        showToast({ message: "Couldn't load the stalls here. Try again.", tone: "error" });
+      }
+    },
+    [catalogRawService, mapFilters.hawkerOnly, mapQuery, showToast],
+  );
+
   const handleRawMarkerPress = useCallback(
     (markerId: string) => {
       const item = rawMapItems.find(
@@ -554,6 +661,10 @@ export function HomeMapScreen() {
       if (!item) return;
       trackAnalyticsEvent("map_pin_tapped", { pin_kind: item.kind, pin_id: item.id });
       if (item.kind === "cluster") {
+        if (item.count <= CLUSTER_LIST_MAX_COUNT || currentZoom >= CLUSTER_LIST_MIN_ZOOM) {
+          void openClusterList(item);
+          return;
+        }
         setMapCenter({ latitude: item.latitude, longitude: item.longitude });
         setCurrentZoom((zoom) => Math.max(14, zoom + 1.5));
         return;
@@ -576,7 +687,17 @@ export function HomeMapScreen() {
       }
       openStall(item.id);
     },
-    [displayMode, openStall, rawMapItems, selectedVenueId, snapToIndex, spacing, venueCards],
+    [
+      currentZoom,
+      displayMode,
+      openClusterList,
+      openStall,
+      rawMapItems,
+      selectedVenueId,
+      snapToIndex,
+      spacing,
+      venueCards,
+    ],
   );
 
   const submitSearch = useCallback(() => {
@@ -639,27 +760,26 @@ export function HomeMapScreen() {
 
   const cameraPadding = useMemo(
     () => ({
-      paddingBottom: displayMode === "list" ? 300 : 260,
+      paddingBottom: 300,
     }),
     [displayMode],
   );
 
   /** The text of one card or row, and what a screen reader says for it. */
   const cardText = (venue: CatalogRawVenueCard) => {
-    // The plain card of map_card_rich_v1's control arm: the stall's dish, distance and building.
-    const dishLine = formatMapCardDish(
-      venue,
-      richCards ? matchedDishByVenue.get(venue.id) : undefined,
-    );
-    const rating = richCards ? formatMapCardRating(venue) : undefined;
-    const detail = formatMapCardDetail(
-      venue,
-      richCards ? openLabelByVenue.get(venue.id) : undefined,
-    );
+    const rating = formatMapCardRating(venue);
+    const hours = hoursTextByVenue.get(venue.id);
+    const distance = formatDistanceLabel(venue.distanceMeters);
+    const location = formatMapCardLocation(venue);
+    // What a search matched is the one dish worth naming; otherwise the card is about the stall.
+    const matched = matchedDishByVenue.get(venue.id);
+    const dishLine = matched ? formatMapCardDish(venue, matched) : undefined;
+    const detail = [hours, distance, location].filter(Boolean).join(" · ");
     return {
-      dishLine,
       rating: rating?.text,
-      detail,
+      hours,
+      distance,
+      location,
       label: mapCardAccessibilityLabel(venue, dishLine, detail, rating?.spoken),
     };
   };
@@ -858,13 +978,21 @@ export function HomeMapScreen() {
               .map((option) => option.id)}
             onSelect={handleFilterSelect}
             gap={spacing[2]}
+            solidSelected
             renderLeftIcon={(option, selected) =>
               option.id === "nearMe" ? (
                 <AppSymbol
                   name="location"
                   fallback={LocateFixed}
                   size={14}
-                  color={selected ? palette.orange : palette.textMuted}
+                  color={selected ? palette.textOnOrange : palette.textMuted}
+                />
+              ) : option.id === "hawkerOnly" ? (
+                <AppSymbol
+                  name="storefront"
+                  fallback={Store}
+                  size={14}
+                  color={selected ? palette.textOnOrange : palette.textMuted}
                 />
               ) : null
             }
@@ -1065,6 +1193,9 @@ export function HomeMapScreen() {
         enableDynamicSizing={false}
         enablePanDownToClose={false}
         enableOverDrag={false}
+        // The cards swipe sideways: the sheet must not claim that drag, or it needs several
+        // tries. The grabber strip still moves the sheet.
+        enableContentPanningGesture={displayMode === "list"}
         handleComponent={renderSheetHandle}
         onAnimate={(_from, to) => {
           sheetIndexRef.current = to;
@@ -1115,16 +1246,13 @@ export function HomeMapScreen() {
                   borderColor: venue.id === selectedVenueId ? palette.orange : palette.border,
                 }}
               >
-                <View style={{ flex: 1, gap: spacing[1] }}>
-                  <AppText variant="h3">{venue.name}</AppText>
-                  {cardText(venue).dishLine ? (
-                    <AppText variant="micro" tone="secondary">
-                      {cardText(venue).dishLine}
-                    </AppText>
-                  ) : null}
-                  <MapCardDetailLine
+                <View style={{ flex: 1 }}>
+                  <MapCardLines
+                    name={venue.name}
                     rating={cardText(venue).rating}
-                    detail={cardText(venue).detail}
+                    hours={cardText(venue).hours}
+                    distance={cardText(venue).distance}
+                    location={cardText(venue).location}
                   />
                 </View>
                 <AppSymbol
@@ -1158,6 +1286,8 @@ export function HomeMapScreen() {
               showsHorizontalScrollIndicator={false}
               snapToInterval={CARD_WIDTH + spacing[4]}
               snapToAlignment="start"
+              disableIntervalMomentum
+              nestedScrollEnabled
               // Swiping to a card lights up its pin.
               onMomentumScrollEnd={(event) => {
                 const index = Math.round(
@@ -1217,16 +1347,13 @@ export function HomeMapScreen() {
                       />
                     )}
                   </View>
-                  <View style={{ padding: spacing[3], gap: spacing[1] }}>
-                    <AppText style={{ fontWeight: "800" }} numberOfLines={1}>
-                      {venue.name}
-                    </AppText>
-                    <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                      {cardText(venue).dishLine ?? " "}
-                    </AppText>
-                    <MapCardDetailLine
+                  <View style={{ padding: CARD_TEXT_PADDING }}>
+                    <MapCardLines
+                      name={venue.name}
                       rating={cardText(venue).rating}
-                      detail={cardText(venue).detail}
+                      hours={cardText(venue).hours}
+                      distance={cardText(venue).distance}
+                      location={cardText(venue).location}
                       fillWhenEmpty
                     />
                   </View>
@@ -1236,6 +1363,34 @@ export function HomeMapScreen() {
           </View>
         )}
       </BottomSheet>
+      <ClusterStallsSheet
+        visible={clusterPick !== null}
+        totalCount={clusterPick?.count ?? 0}
+        loading={clusterPick?.loading ?? false}
+        stalls={(clusterPick?.venues ?? []).map<ClusterStallRow>((venue) => {
+          const hours = clusterPick?.hoursById.get(venue.id);
+          const distance = formatDistanceLabel(venue.distanceMeters);
+          const location = formatMapCardLocation(venue);
+          const detail = [hours, distance].filter(Boolean).join(" · ");
+          return {
+            id: venue.id,
+            name: venue.name,
+            detail: detail || undefined,
+            location: location || undefined,
+            accessibilityLabel: [`Open ${venue.name}`, detail, location].filter(Boolean).join(". "),
+          };
+        })}
+        onClose={() => {
+          clusterPickRun.current += 1;
+          setClusterPick(null);
+        }}
+        onSelect={(stallId) => {
+          clusterPickRun.current += 1;
+          setClusterPick(null);
+          trackAnalyticsEvent("map_cluster_stall_picked", { stall_id: stallId });
+          openStall(stallId);
+        }}
+      />
     </View>
   );
 }
@@ -1249,7 +1404,7 @@ const styles = StyleSheet.create({
   },
   sheetModeToggle: {
     position: "absolute",
-    top: 4,
+    top: 10,
   },
   dragHandleTarget: {
     alignItems: "center",

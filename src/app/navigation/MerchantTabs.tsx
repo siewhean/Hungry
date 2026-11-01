@@ -21,6 +21,7 @@ import { useHungryTheme } from "@/theme";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import type { MerchantTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
+import { tabBarBottomPadding } from "@/app/navigation/tabBarMetrics";
 
 const Tab = createBottomTabNavigator<MerchantTabParamList>();
 const verifiedOnlyScreens = new Set<string>(VERIFIED_ONLY_SCREENS);
@@ -382,8 +383,8 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
-          paddingBottom: Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]),
+          paddingBottom: tabBarBottomPadding(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
         },
       ]}

@@ -97,6 +97,7 @@ import {
 import { Platform, View } from "react-native";
 
 import type { ReviewTasteTagSymbol } from "@/types/domain";
+import { HalalMark } from "./HalalMark";
 
 type SFSymbolName = Extract<SymbolViewProps["name"], string>;
 
@@ -293,6 +294,17 @@ function isRegistryName(name: string): name is AppSymbolName {
 export function AppSymbol(props: AppSymbolProps) {
   const { color, accessibilityLabel, testID } = props;
   const labelled = Boolean(accessibilityLabel);
+
+  if (props.name === "halal") {
+    return (
+      <HalalMark
+        size={props.size ?? 22}
+        color={color}
+        accessibilityLabel={accessibilityLabel}
+        testID={testID}
+      />
+    );
+  }
 
   if (isRegistryName(props.name)) {
     const symbol = APP_SYMBOLS[props.name];

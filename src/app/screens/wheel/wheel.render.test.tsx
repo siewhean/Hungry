@@ -188,18 +188,21 @@ test("MD-W2 a failed prefill is reported and leaves an empty wheel to fill by ha
   assert.match(view.text(), /The wheel is empty/);
 });
 
-test("MD-W4 Spin says what it is waiting for", async () => {
+test("the lobby is titled Hungry Wheel (party: Party lobby) with a plain Spin button and no Close wheel link", async () => {
   useLocationStore.setState({ permission: "denied", currentLocation: undefined });
   serve([]);
   const party = await startWheel();
   const view = await renderLobby(party);
-  assert.ok(view.findByText("Add two to spin"));
+  assert.ok(view.findByText("Spin"));
+  assert.match(view.text(), /Party lobby/, "party builds keep their own title");
+  const lobby = readFileSync("src/app/screens/wheel/WheelLobbyScreen.tsx", "utf8");
+  assert.match(lobby, /PARTY_ENABLED \? "Party lobby" : "Hungry Wheel"/);
+  assert.doesNotMatch(view.text(), /Add places, then spin|Close wheel|Your wheel|Add two to spin/);
   useWheelStore.getState().addEntry("v1", "b", "One", "");
   await view.settle();
-  assert.ok(view.findByText("Add one more to spin"));
   useWheelStore.getState().addEntry("v2", "b", "Two", "");
   await view.settle();
-  assert.ok(view.findByText("Spin wheel"));
+  assert.ok(view.findByText("Spin"));
 });
 
 test("MD-W2 the add sheet stays open after an add and counts what is on the wheel", async () => {
@@ -357,7 +360,7 @@ test("R5-3 late at night the wheel is filled with stalls that open soon, and sti
   assert.equal(useWheelStore.getState().entries.length, 4, "a wheel of four, not one");
   assert.match(view.text(), /We added 1 open stall and 3 that open soon near you/);
   assert.match(view.text(), /Closed now · Opens/);
-  assert.ok(view.findByText("Spin wheel"), "it can spin");
+  assert.ok(view.findByText("Spin"), "it can spin");
 });
 
 test("R5-3 one open stall reads '1 open stall', not '1 open stalls'", async () => {

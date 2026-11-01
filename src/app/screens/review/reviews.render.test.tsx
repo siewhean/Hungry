@@ -455,8 +455,8 @@ test("For your taste with no match shows its own empty state and Show all review
     }),
   });
   const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
-  const tasteChip = view.findByText("For your taste");
-  assert.ok(tasteChip, "the diner has a palette, so the taste chip shows");
+  const tasteChip = view.findByLabel("Show reviews for your taste");
+  assert.ok(tasteChip, "the diner has a palette, so the For you tab shows");
   await view.press(tasteChip);
   assert.match(view.text(), /No reviews for your taste yet/);
   assert.equal(view.findByTestId("review-tile-r1"), null);

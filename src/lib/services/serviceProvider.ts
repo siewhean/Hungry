@@ -104,9 +104,15 @@ export async function runAuthenticatedDiscoveryFallback<T>(
 }
 
 function getExcelDiscoveryService(): DiscoveryService {
-  const { excelService } =
-    require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
-  return excelService.discovery;
+  try {
+    const { excelService } =
+      require("@/lib/services/excel/excelService") as typeof import("@/lib/services/excel/excelService");
+    return excelService.discovery;
+  } catch (error) {
+    // A release bundle has no offline copy: the failure is the retryable "unavailable" one the
+    // screens handle, not a raw error.
+    throw new CatalogUnavailableError(undefined, error);
+  }
 }
 
 export function createResilientDiscoveryService(primary: DiscoveryService): DiscoveryService {
@@ -259,11 +265,31 @@ function createExcelProvider(): ServiceProvider {
   };
 }
 
+/**
+ * Release bundles replace the mock and Excel modules with a stub that throws on any read. A
+ * build whose environment still says "excel" or "mock" (for example a stale env file) would
+ * otherwise crash on the first catalog read; it uses Supabase instead.
+ */
+export function isStubbedDataModule(load: () => unknown): boolean {
+  try {
+    const loaded = load() as { __hungryReleaseStub?: boolean } | undefined;
+    return !loaded || loaded.__hungryReleaseStub === true;
+  } catch {
+    return true;
+  }
+}
+
 function createProviderFromEnv(): ServiceProvider {
   const dataSource = getConfiguredDataSource();
   if (dataSource === "supabase") return createSupabaseProvider();
-  if (dataSource === "excel") return createExcelProvider();
-  return createMockProvider();
+  if (dataSource === "excel") {
+    return isStubbedDataModule(() => require("@/lib/services/excel/repositories"))
+      ? createSupabaseProvider()
+      : createExcelProvider();
+  }
+  return isStubbedDataModule(() => require("@/lib/services/mock/mockService"))
+    ? createSupabaseProvider()
+    : createMockProvider();
 }
 
 let activeProvider: ServiceProvider | null = null;
@@ -275,9 +301,14 @@ function getActiveProvider(): ServiceProvider {
 }
 
 function getExcelCatalogFallbackService(): CatalogReadService {
-  const { excelCatalogFallbackService } =
-    require("@/lib/services/catalog/excelFallback") as typeof import("@/lib/services/catalog/excelFallback");
-  return excelCatalogFallbackService;
+  const loaded = require("@/lib/services/catalog/excelFallback") as
+    | typeof import("@/lib/services/catalog/excelFallback")
+    | undefined;
+  // A module that failed to load once comes back empty the next time it is required.
+  if (!loaded?.excelCatalogFallbackService) {
+    throw new Error("The offline catalog is not available in this build.");
+  }
+  return loaded.excelCatalogFallbackService;
 }
 
 function isExcelFallbackRelease(releaseId?: string): boolean {

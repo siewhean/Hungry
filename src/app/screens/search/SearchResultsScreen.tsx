@@ -31,6 +31,7 @@ import {
   PressableScale,
   Screen,
   Skeleton,
+  UnderlineTabs,
 } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { appendUniqueById } from "@/lib/services/catalog/paging";
@@ -136,8 +137,10 @@ function analyticsFilterName(filter: string) {
 
 /** The grid runs edge to edge: cells touch the screen sides and sit this far apart. */
 const GRID_GAP = 2;
+/** The photo is as tall as the cell is wide, so it leads the card. */
+const GRID_IMAGE_RATIO = 1;
 /** Every text block is at least this tall, so a row of cells ends on one line. */
-const GRID_TEXT_MIN_HEIGHT = 144;
+const GRID_TEXT_MIN_HEIGHT = 104;
 
 function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: BrowseMode }) {
   const { palette, spacing } = useHungryTheme();
@@ -154,7 +157,7 @@ function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: 
           <View
             key={`browse-grid-skeleton-${index}`}
             style={{
-              height: itemWidth * 1.35,
+              height: itemWidth * GRID_IMAGE_RATIO + GRID_TEXT_MIN_HEIGHT,
               padding: GRID_GAP / 2,
               width: itemWidth,
             }}
@@ -225,11 +228,11 @@ const RawCatalogCard = memo(function RawCatalogCard({
         <View
           style={{
             backgroundColor: palette.surface,
-            minHeight: itemWidth * 0.7 + GRID_TEXT_MIN_HEIGHT,
+            minHeight: itemWidth * GRID_IMAGE_RATIO + GRID_TEXT_MIN_HEIGHT,
             overflow: "hidden",
           }}
         >
-          <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * 0.7 }}>
+          <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * GRID_IMAGE_RATIO }}>
             {imageUrl ? (
               <AccessibleImage
                 source={{ uri: imageUrl }}
@@ -277,7 +280,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
               </View>
             ) : null}
           </View>
-          <View style={{ gap: spacing[1], minHeight: GRID_TEXT_MIN_HEIGHT, padding: spacing[2] }}>
+          <View style={{ gap: 2, minHeight: GRID_TEXT_MIN_HEIGHT, padding: spacing[2] }}>
             <AppText numberOfLines={2} variant="bodyBold">
               {title}
             </AppText>
@@ -289,30 +292,38 @@ const RawCatalogCard = memo(function RawCatalogCard({
                 {stallDetail}
               </AppText>
             ) : null}
-            {/* The line is reserved even with no rating or menu count, so cards in a row match (SR4-19). */}
-            <View style={{ minHeight: RESERVED_LINE_HEIGHT }}>
-              {rating ? (
-                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                  <AppSymbol name="rating" color={palette.ratingStar} size={12} />
-                  <AppText tone="secondary" variant="micro">
-                    {rating}
-                  </AppText>
-                </View>
-              ) : stall && stall.menuCount > 0 ? (
-                <AppText tone="secondary" variant="micro">
-                  {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
+            {/* Rating, distance and price share one line; it is always there, so cards in a row match (SR4-19). */}
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+                minHeight: RESERVED_LINE_HEIGHT,
+              }}
+            >
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                {rating ? (
+                  <>
+                    <AppSymbol name="rating" color={palette.ratingStar} size={12} />
+                    <AppText tone="secondary" variant="micro">
+                      {rating}
+                    </AppText>
+                  </>
+                ) : null}
+                <AppText tone="muted" variant="micro">
+                  {rating ? "· " : ""}
+                  {item.distanceMeters !== undefined
+                    ? formatBrowseDistance(item.distanceMeters)
+                    : "Singapore"}
                 </AppText>
-              ) : null}
-            </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <AppText tone="muted" variant="micro">
-                {item.distanceMeters !== undefined
-                  ? formatBrowseDistance(item.distanceMeters)
-                  : "Singapore"}
-              </AppText>
+              </View>
               {dish?.price !== undefined ? (
                 <AppText style={{ color: palette.text }} variant="price">
                   S${dish.price.toFixed(2)}
+                </AppText>
+              ) : !rating && stall && stall.menuCount > 0 ? (
+                <AppText tone="secondary" variant="micro">
+                  {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
                 </AppText>
               ) : null}
             </View>
@@ -332,7 +343,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
             justifyContent: "center",
             position: "absolute",
             right: GRID_GAP / 2 + spacing[2],
-            top: GRID_GAP / 2 + itemWidth * 0.7 - 44 - spacing[2],
+            top: GRID_GAP / 2 + itemWidth * GRID_IMAGE_RATIO - 44 - spacing[2],
             width: 44,
           }}
         />
@@ -345,6 +356,11 @@ const RawCatalogCard = memo(function RawCatalogCard({
 const RESERVED_LINE_HEIGHT = 16;
 
 const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
+const MODE_TABS = (["dishes", "stalls"] as const).map((option) => ({
+  value: option,
+  label: MODE_LABELS[option],
+  accessibilityLabel: `Show ${MODE_LABELS[option].toLowerCase()}`,
+}));
 
 type BrowsePlace = { id: string; name: string };
 
@@ -865,6 +881,9 @@ function RawCatalogBrowseGrid({
   // Zero results are logged only for a submitted query, once, with the (capped) text so
   // "what did people fail to find" can be answered. Partial typing is never logged.
   const hasNoResults = loadedKey === requestKey && !isLoading && !error && items.length === 0;
+  // Switching tab or filter clears the grid a moment before the new request starts: until the
+  // results for this request land, show the loading grid, never "no matches".
+  const showLoadingGrid = isLoading || (!error && !tooShort && loadedKey !== requestKey);
   // The parsed filters found nothing: search the whole typed text instead (see `relaxed` above).
   // With no dish words left ("halal" alone) there is nothing to relax to: the empty state shows.
   const willRelax =
@@ -1367,20 +1386,6 @@ function RawCatalogBrowseGrid({
         contentContainerStyle={{ alignItems: "center", gap: spacing[2] }}
         keyboardShouldPersistTaps="handled"
       >
-        {allowModeSwitch ? (
-          <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: spacing[2] }}>
-            {(["dishes", "stalls"] as const).map((option) => (
-              <Chip
-                key={option}
-                accessibilityRole="tab"
-                label={MODE_LABELS[option]}
-                accessibilityLabel={`Show ${MODE_LABELS[option].toLowerCase()}`}
-                selected={mode === option}
-                onPress={() => switchMode(option)}
-              />
-            ))}
-          </View>
-        ) : null}
         <ParsedQueryChips parts={parsed.parts} onRemove={handleRemoveParsedPart} />
         {filters.map((filter) => (
           <Chip
@@ -1601,6 +1606,16 @@ function RawCatalogBrowseGrid({
             </AppText>
           ) : null}
         </View>
+        {allowModeSwitch ? (
+          <UnderlineTabs
+            accessibilityLabel="Search results"
+            fill
+            tabs={MODE_TABS}
+            value={mode}
+            onChange={switchMode}
+            style={{ marginHorizontal: spacing[4] }}
+          />
+        ) : null}
         <View style={{ flex: 1, opacity: isRefreshing ? 0.45 : 1 }}>
           <FlashList
             ref={listRef}
@@ -1620,7 +1635,9 @@ function RawCatalogBrowseGrid({
             ListEmptyComponent={
               // The loading grid is edge to edge like the results; messages keep side padding.
               <View
-                style={isAuthenticated && isLoading ? undefined : { paddingHorizontal: spacing[3] }}
+                style={
+                  isAuthenticated && showLoadingGrid ? undefined : { paddingHorizontal: spacing[3] }
+                }
               >
                 {!isAuthenticated ? (
                   // A signed-out grid (after a session expiry and a back swipe) loads nothing.
@@ -1630,7 +1647,7 @@ function RawCatalogBrowseGrid({
                     ctaLabel="Sign in"
                     onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
                   />
-                ) : isLoading ? (
+                ) : showLoadingGrid ? (
                   <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
                 ) : error && retryAvailableAt !== null ? (
                   // The limiter said slow down: a connection check would not help, and Retry waits.

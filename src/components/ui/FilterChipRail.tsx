@@ -23,6 +23,8 @@ interface FilterChipRailProps<T extends string = string> {
   selectedIds?: readonly T[];
   onSelect: (id: T) => void;
   renderLeftIcon?: (option: FilterChipRailOption<T>, selected: boolean) => ReactNode;
+  /** The chosen chips are solid orange, so they read clearly over a map. */
+  solidSelected?: boolean;
   onSwipeLockChange?: (locked: boolean) => void;
   unlockDelayMs?: number;
   gap?: number;
@@ -40,6 +42,7 @@ export function FilterChipRail<T extends string = string>({
   selectedIds,
   onSelect,
   renderLeftIcon,
+  solidSelected = false,
   onSwipeLockChange,
   unlockDelayMs = DEFAULT_UNLOCK_DELAY_MS,
   gap,
@@ -128,6 +131,7 @@ export function FilterChipRail<T extends string = string>({
             label={option.label}
             accessibilityLabel={option.accessibilityLabel}
             selected={selected}
+            solid={solidSelected}
             onPress={() => onSelect(option.id)}
             leftIcon={renderLeftIcon ? renderLeftIcon(option, selected) : option.leftIcon}
           />

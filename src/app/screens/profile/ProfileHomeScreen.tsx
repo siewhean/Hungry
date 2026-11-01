@@ -156,7 +156,10 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
+  // Link-only share sheet: as tall as its four actions plus the home-indicator inset.
+  const linkOnlyShareSnapPoints = useMemo(() => [150 + insets.bottom + 24], [insets.bottom]);
   const gamificationEnabled = FEATURE_FLAGS.gamificationEnabled;
+  const passportEnabled = FEATURE_FLAGS.passportEnabled;
   const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
   const [isTasteShareSheetOpen, setIsTasteShareSheetOpen] = useState(false);
   // A profile photo that fails to load falls back to initials, never a blank circle.
@@ -307,9 +310,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   ]);
 
   useEffect(() => {
-    if (!isAuthenticated || !gamificationEnabled) return;
+    if (!isAuthenticated || !passportEnabled) return;
     computePassportProgress(triedStallIds);
-  }, [computePassportProgress, gamificationEnabled, isAuthenticated, triedStallIds]);
+  }, [computePassportProgress, passportEnabled, isAuthenticated, triedStallIds]);
 
   const loadOwnPostsPage = useCallback(
     (offset: number) =>
@@ -810,6 +813,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       : null,
   ].filter((stat): stat is NonNullable<typeof stat> => stat !== null);
 
+  const passportCard =
+    isAuthenticated && passportEnabled ? (
+      <PassportCard
+        onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
+        onPress={() => rootNavigation.navigate("PassportScreen")}
+      />
+    ) : null;
+
   const tasteCard = (
     <View
       style={[
@@ -1153,8 +1164,14 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           />
         ) : null}
 
-        {/* The palate is what this page is remembered by, so its radar sits right under the stats. */}
-        {hasTasteFingerprint ? tasteCard : null}
+        {/* The palate is what this page is remembered by, so its radar sits right under the stats,
+            with the Hungry Passport just above it. */}
+        {hasTasteFingerprint ? (
+          <>
+            {passportCard}
+            {tasteCard}
+          </>
+        ) : null}
 
         {/* What you ate comes first: your reviews, with the photos you posted. */}
         <View style={{ gap: spacing[4] }}>
@@ -1390,14 +1407,13 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         </View>
 
         <View style={{ gap: spacing[4] }}>
-          {hasTasteFingerprint ? null : tasteCard}
+          {hasTasteFingerprint ? null : (
+            <>
+              {passportCard}
+              {tasteCard}
+            </>
+          )}
 
-          {isAuthenticated && gamificationEnabled ? (
-            <PassportCard
-              onPressIn={() => preloadRoute(rootNavigation, "PassportScreen")}
-              onPress={() => rootNavigation.navigate("PassportScreen")}
-            />
-          ) : null}
           {isAuthenticated && gamificationEnabled ? (
             <MissionBanner onPress={() => navigation.navigate("MissionsScreen" as any)} />
           ) : null}
@@ -1414,7 +1430,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
         <BottomSheetModal
           ref={shareSheetRef}
-          snapPoints={shareSnapPoints}
+          snapPoints={directMessagesEnabled ? shareSnapPoints : linkOnlyShareSnapPoints}
           index={0}
           enablePanDownToClose
           accessibilityLabel="Share taste fingerprint"
@@ -1456,7 +1472,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               contentContainerStyle={{
                 gap: spacing[3],
                 padding: spacing[4],
-                paddingBottom: insets.bottom + spacing[12],
+                paddingBottom: directMessagesEnabled ? insets.bottom + spacing[12] : insets.bottom,
               }}
             >
               <InAppShareCard

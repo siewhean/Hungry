@@ -110,7 +110,7 @@ export function WheelLobbyScreen({ navigation }: Props) {
   if (!party) {
     // Restored or deep-linked without a live party: offer a way back instead of a blank screen.
     return (
-      <Screen title="Your wheel" subtitle="This wheel has ended" scroll={false}>
+      <Screen title="Hungry Wheel" subtitle="This wheel has ended" scroll={false}>
         <Button label="Start a new wheel" onPress={() => navigation.popTo("WheelHome")} />
       </Screen>
     );
@@ -118,12 +118,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
 
   const isHost = members.find((m) => m.id === myMemberId)?.isHost ?? false;
   const canSpin = activeEntries.length >= 2;
-  // MD-W4: a disabled Spin says what it is waiting for.
-  const spinLabel = canSpin
-    ? "Spin wheel"
-    : activeEntries.length === 1
-      ? "Add one more to spin"
-      : "Add two to spin";
+  // Spin is grey until there are two options to choose between, orange from then on.
+  const spinLabel = "Spin";
 
   // "We added 3 open stalls", or, late at night, "We added 1 open stall and 3 that open soon".
   const soonCount = Object.keys(opensAtByVenue).length;
@@ -212,10 +208,8 @@ export function WheelLobbyScreen({ navigation }: Props) {
   return (
     <>
       <Screen
-        title={PARTY_ENABLED ? "Party lobby" : "Your wheel"}
-        subtitle={
-          PARTY_ENABLED ? "Invite friends and decide together" : "Add places, then spin to decide"
-        }
+        title={PARTY_ENABLED ? "Party lobby" : "Hungry Wheel"}
+        subtitle={PARTY_ENABLED ? "Invite friends and decide together" : undefined}
         scroll={false}
       >
         {PARTY_ENABLED ? (
@@ -378,19 +372,32 @@ export function WheelLobbyScreen({ navigation }: Props) {
                     <AppText tone="secondary">Finding open stalls near you…</AppText>
                   </View>
                 ) : (
-                  <EmptyState
-                    title="The wheel is empty"
-                    body={
-                      prefillFoundNone
-                        ? "No stalls near you are open right now. Add a few spots yourself."
-                        : PARTY_ENABLED
-                          ? "Add some spots to start the party."
-                          : "Add some spots, then spin to decide."
-                    }
-                    icon={
-                      <AppSymbol name="plus" fallback={Plus} size={36} color={palette.textMuted} />
-                    }
-                  />
+                  // Tapping the empty card opens the same sheet as "Add option".
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Add an option to the wheel"
+                    onPress={() => setAddSheetOpen(true)}
+                    style={{ flex: 1 }}
+                  >
+                    <EmptyState
+                      title="The wheel is empty"
+                      body={
+                        prefillFoundNone
+                          ? "No stalls near you are open right now. Add a few spots yourself."
+                          : PARTY_ENABLED
+                            ? "Add some spots to start the party."
+                            : "Add some spots, then spin to decide."
+                      }
+                      icon={
+                        <AppSymbol
+                          name="plus"
+                          fallback={Plus}
+                          size={36}
+                          color={palette.textMuted}
+                        />
+                      }
+                    />
+                  </Pressable>
                 )
               }
             />
@@ -432,22 +439,24 @@ export function WheelLobbyScreen({ navigation }: Props) {
             </View>
           )}
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={handleLeave}
-            style={{ padding: spacing[2], minHeight: 44, justifyContent: "center" }}
-          >
-            <AppText
-              variant="bodySmallBold"
-              tone="muted"
-              style={{
-                textAlign: "center",
-                letterSpacing: 1,
-              }}
+          {PARTY_ENABLED ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={handleLeave}
+              style={{ padding: spacing[2], minHeight: 44, justifyContent: "center" }}
             >
-              {PARTY_ENABLED ? "Leave party" : "Close wheel"}
-            </AppText>
-          </Pressable>
+              <AppText
+                variant="bodySmallBold"
+                tone="muted"
+                style={{
+                  textAlign: "center",
+                  letterSpacing: 1,
+                }}
+              >
+                Leave party
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
       </Screen>
 

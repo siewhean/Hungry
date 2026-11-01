@@ -50,6 +50,7 @@ export type AnalyticsEventName =
   | "home_cold_start_group_opened"
   | "discover_see_all_tapped"
   | "map_pin_tapped"
+  | "map_cluster_stall_picked"
   | "map_opened"
   | "map_filter_toggled"
   | "map_search_submitted"

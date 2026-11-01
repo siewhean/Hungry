@@ -143,7 +143,10 @@ test("P5-12: the shared back button draws chevron.backward on iOS (lucide arrow 
 
 test("P5-13, P5-14: the radar is the hero and the copy reads plainly", () => {
   const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(home, /\{hasTasteFingerprint \? tasteCard : null\}/);
+  assert.match(
+    home,
+    /\{hasTasteFingerprint \? \(\s*<>\s*\{passportCard\}\s*\{tasteCard\}\s*<\/>\s*\) : null\}/,
+  );
   assert.match(home, /You like it less/);
   assert.doesNotMatch(home, /You prefer mild/);
   const radar = read("src/components/profile/TasteRadar.tsx");

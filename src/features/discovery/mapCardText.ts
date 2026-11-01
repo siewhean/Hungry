@@ -15,6 +15,19 @@ export function shortOpenLabel(state: OpenState | undefined): string | undefined
   return state.status === "open" ? "Open" : "Closed";
 }
 
+/** "Open · Closes 9pm" or "Closed · Opens 5pm" for a card; nothing when the hours cannot be read. */
+export function formatMapCardHours(state: OpenState | undefined): string | undefined {
+  const word = shortOpenLabel(state);
+  if (!word) return undefined;
+  return [word, state?.detail].filter(Boolean).join(" · ");
+}
+
+/** "JW50 Hawker Centre · #01-23": where the stall is, building first. */
+export function formatMapCardLocation(venue: CatalogRawVenueCard): string {
+  const unit = [venue.floor, venue.unitNumber].filter(Boolean).join(" ");
+  return [venue.buildingName, unit].filter(Boolean).join(" · ");
+}
+
 /**
  * The dish line of a map card: the dish a search matched when there is one, otherwise the stall's
  * representative dish, with its listed price. A stall with no menu has no line (never "0 dishes").
