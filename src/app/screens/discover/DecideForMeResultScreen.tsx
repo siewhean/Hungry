@@ -36,6 +36,7 @@ import {
   Badge,
   Button,
   Card,
+  Chip,
   ChipGroup,
   EmptyState,
   Screen,
@@ -56,6 +57,7 @@ import {
   DECIDE_RADIUS_STEPS_METERS,
   formatOpenLabel,
   keepScoreOrder,
+  spreadAcrossBuildings,
   preferOpenStalls,
   rankDecideCandidates,
   type OpenAwareCandidates,
@@ -201,6 +203,23 @@ function nextRadius(currentRadius: number) {
 
 /** Dishes asked for per search: the server's maximum, so the quiz answers have a pool to narrow. */
 const DECIDE_POOL_SIZE = 50;
+/** Pages of that size read per search, so one busy mall cannot fill the whole pool. */
+const DECIDE_POOL_PAGES = 3;
+/**
+ * Inside a big mall the first pages can all be that mall's dishes. Reading goes on, up to this
+ * many pages, until this many dishes from other buildings are in the pool.
+ */
+const DECIDE_POOL_MAX_PAGES = 8;
+const DECIDE_POOL_OUTSIDE_TARGET = 60;
+
+/** Dishes in the pool that are not in its busiest building (the mall the diner is probably in). */
+function dishesOutsideBusiestBuilding(pool: ReadonlyMap<string, DishDetail>): number {
+  const perBuilding = new Map<string, number>();
+  for (const dish of pool.values()) {
+    perBuilding.set(dish.buildingId, (perBuilding.get(dish.buildingId) ?? 0) + 1);
+  }
+  return pool.size - Math.max(0, ...perBuilding.values());
+}
 /** Stalls whose hours are read for the open-now check: one get_venue_summaries call (max 50). */
 const MAX_OPEN_STATE_VENUES = 50;
 
@@ -231,24 +250,51 @@ async function loadCandidates(
     dropped: Parameters<typeof decideServerFilters>[1],
   ) => {
     const { maxPrice, ...keywords } = answers ? decideServerFilters(answers, dropped) : {};
-    const results = await service.discovery.searchDishes(
-      {
-        query: "",
-        categories: [],
+    // The server returns the best 50 by rating and nearness, so inside a mall they are mostly
+    // that mall's dishes. A full page asks for the next one, so the area's food is in the pool too.
+    const pool = new Map<string, DishDetail>();
+    let cursor: { score: number; dishId: string } | undefined;
+    for (let page = 0; page < DECIDE_POOL_MAX_PAGES; page += 1) {
+      if (
+        page >= DECIDE_POOL_PAGES &&
+        dishesOutsideBusiestBuilding(pool) >= DECIDE_POOL_OUTSIDE_TARGET
+      ) {
+        break;
+      }
+      // n-plus-one-ok: each page starts after the last row of the one before, at most three reads
+      const results = await service.discovery.searchDishes(
+        {
+          query: "",
+          categories: [],
+          dietaryFlags,
+          tasteValues: tasteVector,
+          radius: searchRadius,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          maxPrice,
+          limit: DECIDE_POOL_SIZE,
+          cursor,
+          ...keywords,
+        },
+        tasteVector,
+      );
+      const before = pool.size;
+      for (const result of results) pool.set(result.dish.id, result.dish);
+      const last = results[results.length - 1];
+      // A short page is the end; a page of dishes already seen means the backend ignores cursors.
+      if (results.length < DECIDE_POOL_SIZE || pool.size === before || !last) break;
+      cursor = { score: last.score, dishId: last.dish.id };
+    }
+    // One building (the mall the diner is in) never takes more than 40% of the picks ahead of
+    // the food around it.
+    return spreadAcrossBuildings(
+      rankDecideCandidates([...pool.values()], {
+        tasteVector,
+        hasTasteProfile,
         dietaryFlags,
-        tasteValues: tasteVector,
-        radius: searchRadius,
-        latitude: location.latitude,
-        longitude: location.longitude,
-        maxPrice,
-        limit: DECIDE_POOL_SIZE,
-        ...keywords,
-      },
-      tasteVector,
-    );
-    return rankDecideCandidates(
-      results.map((result) => result.dish),
-      { tasteVector, hasTasteProfile, dietaryFlags, radiusMeters: searchRadius, maxDishBudget },
+        radiusMeters: searchRadius,
+        maxDishBudget,
+      }),
     );
   };
   let usedRadius = radius;
@@ -424,6 +470,8 @@ export function DecideForMeResultScreen() {
   const [candidatePool, setCandidatePool] = useState<LoadedCandidates>();
   // The radius the shown picks were found within: wider than asked when the answers needed it.
   const shownRadius = candidatePool?.radius ?? searchRadius;
+  // Closed stalls are listed after the open ones; this hides them (the "Open now" chip).
+  const [openNowOnly, setOpenNowOnly] = useState(false);
   const [isLoadingCandidates, setIsLoadingCandidates] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reloadCount, setReloadCount] = useState(0);
@@ -489,21 +537,33 @@ export function DecideForMeResultScreen() {
         : { dishes: candidatePool?.candidates ?? [], relaxed: [] },
     [answers, candidatePool],
   );
-  const matchingCandidates = useMemo(
-    () =>
-      // Openness sets how often a pick is a dish they know versus something new, but a dish never
-      // moves above one that matches more than a few points better: the order follows the match.
-      keepScoreOrder(
-        mixByFoodHistory(answerResult.dishes, {
-          history: foodHistory,
-          openness,
-          lookup: (dishId) => repository.getDishById(dishId),
-        }),
-        (candidate) =>
-          hasTasteProfile ? tasteMatchPercent(tasteVector, candidate.tasteVector) : 0,
-      ),
-    [answerResult, foodHistory, hasTasteProfile, openness, repository, tasteVector],
-  );
+  const matchingCandidates = useMemo(() => {
+    // Openness sets how often a pick is a dish they know versus something new, but a dish never
+    // moves above one that matches more than a few points better: the order follows the match.
+    const ordered = keepScoreOrder(
+      mixByFoodHistory(answerResult.dishes, {
+        history: foodHistory,
+        openness,
+        lookup: (dishId) => repository.getDishById(dishId),
+      }),
+      (candidate) => (hasTasteProfile ? tasteMatchPercent(tasteVector, candidate.tasteVector) : 0),
+    );
+    // Stalls that are closed now come after the open ones (their pick says Closed), or not at all.
+    const isClosed = (candidate: DishDetail) =>
+      candidatePool?.openStateByVenueId.get(candidate.venueId)?.status === "closed";
+    return openNowOnly
+      ? ordered.filter((candidate) => !isClosed(candidate))
+      : [...ordered.filter((c) => !isClosed(c)), ...ordered.filter(isClosed)];
+  }, [
+    answerResult,
+    candidatePool,
+    foodHistory,
+    hasTasteProfile,
+    openNowOnly,
+    openness,
+    repository,
+    tasteVector,
+  ]);
   const candidates = useMemo(
     () => matchingCandidates.filter((candidate) => !dismissedIds.has(candidate.id)),
     [dismissedIds, matchingCandidates],
@@ -606,7 +666,11 @@ export function DecideForMeResultScreen() {
 
   // Every match was turned down with "Not for me", on this visit or before (food history hides
   // dismissed dishes too): not the same as nothing nearby.
-  const hasSeenEveryMatch = answerResult.dishes.length > 0 && candidates.length === 0;
+  // "Open now" can hide every match too: that is its own message, not "seen every match".
+  const hasNothingOpen =
+    openNowOnly && answerResult.dishes.length > 0 && matchingCandidates.length === 0;
+  const hasSeenEveryMatch =
+    answerResult.dishes.length > 0 && candidates.length === 0 && !hasNothingOpen;
   // A cold open (such as the meal-time push) waits for the server instead of saying "no match".
   const hasNoMatch =
     !isLocationApproximate &&
@@ -741,7 +805,7 @@ export function DecideForMeResultScreen() {
 
   if (!dish && isLoadingCandidates) {
     return (
-      <Screen title="Your pick" subtitle="Finding a dish near you…">
+      <Screen title="Your pick">
         <View
           accessible
           accessibilityLabel="Finding a dish near you"
@@ -761,14 +825,16 @@ export function DecideForMeResultScreen() {
         {/* One line says it once: the header and the buttons carry the rest. */}
         <EmptyState
           title={
-            hasSeenEveryMatch ? `You've seen every match within ${radiusKm} km` : "No match found"
-          }
-          body={
-            hasSeenEveryMatch
-              ? "Widen the radius, change your answers or start over."
-              : `No dish fits your current filters within ${radiusKm} km.`
+            hasNothingOpen
+              ? `Nothing open within ${radiusKm} km`
+              : hasSeenEveryMatch
+                ? `You've seen every match within ${radiusKm} km`
+                : "No match found"
           }
         />
+        {hasNothingOpen ? (
+          <Button label="Show closed stalls too" onPress={() => setOpenNowOnly(false)} />
+        ) : null}
         {upcomingRadius ? (
           <Button
             label={`Expand radius to ${(upcomingRadius / 1000).toFixed(1)} km`}
@@ -1056,6 +1122,12 @@ export function DecideForMeResultScreen() {
               selectedId={String(shownRadius)}
               onSelect={pickRadius}
               style={{ flexShrink: 1, gap: spacing[1] }}
+            />
+            <Chip
+              label="Open now"
+              accessibilityLabel={`Open now${openNowOnly ? ", selected" : ""}`}
+              selected={openNowOnly}
+              onPress={() => setOpenNowOnly((on) => !on)}
             />
             {isLoadingCandidates ? (
               // A wider radius is loading; the current pick stays until it arrives.

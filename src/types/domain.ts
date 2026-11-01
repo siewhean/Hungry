@@ -493,6 +493,8 @@ export interface SearchFilters {
   openOnly?: boolean;
   /** Rows to ask the server for (default 20, server cap 50). */
   limit?: number;
+  /** The last row of the previous page (its rank score and dish id): asks for the next page. */
+  cursor?: { score: number; dishId: string };
 }
 
 /** What Claude understood from a plain-language search such as "something soupy, under $8". */

@@ -119,10 +119,10 @@ test("release-reachable screens hide controls for cut features behind their flag
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   const dishDetail = read("src/app/screens/detail/DishDetailScreenV2.tsx");
 
-  // Follows and follow requests outlive the archived social feed, so visibility always shows.
+  // Profile visibility and Blocked people are archived with followers and following.
   assert.match(
     settings,
-    /\{isAuthenticated \? \(\s*<SettingsRow\s+\{\.\.\.neutralRow\}\s+label="Profile visibility"/,
+    /\{isAuthenticated && FEATURE_FLAGS\.followConnectionsEnabled \? \(\s*<SettingsRow\s+\{\.\.\.neutralRow\}\s+label="Profile visibility"/,
   );
   // Unwired preferences were removed outright (see mvp-source-of-truth-contracts).
   for (const label of [

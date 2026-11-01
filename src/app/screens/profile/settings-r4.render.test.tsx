@@ -506,7 +506,12 @@ test("R5: Delete account is a red text row at the end of Account & security, not
 });
 
 test("R5: in-place actions have no disclosure arrow; rows that open another screen keep it", async () => {
+  // Profile visibility is archived with followers and following; a build that opts back in has it.
+  const flagValues = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const savedFollowFlag = flagValues.followConnectionsEnabled;
+  flagValues.followConnectionsEnabled = true;
   const view = await settingsScreen();
+  flagValues.followConnectionsEnabled = savedFollowFlag;
   for (const label of [
     "Clear local cache",
     "Sign out of all devices",

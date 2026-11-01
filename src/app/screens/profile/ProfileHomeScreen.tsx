@@ -287,9 +287,10 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
     void loadStallSubmissions().catch(logLoadError("stall_submissions"));
 
+    // Saved stalls feed the Saved count; tried stalls feed the Passport progress below.
+    void loadStallInteractions(profile.id).catch(logLoadError("stall_interactions"));
+
     if (gamificationEnabled) {
-      // Tried stalls feed only the Passport progress below.
-      void loadStallInteractions(profile.id).catch(logLoadError("stall_interactions"));
       void loadCredProfile(profile.id).catch(logLoadError("FoodCred"));
       void loadMissions(profile.id).catch(logLoadError("missions"));
     }
@@ -439,8 +440,13 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     },
     [rootNavigation],
   );
-  // Counts the saved dish ids; Saved itself skips dishes that left the catalog (SAVED4-16).
-  const savedCount = profile.stats.favouritesCount;
+  // Counts the saved dish ids and saved stalls; Saved itself skips dishes that left the catalog
+  // (SAVED4-16). Stalls alone used to read 0 here, because only dishes were counted.
+  const savedStallCount = useMemo(
+    () => Object.values(stallInteractions).filter((interaction) => interaction.isSaved).length,
+    [stallInteractions],
+  );
+  const savedCount = profile.stats.favouritesCount + savedStallCount;
   const {
     dishIds: pinnedDishIds,
     isLoaded: pinnedDishesLoaded,
@@ -1069,12 +1075,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                   style={{ alignSelf: "flex-start", minHeight: 44 }}
                 />
               </View>
-              {profile.profileVisibility === "private" ? (
-                // The shared link opens "Profile not found" for anyone who does not follow you.
-                <AppText variant="micro" tone="muted" testID="profile-share-private-note">
-                  Only approved followers can see your profile through the link.
-                </AppText>
-              ) : null}
             </View>
           </View>
 

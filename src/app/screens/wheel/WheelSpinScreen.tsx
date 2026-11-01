@@ -139,7 +139,8 @@ export function WheelSpinScreen({ navigation }: Props) {
         completeSpin(winnerEntry.id);
         const currentParty = useWheelStore.getState().party;
         if (currentParty?.status === "resolved" && currentParty.winnerEntryId) {
-          navigationRef.current.replace("WheelResult", {
+          // Pushed, not replaced, so closing the pop-up lands back on this spin screen.
+          navigationRef.current.navigate("WheelResult", {
             partyId: currentParty.id,
             winnerEntryId: currentParty.winnerEntryId,
           });

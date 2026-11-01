@@ -15,6 +15,8 @@ import { clearExperimentOverrides, setExperimentOverride } from "@/lib/experimen
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { useWheelStore } from "@/store/useWheelStore";
 import { cleanup, createFakeNavigation, renderScreen, render } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -435,6 +437,68 @@ test("R5-12 Surprise with nothing left says so in the sheet, not in an alert", a
   assert.match(view.text(), /Every stall is already on the wheel/);
   const button = view.findByLabel(/Pick a random stall/) as HTMLElement;
   assert.equal(button.getAttribute("aria-disabled"), "true");
+});
+
+async function renderWinnerPopup() {
+  const repository = getDataRepository();
+  const venue = repository.getVenueById(repository.listPopularNearby()[0].venueId)!;
+  await startWheel();
+  // The demo account has saved this stall already; start from nothing saved.
+  useStallInteractionStore.setState({ interactions: {}, isLoaded: true });
+  useWheelStore.setState({
+    entries: [
+      {
+        id: "entry-1",
+        partyId: "p1",
+        addedByMemberId: "m1",
+        venueId: venue.id,
+        buildingId: venue.buildingId,
+        label: venue.name,
+        imageUrl: "",
+        isEliminated: false,
+        position: 0,
+        addedAt: new Date().toISOString(),
+      },
+    ],
+  });
+  const navigation = createFakeNavigation();
+  const view = await renderScreen(WheelResultModal as never, {
+    name: "WheelResult",
+    params: { winnerEntryId: "entry-1" },
+    navigation,
+  });
+  await view.settle();
+  return { view, navigation, venue };
+}
+
+test("the winner pop-up saves the stall for a signed-in diner and toggles it back", async () => {
+  await enterScenario("user");
+  const { view, venue } = await renderWinnerPopup();
+  assert.ok(view.findByText("Save stall"), "the pop-up offers Save stall");
+  await view.press(view.findByText("Save stall"));
+  await view.settle();
+  assert.equal(useStallInteractionStore.getState().interactions[venue.id]?.isSaved, true);
+  assert.ok(view.findByText("Saved"), "the button now says Saved");
+  await view.press(view.findByText("Saved"));
+  await view.settle();
+  assert.equal(useStallInteractionStore.getState().interactions[venue.id]?.isSaved, false);
+});
+
+test("a guest who taps Save stall is asked to sign in, and nothing is saved", async () => {
+  const { view, venue } = await renderWinnerPopup();
+  await view.press(view.findByText("Save stall"));
+  await view.settle();
+  assert.equal(useStallInteractionStore.getState().interactions[venue.id]?.isSaved ?? false, false);
+  assert.equal(useUIStore.getState().toast?.message, "Sign in to save this stall.");
+});
+
+test("Spin again closes the winner pop-up instead of replacing it", async () => {
+  const { view, navigation } = await renderWinnerPopup();
+  await view.press(view.findByText("Spin again"));
+  const methods = navigation.calls.map((call) => call.method);
+  assert.ok(methods.includes("goBack"), "the pop-up is dismissed");
+  assert.ok(!methods.includes("replace"), "no screen is swapped in behind it");
+  assert.equal(useWheelStore.getState().party?.status, "spinning", "the next spin has started");
 });
 
 test("R5-5 the remove button and Done reach 44 pt", () => {

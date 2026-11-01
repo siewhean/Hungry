@@ -17,6 +17,7 @@ import {
   minutesUntilOpening,
   preferOpenStalls,
   rankDecideCandidates,
+  spreadAcrossBuildings,
 } from "./decideForMeCandidates";
 
 const baseDish = dishes[0]!;
@@ -44,7 +45,7 @@ test("the map's open check uses the merchant's weekly schedule over the listed h
   assert.equal(isVenueOpenNow(venue("no-hours", "", false), TEN_PM_SGT), false);
 });
 
-test("Decide for Me skips a stall that closed hours ago", () => {
+test("Decide for Me puts a stall that closed hours ago after the open ones, not out of the list", () => {
   const lunchOnly = venue("lunch-stall", "Mon-Sun 11am-2pm");
   const supper = venue("supper-stall", "Mon-Sun 6pm-11:30pm");
   const result = preferOpenStalls(
@@ -57,7 +58,7 @@ test("Decide for Me skips a stall that closed hours ago", () => {
   );
   assert.deepEqual(
     result.candidates.map((candidate) => candidate.id),
-    ["supper-dish"],
+    ["supper-dish", "lunch-dish"],
   );
   assert.equal(result.onlyClosed, false);
   assert.equal(result.openStateByVenueId.get(supper.id)?.status, "open");
@@ -89,8 +90,8 @@ test("MERCH-R4 a paused stall is closed now whatever its hours say, and opens ag
   );
   assert.deepEqual(
     result.candidates.map((candidate) => candidate.id),
-    ["open-dish"],
-    "Decide for Me never sends a diner to a paused stall while another is open",
+    ["open-dish", "paused-dish"],
+    "a paused stall comes after the open one, still listed so the screen can say Closed",
   );
 });
 
@@ -107,7 +108,7 @@ test("Decide for Me keeps stalls with unknown hours after open ones", () => {
   );
 });
 
-test("Decide for Me falls back to closed stalls only when nothing is open", () => {
+test("Decide for Me lists closed stalls when nothing is open, and says so", () => {
   const lunchOnly = venue("lunch-stall", "Mon-Sun 11am-2pm");
   const result = preferOpenStalls(
     [dish("lunch-dish", lunchOnly.id)],
@@ -263,4 +264,30 @@ test("minutesUntilOpening reads the opening time from the label, wrapping past m
     Infinity,
   );
   assert.equal(minutesUntilOpening({ status: "closed" }, TEN_PM_SGT), Infinity);
+});
+
+test("spreadAcrossBuildings keeps one building from taking the list, and drops nothing", () => {
+  // Ten of a mall's dishes ranked first, then five from the streets around it.
+  const mall = Array.from({ length: 10 }, (_, index) =>
+    dish(`mall-${index}`, "mall-stall", { buildingId: "mall" }),
+  );
+  const around = Array.from({ length: 5 }, (_, index) =>
+    dish(`around-${index}`, "other-stall", { buildingId: "street" }),
+  );
+  const spread = spreadAcrossBuildings([...mall, ...around]);
+  assert.equal(spread.length, 15, "nothing is dropped");
+  // 40% of 15 is 6: the mall's first six, then the other building, then the mall's extra four.
+  assert.deepEqual(
+    spread.slice(0, 11).map((item) => item.buildingId),
+    [...Array(6).fill("mall"), ...Array(5).fill("street")],
+  );
+  assert.deepEqual(
+    spread.slice(11).map((item) => item.id),
+    ["mall-6", "mall-7", "mall-8", "mall-9"],
+  );
+});
+
+test("spreadAcrossBuildings leaves a list from one building as it was", () => {
+  const only = [dish("a", "s", { buildingId: "mall" }), dish("b", "s", { buildingId: "mall" })];
+  assert.equal(spreadAcrossBuildings(only), only);
 });

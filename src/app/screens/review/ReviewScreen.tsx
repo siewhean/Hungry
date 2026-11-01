@@ -564,7 +564,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   if (!draftHydrated) {
     return (
-      <Screen title="Write a review" subtitle="Share what you ate">
+      <Screen title="Write a review">
         <View accessibilityLabel="Loading your draft" style={{ gap: spacing[4] }}>
           <Skeleton width="100%" height={88} />
           <Skeleton width="60%" height={32} />
@@ -839,7 +839,6 @@ export function ReviewScreen({ navigation, route }: Props) {
     <Screen
       keyboardAvoiding
       title="Write a review"
-      subtitle="Share what you ate"
       scroll
       scrollRef={scrollRef}
       headerLeft={

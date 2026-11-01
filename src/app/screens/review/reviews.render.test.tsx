@@ -533,6 +533,12 @@ test("tapping a review photo opens it full screen (REV-19)", async () => {
   assert.ok(view.findByLabel("Close photos"), "the full-screen viewer is open");
 });
 
+test("the review page has no subtitle line under its title", async () => {
+  const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
+  assert.ok(view.findByText("Write a review"));
+  assert.doesNotMatch(view.text(), /Share what you ate/);
+});
+
 test("the Select stall & dish search fills the row beside Close instead of collapsing", async () => {
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
   await view.press(view.findByText("Select stall & dish"));

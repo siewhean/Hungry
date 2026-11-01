@@ -1052,8 +1052,8 @@ export async function searchDishesViaRpc(
     p_dietary_flags: filters.dietaryFlags,
     // search_dishes caps p_limit at 50.
     p_limit: Math.min(50, Math.max(1, Math.round(filters.limit ?? 20))),
-    p_cursor_score: null,
-    p_cursor_id: null,
+    p_cursor_score: filters.cursor?.score ?? null,
+    p_cursor_id: filters.cursor?.dishId ?? null,
     p_venue_id: null,
     p_area_name: filters.areaName ?? null,
     p_cuisine_tags: filters.cuisineTags ?? null,

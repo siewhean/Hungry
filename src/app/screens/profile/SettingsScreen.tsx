@@ -708,7 +708,8 @@ export function SettingsScreen() {
       ) : null}
 
       <SettingsSection editorial title="Privacy & data">
-        {isAuthenticated ? (
+        {/* Archived with followers and following: back when a build opts in to follow connections. */}
+        {isAuthenticated && FEATURE_FLAGS.followConnectionsEnabled ? (
           <SettingsRow
             {...neutralRow}
             label="Profile visibility"
@@ -726,7 +727,7 @@ export function SettingsScreen() {
             isLast={false}
           />
         ) : null}
-        {isAuthenticated ? (
+        {isAuthenticated && FEATURE_FLAGS.followConnectionsEnabled ? (
           <SettingsRow
             {...neutralRow}
             label={BLOCKED_AND_HIDDEN_TITLE}
