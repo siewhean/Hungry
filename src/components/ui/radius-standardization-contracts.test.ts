@@ -57,7 +57,6 @@ test("UI radius contract: high-traffic app surfaces consume componentRadii", () 
   const surfaces = [
     "src/app/screens/discover/DiscoverHomeScreen.tsx",
     "src/app/screens/home/HomeFeedScreen.tsx",
-    "src/app/screens/search/SearchResultsScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/features/post/components/PostTab.tsx",
     "src/features/post/components/MediaManager.tsx",

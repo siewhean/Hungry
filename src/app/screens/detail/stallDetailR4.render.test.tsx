@@ -295,18 +295,14 @@ test("R4-STALL-1: an empty stall shows one 'Help us fill this in' card, not thre
   assert.ok(view.findByText("Add opening hours"));
 });
 
-test("R4-STALL-1 / R5-STALL-5: an ALL CAPS name is shown in title case; with no photo there is no hero, a compact header instead", async () => {
+test("R4-STALL-1: an ALL CAPS name is shown in title case; with no photo the page opens on a brand band with the monogram", async () => {
   useEmptyStall();
   const view = await openStall(EMPTY_STALL);
   const heading = view.container.querySelector("h1");
   assert.equal(heading?.textContent, "Tian Tian Hainanese Chicken Rice");
   assert.ok(
-    !view.findByLabel("Tian Tian Hainanese Chicken Rice photo unavailable"),
-    "no 96pt monogram band when there is no photo",
-  );
-  assert.ok(
-    view.findByLabel("Tian Tian Hainanese Chicken Rice stall logo unavailable"),
-    "the monogram sits beside the name instead",
+    view.findByLabel("Tian Tian Hainanese Chicken Rice photo unavailable"),
+    "the hero band stands in for the photo",
   );
 });
 

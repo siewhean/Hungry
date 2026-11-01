@@ -134,6 +134,11 @@ function analyticsFilterName(filter: string) {
   return filter === "Halal" ? "dietary" : filter;
 }
 
+/** The grid runs edge to edge: cells touch the screen sides and sit this far apart. */
+const GRID_GAP = 2;
+/** Every text block is at least this tall, so a row of cells ends on one line. */
+const GRID_TEXT_MIN_HEIGHT = 144;
+
 function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: BrowseMode }) {
   const { palette, spacing } = useHungryTheme();
   const loadingLabel = mode === "dishes" ? "Finding dishes" : "Finding stalls";
@@ -150,7 +155,7 @@ function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: 
             key={`browse-grid-skeleton-${index}`}
             style={{
               height: itemWidth * 1.35,
-              padding: spacing[1],
+              padding: GRID_GAP / 2,
               width: itemWidth,
             }}
           >
@@ -180,7 +185,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
   onToggleSave?: (dish: CatalogRawDishCard) => void;
   saved: boolean;
 }) {
-  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const isDish = mode === "dishes";
   const dish = isDish ? (item as CatalogRawDishCard) : undefined;
   const stall = isDish ? undefined : (item as StallRow);
@@ -209,7 +214,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
   // The heart sits beside the card button, not inside it: a button inside a button is invalid HTML
   // on web and breaks hydration.
   return (
-    <View style={{ padding: spacing[1], width: itemWidth }}>
+    <View style={{ padding: GRID_GAP / 2, width: itemWidth }}>
       <PressableScale
         accessibilityRole="button"
         accessibilityLabel={cardAccessibilityLabel(mode, item)}
@@ -220,10 +225,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
         <View
           style={{
             backgroundColor: palette.surface,
-            borderColor: palette.border,
-            borderRadius: componentRadii.card,
-            borderWidth: 1,
-            minHeight: itemWidth * 1.25,
+            minHeight: itemWidth * 0.7 + GRID_TEXT_MIN_HEIGHT,
             overflow: "hidden",
           }}
         >
@@ -275,11 +277,11 @@ const RawCatalogCard = memo(function RawCatalogCard({
               </View>
             ) : null}
           </View>
-          <View style={{ gap: spacing[1], padding: spacing[2] }}>
+          <View style={{ gap: spacing[1], minHeight: GRID_TEXT_MIN_HEIGHT, padding: spacing[2] }}>
             <AppText numberOfLines={2} variant="bodyBold">
               {title}
             </AppText>
-            <AppText numberOfLines={2} tone="secondary" variant="micro">
+            <AppText numberOfLines={1} tone="secondary" variant="micro">
               {cardSubtitle(mode, item)}
             </AppText>
             {stallDetail ? (
@@ -329,8 +331,8 @@ const RawCatalogCard = memo(function RawCatalogCard({
             height: 44,
             justifyContent: "center",
             position: "absolute",
-            right: spacing[1] + spacing[2],
-            top: spacing[1] + 1 + itemWidth * 0.7 - 44 - spacing[2],
+            right: GRID_GAP / 2 + spacing[2],
+            top: GRID_GAP / 2 + itemWidth * 0.7 - 44 - spacing[2],
             width: 44,
           }}
         />
@@ -424,8 +426,8 @@ function RawCatalogBrowseGrid({
   // One id per counted search, carried on its result-opened and zero-results events.
   const searchIdRef = useRef<string | undefined>(undefined);
   const service = getCatalogRawService();
-  // The list sits 12 in from each edge and each card has 4 of its own, so cards line up with the header's 16.
-  const itemWidth = (width - spacing[3] * 2) / 2;
+  // The grid is edge to edge: each cell is half the screen. The header and messages keep their own side padding.
+  const itemWidth = width / 2;
 
   const typedQuery = useMemo(() => normalizeQuery(searchText), [searchText]);
   // Filters read out of the typed text ("halal laksa under $5"). A chip the user removed puts its
@@ -1295,7 +1297,7 @@ function RawCatalogBrowseGrid({
 
   // Everything above the first card scrolls away with the list; only the search row stays put.
   const listHeader = (
-    <View style={{ gap: spacing[3], paddingHorizontal: spacing[1], paddingBottom: spacing[2] }}>
+    <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}>
       {place ? (
         <PressableScale
           accessibilityRole="button"
@@ -1607,7 +1609,6 @@ function RawCatalogBrowseGrid({
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             numColumns={2}
-            contentContainerStyle={{ paddingHorizontal: spacing[3] }}
             onEndReached={() => {
               if (nextCursor && !isLoadingMore && !isLoading && !loadMoreFailed) {
                 void loadPage(nextCursor, true);
@@ -1617,76 +1618,81 @@ function RawCatalogBrowseGrid({
             renderItem={renderItem}
             ListHeaderComponent={listHeader}
             ListEmptyComponent={
-              !isAuthenticated ? (
-                // A signed-out grid (after a session expiry and a back swipe) loads nothing.
-                <EmptyState
-                  title="Sign in to search"
-                  body="Sign in again to search dishes and stalls."
-                  ctaLabel="Sign in"
-                  onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
-                />
-              ) : isLoading ? (
-                <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
-              ) : error && retryAvailableAt !== null ? (
-                // The limiter said slow down: a connection check would not help, and Retry waits.
-                <View style={{ gap: spacing[2] }}>
+              // The loading grid is edge to edge like the results; messages keep side padding.
+              <View
+                style={isAuthenticated && isLoading ? undefined : { paddingHorizontal: spacing[3] }}
+              >
+                {!isAuthenticated ? (
+                  // A signed-out grid (after a session expiry and a back swipe) loads nothing.
                   <EmptyState
-                    title="Too many searches"
-                    body="You're searching faster than we can keep up. Wait a few seconds, then try again."
+                    title="Sign in to search"
+                    body="Sign in again to search dishes and stalls."
+                    ctaLabel="Sign in"
+                    onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
                   />
-                  <View style={{ alignItems: "center" }}>
-                    <Button
-                      label={
-                        now >= retryAvailableAt
-                          ? "Try again"
-                          : `Try again in ${Math.ceil((retryAvailableAt - now) / 1_000)}s`
-                      }
-                      disabled={now < retryAvailableAt}
-                      onPress={() => void loadPage()}
+                ) : isLoading ? (
+                  <BrowseGridLoadingState itemWidth={itemWidth} mode={mode} />
+                ) : error && retryAvailableAt !== null ? (
+                  // The limiter said slow down: a connection check would not help, and Retry waits.
+                  <View style={{ gap: spacing[2] }}>
+                    <EmptyState
+                      title="Too many searches"
+                      body="You're searching faster than we can keep up. Wait a few seconds, then try again."
                     />
+                    <View style={{ alignItems: "center" }}>
+                      <Button
+                        label={
+                          now >= retryAvailableAt
+                            ? "Try again"
+                            : `Try again in ${Math.ceil((retryAvailableAt - now) / 1_000)}s`
+                        }
+                        disabled={now < retryAvailableAt}
+                        onPress={() => void loadPage()}
+                      />
+                    </View>
                   </View>
-                </View>
-              ) : error ? (
-                <EmptyState
-                  title="Catalog unavailable"
-                  body="We couldn't load the catalog. Check your connection and try again."
-                  errorMessage={error}
-                  ctaLabel="Retry"
-                  onPress={() => void loadPage()}
-                />
-              ) : (
-                <SearchEmptyState
-                  body={
-                    filterCount || parsed.parts.length
-                      ? "Try removing a filter or searching for something else."
-                      : "Try another search."
-                  }
-                  query={query}
-                  suggestedQuery={suggestedQuery}
-                  otherMode={
-                    otherModeCount &&
-                    otherModeCount.mode === otherMode &&
-                    otherModeCount.query === query &&
-                    otherModeCount.count > 0
-                      ? { mode: otherMode, count: otherModeCount.count }
-                      : undefined
-                  }
-                  onSwitchMode={() => switchMode(otherMode)}
-                  onClearFilters={filterCount ? clearFilters : undefined}
-                  onWiden={radiusInPlay ? () => setWidenedScope(widenScope) : undefined}
-                  popular={foodTypeOptions.filter(
-                    (label) => label.toLowerCase() !== query.toLowerCase(),
-                  )}
-                  onSearch={(text) => {
-                    updateSearchText(text);
-                    recordCommittedQuery(text, {
-                      recordTaste: true,
-                      remember: true,
-                      source: "results",
-                    });
-                  }}
-                />
-              )
+                ) : error ? (
+                  <EmptyState
+                    title="Catalog unavailable"
+                    body="We couldn't load the catalog. Check your connection and try again."
+                    errorMessage={error}
+                    ctaLabel="Retry"
+                    onPress={() => void loadPage()}
+                  />
+                ) : (
+                  <SearchEmptyState
+                    body={
+                      filterCount || parsed.parts.length
+                        ? "Try removing a filter or searching for something else."
+                        : "Try another search."
+                    }
+                    query={query}
+                    suggestedQuery={suggestedQuery}
+                    otherMode={
+                      otherModeCount &&
+                      otherModeCount.mode === otherMode &&
+                      otherModeCount.query === query &&
+                      otherModeCount.count > 0
+                        ? { mode: otherMode, count: otherModeCount.count }
+                        : undefined
+                    }
+                    onSwitchMode={() => switchMode(otherMode)}
+                    onClearFilters={filterCount ? clearFilters : undefined}
+                    onWiden={radiusInPlay ? () => setWidenedScope(widenScope) : undefined}
+                    popular={foodTypeOptions.filter(
+                      (label) => label.toLowerCase() !== query.toLowerCase(),
+                    )}
+                    onSearch={(text) => {
+                      updateSearchText(text);
+                      recordCommittedQuery(text, {
+                        recordTaste: true,
+                        remember: true,
+                        source: "results",
+                      });
+                    }}
+                  />
+                )}
+              </View>
             }
             ListFooterComponent={
               isLoadingMore ? (
