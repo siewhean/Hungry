@@ -95,7 +95,7 @@ test.describe("Reviews editor", () => {
 });
 
 test.describe("Reviews tab", () => {
-  test("opens from Home and lists review tiles with the filter chips", async ({ page }) => {
+  test("opens from Home and lists review tiles and the section tabs", async ({ page }) => {
     await resetAppState(page);
     await startOnboardedMockSession(page);
     await clickDevButton(page, "Home", "Core app flow");
@@ -103,8 +103,13 @@ test.describe("Reviews tab", () => {
       .getByRole("tab", { name: /Reviews/ })
       .first()
       .click();
-    await expect(page.getByRole("button", { name: /Show all reviews|All/ }).first()).toBeVisible({
-      timeout: 30_000,
-    });
+    // Review tiles, the All / For you tabs (taste diners) or the filter chips (anyone else).
+    await expect(
+      page
+        .getByTestId(/^review-tile-/)
+        .or(page.getByRole("tablist", { name: "Review sections" }))
+        .or(page.getByRole("button", { name: /Show all reviews/ }))
+        .first(),
+    ).toBeVisible({ timeout: 30_000 });
   });
 });

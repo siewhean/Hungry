@@ -29,7 +29,7 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(
     tabs,
-    /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
+    /height: componentSizes\.bottomTabBar \+ tabBarBottomPadding\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
   // The write button looks like every other tab: same glyph size, slot and colours, and a label.

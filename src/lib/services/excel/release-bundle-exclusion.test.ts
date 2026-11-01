@@ -58,3 +58,28 @@ test("non-production Metro bundles keep the real mock and Excel modules", () => 
   const catalog = join(servicesDir, "excel/excelCatalog.generated.json");
   assert.equal(resolveWith(config, catalog).filePath, catalog);
 });
+
+test("a build that still carries the release stub is detected, so it uses Supabase", () => {
+  const { isStubbedDataModule } =
+    require("@/lib/services/serviceProvider") as typeof import("@/lib/services/serviceProvider");
+  const stub = requireFromRepo(join(servicesDir, "excel/releaseBundleStub.js"));
+  assert.equal(
+    isStubbedDataModule(() => stub),
+    true,
+  );
+  // A module that throws on load or comes back empty is treated the same way.
+  assert.equal(
+    isStubbedDataModule(() => {
+      throw new Error("boom");
+    }),
+    true,
+  );
+  assert.equal(
+    isStubbedDataModule(() => undefined),
+    true,
+  );
+  assert.equal(
+    isStubbedDataModule(() => ({ excelRepository: {} })),
+    false,
+  );
+});

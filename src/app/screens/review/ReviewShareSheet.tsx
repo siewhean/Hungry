@@ -71,9 +71,11 @@ export function ReviewShareSheet({
   const directMessagesEnabled =
     FEATURE_FLAGS.directMessagesEnabled && inAppSharingEnabled && Boolean(activeReview?.postId);
   // Without in-app recipients the sheet holds only the four link actions: keep it short.
+  // The link-only sheet is as tall as its content (about 150) plus the home-indicator inset,
+  // so there is no empty band under the four actions.
   const snapPoints = useMemo(
-    () => [directMessagesEnabled ? "62%" : "42%"],
-    [directMessagesEnabled],
+    () => [directMessagesEnabled ? "62%" : 150 + bottomInset + 24],
+    [directMessagesEnabled, bottomInset],
   );
 
   const loadChatConversations = useCallback(async () => {
@@ -264,7 +266,7 @@ export function ReviewShareSheet({
             contentContainerStyle={{
               gap: spacing[3],
               padding: spacing[4],
-              paddingBottom: bottomInset + spacing[12],
+              paddingBottom: directMessagesEnabled ? bottomInset + spacing[12] : bottomInset,
             }}
           >
             <InAppShareCard

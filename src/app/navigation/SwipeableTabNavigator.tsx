@@ -16,6 +16,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import { tabBarBottomPadding } from "./tabBarMetrics";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 const MAIN_TAB_PRELOAD_DISTANCE = 2;
@@ -241,8 +242,8 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
-          paddingBottom: Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]),
+          paddingBottom: tabBarBottomPadding(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
         },
       ]}

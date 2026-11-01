@@ -50,11 +50,12 @@ function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K
   });
 }
 
-/** Production defaults: the posts feed, Activity and the Passport are off. */
+/** Production defaults: the posts feed and Activity are off; the Passport is on. */
 function productionFlags() {
   flags.socialFeedEnabled = false;
   flags.activityEnabled = false;
   flags.gamificationEnabled = false;
+  flags.passportEnabled = true;
   flags.storiesEnabled = false;
   flags.merchantCentreEnabled = false;
 }
@@ -146,11 +147,7 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome", navigation });
 
   assert.ok(view.findByText("Profile"), "the header says Profile, not Hungry");
-  assert.equal(
-    view.findByText("Hungry Passport"),
-    null,
-    "Passport is not registered in production",
-  );
+  assert.ok(view.findByText("Hungry Passport"), "the Passport shows in production");
   assert.equal(view.findByLabel("Show profile posts"), null, "no Posts tab with the feed archived");
   assert.equal(postReads, 0, "no post reads for an archived feed");
   assert.equal(interactionLoads.length, 1, "saved stalls load for the Saved count");
@@ -247,10 +244,24 @@ test("Followers and Following are archived: no tiles and no count read until a b
 });
 
 test("own profile shows the Passport card only with the Passport", async () => {
-  flags.gamificationEnabled = true;
+  flags.passportEnabled = true;
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.ok(view.findByText("Hungry Passport"));
+  assert.ok(view.findByText("Taste Fingerprint"));
+  assert.ok(
+    (view
+      .findByText("Hungry Passport")
+      ?.compareDocumentPosition(view.findByText("Taste Fingerprint") as Node) ?? 0) & 4,
+    "the Passport sits above the taste card",
+  );
   assert.equal(view.findByText("Badges"), null, "the old Badges tile is gone");
+});
+
+test("own profile hides the Passport card when the Passport is off", async () => {
+  flags.passportEnabled = false;
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(view.findByText("Taste Fingerprint"));
+  assert.ok(view.findByText("Hungry Passport") === null, "no Passport card");
 });
 
 test("the taste radar is capped at 260 and shrinks with its card", async () => {

@@ -124,6 +124,7 @@ import {
 } from "@/components/discover/home/PopularFoodStyleItem";
 import { VerticalStallShowcaseSection } from "@/components/discover/home/VerticalStallShowcaseSection";
 import { POPULAR_FOOD_STYLES } from "@/features/discover/popularFoodStyles";
+import { tabBarBottomPadding } from "@/app/navigation/tabBarMetrics";
 import {
   buildStallShowcaseCardsFromVenues,
   STALL_SHOWCASE_CARD_LIMIT,
@@ -263,7 +264,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     76,
     decisionCardWidth - decisionCardPadding * 2 - decisionCardIconSize - decisionCardInnerGap,
   );
-  const bottomTabVisibleHeight = componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]);
+  const bottomTabVisibleHeight =
+    componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]);
   const fallbackDiscoverViewportHeight = Math.max(0, screenHeight - insets.top);
   const effectiveDiscoverViewportHeight = discoverViewportHeight || fallbackDiscoverViewportHeight;
   const stallShowcasePageHeight =

@@ -220,9 +220,7 @@ export function WheelResultModal({ navigation, route }: Props) {
     if (!winnerEntry) return;
     const rootNav = navigation.getParent<NativeStackNavigationProp<RootStackParamList>>();
     if (!rootNav) return;
-    // Close the pop-up and the wheel first, so the stall page opens over where the wheel was
-    // started and spinning again later starts a fresh wheel instead of this finished one.
-    leaveWheelStack(navigation);
+    // The stall page opens over the wheel, so Back returns to this pop-up and the wheel.
     rootNav.navigate("StallDetail", { venueId: winnerEntry.venueId });
   }
 

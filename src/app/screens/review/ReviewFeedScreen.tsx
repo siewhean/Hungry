@@ -28,6 +28,7 @@ import {
   FilterChipRail,
   PressableScale,
   Skeleton,
+  UnderlineTabs,
 } from "@/components/ui";
 import {
   isContentHiddenForSession,
@@ -123,6 +124,11 @@ function ReviewFeedSkeleton() {
     </View>
   );
 }
+
+const SECTION_TABS = [
+  { value: "all", label: "All", accessibilityLabel: "Show all reviews" },
+  { value: "taste", label: "For you", accessibilityLabel: "Show reviews for your taste" },
+] as const;
 
 /** One line under the chips while searching: how many reviews matched. */
 function ReviewSearchQuerySummary({
@@ -672,6 +678,8 @@ export function ReviewFeedScreen() {
     [allReviews, areaOf, chipId, distanceMetersOf, tasteVector],
   );
   const activeChip = resolveActiveReviewChip(chips, chipId);
+  const hasTasteTab = chips.some((chip) => chip.kind === "taste");
+  const filterChips = chips.filter((chip) => chip.kind !== "all" && chip.kind !== "taste");
 
   const filteredReviews = useMemo(() => {
     const byChip = filterReviewExplore(serverSearchItems ?? allReviews, activeChip, {
@@ -869,14 +877,30 @@ export function ReviewFeedScreen() {
           }
         />
 
-        {/* Filter chips: your taste, foods and areas */}
-        <FilterChipRail
-          options={chips.map((chip) => ({ id: chip.id, label: chip.label }))}
-          selectedId={activeChip?.id ?? "all"}
-          onSelect={setChipId}
-          onSwipeLockChange={setTabSwipeLocked}
-          gap={spacing[2]}
-        />
+        {/* Sections like TikTok's tabs: every review, or the ones that fit your taste. */}
+        {hasTasteTab ? (
+          <UnderlineTabs
+            accessibilityLabel="Review sections"
+            tabs={SECTION_TABS}
+            value={activeChip?.kind === "taste" ? "taste" : "all"}
+            onChange={setChipId}
+          />
+        ) : null}
+
+        {/* Filter chips: near you, foods and areas. Tap the chosen one again to clear it. */}
+        {filterChips.length > 0 ? (
+          <FilterChipRail
+            options={filterChips.map((chip) => ({ id: chip.id, label: chip.label }))}
+            selectedId={
+              activeChip && activeChip.kind !== "all" && activeChip.kind !== "taste"
+                ? activeChip.id
+                : undefined
+            }
+            onSelect={(id) => setChipId(activeChip?.id === id ? "all" : id)}
+            onSwipeLockChange={setTabSwipeLocked}
+            gap={spacing[2]}
+          />
+        ) : null}
 
         <ReviewSearchQuerySummary
           query={searchQuery}
@@ -899,7 +923,7 @@ export function ReviewFeedScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             gap: GRID_GAP,
-            paddingBottom: spacing[20],
+            paddingBottom: spacing[4],
             paddingTop: spacing[2],
           }}
           extraData={showTileLabels}

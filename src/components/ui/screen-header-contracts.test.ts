@@ -113,7 +113,7 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviews, /FilterChipRail/);
   assert.match(
     reviews,
-    /\/\* Filter chips: your taste, foods and areas \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{chips\.map\([\s\S]*selectedId=\{activeChip\?\.id \?\? "all"\}[\s\S]*onSelect=\{setChipId\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
+    /<UnderlineTabs[\s\S]*accessibilityLabel="Review sections"[\s\S]*onChange=\{setChipId\}[\s\S]*\/\* Filter chips: near you, foods and areas\.[\s\S]*<FilterChipRail[\s\S]*options=\{filterChips\.map\([\s\S]*onSelect=\{\(id\) => setChipId\(activeChip\?\.id === id \? "all" : id\)\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
   );
   assert.doesNotMatch(
     reviews,
@@ -657,7 +657,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const insets = useSafeAreaInsets\(\)/);
   assert.match(
     discover,
-    /const bottomTabVisibleHeight = componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
+    /const bottomTabVisibleHeight =\s+componentSizes\.bottomTabBar \+ tabBarBottomPadding\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(
     discover,

@@ -693,7 +693,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "WheelLobbyScreen",
     file: "src/app/screens/wheel/WheelLobbyScreen.tsx",
     scenario: "user",
-    expect: /Your wheel/,
+    expect: /Hungry Wheel/,
   },
   {
     name: "WheelSpinScreen",

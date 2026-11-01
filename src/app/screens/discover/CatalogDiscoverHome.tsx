@@ -757,7 +757,7 @@ export function CatalogDiscoverHome({ onRetryLive }: { onRetryLive?: () => void 
         ref={scrollRef}
         contentContainerStyle={{
           gap: spacing[5],
-          paddingBottom: spacing[12],
+          paddingBottom: spacing[6],
           paddingHorizontal: semanticSpacing.screenEdge,
           paddingTop: spacing[3],
         }}

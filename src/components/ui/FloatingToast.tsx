@@ -7,6 +7,7 @@ import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-nati
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
+import { tabBarBottomPadding } from "@/app/navigation/tabBarMetrics";
 import { AppText } from "./AppText";
 
 export function FloatingToast() {
@@ -39,7 +40,7 @@ export function FloatingToast() {
 
   // Sits above the tab bar and its safe-area inset, so the tab labels stay readable.
   const toastBottom =
-    componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]) + spacing[2];
+    componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]) + spacing[2];
 
   // A compact inverted pill (dark on light, light on dark): the tone shows in the icon, not a border.
   const toneConfig = {

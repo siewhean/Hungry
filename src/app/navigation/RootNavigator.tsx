@@ -911,11 +911,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               />
             </>
           ) : null}
+          {FEATURE_FLAGS.passportEnabled ? (
+            <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+          ) : null}
           {FEATURE_FLAGS.gamificationEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
-              <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-            </>
+            <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
           ) : null}
           {FEATURE_FLAGS.portfoliosEnabled ? (
             <RootStack.Screen

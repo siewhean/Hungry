@@ -93,7 +93,7 @@ export function WheelHomeScreen({ navigation, route }: Props) {
 
   if (startsStraightAway) {
     return (
-      <Screen title="Your wheel" scroll={false}>
+      <Screen title="Hungry Wheel" scroll={false}>
         <View style={{ alignItems: "center", gap: spacing[4], paddingTop: spacing[8] }}>
           {createError ? (
             <>

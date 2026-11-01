@@ -11,6 +11,8 @@ interface ChipProps {
   /** "tab" inside a tablist; buttons otherwise. */
   accessibilityRole?: "button" | "tab";
   selected?: boolean;
+  /** A solid fill for the chosen chip, for chips that sit over a map or photo. */
+  solid?: boolean;
   onPress?: () => void;
   leftIcon?: ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -21,6 +23,7 @@ export function Chip({
   accessibilityLabel,
   accessibilityRole = "button",
   selected = false,
+  solid = false,
   onPress,
   leftIcon,
   style,
@@ -36,11 +39,14 @@ export function Chip({
   } = useHungryTheme();
 
   const chipStyle = {
-    backgroundColor: selected
-      ? palette.orangeLight
-      : colorScheme === "dark"
-        ? palette.surfaceRaised
-        : palette.surface,
+    backgroundColor:
+      selected && solid
+        ? palette.orange
+        : selected
+          ? palette.orangeLight
+          : colorScheme === "dark"
+            ? palette.surfaceRaised
+            : palette.surface,
     borderColor: selected ? palette.orange : palette.border,
     borderRadius: componentRadii.button,
     borderCurve: componentCornerCurve.borderCurve,
@@ -55,7 +61,12 @@ export function Chip({
       {leftIcon}
       <AppText
         style={{
-          color: selected ? palette.orange : palette.textSecondary,
+          color:
+            selected && solid
+              ? palette.textOnOrange
+              : selected
+                ? palette.orange
+                : palette.textSecondary,
           flexShrink: 1,
           fontWeight: selected ? "700" : "500",
         }}

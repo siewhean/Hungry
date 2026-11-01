@@ -427,14 +427,16 @@ test("one note shows at a time and dismissing it brings up the next; location is
   assert.equal(view.findByLabel("Notes about these results"), null);
 });
 
-test("the Dishes and Stalls segment and the parsed filters share one rail (SR5-5)", async () => {
+test("Dishes and Stalls are top tabs and the parsed filters stay in the chip rail (SR5-5)", async () => {
   stubCatalog({ listDishes: async () => page([dishCard("1")]), listPlaces: async () => [] });
   const view = await renderResults({ browseMode: "dishes", initialQuery: "halal laksa" });
   await wait(400);
   const chips = view.findByTestId("search-parsed-chips");
   const tablist = view.container.querySelector('[role="tablist"]');
   assert.ok(chips && tablist);
-  assert.equal(chips.parentElement, tablist.parentElement, "one row, not two stacked rows");
+  assert.ok(!tablist.contains(chips), "filter chips are not inside the tab bar");
+  const tabs = [...tablist.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent);
+  assert.deepEqual(tabs, ["Dishes", "Stalls"]);
 });
 
 test("the too-short hint is a live region (SR4-29)", async () => {
@@ -1580,7 +1582,7 @@ test("the browse grid is edge to edge: half-screen cells, no rounded bordered ca
   const results = readFileSync("src/app/screens/search/SearchResultsScreen.tsx", "utf8");
   assert.match(results, /const itemWidth = width \/ 2;/);
   assert.match(results, /const GRID_GAP = 2;/);
-  assert.match(results, /minHeight: itemWidth \* 0\.7 \+ GRID_TEXT_MIN_HEIGHT/);
+  assert.match(results, /minHeight: itemWidth \* GRID_IMAGE_RATIO \+ GRID_TEXT_MIN_HEIGHT/);
   const card = results.slice(
     results.indexOf("const RawCatalogCard"),
     results.indexOf("const RESERVED_LINE_HEIGHT"),

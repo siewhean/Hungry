@@ -77,7 +77,7 @@ test("H23: searches match building names and stall search matches the stall's di
 
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.match(grid, /<RawCatalogBrowseGrid\s+allowModeSwitch/);
-  assert.match(grid, /accessibilityRole="tablist"/);
+  assert.match(grid, /<UnderlineTabs[\s\S]*accessibilityLabel="Search results"/);
   assert.match(grid, /trackAnalyticsEvent\("search_mode_changed"/);
 });
 

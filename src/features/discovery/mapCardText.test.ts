@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   formatMapCardDetail,
   formatMapCardDish,
+  formatMapCardHours,
+  formatMapCardLocation,
   formatMapCardRating,
   mapCardAccessibilityLabel,
   shortOpenLabel,
@@ -75,4 +77,28 @@ test("MD-M11 a screen reader hears the stall, the dish and the detail", () => {
     "Open Tian Tian. Laksa · S$6.00. Rated 4.6 from 23 reviews. Open · 450 m",
   );
   assert.equal(mapCardAccessibilityLabel(venue, undefined, ""), "Open Tian Tian");
+});
+
+test("the card hours line joins the open word and its detail, and is empty when hours are unknown", () => {
+  assert.equal(
+    formatMapCardHours({ status: "open", detail: "Closes 9pm" } as never),
+    "Open · Closes 9pm",
+  );
+  assert.equal(formatMapCardHours({ status: "open" } as never), "Open");
+  assert.equal(
+    formatMapCardHours({ status: "closed", detail: "Opens 5pm" } as never),
+    "Closed · Opens 5pm",
+  );
+  assert.equal(formatMapCardHours(undefined), undefined);
+});
+
+test("the card location line is the building, then the floor and unit", () => {
+  assert.equal(
+    formatMapCardLocation(
+      card({ buildingName: "JW50 Hawker Centre", floor: "B1", unitNumber: "#01-23" }),
+    ),
+    "JW50 Hawker Centre · B1 #01-23",
+  );
+  assert.equal(formatMapCardLocation(card({ buildingName: "Maxwell" })), "Maxwell");
+  assert.equal(formatMapCardLocation(card()), "");
 });

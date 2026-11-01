@@ -536,13 +536,13 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1500,
   },
   /**
-   * Map cards with rating, open state and the matched dish against the plain card. Read in
-   * HomeMapScreen. Draft until the map has enough weekly users; the shipped fallback is rich.
+   * Map cards with rating, hours and distance against the plain card. Concluded without a test:
+   * every diner now gets the rich card (owner request, 2026-11-01), so the map no longer reads it.
    */
   map_card_rich_v1: {
     variants: ["control", "rich"],
     fallback: "rich",
-    status: "draft",
+    status: "concluded",
     surface: "map",
     hypothesis:
       "A card that shows its rating, whether the stall is open and the dish that matched the search lifts card opens, because diners can judge a stall without leaving the map.",

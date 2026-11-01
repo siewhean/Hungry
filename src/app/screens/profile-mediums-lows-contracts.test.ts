@@ -42,7 +42,7 @@ test("profile home loads once per account and recomputes passport progress separ
   assert.match(source, /loadStallSubmissions\(\)\.catch\(/);
   assert.match(
     source,
-    /if \(!isAuthenticated \|\| !gamificationEnabled\) return;\s*computePassportProgress\(triedStallIds\);/,
+    /if \(!isAuthenticated \|\| !passportEnabled\) return;\s*computePassportProgress\(triedStallIds\);/,
   );
 });
 
