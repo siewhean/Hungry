@@ -391,7 +391,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
   const submitMenuPhotoFrom = useCallback(
-    async (source: "camera" | "library") => {
+    async (source: "camera" | "library", kind: "menu" | "stall") => {
       if (!venue) return;
       const permission =
         source === "camera"
@@ -401,8 +401,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
         showToast({
           message:
             source === "camera"
-              ? "Camera permission is needed to snap a menu photo."
-              : "Photo library permission is needed to pick a menu photo.",
+              ? `Camera permission is needed to snap a ${kind} photo.`
+              : `Photo library permission is needed to pick a ${kind} photo.`,
           tone: "warning",
         });
         return;
@@ -419,8 +419,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
           : await ImagePicker.launchImageLibraryAsync(pickerOptions);
       if (result.canceled || result.assets.length === 0) return;
       const asset = result.assets[0];
-      // The photo is read by Google, so ask first (App Review 5.1.2(i)). Declining still saves it.
-      const allowAiReading = await ensureAiSearchConsent();
+      // A menu photo is read by Google, so ask first (App Review 5.1.2(i)). Declining still saves it.
+      // A stall photo is never sent anywhere, so there is nothing to ask.
+      const allowAiReading = kind === "menu" ? await ensureAiSearchConsent() : false;
       setIsSubmittingMenuPhoto(true);
       try {
         await getHungryService().supply.submitMenuPhoto({
@@ -428,12 +429,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
           photoUri: asset.uri,
           photoMimeType: asset.mimeType ?? undefined,
           photoFileSizeBytes: asset.fileSize ?? undefined,
+          photoKind: kind,
           allowAiReading,
         });
         showToast({
-          message: allowAiReading
-            ? "Thanks, we'll add the menu soon."
-            : "Thanks. Your photo is saved and was not sent to Google.",
+          message:
+            kind === "stall"
+              ? "Thanks, we'll check your stall photo and add it soon."
+              : allowAiReading
+                ? "Thanks, we'll add the menu soon."
+                : "Thanks. Your photo is saved and was not sent to Google.",
           tone: "success",
         });
       } catch (error) {
@@ -442,7 +447,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
           message:
             error instanceof Error && error.message
               ? error.message
-              : "Couldn't upload the menu photo. Please try again.",
+              : `Couldn't upload the ${kind} photo. Please try again.`,
           tone: "error",
         });
       } finally {
@@ -452,13 +457,30 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [showToast, venue],
   );
 
+  const promptSourceFor = useCallback(
+    (kind: "menu" | "stall") => {
+      Alert.alert(
+        kind === "menu" ? "Menu photo" : "Stall photo",
+        kind === "menu"
+          ? "Snap or pick a photo of this stall's menu."
+          : "Snap or pick a photo of the stall front or its food.",
+        [
+          { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera", kind) },
+          { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library", kind) },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
+    },
+    [submitMenuPhotoFrom],
+  );
+  // One button covers both: say what the photo shows, then where it comes from.
   const promptMenuPhoto = useCallback(() => {
-    Alert.alert("Add a menu photo", "Snap or pick a photo of this stall's menu.", [
-      { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera") },
-      { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library") },
+    Alert.alert("Add a menu/stall photo", "What does your photo show?", [
+      { text: "Menu", onPress: () => promptSourceFor("menu") },
+      { text: "Stall", onPress: () => promptSourceFor("stall") },
       { text: "Cancel", style: "cancel" },
     ]);
-  }, [submitMenuPhotoFrom]);
+  }, [promptSourceFor]);
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() =>
     hasPendingClaimForVenue(profile.id, venueId),
@@ -1291,7 +1313,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
             onScroll={onScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
-              paddingBottom: insets.bottom + 96,
+              paddingBottom: insets.bottom + spacing[6],
             }}
           >
             {/* Hero: swipeable photos (owner cover, stall, dishes, reviews). With none there is no
@@ -1729,7 +1751,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       {/* Uploads a menu photo for the team to add the menu from. */}
                       {showDeferredDetailControls && canSubmitMenuPhoto ? (
                         <Button
-                          label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu photo"}
+                          label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu/stall photo"}
                           variant="secondary"
                           disabled={isSubmittingMenuPhoto}
                           onPress={promptMenuPhoto}

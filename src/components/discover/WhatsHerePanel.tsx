@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
 import { AccessibleImage, AppText } from "@/components/ui";
@@ -22,7 +22,12 @@ interface WhatsHerePanelProps {
   getStallMeta: (stall: HereStall) => string;
   onOpenStall: (venueId: string) => void;
   onPrefetchStall?: (stall: HereStall) => void;
+  /** Opens the full list of the place's stalls; the title gets a chevron when given. */
+  onSeeAll?: () => void;
 }
+
+/** Each stall is a card in a row that scrolls sideways. */
+const STALL_CARD_WIDTH = 290;
 
 function titleCase(value: string): string {
   return value.replace(/\b\w/g, (char) => char.toUpperCase());
@@ -35,8 +40,10 @@ export function WhatsHerePanel({
   getStallMeta,
   onOpenStall,
   onPrefetchStall,
+  onSeeAll,
 }: WhatsHerePanelProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const [filters, setFilters] = useState<HereFilters>({});
   const cuisines = useMemo(() => cuisineOptions(stalls), [stalls]);
   const visible = useMemo(() => filterHereStalls(stalls, filters), [filters, stalls]);
@@ -84,7 +91,20 @@ export function WhatsHerePanel({
 
   return (
     <View style={{ gap: spacing[3] }} testID="whats-here-panel">
-      <AppText variant="h2">{`All stalls at ${placeName}`}</AppText>
+      {onSeeAll ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`See all stalls at ${placeName}`}
+          hitSlop={8}
+          onPress={onSeeAll}
+          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+        >
+          <AppText variant="h2" style={{ flexShrink: 1 }}>{`Stalls at ${placeName}`}</AppText>
+          <ChevronRight color={palette.textMuted} size={20} />
+        </Pressable>
+      ) : (
+        <AppText variant="h2">{`Stalls at ${placeName}`}</AppText>
+      )}
       {cuisines.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -127,62 +147,70 @@ export function WhatsHerePanel({
           </Pressable>
         </View>
       ) : (
-        visible.map((stall) => {
-          const imageUrl = stall.venue.imageUrl ?? stall.topDish?.imageUrl;
-          const price = stallPriceLabel(stall);
-          return (
-            <Pressable
-              key={stall.venue.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${stall.venue.name}`}
-              onPress={() => onOpenStall(stall.venue.id)}
-              onPressIn={() => onPrefetchStall?.(stall)}
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                borderRadius: componentRadii.card,
-                borderWidth: 1,
-                flexDirection: "row",
-                gap: spacing[3],
-                padding: spacing[3],
-              }}
-            >
-              <View
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ width: screenWidth }}
+          contentContainerStyle={{ gap: spacing[3] }}
+        >
+          {visible.map((stall) => {
+            const imageUrl = stall.venue.imageUrl ?? stall.topDish?.imageUrl;
+            const price = stallPriceLabel(stall);
+            return (
+              <Pressable
+                key={stall.venue.id}
+                accessibilityRole="button"
+                accessibilityLabel={`Open ${stall.venue.name}`}
+                onPress={() => onOpenStall(stall.venue.id)}
+                onPressIn={() => onPrefetchStall?.(stall)}
                 style={{
-                  backgroundColor: palette.bgSoft,
+                  alignItems: "center",
+                  backgroundColor: palette.surface,
+                  borderColor: palette.border,
                   borderRadius: componentRadii.card,
-                  height: 64,
-                  overflow: "hidden",
-                  width: 64,
+                  borderWidth: 1,
+                  flexDirection: "row",
+                  gap: spacing[3],
+                  padding: spacing[3],
+                  width: STALL_CARD_WIDTH,
                 }}
               >
-                {imageUrl ? (
-                  <AccessibleImage
-                    source={{ uri: imageUrl }}
-                    decorative
-                    contentFit="cover"
-                    style={{ height: "100%", width: "100%" }}
-                  />
-                ) : null}
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <AppText variant="bodyBold" numberOfLines={1}>
-                  {stall.venue.name}
-                </AppText>
-                <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                  {getStallMeta(stall)}
-                </AppText>
-                {price ? (
-                  <AppText variant="bodySmallBold" style={{ color: palette.accentText }}>
-                    {price}
+                <View
+                  style={{
+                    backgroundColor: palette.bgSoft,
+                    borderRadius: componentRadii.card,
+                    height: 64,
+                    overflow: "hidden",
+                    width: 64,
+                  }}
+                >
+                  {imageUrl ? (
+                    <AccessibleImage
+                      source={{ uri: imageUrl }}
+                      decorative
+                      contentFit="cover"
+                      style={{ height: "100%", width: "100%" }}
+                    />
+                  ) : null}
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <AppText variant="bodyBold" numberOfLines={1}>
+                    {stall.venue.name}
                   </AppText>
-                ) : null}
-              </View>
-              <ChevronRight size={20} color={palette.textMuted} />
-            </Pressable>
-          );
-        })
+                  <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                    {getStallMeta(stall)}
+                  </AppText>
+                  {price ? (
+                    <AppText variant="bodySmallBold" style={{ color: palette.accentText }}>
+                      {price}
+                    </AppText>
+                  ) : null}
+                </View>
+                <ChevronRight size={20} color={palette.textMuted} />
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       )}
     </View>
   );

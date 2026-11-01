@@ -875,7 +875,7 @@ test("WhatsHerePanel filters stalls by food type and price, and clears the filte
       onOpenStall: (id: string) => opened.push(id),
     }),
   );
-  assert.match(view.text(), /All stalls at Maxwell/);
+  assert.match(view.text(), /Stalls at Maxwell/);
   assert.match(view.text(), /2 stalls/);
   await view.press(view.findByLabel("Noodles filter"));
   assert.match(view.text(), /1 stall/);

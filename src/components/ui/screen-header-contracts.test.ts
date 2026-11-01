@@ -82,7 +82,10 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   const composerHeader = read("src/features/post/components/ComposerHeader.tsx");
   const reviewSearchSummary =
     reviews.match(/function ReviewSearchQuerySummary[\s\S]*?\n}\n\n\/\//)?.[0] ?? "";
-  assert.match(discover, /You are at \$\{discoverHeaderLabel\}/);
+  assert.match(
+    discover,
+    /\$\{hasManualAreaPick \? "Showing food in" : "You are at"\} \$\{discoverHeaderLabel\}/,
+  );
   assert.doesNotMatch(discover, /<AppHeader[\s\S]*title="Discover"/);
   assert.match(
     discover,
@@ -198,7 +201,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const DiscoverBiteCard = memo\(function DiscoverBiteCard/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*areaStallCards\.map[\s\S]*\)\)\s*\) : null\}/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*renderStallRail\(areaStallCards\)[\s\S]*\) : null\}/,
   );
   assert.match(
     discover,
@@ -286,7 +289,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onPrefetchCard=\{prefetchStallShowcaseCard\}/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.map[\s\S]*stallShowcaseCards\.length \? \([\s\S]*<VerticalStallShowcaseSection/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*renderStallRail[\s\S]*stallShowcaseCards\.length \? \([\s\S]*<VerticalStallShowcaseSection/,
   );
   assert.match(discover, /No matching results/);
   assert.match(discover, /Try removing a filter\./);
@@ -569,7 +572,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /onSelect=\{toggleDiscoverChip\}/);
   assert.match(
     discover,
-    /<AppText variant="h2" style=\{\{ color: themeTints\.text \}\}>\s*\{popularFoodTitle\}\s*<\/AppText>/,
+    /<AppText variant="h2" style=\{\{ color: themeTints\.text, flexShrink: 1 \}\}>\s*\{popularFoodTitle\}\s*<\/AppText>/,
   );
   assert.doesNotMatch(discover, /<DecideForMeCard compact \/>/);
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
@@ -647,7 +650,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*areaStallCards\.map/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*renderStallRail\(areaStallCards\)/,
   );
   assert.match(
     discover,

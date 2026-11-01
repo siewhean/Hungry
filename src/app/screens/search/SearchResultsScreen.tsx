@@ -141,6 +141,8 @@ const GRID_GAP = 2;
 const GRID_IMAGE_RATIO = 1;
 /** Every text block is at least this tall, so a row of cells ends on one line. */
 const GRID_TEXT_MIN_HEIGHT = 104;
+/** Stall cards carry one more line (their top dish) than dish cards. */
+const gridTextHeight = (mode: BrowseMode) => (mode === "stalls" ? 122 : GRID_TEXT_MIN_HEIGHT);
 
 function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: BrowseMode }) {
   const { palette, spacing } = useHungryTheme();
@@ -196,13 +198,8 @@ const RawCatalogCard = memo(function RawCatalogCard({
   const title = item.name;
   const stallName = dish ? dish.venueName || title : title;
   const stallRating = ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
-  // On a stall card the rating is its top dish's, which the pill says so it is not read as the
-  // stall's own rating (SEARCH-V5).
-  const rating = dish
-    ? ratingPillText(dish.rating, dish.reviewCount)
-    : stallRating
-      ? `Top dish ${stallRating}`
-      : undefined;
+  // On a stall card the rating is its top dish's (the line above names that dish).
+  const rating = dish ? ratingPillText(dish.rating, dish.reviewCount) : stallRating;
   const outlets = stall?.extraOutlets ?? 0;
   const stallDetail = stall ? stallCardDetail(stall) : undefined;
   const isVerified = item.verificationStatus === "approved";
@@ -228,7 +225,7 @@ const RawCatalogCard = memo(function RawCatalogCard({
         <View
           style={{
             backgroundColor: palette.surface,
-            minHeight: itemWidth * GRID_IMAGE_RATIO + GRID_TEXT_MIN_HEIGHT,
+            minHeight: itemWidth * GRID_IMAGE_RATIO + gridTextHeight(mode),
             overflow: "hidden",
           }}
         >
@@ -280,52 +277,68 @@ const RawCatalogCard = memo(function RawCatalogCard({
               </View>
             ) : null}
           </View>
-          <View style={{ gap: 2, minHeight: GRID_TEXT_MIN_HEIGHT, padding: spacing[2] }}>
-            <AppText numberOfLines={2} variant="bodyBold">
-              {title}
-            </AppText>
-            <AppText numberOfLines={1} tone="secondary" variant="micro">
-              {cardSubtitle(mode, item)}
-            </AppText>
-            {stallDetail ? (
-              <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
-                {stallDetail}
+          {/* Title and subtitle sit at the top; one meta row is pinned to the bottom, so a short
+              name never leaves a gap below the card and every rating lines up bottom right. */}
+          <View
+            style={{
+              height: gridTextHeight(mode),
+              justifyContent: "space-between",
+              overflow: "hidden",
+              padding: spacing[2],
+            }}
+          >
+            <View style={{ gap: 2 }}>
+              <AppText numberOfLines={2} variant="bodyBold">
+                {title}
               </AppText>
-            ) : null}
-            {/* Rating, distance and price share one line; it is always there, so cards in a row match (SR4-19). */}
+              <AppText numberOfLines={1} tone="secondary" variant="micro">
+                {cardSubtitle(mode, item)}
+              </AppText>
+              {stallDetail ? (
+                <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
+                  {stallDetail}
+                </AppText>
+              ) : null}
+            </View>
             <View
               style={{
                 alignItems: "center",
                 flexDirection: "row",
+                gap: spacing[2],
                 justifyContent: "space-between",
                 minHeight: RESERVED_LINE_HEIGHT,
               }}
             >
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                {rating ? (
-                  <>
-                    <AppSymbol name="rating" color={palette.ratingStar} size={12} />
-                    <AppText tone="secondary" variant="micro">
-                      {rating}
-                    </AppText>
-                  </>
+              <View style={{ alignItems: "baseline", flexDirection: "row", flexShrink: 1, gap: 4 }}>
+                {dish?.price !== undefined ? (
+                  <AppText style={{ color: palette.text }} variant="price">
+                    S${dish.price.toFixed(2)}
+                  </AppText>
                 ) : null}
-                <AppText tone="muted" variant="micro">
-                  {rating ? "· " : ""}
+                <AppText numberOfLines={1} tone="muted" variant="micro" style={{ flexShrink: 1 }}>
+                  {dish?.price !== undefined ? "· " : ""}
                   {item.distanceMeters !== undefined
                     ? formatBrowseDistance(item.distanceMeters)
                     : "Singapore"}
                 </AppText>
               </View>
-              {dish?.price !== undefined ? (
-                <AppText style={{ color: palette.text }} variant="price">
-                  S${dish.price.toFixed(2)}
-                </AppText>
-              ) : !rating && stall && stall.menuCount > 0 ? (
-                <AppText tone="secondary" variant="micro">
-                  {`${stall.menuCount} ${stall.menuCount === 1 ? "dish" : "dishes"}`}
-                </AppText>
-              ) : null}
+              <View
+                accessibilityLabel={rating ? `Rated ${rating}` : "Not rated yet"}
+                style={{ alignItems: "center", flexDirection: "row", flexShrink: 0, gap: 2 }}
+              >
+                {rating ? (
+                  <>
+                    <AppSymbol name="rating" color={palette.ratingStar} size={12} />
+                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
+                      {rating}
+                    </AppText>
+                  </>
+                ) : (
+                  <AppText tone="muted" variant="micro">
+                    New
+                  </AppText>
+                )}
+              </View>
             </View>
           </View>
         </View>

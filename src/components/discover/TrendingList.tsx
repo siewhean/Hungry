@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, View } from "react-native";
+import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { ChevronRight, Utensils } from "lucide-react-native";
 
 import { HOME_PRICE_STYLE } from "@/components/discover/home/homeLayout";
@@ -16,7 +16,9 @@ interface TrendingListProps {
   onSeeAll?: () => void;
 }
 
-const MAX_ROWS = 5;
+const MAX_ROWS = 8;
+/** Each dish is a card in a row that scrolls sideways; the next one peeks in. */
+const CARD_WIDTH = 300;
 
 /** The row photo; a missing or broken photo shows the same dish icon as the card rails. */
 function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: string }) {
@@ -52,9 +54,10 @@ function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: st
   );
 }
 
-/** Trending dishes as rich rows: photo, name, stall and unit, rating, price and distance. */
+/** Trending dishes as rich cards in a sideways row: photo, name, stall and unit, rating, price and distance. */
 export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: TrendingListProps) {
   const { componentRadii, palette, spacing } = useHungryTheme();
+  const { width: screenWidth } = useWindowDimensions();
   if (!bites.length) return null;
   return (
     <View style={{ gap: spacing[3] }} testID="trending-list">
@@ -74,61 +77,69 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
       ) : (
         <AppText variant="h2">{title}</AppText>
       )}
-      {bites.slice(0, MAX_ROWS).map((bite) => {
-        const distance = formatBiteDistance(bite.distanceMeters);
-        return (
-          <PressableScale
-            key={bite.id}
-            accessibilityRole="button"
-            accessibilityLabel={buildBiteLabel(bite)}
-            onPress={() => onOpen(bite)}
-            onPressIn={() => onPrefetch?.(bite)}
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.surface,
-              borderColor: palette.border,
-              borderRadius: componentRadii.card,
-              borderWidth: 1,
-              flexDirection: "row",
-              gap: spacing[3],
-              padding: spacing[3],
-            }}
-          >
-            <TrendingThumb photoUrl={bite.photoUrl} dishName={bite.dishName} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <AppText variant="bodyBold" numberOfLines={1}>
-                {bite.dishName}
-              </AppText>
-              <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                {bite.venueName}
-                {bite.unitNumber ? ` · ${bite.unitNumber}` : ""}
-              </AppText>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-                {bite.rating > 0 ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-                    <AppSymbol name="rating" size={12} color={palette.starFill} />
-                    <AppText variant="micro">{bite.rating.toFixed(1)}</AppText>
-                  </View>
-                ) : null}
-                {distance ? (
-                  <AppText variant="micro" tone="muted">
-                    {distance}
-                  </AppText>
-                ) : null}
-                {bite.price > 0 ? (
-                  <AppText
-                    variant="bodySmallBold"
-                    style={{ color: palette.text, ...HOME_PRICE_STYLE }}
-                  >
-                    S${bite.price.toFixed(2)}
-                  </AppText>
-                ) : null}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ width: screenWidth }}
+        contentContainerStyle={{ gap: spacing[3] }}
+      >
+        {bites.slice(0, MAX_ROWS).map((bite) => {
+          const distance = formatBiteDistance(bite.distanceMeters);
+          return (
+            <PressableScale
+              key={bite.id}
+              accessibilityRole="button"
+              accessibilityLabel={buildBiteLabel(bite)}
+              onPress={() => onOpen(bite)}
+              onPressIn={() => onPrefetch?.(bite)}
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                borderRadius: componentRadii.card,
+                borderWidth: 1,
+                flexDirection: "row",
+                gap: spacing[3],
+                padding: spacing[3],
+                width: CARD_WIDTH,
+              }}
+            >
+              <TrendingThumb photoUrl={bite.photoUrl} dishName={bite.dishName} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <AppText variant="bodyBold" numberOfLines={1}>
+                  {bite.dishName}
+                </AppText>
+                <AppText variant="micro" tone="secondary" numberOfLines={1}>
+                  {bite.venueName}
+                  {bite.unitNumber ? ` · ${bite.unitNumber}` : ""}
+                </AppText>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+                  {bite.rating > 0 ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+                      <AppSymbol name="rating" size={12} color={palette.starFill} />
+                      <AppText variant="micro">{bite.rating.toFixed(1)}</AppText>
+                    </View>
+                  ) : null}
+                  {distance ? (
+                    <AppText variant="micro" tone="muted">
+                      {distance}
+                    </AppText>
+                  ) : null}
+                  {bite.price > 0 ? (
+                    <AppText
+                      variant="bodySmallBold"
+                      style={{ color: palette.text, ...HOME_PRICE_STYLE }}
+                    >
+                      S${bite.price.toFixed(2)}
+                    </AppText>
+                  ) : null}
+                </View>
               </View>
-            </View>
-            <ChevronRight size={20} color={palette.textMuted} />
-          </PressableScale>
-        );
-      })}
+              <ChevronRight size={20} color={palette.textMuted} />
+            </PressableScale>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }
