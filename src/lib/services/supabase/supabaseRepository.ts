@@ -1,6 +1,7 @@
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import type {
   BuildingDetail,
@@ -968,7 +969,21 @@ function isExpectedDiscoveryRpcError(error: { code?: unknown; message?: unknown 
   );
 }
 
+/** Overlapping identical counts share one request. */
 export async function countVenuesInAreaViaRpc(
+  lat?: number,
+  lng?: number,
+  radiusMeters?: number,
+  areaName?: string,
+): Promise<number | undefined> {
+  return shareInFlight(
+    getSupabaseClient(),
+    `count:${JSON.stringify([lat, lng, radiusMeters, areaName?.trim()])}`,
+    () => readVenueCountInArea(lat, lng, radiusMeters, areaName),
+  );
+}
+
+async function readVenueCountInArea(
   lat?: number,
   lng?: number,
   radiusMeters?: number,
@@ -1140,7 +1155,16 @@ async function loadDishDietaryFlagsByDishId(
   return flagsByDishId;
 }
 
+/** Overlapping identical feed reads share one request (and one set of follow-up batched reads). */
 export async function listDiscoveryFeedByLocationViaRpc(
+  request: DiscoveryLocationFeedRequest,
+): Promise<DiscoveryLocationFeed | undefined> {
+  return shareInFlight(getSupabaseClient(), `feed:${JSON.stringify(request)}`, () =>
+    readDiscoveryFeedByLocation(request),
+  );
+}
+
+async function readDiscoveryFeedByLocation(
   request: DiscoveryLocationFeedRequest,
 ): Promise<DiscoveryLocationFeed | undefined> {
   let rows = await rpcRows("get_discovery_feed_by_location", {
