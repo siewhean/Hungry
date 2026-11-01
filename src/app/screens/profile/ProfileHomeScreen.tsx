@@ -497,8 +497,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   }, [hasAccountProfile, isFocused, profile.id]);
 
   useEffect(() => {
-    // Refetch on focus so approving/declining on Follow Requests updates the row.
-    if (!hasAccountProfile || !isFocused) return;
+    // Refetch on focus so approving/declining on Follow Requests updates the row. Follow
+    // requests are archived with followers and following, so nothing is read without the flag.
+    if (!FEATURE_FLAGS.followConnectionsEnabled || !hasAccountProfile || !isFocused) return;
 
     let isActive = true;
 
@@ -524,7 +525,9 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     const service = getHungryService();
     const [counts, requests, reviews] = await Promise.allSettled([
       service.social.getFollowCounts(profile.id),
-      service.social.getFollowRequestCount(),
+      FEATURE_FLAGS.followConnectionsEnabled
+        ? service.social.getFollowRequestCount()
+        : Promise.resolve(null),
       service.reviews.getUserReviews(profile.id),
     ]);
     if (counts.status === "fulfilled") setFollowCounts(counts.value ?? "unavailable");
@@ -707,7 +710,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             onPress: () => navigation.navigate("SocialGrid", { type: "liked" }),
           }
         : null,
-      (followRequestCount ?? 0) > 0 || profile.profileVisibility === "private"
+      FEATURE_FLAGS.followConnectionsEnabled &&
+      ((followRequestCount ?? 0) > 0 || profile.profileVisibility === "private")
         ? {
             id: "follow-requests",
             title: "Follow requests",

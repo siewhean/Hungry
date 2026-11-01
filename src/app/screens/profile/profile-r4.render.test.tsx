@@ -272,7 +272,23 @@ test("avatar falls back to initials when the photo fails to load", async () => {
 
 // --- Profile home -----------------------------------------------------------------------
 
+test("follow requests are archived: no count read, badge, banner or menu entry without the flag", async () => {
+  let reads = 0;
+  stub(getHungryService().social, "getFollowRequestCount", async () => {
+    reads += 1;
+    return 2;
+  });
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.equal(reads, 0, "the count is not read");
+  assert.ok(view.findByLabel("Open quick access"), "no count in the menu label");
+  assert.equal(view.findByTestId("profile-menu-badge"), null);
+  assert.equal(view.findByTestId("profile-follow-requests-row"), null);
+  await view.press(view.findByLabel(/^Open quick access/));
+  assert.equal(view.findByLabel(/^Follow requests/), null, "the menu has no Follow requests");
+});
+
 test("menu button: badge and count in the label at 2 follow requests, none at 0", async () => {
+  flags.followConnectionsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 2);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.ok(view.findByLabel("Open quick access, 2 follow requests"));
