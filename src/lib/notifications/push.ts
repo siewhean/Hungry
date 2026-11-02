@@ -14,7 +14,7 @@ import * as Notifications from "expo-notifications";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import { resolveNotificationPermission } from "./notificationPermission";
+import { isPushUnsupportedByBuild, resolveNotificationPermission } from "./notificationPermission";
 
 export const STALL_UPDATES_CHANNEL_ID = "stall-updates";
 
@@ -50,7 +50,14 @@ export async function registerForStallAlerts({ askPermission = true } = {}): Pro
 
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? undefined;
-  const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+  let token: string;
+  try {
+    ({ data: token } = await Notifications.getExpoPushTokenAsync({ projectId }));
+  } catch (error) {
+    // A build without the push entitlement can never get a token; nothing to report or retry.
+    if (isPushUnsupportedByBuild(error)) return false;
+    throw error;
+  }
   await getHungryService().push.registerPushToken(token, Platform.OS === "ios" ? "ios" : "android");
   return true;
 }
