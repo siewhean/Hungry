@@ -219,12 +219,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     loadedDiscoverFeedKey,
     currentPlace,
   } = useDiscoverFeed();
-  const openDietarySettings = useCallback(() => {
-    navigation.navigate("OnboardingStack", {
-      screen: "TasteQuiz",
-      params: { mode: "profile", initialPhase: "dietary", source: "home" },
-    });
-  }, [navigation]);
   const {
     deferredDiscoverChipIds,
     activeDiscoverChipSignature,
@@ -236,7 +230,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     clearDiscoverFilters,
     activeDiscoverChipIds,
     currentHour,
-  } = useDiscoverFilters({ getVenueHours, onOpenDietarySettings: openDietarySettings });
+  } = useDiscoverFilters({ getVenueHours });
   const scrollRef = useRef<ScrollView>(null);
   useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
@@ -1867,21 +1861,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     placeName: currentPlace.name,
                   })
                 }
-                getStallMeta={({ venue, topDish }) =>
-                  [
-                    getStallRowOpenLabel(venue),
-                    topDish && topDish.reviewCount > 0
-                      ? `Rated ${topDish.rating.toFixed(1)}`
-                      : undefined,
-                    venue.unitNumber,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")
-                }
-                onOpenStall={(venueId) => navigation.navigate("StallDetail", { venueId })}
-                onPrefetchStall={({ venue, topDish }) => {
-                  prefetchStallDetail(venue.id, repository);
-                  if (topDish?.id) prefetchDishDetail(topDish.id, repository);
+                renderStalls={(visibleStalls) => {
+                  const visibleIds = new Set(visibleStalls.map((stall) => stall.venue.id));
+                  return renderStallRail(
+                    unfilteredAreaStallCards.filter((card) => visibleIds.has(card.venue.id)),
+                  );
                 }}
               />
             )}

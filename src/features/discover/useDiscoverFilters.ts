@@ -5,6 +5,7 @@ import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail } from "@/types/domain";
 import { getSingaporeHour } from "@/utils/operatingHours";
 
@@ -24,15 +25,11 @@ const INTENT_CHIPS: readonly {
 type UseDiscoverFiltersOptions = {
   /** Opening hours of a stall, for the late-night chip. */
   getVenueHours: (venueId?: string) => string | undefined;
-  /** Where the dietary chip goes when the diner has no dietary needs saved yet. */
-  onOpenDietarySettings: () => void;
 };
 
 /** The Home chips: which are on, the deferred copy the page filters by, and what each chip keeps. */
-export function useDiscoverFilters({
-  getVenueHours,
-  onOpenDietarySettings,
-}: UseDiscoverFiltersOptions) {
+export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions) {
+  const showToast = useUIStore((state) => state.showToast);
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
 
@@ -94,14 +91,14 @@ export function useDiscoverFilters({
   const toggleDiscoverChip = useCallback(
     (chipId: DiscoverChipId) => {
       if (chipId === "dietary" && profile.dietaryPreferences.length === 0) {
-        // Nothing to filter by yet: the chip is the way to set dietary needs.
+        // Nothing to filter by yet: say where to add dietary needs (no questions here).
         trackAnalyticsEvent("discover_chip_tapped", {
           surface: "home",
           chip: chipId,
           selected: false,
-          opened_settings: true,
+          no_saved_needs: true,
         });
-        onOpenDietarySettings();
+        showToast({ message: "Add your dietary needs in Profile settings to filter by them." });
         return;
       }
       const wasActive = activeDiscoverChipIds.includes(chipId);
@@ -131,12 +128,7 @@ export function useDiscoverFilters({
 
       setActiveDiscoverChipIds(nextChipIds);
     },
-    [
-      activeDiscoverChipIds,
-      onOpenDietarySettings,
-      profile.dietaryPreferences.length,
-      recordTasteInteraction,
-    ],
+    [activeDiscoverChipIds, profile.dietaryPreferences.length, recordTasteInteraction, showToast],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {

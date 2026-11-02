@@ -35,10 +35,9 @@ async function expectNoHorizontalScroll(page: Page, where: string) {
         let inRail = false;
         for (let up = element.parentElement; up; up = up.parentElement) {
           const overflowX = getComputedStyle(up).overflowX;
-          if (
-            (overflowX === "auto" || overflowX === "scroll") &&
-            up.scrollWidth > up.clientWidth + 1
-          ) {
+          // A rail is a sideways scroller even when its cards happen to fit (a filter can leave
+          // only a few), so the container's overflow setting is what counts, not its content.
+          if (overflowX === "auto" || overflowX === "scroll") {
             inRail = true;
           }
         }

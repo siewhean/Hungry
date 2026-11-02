@@ -6,7 +6,7 @@
  */
 
 /** A swipe that starts this close (pt) to a screen edge belongs to page navigation. */
-export const EDGE_SWIPE_ZONE = 28;
+export const EDGE_SWIPE_ZONE = 40;
 /** Distance (pt) a swipe must travel, or travel with a flick, to count. */
 export const SWIPE_MIN_DISTANCE = 64;
 export const SWIPE_FLICK_DISTANCE = 32;
