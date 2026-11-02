@@ -5,7 +5,7 @@ import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/component
 import { useHungryTheme } from "@/theme";
 
 /** Height of the picture band at the top of a stall card. */
-export const STALL_RAIL_IMAGE_HEIGHT = 116;
+export const STALL_RAIL_IMAGE_HEIGHT = 156;
 
 interface StallRailCardProps {
   name: string;
@@ -97,7 +97,7 @@ export function StallRailCard({
           <StallLogoMark borderWidth={3} logoUrl={logoUrl} name={name} size={72} />
         )}
       </View>
-      <View style={{ gap: 2, minHeight: 84, padding: spacing[3] }}>
+      <View style={{ gap: 1, paddingHorizontal: spacing[3], paddingVertical: spacing[2] }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
           <AppText
             variant="bodySmall"

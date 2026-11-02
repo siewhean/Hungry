@@ -6,10 +6,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import { PortfolioCard } from "@/components/portfolio";
-import { AppText, Button, Card, Input } from "@/components/ui";
+import { AppText, Button, Card, Input, UnderlineTabs } from "@/components/ui";
 import { useShallow } from "zustand/react/shallow";
 
 import { resolveListItemCount } from "@/features/checklistPortfolio/listLabels";
+import { useListCovers } from "@/features/saved/useListCovers";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { usePortfolioStore, type PortfolioListScope } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
@@ -89,6 +90,10 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
       });
   }, [portfolios, query, tabIds]);
 
+  const covers = useListCovers(
+    useMemo(() => visiblePortfolios.map((portfolio) => portfolio.id), [visiblePortfolios]),
+  );
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: palette.bg, paddingTop: insets.top }}
@@ -104,60 +109,49 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
         >
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
-        <View style={{ flex: 1 }}>
-          <AppText variant="h1">Your lists</AppText>
-          <AppText variant="bodySmall" tone="secondary">
-            Curate rankings, trails, and recommendations.
-          </AppText>
-        </View>
+        <AppText variant="h1" style={{ flex: 1 }}>
+          Your lists
+        </AppText>
+        {activeTab === "mine" ? (
+          <Button
+            label="Create list"
+            fullWidth={false}
+            size="sm"
+            leftIcon={<Plus color={palette.textOnOrange} size={16} />}
+            onPress={() => navigation.navigate("PortfolioCreate")}
+          />
+        ) : null}
       </View>
 
-      <View style={styles.actionRow}>
-        {(Object.keys(TAB_LABELS) as PortfolioTab[]).map((tab) => (
-          <Pressable
-            key={tab}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeTab === tab }}
-            accessibilityLabel={`${TAB_LABELS[tab]} lists`}
-            onPress={() => setActiveTab(tab)}
-            style={[
-              styles.tab,
-              {
-                backgroundColor: activeTab === tab ? palette.orangeLight : palette.surface,
-                borderColor: activeTab === tab ? palette.orange : palette.border,
-              },
-            ]}
-          >
-            <AppText variant="bodySmallBold" tone={activeTab === tab ? "accent" : "secondary"}>
-              {TAB_LABELS[tab]}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
+      <UnderlineTabs
+        accessibilityLabel="List sections"
+        fill
+        tabs={(Object.keys(TAB_LABELS) as PortfolioTab[]).map((tab) => ({
+          value: tab,
+          label: TAB_LABELS[tab],
+          accessibilityLabel: `${TAB_LABELS[tab]} lists`,
+        }))}
+        value={activeTab}
+        onChange={setActiveTab}
+      />
 
       <Input
-        label="Search your lists"
-        placeholder="Search by title, type, or description..."
+        accessibilityLabel="Search your lists"
+        placeholder="Search lists"
         value={query}
         onChangeText={setQuery}
         leftIcon={<Search color={palette.textMuted} size={18} />}
       />
 
       {activeTab === "mine" ? (
-        <View style={styles.actionRow}>
-          <Button
-            label="Create list"
-            fullWidth={false}
-            leftIcon={<Plus color={palette.textOnOrange} size={18} />}
-            onPress={() => navigation.navigate("PortfolioCreate")}
-          />
-          <Button
-            label="Search public lists"
-            fullWidth={false}
-            variant="secondary"
-            onPress={() => navigation.navigate("PortfolioSearch")}
-          />
-        </View>
+        <Button
+          label="Search public lists"
+          fullWidth={false}
+          variant="ghost"
+          size="sm"
+          style={{ alignSelf: "flex-start" }}
+          onPress={() => navigation.navigate("PortfolioSearch")}
+        />
       ) : null}
 
       {!isLoaded && loadFailed ? (
@@ -191,6 +185,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
             key={portfolio.id}
             portfolio={portfolio}
             itemCount={resolveListItemCount(portfolio, items[portfolio.id])}
+            coverPhotos={covers.get(portfolio.id) ?? []}
             onPress={() => navigation.navigate("PortfolioDetail", { portfolioId: portfolio.id })}
           />
         ))

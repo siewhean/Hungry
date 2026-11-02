@@ -150,34 +150,49 @@ export function RangeRows({
     onChange(ranges.map((range, i) => (i === index ? { ...range, ...patch } : range)));
 
   return (
-    <View style={{ gap: spacing[2] }}>
+    <View style={{ gap: spacing[3] }}>
       {ranges.map((range, index) => (
-        <View key={index} style={{ flexDirection: "row", alignItems: "flex-end", gap: spacing[2] }}>
-          <View style={{ flex: 1 }}>
-            <TimeField
-              label="Opens"
-              accessibilityLabel={`${label} opens, range ${index + 1}`}
-              value={range.open}
-              onChange={(open) => update(index, { open })}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <TimeField
-              label="Closes"
-              accessibilityLabel={`${label} closes, range ${index + 1}`}
-              value={range.close}
-              onChange={(close) => update(index, { close })}
-            />
-          </View>
+        <View key={index} style={{ gap: spacing[2] }}>
+          {/* Each session is its own block: two pickers side by side, then Remove underneath, so
+              a second session never squeezes the times. */}
           {ranges.length > 1 ? (
-            <Button
-              label="Remove"
-              variant="ghost"
-              size="sm"
-              accessibilityLabel={`Remove ${label} range ${index + 1}`}
-              onPress={() => onChange(ranges.filter((_, i) => i !== index))}
-            />
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <AppText variant="bodySmallBold" tone="secondary">
+                {`Session ${index + 1}`}
+              </AppText>
+              <Button
+                label="Remove"
+                variant="ghost"
+                size="sm"
+                accessibilityLabel={`Remove ${label} session ${index + 1}`}
+                onPress={() => onChange(ranges.filter((_, i) => i !== index))}
+              />
+            </View>
           ) : null}
+          <View style={{ flexDirection: "row", gap: spacing[3] }}>
+            <View style={{ flex: 1 }}>
+              <TimeField
+                label="Opens"
+                accessibilityLabel={`${label} opens, session ${index + 1}`}
+                value={range.open}
+                onChange={(open) => update(index, { open })}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <TimeField
+                label="Closes"
+                accessibilityLabel={`${label} closes, session ${index + 1}`}
+                value={range.close}
+                onChange={(close) => update(index, { close })}
+              />
+            </View>
+          </View>
         </View>
       ))}
       {ranges.length < MAX_RANGES_PER_DAY ? (

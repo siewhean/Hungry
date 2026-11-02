@@ -58,3 +58,17 @@ test("a sheet that is not visible renders nothing, and the close control closes 
   );
   assert.equal(closed, 1);
 });
+
+test("only the newest host shows the sheet, and the older one takes over when it leaves", async () => {
+  const root = await render(createElement(ChoiceSheetHost));
+  const card = await render(createElement(ChoiceSheetHost));
+  const answer = askChoice({ title: "From the card", options: [{ id: "a", label: "A" }] });
+  await settle();
+  // One sheet, not two: the card's host shows it, the root's stays empty.
+  assert.equal(document.body.querySelectorAll('[aria-label="Cancel"]').length, 1);
+  await card.unmount();
+  await settle();
+  assert.equal(document.body.querySelectorAll('[aria-label="Cancel"]').length, 1);
+  await root.press(document.body.querySelector('[aria-label="Cancel"]') as HTMLElement | null);
+  assert.equal(await answer, null);
+});
