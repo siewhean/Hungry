@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
 
-import { askChoice, notifyChoiceSheetClosed, useChoiceSheetStore } from "./useChoiceSheetStore";
+import {
+  activeChoiceSheetHostId,
+  askChoice,
+  notifyChoiceSheetClosed,
+  registerChoiceSheetHost,
+  subscribeChoiceSheetHosts,
+  useChoiceSheetStore,
+} from "./useChoiceSheetStore";
 
 const OPTIONS = [
   { id: "camera", label: "Take photo" },
@@ -56,4 +63,21 @@ test("with no sheet mounted the answer still arrives", async () => {
   const answer = askChoice({ title: "Add a photo", options: OPTIONS });
   useChoiceSheetStore.getState().settle("library");
   assert.equal(await answer, "library");
+});
+
+test("the newest registered host is the active one, and the older takes over when it leaves", () => {
+  let notified = 0;
+  const unsubscribe = subscribeChoiceSheetHosts(() => {
+    notified += 1;
+  });
+  const root = registerChoiceSheetHost();
+  assert.equal(activeChoiceSheetHostId(), root.id);
+  const card = registerChoiceSheetHost();
+  assert.equal(activeChoiceSheetHostId(), card.id);
+  card.unregister();
+  assert.equal(activeChoiceSheetHostId(), root.id);
+  root.unregister();
+  assert.equal(activeChoiceSheetHostId(), null);
+  unsubscribe();
+  assert.equal(notified, 4);
 });

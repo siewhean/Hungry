@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Pressable, View } from "react-native";
 
 import {
+  activeChoiceSheetHostId,
   notifyChoiceSheetClosed,
+  registerChoiceSheetHost,
+  subscribeChoiceSheetHosts,
   useChoiceSheetStore,
   type ChoiceRequest,
 } from "@/store/useChoiceSheetStore";
@@ -11,10 +14,28 @@ import { AppText } from "./AppText";
 import { DismissibleSheet } from "./DismissibleSheet";
 
 /**
- * Shows whatever `askChoice` asked, in the app's own bottom sheet. Mounted once, near the root.
+ * Shows whatever `askChoice` asked, in the app's own bottom sheet. Mounted near the root, and
+ * again inside any card (the Post card): iOS cannot present a sheet from the root while a card
+ * covers it, so the newest host is the one that shows it.
  * It keeps the last question while the sheet slides away so the options do not vanish mid-way.
  */
 export function ChoiceSheetHost() {
+  const [hostId, setHostId] = useState<number | null>(null);
+  useEffect(() => {
+    const host = registerChoiceSheetHost();
+    setHostId(host.id);
+    return host.unregister;
+  }, []);
+  const activeId = useSyncExternalStore(
+    subscribeChoiceSheetHosts,
+    activeChoiceSheetHostId,
+    activeChoiceSheetHostId,
+  );
+  if (hostId === null || hostId !== activeId) return null;
+  return <ActiveChoiceSheet />;
+}
+
+function ActiveChoiceSheet() {
   const { palette, radii, spacing } = useHungryTheme();
   const request = useChoiceSheetStore((state) => state.request);
   const settle = useChoiceSheetStore((state) => state.settle);

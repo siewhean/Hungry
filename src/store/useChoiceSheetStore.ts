@@ -33,6 +33,41 @@ export const useChoiceSheetStore = create<ChoiceSheetState>((set, get) => ({
   },
 }));
 
+/**
+ * Hosts that can show the sheet, oldest first. iOS cannot present a modal from the root while a
+ * card (the Post card) is covering it, so a screen that is a card mounts its own host, and only
+ * the newest host shows the sheet.
+ */
+let hostIds: number[] = [];
+let nextHostId = 1;
+const hostListeners = new Set<() => void>();
+
+/** Registers a host; returns its id and a function that removes it. */
+export function registerChoiceSheetHost(): { id: number; unregister: () => void } {
+  const id = nextHostId++;
+  hostIds = [...hostIds, id];
+  hostListeners.forEach((listener) => listener());
+  return {
+    id,
+    unregister: () => {
+      hostIds = hostIds.filter((hostId) => hostId !== id);
+      hostListeners.forEach((listener) => listener());
+    },
+  };
+}
+
+/** The id of the host that shows the sheet now, or null with none mounted. */
+export function activeChoiceSheetHostId(): number | null {
+  return hostIds.length ? hostIds[hostIds.length - 1] : null;
+}
+
+export function subscribeChoiceSheetHosts(listener: () => void): () => void {
+  hostListeners.add(listener);
+  return () => {
+    hostListeners.delete(listener);
+  };
+}
+
 /** Waiters for the sheet to be gone, and the longest any of them waits (no host mounted). */
 const closeWaiters = new Set<() => void>();
 const SHEET_CLOSED_FALLBACK_MS = 800;

@@ -149,9 +149,11 @@ export function ReviewScreen({ navigation, route }: Props) {
   const [pickerVenueId, setPickerVenueId] = useState<string | null>(null);
   const [remoteDish, setRemoteDish] = useState<DishDetail | undefined>(undefined);
   // The routed stall's menu from the service: a live build's sync catalog may not hold it.
-  const [venueMenu, setVenueMenu] = useState<{ venueId: string; dishes: DishDetail[] } | null>(
-    null,
-  );
+  const [venueMenu, setVenueMenu] = useState<{
+    venueId: string;
+    dishes: DishDetail[];
+    venueName?: string;
+  } | null>(null);
   // Set when the review was opened for a stall: a stall with one dish needs no picking.
   const autoPickVenueRef = useRef<string | null>(null);
   // Server results for the query that has stopped changing; null = use the cached catalog.
@@ -401,8 +403,17 @@ export function ReviewScreen({ navigation, route }: Props) {
   const blockCardDismiss = isSearching || choiceSheetOpen;
   useEffect(() => {
     const cardNavigation = navigation.getParent();
-    cardNavigation?.setOptions({ gestureEnabled: !blockCardDismiss });
-    return () => cardNavigation?.setOptions({ gestureEnabled: true });
+    // While the card is first mounting, React Navigation refuses options from here ("Options
+    // cannot be set from a placeholder screen"); the lock only matters later, so skip then.
+    const setCardGesture = (enabled: boolean) => {
+      try {
+        cardNavigation?.setOptions({ gestureEnabled: enabled });
+      } catch {
+        // Not ready yet, or already gone.
+      }
+    };
+    setCardGesture(!blockCardDismiss);
+    return () => setCardGesture(true);
   }, [blockCardDismiss, navigation]);
 
   // Leaving with an unpublished draft (it is kept, but the user walked away).
@@ -430,10 +441,10 @@ export function ReviewScreen({ navigation, route }: Props) {
   useEffect(() => {
     if (!pickerVenueId) return;
     let active = true;
-    getHungryService()
-      .discovery.listDishesByVenue(pickerVenueId)
-      .then((dishes) => {
-        if (active) setVenueMenu({ venueId: pickerVenueId, dishes });
+    const discovery = getHungryService().discovery;
+    Promise.all([discovery.listDishesByVenue(pickerVenueId), discovery.getVenue(pickerVenueId)])
+      .then(([dishes, venue]) => {
+        if (active) setVenueMenu({ venueId: pickerVenueId, dishes, venueName: venue?.name });
       })
       .catch((error: unknown) =>
         reportError(error, { screen: "ReviewScreen", action: "load_venue_menu" }),
@@ -453,7 +464,10 @@ export function ReviewScreen({ navigation, route }: Props) {
   const pickerVenue = pickerVenueId
     ? (repository.getVenueById(pickerVenueId) ?? {
         id: pickerVenueId,
-        name: pickerDishes[0]?.venueName ?? "This stall",
+        name:
+          (venueMenu?.venueId === pickerVenueId ? venueMenu.venueName : undefined) ??
+          pickerDishes[0]?.venueName ??
+          "This stall",
       })
     : undefined;
 

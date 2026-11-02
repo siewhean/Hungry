@@ -6,6 +6,7 @@ import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useUIStore } from "@/store/useUIStore";
 import { AccessibleImage, AppSymbol, AppText, Card } from "../ui";
+import { reportError } from "@/lib/monitoring/reportError";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 
 interface MediaPickerProps {
@@ -33,6 +34,16 @@ export function MediaPicker({
   const showToast = useUIStore((state) => state.showToast);
 
   const handlePickMedia = async (type: "image" | "video") => {
+    try {
+      await pickMedia(type);
+    } catch (error) {
+      // A picker that cannot open must say so, not do nothing.
+      reportError(error, { screen: "MediaPicker", action: `pick_${type}` });
+      showToast({ message: "Couldn't open your photos. Try again.", tone: "error" });
+    }
+  };
+
+  const pickMedia = async (type: "image" | "video") => {
     const remainingPhotos = Math.max(0, maxPhotos - photos.length);
     if (type === "image" && remainingPhotos === 0) return;
 

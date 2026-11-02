@@ -22,7 +22,7 @@ export function ListsHomeScreen({ navigation }: Props) {
   const savedCount = useProfileStore((state) => state.profile.favouriteDishIds.length);
 
   return (
-    <ProfileScreenShell title="Lists" subtitle="Everything you've saved and listed, in one place.">
+    <ProfileScreenShell title="Lists">
       <View style={{ gap: 12 }}>
         <ListsHubRow
           title="Saved"

@@ -238,7 +238,7 @@
     "src/store/useAchievementTallyStore.ts": 100,
     "src/store/useActivityStore.ts": 99.1,
     "src/store/useChecklistStore.ts": 80.6,
-    "src/store/useChoiceSheetStore.ts": 98.8,
+    "src/store/useChoiceSheetStore.ts": 100,
     "src/store/useConsentStore.ts": 100,
     "src/store/useDiscoveryStore.ts": 88.4,
     "src/store/useFoodCredStore.ts": 97.1,
