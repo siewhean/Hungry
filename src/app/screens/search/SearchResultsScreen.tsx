@@ -31,6 +31,7 @@ import {
   PressableScale,
   Screen,
   Skeleton,
+  SwipeSections,
   UnderlineTabs,
 } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -358,7 +359,8 @@ const RawCatalogCard = memo(function RawCatalogCard({
             justifyContent: "center",
             position: "absolute",
             right: GRID_GAP / 2 + spacing[2],
-            top: GRID_GAP / 2 + itemWidth * GRID_IMAGE_RATIO - 44 - spacing[2],
+            // Top right of the picture, where a heart sits on a photo card.
+            top: GRID_GAP / 2 + spacing[2],
             width: 44,
           }}
         />
@@ -1636,7 +1638,17 @@ function RawCatalogBrowseGrid({
             style={{ marginHorizontal: spacing[4] }}
           />
         ) : null}
-        <View style={{ flex: 1, opacity: isRefreshing ? 0.45 : 1 }}>
+        {/* A swipe sideways over the results switches Dishes / Stalls. The left screen edge stays
+            the system's back swipe: SwipeSections ignores a swipe that starts there. */}
+        <SwipeSections
+          style={{ opacity: isRefreshing ? 0.45 : 1 }}
+          onSwipeLeft={
+            allowModeSwitch && mode === "dishes" ? () => switchMode("stalls") : undefined
+          }
+          onSwipeRight={
+            allowModeSwitch && mode === "stalls" ? () => switchMode("dishes") : undefined
+          }
+        >
           <FlashList
             ref={listRef}
             data={rows}
@@ -1760,7 +1772,7 @@ function RawCatalogBrowseGrid({
               <ActivityIndicator color={palette.orange} />
             </View>
           ) : null}
-        </View>
+        </SwipeSections>
       </View>
       <BottomSheet ref={filterSheetRef} accessibilityLabel="Filters and sort" snapPoints={["85%"]}>
         <BottomSheetScrollView contentContainerStyle={{ gap: spacing[3] }}>

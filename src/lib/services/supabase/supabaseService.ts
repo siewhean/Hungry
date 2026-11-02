@@ -290,6 +290,33 @@ function readEmbeddedCount(value: unknown): number | undefined {
   return Number.isFinite(count) ? count : undefined;
 }
 
+/**
+ * How many items each list holds. Read from `portfolio_id` alone: signed-in readers have column
+ * privileges on portfolio_items (not the table, which keeps `private_notes` private), and the
+ * `portfolio_items(count)` embed asks for more than that and is refused (42501).
+ */
+async function readPortfolioItemCounts(
+  client: NonNullable<ReturnType<typeof getSupabaseClient>>,
+  portfolioIds: readonly string[],
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  if (portfolioIds.length === 0) return counts;
+  const { data, error } = await client
+    .from("portfolio_items")
+    .select("portfolio_id")
+    .in("portfolio_id", [...portfolioIds]);
+  if (error) throw error;
+  for (const row of (data ?? []) as Row[]) {
+    const id = String(row.portfolio_id ?? "");
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function withItemCount(row: Row, counts: ReadonlyMap<string, number>): Row {
+  return { ...row, item_count: counts.get(String(row.id ?? "")) ?? 0 };
+}
+
 function mapPortfolioItem(row: Row): PortfolioItem {
   return {
     id: String(row.id ?? ""),
@@ -8715,8 +8742,7 @@ export const supabaseService: HungryService = {
     async getPortfolios(filters?: any) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      // Item counts ride along, so list cards show real counts without opening each list.
-      let query = client.from("portfolios").select("*, portfolio_items(count)");
+      let query = client.from("portfolios").select("*");
 
       if (filters?.userId) {
         query = query.eq("owner_id", filters.userId);
@@ -8737,19 +8763,22 @@ export const supabaseService: HungryService = {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data || []).map((row: Row) => mapPortfolio(row));
+      const rows = (data || []) as Row[];
+      // Item counts, so list cards show real counts without opening each list (one batched read).
+      const counts = await readPortfolioItemCounts(
+        client,
+        rows.map((row) => String(row.id ?? "")),
+      );
+      return rows.map((row) => mapPortfolio(withItemCount(row, counts)));
     },
 
     async getPortfolio(id: string) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      const { data, error } = await client
-        .from("portfolios")
-        .select("*, portfolio_items(count)")
-        .eq("id", id)
-        .single();
+      const { data, error } = await client.from("portfolios").select("*").eq("id", id).single();
       if (error) throw error;
-      return mapPortfolio(data as Row);
+      const counts = await readPortfolioItemCounts(client, [id]);
+      return mapPortfolio(withItemCount(data as Row, counts));
     },
 
     async getPublicPortfolio(id: string) {

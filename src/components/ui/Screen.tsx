@@ -1,4 +1,11 @@
-import type { PropsWithChildren, ReactElement, ReactNode, RefObject } from "react";
+import {
+  useCallback,
+  type ComponentProps,
+  type PropsWithChildren,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +19,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useIsInsideMainTabs } from "@/hooks/useIsInsideMainTabs";
+import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AppHeader } from "./AppHeader";
@@ -62,7 +70,21 @@ export function Screen({
   const effectiveHeaderGap = headerGap ?? spacing[5];
   const insets = useSafeAreaInsets();
   const insideTabs = useIsInsideMainTabs();
-  const { onScroll, scrollEventThrottle } = useScrollToRevealBack();
+  const { onScroll: onScrollRevealBack, scrollEventThrottle } = useScrollToRevealBack();
+  // A tapped text box must stay in view: on a form the keyboard lifts the page (above) and this
+  // scrolls the focused box clear of the keyboard; elsewhere iOS insets the scroll view itself.
+  const reveal = useKeyboardRevealFocusedInput();
+  const setScrollNode = useCallback(
+    (node: ScrollView | null) => {
+      (reveal.scrollRef as { current: ScrollView | null }).current = node;
+      if (scrollRef) (scrollRef as { current: ScrollView | null }).current = node;
+    },
+    [reveal.scrollRef, scrollRef],
+  );
+  const onScroll: NonNullable<ComponentProps<typeof ScrollView>["onScroll"]> = (event) => {
+    onScrollRevealBack(event);
+    reveal.onScroll(event);
+  };
 
   const header =
     title || headerRight || headerLeft ? (
@@ -80,7 +102,8 @@ export function Screen({
   const body = scroll ? (
     <ScrollView
       style={styles.flex}
-      ref={scrollRef}
+      ref={setScrollNode}
+      automaticallyAdjustKeyboardInsets={!keyboardAvoiding}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[
         styles.content,
@@ -99,6 +122,7 @@ export function Screen({
       refreshControl={refreshControl}
     >
       <View
+        onFocus={keyboardAvoiding ? reveal.onFocus : undefined}
         style={[
           styles.inner,
           fullWidth && { maxWidth: undefined },

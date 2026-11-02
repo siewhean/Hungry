@@ -37,3 +37,5 @@ export * from "./Skeleton";
 export * from "./StatusChip";
 export * from "./StickyBottomBar";
 export * from "./UnderlineTabs";
+export * from "./EdgeSwipeZones";
+export * from "./SwipeSections";

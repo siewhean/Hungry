@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Modal, Pressable, View, type LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
@@ -25,6 +25,8 @@ type Props = {
   header: ReactNode;
   children: ReactNode;
   closeLabel?: string;
+  /** Called once the sheet has finished closing and its modal is gone from the screen. */
+  onClosed?: () => void;
   /** Share of the screen the sheet may fill. */
   maxHeightRatio?: number;
 };
@@ -40,6 +42,7 @@ export function DismissibleSheet({
   header,
   children,
   closeLabel = "Close",
+  onClosed,
   maxHeightRatio = 0.7,
 }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -49,6 +52,17 @@ export function DismissibleSheet({
   const progress = useSharedValue(0);
   const drag = useSharedValue(0);
   const panelHeight = useSharedValue(420);
+  const wasMounted = useRef(mounted);
+  // The modal is gone once `mounted` flips off after having been on.
+  useEffect(() => {
+    if (mounted) {
+      wasMounted.current = true;
+      return;
+    }
+    if (!wasMounted.current) return;
+    wasMounted.current = false;
+    onClosed?.();
+  }, [mounted, onClosed]);
 
   useEffect(() => {
     if (visible) {

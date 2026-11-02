@@ -140,7 +140,6 @@ import {
 } from "@/features/discover/stallShowcase";
 
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
-const DISCOVER_STALL_SHOW_MORE_COUNT = 20;
 
 /** A horizontal rail with fewer dishes than this is hidden. */
 const MIN_DISCOVER_RAIL_ITEMS = 3;
@@ -186,7 +185,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const isFocused = useIsFocused();
-  const isTabSwipeLockedRef = useRef(false);
   const {
     repository,
     isSupabaseDataSource,
@@ -284,17 +282,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const edgeToEdgeHorizontalScrollStyle = {
     width: screenWidth,
   };
-  const setTabSwipeLocked = useCallback(
-    (isLocked: boolean) => {
-      if (isTabSwipeLockedRef.current === isLocked) {
-        return;
-      }
-
-      isTabSwipeLockedRef.current = isLocked;
-      navigation.setOptions({ swipeEnabled: !isLocked });
-    },
-    [navigation],
-  );
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
   const isDeveloperMode = useMerchantStore((state) => state.developerMerchantMode);
@@ -312,15 +299,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     return cancelWarmup;
   }, [navigation, repository]);
 
-  useEffect(
-    () => () => {
-      if (isTabSwipeLockedRef.current) {
-        navigation.setOptions({ swipeEnabled: true });
-      }
-    },
-    [navigation],
-  );
-
   const setDecideForMe = useDiscoveryStore((state) => state.setDecideForMe);
   const searchIconSize = 52;
   const openSearchHome = useCallback(() => {
@@ -328,9 +306,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     navigation.navigate("SearchHome");
   }, [navigation]);
 
-  const [visibleAreaStallCount, setVisibleAreaStallCount] = useState(
-    DISCOVER_STALL_INITIAL_VISIBLE_COUNT,
-  );
   const handleDiscoverViewportLayout = useCallback((event: LayoutChangeEvent) => {
     const nextHeight = event.nativeEvent.layout.height;
     if (nextHeight <= 0) {
@@ -343,9 +318,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, []);
 
   const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "With friends" : "Spin the wheel";
-  useEffect(() => {
-    setVisibleAreaStallCount(DISCOVER_STALL_INITIAL_VISIBLE_COUNT);
-  }, [discoverLocationLabel, activeDiscoverChipSignature]);
 
   const themeTints = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -791,19 +763,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       : "Hawker classics";
   const [isMenuLessGroupOpen, setIsMenuLessGroupOpen] = useState(false);
   const areaStallCards = useMemo(
-    () => listedAreaStallCards.slice(0, visibleAreaStallCount),
-    [listedAreaStallCards, visibleAreaStallCount],
+    () => listedAreaStallCards.slice(0, DISCOVER_STALL_INITIAL_VISIBLE_COUNT),
+    [listedAreaStallCards],
   );
-  const hasMoreAreaStalls = areaStallCards.length < listedAreaStallCards.length;
-  const nextAreaStallRevealCount = Math.min(
-    DISCOVER_STALL_SHOW_MORE_COUNT,
-    Math.max(0, listedAreaStallCards.length - areaStallCards.length),
-  );
-  const handleShowMoreAreaStalls = useCallback(() => {
-    setVisibleAreaStallCount((count) =>
-      Math.min(count + DISCOVER_STALL_SHOW_MORE_COUNT, listedAreaStallCards.length),
-    );
-  }, [listedAreaStallCards.length]);
   const handleToggleMenuLessGroup = useCallback(() => {
     if (!isMenuLessGroupOpen) {
       trackAnalyticsEvent("home_cold_start_group_opened", {
@@ -1658,7 +1620,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           options={sortedChips}
           selectedIds={activeDiscoverChipIds}
           onSelect={toggleDiscoverChip}
-          onSwipeLockChange={setTabSwipeLocked}
           renderLeftIcon={(chip, isActive) =>
             chip.id === "dietary" ? (
               <Salad size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
@@ -2151,17 +2112,20 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     accessibilityLabel={
                       isUserMode && currentPlace
                         ? `See all stalls at ${currentPlace.name}`
-                        : "View stalls on map"
+                        : "See all stalls"
                     }
                     hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
                     onPress={() =>
-                      isUserMode && currentPlace
-                        ? navigation.navigate("SearchResults", {
-                            browseMode: "stalls",
-                            placeId: currentPlace.id,
-                            placeName: currentPlace.name,
-                          })
-                        : navigation.navigate("DiscoverMap")
+                      navigation.navigate(
+                        "SearchResults",
+                        isUserMode && currentPlace
+                          ? {
+                              browseMode: "stalls",
+                              placeId: currentPlace.id,
+                              placeName: currentPlace.name,
+                            }
+                          : { browseMode: "stalls" },
+                      )
                     }
                     style={{
                       alignItems: "center",
@@ -2193,33 +2157,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     <DiscoverStallListLoadingSkeleton />
                   ) : areaStallCards.length ? (
                     renderStallRail(areaStallCards)
-                  ) : null}
-                  {hasMoreAreaStalls ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Show ${nextAreaStallRevealCount} more stalls ${discoverAreaPhrase}`}
-                      onPress={handleShowMoreAreaStalls}
-                      style={[
-                        shadows.card,
-                        {
-                          alignItems: "center",
-                          alignSelf: "stretch",
-                          backgroundColor: themeTints.cardBg,
-                          borderColor: palette.border,
-                          borderRadius: componentRadii.button,
-                          borderWidth: themeTints.isDark ? 0 : 1,
-                          flexDirection: "row",
-                          gap: spacing[2],
-                          justifyContent: "center",
-                          paddingVertical: spacing[3],
-                        },
-                      ]}
-                    >
-                      <AppText variant="bodySmall" tone="accent" style={{ fontWeight: "800" }}>
-                        Show {nextAreaStallRevealCount} more
-                      </AppText>
-                      <ChevronRight color={palette.orange} size={18} />
-                    </Pressable>
                   ) : null}
                   {foldedStallCards.length && !showDiscoverFilterRailSkeleton ? (
                     <>

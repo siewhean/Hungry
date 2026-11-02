@@ -166,7 +166,7 @@ test.describe("home page walk", () => {
         });
         await test.step("10. The stalls section arrow opens the stall list", async () => {
           const stallsHeader = page
-            .getByRole("button", { name: /^(See all stalls at |View stalls on map)/ })
+            .getByRole("button", { name: /^See all stalls/ })
             .filter({ visible: true })
             .last();
           await stallsHeader.scrollIntoViewIfNeeded();

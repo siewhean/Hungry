@@ -112,6 +112,7 @@ import {
   getStallPin,
   summarizeStallRating,
 } from "@/features/detail/stallLocation";
+import { DETAIL_ACTION_BAR_CLEARANCE } from "@/components/detail/DetailActionBar";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { askMediaSource } from "@/lib/permissions/mediaSource";
 import { askChoice } from "@/store/useChoiceSheetStore";
@@ -1056,20 +1057,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const openVisitedSheet = () => navigation.navigate("StallVisited", { venueId: venue.id });
 
   const openReportHours = () => {
-    const params = {
-      venueId: venue.id,
-      subjectName: displayName,
-      initialKind: "wrong_hours" as const,
-    };
+    const params = { venueId: venue.id, subjectName: displayName };
     if (
       !requireAccount("Sign in to add opening hours for this stall.", {
-        name: "ReportProblem",
+        name: "SuggestOpeningHours",
         params,
       })
     ) {
       return;
     }
-    navigation.navigate("ReportProblem", params);
+    navigation.navigate("SuggestOpeningHours", params);
   };
 
   const openWriteReview = () => {
@@ -1304,7 +1301,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
             onScroll={onScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
-              paddingBottom: insets.bottom + spacing[6],
+              paddingBottom:
+                Math.max(insets.bottom, spacing[3]) + DETAIL_ACTION_BAR_CLEARANCE + spacing[4],
             }}
           >
             {/* Hero: swipeable photos (owner cover, stall, dishes, reviews). With none there is no

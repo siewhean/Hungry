@@ -3,7 +3,7 @@
  * or an address, and every result resolves to a planning area (an address shows its area,
  * never the street). Pure, so the screen only fetches and renders.
  */
-import type { OneMapAddress } from "@/lib/geo/oneMap";
+import { SINGAPORE_POSTAL_CODE_PATTERN, type OneMapAddress } from "@/lib/geo/oneMap";
 import type { SingaporeArea } from "@/app/screens/onboarding/singaporeAreas";
 import type { Coordinate } from "@/types/domain";
 
@@ -165,4 +165,17 @@ export function nearestAreaName(coordinate: Coordinate, areas: readonly Singapor
     }
   }
   return best?.name ?? "Singapore";
+}
+
+/**
+ * The address a typed 6-digit postal code points at, or null when the text is not a postal code
+ * (or OneMap has no such code). Its position finds the places nearby; the code is never a row.
+ */
+export function postalCodeAnchor(
+  query: string,
+  addresses: readonly OneMapAddress[],
+): OneMapAddress | null {
+  const code = query.trim();
+  if (!SINGAPORE_POSTAL_CODE_PATTERN.test(code)) return null;
+  return addresses.find((address) => address.postalCode === code) ?? null;
 }

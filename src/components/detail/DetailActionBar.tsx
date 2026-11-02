@@ -20,6 +20,9 @@ import { useHungryTheme } from "@/theme";
 type IconComponent = ComponentType<{ size?: number; color?: string; fill?: string }>;
 
 /** One choice in the menu that opens when its bar button is held. */
+/** Height of the bar above the safe area (buttons, labels, padding), so pages can leave room for it. */
+export const DETAIL_ACTION_BAR_CLEARANCE = 92;
+
 export type DetailHoldOption = {
   id: string;
   label: string;

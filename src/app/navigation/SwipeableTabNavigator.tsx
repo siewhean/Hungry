@@ -16,9 +16,10 @@ import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-nati
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppBottomTabItem, Skeleton } from "@/components/ui";
+import { AppBottomTabItem, EdgeSwipeZones, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { adjacentTabKey, mainTabOrder, type MainTabKey } from "@/features/navigation/swipeIntent";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useFadeRiseIn } from "@/lib/motion/uiMotion";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -142,10 +143,57 @@ function TabScreenLoadingPlaceholder() {
   );
 }
 
+const MAIN_TAB_ORDER = mainTabOrder({
+  socialFeedEnabled: FEATURE_FLAGS.socialFeedEnabled,
+  reviewCreationEnabled: FEATURE_FLAGS.reviewCreationEnabled,
+});
+
+/**
+ * Opens the Post card (the review composer) from the bottom, the way the Post button does. A
+ * guest signs in first and lands on the composer afterwards.
+ */
+function useOpenCreateReview() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>() ?? navigation;
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  return useCallback(() => {
+    if (!isAuthenticated) {
+      setReturnRoute({ name: "ReviewStack", params: { screen: "ReviewMain" } });
+      rootNavigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+    rootNavigation.navigate("ReviewStack", { screen: "ReviewMain" });
+  }, [isAuthenticated, rootNavigation, setReturnRoute]);
+}
+
+/**
+ * A swipe in from a screen edge goes to the next or previous page of the tab bar. The Post
+ * button sits between the pages, so the swipe there opens the review card from the bottom.
+ */
+function useTabEdgeSwipes(current: MainTabKey) {
+  // Plain tab names: the swipe never carries params, so Profile reopens where it was.
+  const navigation = useNavigation<MaterialTopTabNavigationProp<Record<string, undefined>>>();
+  const openCreateReview = useOpenCreateReview();
+  const go = useCallback(
+    (direction: "previous" | "next") => {
+      const target = adjacentTabKey(MAIN_TAB_ORDER, current, direction);
+      if (!target) return undefined;
+      return () => {
+        if (target === "Create") openCreateReview();
+        else navigation.navigate(target);
+      };
+    },
+    [current, navigation, openCreateReview],
+  );
+  return { onSwipeFromLeft: go("previous"), onSwipeFromRight: go("next") };
+}
+
 function createDeferredTabScreen(loader: TabScreenLoader) {
   function DeferredTabScreen(props: object) {
     const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
     const route = useRoute();
+    const edgeSwipes = useTabEdgeSwipes(route.name as MainTabKey);
     const reduceMotion = useReduceMotion();
     // Whether this is the tab on show in the tab bar (not whether a screen is pushed over it, so
     // coming back from a stall page does not replay the entrance).
@@ -169,7 +217,9 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
 
     return (
       <Animated.View style={[styles.tabPage, riseStyle]}>
-        {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
+        <EdgeSwipeZones {...edgeSwipes}>
+          {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
+        </EdgeSwipeZones>
       </Animated.View>
     );
   }
@@ -353,8 +403,8 @@ export function SwipeableTabNavigator() {
       tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
-        // The tabs open from the tab bar, each rising in from the bottom: a sideways swipe left
-        // half-drawn pages between them.
+        // No drag-along pager: it half-drew the neighbouring pages. The tabs open from the bar or
+        // from a swipe in from a screen edge (EdgeSwipeZones), each rising in from the bottom.
         swipeEnabled: false,
         animationEnabled: false,
         lazy: !tabPreloadEnabled,

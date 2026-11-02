@@ -19,7 +19,11 @@ import {
 } from "@/features/detail/similarDishes";
 import { isSoldOut } from "@/features/merchant/menuSections";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
-import { DetailActionBar, type DetailAction } from "@/components/detail/DetailActionBar";
+import {
+  DETAIL_ACTION_BAR_CLEARANCE,
+  DetailActionBar,
+  type DetailAction,
+} from "@/components/detail/DetailActionBar";
 import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
 import { DishTasteCard } from "@/components/dish/DishTasteCard";
 import { PhotoPager } from "@/components/dish/PhotoPager";
@@ -996,7 +1000,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             onScroll={onHeroScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
-              paddingBottom: insets.bottom + spacing[6],
+              paddingBottom:
+                Math.max(insets.bottom, spacing[3]) + DETAIL_ACTION_BAR_CLEARANCE + spacing[4],
             }}
           >
             <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>

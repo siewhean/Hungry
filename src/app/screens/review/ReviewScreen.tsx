@@ -29,6 +29,7 @@ import {
   AppText,
   Button,
   Card,
+  EdgeSwipeZones,
   Input,
   Screen,
   Badge,
@@ -44,7 +45,9 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { adjacentTabKey, mainTabOrder } from "@/features/navigation/swipeIntent";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { describePublishError, isExpectedPublishError } from "@/features/review/publishErrorCopy";
@@ -99,6 +102,11 @@ function FoldChevron({ open, color }: { open: boolean; color: string }) {
 
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 
+const POST_TAB_ORDER = mainTabOrder({
+  socialFeedEnabled: FEATURE_FLAGS.socialFeedEnabled,
+  reviewCreationEnabled: FEATURE_FLAGS.reviewCreationEnabled,
+});
+
 type PickerListItem = { type: "header"; title: string } | { type: "row"; row: PickerRow };
 
 // Music is never saved and video is never uploaded with a review, so the editor hides both
@@ -140,6 +148,12 @@ export function ReviewScreen({ navigation, route }: Props) {
   const [isSearching, setIsSearching] = useState(false);
   const [pickerVenueId, setPickerVenueId] = useState<string | null>(null);
   const [remoteDish, setRemoteDish] = useState<DishDetail | undefined>(undefined);
+  // The routed stall's menu from the service: a live build's sync catalog may not hold it.
+  const [venueMenu, setVenueMenu] = useState<{ venueId: string; dishes: DishDetail[] } | null>(
+    null,
+  );
+  // Set when the review was opened for a stall: a stall with one dish needs no picking.
+  const autoPickVenueRef = useRef<string | null>(null);
   // Server results for the query that has stopped changing; null = use the cached catalog.
   const [serverRows, setServerRows] = useState<{ query: string; rows: PickerRow[] } | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -335,6 +349,7 @@ export function ReviewScreen({ navigation, route }: Props) {
       }
       // Opened for a stall without a dish: ask which dish instead of guessing.
       if (routeVenueId) {
+        autoPickVenueRef.current = routeVenueId;
         setPickerVenueId(routeVenueId);
         setIsSearching(true);
       }
@@ -380,6 +395,16 @@ export function ReviewScreen({ navigation, route }: Props) {
     };
   }, [repository, selectedDishId]);
 
+  // A swipe down on the card while a sheet or the picker is on top of it would dismiss the card
+  // under that modal and leave the screen frozen: the card stays put until they are closed.
+  const choiceSheetOpen = useChoiceSheetStore((state) => state.sheetOpen);
+  const blockCardDismiss = isSearching || choiceSheetOpen;
+  useEffect(() => {
+    const cardNavigation = navigation.getParent();
+    cardNavigation?.setOptions({ gestureEnabled: !blockCardDismiss });
+    return () => cardNavigation?.setOptions({ gestureEnabled: true });
+  }, [blockCardDismiss, navigation]);
+
   // Leaving with an unpublished draft (it is kept, but the user walked away).
   useEffect(
     () =>
@@ -402,8 +427,46 @@ export function ReviewScreen({ navigation, route }: Props) {
     }
   }, [isAuthenticated, rootNavigation, setReturnRoute]);
 
-  const pickerVenue = pickerVenueId ? repository.getVenueById(pickerVenueId) : undefined;
-  const pickerDishes = pickerVenue ? repository.listDishesByVenue(pickerVenue.id) : [];
+  useEffect(() => {
+    if (!pickerVenueId) return;
+    let active = true;
+    getHungryService()
+      .discovery.listDishesByVenue(pickerVenueId)
+      .then((dishes) => {
+        if (active) setVenueMenu({ venueId: pickerVenueId, dishes });
+      })
+      .catch((error: unknown) =>
+        reportError(error, { screen: "ReviewScreen", action: "load_venue_menu" }),
+      );
+    return () => {
+      active = false;
+    };
+  }, [pickerVenueId]);
+
+  const localPickerDishes = pickerVenueId ? repository.listDishesByVenue(pickerVenueId) : [];
+  const pickerDishes =
+    localPickerDishes.length > 0
+      ? localPickerDishes
+      : venueMenu && venueMenu.venueId === pickerVenueId
+        ? venueMenu.dishes
+        : [];
+  const pickerVenue = pickerVenueId
+    ? (repository.getVenueById(pickerVenueId) ?? {
+        id: pickerVenueId,
+        name: pickerDishes[0]?.venueName ?? "This stall",
+      })
+    : undefined;
+
+  // A stall with a single dish: pick it, so the diner goes straight to writing.
+  useEffect(() => {
+    if (!pickerVenueId || autoPickVenueRef.current !== pickerVenueId) return;
+    if (pickerDishes.length === 0) return;
+    autoPickVenueRef.current = null;
+    if (pickerDishes.length !== 1) return;
+    selectDish(pickerVenueId, pickerDishes[0].id);
+    setPickerVenueId(null);
+    setIsSearching(false);
+  }, [pickerVenueId, pickerDishes, selectDish]);
 
   const openPicker = () => {
     setPickerVenueId(null);
@@ -562,6 +625,17 @@ export function ReviewScreen({ navigation, route }: Props) {
   };
 
   if (!isAuthenticated) return null;
+
+  // The Post card sits between two pages of the tab bar: a swipe in from either edge goes there.
+  const goToTab = (direction: "previous" | "next") => {
+    const target = adjacentTabKey(POST_TAB_ORDER, "Create", direction);
+    if (!target || target === "Create") return undefined;
+    return () => rootNavigation.navigate("MainTabs", { screen: target } as never);
+  };
+  const cardEdgeSwipes = {
+    onSwipeFromLeft: goToTab("previous"),
+    onSwipeFromRight: goToTab("next"),
+  };
 
   if (!draftHydrated) {
     return (
@@ -837,222 +911,156 @@ export function ReviewScreen({ navigation, route }: Props) {
   ) : null;
 
   return (
-    <Screen
-      keyboardAvoiding
-      title="Write a review"
-      scroll
-      scrollRef={scrollRef}
-      headerLeft={
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Cancel"
-          accessibilityHint="Closes the editor and keeps your draft"
-          onPress={cancelEditor}
-          style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}
+    <EdgeSwipeZones {...cardEdgeSwipes}>
+      <Screen
+        keyboardAvoiding
+        title="Write a review"
+        scroll
+        scrollRef={scrollRef}
+        headerLeft={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cancel"
+            accessibilityHint="Closes the editor and keeps your draft"
+            onPress={cancelEditor}
+            style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}
+          >
+            <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
+              Cancel
+            </AppText>
+          </Pressable>
+        }
+        headerRight={
+          <Button
+            label="Publish"
+            size="sm"
+            fullWidth={false}
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            disabled={Boolean(publishBlockedReason)}
+            accessibilityHint={publishBlockedReason ?? "Posts your review"}
+          />
+        }
+        footer={publishBlockedHint ?? undefined}
+      >
+        <FeedErrorBoundary
+          title="Review editor failed"
+          body="We hit a snag loading the editor. Please try again."
         >
-          <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-            Cancel
-          </AppText>
-        </Pressable>
-      }
-      headerRight={
-        <Button
-          label="Publish"
-          size="sm"
-          fullWidth={false}
-          onPress={handleSubmit}
-          loading={isSubmitting}
-          disabled={Boolean(publishBlockedReason)}
-          accessibilityHint={publishBlockedReason ?? "Posts your review"}
-        />
-      }
-      footer={publishBlockedHint ?? undefined}
-    >
-      <FeedErrorBoundary
-        title="Review editor failed"
-        body="We hit a snag loading the editor. Please try again."
-      >
-        <View style={{ gap: spacing[6] }}>
-          {dishSection}
-          {photoSection}
-          {ratingSection}
-          {textSection}
-          {musicSection}
-          <View style={{ gap: spacing[4] }}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ expanded: detailOpen }}
-              accessibilityLabel="Add more detail (optional)"
-              onPress={() => setDetailOpen((open) => !open)}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                minHeight: 44,
-              }}
-            >
-              <AppText variant="h3">
-                Add more detail (optional){optionalCount > 0 ? ` · ${optionalCount}` : ""}
-              </AppText>
-              <FoldChevron open={detailOpen} color={palette.textMuted} />
-            </Pressable>
-            {detailOpen ? (
-              <Animated.View
-                entering={reduceMotion ? undefined : FadeIn.duration(FOLD_MS)}
-                style={{ gap: spacing[6] }}
+          <View style={{ gap: spacing[6] }}>
+            {dishSection}
+            {photoSection}
+            {ratingSection}
+            {textSection}
+            {musicSection}
+            <View style={{ gap: spacing[4] }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: detailOpen }}
+                accessibilityLabel="Add more detail (optional)"
+                onPress={() => setDetailOpen((open) => !open)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  minHeight: 44,
+                }}
               >
-                {tagsSection}
-                {tasteSection}
-                {recommendSection}
-              </Animated.View>
-            ) : null}
+                <AppText variant="h3">
+                  Add more detail (optional){optionalCount > 0 ? ` · ${optionalCount}` : ""}
+                </AppText>
+                <FoldChevron open={detailOpen} color={palette.textMuted} />
+              </Pressable>
+              {detailOpen ? (
+                <Animated.View
+                  entering={reduceMotion ? undefined : FadeIn.duration(FOLD_MS)}
+                  style={{ gap: spacing[6] }}
+                >
+                  {tagsSection}
+                  {tasteSection}
+                  {recommendSection}
+                </Animated.View>
+              ) : null}
+            </View>
           </View>
-        </View>
-      </FeedErrorBoundary>
+        </FeedErrorBoundary>
 
-      {/* Dish picker: a real modal (viewport-sized, Android back closes it) instead
+        {/* Dish picker: a real modal (viewport-sized, Android back closes it) instead
           of an overlay inside the scroll content. */}
-      <Modal
-        visible={isSearching}
-        animationType="slide"
-        onRequestClose={() => (pickerVenue ? setPickerVenueId(null) : closePicker())}
-      >
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: palette.bg,
-            paddingHorizontal: spacing[4],
-            paddingTop: insets.top + spacing[4],
-            paddingBottom: insets.bottom,
-          }}
+        <Modal
+          visible={isSearching}
+          animationType="slide"
+          onRequestClose={() => (pickerVenue ? setPickerVenueId(null) : closePicker())}
         >
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: spacing[3],
-              marginBottom: spacing[4],
+              flex: 1,
+              backgroundColor: palette.bg,
+              paddingHorizontal: spacing[4],
+              paddingTop: insets.top + spacing[4],
+              paddingBottom: insets.bottom,
             }}
           >
-            {pickerVenue ? (
-              <>
-                <Button
-                  label="Back"
-                  variant="ghost"
-                  fullWidth={false}
-                  onPress={() => setPickerVenueId(null)}
-                />
-                <AppText variant="h3" style={{ flex: 1 }} numberOfLines={1}>
-                  {pickerVenue.name}
-                </AppText>
-              </>
-            ) : (
-              // Buttons default to 100% wide, so Close/Back are fullWidth={false}; Input's outer
-              // wrapper sizes to its content, so this flex:1 slot lets the field fill the rest.
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Input
-                  placeholder="Search dishes or stalls..."
-                  accessibilityLabel="Search dishes or stalls"
-                  value={query}
-                  onChangeText={setQuery}
-                  autoFocus
-                />
-              </View>
-            )}
-            <Button label="Close" variant="ghost" fullWidth={false} onPress={closePicker} />
-          </View>
-
-          {pickerVenue ? (
-            <FlatList
-              data={pickerDishes}
-              keyExtractor={(item) => item.id}
-              ListEmptyComponent={
-                <View style={{ gap: spacing[3] }}>
-                  <AppText tone="secondary">No dishes listed for this stall yet.</AppText>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: spacing[3],
+                marginBottom: spacing[4],
+              }}
+            >
+              {pickerVenue ? (
+                <>
                   <Button
-                    label="Suggest a dish"
-                    variant="secondary"
+                    label="Back"
+                    variant="ghost"
                     fullWidth={false}
-                    onPress={() => {
-                      // The stall page has the menu-photo flow that adds dishes.
-                      closePicker();
-                      rootNavigation.navigate("StallDetail", { id: pickerVenue.id });
-                    }}
+                    onPress={() => setPickerVenueId(null)}
+                  />
+                  <AppText variant="h3" style={{ flex: 1 }} numberOfLines={1}>
+                    {pickerVenue.name}
+                  </AppText>
+                </>
+              ) : (
+                // Buttons default to 100% wide, so Close/Back are fullWidth={false}; Input's outer
+                // wrapper sizes to its content, so this flex:1 slot lets the field fill the rest.
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Input
+                    placeholder="Search dishes or stalls..."
+                    accessibilityLabel="Search dishes or stalls"
+                    value={query}
+                    onChangeText={setQuery}
+                    autoFocus
                   />
                 </View>
-              }
-              renderItem={({ item }) => (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Review ${item.name}`}
-                  onPress={() => chooseDish(pickerVenue.id, item.id)}
-                  style={{
-                    paddingVertical: spacing[3],
-                    borderBottomWidth: 1,
-                    borderBottomColor: palette.border,
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <AppText style={{ fontWeight: "600", flex: 1 }}>{item.name}</AppText>
-                    {draft.selectedDishId === item.id ? (
-                      <AppSymbol name="selected" size={18} color={palette.orange} />
-                    ) : null}
-                  </View>
-                </Pressable>
               )}
-            />
-          ) : (
-            <FlatList
-              data={pickerListItems}
-              keyExtractor={(item) =>
-                item.type === "header" ? `header:${item.title}` : item.row.key
-              }
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-              ListEmptyComponent={
-                <AppText tone="secondary">
-                  {trimmedQuery
-                    ? `No dishes or stalls match "${trimmedQuery}".`
-                    : "No stalls to show yet."}
-                </AppText>
-              }
-              renderItem={({ item: entry }: { item: PickerListItem }) => {
-                if (entry.type === "header") {
-                  return (
-                    <AppText
-                      variant="bodySmallBold"
-                      tone="secondary"
-                      accessibilityRole="header"
-                      style={{ paddingTop: spacing[3], paddingBottom: spacing[1] }}
-                    >
-                      {entry.title}
-                    </AppText>
-                  );
+              <Button label="Close" variant="ghost" fullWidth={false} onPress={closePicker} />
+            </View>
+
+            {pickerVenue ? (
+              <FlatList
+                data={pickerDishes}
+                keyExtractor={(item) => item.id}
+                ListEmptyComponent={
+                  <View style={{ gap: spacing[3] }}>
+                    <AppText tone="secondary">No dishes listed for this stall yet.</AppText>
+                    <Button
+                      label="Suggest a dish"
+                      variant="secondary"
+                      fullWidth={false}
+                      onPress={() => {
+                        // The stall page has the menu-photo flow that adds dishes.
+                        closePicker();
+                        rootNavigation.navigate("StallDetail", { id: pickerVenue.id });
+                      }}
+                    />
+                  </View>
                 }
-                const item = entry.row;
-                const isDish = item.kind === "dish";
-                const title = isDish ? item.dish.name : item.venue.name;
-                const subtitle = pickerRowSubtitle(item);
-                const thumbnail = isDish ? item.dish.imageUrl : item.venue.imageUrl;
-                return (
+                renderItem={({ item }) => (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel={
-                      isDish
-                        ? `Review ${title} at ${item.dish.venueName}`
-                        : `Choose a dish at ${title}`
-                    }
-                    onPress={() =>
-                      isDish
-                        ? chooseDish(item.dish.venueId, item.dish.id)
-                        : setPickerVenueId(item.venue.id)
-                    }
+                    accessibilityLabel={`Review ${item.name}`}
+                    onPress={() => chooseDish(pickerVenue.id, item.id)}
                     style={{
                       paddingVertical: spacing[3],
                       borderBottomWidth: 1,
@@ -1062,49 +1070,117 @@ export function ReviewScreen({ navigation, route }: Props) {
                     <View
                       style={{
                         flexDirection: "row",
+                        justifyContent: "space-between",
                         alignItems: "center",
-                        gap: spacing[3],
                       }}
                     >
-                      {thumbnail ? (
-                        <AccessibleImage
-                          decorative
-                          source={{ uri: thumbnail }}
-                          style={{ width: 40, height: 40, borderRadius: radii.md }}
-                        />
-                      ) : (
-                        <View
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: radii.md,
-                            backgroundColor: palette.bgSoft,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <AppSymbol name="dish" size={18} color={palette.textMuted} />
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <AppText style={{ fontWeight: "600" }}>{title}</AppText>
-                        {subtitle ? (
-                          <AppText variant="bodySmall" tone="secondary">
-                            {subtitle}
-                          </AppText>
-                        ) : null}
-                      </View>
-                      {isDish ? null : (
-                        <AppSymbol name="chevronRight" size={18} color={palette.textMuted} />
-                      )}
+                      <AppText style={{ fontWeight: "600", flex: 1 }}>{item.name}</AppText>
+                      {draft.selectedDishId === item.id ? (
+                        <AppSymbol name="selected" size={18} color={palette.orange} />
+                      ) : null}
                     </View>
                   </Pressable>
-                );
-              }}
-            />
-          )}
-        </View>
-      </Modal>
-    </Screen>
+                )}
+              />
+            ) : (
+              <FlatList
+                data={pickerListItems}
+                keyExtractor={(item) =>
+                  item.type === "header" ? `header:${item.title}` : item.row.key
+                }
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
+                ListEmptyComponent={
+                  <AppText tone="secondary">
+                    {trimmedQuery
+                      ? `No dishes or stalls match "${trimmedQuery}".`
+                      : "No stalls to show yet."}
+                  </AppText>
+                }
+                renderItem={({ item: entry }: { item: PickerListItem }) => {
+                  if (entry.type === "header") {
+                    return (
+                      <AppText
+                        variant="bodySmallBold"
+                        tone="secondary"
+                        accessibilityRole="header"
+                        style={{ paddingTop: spacing[3], paddingBottom: spacing[1] }}
+                      >
+                        {entry.title}
+                      </AppText>
+                    );
+                  }
+                  const item = entry.row;
+                  const isDish = item.kind === "dish";
+                  const title = isDish ? item.dish.name : item.venue.name;
+                  const subtitle = pickerRowSubtitle(item);
+                  const thumbnail = isDish ? item.dish.imageUrl : item.venue.imageUrl;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        isDish
+                          ? `Review ${title} at ${item.dish.venueName}`
+                          : `Choose a dish at ${title}`
+                      }
+                      onPress={() =>
+                        isDish
+                          ? chooseDish(item.dish.venueId, item.dish.id)
+                          : setPickerVenueId(item.venue.id)
+                      }
+                      style={{
+                        paddingVertical: spacing[3],
+                        borderBottomWidth: 1,
+                        borderBottomColor: palette.border,
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: spacing[3],
+                        }}
+                      >
+                        {thumbnail ? (
+                          <AccessibleImage
+                            decorative
+                            source={{ uri: thumbnail }}
+                            style={{ width: 40, height: 40, borderRadius: radii.md }}
+                          />
+                        ) : (
+                          <View
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: radii.md,
+                              backgroundColor: palette.bgSoft,
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <AppSymbol name="dish" size={18} color={palette.textMuted} />
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <AppText style={{ fontWeight: "600" }}>{title}</AppText>
+                          {subtitle ? (
+                            <AppText variant="bodySmall" tone="secondary">
+                              {subtitle}
+                            </AppText>
+                          ) : null}
+                        </View>
+                        {isDish ? null : (
+                          <AppSymbol name="chevronRight" size={18} color={palette.textMuted} />
+                        )}
+                      </View>
+                    </Pressable>
+                  );
+                }}
+              />
+            )}
+          </View>
+        </Modal>
+      </Screen>
+    </EdgeSwipeZones>
   );
 }
