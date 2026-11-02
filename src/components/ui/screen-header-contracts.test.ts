@@ -116,13 +116,13 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(reviews, /FilterChipRail/);
   assert.match(
     reviews,
-    /<UnderlineTabs[\s\S]*accessibilityLabel="Review sections"[\s\S]*onChange=\{setChipId\}[\s\S]*\/\* Filter chips: near you, foods and areas\.[\s\S]*<FilterChipRail[\s\S]*options=\{filterChips\.map\([\s\S]*onSelect=\{\(id\) => setChipId\(activeChip\?\.id === id \? "all" : id\)\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*gap=\{spacing\[2\]\}/,
+    /<UnderlineTabs[\s\S]*accessibilityLabel="Review sections"[\s\S]*onChange=\{setChipId\}[\s\S]*\/\* Filter chips: near you, foods and areas\.[\s\S]*<FilterChipRail[\s\S]*options=\{filterChips\.map\([\s\S]*onSelect=\{\(id\) => setChipId\(activeChip\?\.id === id \? "all" : id\)\}[\s\S]*gap=\{spacing\[2\]\}/,
   );
   assert.doesNotMatch(
     reviews,
     /filterChipRailScrollStyle|filterChipRailContentStyle|handleChipRailGestureStart|handleChipRailGestureEnd|chipRailUnlockTimerRef/,
   );
-  assert.match(reviews, /navigation\.setOptions\(\{ swipeEnabled: !isLocked \}\)/);
+  assert.doesNotMatch(reviews, /swipeEnabled/);
   assert.match(reviews, /function ReviewSearchQuerySummary/);
   assert.match(reviews, /<ReviewSearchQuerySummary\s+query=\{searchQuery\}/);
   // The line under the chips counts what matched (the query itself is in the search field).
@@ -551,9 +551,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /Home,\s*Utensils/);
   assert.match(
     discover,
-    /\/\* Intent Chips with Icons \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{sortedChips\}[\s\S]*selectedIds=\{activeDiscoverChipIds\}[\s\S]*onSelect=\{toggleDiscoverChip\}[\s\S]*onSwipeLockChange=\{setTabSwipeLocked\}[\s\S]*renderLeftIcon=\{\(chip, isActive\) =>/,
+    /\/\* Intent Chips with Icons \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{sortedChips\}[\s\S]*selectedIds=\{activeDiscoverChipIds\}[\s\S]*onSelect=\{toggleDiscoverChip\}[\s\S]*renderLeftIcon=\{\(chip, isActive\) =>/,
   );
-  assert.match(discover, /navigation\.setOptions\(\{ swipeEnabled: !isLocked \}\)/);
+  assert.doesNotMatch(discover, /swipeEnabled/);
   // Every rail card is the one memoised card, in the themed surface (no dark-only styling).
   const biteCard =
     discover.match(

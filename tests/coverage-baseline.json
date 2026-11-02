@@ -1,7 +1,7 @@
 {
   "global": {
-    "lines": 86.3,
-    "branches": 85.7,
+    "lines": 86.4,
+    "branches": 85.8,
     "functions": 82.9
   },
   "files": {
@@ -71,6 +71,7 @@
     "src/features/detail/stallLocation.ts": 96.4,
     "src/features/detail/stallOpenState.ts": 100,
     "src/features/detail/stallVisited.ts": 96.3,
+    "src/features/detail/suggestedOpeningHours.ts": 96.6,
     "src/features/detail/tasteMatch.ts": 100,
     "src/features/discover/areaCount.ts": 100,
     "src/features/discover/biteLabel.ts": 100,
@@ -123,6 +124,7 @@
     "src/features/merchant/verificationStateMachine.ts": 100,
     "src/features/merchantClaim/submitClaimFromStall.ts": 91.4,
     "src/features/navigation/insideMainTabs.ts": 100,
+    "src/features/navigation/swipeIntent.ts": 97.4,
     "src/features/passport/weeklyGoal.ts": 100,
     "src/features/post/composerOptions.ts": 100,
     "src/features/post/publishing.ts": 98.4,
@@ -236,7 +238,7 @@
     "src/store/useAchievementTallyStore.ts": 100,
     "src/store/useActivityStore.ts": 99.1,
     "src/store/useChecklistStore.ts": 80.6,
-    "src/store/useChoiceSheetStore.ts": 95.7,
+    "src/store/useChoiceSheetStore.ts": 98.8,
     "src/store/useConsentStore.ts": 100,
     "src/store/useDiscoveryStore.ts": 88.4,
     "src/store/useFoodCredStore.ts": 97.1,
@@ -261,7 +263,7 @@
     "src/store/useWheelStore.ts": 81.5,
     "src/theme/tokens.ts": 99.8,
     "src/types/domain.ts": 100,
-    "src/utils/openingSchedule.ts": 94.5,
+    "src/utils/openingSchedule.ts": 96,
     "src/utils/operatingHours.ts": 97.3,
     "src/utils/stallStatus.ts": 84.1
   }

@@ -144,9 +144,10 @@ function PopupMenu({
           accessibilityRole="button"
           accessibilityLabel={openAccessibilityLabel}
           onPress={close}
-          style={StyleSheet.absoluteFill}
+          style={[StyleSheet.absoluteFill, { backgroundColor: palette.overlay }]}
         />
         {anchor ? (
+          // The shadow sits on this outer view: an `overflow: hidden` view clips its own shadow.
           <View
             accessibilityViewIsModal
             style={{
@@ -155,15 +156,19 @@ function PopupMenu({
                 ? { shadowColor: palette.white, shadowOpacity: 0.24, shadowRadius: 14 }
                 : {}),
               backgroundColor: palette.surface,
+              borderColor: palette.border,
               borderRadius: componentRadii.card,
+              borderWidth: StyleSheet.hairlineWidth,
+              elevation: 12,
               minWidth: 230,
-              overflow: "hidden",
               position: "absolute",
               right: anchor.right,
               top: anchor.top,
             }}
           >
-            <MenuRows items={items} onSelect={close} />
+            <View style={{ borderRadius: componentRadii.card, overflow: "hidden" }}>
+              <MenuRows items={items} onSelect={close} />
+            </View>
           </View>
         ) : null}
       </Modal>

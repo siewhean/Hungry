@@ -46,6 +46,8 @@ import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import { BookOpenText, PenLine } from "lucide-react-native";
 import { HungryLogo } from "@/components/ui/HungryLogo";
 import { InlineBanner } from "@/components/ui/InlineBanner";
+import { EdgeSwipeZones } from "@/components/ui/EdgeSwipeZones";
+import { SwipeSections } from "@/components/ui/SwipeSections";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { TabSwitcher } from "@/features/post/components/TabSwitcher";
 import { useComposerStore } from "@/features/post/useComposerStore";
@@ -1053,4 +1055,30 @@ test("StallLogoMark shows no circle backdrop behind a logo, only behind the init
     fallbackRing.getAttribute("style") ?? "",
     /background-color: rgba\(0, 0, 0, 0\)/,
   );
+});
+
+test("SwipeSections and EdgeSwipeZones render their page and leave its taps alone", async () => {
+  const sections = await render(
+    <SwipeSections onSwipeLeft={() => undefined} onSwipeRight={() => undefined}>
+      <Text>Dishes grid</Text>
+    </SwipeSections>,
+  );
+  assert.ok(sections.findByText("Dishes grid"));
+  await sections.unmount();
+
+  const zones = await render(
+    <EdgeSwipeZones onSwipeFromLeft={() => undefined} onSwipeFromRight={() => undefined}>
+      <Text>Reviews page</Text>
+    </EdgeSwipeZones>,
+  );
+  assert.ok(zones.findByText("Reviews page"));
+  await zones.unmount();
+
+  // With neither side wired the page still shows.
+  const idle = await render(
+    <EdgeSwipeZones>
+      <Text>Idle page</Text>
+    </EdgeSwipeZones>,
+  );
+  assert.ok(idle.findByText("Idle page"));
 });

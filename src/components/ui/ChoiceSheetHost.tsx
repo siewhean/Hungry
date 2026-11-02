@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { useChoiceSheetStore, type ChoiceRequest } from "@/store/useChoiceSheetStore";
+import {
+  notifyChoiceSheetClosed,
+  useChoiceSheetStore,
+  type ChoiceRequest,
+} from "@/store/useChoiceSheetStore";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { DismissibleSheet } from "./DismissibleSheet";
@@ -25,6 +29,7 @@ export function ChoiceSheetHost() {
     <DismissibleSheet
       visible={request !== null}
       onClose={() => settle(null)}
+      onClosed={notifyChoiceSheetClosed}
       closeLabel="Close"
       maxHeightRatio={0.6}
       header={

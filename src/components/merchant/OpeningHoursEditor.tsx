@@ -136,7 +136,7 @@ function OpenSwitch({
   return <AnimatedSwitch accessibilityLabel={label} value={value} onValueChange={onValueChange} />;
 }
 
-function RangeRows({
+export function RangeRows({
   label,
   ranges,
   onChange,

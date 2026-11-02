@@ -20,7 +20,7 @@ import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedI
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
-import { useChoiceSheetStore } from "@/store/useChoiceSheetStore";
+import { notifyChoiceSheetClosed, useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, render } from "@/test/render";
@@ -241,12 +241,15 @@ test("askMediaSource asks in the app's own sheet and resolves with the chosen so
     const camera = askMediaSource("Add a photo");
     assert.equal(useChoiceSheetStore.getState().request?.title, "Add a photo");
     useChoiceSheetStore.getState().settle("camera");
+    notifyChoiceSheetClosed();
     assert.equal(await camera, "camera");
     const library = askMediaSource();
     useChoiceSheetStore.getState().settle("library");
+    notifyChoiceSheetClosed();
     assert.equal(await library, "library");
     const cancelled = askMediaSource();
     useChoiceSheetStore.getState().settle(null);
+    notifyChoiceSheetClosed();
     assert.equal(await cancelled, null);
   } finally {
     Object.defineProperty(Platform, "OS", { value: originalOS, configurable: true });

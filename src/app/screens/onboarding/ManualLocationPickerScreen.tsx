@@ -17,6 +17,7 @@ import { AppText, Button } from "@/components/ui";
 import {
   AREA_SEARCH_MIN_CHARS,
   buildAreaSearchResults,
+  postalCodeAnchor,
   nearestAreaName,
   type AreaSearchPlace,
   type AreaSearchResult,
@@ -37,6 +38,8 @@ import { SORTED_SINGAPORE_AREAS } from "./singaporeAreas";
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
 const SEARCH_DEBOUNCE_MS = 300;
+/** Malls and food courts within this distance of a typed postal code are offered. */
+const POSTAL_CODE_RADIUS_METERS = 1200;
 const SEARCH_PLACEHOLDER_PHRASES = [
   "Area, mall, hawker centre or address",
   "Try Tampines",
@@ -113,19 +116,29 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     let active = true;
     setIsSearching(true);
     const timer = setTimeout(() => {
-      const placeLookup = getCatalogRawService()
-        .listPlaces({ query: trimmedQuery, limit: 5 })
+      const addressLookup = searchOneMapAddresses(trimmedQuery)
+        .then((items) => {
+          if (active) setAddresses({ query: trimmedQuery, items });
+          return items;
+        })
+        .catch(() => [] as OneMapAddress[]); // Offline: areas and places still show.
+      // A postal code is never listed itself: it finds the malls and food courts around it
+      // (and its area), so the diner picks a place, not a code.
+      const placeLookup = addressLookup
+        .then((found) => {
+          const anchor = postalCodeAnchor(trimmedQuery, found);
+          return getCatalogRawService().listPlaces(
+            anchor
+              ? { coordinate: anchor.coordinate, radiusMeters: POSTAL_CODE_RADIUS_METERS, limit: 5 }
+              : { query: trimmedQuery, limit: 5 },
+          );
+        })
         .then((items) => {
           if (active) setPlaces({ query: trimmedQuery, items });
         })
         .catch((error: unknown) => {
           reportError(error, { screen: "ManualLocationPicker", action: "listPlaces" });
         });
-      const addressLookup = searchOneMapAddresses(trimmedQuery)
-        .then((items) => {
-          if (active) setAddresses({ query: trimmedQuery, items });
-        })
-        .catch(() => undefined); // Offline: areas and places still show.
       void Promise.allSettled([placeLookup, addressLookup]).then(() => {
         if (active) setIsSearching(false);
       });

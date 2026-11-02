@@ -306,18 +306,14 @@ test("R4-STALL-1: an ALL CAPS name is shown in title case; with no photo the pag
   );
 });
 
-test("R4-STALL-1: Add opening hours opens the report page with 'opening hours' picked", async () => {
+test("R4-STALL-1: Add opening hours opens the opening hours page", async () => {
   useEmptyStall();
   const view = await openStall(EMPTY_STALL);
   await view.press(view.findByText("Add opening hours"));
   const call = view.navigation.calls.find((entry) => entry.method === "navigate");
   assert.deepEqual(call?.args, [
-    "ReportProblem",
-    {
-      venueId: EMPTY_STALL,
-      subjectName: "Tian Tian Hainanese Chicken Rice",
-      initialKind: "wrong_hours",
-    },
+    "SuggestOpeningHours",
+    { venueId: EMPTY_STALL, subjectName: "Tian Tian Hainanese Chicken Rice" },
   ]);
 });
 

@@ -161,6 +161,8 @@ export type RootStackParamList = {
   MerchantClaimExplainer: undefined;
   /** "What did you have?" after a stall is marked visited; a system form sheet. */
   StallVisited: { venueId: string };
+  /** "Add opening hours": pick every day, weekdays and weekends, or each day; sent for review. */
+  SuggestOpeningHours: { venueId: string; subjectName?: string };
   ReportProblem: {
     venueId: string;
     dishId?: string;

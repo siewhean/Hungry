@@ -548,6 +548,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /What's wrong\?/,
   },
   {
+    name: "SuggestOpeningHoursScreen",
+    file: "src/app/screens/detail/SuggestOpeningHoursScreen.tsx",
+    scenario: "user",
+    params: "stallVisited",
+    expect: /Every day/,
+  },
+  {
     name: "CollectionsScreen",
     file: "src/app/screens/profile/CollectionsScreen.tsx",
     scenario: "user",

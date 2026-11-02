@@ -1,6 +1,6 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, RefreshControl, View, useWindowDimensions } from "react-native";
 
 import { CollectionAlbumCard, NewCollectionTile } from "@/components/portfolio";
 import {
@@ -16,9 +16,9 @@ import {
   AccessibleImage,
   AppText,
   Button,
-  Chip,
   EmptyState,
   SegmentedControl,
+  UnderlineTabs,
 } from "@/components/ui";
 import { isLiveMapAvailable } from "@/components/map/mapAvailability";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
@@ -32,7 +32,6 @@ import { useVisitedStallIds } from "@/features/profile/visitedStalls";
 import {
   SAVED_SECTION_LABELS,
   fitSavedPins,
-  formatSavedCount,
   getSavedOrigin,
   matchesSavedDishQuery,
   visibleSavedSections,
@@ -101,7 +100,6 @@ export function FavouritesScreen({ navigation, route }: Props) {
   // Loaded here, not inside the Dishes tab, so the header count matches the cards below.
   const userKey = `${authenticatedUserId ?? "guest"}:${profileId}`;
   const savedDishes = useSavedDishes(userKey);
-  const savedDishCount = savedDishes.savedIds.filter((id) => savedDishes.cards.has(id)).length;
 
   // Stalls and lists are read as soon as a search, the Stalls section or the Lists section needs
   // them, then kept.
@@ -191,11 +189,9 @@ export function FavouritesScreen({ navigation, route }: Props) {
     }
   };
 
-  const showCount = activeSection === "dishes" && savedDishes.status === "ready" && !searching;
   return (
     <ProfileScreenShell
       title="Saved"
-      subtitle={showCount ? formatSavedCount(savedDishCount) : undefined}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
     >
       <SavedSearchBox value={query} onChangeText={setQuery} />
@@ -222,25 +218,17 @@ export function FavouritesScreen({ navigation, route }: Props) {
         />
       ) : (
         <>
-          {/* Scrolls sideways so the tabs never clip at large text sizes or on small phones. */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            accessibilityRole="tablist"
-            contentContainerStyle={{ gap: spacing[2] }}
-            style={{ flexGrow: 0 }}
-          >
-            {sections.map((key) => (
-              <Chip
-                key={key}
-                label={SAVED_SECTION_LABELS[key]}
-                accessibilityRole="tab"
-                accessibilityLabel={`Saved ${SAVED_SECTION_LABELS[key].toLowerCase()}`}
-                selected={activeSection === key}
-                onPress={() => chooseSection(key)}
-              />
-            ))}
-          </ScrollView>
+          <UnderlineTabs
+            accessibilityLabel="Saved sections"
+            fill
+            tabs={sections.map((key) => ({
+              value: key,
+              label: SAVED_SECTION_LABELS[key],
+              accessibilityLabel: `Saved ${SAVED_SECTION_LABELS[key].toLowerCase()}`,
+            }))}
+            value={activeSection}
+            onChange={chooseSection}
+          />
           {activeSection === "stalls" ? (
             <SavedStallsSection
               state={savedStalls}

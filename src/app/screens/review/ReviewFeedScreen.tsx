@@ -28,6 +28,7 @@ import {
   FilterChipRail,
   PressableScale,
   Skeleton,
+  SwipeSections,
   UnderlineTabs,
 } from "@/components/ui";
 import {
@@ -273,7 +274,6 @@ const ReviewTile = memo(function ReviewTile({
 
 export function ReviewFeedScreen() {
   const navigation = useNavigation<RootNavigation>();
-  const isTabSwipeLockedRef = useRef(false);
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const repository = getDataRepository();
@@ -308,17 +308,6 @@ export function ReviewFeedScreen() {
   const newestCreatedAtRef = useRef<string | undefined>(undefined);
   const searchBarWidth = screenWidth - spacing[8];
   const tileSize = (screenWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
-  const setTabSwipeLocked = useCallback(
-    (isLocked: boolean) => {
-      if (isTabSwipeLockedRef.current === isLocked) {
-        return;
-      }
-
-      isTabSwipeLockedRef.current = isLocked;
-      navigation.setOptions({ swipeEnabled: !isLocked });
-    },
-    [navigation],
-  );
   const headerActionSize = spacing[8] + spacing[2.5];
   const isServiceFeedLoading =
     serviceProviderMode !== "mock" && serviceReviewItems === null && !serviceLoadFailed;
@@ -341,15 +330,6 @@ export function ReviewFeedScreen() {
       isMounted = false;
     };
   }, [bumpSafetyFilter]);
-
-  useEffect(
-    () => () => {
-      if (isTabSwipeLockedRef.current) {
-        navigation.setOptions({ swipeEnabled: true });
-      }
-    },
-    [navigation],
-  );
 
   const toServiceFeedItem = useCallback(
     (entry: RecentReviewFeedEntry): ReviewFeedItem => ({
@@ -897,7 +877,6 @@ export function ReviewFeedScreen() {
                 : undefined
             }
             onSelect={(id) => setChipId(activeChip?.id === id ? "all" : id)}
-            onSwipeLockChange={setTabSwipeLocked}
             gap={spacing[2]}
           />
         ) : null}
@@ -913,81 +892,91 @@ export function ReviewFeedScreen() {
       {showInitialSkeleton ? (
         <ReviewFeedSkeleton />
       ) : (
-        <FlatList
-          data={filteredReviews}
-          key={`grid-${GRID_COLUMNS}`}
-          numColumns={GRID_COLUMNS}
-          columnWrapperStyle={{ gap: GRID_GAP }}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            gap: GRID_GAP,
-            paddingBottom: spacing[4],
-            paddingTop: spacing[2],
-          }}
-          extraData={showTileLabels}
-          refreshControl={
-            serviceProviderMode === "mock" ? undefined : (
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={() => void handleRefresh()}
-                tintColor={palette.orange}
-              />
-            )
+        <SwipeSections
+          style={{ flex: 1 }}
+          onSwipeLeft={
+            hasTasteTab && activeChip?.kind !== "taste" ? () => setChipId("taste") : undefined
           }
-          onEndReached={() => void handleLoadMore()}
-          onEndReachedThreshold={0.5}
-          ListEmptyComponent={
-            serviceLoadFailed ? (
-              <EmptyState
-                title="Couldn't load reviews"
-                body="Check your connection and try again."
-                ctaLabel="Try again"
-                onPress={handleRetry}
-              />
-            ) : searchQuery ? (
-              <EmptyState
-                title="No reviews found"
-                body={
-                  serverSearchItems
-                    ? "Try a different dish, stall or taste."
-                    : searchState?.status === "failed"
-                      ? "Couldn't search every review. Showing the latest ones only."
-                      : serverSearching
-                        ? "Searching every review…"
-                        : "Try a different search term."
-                }
-              />
-            ) : activeChip && activeChip.kind !== "all" && allReviews.length > 0 ? (
-              <EmptyState
-                title={
-                  activeChip.kind === "taste"
-                    ? "No reviews for your taste yet"
-                    : activeChip.kind === "near"
-                      ? "No reviews near you yet"
-                      : `No ${activeChip.label} reviews here`
-                }
-                body={
-                  activeChip.kind === "taste"
-                    ? "None of the latest photo reviews match your palette. See them all instead."
-                    : activeChip.kind === "near"
-                      ? "None of the latest photo reviews are within 2 km of you. See them all instead."
-                      : "Try another filter, or see every review."
-                }
-                ctaLabel="Show all reviews"
-                onPress={() => setChipId("all")}
-              />
-            ) : (
-              <EmptyState
-                title="Be the first to review a dish"
-                body="Snap your next meal and rate it. Reviews with a photo show here."
-                ctaLabel="Write a review"
-                onPress={handleWriteReview}
-              />
-            )
+          onSwipeRight={
+            hasTasteTab && activeChip?.kind === "taste" ? () => setChipId("all") : undefined
           }
-        />
+        >
+          <FlatList
+            data={filteredReviews}
+            key={`grid-${GRID_COLUMNS}`}
+            numColumns={GRID_COLUMNS}
+            columnWrapperStyle={{ gap: GRID_GAP }}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              gap: GRID_GAP,
+              paddingBottom: spacing[4],
+              paddingTop: spacing[2],
+            }}
+            extraData={showTileLabels}
+            refreshControl={
+              serviceProviderMode === "mock" ? undefined : (
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={() => void handleRefresh()}
+                  tintColor={palette.orange}
+                />
+              )
+            }
+            onEndReached={() => void handleLoadMore()}
+            onEndReachedThreshold={0.5}
+            ListEmptyComponent={
+              serviceLoadFailed ? (
+                <EmptyState
+                  title="Couldn't load reviews"
+                  body="Check your connection and try again."
+                  ctaLabel="Try again"
+                  onPress={handleRetry}
+                />
+              ) : searchQuery ? (
+                <EmptyState
+                  title="No reviews found"
+                  body={
+                    serverSearchItems
+                      ? "Try a different dish, stall or taste."
+                      : searchState?.status === "failed"
+                        ? "Couldn't search every review. Showing the latest ones only."
+                        : serverSearching
+                          ? "Searching every review…"
+                          : "Try a different search term."
+                  }
+                />
+              ) : activeChip && activeChip.kind !== "all" && allReviews.length > 0 ? (
+                <EmptyState
+                  title={
+                    activeChip.kind === "taste"
+                      ? "No reviews for your taste yet"
+                      : activeChip.kind === "near"
+                        ? "No reviews near you yet"
+                        : `No ${activeChip.label} reviews here`
+                  }
+                  body={
+                    activeChip.kind === "taste"
+                      ? "None of the latest photo reviews match your palette. See them all instead."
+                      : activeChip.kind === "near"
+                        ? "None of the latest photo reviews are within 2 km of you. See them all instead."
+                        : "Try another filter, or see every review."
+                  }
+                  ctaLabel="Show all reviews"
+                  onPress={() => setChipId("all")}
+                />
+              ) : (
+                <EmptyState
+                  title="Be the first to review a dish"
+                  body="Snap your next meal and rate it. Reviews with a photo show here."
+                  ctaLabel="Write a review"
+                  onPress={handleWriteReview}
+                />
+              )
+            }
+          />
+        </SwipeSections>
       )}
       {ownReviewEditor.dialog}
     </SafeAreaView>

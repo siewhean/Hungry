@@ -108,7 +108,7 @@ test("60 saved dishes load with one batched read, not 60 (SAVED4-3)", async () =
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
   assert.equal(calls.length, 1);
   assert.equal(new Set(calls[0]).size, 60);
-  assert.match(view.text(), /60 cravings saved for later/);
+  assert.doesNotMatch(view.text(), /saved for later/);
 });
 
 test("the live card has Directions, Tried and Review, and opens the dish page (SAVED4-1/2)", async () => {
@@ -296,13 +296,12 @@ test("compact rows lay out the same dishes in the density variant (SAVED4-9)", a
   assert.equal(view.findByText("Get directions"), null);
 });
 
-test("the count follows the cards and reads '1 craving' (SAVED4-15/16)", async () => {
+test("the dishes tab shows no count line, and says how many saved dishes left the catalog (SAVED4-15/16)", async () => {
   // Three ids are saved, but only one dish is still in the catalog.
   saveDishes([LAKSA.id, "gone-1", "gone-2"]);
   stubCards();
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
-  assert.match(view.text(), /1 craving saved for later/);
-  assert.doesNotMatch(view.text(), /1 cravings/);
+  assert.doesNotMatch(view.text(), /saved for later/);
   assert.match(view.text(), /2 saved dishes are not in the current catalog/);
 });
 
@@ -341,4 +340,17 @@ test("viewing Saved records saved_viewed once with the count", async () => {
   assert.equal(viewed.length, 1);
   assert.equal(viewed[0].properties.count, 2);
   assert.equal(viewed[0].properties.tab, "want");
+});
+
+test("Saved switches sections with underline tabs, not chips (SAVED-TABS)", async () => {
+  saveDishes([LAKSA.id]);
+  stubCards();
+  const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
+  const tabs = view.findByLabel("Saved sections");
+  assert.ok(tabs, "the tab row");
+  assert.ok(view.findByLabel("Saved dishes"));
+  assert.ok(view.findByLabel("Saved stalls"));
+  assert.ok(view.findByLabel("Saved lists"));
+  await view.press(view.findByLabel("Saved lists"));
+  assert.equal(useSavedViewStore.getState().section, "lists");
 });
