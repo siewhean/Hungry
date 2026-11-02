@@ -226,7 +226,7 @@
     "src/lib/services/storyGalleryAssets.ts": 95,
     "src/lib/services/supabase/authStorage.ts": 97.9,
     "src/lib/services/supabase/client.ts": 97.1,
-    "src/lib/services/supabase/mediaUpload.ts": 73.6,
+    "src/lib/services/supabase/mediaUpload.ts": 75.3,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/shareInFlight.ts": 91.7,
     "src/lib/services/supabase/supabaseRepository.ts": 74.7,

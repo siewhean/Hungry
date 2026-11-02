@@ -640,17 +640,14 @@ test("H4-12: the Halal chip uses no Arabic mark that could read as a certificate
   assert.doesNotMatch(view.html(), /حلال/);
 });
 
-test("H4-10: with no saved needs the Dietary needs chip opens the dietary settings", async () => {
+test("H4-10: with no saved needs the Dietary needs chip asks no questions and filters nothing", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   await view.press(view.findByLabel("Dietary needs"));
-  assert.deepEqual(view.navigation.calls.at(-1), {
-    method: "navigate",
-    args: [
-      "OnboardingStack",
-      { screen: "TasteQuiz", params: { mode: "profile", initialPhase: "dietary", source: "home" } },
-    ],
-  });
+  const navigated = view.navigation.calls.filter(
+    (call: { args: unknown[] }) => call.args[0] === "OnboardingStack",
+  );
+  assert.equal(navigated.length, 0, "the onboarding questions do not open");
   // It did not switch a filter on behind the diner's back.
   assert.doesNotMatch(view.text(), /No matching results/);
 });

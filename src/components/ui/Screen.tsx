@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useState,
   type ComponentProps,
   type PropsWithChildren,
   type ReactElement,
@@ -85,6 +86,15 @@ export function Screen({
     onScrollRevealBack(event);
     reveal.onScroll(event);
   };
+  // A page whose content fits on the screen does not scroll or rubber-band: pulling it only
+  // made the page look loose. Pull to refresh keeps its bounce.
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const contentFits =
+    viewportHeight > 0 &&
+    contentHeight > 0 &&
+    contentHeight <= viewportHeight + 1 &&
+    !refreshControl;
 
   const header =
     title || headerRight || headerLeft ? (
@@ -103,6 +113,11 @@ export function Screen({
     <ScrollView
       style={styles.flex}
       ref={setScrollNode}
+      alwaysBounceVertical={!contentFits}
+      bounces={!contentFits}
+      overScrollMode={contentFits ? "never" : "auto"}
+      onLayout={(event) => setViewportHeight(event.nativeEvent.layout.height)}
+      onContentSizeChange={(_width, height) => setContentHeight(height)}
       automaticallyAdjustKeyboardInsets={!keyboardAvoiding}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[

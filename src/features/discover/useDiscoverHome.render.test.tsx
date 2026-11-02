@@ -6,6 +6,7 @@ import test, { afterEach, beforeEach } from "node:test";
 import { useDiscoverFeed } from "@/features/discover/useDiscoverFeed";
 import { useDiscoverFilters } from "@/features/discover/useDiscoverFilters";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
 import { cleanup, render } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
@@ -19,12 +20,11 @@ afterEach(cleanup);
 
 type Filters = ReturnType<typeof useDiscoverFilters>;
 
-async function mountFilters(options: { openedSettings?: string[]; hours?: string } = {}) {
+async function mountFilters(options: { hours?: string } = {}) {
   let latest: Filters | undefined;
   function Probe() {
     latest = useDiscoverFilters({
       getVenueHours: () => options.hours,
-      onOpenDietarySettings: () => options.openedSettings?.push("dietary"),
     });
     return null;
   }
@@ -61,19 +61,26 @@ test("useDiscoverFilters starts with no chips and a chip taps on and off", async
   assert.deepEqual(filters().activeDiscoverChipIds, []);
 });
 
-test("the dietary chip opens dietary settings when none are saved, and filters once they are", async () => {
+test("the dietary chip points to settings when none are saved, and toggles once they are", async () => {
   useProfileStore.getState().setDietaryPreferences([]);
-  const openedSettings: string[] = [];
-  const { view, filters } = await mountFilters({ openedSettings });
+  useUIStore.setState({ toast: null } as never);
+  const { view, filters } = await mountFilters();
 
   filters().toggleDiscoverChip("dietary");
   await view.settle();
-  assert.deepEqual(openedSettings, ["dietary"]);
   assert.deepEqual(filters().activeDiscoverChipIds, [], "nothing to filter by yet");
+  assert.match(String(useUIStore.getState().toast?.message), /dietary needs/);
 
   useProfileStore.getState().setDietaryPreferences(["halal"]);
   await view.settle();
   assert.deepEqual(filters().activeDiscoverChipIds, ["dietary"], "saving a need switches it on");
+
+  filters().toggleDiscoverChip("dietary");
+  await view.settle();
+  assert.deepEqual(filters().activeDiscoverChipIds, [], "tapping it again switches it off");
+  filters().toggleDiscoverChip("dietary");
+  await view.settle();
+  assert.deepEqual(filters().activeDiscoverChipIds, ["dietary"], "and on again");
 });
 
 test("clearing the filters empties the chips and says so", async () => {

@@ -857,8 +857,7 @@ test("ForYouCard shows no match badge without a palate", async () => {
   assert.match(view.text(), /Popular here/);
 });
 
-test("WhatsHerePanel filters stalls by food type and price, and clears the filters", async () => {
-  const opened: string[] = [];
+test("WhatsHerePanel filters stalls by food type only, and clears the filter", async () => {
   const stalls: HereStall[] = [
     {
       venue: renderVenue("noodle"),
@@ -873,8 +872,12 @@ test("WhatsHerePanel filters stalls by food type and price, and clears the filte
     createElement(WhatsHerePanel, {
       placeName: "Maxwell",
       stalls,
-      getStallMeta: () => "Open now",
-      onOpenStall: (id: string) => opened.push(id),
+      renderStalls: (visible: HereStall[]) =>
+        createElement(
+          "div",
+          null,
+          visible.map((stall) => createElement("span", { key: stall.venue.id }, stall.venue.name)),
+        ),
     }),
   );
   assert.match(view.text(), /Stalls at Maxwell/);
@@ -883,12 +886,9 @@ test("WhatsHerePanel filters stalls by food type and price, and clears the filte
   assert.match(view.text(), /1 stall/);
   assert.match(view.text(), /Stall noodle/);
   assert.doesNotMatch(view.text(), /Stall rice/);
-  await view.press(view.findByLabel("S$8+ filter"));
-  assert.match(view.text(), /No stalls match/);
-  await view.press(view.findByLabel("Clear filters"));
+  assert.equal(view.findByLabel("S$8+ filter"), null, "there is no price filter");
+  await view.press(view.findByLabel("Noodles filter"));
   assert.match(view.text(), /2 stalls/);
-  await view.press(view.findByLabel("Open Stall rice"));
-  assert.deepEqual(opened, ["rice"]);
 });
 
 test("TrendingList shows rich rows, opens one, and hides when there are none", async () => {
