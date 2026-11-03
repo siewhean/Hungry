@@ -610,6 +610,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Your reviews/,
   },
   {
+    name: "DeveloperToolsScreen",
+    file: "src/app/screens/profile/DeveloperToolsScreen.tsx",
+    scenario: "user",
+    expect: /Developer tools/,
+  },
+  {
     name: "SettingsScreen",
     file: "src/app/screens/profile/SettingsScreen.tsx",
     scenario: "user",

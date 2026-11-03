@@ -47,6 +47,7 @@ import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
 import { useConsentStore } from "@/store/useConsentStore";
+import { useDeveloperToolsStore } from "@/store/useDeveloperToolsStore";
 import { useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
@@ -641,6 +642,16 @@ export function SettingsScreen() {
       .catch((error: unknown) => reportError(error, { area: "settings_copy_version" }));
   };
 
+  // Seven quick taps on Version open the hidden Developer tools; each tap still copies the version.
+  const developerToolsUnlocked = useDeveloperToolsStore((state) => state.unlocked);
+  const handleVersionTap = () => {
+    if (useDeveloperToolsStore.getState().registerVersionTap()) {
+      showToast({ message: "Developer tools unlocked.", tone: "success" });
+      return;
+    }
+    handleCopyVersion();
+  };
+
   const foodOpenness = foodOpennessLabel(resolveFoodOpenness(profile.tasteProfile));
   const diningSummary = [
     profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} dietary` : null,
@@ -1020,10 +1031,19 @@ export function SettingsScreen() {
           type="value"
           value={appVersion}
           description="Tap to copy."
-          onPress={handleCopyVersion}
+          onPress={handleVersionTap}
           onLongPress={handleCopyVersion}
-          isLast
+          isLast={!developerToolsUnlocked}
         />
+        {developerToolsUnlocked ? (
+          <SettingsRow
+            {...neutralRow}
+            label="Developer tools"
+            icon={<AppSymbol name="developerTools" size={20} color={iconColor} />}
+            onPress={() => navigation.navigate("DeveloperTools" as never)}
+            isLast
+          />
+        ) : null}
       </SettingsSection>
 
       {isAuthenticated ? (

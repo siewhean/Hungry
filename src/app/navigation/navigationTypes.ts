@@ -92,6 +92,8 @@ export type ProfileStackParamList = {
   VisitedStalls: undefined;
   FollowedStalls: undefined;
   Settings: undefined;
+  /** Hidden: opened by tapping Version in Settings seven times. */
+  DeveloperTools: undefined;
   SocialGrid: { type: "liked" | "saved" };
   SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
