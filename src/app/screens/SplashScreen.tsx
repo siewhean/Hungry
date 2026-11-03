@@ -15,6 +15,7 @@ import Constants from "expo-constants";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { onboardingEntryRoute } from "@/app/navigation/onboardingEntry";
+import { warmHomeFeed } from "@/features/discover/warmHomeFeed";
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useMerchantStore } from "@/store/useMerchantStore";
@@ -60,6 +61,9 @@ type Props = NativeStackScreenProps<RootStackParamList, "Splash">;
 /** If session hydration never reports back (e.g. corrupt storage), stop waiting. */
 const HYDRATION_FALLBACK_MS = 5000;
 
+/** Splash waits this long at most (counted from when it appeared) for Home's first stalls. */
+export const HOME_FEED_WAIT_CAP_MS = 4000;
+
 export function SplashScreen({ navigation }: Props) {
   const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -84,6 +88,10 @@ export function SplashScreen({ navigation }: Props) {
   const dotScale = useRef(new Animated.Value(0.6)).current;
   const dotOpacity = useRef(new Animated.Value(0)).current;
   const [mountedAt] = useState(() => Date.now());
+  const [homeFeedSettled, setHomeFeedSettled] = useState(false);
+  // Only a signed-in diner who has finished onboarding lands on Home, so only they warm its feed.
+  const opensHome =
+    isAuthReady && isAuthenticated && hasCompletedOnboarding && merchantModeRestore !== "restore";
 
   useEffect(() => {
     if (reduceMotion) {
@@ -153,9 +161,31 @@ export function SplashScreen({ navigation }: Props) {
     return () => clearTimeout(timer);
   }, [isAuthReady]);
 
+  // Start Home's first reads behind the splash and leave once the nearest stalls are in, or after
+  // the cap so a slow network never holds the diner here.
+  useEffect(() => {
+    if (!opensHome) return;
+    let isActive = true;
+    void warmHomeFeed().then(() => {
+      if (isActive) setHomeFeedSettled(true);
+    });
+    const capTimer = setTimeout(
+      () => setHomeFeedSettled(true),
+      Math.max(0, HOME_FEED_WAIT_CAP_MS - (Date.now() - mountedAt)),
+    );
+    return () => {
+      isActive = false;
+      clearTimeout(capTimer);
+    };
+  }, [mountedAt, opensHome]);
+
   // Leave as soon as auth/bootstrap is ready, keeping only a short minimum.
   useEffect(() => {
     if (!isAuthReady) {
+      return;
+    }
+    // Wait for Home's first stalls (see above); everyone else leaves at once.
+    if (opensHome && !homeFeedSettled) {
       return;
     }
     // A remembered Merchant mode waits for the session's merchant account check.
@@ -264,8 +294,10 @@ export function SplashScreen({ navigation }: Props) {
     isAuthReady,
     merchantModeRestore,
     motion.splashTotal,
+    homeFeedSettled,
     mountedAt,
     navigation,
+    opensHome,
     returnRoute,
     setReturnRoute,
   ]);

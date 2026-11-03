@@ -2,7 +2,7 @@
   "global": {
     "lines": 86.6,
     "branches": 86,
-    "functions": 83.1
+    "functions": 83.2
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -78,6 +78,7 @@
     "src/features/discover/biteLabel.ts": 100,
     "src/features/discover/bites.ts": 64.5,
     "src/features/discover/currentPlace.ts": 56.7,
+    "src/features/discover/discoverReadArgs.ts": 100,
     "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/feedMerge.ts": 100,
     "src/features/discover/foodStyleOptions.ts": 100,
@@ -88,6 +89,7 @@
     "src/features/discover/mallMode.ts": 97,
     "src/features/discover/personalFeedback.ts": 95.6,
     "src/features/discover/personalRails.ts": 99.3,
+    "src/features/discover/warmHomeFeed.ts": 100,
     "src/features/discovery/decideForMeCandidates.ts": 96.8,
     "src/features/discovery/decideQuiz.ts": 99.4,
     "src/features/discovery/distanceLabel.ts": 94.4,
