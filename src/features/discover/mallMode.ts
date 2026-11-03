@@ -7,11 +7,18 @@ import { rankDecideCandidates } from "@/features/discovery/decideForMeCandidates
 import { shouldShowMatchPercent } from "@/features/discover/personalFeedback";
 import {
   buildHomeScorer,
+  freshSlotsFor,
   isUnprovenDish,
   reserveFreshSlots,
 } from "@/features/discover/rankingBalance";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
-import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
+import type {
+  DietaryFlag,
+  DishDetail,
+  FoodOpenness,
+  TasteVector,
+  VenueSummary,
+} from "@/types/domain";
 
 const AXIS_NAMES: { key: keyof TasteVector; label: string }[] = [
   { key: "spicy", label: "spicy" },
@@ -83,8 +90,10 @@ export function rankForYou(
      * keeps its own ranking.
      */
     likedDishes?: readonly DishDetail[];
-    /** Reserve slots 3, 8, 13... for dishes with few reviews. Home turns it on. */
+    /** Reserve slots for dishes with few reviews. Home turns it on. */
     reserveFresh?: boolean;
+    /** The diner's food openness: how hard liked dishes steer the order and how many new dishes get slots. */
+    openness?: FoodOpenness;
   },
 ): ForYouPick[] {
   const hasPalate = hasPersonalTasteProfile(options.tasteVector);
@@ -93,7 +102,9 @@ export function rankForYou(
     dietaryFlags: options.dietaryFlags,
     radiusMeters: NO_RADIUS_LIMIT_METERS,
     maxDishBudget: options.maxDishBudget,
-    adjustScore: options.likedDishes ? buildHomeScorer(options.likedDishes) : undefined,
+    adjustScore: options.likedDishes
+      ? buildHomeScorer(options.likedDishes, options.openness)
+      : undefined,
   });
   // Stable partition keeps the taste order inside each group.
   const here = options.preferBuildingId
@@ -103,7 +114,9 @@ export function rankForYou(
     ? ranked.filter((dish) => dish.buildingId !== options.preferBuildingId)
     : ranked;
   const ordered = [...here, ...elsewhere];
-  const withFresh = options.reserveFresh ? reserveFreshSlots(ordered, isUnprovenDish) : ordered;
+  const withFresh = options.reserveFresh
+    ? reserveFreshSlots(ordered, isUnprovenDish, freshSlotsFor(options.openness))
+    : ordered;
   return withFresh.slice(0, options.limit ?? FOR_YOU_LIMIT).map((dish) => ({
     dish,
     matchPercent:

@@ -85,7 +85,7 @@ import {
   isStallClosed,
   isUnprovenStall,
 } from "@/features/discover/homeStalls";
-import { reserveFreshSlots } from "@/features/discover/rankingBalance";
+import { freshSlotsFor, reserveFreshSlots } from "@/features/discover/rankingBalance";
 import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
 import {
@@ -110,6 +110,7 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { buildFoodHistory, normalizeFoodType } from "@/lib/ai/foodHistory";
 import { useFeedFeedbackStore } from "@/store/useFeedFeedbackStore";
 import { askChoice } from "@/store/useChoiceSheetStore";
@@ -498,6 +499,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       return dish ? [dish] : [];
     });
   }, [discoverDishById, foodHistoryRows, profile.favouriteDishIds, profile.reviewedDishIds]);
+  // "Favourites" follows liked dishes closely, "adventurous" mixes in new food (Settings > Food openness).
+  const rankingOpenness = resolveFoodOpenness(profile.tasteProfile);
   const tasteOrdered = useMemo(
     () =>
       rankByTaste
@@ -505,9 +508,18 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             tasteVector: rankingTasteVector,
             preferBuildingId: currentPlaceId,
             likedDishes,
+            openness: rankingOpenness,
           })
         : { bites: quickBitePool, reasons: NO_BITE_REASONS },
-    [currentPlaceId, discoverDishById, likedDishes, quickBitePool, rankByTaste, rankingTasteVector],
+    [
+      currentPlaceId,
+      discoverDishById,
+      likedDishes,
+      quickBitePool,
+      rankByTaste,
+      rankingOpenness,
+      rankingTasteVector,
+    ],
   );
   // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
   const [pickedTrendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] =
@@ -797,14 +809,19 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       // Open first, then the best near-and-good stall; closed ones follow the open ones.
       return compareHomeStalls(a, b);
     });
-    // New stalls (few reviews) get slots 3, 8, 13... so well-reviewed stalls do not hold the list.
-    return reserveFreshSlots(sorted, (card) => isUnprovenStall(card) && !isStallClosed(card.venue));
+    // New stalls (few reviews) get slots 4, 11, 18... so well-reviewed stalls do not hold the list.
+    return reserveFreshSlots(
+      sorted,
+      (card) => isUnprovenStall(card) && !isStallClosed(card.venue),
+      freshSlotsFor(rankingOpenness),
+    );
     // currentHour re-sorts when Home comes back into focus: open stalls change with the clock.
   }, [
     currentHour,
     currentPlaceId,
     isDiscoverFiltering,
     matchesDiscoverChipSelection,
+    rankingOpenness,
     unfilteredAreaStallCards,
   ]);
   // Stalls whose menus are not in yet (no top dish): with some menus nearby they fold into one
@@ -975,6 +992,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         profileTrusted: hasTasteProfile,
         likedDishes,
         reserveFresh: true,
+        openness: rankingOpenness,
       },
     );
     return isDiscoverFiltering
@@ -989,6 +1007,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     isDiscoverFiltering,
     likedDishes,
     matchesDiscoverChipSelection,
+    rankingOpenness,
     profile.dietaryPreferences,
     profile.maxDishBudget,
     profile.tasteVector,

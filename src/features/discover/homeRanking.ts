@@ -5,13 +5,15 @@
 import { rankForYou } from "@/features/discover/mallMode";
 import { hasPersonalTasteProfile } from "@/lib/ai/tasteEngine";
 import type { Bite } from "@/lib/services/types";
-import type { DishDetail, TasteVector } from "@/types/domain";
+import type { DishDetail, FoodOpenness, TasteVector } from "@/types/domain";
 
 export type TasteOrderOptions = {
   tasteVector: TasteVector;
   preferBuildingId?: string;
   /** The diner's liked dishes: with some, ranking follows their tags too (see rankingBalance). */
   likedDishes?: readonly DishDetail[];
+  /** The diner's food openness: how hard liked dishes steer the order, how many new dishes get slots. */
+  openness?: FoodOpenness;
 };
 
 /**

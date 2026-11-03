@@ -97,70 +97,93 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   );
 
   return (
-    <PressableScale
-      accessibilityRole="button"
-      accessibilityLabel={getCardLabel(bite)}
-      accessibilityActions={
-        onOptions
-          ? [{ name: BITE_OPTIONS_ACTION, label: "Not for me, or show less of this food" }]
-          : undefined
-      }
-      onAccessibilityAction={onOptions ? handleAccessibilityAction : undefined}
-      onPressIn={handlePressIn}
-      onPress={handlePress}
-      onLongPress={onOptions ? handleOptions : undefined}
-      style={chrome.biteCardShell(cardWidth)}
-    >
-      <DiscoverBiteImage bite={bite} height={imageHeight} />
-      {/* Rating badge overlay: the rail is rating-based, not curated */}
-      {variant === "topRated" && hasRating ? (
-        <View
+    <View style={{ width: cardWidth }}>
+      <PressableScale
+        accessibilityRole="button"
+        accessibilityLabel={getCardLabel(bite)}
+        accessibilityActions={
+          onOptions
+            ? [{ name: BITE_OPTIONS_ACTION, label: "Not for me, or show less of this food" }]
+            : undefined
+        }
+        onAccessibilityAction={onOptions ? handleAccessibilityAction : undefined}
+        onPressIn={handlePressIn}
+        onPress={handlePress}
+        onLongPress={onOptions ? handleOptions : undefined}
+        style={chrome.biteCardShell(cardWidth)}
+      >
+        <DiscoverBiteImage bite={bite} height={imageHeight} />
+        {/* Rating badge overlay: the rail is rating-based, not curated */}
+        {variant === "topRated" && hasRating ? (
+          <View
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.orange,
+              borderRadius: radii.sm,
+              flexDirection: "row",
+              gap: spacing[0.5],
+              left: spacing[2],
+              paddingHorizontal: spacing[2],
+              paddingVertical: spacing[0.5],
+              position: "absolute",
+              top: spacing[2],
+            }}
+          >
+            <AppSymbol name="rating" size={11} color={palette.textOnOrange} />
+            <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
+              {bite.rating.toFixed(1)}
+            </AppText>
+          </View>
+        ) : null}
+        <View style={chrome.biteCardBody}>
+          <AppText variant="bodySmallBold" numberOfLines={1} style={{ color: palette.text }}>
+            {bite.dishName}
+          </AppText>
+          <AppText variant="micro" style={{ color: palette.textSecondary }} numberOfLines={1}>
+            {bite.venueName}
+          </AppText>
+          {reason ? (
+            <AppText variant="micro" tone="accent" numberOfLines={1}>
+              {reason}
+            </AppText>
+          ) : null}
+          <View style={chrome.biteCardPriceRow}>
+            <AppText variant="bodySmallBold" style={{ color: palette.text, ...HOME_PRICE_STYLE }}>
+              S${bite.price.toFixed(2)}
+            </AppText>
+            {variant !== "price" && hasRating ? (
+              <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                <AppSymbol name="rating" size={12} color={palette.starFill} />
+                <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
+                  {bite.rating.toFixed(1)}
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </PressableScale>
+      {onOptions ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`More options for ${bite.dishName}`}
+          hitSlop={8}
+          onPress={handleOptions}
           style={{
             alignItems: "center",
-            backgroundColor: palette.orange,
-            borderRadius: radii.sm,
-            flexDirection: "row",
-            gap: spacing[0.5],
-            left: spacing[2],
-            paddingHorizontal: spacing[2],
-            paddingVertical: spacing[0.5],
+            backgroundColor: palette.surface,
+            borderRadius: radii.pill,
+            height: 28,
+            justifyContent: "center",
             position: "absolute",
+            right: spacing[2],
             top: spacing[2],
+            width: 28,
           }}
         >
-          <AppSymbol name="rating" size={11} color={palette.textOnOrange} />
-          <AppText variant="micro" style={{ color: palette.textOnOrange, fontWeight: "800" }}>
-            {bite.rating.toFixed(1)}
-          </AppText>
-        </View>
+          <AppSymbol name="rowActions" size={16} color={palette.text} />
+        </Pressable>
       ) : null}
-      <View style={chrome.biteCardBody}>
-        <AppText variant="bodySmallBold" numberOfLines={1} style={{ color: palette.text }}>
-          {bite.dishName}
-        </AppText>
-        <AppText variant="micro" style={{ color: palette.textSecondary }} numberOfLines={1}>
-          {bite.venueName}
-        </AppText>
-        {reason ? (
-          <AppText variant="micro" tone="accent" numberOfLines={1}>
-            {reason}
-          </AppText>
-        ) : null}
-        <View style={chrome.biteCardPriceRow}>
-          <AppText variant="bodySmallBold" style={{ color: palette.text, ...HOME_PRICE_STYLE }}>
-            S${bite.price.toFixed(2)}
-          </AppText>
-          {variant !== "price" && hasRating ? (
-            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <AppSymbol name="rating" size={12} color={palette.starFill} />
-              <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
-                {bite.rating.toFixed(1)}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </PressableScale>
+    </View>
   );
 });
 

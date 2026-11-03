@@ -6,22 +6,44 @@
  *    ranks by the quiz palate alone.
  */
 import { buildTagAffinity, tagMatchScore } from "@/lib/ai/tasteEngine";
-import type { DishSummary } from "@/types/domain";
+import type { DishSummary, FoodOpenness } from "@/types/domain";
 
 /** A dish or stall with fewer reviews than this is "new": nobody has had a chance to rate it yet. */
 export const FRESH_REVIEW_LIMIT = 3;
-/** The first reserved slot (1 is the top) and the gap between reserved slots after it. */
-export const FRESH_FIRST_SLOT = 3;
-export const FRESH_SLOT_EVERY = 5;
 /** Only items this far down the ranking can be lifted into a reserved slot. */
 export const FRESH_LIFT_WINDOW = 30;
+
+/**
+ * How hard Home leans on what the diner already likes, by their food openness setting:
+ * "favourites" follows liked dishes closely and reserves few slots for new food; "adventurous"
+ * leans on them lightly and reserves many. First slot is 1-based (1 is the top).
+ */
+export type RankingProfile = {
+  historyMin: number;
+  historyMax: number;
+  historyFull: number;
+  freshFirst: number;
+  freshEvery: number;
+};
+
+export const RANKING_PROFILES: Record<FoodOpenness, RankingProfile> = {
+  favourites: { historyMin: 0.35, historyMax: 0.7, historyFull: 4, freshFirst: 5, freshEvery: 9 },
+  mix: { historyMin: 0.25, historyMax: 0.6, historyFull: 5, freshFirst: 4, freshEvery: 7 },
+  adventurous: { historyMin: 0.1, historyMax: 0.35, historyFull: 8, freshFirst: 2, freshEvery: 4 },
+};
+
+/** The first reserved slot and the gap after it for a diner's openness (mix when unset). */
+export function freshSlotsFor(openness: FoodOpenness = "mix"): { first: number; every: number } {
+  const profile = RANKING_PROFILES[openness];
+  return { first: profile.freshFirst, every: profile.freshEvery };
+}
 
 export function isUnprovenDish(dish: Pick<DishSummary, "reviewCount">): boolean {
   return dish.reviewCount < FRESH_REVIEW_LIMIT;
 }
 
 /**
- * Keeps the order, except that slots 3, 8, 13... go to the best-ranked new item not already
+ * Keeps the order, except that reserved slots (4, 11, 18... for "mix") go to the best-ranked new item not already
  * shown. With no new item left (or none in the window) the slot goes to the next ranked item, so
  * a list of all-new or all-proven items comes back unchanged.
  */
@@ -30,8 +52,8 @@ export function reserveFreshSlots<T>(
   isFresh: (item: T) => boolean,
   options: { first?: number; every?: number; window?: number } = {},
 ): T[] {
-  const first = options.first ?? FRESH_FIRST_SLOT;
-  const every = options.every ?? FRESH_SLOT_EVERY;
+  const first = options.first ?? RANKING_PROFILES.mix.freshFirst;
+  const every = options.every ?? RANKING_PROFILES.mix.freshEvery;
   const window = options.window ?? FRESH_LIFT_WINDOW;
   const used = new Set<number>();
   const result: T[] = [];
@@ -63,10 +85,10 @@ const PRIOR_RATING = 3.8;
 /** How many reviews it takes for the real rating to count as much as the assumed one. */
 const PRIOR_REVIEWS = 3;
 /** Most points (out of 100) the rating can add to, or take from, a taste match. */
-export const MAX_QUALITY_POINTS = 5;
+export const MAX_QUALITY_POINTS = 3;
 
 /**
- * Points (-5 to +5) for a rating, pulled toward neutral when few reviews stand behind it: a
+ * Points (-3 to +3) for a rating, pulled toward neutral when few reviews stand behind it: a
  * single 5-star review moves a dish less than twenty 4.6 reviews do.
  */
 export function qualityPoints(rating: number, reviewCount: number): number {
@@ -77,16 +99,20 @@ export function qualityPoints(rating: number, reviewCount: number): number {
   return Math.max(-MAX_QUALITY_POINTS, Math.min(MAX_QUALITY_POINTS, points));
 }
 
-/** Most of the taste score that liked-dish tags may take, reached at HISTORY_FULL liked dishes. */
-export const HISTORY_MAX_WEIGHT = 0.4;
-export const HISTORY_MIN_WEIGHT = 0.1;
-export const HISTORY_FULL = 8;
+/** Mix defaults, kept for callers that do not know the diner's openness. */
+export const HISTORY_MAX_WEIGHT = RANKING_PROFILES.mix.historyMax;
+export const HISTORY_MIN_WEIGHT = RANKING_PROFILES.mix.historyMin;
+export const HISTORY_FULL = RANKING_PROFILES.mix.historyFull;
 
-/** Share of the score taken by the diner's liked dishes: 0 with none (quiz palate only). */
-export function historyWeight(likedCount: number): number {
+/**
+ * Share of the score taken by the diner's liked dishes: 0 with none (quiz palate only), then
+ * rising to the openness's maximum as liked dishes pile up.
+ */
+export function historyWeight(likedCount: number, openness: FoodOpenness = "mix"): number {
   if (likedCount <= 0) return 0;
-  const progress = Math.min(1, likedCount / HISTORY_FULL);
-  return HISTORY_MIN_WEIGHT + (HISTORY_MAX_WEIGHT - HISTORY_MIN_WEIGHT) * progress;
+  const { historyMin, historyMax, historyFull } = RANKING_PROFILES[openness];
+  const progress = Math.min(1, likedCount / historyFull);
+  return historyMin + (historyMax - historyMin) * progress;
 }
 
 /**
@@ -95,8 +121,9 @@ export function historyWeight(likedCount: number): number {
  */
 export function buildHomeScorer(
   likedDishes: readonly DishSummary[],
+  openness: FoodOpenness = "mix",
 ): (dish: DishSummary, tasteMatch: number) => number {
-  const weight = historyWeight(likedDishes.length);
+  const weight = historyWeight(likedDishes.length, openness);
   const affinity = weight > 0 ? buildTagAffinity([...likedDishes]) : new Map<string, number>();
   return (dish, tasteMatch) => {
     const blended =

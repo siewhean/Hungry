@@ -5,7 +5,9 @@ import type { DishSummary, TasteVector } from "@/types/domain";
 import {
   buildHomeScorer,
   historyWeight,
+  freshSlotsFor,
   HISTORY_MAX_WEIGHT,
+  RANKING_PROFILES,
   isUnprovenDish,
   MAX_QUALITY_POINTS,
   qualityPoints,
@@ -44,17 +46,17 @@ test("a dish with fewer than 3 reviews is new", () => {
   assert.equal(isUnprovenDish({ reviewCount: 3 }), false);
 });
 
-test("slot 3 and slot 8 go to the best-ranked new dishes, the rest keep their order", () => {
+test("slot 4 and slot 11 go to the best-ranked new dishes, the rest keep their order", () => {
   const ranked = Array.from({ length: 12 }, (_, index) => ({
     id: `p${index + 1}`,
-    fresh: index === 8 || index === 10,
+    fresh: index === 8 || index === 11,
   }));
   const result = reserveFreshSlots(ranked, (item) => item.fresh);
-  assert.equal(result[2]?.id, "p9");
-  assert.equal(result[7]?.id, "p11");
+  assert.equal(result[3]?.id, "p9");
+  assert.equal(result[10]?.id, "p12");
   assert.deepEqual(
     result.map((item) => item.id),
-    ["p1", "p2", "p9", "p3", "p4", "p5", "p6", "p11", "p7", "p8", "p10", "p12"],
+    ["p1", "p2", "p3", "p9", "p4", "p5", "p6", "p7", "p8", "p10", "p12", "p11"],
   );
 });
 
@@ -83,7 +85,7 @@ test("a new dish ranked beyond the lift window is not pulled up", () => {
   assert.equal(result[2]?.id, "p2");
 });
 
-test("a rating counts for more with more reviews, and is never worth more than 5 points", () => {
+test("a rating counts for more with more reviews, and is never worth more than 3 points", () => {
   assert.equal(qualityPoints(5, 0), 0);
   const one = qualityPoints(5, 1);
   const many = qualityPoints(5, 50);
@@ -93,11 +95,11 @@ test("a rating counts for more with more reviews, and is never worth more than 5
   assert.equal(qualityPoints(1, 500), -MAX_QUALITY_POINTS);
 });
 
-test("history counts for nothing without liked dishes and grows to 40%", () => {
+test("history counts for nothing without liked dishes and grows to 60%", () => {
   assert.equal(historyWeight(0), 0);
   assert.ok(historyWeight(1) > 0);
   assert.ok(historyWeight(4) > historyWeight(1));
-  assert.equal(historyWeight(8), HISTORY_MAX_WEIGHT);
+  assert.equal(historyWeight(5), HISTORY_MAX_WEIGHT);
   assert.equal(historyWeight(30), HISTORY_MAX_WEIGHT);
 });
 
@@ -113,4 +115,16 @@ test("a returning diner's score rises for dishes that share tags with the dishes
   const alike = dish("a", { tasteTags: ["spicy", "noodle"], foodTypeTag: "laksa" });
   const different = dish("b", { tasteTags: ["sweet"], foodTypeTag: "cake" });
   assert.ok(score(alike, 70) > score(different, 70));
+});
+
+test("favourites lean on liked dishes more and reserve fewer new slots than adventurous", () => {
+  assert.ok(historyWeight(3, "favourites") > historyWeight(3, "mix"));
+  assert.ok(historyWeight(3, "mix") > historyWeight(3, "adventurous"));
+  assert.equal(historyWeight(8, "adventurous"), RANKING_PROFILES.adventurous.historyMax);
+  assert.equal(historyWeight(0, "favourites"), 0);
+  const favourites = freshSlotsFor("favourites");
+  const adventurous = freshSlotsFor("adventurous");
+  assert.ok(favourites.first > adventurous.first);
+  assert.ok(favourites.every > adventurous.every);
+  assert.deepEqual(freshSlotsFor(), freshSlotsFor("mix"));
 });
