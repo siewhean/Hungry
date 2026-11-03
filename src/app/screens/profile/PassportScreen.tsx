@@ -383,7 +383,8 @@ export function PassportScreen({ navigation }: Props) {
           onPress={() =>
             navigation.navigate("MainTabs", {
               screen: "Profile",
-              params: { screen: "VisitedStalls" },
+              // initial: false keeps Profile home under the list, so Back returns to Profile.
+              params: { screen: "VisitedStalls", initial: false },
             })
           }
           style={{
