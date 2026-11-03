@@ -140,7 +140,10 @@ export function DeveloperToolsScreen() {
       subtitle="Hidden from everyone else. Changes stay on this phone."
       testID="developer-tools-screen"
     >
-      <SettingsSection title="This build" description="Press and hold a row to copy the whole list.">
+      <SettingsSection
+        title="This build"
+        description="Press and hold a row to copy the whole list."
+      >
         {buildRows.map(([label, value], index) => (
           <SettingsRow
             key={label}
@@ -245,7 +248,9 @@ export function DeveloperToolsScreen() {
           label="Success message"
           type="action"
           icon={<AppSymbol name="tried" size={20} color={iconColor} />}
-          onPress={() => showToast({ message: "This is what success looks like.", tone: "success" })}
+          onPress={() =>
+            showToast({ message: "This is what success looks like.", tone: "success" })
+          }
         />
         <SettingsRow
           label="Error message"
