@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { DishDetail, VenueSummary } from "@/types/domain";
-import { compareHomeStalls, getStallRowOpenLabel, isStallClosed } from "./homeStalls";
+import {
+  compareHomeStalls,
+  getStallRowOpenLabel,
+  isStallClosed,
+  isUnprovenStall,
+} from "./homeStalls";
 
 const OPEN_ALWAYS = "Mon-Sun 24 hours";
 
@@ -105,4 +110,22 @@ test("a paused stall sorts below open stalls", () => {
   const paused = { venue: venue({ id: "paused", closedUntil: reopens }), topDish: dish(5, 99, 10) };
   assert.ok(compareHomeStalls(open, paused) < 0);
   assert.ok(compareHomeStalls(paused, open) > 0);
+});
+
+test("at a similar distance a well-reviewed stall comes before a poorly reviewed one", () => {
+  const good = { venue: venue({ id: "good" }), topDish: dish(4.7, 40, 100) };
+  const poor = { venue: venue({ id: "poor" }), topDish: dish(2.5, 40, 90) };
+  assert.ok(compareHomeStalls(good, poor) < 0);
+});
+
+test("a much nearer stall still beats a better-rated far one", () => {
+  const near = { venue: venue({ id: "near" }), topDish: dish(4, 20, 30) };
+  const far = { venue: venue({ id: "far" }), topDish: dish(4.9, 200, 1500) };
+  assert.ok(compareHomeStalls(near, far) < 0);
+});
+
+test("a stall with few reviews is new, and one without a menu is not", () => {
+  assert.equal(isUnprovenStall({ venue: venue(), topDish: dish(5, 1) }), true);
+  assert.equal(isUnprovenStall({ venue: venue(), topDish: dish(4, 30) }), false);
+  assert.equal(isUnprovenStall({ venue: venue() }), false);
 });

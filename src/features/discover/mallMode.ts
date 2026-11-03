@@ -5,6 +5,11 @@
  */
 import { rankDecideCandidates } from "@/features/discovery/decideForMeCandidates";
 import { shouldShowMatchPercent } from "@/features/discover/personalFeedback";
+import {
+  buildHomeScorer,
+  isUnprovenDish,
+  reserveFreshSlots,
+} from "@/features/discover/rankingBalance";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
 import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
 
@@ -72,6 +77,14 @@ export function rankForYou(
      * percentage then, only the reason line. Defaults to true.
      */
     profileTrusted?: boolean;
+    /**
+     * Dishes the diner has liked (saved, tried, reviewed well). With some, the order also follows
+     * their tags; with none, it follows the quiz palate alone. Home passes them; Decide for Me
+     * keeps its own ranking.
+     */
+    likedDishes?: readonly DishDetail[];
+    /** Reserve slots 3, 8, 13... for dishes with few reviews. Home turns it on. */
+    reserveFresh?: boolean;
   },
 ): ForYouPick[] {
   const hasPalate = hasPersonalTasteProfile(options.tasteVector);
@@ -80,6 +93,7 @@ export function rankForYou(
     dietaryFlags: options.dietaryFlags,
     radiusMeters: NO_RADIUS_LIMIT_METERS,
     maxDishBudget: options.maxDishBudget,
+    adjustScore: options.likedDishes ? buildHomeScorer(options.likedDishes) : undefined,
   });
   // Stable partition keeps the taste order inside each group.
   const here = options.preferBuildingId
@@ -88,7 +102,9 @@ export function rankForYou(
   const elsewhere = options.preferBuildingId
     ? ranked.filter((dish) => dish.buildingId !== options.preferBuildingId)
     : ranked;
-  return [...here, ...elsewhere].slice(0, options.limit ?? FOR_YOU_LIMIT).map((dish) => ({
+  const ordered = [...here, ...elsewhere];
+  const withFresh = options.reserveFresh ? reserveFreshSlots(ordered, isUnprovenDish) : ordered;
+  return withFresh.slice(0, options.limit ?? FOR_YOU_LIMIT).map((dish) => ({
     dish,
     matchPercent:
       hasPalate &&
