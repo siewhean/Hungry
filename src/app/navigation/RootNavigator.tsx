@@ -795,11 +795,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             getComponent={loadStallVisitedScreen}
             name="StallVisited"
             options={{
-              presentation: "formSheet",
+              // The sheet is the app's own DismissibleSheet over this transparent route: the
+              // system formSheet it replaced came up empty on iOS.
+              presentation: "transparentModal",
+              animation: "fade",
               headerShown: false,
-              sheetAllowedDetents: [0.5, 1],
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 24,
+              contentStyle: { backgroundColor: "transparent" },
             }}
           />
           <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />

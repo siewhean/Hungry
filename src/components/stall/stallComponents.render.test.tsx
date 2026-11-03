@@ -117,7 +117,8 @@ test("StallVisitedSheet offers dishes, writes a review without one, and skips", 
       dishes: [{ id: "d1", name: "Laksa", priceLabel: "S$5.50" }],
     }),
   );
-  assert.match(withDishes.container.textContent ?? "", /S\$5\.50/);
+  // The sheet is a modal, which renders in a portal outside the container.
+  assert.match(document.body.textContent ?? "", /S\$5\.50/);
   await withDishes.press(withDishes.findByLabel("Review Laksa"));
   await withDishes.press(withDishes.findByText("Skip"));
   await cleanup();
