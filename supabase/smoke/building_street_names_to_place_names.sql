@@ -68,4 +68,26 @@ begin
   end if;
 end $$;
 
+-- The rollback's restore statement, on a backup row of its own: the old street name comes back.
+do $$
+declare
+  v_name text;
+begin
+  insert into app_private.building_name_backup_20261103 (building_id, old_name, new_name)
+  values ('smoke-bld-street', '9 Smoke Test Road', 'Smoke Test Hawker Centre')
+  on conflict (building_id) do nothing;
+
+  update public.buildings bl
+  set name = k.old_name
+  from app_private.building_name_backup_20261103 k
+  where k.building_id = bl.id
+    and bl.name = k.new_name
+    and k.building_id = 'smoke-bld-street';
+
+  select name into v_name from public.buildings where id = 'smoke-bld-street';
+  if v_name is distinct from '9 Smoke Test Road' then
+    raise exception 'the rollback did not put the street name back: %', v_name;
+  end if;
+end $$;
+
 rollback;

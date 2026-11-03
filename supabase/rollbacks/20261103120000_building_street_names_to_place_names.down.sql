@@ -1,3 +1,4 @@
+-- expect-row-loss: app_private.building_name_backup_20261103
 -- Undo 20261103120000_building_street_names_to_place_names: puts each renamed building's old
 -- (street address) name back. A building renamed again since is left as it is. The backup rows
 -- move to the rollback_archive schema rather than being dropped, and a second run (up, down, up,
