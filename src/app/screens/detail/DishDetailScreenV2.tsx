@@ -67,6 +67,7 @@ import {
   getHungryService,
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
+import { DISH_OPEN_DWELL_MS, shouldRecordDishOpen } from "@/features/discover/dishOpen";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useAchievementTallyStore, triedDishFacts } from "@/store/useAchievementTallyStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -520,6 +521,24 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       userId: isAuthenticated ? profile.id : undefined,
     });
   }, [dish, isAuthenticated, profile.id]);
+
+  // Opening a dish counts as interest once the page has stayed open a moment, whichever list or
+  // link it came from. A click the list already recorded is not counted twice.
+  const dishIdForOpen = dish?.id;
+  useEffect(() => {
+    if (!dishIdForOpen) return;
+    const timer = setTimeout(() => {
+      const { tasteInteractionEvents, recordTasteInteraction } = useProfileStore.getState();
+      if (!shouldRecordDishOpen(tasteInteractionEvents, dishIdForOpen)) return;
+      recordTasteInteraction({
+        type: "dish_result_click",
+        surface: "dish_detail",
+        dishId: dishIdForOpen,
+        buttonId: "dish_detail_open",
+      });
+    }, DISH_OPEN_DWELL_MS);
+    return () => clearTimeout(timer);
+  }, [dishIdForOpen]);
 
   // Deep links can open a missing dish with no history; never leave a dead end.
   const leaveDetail = () => {

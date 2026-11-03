@@ -80,7 +80,9 @@ import {
   compareHomeStalls,
   getStallRowOpenLabel,
   isStallClosed,
+  isUnprovenStall,
 } from "@/features/discover/homeStalls";
+import { reserveFreshSlots } from "@/features/discover/rankingBalance";
 import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
 import {
@@ -481,15 +483,27 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       ),
     [discoverDishById, profile.tasteVector, sessionActions],
   );
+  // The dishes the diner saved, tried or reviewed well. A returning diner's rails follow these
+  // tags as well as the palate; a new diner has none, so the quiz palate alone ranks.
+  const likedDishes = useMemo(() => {
+    const { likedDishIds } = buildFoodHistory(foodHistoryRows);
+    // Saved and tried dishes count too, before the server has a history row for them.
+    const ids = new Set([...likedDishIds, ...profile.favouriteDishIds, ...profile.reviewedDishIds]);
+    return [...ids].flatMap((dishId) => {
+      const dish = discoverDishById.get(dishId);
+      return dish ? [dish] : [];
+    });
+  }, [discoverDishById, foodHistoryRows, profile.favouriteDishIds, profile.reviewedDishIds]);
   const tasteOrdered = useMemo(
     () =>
       rankByTaste
         ? tasteOrderBites(quickBitePool, discoverDishById, {
             tasteVector: rankingTasteVector,
             preferBuildingId: currentPlaceId,
+            likedDishes,
           })
         : { bites: quickBitePool, reasons: NO_BITE_REASONS },
-    [currentPlaceId, discoverDishById, quickBitePool, rankByTaste, rankingTasteVector],
+    [currentPlaceId, discoverDishById, likedDishes, quickBitePool, rankByTaste, rankingTasteVector],
   );
   // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
   const [pickedTrendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] =
@@ -773,12 +787,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     // Stalls in the viewer's own building lead; the rest of the area follows once they run out.
     const isInCurrentPlace = (card: (typeof nearestChainCards)[number]) =>
       Boolean(currentPlaceId) && card.venue.buildingId === currentPlaceId;
-    return [...nearestChainCards].sort((a, b) => {
+    const sorted = [...nearestChainCards].sort((a, b) => {
       const placeOrder = Number(isInCurrentPlace(b)) - Number(isInCurrentPlace(a));
       if (placeOrder !== 0) return placeOrder;
-      // Open first, then nearest; late at night the closed stalls follow the open ones.
+      // Open first, then the best near-and-good stall; closed ones follow the open ones.
       return compareHomeStalls(a, b);
     });
+    // New stalls (few reviews) get slots 3, 8, 13... so well-reviewed stalls do not hold the list.
+    return reserveFreshSlots(sorted, (card) => isUnprovenStall(card) && !isStallClosed(card.venue));
     // currentHour re-sorts when Home comes back into focus: open stalls change with the clock.
   }, [
     currentHour,
@@ -953,6 +969,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         maxDishBudget: profile.maxDishBudget,
         preferBuildingId: currentPlaceId,
         profileTrusted: hasTasteProfile,
+        likedDishes,
+        reserveFresh: true,
       },
     );
     return isDiscoverFiltering
@@ -965,6 +983,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     hasTasteProfile,
     inMallMode,
     isDiscoverFiltering,
+    likedDishes,
     matchesDiscoverChipSelection,
     profile.dietaryPreferences,
     profile.maxDishBudget,

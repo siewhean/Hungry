@@ -144,3 +144,63 @@ test("rankForYou hides the match percent for a dish with low-confidence tags onl
   assert.equal(typeof picks.find((pick) => pick.dish.id === "sure")?.matchPercent, "number");
   assert.equal(picks.find((pick) => pick.dish.id === "unsure")?.matchPercent, undefined);
 });
+
+const SPICY_FAN: TasteVector = { sweet: 3, spicy: 9, sour: 4, salty: 6, rich: 5, aromatic: 6 };
+
+test("reserveFresh gives slot 3 to the best-ranked dish with few reviews", () => {
+  const dishes = Array.from({ length: 6 }, (_, index) =>
+    dish(`p${index}`, {
+      tasteVector: { ...SPICY_FAN, spicy: 9 - index * 0.5 },
+      reviewCount: index === 4 ? 0 : 30,
+    }),
+  );
+  const plain = rankForYou(dishes, {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    limit: 6,
+  }).map((pick) => pick.dish.id);
+  const reserved = rankForYou(dishes, {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    limit: 6,
+    reserveFresh: true,
+  }).map((pick) => pick.dish.id);
+  assert.notEqual(plain[2], "p4");
+  assert.equal(reserved[2], "p4");
+});
+
+test("a well-reviewed dish edges out an equal match with no reviews", () => {
+  const proven = dish("proven", { tasteVector: SPICY_FAN, rating: 4.8, reviewCount: 60 });
+  const unknown = dish("unknown", { tasteVector: SPICY_FAN, rating: 0, reviewCount: 0 });
+  const order = rankForYou([unknown, proven], {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    likedDishes: [],
+  }).map((pick) => pick.dish.id);
+  assert.deepEqual(order, ["proven", "unknown"]);
+});
+
+test("with liked dishes, a dish that shares their tags moves up among close matches", () => {
+  const liked = [dish("liked", { tasteTags: ["noodle"], foodTypeTag: "laksa" })];
+  const alike = dish("alike", {
+    tasteVector: { ...SPICY_FAN, spicy: 8 },
+    tasteTags: ["noodle"],
+    foodTypeTag: "laksa",
+  });
+  const other = dish("other", {
+    tasteVector: { ...SPICY_FAN, spicy: 8.2 },
+    tasteTags: ["grilled"],
+    foodTypeTag: "satay",
+  });
+  const withoutHistory = rankForYou([other, alike], {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+  }).map((pick) => pick.dish.id);
+  const withHistory = rankForYou([other, alike], {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    likedDishes: liked,
+  }).map((pick) => pick.dish.id);
+  assert.equal(withoutHistory[0], "other");
+  assert.equal(withHistory[0], "alike");
+});

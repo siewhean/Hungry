@@ -1,7 +1,7 @@
 {
   "global": {
     "lines": 86.6,
-    "branches": 86,
+    "branches": 86.1,
     "functions": 83.2
   },
   "files": {
@@ -79,6 +79,7 @@
     "src/features/discover/bites.ts": 64.5,
     "src/features/discover/currentPlace.ts": 56.7,
     "src/features/discover/discoverReadArgs.ts": 100,
+    "src/features/discover/dishOpen.ts": 100,
     "src/features/discover/favouriteOrder.ts": 100,
     "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/feedMerge.ts": 100,
@@ -88,11 +89,12 @@
     "src/features/discover/homeRails.ts": 100,
     "src/features/discover/homeRanking.ts": 100,
     "src/features/discover/homeStalls.ts": 100,
-    "src/features/discover/mallMode.ts": 97,
+    "src/features/discover/mallMode.ts": 98.9,
     "src/features/discover/personalFeedback.ts": 95.6,
     "src/features/discover/personalRails.ts": 99.3,
+    "src/features/discover/rankingBalance.ts": 91.7,
     "src/features/discover/warmHomeFeed.ts": 100,
-    "src/features/discovery/decideForMeCandidates.ts": 96.8,
+    "src/features/discovery/decideForMeCandidates.ts": 96.9,
     "src/features/discovery/decideQuiz.ts": 99.4,
     "src/features/discovery/distanceLabel.ts": 94.4,
     "src/features/discovery/mapCardText.ts": 100,
