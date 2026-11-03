@@ -301,6 +301,13 @@ function getActiveProvider(): ServiceProvider {
 }
 
 function getExcelCatalogFallbackService(): CatalogReadService {
+  // Release bundles stub the Excel data. Requiring excelFallback there would run its load-time
+  // reads, which throw inside Metro's module loader: Metro reports that as a fatal error (the
+  // app closes) and hands back an empty module, so the try/catch around this call never sees
+  // it. Look at the stub first and never load the module in such a bundle.
+  if (isStubbedDataModule(() => require("@/lib/services/excel/repositories"))) {
+    throw new Error("The offline catalog is not available in this build.");
+  }
   const loaded = require("@/lib/services/catalog/excelFallback") as
     | typeof import("@/lib/services/catalog/excelFallback")
     | undefined;

@@ -104,7 +104,7 @@ test("P5-1: stat labels never break inside a word", () => {
   assert.match(row, /shouldStackStats/);
 });
 
-test("P5-8, P5-10: plural stat labels, haptics on follow, approve and pins, pull to refresh", () => {
+test("P5-8, P5-10: plural stat labels, haptics on follow, approve and pins", () => {
   assert.match(
     read("src/app/screens/profile/ProfileHomeScreen.tsx"),
     /pluralLabel\(ownReviewCount, "Review"\)/,
@@ -116,10 +116,8 @@ test("P5-8, P5-10: plural stat labels, haptics on follow, approve and pins, pull
   assert.match(read("src/features/profile/useFollowPress.ts"), /confirmHaptic\(\)/);
   assert.match(read("src/app/screens/profile/FollowRequestsScreen.tsx"), /confirmHaptic\(\)/);
   assert.match(read("src/components/profile/FavouriteDishesRow.tsx"), /confirmHaptic\(\)/);
-  const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(home, /<RefreshControl/);
-  // The refresh reads counts, requests and reviews once each, in parallel: no per-row calls.
-  assert.match(home, /Promise\.allSettled\(\[/);
+  // Profile reloads its counts, requests and reviews on focus: no pull to refresh.
+  assert.doesNotMatch(read("src/app/screens/profile/ProfileHomeScreen.tsx"), /RefreshControl/);
 });
 
 test("P5-11, P5-12: trailing checkmark picker, Cancel and Save in the header, Edit picture", () => {

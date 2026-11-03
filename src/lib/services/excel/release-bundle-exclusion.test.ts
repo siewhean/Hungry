@@ -45,6 +45,7 @@ test("production Metro bundles stub out mock and Excel data sources", () => {
     "excel/excelService.ts",
     "excel/repositories.ts",
     "excel/excelCatalog.generated.json",
+    "catalog/excelFallback.ts",
   ]) {
     assert.equal(resolveWith(config, join(servicesDir, file)).filePath, stub, file);
   }
