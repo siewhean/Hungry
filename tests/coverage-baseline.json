@@ -2,7 +2,7 @@
   "global": {
     "lines": 86.5,
     "branches": 85.9,
-    "functions": 82.9
+    "functions": 83
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -83,7 +83,8 @@
     "src/features/discover/homeFilters.ts": 100,
     "src/features/discover/homeRanking.ts": 100,
     "src/features/discover/homeStalls.ts": 100,
-    "src/features/discover/mallMode.ts": 95.5,
+    "src/features/discover/mallMode.ts": 97,
+    "src/features/discover/personalFeedback.ts": 95.6,
     "src/features/discover/personalRails.ts": 99.3,
     "src/features/discovery/decideForMeCandidates.ts": 96.8,
     "src/features/discovery/decideQuiz.ts": 99.4,
@@ -174,7 +175,7 @@
     "src/lib/ai/foodHistory.ts": 96.6,
     "src/lib/ai/moodSearch.ts": 100,
     "src/lib/ai/similarityScore.ts": 100,
-    "src/lib/ai/tasteEngine.ts": 95.8,
+    "src/lib/ai/tasteEngine.ts": 96.1,
     "src/lib/ai/tasteQuiz.ts": 84.3,
     "src/lib/analytics/firstDishTiming.ts": 100,
     "src/lib/analytics/gamificationEvents.ts": 100,
@@ -244,6 +245,7 @@
     "src/store/useConsentStore.ts": 100,
     "src/store/useDiscoveryStore.ts": 88.4,
     "src/store/useFeedbackStore.ts": 100,
+    "src/store/useFeedFeedbackStore.ts": 100,
     "src/store/useFoodCredStore.ts": 97.1,
     "src/store/useGamificationStore.ts": 99.3,
     "src/store/useLocationStore.ts": 79.7,

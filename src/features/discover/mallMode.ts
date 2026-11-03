@@ -4,6 +4,7 @@
  * Pure: the screen passes the dishes and stalls it already holds.
  */
 import { rankDecideCandidates } from "@/features/discovery/decideForMeCandidates";
+import { shouldShowMatchPercent } from "@/features/discover/personalFeedback";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
 import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
 
@@ -66,6 +67,11 @@ export function rankForYou(
     maxDishBudget?: number;
     preferBuildingId?: string;
     limit?: number;
+    /**
+     * False when the profile is not yet trusted (a skipped quiz, few signals): no match
+     * percentage then, only the reason line. Defaults to true.
+     */
+    profileTrusted?: boolean;
   },
 ): ForYouPick[] {
   const hasPalate = hasPersonalTasteProfile(options.tasteVector);
@@ -84,7 +90,14 @@ export function rankForYou(
     : ranked;
   return [...here, ...elsewhere].slice(0, options.limit ?? FOR_YOU_LIMIT).map((dish) => ({
     dish,
-    matchPercent: hasPalate ? tasteMatchPercent(options.tasteVector, dish.tasteVector) : undefined,
+    matchPercent:
+      hasPalate &&
+      shouldShowMatchPercent({
+        profileTrusted: options.profileTrusted ?? true,
+        dishConfidence: dish.tasteConfidence,
+      })
+        ? tasteMatchPercent(options.tasteVector, dish.tasteVector)
+        : undefined,
     reason: forYouReason(dish, options.tasteVector),
   }));
 }

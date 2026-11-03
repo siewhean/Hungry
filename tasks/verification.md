@@ -1657,3 +1657,8 @@ Use the smallest check that matches the change risk.
 - New tests: `shareInFlight.test.ts` (share, no cache, per client, hung request not joined, failure shared), `external-call-timeouts.test.ts` (fails on the old Edge Function code: send-email and report-digest had no signal).
 - Prod read-only: Supabase performance advisor (no missing indexes on hot tables; 74 unindexed FKs, mostly admin/staging/archived-social) and API logs (about 8 bulk table reads at start, near-empty responses).
 - Not run: Edge Functions against the real providers (redeploy by sh), a phone build, a slow-network test.
+### RECS-1, 2026-11-03
+- `npm run typecheck` clean; `npm test` 2706 (0 fail); `npm run test:render` 1144 pass; `npm run test:coverage` OK (baseline updated); eslint 0 errors on touched files.
+- New tests: `personalFeedback.test.ts`, `useFeedFeedbackStore.test.ts`, `tasteEngine.distance.test.ts`, `home-personal-feedback-contracts.test.ts`, plus cases in `mallMode.test.ts` and `useProfileStore.feedback.test.ts`.
+- No database change, so no migration, race or rate-limit check applies.
+- Not run: a device build (long press, choice sheet and toast on a phone), PostHog flag for the distance option.

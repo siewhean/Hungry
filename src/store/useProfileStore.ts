@@ -20,6 +20,7 @@ import {
   mergeFoodHistory,
   type AffinitySignal,
 } from "@/lib/ai/foodHistory";
+import type { SessionActionKind } from "@/features/discover/personalFeedback";
 import { OPENNESS_NEOPHILIA_INDEX } from "@/lib/ai/exploration";
 import type {
   DietaryFlag,
@@ -37,6 +38,7 @@ import type {
 } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
+import { useFeedFeedbackStore } from "./useFeedFeedbackStore";
 import { useUIStore } from "./useUIStore";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 
@@ -1279,6 +1281,11 @@ export const useProfileStore = create<ProfileState>()(
           });
         }
         persistTasteInteraction(input, recordedEvent);
+        // What the diner just did, kept for this visit only: it nudges Home's ranking, not the saved palate.
+        const sessionKind = SESSION_KIND_BY_INTERACTION[input.type];
+        if (sessionKind && affinityDishId) {
+          useFeedFeedbackStore.getState().recordSessionAction(affinityDishId, sessionKind);
+        }
         return recordedEvent;
       },
       clearProfile: () => {
@@ -1325,6 +1332,17 @@ export const useProfileStore = create<ProfileState>()(
     },
   ),
 );
+
+/** Taste interactions that also count as what the diner did in this visit (see sessionShift). */
+const SESSION_KIND_BY_INTERACTION: Partial<
+  Record<RecordTasteInteractionInput["type"], SessionActionKind>
+> = {
+  dish_result_click: "open",
+  food_button_click: "open",
+  saved: "save",
+  dish_like: "save",
+  dismissed: "hide",
+};
 
 /** Same signals the server trigger counts (20261020080000); saves and ratings come from favourites and reviews. */
 function getAffinitySignal(

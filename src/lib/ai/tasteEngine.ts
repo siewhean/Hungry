@@ -391,6 +391,27 @@ export interface PipelineContext {
   openness?: FoodOpenness;
   /** What the user ate or liked before; with liked dishes, stage 4 mixes familiar and new food by openness */
   history?: FoodHistory;
+  /**
+   * How distance counts. "additive" (default) adds a 15% distance term to the score, so a far
+   * perfect match can beat a near good one. "decay" scores relevance first and multiplies it by
+   * a walking-distance decay, so nearer food wins unless the far dish is clearly better.
+   */
+  distanceMode?: DistanceMode;
+}
+
+export type DistanceMode = "additive" | "decay";
+
+/** Metres over which the "decay" distance factor falls to about a third (a short walk). */
+export const DISTANCE_DECAY_METERS = 400;
+/** The factor never falls below this, so far dishes still rank among themselves by relevance. */
+export const DISTANCE_DECAY_FLOOR = 0.25;
+
+/** 1 at the diner's feet, falling toward DISTANCE_DECAY_FLOOR with distance. */
+export function distanceDecayFactor(distanceMeters: number): number {
+  const meters = Math.max(0, Number.isFinite(distanceMeters) ? distanceMeters : 0);
+  return (
+    DISTANCE_DECAY_FLOOR + (1 - DISTANCE_DECAY_FLOOR) * Math.exp(-meters / DISTANCE_DECAY_METERS)
+  );
 }
 
 export interface PipelineResult {
@@ -493,6 +514,7 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
   contextVector: TasteVector,
   userVector: TasteVector,
   tagAffinity: Map<string, number> = new Map(),
+  distanceMode: DistanceMode = "additive",
 ): (T & { _precisionScore: number })[] {
   // Find max distance for normalization
   const maxDist = Math.max(...candidates.map((d) => d.distanceMeters), 1);
@@ -512,6 +534,19 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
 
     const confidence = Math.min(1, Math.max(0, dish.tasteConfidence ?? 1));
     const shiftedWeight = RECOMMENDATION_SCORE_WEIGHTS.taste * (1 - confidence);
+
+    if (distanceMode === "decay") {
+      // Relevance without distance (its weights sum to 1 minus the distance weight), scaled to
+      // 0-1, then multiplied by the walking-distance factor.
+      const relevanceWeight = 1 - RECOMMENDATION_SCORE_WEIGHTS.distance;
+      const relevance =
+        (RECOMMENDATION_SCORE_WEIGHTS.taste * confidence * tasteScore +
+          RECOMMENDATION_SCORE_WEIGHTS.context * contextScore +
+          (RECOMMENDATION_SCORE_WEIGHTS.rating + shiftedWeight) * ratingScore +
+          RECOMMENDATION_SCORE_WEIGHTS.novelty * noveltyScore) /
+        relevanceWeight;
+      return { ...dish, _precisionScore: relevance * distanceDecayFactor(dish.distanceMeters) };
+    }
 
     const precisionScore =
       RECOMMENDATION_SCORE_WEIGHTS.taste * confidence * tasteScore +
@@ -752,6 +787,7 @@ export function runRecommendationPipeline(
     contextVector,
     ctx.userVector,
     tagAffinity,
+    ctx.distanceMode,
   );
 
   // Sort by precision score
