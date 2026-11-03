@@ -12,6 +12,7 @@ import { ProfileHomeScreen } from "./ProfileHomeScreen";
 import { FollowersScreen, FollowingScreen } from "./ProfileConnectionsScreen";
 import { ReviewHistoryScreen } from "./ReviewHistoryScreen";
 import { SettingsScreen } from "./SettingsScreen";
+import { DeveloperToolsScreen } from "./DeveloperToolsScreen";
 import { VisitedStallsScreen } from "./VisitedStallsScreen";
 import { FollowedStallsScreen } from "./FollowedStallsScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
@@ -89,6 +90,7 @@ export function ProfileStack() {
         <Stack.Screen name="Collections" component={CollectionsScreen} />
         <Stack.Screen name="ReviewHistory" component={ReviewHistoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="DeveloperTools" component={DeveloperToolsScreen} />
         <Stack.Screen name="ReviewFlow" component={ReviewStack} />
         {FEATURE_FLAGS.collectionsEnabled ? (
           <>
