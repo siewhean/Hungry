@@ -20,7 +20,7 @@ export const SESSION_WINDOW_MS = 30 * 60 * 1000;
 /** Only the latest actions count, so one long browse cannot swamp the palate. */
 export const SESSION_ACTION_LIMIT = 10;
 /** The most one axis can move for this visit. */
-export const SESSION_SHIFT_MAX = 2;
+export const SESSION_SHIFT_MAX = 3;
 /** A dish tagged with less confidence than this does not show a match percentage. */
 export const MATCH_PERCENT_MIN_CONFIDENCE = 0.7;
 
@@ -42,9 +42,9 @@ export interface MutedFoodType {
 
 /** How far one action pulls the palate toward (or, for hide, away from) the dish. */
 const ACTION_PULL: Record<SessionActionKind, number> = {
-  open: 0.1,
-  save: 0.2,
-  hide: -0.2,
+  open: 0.2,
+  save: 0.4,
+  hide: -0.4,
 };
 
 const TASTE_AXES: (keyof TasteVector)[] = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"];
@@ -54,7 +54,7 @@ const ZERO_SHIFT: TasteVector = { sweet: 0, spicy: 0, sour: 0, salty: 0, rich: 0
 type DishTaste = Pick<DishSummary, "tasteVector" | "tasteConfidence">;
 
 /**
- * How far this visit's actions move each taste axis, from -2 to 2. Each recent action pulls the
+ * How far this visit's actions move each taste axis, from -3 to 3. Each recent action pulls the
  * palate toward the dish it was about (away for a hide), scaled by how sure we are of the dish's
  * tags. A dish with no taste data (or the all-5 placeholder) moves nothing.
  */

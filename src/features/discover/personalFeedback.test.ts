@@ -40,7 +40,7 @@ test("an opened spicy dish pulls the palate toward spicy, a little", () => {
     lookup({ hot: { tasteVector: SPICY_DISH } }),
     NOW,
   );
-  assert.ok(shift.spicy > 0 && shift.spicy < 1, `spicy shift ${shift.spicy}`);
+  assert.ok(shift.spicy > 0 && shift.spicy < 2, `spicy shift ${shift.spicy}`);
   assert.ok(shift.sweet < 0, "a less sweet dish pulls sweet down");
 });
 

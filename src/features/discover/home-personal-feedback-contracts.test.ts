@@ -46,6 +46,12 @@ test("the card opens its options on long press and offers a screen reader action
   assert.match(rail, /onAccessibilityAction=/);
 });
 
+test("the card also shows a visible more-options button, so the long press is not the only way", () => {
+  const rail = readRepoFile(RAIL);
+  assert.match(rail, /More options for \$\{bite\.dishName\}/);
+  assert.match(rail, /onPress=\{handleOptions\}/);
+});
+
 test("the rail impression event lists the dish ids in on-screen order", () => {
   const rail = readRepoFile(RAIL);
   assert.match(rail, /dish_ids: cards\.map\(\(card\) => card\.dishId\)/);
