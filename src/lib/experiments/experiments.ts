@@ -796,12 +796,19 @@ export function setExperimentOverride<K extends ExperimentKey>(
   else if (overridesAllowed()) overrides.set(key, variant);
 }
 
-/** Maps a raw flag value to a known variant: true is "test", false is "control". */
+/**
+ * Maps a raw flag value to a known variant: true is "test", false is "control" (a rollout keeps
+ * its fallback on false, see below).
+ */
 export function resolveExperimentVariant<K extends ExperimentKey>(
   key: K,
   flagValue: boolean | string | undefined,
 ): ExperimentVariant<K> {
-  const { variants, fallback } = EXPERIMENTS[key] as ExperimentDefinition;
+  const { variants, fallback, rollout } = EXPERIMENTS[key] as ExperimentDefinition;
+  // PostHog reports a flag that does not exist (or is off) as false. A rollout has no flag until
+  // someone creates one, so false must leave everyone on the fallback arm; its kill switch is a
+  // multivariate flag that says "control".
+  if (rollout && flagValue === false) return fallback as ExperimentVariant<K>;
   const value = flagValue === true ? "test" : flagValue === false ? "control" : flagValue;
   return (
     typeof value === "string" && (variants as readonly string[]).includes(value) ? value : fallback

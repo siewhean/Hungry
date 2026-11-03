@@ -238,6 +238,16 @@ test("auth experiments state the sample they need per arm before a result may be
   }
 });
 
+test("a rollout stays on its fallback when PostHog reports no flag, and honours a control variant", () => {
+  // PostHog gives false for a flag that does not exist; a rollout has no flag until it is live.
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", false), "loop");
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", undefined), "loop");
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", "control"), "control");
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", "loop"), "loop");
+  assert.equal(resolveExperimentVariant("auth_email_code_first_v1", false), "email_code");
+  assert.equal(resolveExperimentVariant("auth_email_code_first_v1", "control"), "control");
+});
+
 test("a running experiment with no PostHog flag is a rollout, not a test", () => {
   // Round-four finding AUTH4-2: no flag existed in PostHog, so every "running" test served
   // control. These predate the finding and run on their fallback until sh creates their flags;

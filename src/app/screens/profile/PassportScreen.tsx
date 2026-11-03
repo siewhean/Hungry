@@ -33,6 +33,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { trackPassportViewed } from "@/lib/analytics/gamificationEvents";
 import { usePassportStore } from "@/store/usePassportStore";
+import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
 import type { PassportContributionStats, PassportProgressEvent } from "@/types/domain";
@@ -380,13 +381,12 @@ export function PassportScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Visited stalls, ${achievementInput.stallsVisited}`}
-          onPress={() =>
-            navigation.navigate("MainTabs", {
-              screen: "Profile",
-              // initial: false keeps Profile home under the list, so Back returns to Profile.
-              params: { screen: "VisitedStalls", initial: false },
-            })
-          }
+          onPress={() => {
+            // Saved > Stalls > Visited is a root screen, so this never builds the Profile tab
+            // stack mid-transition (a cold Profile stack came up with Back going to Home, or blank).
+            useSavedViewStore.getState().setStallTab("visited");
+            navigation.navigate("Favourites", { section: "stalls" });
+          }}
           style={{
             alignItems: "center",
             backgroundColor: palette.surface,
