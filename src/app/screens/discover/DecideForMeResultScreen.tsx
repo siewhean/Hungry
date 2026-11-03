@@ -1,3 +1,4 @@
+import { FeedbackThumbs } from "@/components/feedback/FeedbackThumbs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -1286,6 +1287,7 @@ export function DecideForMeResultScreen() {
               })}
             </View>
           ) : null}
+          <FeedbackThumbs promptId="decide_pick" />
         </View>
       </Animated.ScrollView>
 

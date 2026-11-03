@@ -2,7 +2,7 @@
   "global": {
     "lines": 86.5,
     "branches": 85.9,
-    "functions": 82.9
+    "functions": 83
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -92,6 +92,8 @@
     "src/features/discovery/mapCardText.ts": 100,
     "src/features/discovery/mapPins.ts": 100,
     "src/features/discovery/venueDescriptor.ts": 100,
+    "src/features/feedback/feedback.ts": 100,
+    "src/features/feedback/screenTracking.ts": 100,
     "src/features/home/activity.ts": 95.5,
     "src/features/home/bites.ts": 100,
     "src/features/home/chatShare.ts": 100,
@@ -242,6 +244,7 @@
     "src/store/useChoiceSheetStore.ts": 100,
     "src/store/useConsentStore.ts": 100,
     "src/store/useDiscoveryStore.ts": 88.4,
+    "src/store/useFeedbackStore.ts": 100,
     "src/store/useFeedFeedbackStore.ts": 100,
     "src/store/useFoodCredStore.ts": 97.1,
     "src/store/useGamificationStore.ts": 99.3,

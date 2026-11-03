@@ -19,6 +19,7 @@ import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { AppText, FloatingToast } from "@/components/ui";
+import { trackScreen } from "@/features/feedback/screenTracking";
 import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
@@ -718,12 +719,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         theme={theme}
         linking={linking}
         onReady={() => {
+          trackScreen(navigationRef.getRootState());
           const launchRoute = navigationRef.getRootState()?.routes[0]?.name;
           if (launchRoute !== "Splash" && launchRoute !== "DeveloperLauncher") {
             setLaunchSkippedSplash(true);
           }
         }}
-        onStateChange={() => {
+        onStateChange={(state) => {
+          trackScreen(state);
           resetScrollBack();
         }}
       >
