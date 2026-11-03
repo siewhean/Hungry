@@ -10,6 +10,8 @@ import type { DishDetail, TasteVector } from "@/types/domain";
 export type TasteOrderOptions = {
   tasteVector: TasteVector;
   preferBuildingId?: string;
+  /** The diner's liked dishes: with some, ranking follows their tags too (see rankingBalance). */
+  likedDishes?: readonly DishDetail[];
 };
 
 /**
@@ -35,6 +37,7 @@ export function tasteOrderBites(
     ...options,
     dietaryFlags: [],
     limit: dishes.length,
+    reserveFresh: true,
   });
   const rankByDishId = new Map(picks.map((pick, index) => [pick.dish.id, index] as const));
   const ranked = bites

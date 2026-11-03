@@ -35,15 +35,21 @@ export function rankDecideCandidates(
     maxDishBudget?: number;
     /** Defaults to "the vector differs from the all-5s guest default". */
     hasTasteProfile?: boolean;
+    /** Home only: changes the score used for the order (history and rating), never the filters. */
+    adjustScore?: (dish: DishDetail, score: number) => number;
   },
 ): DishDetail[] {
   const hasTasteProfile = options.hasTasteProfile ?? hasPersonalTasteProfile(options.tasteVector);
-  const scoreOf = (dish: DishDetail) =>
+  const baseScoreOf = (dish: DishDetail) =>
     hasTasteProfile
       ? tasteMatchPercent(options.tasteVector, dish.tasteVector)
       : dish.reviewCount > 0
         ? dish.rating
         : 0;
+  const scoreOf = (dish: DishDetail) =>
+    options.adjustScore && hasTasteProfile
+      ? options.adjustScore(dish, baseScoreOf(dish))
+      : baseScoreOf(dish);
   const ranked = filterSafeDishes(dishes, options.dietaryFlags)
     .filter((dish) => dish.distanceMeters <= options.radiusMeters)
     .map((dish) => ({ dish, score: scoreOf(dish) }))
