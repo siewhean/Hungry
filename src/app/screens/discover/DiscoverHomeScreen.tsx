@@ -49,6 +49,7 @@ import { ForYouCard } from "@/components/discover/ForYouCard";
 import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
+import { HomeFeedbackCard } from "@/components/feedback/HomeFeedbackCard";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import {
   DISCOVER_FEED_LIMIT,
@@ -1839,6 +1840,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
         {/* Intent Chips with Icons */}
         <FilterChipRail
+          fit
           options={sortedChips}
           selectedIds={activeDiscoverChipIds}
           onSelect={toggleDiscoverChip}
@@ -2005,6 +2007,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             </Pressable>
           ) : null}
         </View>
+
+        <HomeFeedbackCard />
 
         {inMallMode && currentPlace ? (
           <>

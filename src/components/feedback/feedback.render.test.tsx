@@ -13,6 +13,7 @@ import { cleanup, render, settle } from "@/test/render";
 
 import { FeedbackSheet } from "./FeedbackSheet";
 import { FeedbackThumbs } from "./FeedbackThumbs";
+import { HomeFeedbackCard } from "./HomeFeedbackCard";
 
 beforeEach(() => {
   useFeedbackStore.setState({ settled: {}, lastShownAt: 0, sentAt: [] });
@@ -82,4 +83,16 @@ test("the feedback sheet will not send an empty note, and sends a written one", 
   await view.press(byLabel("Send"));
   assert.match(document.body.textContent ?? "", /Thank you\. We read every note\./);
   assert.equal(tracked().at(-1), "feedback_submitted");
+});
+
+test("the Home card opens the feedback sheet and logs where it was opened from", async () => {
+  const view = await render(<HomeFeedbackCard />);
+  assert.match(document.body.textContent ?? "", /Help us make Hungry better/);
+  assert.equal(document.body.textContent?.includes("What do you like"), false);
+
+  await view.press(byLabel("Send feedback"));
+  await settle();
+  assert.equal(tracked().at(-1), "feedback_opened");
+  assert.equal(getTrackedAnalyticsEvents().at(-1)?.properties.source, "home_card");
+  assert.ok(document.body.querySelector("textarea"), "the feedback field is on screen");
 });
