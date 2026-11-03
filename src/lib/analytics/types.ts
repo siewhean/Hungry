@@ -159,6 +159,15 @@ export type AnalyticsEventName =
   | "follow_request_declined"
   | "claim_this_stall_tapped"
 
+  // ─── Usage & feedback ──────────────────────────────────────────────────────
+  | "screen_viewed"
+  | "feedback_prompt_shown"
+  | "feedback_thumb_submitted"
+  | "feedback_thumb_reason"
+  | "feedback_prompt_dismissed"
+  | "feedback_opened"
+  | "feedback_submitted"
+
   // ─── Settings & Account Events ─────────────────────────────────────────────
   | "settings_changed"
   | "settings_data_export_requested"

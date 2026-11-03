@@ -12,6 +12,7 @@ import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { FloatingToast } from "@/components/ui";
+import { trackScreen } from "@/features/feedback/screenTracking";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { RootStackParamList } from "./navigationTypes";
@@ -55,7 +56,14 @@ export function PreAuthNavigator({ theme }: { theme: Theme }) {
 
   return (
     <>
-      <NavigationContainer theme={theme} linking={linking} onStateChange={resetScrollBack}>
+      <NavigationContainer
+        theme={theme}
+        linking={linking}
+        onStateChange={(state) => {
+          trackScreen(state);
+          resetScrollBack();
+        }}
+      >
         <Stack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
           <Stack.Screen component={SplashScreen} name="Splash" />
           <Stack.Screen component={OnboardingStack} name="OnboardingStack" />

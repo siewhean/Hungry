@@ -11,7 +11,7 @@ Source of truth: `ios/Hungry/PrivacyInfo.xcprivacy` (kept in step by `src/app/re
 | Location | Coarse location | App functionality, Product personalization | Optional; area pick works without it |
 | Location | Precise location | App functionality | Optional; nearby ranking and map |
 | User Content | Photos or videos | App functionality | Review, menu and profile photos |
-| User Content | Other user content | App functionality | Reviews, lists, reports |
+| User Content | Other user content | App functionality | Reviews, lists, reports, feedback notes (Send feedback, sent via PostHog only when usage analytics is on) |
 | Search History | Search history | App functionality, Product personalization | Typed searches used for recommendations |
 | Usage Data | Product interaction | Analytics, Product personalization | PostHog; off until the person agrees (onboarding question) |
 | Diagnostics | Crash data, Performance data, Other diagnostic data | App functionality, Analytics | Sentry |

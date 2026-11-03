@@ -9,6 +9,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { FeedbackSheet } from "@/components/feedback/FeedbackSheet";
 import { AppSymbol, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
@@ -265,6 +266,7 @@ export function SettingsScreen() {
     })();
   };
 
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [accountDialog, setAccountDialog] = useState<
     | "signOut"
     | "deleteAccount"
@@ -901,6 +903,18 @@ export function SettingsScreen() {
       <SettingsSection editorial title="Help & legal">
         <SettingsRow
           {...neutralRow}
+          label="Send feedback"
+          description="Tell us what you like or what to fix."
+          icon={<AppSymbol name="feedback" size={20} color={iconColor} />}
+          type="action"
+          onPress={() => {
+            trackAnalyticsEvent("feedback_opened", { source: "settings" });
+            setFeedbackOpen(true);
+          }}
+          isLast={false}
+        />
+        <SettingsRow
+          {...neutralRow}
           label="Contact us"
           description="Email us or open the help centre."
           icon={<AppSymbol name="contact" size={20} color={iconColor} />}
@@ -970,6 +984,7 @@ export function SettingsScreen() {
         ]}
         onClose={() => setAccountDialog(null)}
       />
+      <FeedbackSheet visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <Dialog
         visible={accountDialog === "contact"}
         title="Contact us"

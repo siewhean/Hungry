@@ -1,3 +1,4 @@
+import { FeedbackThumbs } from "@/components/feedback/FeedbackThumbs";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -1759,6 +1760,8 @@ function RawCatalogBrowseGrid({
                     onPress={() => void loadPage(nextCursor, true)}
                   />
                 </View>
+              ) : !nextCursor && !isLoading && rows.length > 0 ? (
+                <FeedbackThumbs promptId="search_results" />
               ) : null
             }
           />
