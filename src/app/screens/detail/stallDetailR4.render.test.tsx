@@ -597,3 +597,12 @@ test("R4-STALL-19: a claim refused for an expired session opens sign-in and retu
   await view.settle();
   assert.match(useUIStore.getState().signInPrompt?.title ?? "", /Sign in before claiming/);
 });
+
+test("Visited shows no spinner while the visit is stored: the box flips at once", () => {
+  const source = readRepoFile("src/components/stall/StallInteractionBar.tsx");
+  assert.doesNotMatch(
+    source,
+    /loading:[^\n]*(tryingInProgress|savingInProgress)/,
+    "neither Visited nor Save ties its spinner to the write",
+  );
+});
