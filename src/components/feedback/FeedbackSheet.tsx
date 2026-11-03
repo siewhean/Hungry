@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, View } from "react-native";
 
-import { AppText, Button, Chip, DismissibleSheet, Input } from "@/components/ui";
+import { AppText, Button, CelebrationBurst, Chip, DismissibleSheet, Input } from "@/components/ui";
 import {
   FEEDBACK_CATEGORIES,
   FEEDBACK_MAX_LENGTH,
+  FEEDBACK_PLACEHOLDERS,
   sendFeedback,
   type FeedbackCategory,
 } from "@/features/feedback/feedback";
+import { successHaptic } from "@/lib/haptics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { useHungryTheme } from "@/theme";
@@ -32,6 +34,7 @@ export function FeedbackSheet({ visible, onClose }: Props) {
   const submit = () => {
     const result = sendFeedback(category, message);
     if (result.status === "sent") {
+      successHaptic();
       setSent(true);
       setNotice(null);
     } else if (result.status === "too_many") {
@@ -63,24 +66,39 @@ export function FeedbackSheet({ visible, onClose }: Props) {
         <View style={{ gap: spacing[3], paddingBottom: spacing[3], paddingHorizontal: spacing[4] }}>
           {sent ? (
             <>
-              <AppText>Thank you. We read every note.</AppText>
+              <CelebrationBurst testID="feedback-celebration" />
+              <AppText variant="h3" style={{ textAlign: "center" }}>
+                Thank you!
+              </AppText>
+              <AppText tone="secondary" style={{ textAlign: "center" }}>
+                We read every note, and it helps us make Hungry better.
+              </AppText>
               <Button label="Done" onPress={close} />
             </>
           ) : (
             <>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-                {FEEDBACK_CATEGORIES.map((entry) => (
-                  <Chip
-                    key={entry.id}
-                    label={entry.label}
-                    selected={entry.id === category}
-                    onPress={() => setCategory(entry.id)}
-                  />
-                ))}
+              <AppText tone="secondary">How can we improve your experience?</AppText>
+              {/* Two by two, so every choice is whole and none is cut off or left on its own row. */}
+              <View style={{ gap: spacing[2] }}>
+                {[FEEDBACK_CATEGORIES.slice(0, 2), FEEDBACK_CATEGORIES.slice(2)].map(
+                  (row, index) => (
+                    <View key={index} style={{ flexDirection: "row", gap: spacing[2] }}>
+                      {row.map((entry) => (
+                        <Chip
+                          key={entry.id}
+                          label={entry.label}
+                          selected={entry.id === category}
+                          onPress={() => setCategory(entry.id)}
+                          style={{ flex: 1 }}
+                        />
+                      ))}
+                    </View>
+                  ),
+                )}
               </View>
               <Input
                 accessibilityLabel="Your feedback"
-                placeholder="What do you like, or what should we fix?"
+                placeholder={FEEDBACK_PLACEHOLDERS[category]}
                 value={message}
                 onChangeText={setMessage}
                 multiline

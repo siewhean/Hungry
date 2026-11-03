@@ -9,6 +9,7 @@ export * from "./Badge";
 export * from "./BottomSheet";
 export * from "./Button";
 export * from "./Card";
+export * from "./CelebrationBurst";
 export * from "./Chip";
 export * from "./ChipGroup";
 export * from "./EmptyState";

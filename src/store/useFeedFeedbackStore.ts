@@ -22,8 +22,6 @@ type FeedFeedbackState = {
   muteFoodType: (foodType: string, now?: number) => void;
   /** Pins a popular dish to Home (at the end), or unpins it when it is already pinned. */
   toggleFavouriteFoodStyle: (id: string) => void;
-  /** Moves a pinned popular dish one place earlier (-1) or later (1). */
-  moveFavouriteFoodStyle: (id: string, direction: -1 | 1) => void;
   _reset: () => void;
 };
 
@@ -62,15 +60,6 @@ export const useFeedFeedbackStore = create<FeedFeedbackState>()(
             ? state.favouriteFoodStyleIds.filter((item) => item !== id)
             : [...state.favouriteFoodStyleIds, id],
         })),
-      moveFavouriteFoodStyle: (id, direction) =>
-        set((state) => {
-          const from = state.favouriteFoodStyleIds.indexOf(id);
-          const to = from + direction;
-          if (from < 0 || to < 0 || to >= state.favouriteFoodStyleIds.length) return state;
-          const next = [...state.favouriteFoodStyleIds];
-          [next[from], next[to]] = [next[to], next[from]];
-          return { favouriteFoodStyleIds: next };
-        }),
       _reset: () => set({ mutedFoodTypes: [], sessionActions: [], favouriteFoodStyleIds: [] }),
     }),
     {

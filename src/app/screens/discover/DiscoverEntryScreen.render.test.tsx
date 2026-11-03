@@ -1211,49 +1211,56 @@ test("H4-14: a diner with a saved dietary need still gets dishes above the class
   assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
 });
 
-test("R10: Home also lists what is open now and the malls and hawker centres nearby", async () => {
-  serveLiveFeed([
-    ...Array.from({ length: 4 }, (_, i) =>
-      feedRow(i + 1, { operating_hours: "Mon-Sun 24 hours", is_open: true }),
-    ),
-    ...Array.from({ length: 2 }, (_, i) =>
-      feedRow(i + 5, {
-        building_id: "building-2",
-        building_name: "Lau Pa Sat",
-        operating_hours: "Mon-Sun 24 hours",
-        is_open: true,
-      }),
-    ),
-  ]);
+test("R11: Home adds sections of different foods and names each place by its own building", async () => {
+  // The first ten stalls by distance fill the main rail; the sections come from the stalls after.
+  const near = Array.from({ length: 10 }, (_, i) =>
+    feedRow(i + 1, { venue_name: `Corner ${i + 1}`, top_dish_name: "Mystery plate" }),
+  );
+  const noodles = ["Prawn Noodles", "Wanton Mee", "Lor Mee"].map((dish, i) =>
+    feedRow(11 + i, {
+      venue_name: `${dish} Stall`,
+      top_dish_name: dish,
+      building_id: "building-2",
+      building_name: "Lau Pa Sat",
+    }),
+  );
+  const rice = ["Chicken Rice", "Duck Rice", "Claypot Rice"].map((dish, i) =>
+    feedRow(14 + i, {
+      venue_name: `${dish} Stall`,
+      top_dish_name: dish,
+      building_id: "building-3",
+      building_name: "Jurong Point",
+    }),
+  );
+  serveLiveFeed([...near, ...noodles, ...rice]);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
-  assert.match(text, /Open now/);
+  assert.doesNotMatch(text, /Open now/, "the Open now rail is replaced by the food sections");
+  assert.ok(view.findByLabel("See all: Noodles"), "a Noodles section with a chevron");
+  assert.ok(view.findByLabel("See all: Rice dishes"), "a Rice dishes section with a chevron");
+  assert.ok(view.findByTestId("home-noodles"), "the section renders its stalls");
   assert.match(text, /Malls and hawker centres nearby/);
   assert.ok(view.findByTestId("nearby-places"), "the places rail renders");
-  assert.ok(view.findByLabel(/^See stalls at /), "each place opens its stalls");
+  assert.ok(view.findByLabel(/^See stalls at Lau Pa Sat/), "a place is named by its building");
+  assert.ok(view.findByLabel(/^See stalls at Jurong Point/), "another place has its own name");
 });
 
-test("R10: popular dishes pinned with a long press show first under Your favourites", async () => {
+test("R11: pinned popular dishes lead the Popular dishes row with a star and no extra card or row", async () => {
   const { useFeedFeedbackStore } = await import("@/store/useFeedFeedbackStore");
   useFeedFeedbackStore.getState()._reset();
   serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
   useFeedFeedbackStore.getState().toggleFavouriteFoodStyle("satay");
   useFeedFeedbackStore.getState().toggleFavouriteFoodStyle("laksa");
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  const favourites = view.findByTestId("favourite-food-styles");
-  assert.ok(favourites, "the favourites row is on Home");
-  const labels = Array.from(favourites.querySelectorAll("[aria-label^='Search for']")).map(
+  const items = Array.from(document.body.querySelectorAll("[aria-label^='Search for']")).map(
     (element) => element.getAttribute("aria-label"),
   );
-  assert.deepEqual(labels, ["Search for Satay, favourite", "Search for Laksa, favourite"]);
-  assert.match(view.text(), /Your favourites/);
-  useFeedFeedbackStore.getState()._reset();
-});
-
-test("R10: with nothing pinned there is no favourites row", async () => {
-  const { useFeedFeedbackStore } = await import("@/store/useFeedFeedbackStore");
-  useFeedFeedbackStore.getState()._reset();
-  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
-  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.deepEqual(items.slice(0, 2), [
+    "Search for Satay, favourite",
+    "Search for Laksa, favourite",
+  ]);
+  assert.equal(document.body.querySelectorAll("[data-testid='favourite-star']").length, 2);
+  assert.doesNotMatch(view.text(), /Your favourites/);
   assert.equal(view.findByTestId("favourite-food-styles"), null);
+  useFeedFeedbackStore.getState()._reset();
 });

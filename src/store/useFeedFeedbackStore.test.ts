@@ -81,19 +81,6 @@ test("a popular dish can be pinned to Home and unpinned again", () => {
   assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["satay"]);
 });
 
-test("pinned popular dishes move one place at a time and stop at the ends", () => {
-  const { toggleFavouriteFoodStyle, moveFavouriteFoodStyle } = useFeedFeedbackStore.getState();
-  for (const id of ["a", "b", "c"]) toggleFavouriteFoodStyle(id);
-  moveFavouriteFoodStyle("c", -1);
-  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["a", "c", "b"]);
-  moveFavouriteFoodStyle("a", -1);
-  moveFavouriteFoodStyle("b", 1);
-  moveFavouriteFoodStyle("missing", 1);
-  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["a", "c", "b"]);
-  moveFavouriteFoodStyle("a", 1);
-  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["c", "a", "b"]);
-});
-
 test("resetting on sign-out also clears the pinned popular dishes", () => {
   useFeedFeedbackStore.getState().toggleFavouriteFoodStyle("laksa");
   useFeedFeedbackStore.getState()._reset();
