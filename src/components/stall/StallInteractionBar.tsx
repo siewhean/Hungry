@@ -262,7 +262,8 @@ export function StallInteractionBar({
               icon: isTried ? TriedOnSymbol : TriedOffSymbol,
               active: isTried,
               role: "checkbox" as const,
-              loading: tryingInProgress || interactionLoading,
+              // No spinner on a tap: the button flips at once and the store writes in the background.
+              loading: interactionLoading,
               onPress: () => void handleTried(),
               accessibilityLabel: isTried ? "Visited" : "Mark this stall visited",
             },
@@ -347,7 +348,7 @@ export function StallInteractionBar({
       icon: TriedOnSymbol,
       active: isTried,
       onPress: handleTried,
-      loading: tryingInProgress || (!isLoaded && isLoadingInteractions),
+      loading: !isLoaded && isLoadingInteractions,
     },
     ...(onAddToList
       ? [
