@@ -6,6 +6,11 @@ import {
   matchesHomeCategory,
   type HomeCategoryId,
 } from "@/features/discover/homeCategories";
+import {
+  cannotTakeSpice,
+  fitChipsToDiner,
+  type HomeChipContext,
+} from "@/features/discover/homeChips";
 import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -100,6 +105,17 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
       setCurrentHour(getSingaporeHour());
     }, []),
   );
+  // What decides which chips this diner sees right now; the screen adds the foods they know.
+  const avoidSpicy = cannotTakeSpice(profile);
+  const chipContext = useMemo<Omit<HomeChipContext, "knownKinds">>(
+    () => ({
+      hour: currentHour,
+      avoidSpicy,
+      dietaryPreferences: profile.dietaryPreferences,
+      activeIds: new Set(activeDiscoverChipIds),
+    }),
+    [activeDiscoverChipIds, avoidSpicy, currentHour, profile.dietaryPreferences],
+  );
   const sortedChips = useMemo(() => {
     // The first chip names the diner's saved needs; a saved halal need already is the Halal chip.
     const intentChips = profile.dietaryPreferences.includes("halal")
@@ -107,14 +123,15 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
       : INTENT_CHIPS;
     const baseChips = [
       { id: "dietary" as const, label: getDietaryChipLabel(profile.dietaryPreferences) },
-      ...intentChips,
+      // No breakfast at dinner, no spicy for someone who cannot take it (see homeChips).
+      ...fitChipsToDiner(intentChips, { ...chipContext, knownKinds: new Set() }),
     ];
     // "Late night" only shows from 21:00 to 03:59, and then leads the row.
     if (isLateNightHour(currentHour)) {
       return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
     }
     return baseChips.filter((chip) => chip.id !== "late");
-  }, [currentHour, profile.dietaryPreferences]);
+  }, [chipContext, currentHour, profile.dietaryPreferences]);
 
   const toggleDiscoverChip = useCallback(
     (chipId: DiscoverChipId) => {
@@ -231,6 +248,7 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
     isPopularFoodFilterPending,
     isDiscoverFiltering,
     sortedChips,
+    chipContext,
     toggleDiscoverChip,
     matchesDiscoverChipSelection,
     clearDiscoverFilters,

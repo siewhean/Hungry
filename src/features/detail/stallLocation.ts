@@ -1,3 +1,4 @@
+import { cleanPlaceName } from "@/features/detail/placeNames";
 import { getDistanceMetersFromCoordinates } from "@/lib/geo/distance";
 import type { Coordinate, DishSummary, VenueSummary } from "@/types/domain";
 
@@ -31,21 +32,25 @@ export function formatShortStallAddress(
   venue: Pick<VenueSummary, "unitNumber">,
   building?: BuildingLocation,
 ) {
-  return [venue.unitNumber?.trim(), building?.name?.trim() || building?.address?.trim()]
+  return [venue.unitNumber?.trim(), cleanPlaceName(building?.name) || building?.address?.trim()]
     .filter(Boolean)
     .join(", ");
 }
 
 /**
- * The building a stall card names ("NUS UTown"), so a diner sees where to walk to. Falls back
- * to the planning area ("Queenstown") when the stall has no building on record.
+ * The building a stall card names ("NUS UTown"), so a diner sees where to walk to, written one
+ * way for every stall (see cleanPlaceName). Falls back to the planning area ("Queenstown") when
+ * the stall has no building on record.
  */
 export function stallBuildingLabel(
   venue: Pick<VenueSummary, "buildingName" | "planningArea">,
   building?: { name?: string },
 ) {
   return (
-    venue.buildingName?.trim() || building?.name?.trim() || venue.planningArea?.trim() || undefined
+    cleanPlaceName(venue.buildingName) ||
+    cleanPlaceName(building?.name) ||
+    venue.planningArea?.trim() ||
+    undefined
   );
 }
 

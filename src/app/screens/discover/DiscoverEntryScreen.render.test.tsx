@@ -1264,3 +1264,114 @@ test("R11: pinned popular dishes lead the Popular dishes row with a star and no 
   assert.equal(view.findByTestId("favourite-food-styles"), null);
   useFeedFeedbackStore.getState()._reset();
 });
+
+// ─── Round 12: recommended and taste sections, steady place names, chips for the diner ───
+
+const R12_DISHES = [
+  "Prawn Noodles",
+  "Chicken Rice",
+  "Laksa Noodles",
+  "Nasi Lemak Rice",
+  "Chendol Dessert",
+  "Roti Prata",
+  "Bak Kut Teh Soup",
+  "Kaya Toast",
+];
+// Ten stalls fill the main rail; the sections are built from the 30 after them.
+function r12Rows() {
+  const near = Array.from({ length: 10 }, (_, i) =>
+    feedRow(i + 1, { venue_name: `Corner ${i + 1}`, top_dish_name: "Mystery plate" }),
+  );
+  const far = Array.from({ length: 30 }, (_, i) =>
+    feedRow(i + 11, {
+      venue_name: `Far stall ${i + 11}`,
+      top_dish_name: R12_DISHES[i % R12_DISHES.length],
+      building_id: `building-${(i % 4) + 2}`,
+      building_name: `Place ${(i % 4) + 2}`,
+    }),
+  );
+  tasteRows = far.map((row, i) => ({
+    dish_id: row.top_dish_id,
+    sweet: i % 8 === 4 ? 9 : 4,
+    spicy: i % 8 === 0 || i % 8 === 2 || i % 8 === 3 ? 8 : 3,
+    sour: 5,
+    salty: 5,
+    rich: i % 8 === 1 || i % 8 === 5 ? 8 : 5,
+    aromatic: 5,
+  }));
+  return [...near, ...far];
+}
+const SPICY_PALATE = { sweet: 3, spicy: 9, sour: 5, salty: 5, rich: 7, aromatic: 5 };
+
+test("R12: Home leads with a Recommended section of different foods and adds a taste section", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, tasteVector: SPICY_PALATE },
+  }));
+  serveLiveFeed(r12Rows());
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const recommended = view.findByTestId("home-recommended");
+  assert.ok(recommended, "the Recommended section renders");
+  assert.match(view.text(), /Recommended for you/);
+  const dishes = Array.from(recommended.querySelectorAll("[data-testid='stall-rail-card']")).map(
+    (card) => card.getAttribute("aria-label"),
+  );
+  assert.ok(dishes.length >= 3, "it has stalls");
+  assert.ok(view.findByLabel("See all: Bring the heat"), "a taste section for a spicy palate");
+  assert.ok(view.findByTestId("home-taste-spicy"));
+  // Every stall is in one section only.
+  const names = Array.from(document.body.querySelectorAll("[data-testid='stall-rail-card']"))
+    .map((card) => card.textContent ?? "")
+    .filter((text) => text.includes("Far stall"))
+    .map((text) => /Far stall \d+/.exec(text)?.[0]);
+  assert.equal(new Set(names).size, names.length, "no stall repeats between sections");
+});
+
+test("R12: someone who cannot take spice sees no spicy section and no Spicy chip", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: {
+      ...state.profile,
+      tasteVector: { sweet: 7, spicy: 1, sour: 5, salty: 5, rich: 7, aromatic: 5 },
+      tasteProfile: {
+        vector: { sweet: 7, spicy: 1, sour: 5, salty: 5, rich: 7, aromatic: 5 },
+        bitterTolerance: 5,
+        fatAffinity: 5,
+        textureArchetype: "mixed",
+        neophiliaIndex: 5,
+        spiceSeeking: 1,
+      },
+    },
+  }));
+  serveLiveFeed(r12Rows());
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(view.findByTestId("home-taste-spicy"), null);
+  assert.equal(view.findByLabel("See all: Bring the heat"), null);
+  assert.equal(view.findByLabel("Spicy"), null, "the Spicy chip is not offered");
+  assert.ok(view.findByLabel("Under S$5"), "the other chips still are");
+});
+
+test("R12: one MRT station written two ways reads the same on every stall card", async () => {
+  serveLiveFeed([
+    feedRow(1, {
+      venue_name: "Polar Puffs",
+      building_id: "mrt-1",
+      building_name: "Pioneer Mrt Station",
+    }),
+    feedRow(2, {
+      venue_name: "Jollibean",
+      building_id: "mrt-2",
+      building_name: "Singapore 648310 Pioneer Mrt Stn",
+      operating_hours: null,
+      is_open: null,
+    }),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const cards = Array.from(
+    document.body.querySelectorAll("[data-testid='stall-rail-card']"),
+  ) as HTMLElement[];
+  const polar = cards.find((card) => card.textContent?.includes("Polar Puffs"));
+  const jolly = cards.find((card) => card.textContent?.includes("Jollibean"));
+  assert.ok(polar && jolly, "both stalls are on Home");
+  assert.match(polar.textContent ?? "", /Pioneer MRT Station/);
+  assert.match(jolly.textContent ?? "", /Pioneer MRT Station/);
+  assert.doesNotMatch(view.text(), /648310|Mrt Stn/);
+});
