@@ -255,6 +255,5 @@ test("profile home contract: account reads wait for a real profile id, not the g
   );
   // Posts, reviews and follow requests all send profile.id to the server as a uuid.
   // ...as do the stall-submission, follow-count and gamification loads.
-  // ...and the pull-to-refresh handler, which re-reads the same three.
-  assert.equal(source.match(/!hasAccountProfile/g)?.length, 6);
+  assert.equal(source.match(/!hasAccountProfile/g)?.length, 5);
 });

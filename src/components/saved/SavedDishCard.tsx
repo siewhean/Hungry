@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -161,11 +161,7 @@ export function SavedDishCard({
         width: 44,
       }}
     >
-      {removing ? (
-        <ActivityIndicator color={palette.orange} />
-      ) : (
-        <AppSymbol name="savedMark" color={palette.orange} size={18} />
-      )}
+      <AppSymbol name="savedMark" color={palette.orange} size={18} />
     </Pressable>
   ) : null;
 

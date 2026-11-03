@@ -101,6 +101,8 @@ export function PassportScreen({ navigation }: Props) {
   const achievements = useMemo(() => computeAchievements(achievementInput), [achievementInput]);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
+  // The stamp just earned stays on screen as a card until the diner dismisses it.
+  const [unlockedStampId, setUnlockedStampId] = useState<string | null>(null);
   const [celebratingGoal, setCelebratingGoal] = useState(false);
 
   const triedStallIds = useMemo(
@@ -197,6 +199,7 @@ export function PassportScreen({ navigation }: Props) {
 
     markStampCelebrated(celebrateMarker.stampId);
     setCelebratingStampId(celebrateMarker.stampId);
+    setUnlockedStampId(celebrateMarker.stampId);
     AccessibilityInfo.announceForAccessibility(`Achievement stamped: ${celebrateMarker.title}`);
     if (!reduceMotion) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -238,9 +241,47 @@ export function PassportScreen({ navigation }: Props) {
     return () => clearTimeout(timeout);
   }, [celebratingStampId, reduceMotion]);
 
+  const unlockedStamp = unlockedStampId
+    ? earnedStamps.find((stamp) => stamp.id === unlockedStampId)
+    : undefined;
+  const unlockedCategory = unlockedStamp
+    ? ALL_PASSPORT_CATEGORIES.find((category) => category.id === unlockedStamp.categoryId)
+    : undefined;
+
   return (
     <ProfileScreenShell title="Achievements">
       <View style={{ gap: spacing[5] }}>
+        {unlockedStamp && unlockedCategory ? (
+          <View testID="passport-unlock-card" style={{ gap: spacing[2] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <AppText variant="h3">New stamp</AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss new stamp"
+                hitSlop={8}
+                onPress={() => setUnlockedStampId(null)}
+              >
+                <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
+                  Got it
+                </AppText>
+              </Pressable>
+            </View>
+            <PassportStampCard
+              category={unlockedCategory}
+              stamp={unlockedStamp}
+              earned
+              celebrating
+              reduceMotion={reduceMotion}
+              triedInCategory={unlockedStamp.triedCount}
+            />
+          </View>
+        ) : null}
         <PassportPageFlip
           pageKey={`${totalStamps}-${celebratingStampId ?? "idle"}`}
           reduceMotion={reduceMotion}
