@@ -84,6 +84,7 @@
     "src/features/discover/foodStyleOptions.ts": 100,
     "src/features/discover/hawkerClassics.ts": 92.3,
     "src/features/discover/homeFilters.ts": 100,
+    "src/features/discover/homeRails.ts": 98.4,
     "src/features/discover/homeRanking.ts": 100,
     "src/features/discover/homeStalls.ts": 100,
     "src/features/discover/mallMode.ts": 97,

@@ -70,12 +70,14 @@ import {
   tasteOrderBites,
 } from "@/features/discover/homeRanking";
 import {
-  compareHomeStalls,
-  getStallRowOpenLabel,
   groupNearbyPlaces,
-  isStallClosed,
   pickOpenNowStalls,
   type PlaceBuilding,
+} from "@/features/discover/homeRails";
+import {
+  compareHomeStalls,
+  getStallRowOpenLabel,
+  isStallClosed,
 } from "@/features/discover/homeStalls";
 import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
