@@ -11,6 +11,8 @@ import {
   resolveExperimentVariant,
   setExperimentFlagSource,
   setExperimentOverride,
+  setReleaseExperimentOverrides,
+  getExperimentOverride,
   type ExperimentDefinition,
   type ExperimentFlagSource,
   type ExperimentKey,
@@ -190,6 +192,25 @@ test("QA overrides win outside production and are ignored in production", () => 
     assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "test");
   } finally {
     process.env.NODE_ENV = previous;
+  }
+});
+
+test("opening the developer tools lets a release build force a variant until they are locked", () => {
+  const fake = fakeSource({ welcome_back_v2: "test" });
+  setExperimentFlagSource(fake.source);
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  try {
+    setReleaseExperimentOverrides(true);
+    setExperimentOverride("welcome_back_v2", "control");
+    assert.equal(getExperimentOverride("welcome_back_v2"), "control");
+    assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "control");
+    setReleaseExperimentOverrides(false);
+    assert.equal(getExperimentOverride("welcome_back_v2"), undefined);
+    assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "test");
+  } finally {
+    process.env.NODE_ENV = previous;
+    setReleaseExperimentOverrides(false);
   }
 });
 

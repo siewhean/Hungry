@@ -93,6 +93,7 @@ import {
   UserCheck,
   Users,
   FlaskConical,
+  Wrench,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react-native";
@@ -153,6 +154,7 @@ const APP_SYMBOLS = {
   legal: { ios: "scalemass", lucide: Scale },
   openData: { ios: "server.rack", lucide: Database },
   version: { ios: "info.circle", lucide: Info },
+  developerTools: { ios: "wrench.and.screwdriver", lucide: Wrench },
   signOut: { ios: "rectangle.portrait.and.arrow.right", lucide: LogOut },
   deleteAccount: { ios: "trash", lucide: Trash2 },
   chevronRight: { ios: "chevron.right", lucide: ChevronRight },

@@ -747,8 +747,22 @@ function experimentsKilled() {
   return process.env.EXPO_PUBLIC_DISABLE_EXPERIMENTS === "1";
 }
 
+// The hidden Developer tools turn this on so release builds can preview a variant too.
+let releaseOverridesUnlocked = false;
+
 function overridesAllowed() {
-  return process.env.NODE_ENV !== "production";
+  return process.env.NODE_ENV !== "production" || releaseOverridesUnlocked;
+}
+
+/** Lets a release build use `setExperimentOverride`; turning it off also drops every override. */
+export function setReleaseExperimentOverrides(allowed: boolean): void {
+  releaseOverridesUnlocked = allowed;
+  if (!allowed) overrides.clear();
+}
+
+/** The variant a QA override is forcing for this key on this device, if any. */
+export function getExperimentOverride(key: ExperimentKey): string | undefined {
+  return overridesAllowed() ? overrides.get(key) : undefined;
 }
 
 /** Test seam: replaces the flag source and clears frozen session variants. */
