@@ -1,0 +1,14 @@
+{
+  "version": "20261103120000",
+  "name": "20261103120000_building_street_names_to_place_names",
+  "result": "pass",
+  "rehearsed_at": "2026-11-03T12:48:16Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "e61e913c85eb9d8f8a5d3cbbf8abbe8d79258fb9",
+  "up_sha256": "8b53a9eb9bb7f16b43c3e1471a20db2a91ec59ef0389994d58bea0456759d3ab",
+  "down_sha256": "ab034534174ba16777611b37174762d1eea6ad7ed3ec623cbf22dffeebfbbdae",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/building_street_names_to_place_names.sql"]
+}
