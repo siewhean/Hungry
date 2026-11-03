@@ -44,6 +44,7 @@ import {
   supabaseRepository,
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
@@ -884,7 +885,8 @@ async function getCurrentUserProfileOrGuest(): Promise<UserProfile> {
   if (!client) return DEFAULT_GUEST_PROFILE;
   const userId = await getCurrentSupabaseUserId();
   if (!userId) return DEFAULT_GUEST_PROFILE;
-  return fetchUserProfile(client, userId);
+  // Several screens ask for the profile as the app opens; they share one set of reads.
+  return shareInFlight(client, `profile:${userId}`, () => fetchUserProfile(client, userId));
 }
 
 /** Reviews per profile-list read; the Supabase read has no photos, so a page is cheap. */

@@ -1,4 +1,5 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import {
   sanitizeCatalogCardImageUrl,
   sanitizeCatalogMediaUrl,
@@ -236,7 +237,14 @@ type CacheEntry<T> = { expiresAt: number; value: T };
 const PAGE_TTL_MS = 60_000;
 const DETAIL_TTL_MS = 5 * 60_000;
 const MAX_CACHE_ENTRIES = 40;
+/** Place lists (malls, hawker centres) change with a catalogue release, so they keep longer. */
+const PLACES_TTL_MS = 10 * 60_000;
+/** A list that already loaded this session is shown again if a later read of it fails. */
+const STALE_MAX_AGE_MS = 30 * 60_000;
+/** The phone stops waiting on a list read after this; the server gives up at 8 s on its own. */
+const RPC_TIMEOUT_MS = 15_000;
 const pageCache = new Map<string, CacheEntry<unknown>>();
+const lastGoodPages = new Map<string, { savedAt: number; value: unknown }>();
 const detailCache = new Map<string, CacheEntry<unknown>>();
 
 export class CatalogAccessError extends Error {
@@ -758,12 +766,56 @@ async function requireAuthenticatedClient() {
 
 async function callRawRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   const client = await requireAuthenticatedClient();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const { data, error } = await client.rpc(name, args);
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new CatalogNetworkError("The online catalog took too long to answer.")),
+        RPC_TIMEOUT_MS,
+      );
+    });
+    const { data, error } = await Promise.race([client.rpc(name, args), timeout]);
     if (error) throw classifyCatalogAccessError(error, "rpc");
     return data as T;
   } catch (error) {
     throw classifyCatalogAccessError(error, "rpc");
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * Reads a first-page list through the 60 s cache. Identical reads that overlap share one request,
+ * and when the live read fails (the server cancels slow reads, or the phone is offline) the last
+ * copy of the same list from this session is shown instead of an error. Later pages (a cursor)
+ * and rate-limit, sign-in and release errors are never covered this way.
+ */
+async function readPage<T>(
+  key: string,
+  ttl: number,
+  cursor: string | null | undefined,
+  load: () => Promise<T>,
+): Promise<T> {
+  const cached = readCache<T>(pageCache, key);
+  if (cached) return cached;
+  try {
+    const value = await shareInFlight(getSupabaseClient(), key, load);
+    if (!cursor) {
+      lastGoodPages.delete(key);
+      lastGoodPages.set(key, { savedAt: Date.now(), value });
+      while (lastGoodPages.size > MAX_CACHE_ENTRIES) {
+        lastGoodPages.delete(lastGoodPages.keys().next().value as string);
+      }
+    }
+    return writeCache(pageCache, key, value, ttl);
+  } catch (error) {
+    const stale = cursor ? undefined : lastGoodPages.get(key);
+    const covers =
+      error instanceof CatalogAccessError && (error.kind === "network" || error.kind === "rpc");
+    if (stale && covers && Date.now() - stale.savedAt <= STALE_MAX_AGE_MS) {
+      return writeCache(pageCache, key, stale.value as T, 10_000);
+    }
+    throw error;
   }
 }
 
@@ -786,28 +838,27 @@ export const catalogRawService = {
   clearCache() {
     pageCache.clear();
     detailCache.clear();
+    lastGoodPages.clear();
   },
 
   async listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>> {
     const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("dishes", args);
-    const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
-    if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_dishes_page", args), (item) =>
-      mapDishCard(item, "catalog_raw_dishes_page"),
+    return readPage(key, PAGE_TTL_MS, request.cursor, async () =>
+      mapPage(await callRawRpc("catalog_raw_dishes_page", args), (item) =>
+        mapDishCard(item, "catalog_raw_dishes_page"),
+      ),
     );
-    return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 
   async listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>> {
     const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("venues", args);
-    const cached = readCache<CatalogPage<CatalogRawVenueCard>>(pageCache, key);
-    if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), (item) =>
-      mapVenueCard(item, "catalog_raw_venues_page"),
+    return readPage(key, PAGE_TTL_MS, request.cursor, async () =>
+      mapPage(await callRawRpc("catalog_raw_venues_page", args), (item) =>
+        mapVenueCard(item, "catalog_raw_venues_page"),
+      ),
     );
-    return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 
   /** Typeahead for Search home; under two characters it returns popular food types. */
@@ -835,11 +886,10 @@ export const catalogRawService = {
       p_release_id: request.releaseId ?? null,
     };
     const key = catalogRequestKey("places", args);
-    const cached = readCache<CatalogPlace[]>(pageCache, key);
-    if (cached) return cached;
-    const rows = await callRawRpc<unknown>("catalog_raw_places", args);
-    const places = Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
-    return writeCache(pageCache, key, places, PAGE_TTL_MS);
+    return readPage(key, PLACES_TTL_MS, null, async () => {
+      const rows = await callRawRpc<unknown>("catalog_raw_places", args);
+      return Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
+    });
   },
 
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {
