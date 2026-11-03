@@ -53,6 +53,17 @@ test("stallBuildingLabel names the building and only falls back to the planning 
   assert.equal(stallBuildingLabel({}), undefined);
 });
 
+test("two spellings of one building read the same on every card", () => {
+  const first = stallBuildingLabel({ buildingName: "Singapore 648310 Pioneer Mrt Stn" });
+  const second = stallBuildingLabel({ buildingName: "Pioneer Mrt Station" });
+  assert.equal(first, "Pioneer MRT Station");
+  assert.equal(first, second);
+  assert.equal(
+    formatShortStallAddress({ unitNumber: "#01-02" }, { name: "Pioneer Mrt Stn" }),
+    "#01-02, Pioneer MRT Station",
+  );
+});
+
 test("the Maps link searches by stall, building and postcode, not by the stall's pin", () => {
   const url = buildStallMapsUrl(
     { name: "Ah Seng Noodles", buildingName: "NUS UTown", postalCode: "138607" },

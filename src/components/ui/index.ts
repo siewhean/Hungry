@@ -17,6 +17,7 @@ export * from "./FeedErrorBoundary";
 export * from "./FAB";
 export * from "./FeedStateView";
 export * from "./FilterChipRail";
+export * from "./RailScrollView";
 export * from "./FloatingToast";
 export * from "./FormSwitchRow";
 export * from "./AnimatedSwitch";

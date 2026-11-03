@@ -43,3 +43,37 @@ test("without a rating or photo it still shows the name and the logo band", asyn
   assert.match(view.text(), /Bee Chicken Rice/);
   assert.doesNotMatch(view.text(), /\d\.\d/);
 });
+
+test("a stall with no opening hours keeps the opening line's place, so the location lines up", async () => {
+  const props = {
+    width: 240,
+    locationLabel: "Pioneer MRT Station",
+    onPress: () => undefined,
+  };
+  const withHours = await render(
+    createElement(StallRailCard, {
+      ...props,
+      name: "Polar Puffs",
+      openLabel: "Open · Closes 8pm",
+      reserveOpenLine: true,
+      accessibilityLabel: "Open Polar Puffs",
+    }),
+  );
+  assert.equal(withHours.findByTestId("stall-rail-card-open-spacer"), null);
+  await cleanup();
+  const without = await render(
+    createElement(StallRailCard, {
+      ...props,
+      name: "Jollibean",
+      reserveOpenLine: true,
+      accessibilityLabel: "Open Jollibean",
+    }),
+  );
+  assert.ok(without.findByTestId("stall-rail-card-open-spacer"), "an empty line holds the place");
+  assert.match(without.text(), /Pioneer MRT Station/);
+  await cleanup();
+  const place = await render(
+    createElement(StallRailCard, { ...props, name: "Pioneer Mall", accessibilityLabel: "See" }),
+  );
+  assert.equal(place.findByTestId("stall-rail-card-open-spacer"), null, "place cards have none");
+});

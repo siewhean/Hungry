@@ -1,9 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
-import { AppSymbol, AppText, PressableScale } from "@/components/ui";
+import { AppSymbol, AppText, PressableScale, RailScrollView } from "@/components/ui";
 import { DiscoverFoodRailLoadingSkeleton } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { DiscoverBiteImage } from "@/components/discover/home/DiscoverImages";
 import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
@@ -319,7 +319,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
         )}
       </View>
       {isLoading ? (
-        <ScrollView
+        <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={scrollStyle}
@@ -330,9 +330,9 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
             imageHeight={layout.imageHeight}
             withReason={reasons !== undefined}
           />
-        </ScrollView>
+        </RailScrollView>
       ) : cards.length ? (
-        <ScrollView
+        <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={scrollStyle}
@@ -353,7 +353,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
               variant={variant}
             />
           ))}
-        </ScrollView>
+        </RailScrollView>
       ) : null}
     </View>
   );

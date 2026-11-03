@@ -120,6 +120,31 @@ test("the chip row leads with the dietary chip and always has the intent chips",
   for (const id of ["spicy", "halal", "cheap"]) assert.ok(ids.includes(id as never), id);
 });
 
+test("the chips drop what does not suit the diner: spice they avoid, a vegetarian chip their need covers", async () => {
+  const tasteProfile = {
+    vector: { sweet: 5, spicy: 1, sour: 5, salty: 5, rich: 5, aromatic: 5 },
+    bitterTolerance: 5,
+    fatAffinity: 5,
+    textureArchetype: "mixed" as const,
+    neophiliaIndex: 5,
+    spiceSeeking: 1,
+  };
+  const before = useProfileStore.getState().profile;
+  useProfileStore.setState({
+    profile: { ...before, tasteProfile, dietaryPreferences: ["vegetarian"] },
+  });
+  try {
+    const { filters } = await mountFilters();
+    const ids = filters().sortedChips.map((chip) => chip.id);
+    assert.equal(ids.includes("spicy"), false, "no spicy chip for someone who avoids spice");
+    assert.equal(ids.includes("vegetarian"), false, "the dietary chip already says Vegetarian");
+    assert.ok(ids.includes("cheap"));
+    assert.equal(filters().chipContext.avoidSpicy, true);
+  } finally {
+    useProfileStore.setState({ profile: before });
+  }
+});
+
 test("useDiscoverFeed names the place and builds the stall and dish lists", async () => {
   let latest: ReturnType<typeof useDiscoverFeed> | undefined;
   function Probe() {

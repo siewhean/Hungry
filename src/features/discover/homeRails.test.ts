@@ -102,3 +102,34 @@ test("a place whose first stall has no distance takes the next stall's, and unkn
     ],
   );
 });
+
+test("one place held as two buildings is one entry, and the building you are in hides its twin", () => {
+  const cards = [
+    {
+      building: building("mrt-1", "Pioneer Mrt Station"),
+      venue: venue({ id: "a", buildingId: "mrt-1", distanceMeters: 300 }),
+    },
+    {
+      building: building("mrt-2", "Singapore 648310 Pioneer Mrt Stn"),
+      venue: venue({ id: "b", buildingId: "mrt-2", distanceMeters: 280 }),
+    },
+    {
+      building: building("mall", "Pioneer Mall"),
+      venue: venue({ id: "c", buildingId: "mall", distanceMeters: 500 }),
+    },
+  ];
+  const places = groupNearbyPlaces(cards, null);
+  assert.deepEqual(
+    places.map((place) => [place.building.name, place.stallCount, place.distanceMeters]),
+    [
+      ["Pioneer Mrt Station", 2, 280],
+      ["Pioneer Mall", 1, 500],
+    ],
+  );
+  // Standing in one of the two buildings leaves out the other as well.
+  const inside = groupNearbyPlaces(cards, "mrt-2");
+  assert.deepEqual(
+    inside.map((place) => place.building.name),
+    ["Pioneer Mall"],
+  );
+});

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import {
-  ScrollView,
   type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
@@ -9,6 +8,7 @@ import {
 
 import { useHungryTheme } from "@/theme";
 import { Chip } from "./Chip";
+import { RailScrollView } from "./RailScrollView";
 
 export type FilterChipRailOption<T extends string = string> = {
   id: T;
@@ -106,7 +106,7 @@ export function FilterChipRail<T extends string = string>({
   );
 
   return (
-    <ScrollView
+    <RailScrollView
       horizontal
       directionalLockEnabled
       nestedScrollEnabled
@@ -141,6 +141,6 @@ export function FilterChipRail<T extends string = string>({
           />
         );
       })}
-    </ScrollView>
+    </RailScrollView>
   );
 }

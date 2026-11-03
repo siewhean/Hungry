@@ -15,6 +15,8 @@ interface StallRailCardProps {
   /** The top dish's rating; hidden while it has no reviews. */
   rating?: number;
   openLabel?: string;
+  /** Keep the opening line's place when there is no label, so the location sits on the same line on every card. */
+  reserveOpenLine?: boolean;
   /** Building and unit, on a line of its own. */
   locationLabel?: string;
   /** A last line: "Be the first to review" (accent) or "Menu coming soon". */
@@ -38,6 +40,7 @@ export function StallRailCard({
   logoUrl,
   rating,
   openLabel,
+  reserveOpenLine = false,
   locationLabel,
   note,
   width,
@@ -128,6 +131,17 @@ export function StallRailCard({
         {openLabel ? (
           <AppText variant="micro" tone="secondary" numberOfLines={1}>
             {openLabel}
+          </AppText>
+        ) : reserveOpenLine ? (
+          <AppText
+            variant="micro"
+            tone="secondary"
+            numberOfLines={1}
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            testID="stall-rail-card-open-spacer"
+          >
+            {" "}
           </AppText>
         ) : null}
         {locationLabel ? (
