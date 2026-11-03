@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 86.6,
+    "lines": 86.7,
     "branches": 86.1,
-    "functions": 83.2
+    "functions": 83.3
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -65,10 +65,11 @@
     "src/features/detail/formatSgPhone.ts": 100,
     "src/features/detail/menuCategory.ts": 100,
     "src/features/detail/perceivedTaste.ts": 98,
+    "src/features/detail/placeNames.ts": 98.2,
     "src/features/detail/scrollToSection.ts": 100,
     "src/features/detail/similarDishes.ts": 86.7,
     "src/features/detail/stallDisplayName.ts": 98.1,
-    "src/features/detail/stallLocation.ts": 96.4,
+    "src/features/detail/stallLocation.ts": 97.2,
     "src/features/detail/stallOpenState.ts": 100,
     "src/features/detail/stallVisited.ts": 96.3,
     "src/features/detail/suggestDish.ts": 100,
@@ -84,10 +85,12 @@
     "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/feedMerge.ts": 100,
     "src/features/discover/hawkerClassics.ts": 92.3,
-    "src/features/discover/homeCategories.ts": 96.4,
+    "src/features/discover/homeCategories.ts": 97.4,
+    "src/features/discover/homeChips.ts": 97.7,
     "src/features/discover/homeFilters.ts": 100,
     "src/features/discover/homeRails.ts": 100,
     "src/features/discover/homeRanking.ts": 100,
+    "src/features/discover/homeSections.ts": 99.2,
     "src/features/discover/homeStalls.ts": 100,
     "src/features/discover/mallMode.ts": 98.9,
     "src/features/discover/personalFeedback.ts": 95.6,

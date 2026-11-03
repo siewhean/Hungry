@@ -44,6 +44,7 @@ import {
   EmptyState,
   FilterChipRail,
   PressableScale,
+  RailScrollView,
   Screen,
   Skeleton,
   SkeletonText,
@@ -75,7 +76,9 @@ import {
   tasteOrderBites,
 } from "@/features/discover/homeRanking";
 import { groupNearbyPlaces, type PlaceBuilding } from "@/features/discover/homeRails";
-import { buildCategorySections } from "@/features/discover/homeCategories";
+import { buildHomeSections } from "@/features/discover/homeSections";
+import { fitChipsToDiner, kindsOfNames } from "@/features/discover/homeChips";
+import { cleanPlaceName } from "@/features/detail/placeNames";
 import {
   compareHomeStalls,
   getStallRowOpenLabel,
@@ -246,7 +249,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     activeDiscoverChipSignature,
     isPopularFoodFilterPending,
     isDiscoverFiltering,
-    sortedChips,
+    sortedChips: baseChips,
+    chipContext,
     toggleDiscoverChip,
     matchesDiscoverChipSelection,
     clearDiscoverFilters,
@@ -1054,7 +1058,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // centres around. A stall sits in one section only and never repeats the main rail.
   const categorySections = useMemo(() => {
     const byId = new Map(unfilteredPopularFoodStyleItems.map((item) => [item.id, item]));
-    return buildCategorySections(allAreaStallCards, {
+    return buildHomeSections(allAreaStallCards, {
       hour: currentHour,
       favourites: favouriteFoodStyleIds.flatMap((id) => {
         const item = byId.get(id);
@@ -1063,11 +1067,35 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       familiarNames: familiarDishNames,
       excludeVenueIds: new Set(areaStallCards.map((card) => card.venue.id)),
       compare: compareHomeStalls,
+      palate: rankingTasteVector,
+      palateTrusted: hasTasteProfile,
+      avoidSpicy: chipContext.avoidSpicy,
     });
   }, [
     allAreaStallCards,
     areaStallCards,
+    chipContext.avoidSpicy,
     currentHour,
+    familiarDishNames,
+    favouriteFoodStyleIds,
+    hasTasteProfile,
+    rankingTasteVector,
+    unfilteredPopularFoodStyleItems,
+  ]);
+  // Chips that fit this diner now, with the foods they know (had, or pinned) first.
+  const sortedChips = useMemo(() => {
+    const byId = new Map(unfilteredPopularFoodStyleItems.map((item) => [item.id, item]));
+    const knownKinds = kindsOfNames([
+      ...familiarDishNames,
+      ...favouriteFoodStyleIds.flatMap((id) => {
+        const item = byId.get(id);
+        return item ? [`${item.label} ${item.query}`] : [];
+      }),
+    ]);
+    return fitChipsToDiner(baseChips, { ...chipContext, knownKinds });
+  }, [
+    baseChips,
+    chipContext,
     familiarDishNames,
     favouriteFoodStyleIds,
     unfilteredPopularFoodStyleItems,
@@ -1081,8 +1109,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     return groupNearbyPlaces<PlaceBuilding>(
       unfilteredAreaStallCards.flatMap(({ building, venue, topDish }) => {
         const name =
-          venue.buildingName?.trim() ||
-          (knownBuildingIds.has(building.id) ? building.name : undefined);
+          cleanPlaceName(venue.buildingName) ||
+          (knownBuildingIds.has(building.id) ? cleanPlaceName(building.name) : "");
         return name
           ? [
               {
@@ -1542,16 +1570,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         <ChevronRight color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
       </Pressable>
       {shouldShowPopularFoodSkeleton ? (
-        <ScrollView
+        <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={edgeToEdgeHorizontalScrollStyle}
           contentContainerStyle={{ gap: spacing[2] }}
         >
           <PopularFoodStyleSkeleton />
-        </ScrollView>
+        </RailScrollView>
       ) : popularFoodStyleItems.length ? (
-        <ScrollView
+        <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={edgeToEdgeHorizontalScrollStyle}
@@ -1567,7 +1595,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               onToggleFavourite={toggleFoodStyleFavourite}
             />
           ))}
-        </ScrollView>
+        </RailScrollView>
       ) : null}
     </View>
   );
@@ -1577,7 +1605,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const mallCardWidth = Math.min(screenWidth * 0.78, 320);
   const stallRailCardWidth = Math.min(screenWidth * 0.62, 260);
   const renderStallRail = (cards: typeof areaStallCards) => (
-    <ScrollView
+    <RailScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       style={edgeToEdgeHorizontalScrollStyle}
@@ -1591,6 +1619,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           logoUrl={venue.logoUrl}
           rating={topDish && topDish.reviewCount > 0 ? topDish.rating : undefined}
           openLabel={getStallRowOpenLabel(venue)}
+          reserveOpenLine
           locationLabel={
             [stallBuildingLabel(venue, building), venue.unitNumber].filter(Boolean).join(" · ") ||
             undefined
@@ -1611,7 +1640,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           onPress={() => openAreaStall(venue, stallIndex)}
         />
       ))}
-    </ScrollView>
+    </RailScrollView>
   );
 
   const moreSections =
@@ -1625,11 +1654,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               accessibilityLabel={`See all: ${section.title}`}
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={() =>
-                navigation.navigate("SearchResults", {
-                  browseMode: "stalls",
-                  initialQuery: section.query,
-                  source: "discover_chip",
-                })
+                navigation.navigate(
+                  "SearchResults",
+                  section.query
+                    ? { browseMode: "stalls", initialQuery: section.query, source: "discover_chip" }
+                    : { browseMode: "stalls" },
+                )
               }
               style={{
                 alignItems: "center",
@@ -1681,7 +1711,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 size={20}
               />
             </Pressable>
-            <ScrollView
+            <RailScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               style={edgeToEdgeHorizontalScrollStyle}
@@ -1710,7 +1740,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   }
                 />
               ))}
-            </ScrollView>
+            </RailScrollView>
           </View>
         ) : null}
       </>
@@ -2121,7 +2151,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 />
               </Pressable>
               {forYouPicks.length ? (
-                <ScrollView
+                <RailScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={edgeToEdgeHorizontalScrollStyle}
@@ -2142,7 +2172,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                       }
                     />
                   ))}
-                </ScrollView>
+                </RailScrollView>
               ) : (
                 <EmptyState
                   title="Nothing to suggest yet"
