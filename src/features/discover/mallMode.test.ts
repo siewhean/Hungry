@@ -147,7 +147,7 @@ test("rankForYou hides the match percent for a dish with low-confidence tags onl
 
 const SPICY_FAN: TasteVector = { sweet: 3, spicy: 9, sour: 4, salty: 6, rich: 5, aromatic: 6 };
 
-test("reserveFresh gives slot 3 to the best-ranked dish with few reviews", () => {
+test("reserveFresh gives slot 4 to the best-ranked dish with few reviews", () => {
   const dishes = Array.from({ length: 6 }, (_, index) =>
     dish(`p${index}`, {
       tasteVector: { ...SPICY_FAN, spicy: 9 - index * 0.5 },
@@ -165,8 +165,8 @@ test("reserveFresh gives slot 3 to the best-ranked dish with few reviews", () =>
     limit: 6,
     reserveFresh: true,
   }).map((pick) => pick.dish.id);
-  assert.notEqual(plain[2], "p4");
-  assert.equal(reserved[2], "p4");
+  assert.notEqual(plain[3], "p4");
+  assert.equal(reserved[3], "p4");
 });
 
 test("a well-reviewed dish edges out an equal match with no reviews", () => {
