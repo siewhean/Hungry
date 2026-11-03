@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 86.5,
-    "branches": 85.9,
-    "functions": 83
+    "lines": 86.6,
+    "branches": 86,
+    "functions": 83.1
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -71,6 +71,7 @@
     "src/features/detail/stallLocation.ts": 96.4,
     "src/features/detail/stallOpenState.ts": 100,
     "src/features/detail/stallVisited.ts": 96.3,
+    "src/features/detail/suggestDish.ts": 100,
     "src/features/detail/suggestedOpeningHours.ts": 96.6,
     "src/features/detail/tasteMatch.ts": 100,
     "src/features/discover/areaCount.ts": 100,
@@ -79,6 +80,7 @@
     "src/features/discover/currentPlace.ts": 56.7,
     "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/feedMerge.ts": 100,
+    "src/features/discover/foodStyleOptions.ts": 100,
     "src/features/discover/hawkerClassics.ts": 92.3,
     "src/features/discover/homeFilters.ts": 100,
     "src/features/discover/homeRanking.ts": 100,

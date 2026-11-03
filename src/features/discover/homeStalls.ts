@@ -2,7 +2,10 @@
  * Pure rules for the stall list on Home: the open-state line and the order. The screen passes
  * the cards it already holds; nothing here reads a service.
  */
-import type { DishDetail, VenueSummary } from "@/types/domain";
+import type { BuildingSummary, DishDetail, VenueSummary } from "@/types/domain";
+
+/** What a nearby-place card needs of a building. */
+export type PlaceBuilding = Pick<BuildingSummary, "id" | "name" | "imageUrl" | "logoUrl">;
 import { getClosureLabel, isClosureActive } from "@/features/merchant/closure";
 import { getVenueOpenState } from "@/utils/operatingHours";
 
@@ -51,4 +54,52 @@ export function compareHomeStalls(a: HomeStallCard, b: HomeStallCard): number {
   const distanceB = distanceOf(b);
   if (distanceA !== distanceB) return distanceA < distanceB ? -1 : 1;
   return ratingScore(b) - ratingScore(a);
+}
+
+/** Stalls open right now, nearest first. A stall with unknown hours is not counted as open. */
+export function pickOpenNowStalls<T extends HomeStallCard>(cards: readonly T[], limit = 10): T[] {
+  return cards
+    .filter(({ venue }) => openStateOf(venue).status === "open")
+    .sort((a, b) => distanceOf(a) - distanceOf(b) || ratingScore(b) - ratingScore(a))
+    .slice(0, limit);
+}
+
+export type NearbyPlace<B extends PlaceBuilding = PlaceBuilding> = {
+  building: B;
+  /** Stalls from the feed that are in this building. */
+  stallCount: number;
+  /** Metres to the nearest of them; undefined when none has a distance. */
+  distanceMeters: number | undefined;
+};
+
+/**
+ * The malls and hawker centres around the diner, nearest first: one entry per building the
+ * feed's stalls sit in, leaving out the building they are already in (it has its own section).
+ */
+export function groupNearbyPlaces<B extends PlaceBuilding>(
+  cards: readonly (HomeStallCard & { building: B })[],
+  currentPlaceId: string | null | undefined,
+  limit = 8,
+): NearbyPlace<B>[] {
+  const places = new Map<string, NearbyPlace<B>>();
+  for (const card of cards) {
+    if (!card.venue.buildingId || card.venue.buildingId === currentPlaceId) continue;
+    const distance = card.venue.distanceMeters ?? card.topDish?.distanceMeters;
+    const existing = places.get(card.venue.buildingId);
+    if (!existing) {
+      places.set(card.venue.buildingId, {
+        building: card.building,
+        stallCount: 1,
+        distanceMeters: distance,
+      });
+      continue;
+    }
+    existing.stallCount += 1;
+    if (distance !== undefined && (existing.distanceMeters ?? Infinity) > distance) {
+      existing.distanceMeters = distance;
+    }
+  }
+  return [...places.values()]
+    .sort((a, b) => (a.distanceMeters ?? Infinity) - (b.distanceMeters ?? Infinity))
+    .slice(0, limit);
 }

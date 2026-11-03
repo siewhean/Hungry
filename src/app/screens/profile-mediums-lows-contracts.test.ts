@@ -53,10 +53,11 @@ test("profile home shows real reviews, loading skeletons, retry, and a confirmed
   assert.doesNotMatch(source, /You reviewed this dish\./);
   assert.match(source, /!postsLoaded \? \(\s*<ProfileGridSkeleton \/>/);
   assert.match(source, /ctaLabel="Retry"/);
-  // Same confirmation copy as Settings > Sign out.
+  // Sign out is at the bottom of Settings only, and asks first.
+  assert.doesNotMatch(source, /Sign out/);
   assert.match(
-    source,
-    /confirmAction\(\{\s*title: "Sign out",\s*message: "You will be signed out from Hungry on this device\."/,
+    read("src/app/screens/profile/SettingsScreen.tsx"),
+    /title="Sign out"\s*message="You will be signed out from Hungry on this device\."/,
   );
   assert.match(source, /accessibilityViewIsModal/);
   assert.doesNotMatch(source, /Guest User/);

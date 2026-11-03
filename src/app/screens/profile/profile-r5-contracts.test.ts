@@ -59,16 +59,15 @@ test("P5-2: the profile files draw icons with AppSymbol, not lucide directly", (
   }
 });
 
-test("P5-3: the profile menu is the app's own card, not the system menu", () => {
+test("P5-3: the app's own overflow card is not the system menu", () => {
   const menu = read("src/components/ui/OverflowMenu.tsx");
   assert.doesNotMatch(menu, /@react-native-menu\/menu/);
   assert.match(menu, /Platform\.OS === "web" \? <WebMenu/);
   assert.match(menu, /measureInWindow/);
   assert.match(menu, /<Modal/);
+  // The profile header is now one settings icon, not a menu.
   const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(home, /<OverflowMenu/);
-  assert.doesNotMatch(home, /<Menu color/);
-  assert.match(home, /destructive: true/);
+  assert.doesNotMatch(home, /<OverflowMenu|<Menu color/);
 });
 
 test("P5-4: lists use the plain ListRow, not a card per row", () => {

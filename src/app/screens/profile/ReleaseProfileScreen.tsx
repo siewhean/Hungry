@@ -4,9 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { AppSymbol, AppText, Avatar, Card, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { confirmAction } from "@/lib/runtime/confirmAction";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
 function ReleaseProfileRow({
@@ -66,7 +64,6 @@ export function ReleaseProfileScreen() {
   const navigation = useNavigation();
   const rootNavigation = getRootNavigation(navigation as never);
   const profile = useProfileStore((state) => state.profile);
-  const signOut = useSessionStore((state) => state.signOut);
   const { palette, radii, spacing } = useHungryTheme();
 
   return (
@@ -112,38 +109,6 @@ export function ReleaseProfileScreen() {
           onPress={() => rootNavigation.navigate("Settings")}
         />
       </View>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Sign out"
-        accessibilityHint="Signs out and returns to the authentication screen"
-        onPress={() =>
-          confirmAction({
-            title: "Sign out",
-            message: "You will be signed out from Hungry on this device.",
-            confirmLabel: "Sign out",
-            destructive: true,
-            onConfirm: signOut,
-          })
-        }
-        style={({ pressed }) => ({
-          alignItems: "center",
-          backgroundColor: pressed ? palette.bgSoft : palette.surface,
-          borderColor: palette.border,
-          borderRadius: radii.lg,
-          borderWidth: 1,
-          flexDirection: "row",
-          gap: spacing[2],
-          justifyContent: "center",
-          minHeight: 52,
-          paddingHorizontal: spacing[4],
-        })}
-      >
-        <AppSymbol name="signOut" color={palette.error} size={18} />
-        <AppText style={{ color: palette.error }} variant="bodyBold">
-          Sign out
-        </AppText>
-      </Pressable>
     </Screen>
   );
 }

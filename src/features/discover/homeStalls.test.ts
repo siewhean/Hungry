@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { DishDetail, VenueSummary } from "@/types/domain";
-import { compareHomeStalls, getStallRowOpenLabel, isStallClosed } from "./homeStalls";
+import type { BuildingSummary } from "@/types/domain";
+import {
+  compareHomeStalls,
+  getStallRowOpenLabel,
+  groupNearbyPlaces,
+  isStallClosed,
+  pickOpenNowStalls,
+} from "./homeStalls";
 
 const OPEN_ALWAYS = "Mon-Sun 24 hours";
 
@@ -105,4 +112,62 @@ test("a paused stall sorts below open stalls", () => {
   const paused = { venue: venue({ id: "paused", closedUntil: reopens }), topDish: dish(5, 99, 10) };
   assert.ok(compareHomeStalls(open, paused) < 0);
   assert.ok(compareHomeStalls(paused, open) > 0);
+});
+
+const CLOSED_ALWAYS = "Mon-Sun 00:00-00:01";
+
+test("open now lists only open stalls, nearest first, up to the limit", () => {
+  const far = { venue: venue({ id: "far", distanceMeters: 900 }) };
+  const near = { venue: venue({ id: "near", distanceMeters: 100 }) };
+  const closed = {
+    venue: venue({ id: "closed", operatingHours: CLOSED_ALWAYS, distanceMeters: 50 }),
+  };
+  assert.deepEqual(
+    pickOpenNowStalls([far, closed, near]).map((card) => card.venue.id),
+    ["near", "far"],
+  );
+  assert.equal(pickOpenNowStalls([far, near], 1).length, 1);
+});
+
+function building(id: string, name = id): BuildingSummary {
+  return {
+    id,
+    name,
+    type: "food_court",
+    coordinate: { latitude: 0, longitude: 0 },
+    floors: [],
+    venueCount: 0,
+    isClosedToday: false,
+    heroDishId: "",
+  };
+}
+
+test("nearby places group the feed's stalls by building, nearest first, without the current one", () => {
+  const cards = [
+    {
+      building: building("here"),
+      venue: venue({ id: "a", buildingId: "here", distanceMeters: 10 }),
+    },
+    {
+      building: building("far"),
+      venue: venue({ id: "b", buildingId: "far", distanceMeters: 800 }),
+    },
+    {
+      building: building("near"),
+      venue: venue({ id: "c", buildingId: "near", distanceMeters: 300 }),
+    },
+    {
+      building: building("near"),
+      venue: venue({ id: "d", buildingId: "near", distanceMeters: 250 }),
+    },
+  ];
+  const places = groupNearbyPlaces(cards, "here");
+  assert.deepEqual(
+    places.map((place) => [place.building.id, place.stallCount, place.distanceMeters]),
+    [
+      ["near", 2, 250],
+      ["far", 1, 800],
+    ],
+  );
+  assert.equal(groupNearbyPlaces(cards, "here", 1).length, 1);
 });

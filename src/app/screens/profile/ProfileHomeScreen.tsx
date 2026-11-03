@@ -17,13 +17,12 @@ import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
 import { TasteRadar } from "@/components/profile/TasteRadar";
 import { AccessibleImage, AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
-import { OverflowMenu, type OverflowMenuItem } from "@/components/ui/OverflowMenu";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
 import { FoodCredBadge } from "@/components/gamification/FoodCredBadge";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
-import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetch";
+import { preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import {
   buildTastePersonaSummary,
@@ -37,7 +36,6 @@ import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
-import { confirmAction } from "@/lib/runtime/confirmAction";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { biteToStallPost } from "@/lib/services/postTransforms";
@@ -116,8 +114,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   // A restored session can be signed in before its profile loads; the placeholder id is not a uuid.
   const hasAccountProfile = isAuthenticated && profile.id !== "guest-user";
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
-  const signOut = useSessionStore((state) => state.signOut);
-  const merchantAccount = useMerchantStore((state) => state.account);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const { loadStories } = useStoryStore();
@@ -241,12 +237,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       setShareRecipients([]);
     }
   }, []);
-
-  const prefetchMerchantDashboard = useCallback(() => {
-    const outlet = merchantAccount?.outlets[0];
-    prefetchMerchantTab("Dashboard", outlet?.id, merchantAccount?.id);
-    preloadRoute(rootNavigation, "MerchantTabs");
-  }, [merchantAccount, rootNavigation]);
 
   const isFocused = useIsFocused();
   // One event per visit to the tab, not per re-render.
@@ -685,82 +675,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     (followRequestCount ?? 0) > 0
       ? `${followRequestCount} follow ${followRequestCount === 1 ? "request" : "requests"}`
       : null;
-  const menuItems = (
-    [
-      FEATURE_FLAGS.merchantCentreEnabled && merchantAccount !== null
-        ? {
-            id: "merchant-dashboard",
-            title: "Merchant dashboard",
-            symbol: "stall" as const,
-            onPressIn: prefetchMerchantDashboard,
-            onPress: () => rootNavigation.navigate("MerchantTabs" as any),
-          }
-        : null,
-      FEATURE_FLAGS.merchantCentreEnabled && merchantAccount === null
-        ? {
-            id: "business",
-            title: "Hungry for Business",
-            symbol: "stall" as const,
-            onPress: () => rootNavigation.navigate("MerchantClaimExplainer"),
-          }
-        : null,
-      FEATURE_FLAGS.collectionsEnabled
-        ? {
-            id: "liked-content",
-            title: "Liked content",
-            symbol: "save" as const,
-            onPressIn: () => preloadRoute(navigation, "SocialGrid", { type: "liked" }),
-            onPress: () => navigation.navigate("SocialGrid", { type: "liked" }),
-          }
-        : null,
-      FEATURE_FLAGS.followConnectionsEnabled &&
-      ((followRequestCount ?? 0) > 0 || profile.profileVisibility === "private")
-        ? {
-            id: "follow-requests",
-            title: "Follow requests",
-            subtitle: followRequestCount ? `${followRequestCount} waiting` : undefined,
-            symbol: "followRequests" as const,
-            onPress: () => rootNavigation.navigate("FollowRequests"),
-          }
-        : null,
-      FEATURE_FLAGS.stallFollowEnabled
-        ? {
-            id: "followed-stalls",
-            title: "Followed stalls",
-            symbol: "stall" as const,
-            onPressIn: () => preloadRoute(navigation, "FollowedStalls"),
-            onPress: () => navigation.navigate("FollowedStalls"),
-          }
-        : null,
-      {
-        id: "settings",
-        title: "Settings",
-        symbol: "settings" as const,
-        onPressIn: () => preloadRoute(navigation, "Settings"),
-        onPress: () => navigation.navigate("Settings"),
-      },
-      {
-        id: "sign-out",
-        title: "Sign out",
-        symbol: "signOut" as const,
-        destructive: true,
-        onPress: () =>
-          confirmAction({
-            title: "Sign out",
-            message: "You will be signed out from Hungry on this device.",
-            confirmLabel: "Sign out",
-            destructive: true,
-            onConfirm: () => {
-              signOut();
-              rootNavigation.reset({
-                index: 0,
-                routes: [{ name: "AuthStack", params: { screen: "Login" } }],
-              });
-            },
-          }),
-      },
-    ] as (OverflowMenuItem | null)[]
-  ).filter((item): item is OverflowMenuItem => item !== null);
   const followersValue =
     followCounts === "unavailable"
       ? STAT_UNAVAILABLE
@@ -947,21 +861,22 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         />
       }
       headerRight={
-        <OverflowMenu
+        <Pressable
           testID="profile-menu"
-          items={menuItems}
+          accessibilityRole="button"
           accessibilityLabel={
-            followRequestLabel ? `Open quick access, ${followRequestLabel}` : "Open quick access"
+            followRequestLabel ? `Open settings, ${followRequestLabel}` : "Open settings"
           }
-          openAccessibilityLabel="Close quick access"
-          triggerStyle={{
+          onPressIn={() => preloadRoute(navigation, "Settings")}
+          onPress={() => navigation.navigate("Settings")}
+          style={{
             alignItems: "center",
             height: headerActionSize,
             justifyContent: "center",
             width: headerActionSize,
           }}
         >
-          <AppSymbol name="moreActions" size={24} weight="regular" color={palette.text} />
+          <AppSymbol name="settings" size={24} weight="regular" color={palette.text} />
           {followRequestCount ? (
             <View
               testID="profile-menu-badge"
@@ -992,7 +907,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               </AppText>
             </View>
           ) : null}
-        </OverflowMenu>
+        </Pressable>
       }
     >
       <View style={{ gap: spacing[4], position: "relative" }}>

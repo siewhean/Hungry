@@ -539,7 +539,7 @@ test("the review page has no subtitle line under its title", async () => {
   assert.doesNotMatch(view.text(), /Share what you ate/);
 });
 
-test("the Select stall & dish search fills the row beside Close instead of collapsing", async () => {
+test("the Select stall & dish search fills the row beside the close chevron instead of collapsing", async () => {
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
   await view.press(view.findByText("Select stall & dish"));
   await view.settle();
@@ -550,13 +550,28 @@ test("the Select stall & dish search fills the row beside Close instead of colla
   const slot = search.parentElement?.parentElement?.parentElement;
   assert.match(slot?.getAttribute("style") ?? "", /flex: 1 1 0%/);
   assert.match(slot?.getAttribute("style") ?? "", /min-width: 0px/);
-  // Buttons are 100% wide by default; Close would take the whole row and squeeze the field.
-  const close = view.findByLabel("Close") ?? view.findByText("Close");
-  assert.ok(close, "Close sits beside it");
-  assert.doesNotMatch(
-    close.closest("button, [role=button]")?.getAttribute("style") ?? "",
-    /width: 100%/,
+  // The picker leaves with one chevron, not a "Close" word.
+  assert.ok(view.findByLabel("Close"), "the chevron closes the picker");
+  assert.equal(view.findByText("Close"), null, "no Close text button");
+});
+
+test("Suggest a dish in the picker opens the suggestion form for that stall, not the stall page", async () => {
+  const { first } = twoDishes();
+  const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
+  await view.press(view.findByText("Select stall & dish"));
+  await view.settle();
+  const venue = getDataRepository().getVenueById(first.venueId);
+  await view.press(view.findByLabel(`Choose a dish at ${venue?.name}`));
+  await view.settle();
+  assert.ok(view.findByLabel("Back"), "inside a stall the chevron goes back to the stall list");
+  assert.equal(view.findByText("Back"), null, "no Back text button");
+  await view.press(view.findByText("Don't see it? Suggest a dish"));
+  await view.settle();
+  const call = view.navigation.calls.find(
+    (entry) => entry.method === "navigate" && entry.args[0] === "SuggestDish",
   );
+  assert.ok(call, "the SuggestDish form opens");
+  assert.deepEqual(call.args[1], { venueId: first.venueId, subjectName: venue?.name });
 });
 
 // ─── Editor and dish picker (REV-5, REV-10, REV-11, REV-13, REV-14, REV-21) ──

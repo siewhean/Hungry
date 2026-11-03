@@ -9,16 +9,17 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("profile home contract: quick access lives behind the header menu", () => {
+test("profile home contract: the header holds a settings icon, not a menu", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
   assert.match(source, /headerRight=\{/);
-  // A native menu (UIMenu on iOS) with a web dropdown fallback, opened from a "more" symbol.
-  assert.match(source, /<OverflowMenu/);
-  assert.match(source, /<AppSymbol name="moreActions"/);
-  assert.match(source, /openAccessibilityLabel="Close quick access"/);
-  assert.match(source, /`Open quick access, \$\{followRequestLabel\}`/);
-  assert.match(source, /: "Open quick access"/);
+  // One settings icon that opens Settings; Sign out is at the bottom of Settings only.
+  assert.doesNotMatch(source, /<OverflowMenu/);
+  assert.doesNotMatch(source, /name="moreActions"/);
+  assert.doesNotMatch(source, /Sign out/);
+  assert.match(source, /<AppSymbol name="settings"/);
+  assert.match(source, /`Open settings, \$\{followRequestLabel\}`/);
+  assert.match(source, /: "Open settings"/);
   assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.match(source, /toChatShareRecipient/);
@@ -101,8 +102,9 @@ test("Stitch profile surfaces use account data and preserve their destinations",
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.doesNotMatch(source, /SINGAPORE FOODIE PASSPORT/);
   assert.doesNotMatch(source, /FollowRequestsRow/);
-  assert.match(source, /id: "follow-requests"/);
-  assert.match(source, /subtitle: followRequestCount \? `\$\{followRequestCount\} waiting`/);
+  // The Follow requests row moved to Settings; the Profile header's settings icon carries the count.
+  assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /id: "follow-requests"/);
+  assert.match(source, /testID="profile-menu-badge"/);
   // Saved is the one entry point to dishes, stalls and lists; the old Collections and Badges
   // tiles are gone, and the Passport card shows the stamps.
   assert.doesNotMatch(source, /label="Collections"|label="Badges"/);
@@ -133,8 +135,9 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(source, /\.merchant\.getMerchantAccount\(\)/);
   assert.match(source, /setMerchantAccount\(account\)/);
-  assert.match(source, /title: "Merchant dashboard"/);
-  assert.match(source, /title: "Hungry for Business"/);
+  const settings = read("src/app/screens/profile/SettingsScreen.tsx");
+  assert.match(settings, /label: "Merchant dashboard"/);
+  assert.match(settings, /label: "Hungry for Business"/);
 
   for (const file of [
     "src/app/screens/merchant/MerchantProfileScreen.tsx",

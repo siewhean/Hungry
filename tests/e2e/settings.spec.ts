@@ -14,8 +14,7 @@ async function openSettings(page: Page, width: number) {
   await clickDevButton(page, "Profile", "Profile & Review");
   await page.setViewportSize({ width, height: 800 });
   await expect(page.getByText("Taste Fingerprint", { exact: true }).first()).toBeVisible();
-  await page.getByRole("button", { name: /^Open quick access/ }).click();
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: /^Open settings/ }).click();
   await expect(page.getByRole("heading", { name: "Privacy & data" })).toBeVisible();
 }
 

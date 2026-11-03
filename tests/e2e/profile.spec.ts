@@ -65,23 +65,21 @@ test.describe("profile page walk", () => {
     await expect(page.getByRole("button", { name: /^Following/ })).toHaveCount(0);
   });
 
-  test("the quick access menu has one close control and a sign-out that asks first", async ({
-    page,
-  }) => {
+  test("the header settings icon opens Settings, where Sign out asks first", async ({ page }) => {
     await openProfile(page, 375);
 
-    await page.getByRole("button", { name: /^Open quick access/ }).click();
-    await expect(page.getByRole("button", { name: "Close quick access" })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: /quick access/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Sign out", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: /^Open settings/ }).click();
+    await expect(page.getByRole("heading", { name: "Privacy & data" })).toBeVisible();
 
-    // Sign out asks (the browser confirm on web); dismissing keeps you signed in.
-    let asked = "";
-    page.once("dialog", async (dialog) => {
-      asked = dialog.message();
-      await dialog.dismiss();
-    });
-    await page.getByRole("button", { name: "Sign out" }).click();
-    await expect.poll(() => asked).toContain("Sign out");
-    await expect(page.getByText("Taste Fingerprint", { exact: true }).first()).toBeVisible();
+    // Sign out asks first; Cancel keeps you signed in.
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(
+      page.getByText("You will be signed out from Hungry on this device."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Privacy & data" })).toBeVisible();
   });
 
   test("Edit profile with a draft asks before leaving", async ({ page }) => {

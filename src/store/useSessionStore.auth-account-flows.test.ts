@@ -49,8 +49,8 @@ test("every sign-out path clears account-scoped search history and review drafts
   assert.deepEqual(useSearchStore.getState().recentSearches, []);
   assert.equal(useReviewDraftStore.getState().draft.text, "");
 
-  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
-  assert.match(profileHome, /signOut\(\)/);
+  const settings = read("src/app/screens/profile/SettingsScreen.tsx");
+  assert.match(settings, /signOut\(\)/);
 });
 
 test("session expiry survives the follow-up SIGNED_OUT event and is consumed once on Login", () => {

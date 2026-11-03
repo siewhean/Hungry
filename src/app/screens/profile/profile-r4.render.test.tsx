@@ -272,7 +272,7 @@ test("avatar falls back to initials when the photo fails to load", async () => {
 
 // --- Profile home -----------------------------------------------------------------------
 
-test("follow requests are archived: no count read, badge, banner or menu entry without the flag", async () => {
+test("follow requests are archived: no count read, badge or banner without the flag", async () => {
   let reads = 0;
   stub(getHungryService().social, "getFollowRequestCount", async () => {
     reads += 1;
@@ -280,34 +280,30 @@ test("follow requests are archived: no count read, badge, banner or menu entry w
   });
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.equal(reads, 0, "the count is not read");
-  assert.ok(view.findByLabel("Open quick access"), "no count in the menu label");
+  assert.ok(view.findByLabel("Open settings"), "no count in the settings label");
   assert.equal(view.findByTestId("profile-menu-badge"), null);
   assert.equal(view.findByTestId("profile-follow-requests-row"), null);
-  await view.press(view.findByLabel(/^Open quick access/));
-  assert.equal(view.findByLabel(/^Follow requests/), null, "the menu has no Follow requests");
+  assert.equal(view.findByLabel(/^Follow requests/), null, "no Follow requests entry");
 });
 
-test("menu button: badge and count in the label at 2 follow requests, none at 0", async () => {
+test("settings button: badge and count in the label at 2 follow requests, none at 0", async () => {
   flags.followConnectionsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 2);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  assert.ok(view.findByLabel("Open quick access, 2 follow requests"));
+  assert.ok(view.findByLabel("Open settings, 2 follow requests"));
   assert.ok(view.findByTestId("profile-menu-badge"));
   await view.unmount();
 
   stub(getHungryService().social, "getFollowRequestCount", async () => 0);
   view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  assert.ok(view.findByLabel("Open quick access"));
+  assert.ok(view.findByLabel("Open settings"));
   assert.equal(view.findByTestId("profile-menu-badge"), null);
 });
 
-test("menu open: one accessible Close quick access control, not two", async () => {
+test("the header has no three-dot menu and no Sign out on the profile page", async () => {
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  await view.press(view.findByLabel(/^Open quick access/));
-  const closers = Array.from(document.body.querySelectorAll("[aria-label]")).filter(
-    (element) => element.getAttribute("aria-label") === "Close quick access",
-  );
-  assert.equal(closers.length, 1);
+  assert.equal(view.findByLabel(/quick access/i), null);
+  assert.equal(view.findByText("Sign out"), null);
 });
 
 test("own profile: pin up to four favourite dishes from the dishes you saved or reviewed", async () => {

@@ -248,7 +248,7 @@ export function EditProfileScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={{ justifyContent: "center", minHeight: 44, paddingRight: spacing[2] }}
         >
-          <AppText style={{ color: palette.accentText }}>Cancel</AppText>
+          <AppSymbol name="back" size={22} color={palette.text} />
         </Pressable>
       }
       headerRight={

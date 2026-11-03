@@ -163,6 +163,7 @@ export type RootStackParamList = {
   StallVisited: { venueId: string };
   /** "Add opening hours": pick every day, weekdays and weekends, or each day; sent for review. */
   SuggestOpeningHours: { venueId: string; subjectName?: string };
+  SuggestDish: { venueId: string; subjectName?: string };
   ReportProblem: {
     venueId: string;
     dishId?: string;
