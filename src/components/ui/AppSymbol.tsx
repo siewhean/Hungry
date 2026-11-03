@@ -1,7 +1,6 @@
 import { SymbolView, type SFSymbol, type SymbolViewProps } from "expo-symbols";
 import type { ComponentType } from "react";
 import {
-  ArrowLeft,
   ArrowRight,
   ArrowUpDown,
   BadgeCheck,
@@ -14,6 +13,7 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ChevronUp,
   Circle,
@@ -236,7 +236,7 @@ const APP_SYMBOLS = {
   person: { ios: "person", lucide: User },
   showPassword: { ios: "eye", lucide: Eye },
   hidePassword: { ios: "eye.slash", lucide: EyeOff },
-  back: { ios: "chevron.backward", lucide: ArrowLeft },
+  back: { ios: "chevron.backward", lucide: ChevronLeft },
   forward: { ios: "arrow.right", lucide: ArrowRight },
   done: { ios: "checkmark.circle.fill", lucide: CheckCircle2 },
   notDone: { ios: "circle", lucide: Circle },

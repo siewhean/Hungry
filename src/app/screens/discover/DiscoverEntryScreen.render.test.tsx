@@ -837,12 +837,12 @@ function countOf(text: string, pattern: RegExp) {
   return (text.match(pattern) ?? []).length;
 }
 
-test("R4-B2: with no menus nearby the stalls stay in one list under a single note", async () => {
+test("R4-B2: with no menus nearby the stalls stay in one list with no repeated note", async () => {
   serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   assert.equal(countOf(text, /Menu coming soon/g), 0, "no per-row repeat");
-  assert.equal(countOf(text, /Menus are coming to these stalls/g), 1, "one note instead");
+  assert.equal(countOf(text, /Menus are coming to these stalls/g), 0, "no note either");
   assert.match(text, /Stall 1/);
   assert.doesNotMatch(text, /More stalls nearby/, "nothing to fold under: every stall is bare");
 });
@@ -1209,4 +1209,51 @@ test("H4-14: a diner with a saved dietary need still gets dishes above the class
   assert.match(text, /Nasi Padang/, "the halal dish is on the page");
   assert.ok(text.indexOf("Dishes across Singapore") > 0);
   assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
+});
+
+test("R10: Home also lists what is open now and the malls and hawker centres nearby", async () => {
+  serveLiveFeed([
+    ...Array.from({ length: 4 }, (_, i) =>
+      feedRow(i + 1, { operating_hours: "Mon-Sun 24 hours", is_open: true }),
+    ),
+    ...Array.from({ length: 2 }, (_, i) =>
+      feedRow(i + 5, {
+        building_id: "building-2",
+        building_name: "Lau Pa Sat",
+        operating_hours: "Mon-Sun 24 hours",
+        is_open: true,
+      }),
+    ),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.match(text, /Open now/);
+  assert.match(text, /Malls and hawker centres nearby/);
+  assert.ok(view.findByTestId("nearby-places"), "the places rail renders");
+  assert.ok(view.findByLabel(/^See stalls at /), "each place opens its stalls");
+});
+
+test("R10: popular dishes pinned with a long press show first under Your favourites", async () => {
+  const { useFeedFeedbackStore } = await import("@/store/useFeedFeedbackStore");
+  useFeedFeedbackStore.getState()._reset();
+  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
+  useFeedFeedbackStore.getState().toggleFavouriteFoodStyle("satay");
+  useFeedFeedbackStore.getState().toggleFavouriteFoodStyle("laksa");
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const favourites = view.findByTestId("favourite-food-styles");
+  assert.ok(favourites, "the favourites row is on Home");
+  const labels = Array.from(favourites.querySelectorAll("[aria-label^='Search for']")).map(
+    (element) => element.getAttribute("aria-label"),
+  );
+  assert.deepEqual(labels, ["Search for Satay, favourite", "Search for Laksa, favourite"]);
+  assert.match(view.text(), /Your favourites/);
+  useFeedFeedbackStore.getState()._reset();
+});
+
+test("R10: with nothing pinned there is no favourites row", async () => {
+  const { useFeedFeedbackStore } = await import("@/store/useFeedFeedbackStore");
+  useFeedFeedbackStore.getState()._reset();
+  serveLiveFeed(Array.from({ length: 12 }, (_, i) => coldRow(i + 1)));
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.equal(view.findByTestId("favourite-food-styles"), null);
 });

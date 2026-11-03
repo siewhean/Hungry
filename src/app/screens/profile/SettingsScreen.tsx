@@ -148,6 +148,57 @@ export function SettingsScreen() {
   // Neutral grey icons on grey discs; colour is kept for state (error red, accent actions).
   const iconColor = palette.textSecondary;
   const neutralRow = { editorial: true, iconTone: "neutral" } as const;
+  // SocialGrid and FollowedStalls live in the profile stack, which this screen sits in.
+  const navigateLoose = (name: string, params?: object) =>
+    (navigation as unknown as { navigate: (name: string, params?: object) => void }).navigate(
+      name,
+      params,
+    );
+  // What the profile's three-dot menu held, kept one tap from the settings icon. Each row
+  // keeps the flag it had there, so a build without the feature shows no row.
+  const profileShortcuts = [
+    FEATURE_FLAGS.merchantCentreEnabled && hasMerchantAccount
+      ? {
+          id: "merchant-dashboard",
+          label: "Merchant dashboard",
+          symbol: "stall" as const,
+          onPress: () => rootNavigation.navigate("MerchantTabs" as never),
+        }
+      : null,
+    FEATURE_FLAGS.merchantCentreEnabled && !hasMerchantAccount
+      ? {
+          id: "business",
+          label: "Hungry for Business",
+          symbol: "stall" as const,
+          onPress: () => rootNavigation.navigate("MerchantClaimExplainer"),
+        }
+      : null,
+    FEATURE_FLAGS.collectionsEnabled
+      ? {
+          id: "liked-content",
+          label: "Liked content",
+          symbol: "save" as const,
+          onPress: () => navigateLoose("SocialGrid", { type: "liked" }),
+        }
+      : null,
+    FEATURE_FLAGS.followConnectionsEnabled
+      ? {
+          id: "follow-requests",
+          label: "Follow requests",
+          symbol: "followRequests" as const,
+          onPress: () => rootNavigation.navigate("FollowRequests"),
+        }
+      : null,
+    FEATURE_FLAGS.stallFollowEnabled
+      ? {
+          id: "followed-stalls",
+          label: "Followed stalls",
+          symbol: "stall" as const,
+          onPress: () => navigateLoose("FollowedStalls"),
+        }
+      : null,
+  ].filter((shortcut): shortcut is NonNullable<typeof shortcut> => shortcut !== null);
+  const hasProfileShortcuts = profileShortcuts.length > 0;
   const isNative = Platform.OS !== "web";
 
   // The denominator for every Settings experiment: one view per time the screen comes into focus.
@@ -613,6 +664,22 @@ export function SettingsScreen() {
           avatarUrl={profile.avatarUrl}
           onPress={() => navigation.navigate("EditProfile")}
         />
+      ) : null}
+
+      {isAuthenticated && hasProfileShortcuts ? (
+        <SettingsSection editorial title="Shortcuts">
+          {profileShortcuts.map((shortcut, index) => (
+            <SettingsRow
+              key={shortcut.id}
+              {...neutralRow}
+              label={shortcut.label}
+              icon={<AppSymbol name={shortcut.symbol} size={20} color={iconColor} />}
+              type="navigation"
+              onPress={shortcut.onPress}
+              isLast={index === profileShortcuts.length - 1}
+            />
+          ))}
+        </SettingsSection>
       ) : null}
 
       <SettingsSection

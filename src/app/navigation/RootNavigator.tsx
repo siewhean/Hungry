@@ -54,6 +54,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "StallVisited",
   "ReportProblem",
   "SuggestOpeningHours",
+  "SuggestDish",
   "MerchantClaimExplainer",
   "DishDetail",
   "DishReviews",
@@ -282,6 +283,10 @@ const loadSuggestOpeningHoursScreen = () =>
   (
     require("@/app/screens/detail/SuggestOpeningHoursScreen") as typeof import("@/app/screens/detail/SuggestOpeningHoursScreen")
   ).SuggestOpeningHoursScreen;
+const loadSuggestDishScreen = () =>
+  (
+    require("@/app/screens/detail/SuggestDishScreen") as typeof import("@/app/screens/detail/SuggestDishScreen")
+  ).SuggestDishScreen;
 const loadStallVisitedScreen = () =>
   (
     require("@/app/screens/detail/StallVisitedScreen") as typeof import("@/app/screens/detail/StallVisitedScreen")
@@ -796,6 +801,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             getComponent={loadSuggestOpeningHoursScreen}
             name="SuggestOpeningHours"
           />
+          <RootStack.Screen getComponent={loadSuggestDishScreen} name="SuggestDish" />
           {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
             <RootStack.Screen
               getComponent={loadMerchantClaimExplainerScreen}

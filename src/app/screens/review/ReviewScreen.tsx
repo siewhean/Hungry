@@ -939,9 +939,7 @@ export function ReviewScreen({ navigation, route }: Props) {
             onPress={cancelEditor}
             style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}
           >
-            <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-              Cancel
-            </AppText>
+            <AppSymbol name="back" size={22} color={palette.text} />
           </Pressable>
         }
         headerRight={
@@ -1023,21 +1021,28 @@ export function ReviewScreen({ navigation, route }: Props) {
                 marginBottom: spacing[4],
               }}
             >
+              {/* One chevron leaves the picker: back to the stall list from a stall, closed from the list. */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={pickerVenue ? "Back" : "Close"}
+                hitSlop={8}
+                onPress={() => (pickerVenue ? setPickerVenueId(null) : closePicker())}
+                style={{
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 44,
+                  minWidth: 44,
+                }}
+              >
+                <AppSymbol name="back" size={22} color={palette.text} />
+              </Pressable>
               {pickerVenue ? (
-                <>
-                  <Button
-                    label="Back"
-                    variant="ghost"
-                    fullWidth={false}
-                    onPress={() => setPickerVenueId(null)}
-                  />
-                  <AppText variant="h3" style={{ flex: 1 }} numberOfLines={1}>
-                    {pickerVenue.name}
-                  </AppText>
-                </>
+                <AppText variant="h3" style={{ flex: 1 }} numberOfLines={1}>
+                  {pickerVenue.name}
+                </AppText>
               ) : (
-                // Buttons default to 100% wide, so Close/Back are fullWidth={false}; Input's outer
-                // wrapper sizes to its content, so this flex:1 slot lets the field fill the rest.
+                // Input's outer wrapper sizes to its content, so this flex:1 slot lets the field
+                // fill the rest of the row.
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Input
                     placeholder="Search dishes or stalls..."
@@ -1048,7 +1053,6 @@ export function ReviewScreen({ navigation, route }: Props) {
                   />
                 </View>
               )}
-              <Button label="Close" variant="ghost" fullWidth={false} onPress={closePicker} />
             </View>
 
             {pickerVenue ? (
@@ -1063,12 +1067,31 @@ export function ReviewScreen({ navigation, route }: Props) {
                       variant="secondary"
                       fullWidth={false}
                       onPress={() => {
-                        // The stall page has the menu-photo flow that adds dishes.
+                        // A short form that sends the dish to the team to add to the menu.
                         closePicker();
-                        rootNavigation.navigate("StallDetail", { id: pickerVenue.id });
+                        rootNavigation.navigate("SuggestDish", {
+                          venueId: pickerVenue.id,
+                          subjectName: pickerVenue.name,
+                        });
                       }}
                     />
                   </View>
+                }
+                ListFooterComponent={
+                  pickerDishes.length > 0 ? (
+                    <Button
+                      label="Don't see it? Suggest a dish"
+                      variant="ghost"
+                      fullWidth={false}
+                      onPress={() => {
+                        closePicker();
+                        rootNavigation.navigate("SuggestDish", {
+                          venueId: pickerVenue.id,
+                          subjectName: pickerVenue.name,
+                        });
+                      }}
+                    />
+                  ) : null
                 }
                 renderItem={({ item }) => (
                   <Pressable

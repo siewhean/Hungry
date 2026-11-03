@@ -48,14 +48,18 @@ test("an empty food type is ignored", () => {
   assert.deepEqual(useFeedFeedbackStore.getState().mutedFoodTypes, []);
 });
 
-test("only muted food types are kept on the device; this visit's actions are not", () => {
+test("muted food types and pinned popular dishes are kept on the device; this visit's actions are not", () => {
   const options = useFeedFeedbackStore.persist.getOptions();
   const saved = options.partialize?.({
     ...useFeedFeedbackStore.getState(),
     mutedFoodTypes: [{ foodType: "laksa", until: 1 }],
+    favouriteFoodStyleIds: ["satay"],
     sessionActions: [{ dishId: "d1", kind: "open", at: 1 }],
   });
-  assert.deepEqual(saved, { mutedFoodTypes: [{ foodType: "laksa", until: 1 }] });
+  assert.deepEqual(saved, {
+    mutedFoodTypes: [{ foodType: "laksa", until: 1 }],
+    favouriteFoodStyleIds: ["satay"],
+  });
 });
 
 test("a different account starts with no muted food types and no session actions", async () => {
@@ -65,4 +69,33 @@ test("a different account starts with no muted food types and no session actions
   useSessionStore.getState().signOut();
   assert.deepEqual(useFeedFeedbackStore.getState().mutedFoodTypes, []);
   assert.deepEqual(useFeedFeedbackStore.getState().sessionActions, []);
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, []);
+});
+
+test("a popular dish can be pinned to Home and unpinned again", () => {
+  const { toggleFavouriteFoodStyle } = useFeedFeedbackStore.getState();
+  toggleFavouriteFoodStyle("laksa");
+  toggleFavouriteFoodStyle("satay");
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["laksa", "satay"]);
+  toggleFavouriteFoodStyle("laksa");
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["satay"]);
+});
+
+test("pinned popular dishes move one place at a time and stop at the ends", () => {
+  const { toggleFavouriteFoodStyle, moveFavouriteFoodStyle } = useFeedFeedbackStore.getState();
+  for (const id of ["a", "b", "c"]) toggleFavouriteFoodStyle(id);
+  moveFavouriteFoodStyle("c", -1);
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["a", "c", "b"]);
+  moveFavouriteFoodStyle("a", -1);
+  moveFavouriteFoodStyle("b", 1);
+  moveFavouriteFoodStyle("missing", 1);
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["a", "c", "b"]);
+  moveFavouriteFoodStyle("a", 1);
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, ["c", "a", "b"]);
+});
+
+test("resetting on sign-out also clears the pinned popular dishes", () => {
+  useFeedFeedbackStore.getState().toggleFavouriteFoodStyle("laksa");
+  useFeedFeedbackStore.getState()._reset();
+  assert.deepEqual(useFeedFeedbackStore.getState().favouriteFoodStyleIds, []);
 });

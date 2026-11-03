@@ -9,7 +9,7 @@ import { getVenueOpenState } from "@/utils/operatingHours";
 type OpenStateVenue = Pick<VenueSummary, "operatingHours" | "isOpen" | "closedUntil">;
 
 /** The stall page's rule on Home too: a merchant's "Closed today" / "Reopens 3 Nov" comes first. */
-function openStateOf(venue: OpenStateVenue) {
+export function openStateOf(venue: OpenStateVenue) {
   if (isClosureActive(venue.closedUntil)) {
     return { status: "closed" as const, detail: getClosureLabel(venue.closedUntil) };
   }
@@ -33,11 +33,11 @@ export function isStallClosed(venue: OpenStateVenue) {
   return openStateOf(venue).status === "closed";
 }
 
-function distanceOf({ venue, topDish }: HomeStallCard) {
+export function distanceOf({ venue, topDish }: HomeStallCard) {
   return venue.distanceMeters ?? topDish?.distanceMeters ?? Number.POSITIVE_INFINITY;
 }
 
-function ratingScore({ topDish }: HomeStallCard) {
+export function ratingScore({ topDish }: HomeStallCard) {
   return (topDish?.rating ?? 0) * 100 + (topDish?.reviewCount ?? 0);
 }
 

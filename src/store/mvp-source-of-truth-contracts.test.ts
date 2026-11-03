@@ -352,15 +352,15 @@ test("Supabase review feed does not send review ids through post reaction writes
 
 test("advanced liked-content social collection is gated out of MVP production", () => {
   const profileStack = read("src/app/screens/profile/ProfileStack.tsx");
-  const profileHome = read("src/app/screens/profile/ProfileHomeScreen.tsx");
+  const profileHome = read("src/app/screens/profile/SettingsScreen.tsx");
 
   assert.match(profileStack, /FEATURE_FLAGS\.collectionsEnabled \? \(/);
   assert.match(profileStack, /name="SocialGrid" getComponent=\{loadSocialGridScreen\}/);
   assert.match(profileStack, /name="SocialPostDetail" getComponent=\{loadSocialPostDetailScreen\}/);
   assert.doesNotMatch(profileStack, /SocialGridScreen\} from "\.\/SocialGridScreen"/);
-  // The menu item exists only when the flag is on.
+  // The Settings shortcut exists only when the flag is on.
   assert.match(profileHome, /FEATURE_FLAGS\.collectionsEnabled\s*\?\s*\{\s*id: "liked-content"/);
-  assert.match(profileHome, /title: "Liked content"/);
+  assert.match(profileHome, /label: "Liked content"/);
 });
 
 test("Search results route reads the paged catalog service, never the repository cache", () => {

@@ -143,7 +143,7 @@ test("P5-3 web fallback: the dropdown opens, shows a red Sign out with no chevro
   assert.equal(view.findByLabel("Sign out"), null, "closed after a pick");
 });
 
-test("P5-3 profile home: the badge is 11pt bold and the menu lists the account items", async () => {
+test("P5-3 profile home: the settings badge is 11pt bold and the page has no menu or Sign out", async () => {
   flags.followConnectionsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 3);
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
@@ -152,13 +152,9 @@ test("P5-3 profile home: the badge is 11pt bold and the menu lists the account i
   const number = badge.querySelector("div") as HTMLElement;
   assert.equal(number.style.fontSize, "11px");
   assert.equal(number.style.fontWeight, "700");
-  await view.press(view.findByLabel(/^Open quick access/));
-  for (const label of ["Settings", "Sign out"]) {
-    assert.ok(view.findByLabel(label), `${label} is in the menu`);
-  }
-  // Follow stall is off for now: no Followed stalls entry.
-  assert.equal(view.findByLabel("Followed stalls"), null);
-  assert.ok(view.findByLabel("Follow requests, 3 waiting"));
+  assert.ok(view.findByLabel("Open settings, 3 follow requests"));
+  assert.equal(view.findByLabel(/^Open quick access/), null, "no three-dot menu");
+  assert.equal(view.findByLabel("Sign out"), null, "Sign out is only at the bottom of Settings");
 });
 
 // --- P5-7, P5-9: the review card ---------------------------------------------------------

@@ -8,11 +8,11 @@ const read = (path: string) => readFileSync(path, "utf8");
 const home = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 const other = read("src/app/screens/profile/UserProfileContent.tsx");
 
-test("PROF-25: ReleaseProfile asks before signing out", () => {
+test("PROF-25: ReleaseProfile has no Sign out; it is at the bottom of Settings and asks first", () => {
   const source = read("src/app/screens/profile/ReleaseProfileScreen.tsx");
-  assert.doesNotMatch(source, /onPress=\{signOut\}/);
-  // A web-safe confirm (Alert.alert is a no-op on web): see confirmAction.test.ts.
-  assert.match(source, /confirmAction\(\{[\s\S]*title: "Sign out"[\s\S]*onConfirm: signOut/);
+  assert.doesNotMatch(source, /signOut|Sign out/);
+  assert.match(source, /navigate\("Settings"\)/);
+  assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /title="Sign out"/);
 });
 
 test("PROF-22: both avatars fit inside their 80pt ring with its 2pt border", () => {

@@ -17,16 +17,22 @@ export type PopularFoodStyleItemData = PopularFoodStyle & {
   imageUrl: string | undefined;
 };
 
+const FOOD_STYLE_OPTIONS_ACTION = "foodStyleOptions";
+
 function FoodStyleButton({
   imageSource,
   label,
+  isFavourite,
   onPressIn,
   onPress,
+  onLongPress,
 }: {
   imageSource: ImageSourcePropType;
   label: string;
+  isFavourite: boolean;
   onPressIn?: () => void;
   onPress: () => void;
+  onLongPress?: () => void;
 }) {
   const theme = useHungryTheme();
   const { palette, radii, shadows } = theme;
@@ -38,9 +44,20 @@ function FoodStyleButton({
   return (
     <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={`Search for ${label}`}
+      accessibilityLabel={isFavourite ? `Search for ${label}, favourite` : `Search for ${label}`}
+      accessibilityActions={
+        onLongPress ? [{ name: FOOD_STYLE_OPTIONS_ACTION, label: "Favourite options" }] : undefined
+      }
+      onAccessibilityAction={
+        onLongPress
+          ? (event) => {
+              if (event.nativeEvent.actionName === FOOD_STYLE_OPTIONS_ACTION) onLongPress();
+            }
+          : undefined
+      }
       onPressIn={onPressIn}
       onPress={onPress}
+      onLongPress={onLongPress}
       style={{ alignItems: "center", minHeight: buttonHeight, width: FOOD_STYLE_ITEM_WIDTH }}
     >
       <View
@@ -103,12 +120,18 @@ const MemoFoodStyleButton = memo(FoodStyleButton);
 
 export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
   item,
+  isFavourite = false,
   onPress,
   onPrefetch,
+  onOptions,
 }: {
   item: PopularFoodStyleItemData;
+  /** Pinned to Home: the label says so for screen readers. */
+  isFavourite?: boolean;
   onPress: (item: PopularFoodStyleItemData) => void;
   onPrefetch: (item: PopularFoodStyleItemData) => void;
+  /** Holding the tile: add to favourites, or move or remove a favourite. */
+  onOptions?: (item: PopularFoodStyleItemData) => void;
 }) {
   const handlePressIn = useCallback(() => {
     onPrefetch(item);
@@ -117,12 +140,18 @@ export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
     onPress(item);
   }, [item, onPress]);
 
+  const handleLongPress = useCallback(() => {
+    onOptions?.(item);
+  }, [item, onOptions]);
+
   return (
     <MemoFoodStyleButton
       imageSource={item.imageSource}
       label={item.label}
+      isFavourite={isFavourite}
       onPressIn={handlePressIn}
       onPress={handlePress}
+      onLongPress={onOptions ? handleLongPress : undefined}
     />
   );
 });

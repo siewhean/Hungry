@@ -555,6 +555,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Every day/,
   },
   {
+    name: "SuggestDishScreen",
+    file: "src/app/screens/detail/SuggestDishScreen.tsx",
+    scenario: "user",
+    params: "stallVisited",
+    expect: /Dish name/,
+  },
+  {
     name: "CollectionsScreen",
     file: "src/app/screens/profile/CollectionsScreen.tsx",
     scenario: "user",
