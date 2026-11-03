@@ -8,6 +8,7 @@ import {
   getFoodStyleButtonMetrics,
 } from "@/components/discover/home/homeLayout";
 import type { PopularFoodStyle } from "@/features/discover/popularFoodStyles";
+import { confirmHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 
@@ -17,7 +18,7 @@ export type PopularFoodStyleItemData = PopularFoodStyle & {
   imageUrl: string | undefined;
 };
 
-const FOOD_STYLE_OPTIONS_ACTION = "foodStyleOptions";
+const FOOD_STYLE_FAVOURITE_ACTION = "foodStyleFavourite";
 
 function FoodStyleButton({
   imageSource,
@@ -46,12 +47,19 @@ function FoodStyleButton({
       accessibilityRole="button"
       accessibilityLabel={isFavourite ? `Search for ${label}, favourite` : `Search for ${label}`}
       accessibilityActions={
-        onLongPress ? [{ name: FOOD_STYLE_OPTIONS_ACTION, label: "Favourite options" }] : undefined
+        onLongPress
+          ? [
+              {
+                name: FOOD_STYLE_FAVOURITE_ACTION,
+                label: isFavourite ? "Remove from favourites" : "Add to favourites",
+              },
+            ]
+          : undefined
       }
       onAccessibilityAction={
         onLongPress
           ? (event) => {
-              if (event.nativeEvent.actionName === FOOD_STYLE_OPTIONS_ACTION) onLongPress();
+              if (event.nativeEvent.actionName === FOOD_STYLE_FAVOURITE_ACTION) onLongPress();
             }
           : undefined
       }
@@ -60,42 +68,64 @@ function FoodStyleButton({
       onLongPress={onLongPress}
       style={{ alignItems: "center", minHeight: buttonHeight, width: FOOD_STYLE_ITEM_WIDTH }}
     >
-      <View
-        style={[
-          shadows.card,
-          {
-            width: bowlSize,
-            height: bowlSize,
-            borderRadius: radii.pill,
-            borderWidth: 1,
-            borderColor: palette.border,
-            backgroundColor: palette.surfaceRaised,
-            overflow: "hidden",
-          },
-        ]}
-      >
-        {imageFailed ? (
+      <View style={{ width: bowlSize, height: bowlSize }}>
+        <View
+          style={[
+            shadows.card,
+            {
+              width: bowlSize,
+              height: bowlSize,
+              borderRadius: radii.pill,
+              borderWidth: 1,
+              borderColor: palette.border,
+              backgroundColor: palette.surfaceRaised,
+              overflow: "hidden",
+            },
+          ]}
+        >
+          {imageFailed ? (
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.bgSoft,
+                flex: 1,
+                justifyContent: "center",
+              }}
+            >
+              <AppSymbol name="dish" size={28} color={palette.textMuted} />
+            </View>
+          ) : (
+            <AccessibleImage
+              source={imageSource}
+              style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={120}
+              onError={() => setImageFailed(true)}
+              decorative
+            />
+          )}
+        </View>
+        {isFavourite ? (
           <View
+            testID="favourite-star"
             style={{
+              position: "absolute",
+              top: -2,
+              right: -2,
+              width: 24,
+              height: 24,
+              borderRadius: radii.pill,
               alignItems: "center",
-              backgroundColor: palette.bgSoft,
-              flex: 1,
               justifyContent: "center",
+              backgroundColor: palette.surfaceRaised,
+              borderWidth: 1,
+              borderColor: palette.border,
             }}
           >
-            <AppSymbol name="dish" size={28} color={palette.textMuted} />
+            <AppSymbol name="rating" size={14} color={palette.starFill} />
           </View>
-        ) : (
-          <AccessibleImage
-            source={imageSource}
-            style={{ width: "100%", height: "100%", borderRadius: radii.pill }}
-            contentFit="cover"
-            cachePolicy="memory-disk"
-            transition={120}
-            onError={() => setImageFailed(true)}
-            decorative
-          />
-        )}
+        ) : null}
       </View>
       <AppText
         variant="bodySmallBold"
@@ -123,15 +153,15 @@ export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
   isFavourite = false,
   onPress,
   onPrefetch,
-  onOptions,
+  onToggleFavourite,
 }: {
   item: PopularFoodStyleItemData;
   /** Pinned to Home: the label says so for screen readers. */
   isFavourite?: boolean;
   onPress: (item: PopularFoodStyleItemData) => void;
   onPrefetch: (item: PopularFoodStyleItemData) => void;
-  /** Holding the tile: add to favourites, or move or remove a favourite. */
-  onOptions?: (item: PopularFoodStyleItemData) => void;
+  /** Holding the tile pins it to the front of Popular dishes, or unpins it. */
+  onToggleFavourite?: (item: PopularFoodStyleItemData) => void;
 }) {
   const handlePressIn = useCallback(() => {
     onPrefetch(item);
@@ -141,8 +171,9 @@ export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
   }, [item, onPress]);
 
   const handleLongPress = useCallback(() => {
-    onOptions?.(item);
-  }, [item, onOptions]);
+    confirmHaptic();
+    onToggleFavourite?.(item);
+  }, [item, onToggleFavourite]);
 
   return (
     <MemoFoodStyleButton
@@ -151,7 +182,7 @@ export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
       isFavourite={isFavourite}
       onPressIn={handlePressIn}
       onPress={handlePress}
-      onLongPress={onOptions ? handleLongPress : undefined}
+      onLongPress={onToggleFavourite ? handleLongPress : undefined}
     />
   );
 });

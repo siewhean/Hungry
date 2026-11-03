@@ -1,25 +1,12 @@
 /**
- * Pure rules for Home's extra rails: stalls open right now, and the malls and hawker centres
- * around the diner. The screen passes the cards it already holds; nothing here reads a service.
+ * Pure rules for Home's malls and hawker centres rail. The screen passes the cards it holds;
+ * nothing here reads a service.
  */
-import {
-  distanceOf,
-  openStateOf,
-  ratingScore,
-  type HomeStallCard,
-} from "@/features/discover/homeStalls";
+import type { HomeStallCard } from "@/features/discover/homeStalls";
 import type { BuildingSummary } from "@/types/domain";
 
 /** What a nearby-place card needs of a building. */
 export type PlaceBuilding = Pick<BuildingSummary, "id" | "name" | "imageUrl" | "logoUrl">;
-
-/** Stalls open right now, nearest first. A stall with unknown hours is not counted as open. */
-export function pickOpenNowStalls<T extends HomeStallCard>(cards: readonly T[], limit = 10): T[] {
-  return cards
-    .filter(({ venue }) => openStateOf(venue).status === "open")
-    .sort((a, b) => distanceOf(a) - distanceOf(b) || ratingScore(b) - ratingScore(a))
-    .slice(0, limit);
-}
 
 export type NearbyPlace<B extends PlaceBuilding = PlaceBuilding> = {
   building: B;

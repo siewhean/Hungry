@@ -19,6 +19,14 @@ export const FEEDBACK_CATEGORIES = [
 ] as const;
 export type FeedbackCategory = (typeof FEEDBACK_CATEGORIES)[number]["id"];
 
+/** What the box asks for, by what the feedback is about. */
+export const FEEDBACK_PLACEHOLDERS: Record<FeedbackCategory, string> = {
+  bug: "What went wrong, and where?",
+  idea: "What would make Hungry better for you?",
+  like: "What do you enjoy about Hungry?",
+  other: "Tell us anything on your mind.",
+};
+
 export const THUMB_DOWN_REASONS = [
   { id: "wrong_food", label: "Not my kind of food" },
   { id: "too_far", label: "Too far" },

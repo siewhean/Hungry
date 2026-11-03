@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { groupNearbyPlaces, pickOpenNowStalls } from "@/features/discover/homeRails";
+import { groupNearbyPlaces } from "@/features/discover/homeRails";
 import type { BuildingSummary, DishDetail, VenueSummary } from "@/types/domain";
 
 const OPEN_ALWAYS = "Mon-Sun 24 hours";
@@ -20,25 +20,6 @@ function venue(overrides: Partial<VenueSummary> = {}): VenueSummary {
     ...overrides,
   };
 }
-
-function dish(rating: number, reviewCount: number, distanceMeters = 0): DishDetail {
-  return { rating, reviewCount, distanceMeters } as DishDetail;
-}
-
-const CLOSED_ALWAYS = "Mon-Sun 00:00-00:01";
-
-test("open now lists only open stalls, nearest first, up to the limit", () => {
-  const far = { venue: venue({ id: "far", distanceMeters: 900 }) };
-  const near = { venue: venue({ id: "near", distanceMeters: 100 }) };
-  const closed = {
-    venue: venue({ id: "closed", operatingHours: CLOSED_ALWAYS, distanceMeters: 50 }),
-  };
-  assert.deepEqual(
-    pickOpenNowStalls([far, closed, near]).map((card) => card.venue.id),
-    ["near", "far"],
-  );
-  assert.equal(pickOpenNowStalls([far, near], 1).length, 1);
-});
 
 function building(id: string, name = id): BuildingSummary {
   return {
@@ -100,16 +81,6 @@ test("nearby places skip stalls with no building and fall back to the top dish d
   assert.deepEqual(
     places.map((place) => [place.building.id, place.stallCount, place.distanceMeters]),
     [["mall", 2, 420]],
-  );
-});
-
-test("open now breaks a distance tie by rating, and stalls with no distance come last", () => {
-  const lower = { venue: venue({ id: "lower", distanceMeters: 100 }), topDish: dish(3, 5) };
-  const higher = { venue: venue({ id: "higher", distanceMeters: 100 }), topDish: dish(4.5, 20) };
-  const unknown = { venue: venue({ id: "unknown" }) };
-  assert.deepEqual(
-    pickOpenNowStalls([unknown, lower, higher]).map((card) => card.venue.id),
-    ["higher", "lower", "unknown"],
   );
 });
 

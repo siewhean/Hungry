@@ -17,8 +17,6 @@ interface ChipProps {
   leftIcon?: ReactNode;
   /** After the label, e.g. a chevron on a chip that opens a menu. */
   rightIcon?: ReactNode;
-  /** Tighter padding and smaller text, so several chips share one row. */
-  compact?: boolean;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -31,7 +29,6 @@ export function Chip({
   onPress,
   leftIcon,
   rightIcon,
-  compact = false,
   style,
 }: ChipProps) {
   const {
@@ -57,23 +54,15 @@ export function Chip({
     borderRadius: componentRadii.button,
     borderCurve: componentCornerCurve.borderCurve,
     minHeight: componentSizes.touchTarget,
-    paddingHorizontal: compact ? spacing[2] : spacing[3],
+    paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     justifyContent: "center" as const,
   };
 
   const content = (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: compact ? spacing[1] : spacing[2],
-        ...(compact ? { flexShrink: 1, minWidth: 0 } : null),
-      }}
-    >
+    <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
       {leftIcon}
       <AppText
-        variant={compact ? "bodySmall" : "body"}
         style={{
           color:
             selected && solid

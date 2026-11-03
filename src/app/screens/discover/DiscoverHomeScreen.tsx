@@ -10,14 +10,18 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
+  CakeSlice,
   ChevronDown,
   ChevronRight,
+  Coffee,
   Drumstick,
+  Leaf,
   Moon,
   Salad,
   Search,
   SearchX,
   Shuffle,
+  Soup,
   Flame,
   Dices,
   Users,
@@ -70,11 +74,8 @@ import {
   pickRailsWithoutRepeats,
   tasteOrderBites,
 } from "@/features/discover/homeRanking";
-import {
-  groupNearbyPlaces,
-  pickOpenNowStalls,
-  type PlaceBuilding,
-} from "@/features/discover/homeRails";
+import { groupNearbyPlaces, type PlaceBuilding } from "@/features/discover/homeRails";
+import { buildCategorySections } from "@/features/discover/homeCategories";
 import {
   compareHomeStalls,
   getStallRowOpenLabel,
@@ -150,7 +151,7 @@ import {
   type PopularFoodStyleItemData,
 } from "@/components/discover/home/PopularFoodStyleItem";
 import { VerticalStallShowcaseSection } from "@/components/discover/home/VerticalStallShowcaseSection";
-import { getFoodStyleOptions } from "@/features/discover/foodStyleOptions";
+import { putFavouritesFirst } from "@/features/discover/favouriteOrder";
 import { POPULAR_FOOD_STYLES } from "@/features/discover/popularFoodStyles";
 import { tabBarBottomPadding } from "@/app/navigation/tabBarMetrics";
 import {
@@ -681,32 +682,29 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   );
   const popularFoodStyleItems = useMemo(
     () =>
-      isDiscoverFiltering
-        ? unfilteredPopularFoodStyleItems.filter((style) => {
-            // A classic stays when any dish of that kind nearby passes the filters.
-            const query = style.query.toLowerCase();
-            const candidates = areaDishPool.filter((dish) =>
-              dish.name.toLowerCase().includes(query),
-            );
-            return (candidates.length ? candidates : [style.dish]).some((dish) =>
-              matchesDiscoverChipSelection(dish, [style.label, style.query]),
-            );
-          })
-        : unfilteredPopularFoodStyleItems,
+      putFavouritesFirst(
+        isDiscoverFiltering
+          ? unfilteredPopularFoodStyleItems.filter((style) => {
+              // A classic stays when any dish of that kind nearby passes the filters.
+              const query = style.query.toLowerCase();
+              const candidates = areaDishPool.filter((dish) =>
+                dish.name.toLowerCase().includes(query),
+              );
+              return (candidates.length ? candidates : [style.dish]).some((dish) =>
+                matchesDiscoverChipSelection(dish, [style.label, style.query]),
+              );
+            })
+          : unfilteredPopularFoodStyleItems,
+        favouriteFoodStyleIds,
+      ),
     [
       areaDishPool,
+      favouriteFoodStyleIds,
       isDiscoverFiltering,
       matchesDiscoverChipSelection,
       unfilteredPopularFoodStyleItems,
     ],
   );
-  // Pinned popular dishes, in the order the diner chose; one that is no longer offered is skipped.
-  const favouriteFoodStyleItems = useMemo(() => {
-    const byId = new Map(unfilteredPopularFoodStyleItems.map((item) => [item.id, item]));
-    return favouriteFoodStyleIds
-      .map((id) => byId.get(id))
-      .filter((item): item is PopularFoodStyleItemData => Boolean(item));
-  }, [favouriteFoodStyleIds, unfilteredPopularFoodStyleItems]);
   const isWaitingForPopularFoodStyles = !isDiscoverFiltering && popularFoodStyleItems.length === 0;
   const showPopularFoodSkeleton = useDelayedLoadingSkeleton(isWaitingForPopularFoodStyles);
   const showPopularFoodFilterSkeleton = isPopularFoodFilterPending;
@@ -1032,31 +1030,57 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         : [],
     [currentPlaceId, inMallMode, unfilteredAreaStallCards],
   );
-  // More to browse than the stalls in one building: what is open now, and the malls and hawker
-  // centres around. Left out while a chip filter is on, since neither follows the chips.
-  const openNowStalls = useMemo(() => {
+  // More to browse than the stalls in one building: sections of different foods (noodles, rice,
+  // desserts and so on, led by the diner's pinned dishes and the hour), and the malls and hawker
+  // centres around. A stall sits in one section only and never repeats the main rail.
+  const categorySections = useMemo(() => {
+    const byId = new Map(unfilteredPopularFoodStyleItems.map((item) => [item.id, item]));
+    return buildCategorySections(allAreaStallCards, {
+      hour: currentHour,
+      favourites: favouriteFoodStyleIds.flatMap((id) => {
+        const item = byId.get(id);
+        return item ? [{ id: item.id, label: item.label, query: item.query }] : [];
+      }),
+      familiarNames: familiarDishNames,
+      excludeVenueIds: new Set(areaStallCards.map((card) => card.venue.id)),
+      compare: compareHomeStalls,
+    });
+  }, [
+    allAreaStallCards,
+    areaStallCards,
+    currentHour,
+    familiarDishNames,
+    favouriteFoodStyleIds,
+    unfilteredPopularFoodStyleItems,
+  ]);
+  // Each building is named by its stalls' own address, not the area the diner is in.
+  const nearbyPlaces = useMemo(() => {
     if (isDiscoverFiltering) return [];
-    const byId = new Map(unfilteredAreaStallCards.map((card) => [card.venue.id, card]));
-    return pickOpenNowStalls(
-      unfilteredAreaStallCards.map(({ venue, topDish }) => ({ venue, topDish })),
-    )
-      .map(({ venue }) => byId.get(venue.id))
-      .filter((card): card is NonNullable<typeof card> => Boolean(card));
-  }, [isDiscoverFiltering, unfilteredAreaStallCards]);
-  const nearbyPlaces = useMemo(
-    () =>
-      isDiscoverFiltering
-        ? []
-        : groupNearbyPlaces<PlaceBuilding>(
-            unfilteredAreaStallCards.map(({ building, venue, topDish }) => ({
-              building,
-              venue,
-              topDish,
-            })),
-            currentPlaceId,
-          ),
-    [currentPlaceId, isDiscoverFiltering, unfilteredAreaStallCards],
-  );
+    // A building the area list knows has its own name; otherwise the card's building is only a
+    // stand-in named after the area the diner is in, which is not where the stall is.
+    const knownBuildingIds = new Set(areaBuildings.map((item) => item.id));
+    return groupNearbyPlaces<PlaceBuilding>(
+      unfilteredAreaStallCards.flatMap(({ building, venue, topDish }) => {
+        const name =
+          venue.buildingName?.trim() ||
+          (knownBuildingIds.has(building.id) ? building.name : undefined);
+        return name
+          ? [
+              {
+                building: {
+                  id: building.id,
+                  name,
+                  imageUrl: venue.imageUrl,
+                },
+                venue,
+                topDish,
+              },
+            ]
+          : [];
+      }),
+      currentPlaceId,
+    );
+  }, [areaBuildings, currentPlaceId, isDiscoverFiltering, unfilteredAreaStallCards]);
   const prefetchAreaStall = (
     venue: (typeof areaStallCards)[number]["venue"],
     topDish: (typeof areaStallCards)[number]["topDish"],
@@ -1220,33 +1244,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     [navigation, recordTasteInteraction],
   );
 
-  const openFoodStyleOptions = useCallback(
-    async (item: PopularFoodStyleItemData) => {
-      const {
-        favouriteFoodStyleIds: pinned,
-        toggleFavouriteFoodStyle,
-        moveFavouriteFoodStyle,
-      } = useFeedFeedbackStore.getState();
-      const { message, options } = getFoodStyleOptions(pinned, item.id);
-      const choice = await askChoice({ title: item.label, message, options });
-      if (choice === "add") {
-        toggleFavouriteFoodStyle(item.id);
-        trackAnalyticsEvent("home_food_style_favourited", { surface: "home", food_style: item.id });
-        showToast({ message: `${item.label} is pinned to Home.` });
-      } else if (choice === "remove") {
-        toggleFavouriteFoodStyle(item.id);
-        trackAnalyticsEvent("home_food_style_unfavourited", {
-          surface: "home",
-          food_style: item.id,
-        });
-      } else if (choice === "earlier") {
-        moveFavouriteFoodStyle(item.id, -1);
-      } else if (choice === "later") {
-        moveFavouriteFoodStyle(item.id, 1);
-      }
-    },
-    [showToast],
-  );
+  // Holding a popular dish pins it to the front of the row, or unpins it. No card: the star
+  // on the button and a haptic say it happened.
+  const toggleFoodStyleFavourite = useCallback((item: PopularFoodStyleItemData) => {
+    const { favouriteFoodStyleIds: pinned, toggleFavouriteFoodStyle } =
+      useFeedFeedbackStore.getState();
+    toggleFavouriteFoodStyle(item.id);
+    trackAnalyticsEvent(
+      pinned.includes(item.id) ? "home_food_style_unfavourited" : "home_food_style_favourited",
+      { surface: "home", food_style: item.id },
+    );
+  }, []);
 
   const prefetchFoodStyle = useCallback(
     (item: PopularFoodStyleItemData) => {
@@ -1496,30 +1504,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   ) : null;
   const classicsSection = (
     <View style={{ gap: discoverContentGap }}>
-      {favouriteFoodStyleItems.length ? (
-        <View style={{ gap: discoverContentGap }} testID="favourite-food-styles">
-          <AppText variant="h2" accessibilityRole="header" style={{ color: themeTints.text }}>
-            Your favourites
-          </AppText>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={edgeToEdgeHorizontalScrollStyle}
-            contentContainerStyle={{ gap: spacing[2] }}
-          >
-            {favouriteFoodStyleItems.map((item) => (
-              <PopularFoodStyleItem
-                key={item.id}
-                item={item}
-                isFavourite
-                onPrefetch={prefetchFoodStyle}
-                onPress={handleFoodStylePress}
-                onOptions={openFoodStyleOptions}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`See all dishes: ${popularFoodTitle}`}
@@ -1561,7 +1545,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               isFavourite={favouriteFoodStyleIds.includes(item.id)}
               onPrefetch={prefetchFoodStyle}
               onPress={handleFoodStylePress}
-              onOptions={openFoodStyleOptions}
+              onToggleFavourite={toggleFoodStyleFavourite}
             />
           ))}
         </ScrollView>
@@ -1613,21 +1597,71 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   const moreSections =
     showInitialDiscoverSkeleton ||
-    (openNowStalls.length < 3 && nearbyPlaces.length === 0) ? null : (
+    (categorySections.length === 0 && nearbyPlaces.length === 0) ? null : (
       <>
-        {openNowStalls.length >= 3 ? (
-          <View style={{ gap: discoverContentGap }} testID="open-now-stalls">
-            <AppText variant="h2" accessibilityRole="header" style={{ color: themeTints.text }}>
-              Open now
-            </AppText>
-            {renderStallRail(openNowStalls)}
+        {categorySections.map((section) => (
+          <View key={section.id} style={{ gap: discoverContentGap }} testID={`home-${section.id}`}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`See all: ${section.title}`}
+              hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+              onPress={() =>
+                navigation.navigate("SearchResults", {
+                  browseMode: "stalls",
+                  initialQuery: section.query,
+                  source: "discover_chip",
+                })
+              }
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[2],
+                justifyContent: "space-between",
+                minHeight: 44,
+              }}
+            >
+              <AppText
+                variant="h2"
+                accessibilityRole="header"
+                style={{ color: themeTints.text, flexShrink: 1 }}
+              >
+                {section.title}
+              </AppText>
+              <ChevronRight
+                color={themeTints.isDark ? palette.white : palette.textMuted}
+                size={20}
+              />
+            </Pressable>
+            {renderStallRail(section.cards)}
           </View>
-        ) : null}
+        ))}
         {nearbyPlaces.length ? (
           <View style={{ gap: discoverContentGap }} testID="nearby-places">
-            <AppText variant="h2" accessibilityRole="header" style={{ color: themeTints.text }}>
-              Malls and hawker centres nearby
-            </AppText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="See all stalls"
+              hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+              onPress={() => navigation.navigate("SearchResults", { browseMode: "stalls" })}
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                gap: spacing[2],
+                justifyContent: "space-between",
+                minHeight: 44,
+              }}
+            >
+              <AppText
+                variant="h2"
+                accessibilityRole="header"
+                style={{ color: themeTints.text, flexShrink: 1 }}
+              >
+                Malls and hawker centres nearby
+              </AppText>
+              <ChevronRight
+                color={themeTints.isDark ? palette.white : palette.textMuted}
+                size={20}
+              />
+            </Pressable>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -1859,7 +1893,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
         {/* Intent Chips with Icons */}
         <FilterChipRail
-          fit
           options={sortedChips}
           selectedIds={activeDiscoverChipIds}
           onSelect={toggleDiscoverChip}
@@ -1873,6 +1906,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               <Drumstick size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : chip.id === "late" ? (
               <Moon size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "vegetarian" ? (
+              <Leaf size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "soup" ? (
+              <Soup size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "drinks" ? (
+              <Coffee size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
+            ) : chip.id === "dessert" ? (
+              <CakeSlice size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             ) : (
               <Tag size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
             )

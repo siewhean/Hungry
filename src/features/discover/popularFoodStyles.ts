@@ -171,12 +171,6 @@ export const POPULAR_FOOD_STYLES: readonly PopularFoodStyle[] = [
     imageSource: require("../../assets/discover/har-cheong-gai-topdown.webp"),
   },
   {
-    id: "spice-chicken-rice",
-    label: "Chilli Chicken Rice",
-    query: "Chicken Rice",
-    imageSource: require("../../assets/discover/spice-chicken-rice-topdown.webp"),
-  },
-  {
     id: "chendol",
     label: "Chendol",
     query: "Chendol",

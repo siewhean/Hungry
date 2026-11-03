@@ -298,7 +298,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discoverSources, /function SituationTile/);
   assert.match(
     discover,
-    /type DiscoverChipId = "dietary" \| "spicy" \| "halal" \| "late" \| "cheap"/,
+    /type DiscoverChipId =\s*\| "dietary"\s*\| "spicy"\s*\| "halal"\s*\| "late"\s*\| "cheap"\s*\| "vegetarian"/,
   );
   // Saved needs all hold; with none saved the chip opens the dietary settings instead.
   assert.doesNotMatch(discover, /DISCOVER_DIETARY_FALLBACKS/);

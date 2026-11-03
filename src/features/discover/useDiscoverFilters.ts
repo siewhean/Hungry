@@ -1,6 +1,11 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { isLateNightDish, isLateNightHour } from "@/features/discover/bites";
+import {
+  getHomeCategory,
+  matchesHomeCategory,
+  type HomeCategoryId,
+} from "@/features/discover/homeCategories";
 import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
@@ -10,7 +15,28 @@ import type { DishDetail } from "@/types/domain";
 import { getSingaporeHour } from "@/utils/operatingHours";
 
 /** The chips under the search bar. */
-export type DiscoverChipId = "dietary" | "spicy" | "halal" | "late" | "cheap";
+export type DiscoverChipId =
+  | "dietary"
+  | "spicy"
+  | "halal"
+  | "late"
+  | "cheap"
+  | "vegetarian"
+  | CategoryChipId;
+
+/** Chips that keep one kind of food: the dish or stall names it. */
+const CATEGORY_CHIP_IDS = [
+  "noodles",
+  "rice",
+  "soup",
+  "dessert",
+  "drinks",
+  "breakfast",
+  "western",
+] as const satisfies readonly HomeCategoryId[];
+type CategoryChipId = (typeof CATEGORY_CHIP_IDS)[number];
+const isCategoryChip = (id: DiscoverChipId): id is CategoryChipId =>
+  (CATEGORY_CHIP_IDS as readonly string[]).includes(id);
 
 const INTENT_CHIPS: readonly {
   id: Exclude<DiscoverChipId, "dietary">;
@@ -20,6 +46,8 @@ const INTENT_CHIPS: readonly {
   { id: "halal", label: "Halal" },
   { id: "late", label: "Late night" },
   { id: "cheap", label: "Under S$5" },
+  { id: "vegetarian", label: "Vegetarian" },
+  ...CATEGORY_CHIP_IDS.map((id) => ({ id, label: getHomeCategory(id).chipLabel })),
 ] as const;
 
 type UseDiscoverFiltersOptions = {
@@ -175,6 +203,13 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
         }
         if (chipId === "cheap") {
           return Boolean(dish && dish.price > 0 && dish.price < HOME_CHEAP_PRICE_LIMIT);
+        }
+        if (chipId === "vegetarian") {
+          // Structured flag only, like Halal: "vegetarian" in a name is not a promise.
+          return Boolean(dish?.dietaryFlags.includes("vegetarian"));
+        }
+        if (isCategoryChip(chipId)) {
+          return matchesHomeCategory(chipId, getLateNightHaystack());
         }
         return true;
       });
