@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 86.7,
-    "branches": 86.1,
-    "functions": 83.3
+    "lines": 86.8,
+    "branches": 86.2,
+    "functions": 83.5
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -29,10 +29,11 @@
     "src/constants/gamificationLimits.ts": 87.4,
     "src/constants/links.ts": 100,
     "src/constants/missionTemplates.ts": 99.2,
-    "src/constants/passportConfig.ts": 95.7,
+    "src/constants/passportConfig.ts": 96.6,
     "src/constants/release01.ts": 100,
     "src/constants/taste.ts": 91.5,
     "src/features/achievements/achievements.ts": 96,
+    "src/features/achievements/unlocks.ts": 94.3,
     "src/features/auth/accountDeletionErrors.ts": 100,
     "src/features/auth/applySignedInProfile.ts": 85.9,
     "src/features/auth/authAnalytics.ts": 100,
@@ -95,7 +96,7 @@
     "src/features/discover/mallMode.ts": 98.9,
     "src/features/discover/personalFeedback.ts": 95.6,
     "src/features/discover/personalRails.ts": 99.3,
-    "src/features/discover/rankingBalance.ts": 91.7,
+    "src/features/discover/rankingBalance.ts": 97,
     "src/features/discover/warmHomeFeed.ts": 100,
     "src/features/discovery/decideForMeCandidates.ts": 96.9,
     "src/features/discovery/decideQuiz.ts": 99.4,
@@ -139,6 +140,7 @@
     "src/features/merchantClaim/submitClaimFromStall.ts": 91.4,
     "src/features/navigation/insideMainTabs.ts": 100,
     "src/features/navigation/swipeIntent.ts": 97.4,
+    "src/features/passport/nextStamp.ts": 100,
     "src/features/passport/weeklyGoal.ts": 100,
     "src/features/post/composerOptions.ts": 100,
     "src/features/post/publishing.ts": 98.4,
@@ -236,7 +238,7 @@
     "src/lib/services/postTransforms.ts": 98,
     "src/lib/services/realtime/MockRealtimeChannel.ts": 99,
     "src/lib/services/searchCategoryMatch.ts": 100,
-    "src/lib/services/serviceProvider.ts": 87.3,
+    "src/lib/services/serviceProvider.ts": 88.6,
     "src/lib/services/storyGalleryAssets.ts": 95,
     "src/lib/services/supabase/authStorage.ts": 97.9,
     "src/lib/services/supabase/client.ts": 97.1,
@@ -262,6 +264,7 @@
     "src/store/useLocationStore.ts": 79.7,
     "src/store/useMerchantStore.ts": 91.2,
     "src/store/useMissionStore.ts": 99.4,
+    "src/store/useMomentStore.ts": 100,
     "src/store/useOnboardingDraftStore.ts": 97.6,
     "src/store/usePassportStore.ts": 64,
     "src/store/usePortfolioStore.ts": 78.8,

@@ -1,0 +1,282 @@
+// The achievements loop: the progress ring, the Home next-stamp card, the stamp moment and the
+// host that shows it right after the action. Run with
+// `node scripts/test-render.mjs src/components/gamification/achievementsLoop.render.test.tsx`.
+
+import assert from "node:assert/strict";
+import { act, createElement } from "react";
+import { User } from "lucide-react-native";
+import test, { afterEach, beforeEach } from "node:test";
+
+import { NextStampCard } from "@/components/gamification/NextStampCard";
+import { StampMoment } from "@/components/gamification/StampMoment";
+import {
+  MOMENT_DELAY_MS,
+  MOMENT_SETTLE_MS,
+  StampMomentHost,
+} from "@/components/gamification/StampMomentHost";
+import { AppBottomTabItem } from "@/components/ui/AppBottomTabItem";
+import { ProgressRing } from "@/components/ui/ProgressRing";
+import {
+  ALL_PASSPORT_CATEGORIES,
+  PASSPORT_STAMP_DEFINITIONS,
+  computePassportProgress,
+} from "@/constants/passportConfig";
+import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
+import { clearExperimentOverrides, setExperimentOverride } from "@/lib/experiments/experiments";
+import { useMomentStore } from "@/store/useMomentStore";
+import { usePassportStore } from "@/store/usePassportStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import { cleanup, render } from "@/test/render";
+import { enterScenario } from "@/test/render/sessions";
+import type { StallInteraction, UserPassportProgress } from "@/types/domain";
+
+const initialPassport = usePassportStore.getState();
+
+function progressWith(counts: Record<string, number>) {
+  const map: Record<string, UserPassportProgress> = {};
+  for (const category of ALL_PASSPORT_CATEGORIES) {
+    map[category.id] = computePassportProgress(category, counts[category.id] ?? 0);
+  }
+  return map;
+}
+
+function tried(stallId: string): StallInteraction {
+  return {
+    userId: "u",
+    stallId,
+    isSaved: false,
+    isTried: true,
+    isReviewed: false,
+    triedAt: "2026-11-03T04:00:00.000Z",
+  };
+}
+
+async function wait(ms: number) {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+}
+
+beforeEach(async () => {
+  await enterScenario("user");
+  clearTrackedAnalyticsEvents();
+  useMomentStore.getState()._reset();
+  useStallInteractionStore.setState({ interactions: {}, isLoaded: true });
+});
+
+afterEach(async () => {
+  await cleanup();
+  clearExperimentOverrides();
+  usePassportStore.setState({
+    computeProgress: initialPassport.computeProgress,
+    celebratedStampIds: {},
+    progressMap: {},
+    isComputed: false,
+  });
+  useStallInteractionStore.setState({ interactions: {}, isLoaded: false });
+});
+
+test("the ring reports its fill to screen readers and clamps out-of-range values", async () => {
+  const view = await render(createElement(ProgressRing, { fraction: 0.4, size: 48 }));
+  const bar = view.container.querySelector('[role="progressbar"]');
+  assert.equal(bar?.getAttribute("aria-valuenow"), "40");
+  await view.rerender(createElement(ProgressRing, { fraction: 7, size: 48 }));
+  assert.equal(
+    view.container.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow"),
+    "100",
+  );
+  await view.rerender(createElement(ProgressRing, { fraction: Number.NaN, size: 48 }));
+  assert.equal(
+    view.container.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow"),
+    "0",
+  );
+});
+
+test("a decorative ring is not a progress bar", async () => {
+  const view = await render(
+    createElement(ProgressRing, { fraction: 0.5, size: 32, decorative: true }),
+  );
+  assert.equal(view.container.querySelector('[role="progressbar"]'), null);
+});
+
+test("the Home card names the nearest stamp, opens the Passport and logs the view and tap", async () => {
+  usePassportStore.setState({
+    isComputed: true,
+    progressMap: progressWith({ "cuisine-malay": 2 }),
+  });
+  let opened = 0;
+  const view = await render(createElement(NextStampCard, { onOpenPassport: () => (opened += 1) }));
+  assert.ok(view.findByText("1 more stall to your next stamp"));
+  assert.ok(view.findByText(/Malay Food Explorer, 2 of 3 tried/));
+  await view.press(view.findByTestId("next-stamp-card"));
+  assert.equal(opened, 1);
+  const names = getTrackedAnalyticsEvents().map((event) => event.event);
+  assert.ok(names.includes("next_stamp_card_viewed"));
+  assert.ok(names.includes("next_stamp_card_tapped"));
+});
+
+test("the Home card is hidden until progress is counted", async () => {
+  usePassportStore.setState({ isComputed: false, progressMap: {} });
+  const view = await render(createElement(NextStampCard, { onOpenPassport: () => undefined }));
+  assert.equal(view.findByTestId("next-stamp-card"), null);
+
+  await act(async () => {
+    usePassportStore.setState({
+      isComputed: true,
+      progressMap: progressWith({ "cuisine-malay": 2 }),
+    });
+  });
+  assert.ok(view.findByTestId("next-stamp-card"));
+});
+
+test("the kill switch hides the Home card", async () => {
+  setExperimentOverride("achievements_loop_v1", "control");
+  usePassportStore.setState({
+    isComputed: true,
+    progressMap: progressWith({ "cuisine-malay": 2 }),
+  });
+  const view = await render(createElement(NextStampCard, { onOpenPassport: () => undefined }));
+  assert.equal(view.findByTestId("next-stamp-card"), null);
+});
+
+test("a stamp moment shows the new stamp and both buttons work", async () => {
+  const stamp = PASSPORT_STAMP_DEFINITIONS.find((item) => item.id === "cuisine-malay-3");
+  const category = ALL_PASSPORT_CATEGORIES.find((item) => item.id === "cuisine-malay");
+  assert.ok(stamp && category);
+  const calls: string[] = [];
+  const view = await render(
+    createElement(StampMoment, {
+      content: { kind: "stamp", stamp, category, triedCount: 3 },
+      reduceMotion: false,
+      onOpenPassport: () => calls.push("open"),
+      onDismiss: () => calls.push("dismiss"),
+    }),
+  );
+  assert.ok(view.findByText("New stamp"));
+  assert.ok(view.findByText("Malay Food Explorer"));
+  assert.ok(view.text().includes("3 stalls tried"));
+  await view.press(view.findByText("See my Passport"));
+  await view.press(view.findByText("Keep exploring"));
+  assert.deepEqual(calls, ["open", "dismiss"]);
+});
+
+test("an achievement moment names the tier and what was done", async () => {
+  const view = await render(
+    createElement(StampMoment, {
+      content: {
+        kind: "achievement",
+        unlock: {
+          achievementId: "critic",
+          title: "Critic",
+          icon: "pen",
+          level: 2,
+          totalLevels: 4,
+          reached: "Write 5 reviews",
+        },
+      },
+      reduceMotion: true,
+      onOpenPassport: () => undefined,
+      onDismiss: () => undefined,
+    }),
+  );
+  assert.ok(view.findByText("Achievement unlocked"));
+  assert.ok(view.findByText("Critic"));
+  assert.ok(view.text().includes("Level 2 of 4. Write 5 reviews."));
+});
+
+function seedPassport(counts: () => Record<string, number>) {
+  // Progress follows the counts the test sets; the real recount from tried stalls is replaced.
+  usePassportStore.setState({
+    celebratedStampIds: {},
+    computeProgress: () =>
+      usePassportStore.setState({ progressMap: progressWith(counts()), isComputed: true }),
+  });
+}
+
+test("the host stays quiet for stamps already earned when the data settles", async () => {
+  seedPassport(() => ({ "cuisine-hawker": 1 }));
+  useStallInteractionStore.setState({ interactions: { s1: tried("s1") } });
+  const view = await render(createElement(StampMomentHost, { onOpenPassport: () => undefined }));
+  await wait(MOMENT_DELAY_MS + 200);
+  assert.equal(view.findByTestId("stamp-moment"), null);
+  assert.equal(useMomentStore.getState().queue.length, 0);
+});
+
+test("a stamp earned after that shows a moment once, marks it celebrated and opens the Passport", async () => {
+  let counts: Record<string, number> = { "cuisine-hawker": 0 };
+  seedPassport(() => counts);
+  useStallInteractionStore.setState({ interactions: {} });
+  let opened = 0;
+  const view = await render(
+    createElement(StampMomentHost, { onOpenPassport: () => (opened += 1) }),
+  );
+  assert.equal(view.findByTestId("stamp-moment"), null);
+
+  counts = { "cuisine-hawker": 1 };
+  await act(async () => {
+    useStallInteractionStore.setState({ interactions: { s1: tried("s1") } });
+  });
+  assert.equal(view.findByTestId("stamp-moment"), null, "waits a moment before the celebration");
+  assert.equal(usePassportStore.getState().celebratedStampIds["cuisine-hawker-1"], true);
+
+  await wait(MOMENT_DELAY_MS + 300);
+  assert.ok(view.findByTestId("stamp-moment"));
+  assert.ok(view.findByText("Hawker Food Explorer"));
+  assert.ok(getTrackedAnalyticsEvents().some((event) => event.event === "stamp_moment_shown"));
+
+  await view.press(view.findByText("See my Passport"));
+  assert.equal(opened, 1);
+  assert.equal(view.findByTestId("stamp-moment"), null);
+  assert.ok(getTrackedAnalyticsEvents().some((event) => event.event === "stamp_moment_opened"));
+
+  // The same stamp does not come back when the diner marks another stall.
+  await act(async () => {
+    useStallInteractionStore.setState({ interactions: { s1: tried("s1"), s2: tried("s2") } });
+  });
+  await wait(MOMENT_DELAY_MS + 200);
+  assert.equal(view.findByTestId("stamp-moment"), null);
+});
+
+test("the host renders nothing and counts nothing under the kill switch", async () => {
+  let recounts = 0;
+  usePassportStore.setState({ computeProgress: () => void (recounts += 1) });
+  setExperimentOverride("achievements_loop_v1", "control");
+  const view = await render(createElement(StampMomentHost, { onOpenPassport: () => undefined }));
+  await wait(100);
+  assert.equal(recounts, 0);
+  assert.equal(view.findByTestId("stamp-moment"), null);
+});
+
+test("once the data has settled the host reports the diner's achievements", async () => {
+  seedPassport(() => ({}));
+  const reported: string[] = [];
+  const original = useMomentStore.getState().reportAchievements;
+  useMomentStore.setState({
+    reportAchievements: (userId, rows) => {
+      reported.push(`${userId}:${rows.length}`);
+      return [];
+    },
+  });
+  try {
+    await render(createElement(StampMomentHost, { onOpenPassport: () => undefined }));
+    assert.equal(reported.length, 0, "nothing is reported while data may still be arriving");
+    await wait(MOMENT_SETTLE_MS + 200);
+    assert.ok(reported.length >= 1);
+    assert.match(reported[0], /:8$/, "all eight achievements are checked");
+  } finally {
+    useMomentStore.setState({ reportAchievements: original });
+  }
+});
+
+test("the Profile tab draws a ring only when there is progress to show", async () => {
+  const props = { icon: User, label: "Profile", onPress: () => undefined };
+  const html = async (extra: Record<string, unknown>) => {
+    const view = await render(createElement(AppBottomTabItem, { ...props, ...extra }));
+    const out = view.html();
+    await view.unmount();
+    return out;
+  };
+  const plain = await html({});
+  assert.equal(await html({ ringFraction: 0 }), plain, "an empty ring is not drawn");
+  assert.notEqual(await html({ ringFraction: 0.5 }), plain, "progress draws the ring");
+});

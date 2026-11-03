@@ -56,6 +56,7 @@ import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
 import { HomeFeedbackCard } from "@/components/feedback/HomeFeedbackCard";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
+import { NextStampCard } from "@/components/gamification/NextStampCard";
 import {
   DISCOVER_FEED_LIMIT,
   getDiscoverBiteCollections,
@@ -1979,6 +1980,15 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
             }
             onOpenSaved={() => navigation.navigate("Favourites")}
+          />
+        ) : null}
+
+        {/* Next stamp (or weekly goal): always something within reach. Off with the
+            achievements_loop_v1 kill switch. */}
+        {hasDiscoverContent ? (
+          <NextStampCard
+            visible={isFocused}
+            onOpenPassport={() => navigation.navigate("PassportScreen")}
           />
         ) : null}
 

@@ -482,6 +482,12 @@ function ReviewSuccessModalHost({
   return <ReviewSuccessModal onOpenHistory={onOpenHistory} onOpenReview={onOpenReview} />;
 }
 
+function StampMomentHostMount({ onOpenPassport }: { onOpenPassport: () => void }) {
+  const { StampMomentHost } =
+    require("@/components/gamification/StampMomentHost") as typeof import("@/components/gamification/StampMomentHost");
+  return <StampMomentHost onOpenPassport={onOpenPassport} />;
+}
+
 function CredEarnedToastHost() {
   if (!FEATURE_FLAGS.gamificationEnabled) {
     return null;
@@ -917,6 +923,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
+      <StampMomentHostMount onOpenPassport={() => navigationRef.navigate("PassportScreen")} />
     </>
   );
 }

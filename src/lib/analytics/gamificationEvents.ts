@@ -24,6 +24,51 @@ export function trackPassportStampEarned(params: {
   trackAnalyticsEvent("passport_stamp_earned", params);
 }
 
+// ─── Stamp moments and the next-stamp card ───────────────────────────────────
+
+export type StampMomentKind = "stamp" | "achievement";
+
+export function trackStampMomentShown(params: { kind: StampMomentKind; momentId: string }) {
+  trackAnalyticsEvent("stamp_moment_shown", { kind: params.kind, moment_id: params.momentId });
+}
+
+/** The diner tapped through to the Passport from the moment. */
+export function trackStampMomentOpened(params: { kind: StampMomentKind; momentId: string }) {
+  trackAnalyticsEvent("stamp_moment_opened", { kind: params.kind, moment_id: params.momentId });
+}
+
+export function trackStampMomentDismissed(params: {
+  kind: StampMomentKind;
+  momentId: string;
+  how: "button" | "timeout";
+}) {
+  trackAnalyticsEvent("stamp_moment_dismissed", {
+    kind: params.kind,
+    moment_id: params.momentId,
+    how: params.how,
+  });
+}
+
+export function trackAchievementUnlocked(params: {
+  achievementId: string;
+  level: number;
+  totalLevels: number;
+}) {
+  trackAnalyticsEvent("achievement_unlocked", {
+    achievement_id: params.achievementId,
+    level: params.level,
+    total_levels: params.totalLevels,
+  });
+}
+
+export function trackNextStampCardViewed(params: { kind: "stamp" | "weekly-goal" }) {
+  trackAnalyticsEvent("next_stamp_card_viewed", { kind: params.kind });
+}
+
+export function trackNextStampCardTapped(params: { kind: "stamp" | "weekly-goal" }) {
+  trackAnalyticsEvent("next_stamp_card_tapped", { kind: params.kind });
+}
+
 // ─── Food Cred ────────────────────────────────────────────────────────────────
 
 export function trackFoodCredEarned(params: {

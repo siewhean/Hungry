@@ -410,6 +410,24 @@ export const EXPERIMENTS = {
     rollout: true,
   },
   /**
+   * The achievements loop (Passport): the next-stamp card on Home, the progress ring on the
+   * Profile tab, and the stamp or achievement moment that shows right after the action. A
+   * staged release with a kill switch: everyone gets "loop" until a PostHog flag of this key
+   * says "control". Read in StampMomentHost (exposure), NextStampCard and the Profile tab.
+   * Compare weeks with a tried mark per active diner once there is traffic.
+   */
+  achievements_loop_v1: {
+    variants: ["control", "loop"],
+    fallback: "loop",
+    status: "running",
+    surface: "home",
+    hypothesis:
+      "A visible next stamp and an instant stamp celebration give diners a reason to mark one more place tried, so more of them come back in the following week.",
+    primaryMetric: "stamp_moment_opened",
+    guardrailMetrics: ["stamp_moment_dismissed", "next_stamp_card_tapped"],
+    rollout: true,
+  },
+  /**
    * Ask for the name before the first review instead of at sign-up. Defined, not wired: the
    * prompt before a first review does not exist yet, so nothing reads this key. Run it after
    * auth_email_code_first_v1 settles, never together (same form).

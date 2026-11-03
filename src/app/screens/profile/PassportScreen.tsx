@@ -27,11 +27,11 @@ import {
 } from "@/constants/passportConfig";
 import { computeAchievements } from "@/features/achievements/achievements";
 import { useAchievementInput } from "@/features/achievements/useAchievementInput";
-import { computeWeeklyGoal, milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
+import { useWeeklyGoal } from "@/features/passport/useWeeklyGoal";
+import { milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { trackPassportViewed } from "@/lib/analytics/gamificationEvents";
-import { useChecklistStore } from "@/store/useChecklistStore";
 import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
@@ -94,7 +94,6 @@ export function PassportScreen({ navigation }: Props) {
   const passportStamps = usePassportStore((s) => s.stamps);
   const passportEvents = usePassportStore((s) => s.events);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
-  const checklistItems = useChecklistStore((state) => state.items);
   const celebratedGoalWeeks = usePassportStore((s) => s.celebratedGoalWeeks);
   const markGoalWeekCelebrated = usePassportStore((s) => s.markGoalWeekCelebrated);
   const achievementInput = useAchievementInput();
@@ -113,25 +112,7 @@ export function PassportScreen({ navigation }: Props) {
     [stallInteractions],
   );
 
-  // One entry per tried stall or dish (a stall tried and on a checklist counts once).
-  const weeklyGoal = useMemo(() => {
-    const triedAtByItem = new Map<string, string>();
-    for (const interaction of Object.values(stallInteractions)) {
-      if (interaction.isTried && interaction.triedAt) {
-        triedAtByItem.set(`stall:${interaction.stallId}`, interaction.triedAt);
-      }
-    }
-    for (const item of Object.values(checklistItems).flat()) {
-      if (!item.triedAt) continue;
-      const key = item.dishId
-        ? `dish:${item.dishId}`
-        : item.stallId
-          ? `stall:${item.stallId}`
-          : `item:${item.id}`;
-      if (!triedAtByItem.has(key)) triedAtByItem.set(key, item.triedAt);
-    }
-    return computeWeeklyGoal([...triedAtByItem.values()]);
-  }, [checklistItems, stallInteractions]);
+  const weeklyGoal = useWeeklyGoal();
 
   const earnedStamps = useMemo(() => getEarnedPassportStamps(progressMap), [progressMap]);
   const nextStamp = useMemo(() => getNextPassportStamp(progressMap), [progressMap]);

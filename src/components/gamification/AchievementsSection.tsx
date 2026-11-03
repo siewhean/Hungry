@@ -15,7 +15,7 @@ import { AppText } from "@/components/ui";
 import type { AchievementIcon, AchievementRow } from "@/features/achievements/achievements";
 import { useHungryTheme } from "@/theme";
 
-const ICONS: Record<AchievementIcon, LucideIcon> = {
+export const ACHIEVEMENT_ICONS: Record<AchievementIcon, LucideIcon> = {
   utensils: UtensilsCrossed,
   "map-pin": MapPin,
   store: Store,
@@ -46,7 +46,7 @@ export function AchievementsSection({ rows }: AchievementsSectionProps) {
         </AppText>
       </View>
       {rows.map((row) => {
-        const Icon = ICONS[row.icon];
+        const Icon = ACHIEVEMENT_ICONS[row.icon];
         const reached = row.level > 0;
         return (
           <View

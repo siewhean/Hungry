@@ -3,6 +3,12 @@ import test from "node:test";
 
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
+  trackAchievementUnlocked,
+  trackNextStampCardTapped,
+  trackNextStampCardViewed,
+  trackStampMomentDismissed,
+  trackStampMomentOpened,
+  trackStampMomentShown,
   trackFoodCredEarned,
   trackFoodCredLevelChanged,
   trackMissionCompleted,
@@ -70,4 +76,44 @@ test("gamification trackers emit the event name and snake_case properties analyt
   assert.deepEqual(lastEvent().properties, { review_id: "r1", reviewer_id: "u1" });
 
   assert.equal(getTrackedAnalyticsEvents().length, 10);
+});
+
+test("stamp moment and next-stamp trackers emit snake_case properties", () => {
+  clearTrackedAnalyticsEvents();
+
+  trackStampMomentShown({ kind: "stamp", momentId: "cuisine-malay-1" });
+  assert.deepEqual(
+    [lastEvent().event, lastEvent().properties],
+    ["stamp_moment_shown", { kind: "stamp", moment_id: "cuisine-malay-1" }],
+  );
+
+  trackStampMomentOpened({ kind: "achievement", momentId: "critic-1" });
+  assert.deepEqual(
+    [lastEvent().event, lastEvent().properties],
+    ["stamp_moment_opened", { kind: "achievement", moment_id: "critic-1" }],
+  );
+
+  trackStampMomentDismissed({ kind: "stamp", momentId: "cuisine-malay-1", how: "timeout" });
+  assert.deepEqual(
+    [lastEvent().event, lastEvent().properties],
+    ["stamp_moment_dismissed", { kind: "stamp", moment_id: "cuisine-malay-1", how: "timeout" }],
+  );
+
+  trackAchievementUnlocked({ achievementId: "critic", level: 1, totalLevels: 4 });
+  assert.deepEqual(
+    [lastEvent().event, lastEvent().properties],
+    ["achievement_unlocked", { achievement_id: "critic", level: 1, total_levels: 4 }],
+  );
+
+  trackNextStampCardViewed({ kind: "weekly-goal" });
+  assert.deepEqual(
+    [lastEvent().event, lastEvent().properties],
+    ["next_stamp_card_viewed", { kind: "weekly-goal" }],
+  );
+
+  trackNextStampCardTapped({ kind: "stamp" });
+  assert.deepEqual(
+    [lastEvent().event, lastEvent().properties],
+    ["next_stamp_card_tapped", { kind: "stamp" }],
+  );
 });
