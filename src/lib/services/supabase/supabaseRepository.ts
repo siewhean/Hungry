@@ -1738,7 +1738,6 @@ function similarityScoreFallback(dish: DishDetail, tasteProfile: TasteVector): n
 
 const supabaseRepositoryImpl: DataRepository = {
   getProfile(isAuthenticated: boolean, userId?: string | null): UserProfile {
-    ensureHydrated();
     if (!isAuthenticated || !userId) {
       return DEFAULT_GUEST_PROFILE;
     }
