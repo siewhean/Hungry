@@ -55,6 +55,8 @@ export function DiscoverRailBadge({
   );
 }
 
+const BITE_OPTIONS_ACTION = "moreOptions";
+
 /** One dish card, shared by every rail. A rating shows only when reviews stand behind it. */
 const DiscoverBiteCard = memo(function DiscoverBiteCard({
   bite,
@@ -64,6 +66,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   getCardLabel,
   imageHeight,
   onOpen,
+  onOptions,
   onPrefetch,
   variant,
 }: {
@@ -73,6 +76,8 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   getCardLabel: (bite: Bite) => string;
   imageHeight: number;
   onOpen: (bite: Bite, buttonId: string) => void;
+  /** Long press (or the "More options" screen reader action) on the card. */
+  onOptions?: (bite: Bite) => void;
   onPrefetch: (bite: Bite) => void;
   /** Why this dish suits the diner ("Spicy, the way you like it"); only palate-ordered rails pass it. */
   reason?: string;
@@ -83,13 +88,27 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   const hasRating = bite.cravingCount > 0 && bite.rating > 0;
   const handlePressIn = useCallback(() => onPrefetch(bite), [bite, onPrefetch]);
   const handlePress = useCallback(() => onOpen(bite, buttonId), [bite, buttonId, onOpen]);
+  const handleOptions = useCallback(() => onOptions?.(bite), [bite, onOptions]);
+  const handleAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      if (event.nativeEvent.actionName === BITE_OPTIONS_ACTION) onOptions?.(bite);
+    },
+    [bite, onOptions],
+  );
 
   return (
     <PressableScale
       accessibilityRole="button"
       accessibilityLabel={getCardLabel(bite)}
+      accessibilityActions={
+        onOptions
+          ? [{ name: BITE_OPTIONS_ACTION, label: "Not for me, or show less of this food" }]
+          : undefined
+      }
+      onAccessibilityAction={onOptions ? handleAccessibilityAction : undefined}
       onPressIn={handlePressIn}
       onPress={handlePress}
+      onLongPress={onOptions ? handleOptions : undefined}
       style={chrome.biteCardShell(cardWidth)}
     >
       <DiscoverBiteImage bite={bite} height={imageHeight} />
@@ -154,6 +173,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   isLoading,
   isVisible,
   layout,
+  onBiteOptions,
   onOpenBite,
   onPrefetchBite,
   onPrefetchCollection,
@@ -174,6 +194,8 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   /** Home is on screen (not a tab warm-up), so an impression is real. */
   isVisible: boolean;
   layout: DiscoverRailLayout;
+  /** Long press on a card: "Not for me" and "Show less of this food". */
+  onBiteOptions?: (bite: Bite) => void;
   onOpenBite: (bite: Bite, buttonId: string) => void;
   onPrefetchBite: (bite: Bite) => void;
   onPrefetchCollection: (collection: DiscoverCollection) => void;
@@ -203,6 +225,8 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
       surface: "home",
       rail,
       count: cards.length,
+      // In on-screen order, so a card's position and what it was shown beside can be read later.
+      dish_ids: cards.map((card) => card.dishId),
     });
   }, [cards.length, isLoading, isVisible, rail]);
   const handleOpenBite = useCallback(
@@ -300,6 +324,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
               getCardLabel={getCardLabel}
               imageHeight={layout.imageHeight}
               onOpen={handleOpenBite}
+              onOptions={onBiteOptions}
               onPrefetch={onPrefetchBite}
               reason={reasons?.get(bite.dishId)}
               variant={variant}

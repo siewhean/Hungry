@@ -76,6 +76,12 @@ import {
 } from "@/features/discover/homeStalls";
 import { rankForYou, type HereStall } from "@/features/discover/mallMode";
 import {
+  activeMutedFoodTypes,
+  applyFeedbackToBites,
+  applySessionShift,
+  sessionShift,
+} from "@/features/discover/personalFeedback";
+import {
   MEAL_RAILS,
   bitesForMealPeriod,
   bitesLikeDish,
@@ -91,6 +97,10 @@ import {
   preloadRoute,
 } from "@/features/navigation/prefetch";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { buildFoodHistory, normalizeFoodType } from "@/lib/ai/foodHistory";
+import { useFeedFeedbackStore } from "@/store/useFeedFeedbackStore";
+import { askChoice } from "@/store/useChoiceSheetStore";
+import { useUIStore } from "@/store/useUIStore";
 import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -338,7 +348,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     );
   }, [areaVenueIds, isSupabaseDataSource, repository, supabaseDiscoverBites]);
   const biteDishLookup = isSupabaseDataSource ? repositoryLookup : repository;
-  const discoverBiteCollections = useMemo(
+  const allBiteCollections = useMemo(
     () =>
       getDiscoverBiteCollections(discoverBaseBites, biteDishLookup, getVenueHours, {
         preferBuildingId: currentPlaceId,
@@ -362,6 +372,32 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     (bite: Bite) => discoverDishById.get(bite.dishId),
     [discoverDishById],
   );
+  // What the diner told Home: dishes marked "Not for me" are gone (they stay hidden for 30 days),
+  // and food types they asked to see less of drop to the end of every rail.
+  const foodHistoryRows = useProfileStore((state) => state.foodHistory);
+  const mutedFoodTypes = useFeedFeedbackStore((state) => state.mutedFoodTypes);
+  const sessionActions = useFeedFeedbackStore((state) => state.sessionActions);
+  const showToast = useUIStore((state) => state.showToast);
+  const dismissedDishIds = useMemo(
+    () => buildFoodHistory(foodHistoryRows).dismissedDishIds,
+    [foodHistoryRows],
+  );
+  const discoverBiteCollections = useMemo(() => {
+    const muted = new Set(activeMutedFoodTypes(mutedFoodTypes).map((item) => item.foodType));
+    if (dismissedDishIds.size === 0 && muted.size === 0) return allBiteCollections;
+    const options = {
+      dismissedDishIds,
+      mutedFoodTypes: muted,
+      foodTypeOf: (dishId: string) => normalizeFoodType(discoverDishById.get(dishId)?.foodTypeTag),
+    };
+    return {
+      quickBites: applyFeedbackToBites(allBiteCollections.quickBites, options),
+      budget: applyFeedbackToBites(allBiteCollections.budget, options),
+      editorChoice: applyFeedbackToBites(allBiteCollections.editorChoice, options),
+      trending: applyFeedbackToBites(allBiteCollections.trending, options),
+      lateNight: applyFeedbackToBites(allBiteCollections.lateNight, options),
+    };
+  }, [allBiteCollections, discoverDishById, dismissedDishIds, mutedFoodTypes]);
   const unfilteredQuickBiteCards = useMemo(
     () => discoverBiteCollections.quickBites.slice(0, 6),
     [discoverBiteCollections.quickBites],
@@ -426,15 +462,24 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         : discoverBiteCollections.quickBites,
     [discoverBiteCollections.quickBites, filterDiscoverBites, isDiscoverFiltering],
   );
+  // The palate Home ranks by: the saved one, nudged by what the diner did in the last half hour.
+  const rankingTasteVector = useMemo(
+    () =>
+      applySessionShift(
+        profile.tasteVector,
+        sessionShift(sessionActions, profile.tasteVector, (dishId) => discoverDishById.get(dishId)),
+      ),
+    [discoverDishById, profile.tasteVector, sessionActions],
+  );
   const tasteOrdered = useMemo(
     () =>
       rankByTaste
         ? tasteOrderBites(quickBitePool, discoverDishById, {
-            tasteVector: profile.tasteVector,
+            tasteVector: rankingTasteVector,
             preferBuildingId: currentPlaceId,
           })
         : { bites: quickBitePool, reasons: NO_BITE_REASONS },
-    [currentPlaceId, discoverDishById, profile.tasteVector, quickBitePool, rankByTaste],
+    [currentPlaceId, discoverDishById, quickBitePool, rankByTaste, rankingTasteVector],
   );
   // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
   const [pickedTrendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] =
@@ -886,18 +931,24 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const inMallMode = isUserMode && Boolean(currentPlace);
   const forYouPicks = useMemo(() => {
     if (!inMallMode) return [];
-    const picks = rankForYou(areaDishPool, {
-      tasteVector: profile.tasteVector,
-      dietaryFlags: profile.dietaryPreferences,
-      maxDishBudget: profile.maxDishBudget,
-      preferBuildingId: currentPlaceId,
-    });
+    const picks = rankForYou(
+      areaDishPool.filter((dish) => !dismissedDishIds.has(dish.id)),
+      {
+        tasteVector: profile.tasteVector,
+        dietaryFlags: profile.dietaryPreferences,
+        maxDishBudget: profile.maxDishBudget,
+        preferBuildingId: currentPlaceId,
+        profileTrusted: hasTasteProfile,
+      },
+    );
     return isDiscoverFiltering
       ? picks.filter((pick) => matchesDiscoverChipSelection(pick.dish))
       : picks;
   }, [
     areaDishPool,
     currentPlaceId,
+    dismissedDishIds,
+    hasTasteProfile,
     inMallMode,
     isDiscoverFiltering,
     matchesDiscoverChipSelection,
@@ -1279,11 +1330,42 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       buildBiteLabel(needsDiscoverAreaChoice ? { ...bite, distanceMeters: undefined } : bite),
     [needsDiscoverAreaChoice],
   );
+  const openBiteOptions = useCallback(
+    async (bite: Bite) => {
+      const dish = getBiteDish(bite);
+      const foodType = normalizeFoodType(dish?.foodTypeTag);
+      const choice = await askChoice({
+        title: bite.dishName,
+        message: "Tell Hungry what to change.",
+        options: [
+          { id: "hide", label: "Not for me" },
+          ...(foodType ? [{ id: "less", label: `Show less ${foodType}` }] : []),
+        ],
+      });
+      if (choice === "hide") {
+        recordTasteInteraction({
+          type: "dismissed",
+          surface: "discover",
+          dish,
+          dishId: bite.dishId,
+          buttonId: "home_not_for_me",
+        });
+        trackAnalyticsEvent("home_dish_hidden", { surface: "home", dish_id: bite.dishId });
+        showToast({ message: `Hidden. You won't see ${bite.dishName} for 30 days.` });
+      } else if (choice === "less" && foodType) {
+        useFeedFeedbackStore.getState().muteFoodType(foodType);
+        trackAnalyticsEvent("home_food_type_muted", { surface: "home", food_type: foodType });
+        showToast({ message: `You'll see less ${foodType} for 30 days.` });
+      }
+    },
+    [getBiteDish, recordTasteInteraction, showToast],
+  );
   const discoverRailProps = {
     canSeeAll: canOpenDiscoverCollection,
     isLoading: showDiscoverFilterRailSkeleton,
     isVisible: isFocused,
     layout: discoverRailLayout,
+    onBiteOptions: openBiteOptions,
     onOpenBite: openBiteDish,
     onPrefetchBite: prefetchBiteCard,
     onPrefetchCollection: prefetchBiteCollectionRoute,
