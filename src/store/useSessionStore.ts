@@ -200,6 +200,10 @@ function clearAccountScopedStores(): void {
   const { useSavedViewStore } =
     require("./useSavedViewStore") as typeof import("./useSavedViewStore");
   useSavedViewStore.getState().reset();
+  // "Show less of this food" and this visit's taps are one diner's feedback, not the next one's.
+  const { useFeedFeedbackStore } =
+    require("./useFeedFeedbackStore") as typeof import("./useFeedFeedbackStore");
+  useFeedFeedbackStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();

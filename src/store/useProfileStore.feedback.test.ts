@@ -8,6 +8,7 @@ import {
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
 import type { HungryService } from "@/lib/services/types";
+import { useFeedFeedbackStore } from "./useFeedFeedbackStore";
 import { useProfileStore } from "./useProfileStore";
 import { useSessionStore } from "./useSessionStore";
 
@@ -248,4 +249,48 @@ test("saving food openness after the quiz sends the quiz vector, not a stale neu
     }));
     resetServiceProvider();
   }
+});
+
+test("opening, saving and hiding a dish are kept as this visit's actions", () => {
+  const dish = getDataRepository().listPopularNearby()[0];
+  assert.ok(dish, "Expected a dish for the session action test");
+
+  useProfileStore.getState().clearProfile();
+  useProfileStore.getState().syncProfile(true);
+  useFeedFeedbackStore.getState()._reset();
+
+  const { recordTasteInteraction } = useProfileStore.getState();
+  recordTasteInteraction({ type: "dish_result_click", surface: "discover", dish, dishId: dish.id });
+  recordTasteInteraction({ type: "saved", surface: "dish_detail", dish, dishId: dish.id });
+  recordTasteInteraction({ type: "dismissed", surface: "discover", dish, dishId: dish.id });
+  recordTasteInteraction({ type: "search_query", surface: "search", query: "laksa" });
+
+  assert.deepEqual(
+    useFeedFeedbackStore.getState().sessionActions.map((action) => [action.dishId, action.kind]),
+    [
+      [dish.id, "open"],
+      [dish.id, "save"],
+      [dish.id, "hide"],
+    ],
+  );
+});
+
+test("hiding a dish from Home keeps it hidden for 30 days in the food history", () => {
+  const dish = getDataRepository().listPopularNearby()[0];
+  assert.ok(dish, "Expected a dish for the hide test");
+
+  useProfileStore.getState().clearProfile();
+  useProfileStore.getState().syncProfile(true);
+  useProfileStore.getState().recordTasteInteraction({
+    type: "dismissed",
+    surface: "discover",
+    dish,
+    dishId: dish.id,
+    buttonId: "home_not_for_me",
+  });
+
+  const row = useProfileStore.getState().foodHistory.find((item) => item.dishId === dish.id);
+  assert.ok(row?.dismissedUntil, "a dismissed dish carries a dismissal end date");
+  const days = (Date.parse(row.dismissedUntil) - Date.now()) / 86_400_000;
+  assert.ok(days > 29 && days <= 30, `dismissed for ${days} days`);
 });

@@ -57,6 +57,8 @@ export type AnalyticsEventName =
   | "map_card_opened"
   | "discover_rail_impression"
   | "discover_card_opened"
+  | "home_dish_hidden"
+  | "home_food_type_muted"
   | "discover_search_opened"
   | "floor_switched"
   | "dish_viewed"

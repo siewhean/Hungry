@@ -121,3 +121,26 @@ test("stallPriceLabel shows one price or a range", () => {
   );
   assert.equal(stallPriceLabel({ venue: venue("a"), dishes: [] }), "");
 });
+
+test("rankForYou shows no match percent while the profile is not trusted", () => {
+  const spicy = dish("hot", { tasteVector: { ...NEUTRAL, spicy: 9 } });
+  const picks = rankForYou([spicy], {
+    tasteVector: { ...NEUTRAL, spicy: 9 },
+    dietaryFlags: [],
+    profileTrusted: false,
+  });
+  assert.equal(picks[0]?.matchPercent, undefined);
+  assert.match(picks[0]?.reason ?? "", /spicy/i, "the reason line still shows");
+});
+
+test("rankForYou hides the match percent for a dish with low-confidence tags only", () => {
+  const sure = dish("sure", { tasteVector: { ...NEUTRAL, spicy: 9 }, tasteConfidence: 0.9 });
+  const unsure = dish("unsure", { tasteVector: { ...NEUTRAL, spicy: 9 }, tasteConfidence: 0.4 });
+  const picks = rankForYou([sure, unsure], {
+    tasteVector: { ...NEUTRAL, spicy: 9 },
+    dietaryFlags: [],
+    profileTrusted: true,
+  });
+  assert.equal(typeof picks.find((pick) => pick.dish.id === "sure")?.matchPercent, "number");
+  assert.equal(picks.find((pick) => pick.dish.id === "unsure")?.matchPercent, undefined);
+});
