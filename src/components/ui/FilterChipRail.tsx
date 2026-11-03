@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import {
   ScrollView,
+  View,
   type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
@@ -25,6 +26,8 @@ interface FilterChipRailProps<T extends string = string> {
   onSelect: (id: T) => void;
   renderLeftIcon?: (option: FilterChipRailOption<T>, selected: boolean) => ReactNode;
   renderRightIcon?: (option: FilterChipRailOption<T>, selected: boolean) => ReactNode;
+  /** Every chip on one row that fits the screen: no scrolling, compact chips. */
+  fit?: boolean;
   /** The chosen chips are solid orange, so they read clearly over a map. */
   solidSelected?: boolean;
   onSwipeLockChange?: (locked: boolean) => void;
@@ -45,6 +48,7 @@ export function FilterChipRail<T extends string = string>({
   onSelect,
   renderLeftIcon,
   renderRightIcon,
+  fit = false,
   solidSelected = false,
   onSwipeLockChange,
   unlockDelayMs = DEFAULT_UNLOCK_DELAY_MS,
@@ -104,6 +108,30 @@ export function FilterChipRail<T extends string = string>({
     },
     [clearUnlockTimer, onSwipeLockChange],
   );
+
+  if (fit) {
+    return (
+      <View testID={testID} style={[{ flexDirection: "row", gap: spacing[2] }, style]}>
+        {options.map((option) => {
+          const selected =
+            selectedId === option.id || Boolean(selectedIds?.some((id) => id === option.id));
+          return (
+            <Chip
+              key={option.id}
+              compact
+              label={option.label}
+              accessibilityLabel={option.accessibilityLabel}
+              selected={selected}
+              solid={solidSelected}
+              onPress={() => onSelect(option.id)}
+              leftIcon={renderLeftIcon ? renderLeftIcon(option, selected) : option.leftIcon}
+              style={{ flexShrink: 1 }}
+            />
+          );
+        })}
+      </View>
+    );
+  }
 
   return (
     <ScrollView
