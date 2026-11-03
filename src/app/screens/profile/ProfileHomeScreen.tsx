@@ -3,7 +3,6 @@ import {
   AccessibilityInfo,
   Platform,
   Pressable,
-  RefreshControl,
   Share,
   StyleSheet,
   useWindowDimensions,
@@ -510,36 +509,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     };
   }, [hasAccountProfile, isFocused, profile.id]);
 
-  // Pull down to re-read your counts, requests and reviews. Each read is one call, in parallel.
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const handleRefresh = useCallback(async () => {
-    if (!hasAccountProfile) return;
-    setIsRefreshing(true);
-    const service = getHungryService();
-    const [counts, requests, reviews] = await Promise.allSettled([
-      service.social.getFollowCounts(profile.id),
-      FEATURE_FLAGS.followConnectionsEnabled
-        ? service.social.getFollowRequestCount()
-        : Promise.resolve(null),
-      service.reviews.getUserReviews(profile.id),
-    ]);
-    if (counts.status === "fulfilled") setFollowCounts(counts.value ?? "unavailable");
-    else reportError(counts.reason, { screen: "ProfileHome", action: "refresh_follow_counts" });
-    if (requests.status === "fulfilled") setFollowRequestCount(requests.value);
-    else reportError(requests.reason, { screen: "ProfileHome", action: "refresh_requests" });
-    if (reviews.status === "fulfilled") {
-      ownReviewsLoadedRef.current = {
-        at: Date.now(),
-        key: `${profile.id}:${reviewedDishKey}:${ownReviewsReloadKey}`,
-      };
-      setOwnReviews(reviews.value);
-      setOwnReviewsFailed(false);
-    } else {
-      reportError(reviews.reason, { screen: "ProfileHome", action: "refresh_reviews" });
-    }
-    setIsRefreshing(false);
-  }, [hasAccountProfile, ownReviewsReloadKey, profile.id, reviewedDishKey]);
-
   // A skipped quiz leaves every taste at neutral: that is "not built yet", not a result.
   const hasTasteFingerprint = useMemo(
     () => hasTasteSignal(profile.tasteVector),
@@ -852,14 +821,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       title="Profile"
       showBack={false}
       testID="profile-home-screen"
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={() => void handleRefresh()}
-          tintColor={palette.orange}
-          colors={[palette.orange]}
-        />
-      }
       headerRight={
         <Pressable
           testID="profile-menu"

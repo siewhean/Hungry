@@ -274,7 +274,8 @@ export function StallInteractionBar({
         icon: BookmarkSymbol,
         active: isSaved,
         fillWhenActive: true,
-        loading: savingInProgress || interactionLoading,
+        // No spinner on a tap: the button flips at once and the store writes in the background.
+        loading: interactionLoading,
         onPress: () => void handleSave(),
         accessibilityLabel: isSaved ? "Saved" : "Save this stall",
         ...(onAddToList
@@ -337,7 +338,7 @@ export function StallInteractionBar({
             icon: BookmarkSymbol,
             active: isSaved,
             onPress: handleSave,
-            loading: savingInProgress || (!isLoaded && isLoadingInteractions),
+            loading: !isLoaded && isLoadingInteractions,
           },
         ]),
     {

@@ -64,6 +64,9 @@ test("passport screen announces and marks one-time stamp celebrations", () => {
   assert.match(screen, /markStampCelebrated\(celebrateMarker\.stampId\)/);
   assert.match(screen, /reduceMotion/);
   assert.match(screen, /PassportPageFlip/);
+  // An unlock shows the stamp earned as a card until dismissed, not only a flip of the hero card.
+  assert.match(screen, /testID="passport-unlock-card"/);
+  assert.match(screen, /<PassportStampCard[^>]*celebrating/);
 });
 
 test("passport screen surfaces portfolio contribution stats", () => {

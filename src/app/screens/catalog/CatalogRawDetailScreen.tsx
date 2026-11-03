@@ -216,6 +216,8 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
   }, [isLoadingMoreMenu, menu, route.params.id, service]);
 
   const handleToggleFavourite = async (dish: CatalogRawDishDetail) => {
+    // No spinner: the button flips at once. A second tap waits for the first write to settle.
+    if (isSavingFavourite) return;
     setIsSavingFavourite(true);
     try {
       // Toast only after the authenticated write settles so failures are never hidden.
@@ -483,7 +485,6 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               }
               accessibilityState={{ selected: isFavourite }}
               variant={isFavourite ? "secondary" : "primary"}
-              loading={isSavingFavourite}
               leftIcon={
                 <Bookmark
                   color={isFavourite ? palette.orange : palette.white}
