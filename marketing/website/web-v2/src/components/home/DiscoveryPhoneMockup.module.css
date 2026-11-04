@@ -722,7 +722,7 @@
 
 .locationEyebrow {
   margin: 0;
-  color: var(--color-primary);
+  color: var(--color-primary-accessible);
   font-family: var(--font-mono);
   font-size: 0.83em;
   font-weight: 500;

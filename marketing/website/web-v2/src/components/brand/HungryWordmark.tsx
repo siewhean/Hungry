@@ -5,7 +5,7 @@ type HungryWordmarkProps = {
 };
 
 const logoPath = "/images/Logo/hungry_logo_text_transparent.png";
-const HUNGRY_LOGO_WIDTH = 140;
+const HUNGRY_LOGO_WIDTH = 128;
 const HUNGRY_LOGO_HEIGHT = 40;
 
 export function HungryWordmark({ className = "" }: HungryWordmarkProps) {
