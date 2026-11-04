@@ -482,10 +482,37 @@ function ReviewSuccessModalHost({
   return <ReviewSuccessModal onOpenHistory={onOpenHistory} onOpenReview={onOpenReview} />;
 }
 
+/** Root routes the system presents as a modal: anything drawn at the root sits underneath them. */
+const MODAL_ROOT_ROUTES = new Set<RootRouteName>([
+  "StallVisited",
+  "ReviewStack",
+  "MerchantClaimExplainer",
+  "StoryViewer",
+  "AddStory",
+]);
+
+function topRootRouteIsModal(): boolean {
+  const state = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
+  const name = state?.routes[state.index]?.name;
+  return name !== undefined && MODAL_ROOT_ROUTES.has(name as RootRouteName);
+}
+
 function StampMomentHostMount({ onOpenPassport }: { onOpenPassport: () => void }) {
+  const [modalRouteOpen, setModalRouteOpen] = useState(topRootRouteIsModal);
+  const reviewSuccessOpen = useUIStore((state) => state.reviewSuccess != null);
+  useEffect(() => {
+    setModalRouteOpen(topRootRouteIsModal());
+    return navigationRef.addListener("state", () => setModalRouteOpen(topRootRouteIsModal()));
+  }, []);
   const { StampMomentHost } =
     require("@/components/gamification/StampMomentHost") as typeof import("@/components/gamification/StampMomentHost");
-  return <StampMomentHost onOpenPassport={onOpenPassport} />;
+  // A celebration drawn while a sheet or modal is up would be hidden and time out unseen.
+  return (
+    <StampMomentHost
+      blocked={modalRouteOpen || reviewSuccessOpen}
+      onOpenPassport={onOpenPassport}
+    />
+  );
 }
 
 function CredEarnedToastHost() {

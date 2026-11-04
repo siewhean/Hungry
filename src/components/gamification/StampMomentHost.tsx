@@ -11,12 +11,15 @@ import {
 import { computeAchievements } from "@/features/achievements/achievements";
 import { useAchievementInput } from "@/features/achievements/useAchievementInput";
 import { useAchievementsLoopEnabled } from "@/features/passport/useNextStamp";
+import { useWeeklyGoal } from "@/features/passport/useWeeklyGoal";
+import { milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import {
   trackStampMomentDismissed,
   trackStampMomentOpened,
   trackStampMomentShown,
 } from "@/lib/analytics/gamificationEvents";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useMomentStore, type Moment } from "@/store/useMomentStore";
 import { usePassportStore } from "@/store/usePassportStore";
@@ -32,6 +35,8 @@ export const MOMENT_AUTO_DISMISS_MS = 8000;
 
 interface StampMomentHostProps {
   onOpenPassport: () => void;
+  /** A sheet or modal is on screen: hold the celebration until it is gone, so it is seen. */
+  blocked?: boolean;
 }
 
 /**
@@ -39,10 +44,10 @@ interface StampMomentHostProps {
  * screen. Mounted once at the root. It also keeps the Passport progress computed for the whole
  * session, which the Home card and the Profile tab ring read.
  */
-export function StampMomentHost({ onOpenPassport }: StampMomentHostProps) {
+export function StampMomentHost({ onOpenPassport, blocked }: StampMomentHostProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   if (!FEATURE_FLAGS.passportEnabled || !isAuthenticated) return null;
-  return <StampMomentGate onOpenPassport={onOpenPassport} />;
+  return <StampMomentGate blocked={blocked} onOpenPassport={onOpenPassport} />;
 }
 
 function StampMomentGate(props: StampMomentHostProps) {
@@ -65,7 +70,7 @@ function usePassportHydrated(): boolean {
   return hydrated;
 }
 
-function StampMomentRuntime({ onOpenPassport }: StampMomentHostProps) {
+function StampMomentRuntime({ onOpenPassport, blocked = false }: StampMomentHostProps) {
   const reduceMotion = useReduceMotion();
   const userId = useProfileStore((state) => state.profile?.id ?? null);
   // The tried stalls as one stable string, so saves and other edits do not recompute the Passport.
@@ -82,6 +87,9 @@ function StampMomentRuntime({ onOpenPassport }: StampMomentHostProps) {
   const progressMap = usePassportStore((state) => state.progressMap);
   const celebratedStampIds = usePassportStore((state) => state.celebratedStampIds);
   const markStampCelebrated = usePassportStore((state) => state.markStampCelebrated);
+  const celebratedGoalWeeks = usePassportStore((state) => state.celebratedGoalWeeks);
+  const markGoalWeekCelebrated = usePassportStore((state) => state.markGoalWeekCelebrated);
+  const weeklyGoal = useWeeklyGoal();
   const hydrated = usePassportHydrated();
   const queue = useMomentStore((state) => state.queue);
   const enqueue = useMomentStore((state) => state.enqueue);
@@ -139,6 +147,28 @@ function StampMomentRuntime({ onOpenPassport }: StampMomentHostProps) {
     }
   }, [celebratedStampIds, enqueue, hydrated, markStampCelebrated, progressReady, progressMap]);
 
+  // This week's goal, met after the data settled. A goal already met then is left for the
+  // Passport to celebrate when it is opened.
+  const goalBaselineWeek = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!progressReady || !hydrated) return;
+    if (goalBaselineWeek.current === undefined) {
+      goalBaselineWeek.current = weeklyGoal.completed ? weeklyGoal.weekKey : null;
+      return;
+    }
+    if (!weeklyGoal.completed || goalBaselineWeek.current === weeklyGoal.weekKey) return;
+    if (celebratedGoalWeeks[weeklyGoal.weekKey]) return;
+    markGoalWeekCelebrated(weeklyGoal.weekKey);
+    const milestone = milestoneReachedThisWeek(weeklyGoal);
+    trackAnalyticsEvent("weekly_goal_completed", {
+      week: weeklyGoal.weekKey,
+      count: weeklyGoal.count,
+      weeks_completed: weeklyGoal.weeksCompleted,
+      ...(milestone ? { milestone: milestone.title } : {}),
+    });
+    enqueue({ kind: "goal", id: `goal-${weeklyGoal.weekKey}`, weekKey: weeklyGoal.weekKey });
+  }, [celebratedGoalWeeks, enqueue, hydrated, markGoalWeekCelebrated, progressReady, weeklyGoal]);
+
   // New achievement tiers.
   const achievementRows = useMemo(() => computeAchievements(achievementInput), [achievementInput]);
   useEffect(() => {
@@ -148,19 +178,20 @@ function StampMomentRuntime({ onOpenPassport }: StampMomentHostProps) {
 
   // Show the head of the queue after a short pause.
   useEffect(() => {
-    if (!current) {
+    if (!current || blocked) {
       setVisibleId(null);
       return;
     }
     if (visibleId === current.id) return;
     const timer = setTimeout(() => setVisibleId(current.id), MOMENT_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [current, visibleId]);
+  }, [blocked, current, visibleId]);
 
   const shown = current && visibleId === current.id ? current : null;
   const content = useMemo<StampMomentContent | null>(() => {
     if (!shown) return null;
     if (shown.kind === "achievement") return { kind: "achievement", unlock: shown.unlock };
+    if (shown.kind === "goal") return { kind: "goal", goal: weeklyGoal };
     const stamp = PASSPORT_STAMP_DEFINITIONS.find((item) => item.id === shown.stampId);
     const category = stamp
       ? ALL_PASSPORT_CATEGORIES.find((item) => item.id === stamp.categoryId)
@@ -172,7 +203,7 @@ function StampMomentRuntime({ onOpenPassport }: StampMomentHostProps) {
       category,
       triedCount: progressMap[category.id]?.triedCount ?? stamp.threshold,
     };
-  }, [progressMap, shown]);
+  }, [progressMap, shown, weeklyGoal]);
 
   const shownId = shown?.id;
   const shownKind = shown?.kind;

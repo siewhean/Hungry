@@ -237,6 +237,63 @@ test("a stamp earned after that shows a moment once, marks it celebrated and ope
   assert.equal(view.findByTestId("stamp-moment"), null);
 });
 
+test("a moment waits while a sheet or modal is open, then shows once it is gone", async () => {
+  let counts: Record<string, number> = { "cuisine-hawker": 0 };
+  seedPassport(() => counts);
+  useStallInteractionStore.setState({ interactions: {} });
+  const host = (blocked: boolean) =>
+    createElement(StampMomentHost, { blocked, onOpenPassport: () => undefined });
+  const view = await render(host(true));
+
+  counts = { "cuisine-hawker": 1 };
+  await act(async () => {
+    useStallInteractionStore.setState({ interactions: { s1: tried("s1") } });
+  });
+  // Longer than the delay and the auto-dismiss: a hidden moment must not time out unseen.
+  await wait(MOMENT_DELAY_MS + 300);
+  assert.equal(view.findByTestId("stamp-moment"), null);
+  assert.equal(useMomentStore.getState().queue.length, 1, "still waiting in the queue");
+
+  await view.rerender(host(false));
+  assert.equal(view.findByTestId("stamp-moment"), null, "waits a moment after the modal closes");
+  await wait(MOMENT_DELAY_MS + 300);
+  assert.ok(view.findByTestId("stamp-moment"));
+});
+
+test("meeting the weekly goal shows a moment on any screen, once", async () => {
+  seedPassport(() => ({}));
+  useStallInteractionStore.setState({ interactions: {} });
+  const view = await render(createElement(StampMomentHost, { onOpenPassport: () => undefined }));
+  const now = new Date().toISOString();
+  await act(async () => {
+    useStallInteractionStore.setState({
+      interactions: {
+        s1: { ...tried("s1"), triedAt: now },
+        s2: { ...tried("s2"), triedAt: now },
+        s3: { ...tried("s3"), triedAt: now },
+      },
+    });
+  });
+  await wait(MOMENT_DELAY_MS + 300);
+  assert.ok(view.findByTestId("stamp-moment"));
+  assert.ok(view.findByText("Weekly goal complete"));
+  assert.ok(getTrackedAnalyticsEvents().some((event) => event.event === "weekly_goal_completed"));
+  await view.press(view.findByText("Keep exploring"));
+
+  await act(async () => {
+    useStallInteractionStore.setState({
+      interactions: {
+        s1: { ...tried("s1"), triedAt: now },
+        s2: { ...tried("s2"), triedAt: now },
+        s3: { ...tried("s3"), triedAt: now },
+        s4: { ...tried("s4"), triedAt: now },
+      },
+    });
+  });
+  await wait(MOMENT_DELAY_MS + 200);
+  assert.equal(view.findByText("Weekly goal complete"), null, "not again the same week");
+});
+
 test("the host renders nothing and counts nothing under the kill switch", async () => {
   let recounts = 0;
   usePassportStore.setState({ computeProgress: () => void (recounts += 1) });

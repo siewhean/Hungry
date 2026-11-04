@@ -26,7 +26,7 @@ export function trackPassportStampEarned(params: {
 
 // ─── Stamp moments and the next-stamp card ───────────────────────────────────
 
-export type StampMomentKind = "stamp" | "achievement";
+export type StampMomentKind = "stamp" | "achievement" | "goal";
 
 export function trackStampMomentShown(params: { kind: StampMomentKind; momentId: string }) {
   trackAnalyticsEvent("stamp_moment_shown", { kind: params.kind, moment_id: params.momentId });

@@ -10,6 +10,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { Target } from "lucide-react-native";
+
 import { ACHIEVEMENT_ICONS } from "@/components/gamification/AchievementsSection";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
 import { AppText } from "@/components/ui/AppText";
@@ -17,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import * as Haptics from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import type { AchievementUnlock } from "@/features/achievements/unlocks";
+import { milestoneReachedThisWeek, type WeeklyGoalProgress } from "@/features/passport/weeklyGoal";
 import type { PassportCategory, PassportStampDefinition } from "@/types/domain";
 
 export type StampMomentContent =
@@ -26,7 +29,8 @@ export type StampMomentContent =
       category: PassportCategory;
       triedCount: number;
     }
-  | { kind: "achievement"; unlock: AchievementUnlock };
+  | { kind: "achievement"; unlock: AchievementUnlock }
+  | { kind: "goal"; goal: WeeklyGoalProgress };
 
 interface StampMomentProps {
   content: StampMomentContent;
@@ -85,14 +89,8 @@ export function StampMoment({
   const cardStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shake.value }] }));
 
   const isStamp = content.kind === "stamp";
-  const heading = isStamp ? "New stamp" : "Achievement unlocked";
-  const title = isStamp ? content.category.name : content.unlock.title;
-  const body = isStamp
-    ? `${content.stamp.title.split(": ").at(-1)}. ${content.triedCount} ${
-        content.triedCount === 1 ? "stall" : "stalls"
-      } tried.`
-    : `Level ${content.unlock.level} of ${content.unlock.totalLevels}. ${content.unlock.reached}.`;
-  const Icon = isStamp ? null : ACHIEVEMENT_ICONS[content.unlock.icon];
+  const { body, heading, title } = momentText(content);
+  const Icon = content.kind === "achievement" ? ACHIEVEMENT_ICONS[content.unlock.icon] : Target;
 
   return (
     <View
@@ -167,6 +165,35 @@ export function StampMoment({
       </Animated.View>
     </View>
   );
+}
+
+function momentText(content: StampMomentContent): {
+  body: string;
+  heading: string;
+  title: string;
+} {
+  if (content.kind === "stamp") {
+    const tried = content.triedCount;
+    return {
+      heading: "New stamp",
+      title: content.category.name,
+      body: `${content.stamp.title.split(": ").at(-1)}. ${tried} ${tried === 1 ? "stall" : "stalls"} tried.`,
+    };
+  }
+  if (content.kind === "achievement") {
+    const { unlock } = content;
+    return {
+      heading: "Achievement unlocked",
+      title: unlock.title,
+      body: `Level ${unlock.level} of ${unlock.totalLevels}. ${unlock.reached}.`,
+    };
+  }
+  const milestone = milestoneReachedThisWeek(content.goal);
+  return {
+    heading: "Weekly goal",
+    title: "Weekly goal complete",
+    body: `${content.goal.count} new places tried this week.${milestone ? ` ${milestone.title}.` : ""}`,
+  };
 }
 
 const styles = StyleSheet.create({

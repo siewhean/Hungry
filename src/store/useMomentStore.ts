@@ -21,7 +21,8 @@ import { hungryPersistStorage } from "./persistStorage";
 
 export type Moment =
   | { kind: "stamp"; id: string; stampId: string }
-  | { kind: "achievement"; id: string; unlock: AchievementUnlock };
+  | { kind: "achievement"; id: string; unlock: AchievementUnlock }
+  | { kind: "goal"; id: string; weekKey: string };
 
 interface MomentState {
   queue: Moment[];
