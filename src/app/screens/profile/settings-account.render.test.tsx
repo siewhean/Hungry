@@ -16,11 +16,9 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import {
-  EXPERIMENTS,
   clearExperimentOverrides,
   resetExperimentSession,
   setExperimentFlagSource,
-  type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -64,20 +62,6 @@ afterEach(async () => {
   resetExperimentSession();
   clearExperimentOverrides();
 });
-
-function fakeFlags(flags: Record<string, string> | undefined) {
-  const state = { flags, exposed: [] as string[] };
-  const source: ExperimentFlagSource = {
-    peek: (key) => state.flags?.[key],
-    expose: (key) => {
-      state.exposed.push(key);
-      return state.flags?.[key];
-    },
-    hasLoaded: () => state.flags !== undefined,
-    onChange: () => () => undefined,
-  };
-  return { state, source };
-}
 
 const pendingIn30Days = () => ({
   scheduledFor: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -194,57 +178,19 @@ test("a deletion refused because the user owns a business explains the hand-over
   assert.doesNotMatch(view.text(), /Deletion request failed/);
 });
 
-// --- SET-12 + experiment settings_dining_unfolded_v1 -----------------------------------------
+// --- SET-12: Your taste is always open, above Notifications (sh, 2026-11-04) -----------------
 
-test("the folded Your taste header reads its summary with the title", async () => {
+test("Your taste is always open: its rows show, and the header does not fold", async () => {
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
-  const header = view.findByLabel(/^Your taste, /);
-  assert.ok(header, "the summary is part of the header label");
-  assert.match(header.getAttribute("aria-label") ?? "", /food|new|adventur|try|open/i);
-  assert.equal(view.findByText("Meal budget"), null, "control starts folded");
+  assert.ok(view.findByText("Meal budget"), "the rows are showing");
+  assert.equal(view.findByLabel(/^Your taste, /), null, "no fold button with a summary");
+  assert.equal(view.findByLabel("Your taste"), null, "it is not a button");
 });
 
-// The test is a draft until its PostHog flag exists; run it as live here to check the arms.
-function runDiningTestLive() {
-  const definition = EXPERIMENTS.settings_dining_unfolded_v1 as { status: string };
-  const previous = definition.status;
-  definition.status = "running";
-  restores.push(() => {
-    definition.status = previous;
-  });
-}
-
-test("the dining experiment is a draft measured on Settings dietary changes", () => {
-  assert.equal(EXPERIMENTS.settings_dining_unfolded_v1.status, "draft");
-  assert.equal(EXPERIMENTS.settings_dining_unfolded_v1.primaryMetric, "dietary_preferences_set");
-});
-
-test("the unfolded variant shows the dining rows open and is exposed", async () => {
-  runDiningTestLive();
-  const fake = fakeFlags({ settings_dining_unfolded_v1: "unfolded" });
-  setExperimentFlagSource(fake.source);
+test("a signed-out viewer sees Your taste open too", async () => {
+  await enterScenario("guest");
   const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
   assert.ok(view.findByText("Meal budget"));
-  assert.ok(fake.state.exposed.includes("settings_dining_unfolded_v1"));
-});
-
-test("the control variant starts folded", async () => {
-  runDiningTestLive();
-  const fake = fakeFlags({ settings_dining_unfolded_v1: "control" });
-  setExperimentFlagSource(fake.source);
-  const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
-  assert.equal(view.findByText("Meal budget"), null);
-  assert.ok(fake.state.exposed.includes("settings_dining_unfolded_v1"));
-});
-
-test("a signed-out viewer is never exposed to the dining experiment", async () => {
-  await enterScenario("guest");
-  runDiningTestLive();
-  const fake = fakeFlags({ settings_dining_unfolded_v1: "unfolded" });
-  setExperimentFlagSource(fake.source);
-  const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
-  assert.equal(view.findByText("Meal budget"), null, "falls back to control");
-  assert.equal(fake.state.exposed.includes("settings_dining_unfolded_v1"), false);
 });
 
 test("SET-V4: a Settings dining edit tags surface settings, and an unchanged finish sends nothing", async () => {

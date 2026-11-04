@@ -15,6 +15,7 @@ import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail } from "@/types/domain";
 import { getSingaporeHour } from "@/utils/operatingHours";
@@ -63,6 +64,9 @@ type UseDiscoverFiltersOptions = {
 /** The Home chips: which are on, the deferred copy the page filters by, and what each chip keeps. */
 export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions) {
   const showToast = useUIStore((state) => state.showToast);
+  // A diner who finished onboarding was already asked about dietary needs (and may have said
+  // none), so the chip never tells them to go and set them up.
+  const hasCompletedOnboarding = useSessionStore((state) => state.hasCompletedOnboarding);
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
 
@@ -143,7 +147,9 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
           selected: false,
           no_saved_needs: true,
         });
-        showToast({ message: "Add your dietary needs in Profile settings to filter by them." });
+        if (!hasCompletedOnboarding) {
+          showToast({ message: "Add your dietary needs in Profile settings to filter by them." });
+        }
         return;
       }
       const wasActive = activeDiscoverChipIds.includes(chipId);
@@ -173,7 +179,13 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
 
       setActiveDiscoverChipIds(nextChipIds);
     },
-    [activeDiscoverChipIds, profile.dietaryPreferences.length, recordTasteInteraction, showToast],
+    [
+      activeDiscoverChipIds,
+      hasCompletedOnboarding,
+      profile.dietaryPreferences.length,
+      recordTasteInteraction,
+      showToast,
+    ],
   );
   const matchesDiscoverChipSelection = useCallback(
     (dish?: DishDetail, textParts: string[] = []) => {

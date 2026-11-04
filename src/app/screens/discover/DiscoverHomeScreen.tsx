@@ -912,8 +912,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     Boolean(supabaseDiscoveryFeed?.isFallback) && supabaseFeedVenues.length === 0;
   // A failed live read (or one only the saved cache answered) hands Home to the offline
   // surface when the entry provides one; the saved cache is the mock-era synchronous copy.
+  // With no connection and no feed in hand there is nothing to wait for: show the offline page
+  // at once instead of skeletons until the read times out.
+  const isDeviceOffline = useUIStore((state) => state.isOffline);
   const isLiveFeedUnavailable =
-    isSupabaseDataSource && (discoverLoadError || Boolean(supabaseDiscoveryFeed?.isFallback));
+    isSupabaseDataSource &&
+    (discoverLoadError ||
+      Boolean(supabaseDiscoveryFeed?.isFallback) ||
+      (isDeviceOffline && supabaseDiscoveryFeed === null));
   useEffect(() => {
     if (isLiveFeedUnavailable) onLiveFeedUnavailable?.();
   }, [isLiveFeedUnavailable, onLiveFeedUnavailable]);

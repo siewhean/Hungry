@@ -25,7 +25,6 @@ import { foodOpennessLabel } from "@/constants/taste";
 import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { answerAnalyticsConsent, setAiSearchConsent } from "@/features/privacy/consent";
-import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { confirmAction } from "@/lib/runtime/confirmAction";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
@@ -151,11 +150,6 @@ export function SettingsScreen() {
   const isProfilePrivate = profile.profileVisibility === "private";
   // Left-handed mode only moves the merchant menu's add button, so only merchants see it.
   const hasMerchantAccount = useMerchantStore((state) => state.account !== null);
-  // A/B: Dining preferences folded (control) or open (unfolded). The section is the first
-  // thing on Settings in both arms, so exposure on mount is exposure to the variant.
-  const diningVariant = useExperimentVariant("settings_dining_unfolded_v1", {
-    enabled: isAuthenticated,
-  });
 
   // Neutral grey icons on grey discs; colour is kept for state (error red, accent actions).
   const iconColor = palette.textSecondary;
@@ -664,13 +658,6 @@ export function SettingsScreen() {
   };
 
   const foodOpenness = foodOpennessLabel(resolveFoodOpenness(profile.tasteProfile));
-  const diningSummary = [
-    profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} dietary` : null,
-    profile.maxDishBudget ? `up to S$${profile.maxDishBudget}` : null,
-    foodOpenness,
-  ]
-    .filter(Boolean)
-    .join(", ");
 
   return (
     <ProfileScreenShell title={t("settings.title")}>
@@ -704,15 +691,8 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
-      <SettingsSection
-        // Remount when the variant resolves after flags load, so the fold state follows it.
-        key={`dining-${diningVariant}`}
-        editorial
-        collapsible
-        defaultCollapsed={diningVariant === "control"}
-        title={t("settings.section.taste")}
-        collapsedSummary={diningSummary}
-      >
+      {/* Always open: it does not fold, and it sits above Notifications. */}
+      <SettingsSection editorial title={t("settings.section.taste")}>
         <SettingsRow
           {...neutralRow}
           label={t("settings.row.dietary")}

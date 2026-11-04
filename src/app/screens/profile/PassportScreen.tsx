@@ -4,8 +4,7 @@
 
 import { AccessibilityInfo, Pressable, View, useWindowDimensions } from "react-native";
 import { Award, ChevronRight, Flag, Star } from "lucide-react-native";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
-import Animated, { FadeIn, FadeInDown, FadeOut } from "react-native-reanimated";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Haptics from "@/lib/haptics";
@@ -18,7 +17,7 @@ import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
 import { StampDetailPanel } from "@/components/gamification/StampDetailPanel";
 import { WeeklyGoalCard } from "@/components/gamification/WeeklyGoalCard";
-import { AppText, EmptyState, SlideText } from "@/components/ui";
+import { AppText, EmptyState, InfoPopup, SlideText } from "@/components/ui";
 import {
   ALL_PASSPORT_CATEGORIES,
   PASSPORT_STAMP_DEFINITIONS,
@@ -475,52 +474,50 @@ export function PassportScreen({ navigation }: Props) {
             <AppText variant="h2">Heritage stamps ({totalStamps})</AppText>
           </View>
           <View style={{ gap: spacing[2] }}>
-            {stampRows.map((row) => {
-              const openInRow = row.some((item) => item.category.id === openStampCategoryId);
-              return (
-                <Fragment key={row[0]?.category.id}>
-                  <View style={{ flexDirection: "row", gap: spacing[2] }}>
-                    {row.map(({ category, stamp, earned }) =>
-                      stamp ? (
-                        <HeritageStampTile
-                          key={category.id}
-                          title={stamp.title}
-                          subtitle={stamp.subtitle}
-                          detail={`${progressMap[category.id]?.triedCount ?? 0} tried`}
-                          earned={earned}
-                          width={stampTileWidth}
-                          categoryId={category.id}
-                          level={stamp.index}
-                          selected={category.id === openStampCategoryId}
-                          onPress={() => {
-                            void Haptics.selectionAsync();
-                            setOpenStampCategoryId((current) =>
-                              current === category.id ? null : category.id,
-                            );
-                          }}
-                        />
-                      ) : null,
-                    )}
-                  </View>
-                  {openInRow && openCategory && openHistory ? (
-                    <Animated.View
-                      key={openCategory.id}
-                      entering={reduceMotion ? FadeIn.duration(1) : FadeInDown.duration(260)}
-                      exiting={reduceMotion ? undefined : FadeOut.duration(160)}
-                    >
-                      <StampDetailPanel
-                        category={openCategory}
-                        history={openHistory}
-                        onClose={() => setOpenStampCategoryId(null)}
-                        onOpenStall={(venueId) => navigation.navigate("StallDetail", { venueId })}
-                      />
-                    </Animated.View>
-                  ) : null}
-                </Fragment>
-              );
-            })}
+            {stampRows.map((row) => (
+              <View key={row[0]?.category.id} style={{ flexDirection: "row", gap: spacing[2] }}>
+                {row.map(({ category, stamp, earned }) =>
+                  stamp ? (
+                    <HeritageStampTile
+                      key={category.id}
+                      title={stamp.title}
+                      subtitle={stamp.subtitle}
+                      detail={`${progressMap[category.id]?.triedCount ?? 0} tried`}
+                      earned={earned}
+                      width={stampTileWidth}
+                      categoryId={category.id}
+                      level={stamp.index}
+                      selected={category.id === openStampCategoryId}
+                      onPress={() => {
+                        void Haptics.selectionAsync();
+                        setOpenStampCategoryId(category.id);
+                      }}
+                    />
+                  ) : null,
+                )}
+              </View>
+            ))}
           </View>
         </View>
+
+        {/* A stamp's details open in a pop-up over the page, not a card pushed in below it. */}
+        <InfoPopup
+          visible={Boolean(openCategory && openHistory)}
+          label={openCategory ? `${openCategory.name} stamp details` : "Stamp details"}
+          onClose={() => setOpenStampCategoryId(null)}
+        >
+          {openCategory && openHistory ? (
+            <StampDetailPanel
+              category={openCategory}
+              history={openHistory}
+              onClose={() => setOpenStampCategoryId(null)}
+              onOpenStall={(venueId) => {
+                setOpenStampCategoryId(null);
+                navigation.navigate("StallDetail", { venueId });
+              }}
+            />
+          ) : null}
+        </InfoPopup>
 
         <AchievementsSection rows={achievements} />
 
