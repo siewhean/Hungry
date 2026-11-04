@@ -1,3 +1,4 @@
+-- expect-row-loss: app_private.request_rate_rules
 -- Undo 20261104120000_security_review_hardening: puts the request hook back to its
 -- 20261022120000 body (no PostGIS write block), drops the review, avatar and email triggers and
 -- their functions, removes the waitlist rate rule (copied to rollback_archive first), and gives
