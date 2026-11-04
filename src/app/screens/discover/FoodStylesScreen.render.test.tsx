@@ -41,12 +41,24 @@ test("Edit favourites turns taps into pins, shows the star, and puts pinned dish
   assert.equal(document.body.querySelectorAll("[data-testid='favourite-star']").length, 0);
   const lastLabel = dishLabels().at(-1) ?? "";
 
+  assert.equal(document.body.querySelectorAll("[data-testid='favourite-star-empty']").length, 0);
   await view.press(view.findByLabel("Edit favourites"));
-  assert.match(view.text(), /Tap the dishes you want first on Home\./);
+  assert.doesNotMatch(view.text(), /Edit favourites/, "the button is an icon, with no text");
+  assert.doesNotMatch(view.text(), /Tap the dishes you want first/);
+  assert.equal(
+    document.body.querySelectorAll("[data-testid='favourite-star-empty']").length,
+    dishLabels().length,
+    "every dish shows a grey star while editing",
+  );
   await view.press(view.findByLabel(lastLabel));
 
   assert.equal(useFeedFeedbackStore.getState().favouriteFoodStyleIds.length, 1);
   assert.equal(document.body.querySelectorAll("[data-testid='favourite-star']").length, 1);
+  assert.equal(
+    document.body.querySelectorAll("[data-testid='favourite-star-empty']").length,
+    dishLabels().length - 1,
+    "the pinned dish has the gold star, the rest stay grey",
+  );
   assert.equal(dishLabels()[0], `${lastLabel}, favourite`, "the pinned dish moved to the front");
   assert.equal(view.navigation.calls.length, 0, "editing does not search");
 
@@ -54,7 +66,7 @@ test("Edit favourites turns taps into pins, shows the star, and puts pinned dish
   assert.equal(useFeedFeedbackStore.getState().favouriteFoodStyleIds.length, 0);
 
   await view.press(view.findByLabel("Done editing favourites"));
-  assert.doesNotMatch(view.text(), /Tap the dishes you want first/);
+  assert.equal(document.body.querySelectorAll("[data-testid='favourite-star-empty']").length, 0);
 });
 
 test("outside edit mode a tap searches for the dish and pins nothing", async () => {

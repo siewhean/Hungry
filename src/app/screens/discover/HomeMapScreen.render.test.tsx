@@ -103,7 +103,7 @@ test("MD-M2 opening the legend leaves the List/Map and recentre buttons on scree
   assert.ok(view.findByLabel("Recenter map on your location"));
   // The legend is its own row, not a sibling of the buttons in one space-between row.
   const legend = view.findByTestId("map-legend")!;
-  const buttonsRow = view.findByLabel("List view")!.closest("[role='tablist']")!.parentElement!;
+  const buttonsRow = view.findByLabel("List view")!.closest("[role='radiogroup']")!.parentElement!;
   assert.ok(!buttonsRow.contains(legend), "the legend does not share the buttons' row");
 });
 

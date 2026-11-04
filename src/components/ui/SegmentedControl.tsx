@@ -12,6 +12,8 @@ export type SegmentedOption<T extends string> = {
   accessibilityLabel?: string;
   /** Draws this symbol instead of the label (the label still names it for screen readers). */
   icon?: AppSymbolName;
+  /** Fires as the finger lands, before the choice is made (for example to warm up a screen). */
+  onPressIn?: () => void;
 };
 
 type Props<T extends string> = {
@@ -65,6 +67,7 @@ export function SegmentedControl<T extends string>({
             accessibilityLabel={option.accessibilityLabel ?? option.label}
             accessibilityState={{ checked: selected }}
             aria-checked={selected}
+            onPressIn={option.onPressIn}
             onPress={() => {
               if (selected) return;
               selectHaptic();

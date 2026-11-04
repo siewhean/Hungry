@@ -6,7 +6,6 @@ import {
   SavedDishCard,
   SavedMapView,
   SavedSortMenu,
-  SavedViewSwitch,
   SwipeToRemove,
   type SavedMapViewPin,
 } from "@/components/saved";
@@ -263,10 +262,11 @@ export function SavedDishesSection({
     [mapPins],
   );
 
-  const chooseMode = (next: SavedViewMode) => {
-    if (next === mode) return;
-    onModeChange(next);
-    if (next === "map") {
+  // The List / Map switch lives in the page header; the map opening is counted here, where the
+  // pins are known. Only a change while this section is open counts, not arriving on a Map choice.
+  const previousMode = useRef(mode);
+  useEffect(() => {
+    if (previousMode.current !== "map" && mode === "map") {
       trackAnalyticsEvent("saved_map_opened", {
         section: "dishes",
         tab,
@@ -275,7 +275,10 @@ export function SavedDishesSection({
         has_location: origin !== undefined,
       });
     }
-  };
+    previousMode.current = mode;
+    // Counts are read at the moment the map opens, not re-sent when they change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const renderDishCard = (
     dish: SavedDish,
@@ -327,7 +330,7 @@ export function SavedDishesSection({
   const hasDishes = tabDishes.length > 0;
   return (
     <View style={{ gap: spacing[3] }}>
-      {/* One row of controls: Want to try / Tried, then List / Map and Sort as icons. */}
+      {/* One row of controls: Want to try / Tried, then Sort as an icon. List / Map sits in the page header. */}
       <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], zIndex: 20 }}>
         <SegmentedControl
           compact
@@ -340,13 +343,6 @@ export function SavedDishesSection({
             { value: "tried", label: `Tried (${triedCount})` },
           ]}
         />
-        {hasDishes && mapAvailable ? (
-          <SavedViewSwitch
-            accessibilityLabel="Show saved dishes as a list or on a map"
-            value={mode}
-            onChange={chooseMode}
-          />
-        ) : null}
         {hasDishes && mode === "list" && tabDishes.length > 1 ? (
           <SavedSortMenu value={sort} hasLocation={origin !== undefined} onChange={chooseSort} />
         ) : null}

@@ -205,7 +205,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
     discover,
     [
       /const isUserMode = !isDeveloperMode && !isMerchantMode/,
-      /<DiscoverViewToggle\s+value="list"/,
+      /<SavedViewSwitch\s+accessibilityLabel="Show Home as a list or on a map"\s+value="list"/,
       /navigation\.navigate\("StallDetail", \{ venueId: venue\.id \}\)/,
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,

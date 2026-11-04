@@ -365,15 +365,35 @@ export const useLocationStore = create<LocationState>()(
     {
       name: "hungry-location-v1",
       storage: hungryPersistStorage,
+      // A place picked by hand lasts for the session only while the phone can say where it is:
+      // each launch opens on the area at the diner's current location. With location off, the
+      // pick is the only place there is, so it is kept.
       partialize: (state) => ({
         permission: state.permission,
         currentLocation: state.currentLocation,
-        manualLocation: state.manualLocation,
-        manualCoordinate: state.manualCoordinate,
-        manualPlaceName: state.manualPlaceName,
-        gpsBadgeState: state.gpsBadgeState,
+        ...(state.permission === "granted"
+          ? {}
+          : {
+              manualLocation: state.manualLocation,
+              manualCoordinate: state.manualCoordinate,
+              manualPlaceName: state.manualPlaceName,
+            }),
+        gpsBadgeState: state.permission === "granted" ? "live" : state.gpsBadgeState,
         lastLocationFixAt: state.lastLocationFixAt,
       }),
+      // A pick saved by an older build (with location on) is dropped when the app opens.
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<LocationState>;
+        const merged = { ...current, ...saved };
+        if (merged.permission !== "granted") return merged;
+        return {
+          ...merged,
+          manualLocation: undefined,
+          manualCoordinate: undefined,
+          manualPlaceName: undefined,
+          gpsBadgeState: "live",
+        };
+      },
     },
   ),
 );

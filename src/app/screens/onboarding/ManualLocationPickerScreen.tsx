@@ -167,7 +167,8 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const finish = (message: string) => {
     // Already-onboarded users arrive from Discover, the map or Settings and go straight back.
     if (!isOnboarding) {
-      showToast({ message, tone: "success" });
+      // No toast: Home's top-left label already shows the new place. Screen readers hear it.
+      AccessibilityInfo.announceForAccessibility(message);
       navigation.goBack();
       return;
     }

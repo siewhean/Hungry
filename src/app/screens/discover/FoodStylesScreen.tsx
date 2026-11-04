@@ -9,7 +9,7 @@ import {
   type PopularFoodStyleItemData,
 } from "@/components/discover/home/PopularFoodStyleItem";
 import { FOOD_STYLE_ITEM_WIDTH } from "@/components/discover/home/homeLayout";
-import { AppText, PressableScale, Screen } from "@/components/ui";
+import { AppSymbol, PressableScale, Screen } from "@/components/ui";
 import { putFavouritesFirst } from "@/features/discover/favouriteOrder";
 import { POPULAR_FOOD_STYLES } from "@/features/discover/popularFoodStyles";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -20,7 +20,7 @@ import { useHungryTheme } from "@/theme";
 /**
  * Every popular dish as a picture circle, so one can be picked without scrolling Home's row.
  * Pinned dishes (a star on the circle) come first here and on Home. Hold a circle to pin it, or
- * tap Edit and tap the dishes to pin.
+ * tap the edit icon and tap the dishes to pin (the ones not pinned yet show a grey star).
  */
 export function FoodStylesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -86,25 +86,24 @@ export function FoodStylesScreen() {
           accessibilityLabel={isEditing ? "Done editing favourites" : "Edit favourites"}
           hitSlop={8}
           onPress={() => setIsEditing((editing) => !editing)}
-          style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[2] }}
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 44,
+            minWidth: 44,
+          }}
         >
-          <AppText variant="bodySmallBold" style={{ color: palette.orange }}>
-            {isEditing ? "Done" : "Edit favourites"}
-          </AppText>
+          <AppSymbol name={isEditing ? "selected" : "compose"} color={palette.orange} size={22} />
         </PressableScale>
       }
     >
-      {isEditing ? (
-        <AppText variant="bodySmall" tone="muted" style={{ marginBottom: spacing[3] }}>
-          Tap the dishes you want first on Home.
-        </AppText>
-      ) : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: spacing[4] }}>
         {orderedItems.map((item) => (
           <View key={item.id} style={{ alignItems: "center", width: `${100 / columns}%` }}>
             <PopularFoodStyleItem
               item={item}
               isFavourite={favouriteIds.includes(item.id)}
+              showPinHint={isEditing}
               onPress={handlePress}
               onPrefetch={noPrefetch}
               onToggleFavourite={handleToggleFavourite}
