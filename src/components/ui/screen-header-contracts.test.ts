@@ -577,10 +577,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
   assert.match(
     discover,
-    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*\{wheelCtaLabel\}[\s\S]*<\/View>/,
+    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*<\/View>[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*"Or spin the wheel"/,
   );
-  // HOME-X8 / HOME-26: the wheel button needs its route, and says "with friends" only when
-  // party mode ships.
+  // HOME-X8 / HOME-26: the wheel link needs its route, and says "with friends" only when
+  // party mode ships. Audit 2026-11-04: Decide for me leads; the wheel is a quiet second way.
   assert.match(discover, /\{FEATURE_FLAGS\.hungryWheelEnabled \? \(\s*<Pressable/);
   assert.match(
     discover,
@@ -595,7 +595,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /<Dices color=\{palette\.textOnOrange\} size=\{decisionCardIconGraphicSize\} \/>/,
   );
   // Cards grow with large text instead of clipping at a fixed 72.
-  assert.match(discover, /minHeight: 56,[\s\S]*width: decisionCardWidth/);
+  assert.match(discover, /minHeight: 56,[\s\S]*flex: 1/);
   assert.match(discover, /height: "100%"/);
   assert.match(discover, /justifyContent: "center"/);
   assert.doesNotMatch(discover, /adjustsFontSizeToFit[\s\S]{0,80}minimumFontScale=\{0\.88\}/);

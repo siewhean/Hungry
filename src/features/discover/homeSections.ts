@@ -18,6 +18,7 @@ import {
 } from "@/features/discover/homeCategories";
 import { FRESH_REVIEW_LIMIT } from "@/features/discover/rankingBalance";
 import { STALL_LEAN_CONFIDENCE, stallTasteLean, stallText } from "@/features/discover/stallTaste";
+import { MEAL_KEYS, type MealKey, type MealTimes } from "@/features/onboarding/mealTimes";
 import type { FoodOpenness, TasteKey, TasteVector } from "@/types/domain";
 
 export type HomeSectionDish = {
@@ -90,6 +91,8 @@ export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
   preferBuildingId?: string;
   /** "favourites" keeps to what the diner knows, so "Try something different" stays off. */
   openness?: FoodOpenness;
+  /** The diner's usual meal times from onboarding: the hour's section follows them. */
+  mealTimes?: MealTimes;
 };
 
 type Tasted = { vector: TasteVector; confidence: number };
@@ -161,13 +164,38 @@ function roundRobinByKind<T extends HomeSectionCard>(
   return picked;
 }
 
+/** A typical hour for each meal, for which kinds of food lead its section. */
+const MEAL_HOUR: Record<MealKey, number> = { breakfast: 8, lunch: 12, dinner: 19, supper: 23 };
+
+/**
+ * The diner's own meal at this hour: from an hour before their usual time to an hour after it.
+ * Undefined when they gave no times, or none is near.
+ */
+export function dinerMealAt(hour: number, mealTimes: MealTimes | undefined): MealKey | undefined {
+  if (!mealTimes) return undefined;
+  for (const meal of MEAL_KEYS) {
+    const time = mealTimes[meal];
+    if (!time) continue;
+    const mealHour = Number(time.split(":")[0]);
+    if (!Number.isFinite(mealHour)) continue;
+    const diff = (((hour - mealHour) % 24) + 24) % 24;
+    if (diff === 0 || diff === 1 || diff === 23) return meal;
+  }
+  return undefined;
+}
+
 /**
  * The section for this hour: what people want now, and "Late night" once it is late. Inside a
- * mall (`here`) it says "here" rather than "nearby".
+ * mall (`here`) it says "here" rather than "nearby". The diner's own meal (`meal`, from their
+ * usual times) wins over the clock.
  */
-export function hourSectionTitle(hour: number, here = false): string {
-  if (isLateNightHour(hour)) return "Late night";
+export function hourSectionTitle(hour: number, here = false, meal?: MealKey): string {
   const where = here ? "here" : "nearby";
+  if (meal === "breakfast") return `Breakfast ${where}`;
+  if (meal === "lunch") return `Lunch ${where}`;
+  if (meal === "dinner") return here ? "Dinner here" : "Dinner tonight";
+  if (meal === "supper") return `Supper ${where}`;
+  if (isLateNightHour(hour)) return "Late night";
   if (hour < 10) return `Breakfast ${where}`;
   if (hour < 14) return `Lunch ${where}`;
   if (hour < 17) return "Afternoon treats";
@@ -372,11 +400,12 @@ export function buildHomeSections<T extends HomeSectionCard>(
   }
 
   // 4. This hour: only stalls that are open now, the foods people reach for at this time first.
-  const wanted = new Set<HomeCategoryId>(timeOfDayPriority(options.hour));
+  const meal = dinerMealAt(options.hour, options.mealTimes);
+  const wanted = new Set<HomeCategoryId>(timeOfDayPriority(meal ? MEAL_HOUR[meal] : options.hour));
   const isOpen = options.isOpenNow ?? (() => true);
   add({
     id: "hour",
-    title: hourSectionTitle(options.hour, Boolean(options.preferBuildingId)),
+    title: hourSectionTitle(options.hour, Boolean(options.preferBuildingId), meal),
     query: "",
     cards: roundRobinByKind(
       free()

@@ -618,6 +618,23 @@ export const EXPERIMENTS = {
    * rank by never dilutes the result. Read it only in areas with menus. Draft until launch:
    * the fallback is the new taste order.
    */
+  /**
+   * Distance decay on the palate-ranked "Dishes near you" rail: each score is multiplied by a
+   * walking-distance factor (tasteEngine distanceDecayFactor, 400 m half-life to a 0.25 floor), so
+   * a good match two streets away beats a slightly better one across town. Read in
+   * DiscoverHomeScreen only while the rail is ranked by taste. Draft: off until there is traffic.
+   */
+  home_distance_decay_v1: {
+    variants: ["control", "decay"],
+    fallback: "control",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Ranking Dishes near you by palate times walking distance gets more dish opens that end in a tried mark than palate order alone.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["dish_viewed", "stall_marked_tried"],
+    minSamplePerArm: 1600,
+  },
   home_taste_rank_v1: {
     variants: ["control", "taste"],
     fallback: "taste",

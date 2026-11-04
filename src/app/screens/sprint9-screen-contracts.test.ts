@@ -216,7 +216,7 @@ test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
 
   assert.match(
     stallDetail,
-    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{menuDishAccessibilityLabel\(dish\)\}/,
+    /accessibilityRole="button"[\s\S]*accessibilityLabel=\{menuDishAccessibilityLabel\(dish, likelyMatch\)\}/,
   );
   // The label carries the price, or "sold out today" (detail-L24).
   assert.match(stallDetail, /"sold out today"/);

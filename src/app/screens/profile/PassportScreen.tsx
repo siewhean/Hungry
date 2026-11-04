@@ -260,6 +260,21 @@ export function PassportScreen({ navigation }: Props) {
     ? ALL_PASSPORT_CATEGORIES.find((category) => category.id === unlockedStamp.categoryId)
     : undefined;
 
+  const nextStampSection = nextStamp ? (
+    <View style={{ gap: spacing[2] }} testID="passport-next-stamp">
+      <AppText variant="h3">
+        {earnedStamps.length === 0 ? "Your first stamp" : "Next stamp"}
+      </AppText>
+      <PassportStampCard
+        category={nextStamp.category}
+        nextStamp={nextStamp}
+        triedInCategory={progressMap[nextStamp.category.id]?.triedCount ?? 0}
+        reduceMotion={reduceMotion}
+        stamp={nextStamp.stamp}
+      />
+    </View>
+  ) : null;
+
   return (
     <ProfileScreenShell title="Achievements">
       <View style={{ gap: spacing[5] }}>
@@ -445,6 +460,8 @@ export function PassportScreen({ navigation }: Props) {
           </View>
         </Pressable>
 
+        {/* Before the first stamp, the one to aim for comes first instead of an empty page. */}
+        {nextStamp && earnedStamps.length === 0 ? nextStampSection : null}
         {earnedStamps.length === 0 && !nextStamp ? (
           <EmptyState
             title="Nothing yet"
@@ -515,18 +532,7 @@ export function PassportScreen({ navigation }: Props) {
           spacing={spacing}
         />
 
-        {nextStamp ? (
-          <View style={{ gap: spacing[2] }}>
-            <AppText variant="h3">Next stamp</AppText>
-            <PassportStampCard
-              category={nextStamp.category}
-              nextStamp={nextStamp}
-              triedInCategory={progressMap[nextStamp.category.id]?.triedCount ?? 0}
-              reduceMotion={reduceMotion}
-              stamp={nextStamp.stamp}
-            />
-          </View>
-        ) : null}
+        {nextStamp && earnedStamps.length > 0 ? nextStampSection : null}
       </View>
     </ProfileScreenShell>
   );

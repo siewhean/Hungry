@@ -3,15 +3,18 @@ import { Pressable, View } from "react-native";
 import { X } from "lucide-react-native";
 
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { usualAreasFor } from "@/features/discover/usualAreas";
 import { isReturningAfterBreak } from "@/features/lifecycle/lifecycle";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useLifecycleStore } from "@/store/useLifecycleStore";
+import { useOnboardingAnswersStore } from "@/store/useOnboardingAnswersStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useHungryTheme } from "@/theme";
 import type { LifecycleSnapshot, WelcomeBackDish } from "@/types/domain";
+import type { SingaporeArea } from "@/app/screens/onboarding/singaporeAreas";
 import { AppText, Button, Card, IconButton } from "../ui";
 
 interface WelcomeBackCardProps {
@@ -20,6 +23,8 @@ interface WelcomeBackCardProps {
   visible?: boolean;
   onOpenDish: (dishId: string) => void;
   onOpenSaved: () => void;
+  /** Diners with nothing saved: show food in the first usual area they picked at onboarding. */
+  onPickArea?: (area: SingaporeArea) => void;
 }
 
 /**
@@ -37,9 +42,12 @@ export function WelcomeBackCard(props: WelcomeBackCardProps) {
     (state) => FEATURE_FLAGS.stallFollowEnabled && state.followedStallIds.length > 0,
   );
 
+  const hasUsualArea = useOnboardingAnswersStore((state) => state.usualAreaIds.length > 0);
+  const canPickArea = hasUsualArea && Boolean(props.onPickArea);
+
   // Read the experiment only for eligible users, so exposure counts only them.
   if (!snapshot || dismissed || !isReturningAfterBreak(snapshot.state)) return null;
-  if (!hasSavedDishes && !followsAStall) return null;
+  if (!hasSavedDishes && !followsAStall && !canPickArea) return null;
   return <WelcomeBackExperiment snapshot={snapshot} {...props} />;
 }
 
@@ -49,6 +57,7 @@ function WelcomeBackExperiment({
   visible = true,
   onOpenDish,
   onOpenSaved,
+  onPickArea,
 }: WelcomeBackCardProps & { snapshot: LifecycleSnapshot }) {
   const { palette, radii, spacing } = useHungryTheme();
   // Fallback is control: before flags load (and with PostHog off) nothing renders.
@@ -59,6 +68,8 @@ function WelcomeBackExperiment({
   const alreadyShown = useLifecycleStore((state) => state.welcomeBackShown);
   const markShown = useLifecycleStore((state) => state.markWelcomeBackShown);
   const showCard = visible && variant === "test";
+  const areaIds = useOnboardingAnswersStore((state) => state.usualAreaIds);
+  const usualArea = savedCount === 0 && onPickArea ? usualAreasFor(areaIds)[0] : undefined;
 
   useEffect(() => {
     if (!showCard || !snapshot.previousActiveDate || !FEATURE_FLAGS.stallFollowEnabled) return;
@@ -153,6 +164,17 @@ function WelcomeBackExperiment({
             onPress={() => {
               trackAnalyticsEvent("welcome_back_opened", { target: "saved_dishes" });
               onOpenSaved();
+            }}
+          />
+        ) : null}
+
+        {usualArea && onPickArea ? (
+          <Button
+            label={`See what's good in ${usualArea.name}`}
+            variant="secondary"
+            onPress={() => {
+              trackAnalyticsEvent("welcome_back_opened", { target: "usual_area" });
+              onPickArea(usualArea);
             }}
           />
         ) : null}

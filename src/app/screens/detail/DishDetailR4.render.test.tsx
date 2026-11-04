@@ -165,6 +165,10 @@ test("the header opens the share sheet", async () => {
   const { dish, view } = await open();
   await view.press(view.findByLabel(`Share ${dish.name}`));
   assert.match(view.text(), /Copy link|WhatsApp|Share/);
+  // A dish can go out as a picture card without a review.
+  await view.press(view.findByLabel("Share dish as a picture"));
+  await view.settle();
+  assert.ok(view.findByText("Share this dish"), "the picture card screen opens");
 });
 
 // ─── Taste (DISH4-4, DISH4-6) ──────────────────────────────────────────────────────────

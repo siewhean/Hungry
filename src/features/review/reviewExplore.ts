@@ -55,7 +55,8 @@ export function buildReviewExploreChips(
   if (distanceMetersOf && items.some((item) => isNearYou(distanceMetersOf(item)))) {
     chips.push({ id: "near", kind: "near", label: "Near you" });
   }
-  if (options.userVector && hasPersonalTasteProfile(options.userVector)) {
+  // With no reviews on the page there is nothing for a taste tab to sort.
+  if (items.length > 0 && options.userVector && hasPersonalTasteProfile(options.userVector)) {
     chips.push({ id: "taste", kind: "taste", label: "For your taste" });
   }
   for (const food of topValues(items.map(reviewFoodLabel), MAX_FOOD_CHIPS)) {

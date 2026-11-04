@@ -690,6 +690,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     authorName: profile.displayName,
     message: `${dish.name} at ${venueName}.${dish.price > 0 ? ` ${dishPrice}.` : ""}`,
     link: canonicalDishUrl,
+    venueName,
   };
 
   // The merchant "share" counts a completed share, not an opened sheet.

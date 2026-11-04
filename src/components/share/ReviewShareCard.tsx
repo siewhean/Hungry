@@ -55,6 +55,8 @@ export interface ReviewShareCardProps {
 }
 
 function Stars({ rating, size, emptyColor }: { rating: number; size: number; emptyColor: string }) {
+  // A dish or stall shared without a review has no rating: no row of empty stars.
+  if (rating <= 0) return null;
   return (
     <View style={{ flexDirection: "row", gap: size * 0.15 }}>
       {Array.from({ length: 5 }).map((_, index) => (
@@ -370,7 +372,7 @@ function ChitTemplate({ model, u, showQuote }: TemplateProps) {
           <ChitLine
             u={u}
             label={model.dishName}
-            value={`${model.rating} / 5`}
+            value={model.rating > 0 ? `${model.rating} / 5` : "Not yet"}
             valueStyle={{ fontFamily: FONT.bodyBold, fontSize: 16 * u }}
           />
           {model.venueName ? <ChitLine u={u} label="Stall" value={model.venueName} /> : null}
@@ -659,7 +661,7 @@ const TEMPLATE_VIEWS: Record<ReviewCardTemplate, (props: TemplateProps) => React
 
 export function reviewShareCardLabel(model: ReviewCardModel, template: ReviewCardTemplate): string {
   const where = model.venueName ? ` at ${model.venueName}` : "";
-  return `${REVIEW_CARD_TEMPLATES[template].label} card: ${model.dishName}${where}, rated ${model.rating} out of 5`;
+  return `${REVIEW_CARD_TEMPLATES[template].label} card: ${model.dishName}${where}${model.rating > 0 ? `, rated ${model.rating} out of 5` : ""}`;
 }
 
 export function ReviewShareCard({
