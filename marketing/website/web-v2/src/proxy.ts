@@ -4,6 +4,11 @@ import {
   consoleBasicAuthChallengeHeader,
   validateConsoleBasicAuth,
 } from "@/lib/security/consoleBasicAuth";
+import { clientIpFromHeaders } from "@/lib/security/clientIp";
+import {
+  consoleLoginRetryAfterSeconds,
+  recordConsoleLoginFailure,
+} from "@/lib/security/consoleLoginThrottle";
 
 const MERCHANT_ACCESS_COOKIE = "hungry_merchant_access_token";
 
@@ -43,11 +48,27 @@ function redirectOrJson(request: NextRequest, redirectPath: string, message: str
   return applyPrivateResponseHeaders(NextResponse.redirect(url));
 }
 
-function consoleBasicAuthDenied(request: NextRequest) {
+async function consoleBasicAuthDenied(request: NextRequest) {
   const result = validateConsoleBasicAuth(request);
-  if (result.valid) return null;
-
   const configured = result.configured;
+
+  if (configured) {
+    // Checked before the password, so a locked-out guesser cannot tell when they hit it.
+    const client = clientIpFromHeaders(request.headers);
+    const retryAfter = await consoleLoginRetryAfterSeconds(client);
+    if (retryAfter !== null) {
+      const message = "Too many wrong console logins. Please try again later.";
+      const response = wantsJson(request)
+        ? NextResponse.json({ configured, error: message }, { status: 429 })
+        : new NextResponse(message, { status: 429 });
+      response.headers.set("Retry-After", String(retryAfter));
+      return applyPrivateResponseHeaders(response);
+    }
+    if (result.valid) return null;
+    // The browser's first request carries no credentials; only a wrong login counts.
+    if (result.reason !== "missing_header") await recordConsoleLoginFailure(client);
+  }
+
   const status = configured ? 401 : 503;
   const message = configured
     ? "Console username and password are required."
@@ -63,7 +84,7 @@ function consoleBasicAuthDenied(request: NextRequest) {
   return applyPrivateResponseHeaders(response);
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/merchant") && !merchantAuthRoutes.has(pathname)) {
@@ -75,7 +96,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (pathname.startsWith("/console") || pathname.startsWith("/api/console")) {
-    const denied = consoleBasicAuthDenied(request);
+    const denied = await consoleBasicAuthDenied(request);
     if (denied) return denied;
   }
 

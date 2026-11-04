@@ -45,7 +45,8 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   "connect-src 'self' https:",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  // Production bundles never eval; only the dev server's hot reload needs it.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "upgrade-insecure-requests",
 ].join("; ");
