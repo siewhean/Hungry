@@ -1,7 +1,9 @@
-import { View } from "react-native";
+import { useState } from "react";
+import { Pressable, View } from "react-native";
 
 import { AchievementBadgeArt } from "@/components/gamification/AchievementBadgeArt";
-import { AppText } from "@/components/ui";
+import { AchievementDetailPanel } from "@/components/gamification/AchievementDetailPanel";
+import { AppText, InfoPopup } from "@/components/ui";
 import type { AchievementRow } from "@/features/achievements/achievements";
 import { useHungryTheme } from "@/theme";
 
@@ -13,6 +15,8 @@ interface AchievementsSectionProps {
 export function AchievementsSection({ rows }: AchievementsSectionProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const unlocked = rows.filter((row) => row.level > 0).length;
+  const [openId, setOpenId] = useState<string | null>(null);
+  const openRow = rows.find((row) => row.id === openId);
 
   return (
     <View style={{ gap: spacing[3] }} testID="achievements-section">
@@ -27,10 +31,13 @@ export function AchievementsSection({ rows }: AchievementsSectionProps) {
       {rows.map((row) => {
         const reached = row.level > 0;
         return (
-          <View
+          <Pressable
             key={row.id}
+            accessibilityRole="button"
+            accessibilityHint="Shows every level and what earns it"
             accessibilityLabel={`${row.title}, level ${row.level} of ${row.totalLevels}. ${row.progress} of ${row.target} ${row.unit}.`}
-            style={{
+            onPress={() => setOpenId(row.id)}
+            style={({ pressed }) => ({
               alignItems: "center",
               backgroundColor: palette.surface,
               borderColor: reached ? palette.orange : palette.border,
@@ -38,8 +45,9 @@ export function AchievementsSection({ rows }: AchievementsSectionProps) {
               borderWidth: 1,
               flexDirection: "row",
               gap: spacing[3],
+              opacity: pressed ? 0.85 : 1,
               padding: spacing[4],
-            }}
+            })}
           >
             <AchievementBadgeArt
               icon={row.icon}
@@ -87,9 +95,16 @@ export function AchievementsSection({ rows }: AchievementsSectionProps) {
                   : `${row.progress} / ${row.target} · ${row.description}`}
               </AppText>
             </View>
-          </View>
+          </Pressable>
         );
       })}
+      <InfoPopup
+        visible={Boolean(openRow)}
+        label={openRow ? `${openRow.title} achievement details` : "Achievement details"}
+        onClose={() => setOpenId(null)}
+      >
+        {openRow ? <AchievementDetailPanel row={openRow} onClose={() => setOpenId(null)} /> : null}
+      </InfoPopup>
     </View>
   );
 }

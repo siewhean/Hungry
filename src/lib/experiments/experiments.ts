@@ -354,21 +354,6 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1500,
   },
   /**
-   * Dining preferences on Settings start open instead of folded. Measure dietary_preferences_set
-   * with surface = "settings": the Settings rows tag it, and a profile edit sends it only when
-   * the flags changed. Draft until the PostHog flag exists.
-   */
-  settings_dining_unfolded_v1: {
-    variants: ["control", "unfolded"],
-    fallback: "control",
-    status: "draft",
-    surface: "settings",
-    hypothesis:
-      "Showing the dining rows open instead of behind a folded header leads more Settings visitors to update their dietary and budget preferences, which makes Home and Decide for me more relevant.",
-    primaryMetric: "dietary_preferences_set",
-    guardrailMetrics: ["budget_preference_set", "decide_for_me_triggered", "sign_out"],
-  },
-  /**
    * New-password field on SignUp: masked (control) or shown as typed, with Hide. Screen-reader
    * users are not exposed. Measure sign_up_submitted filtered to screen = "sign_up":
    * sign_up_completed also counts OnboardingAuth sign-ups, where this variant is not shown.

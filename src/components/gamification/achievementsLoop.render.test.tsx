@@ -8,6 +8,8 @@ import { User } from "lucide-react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { AchievementBadgeArt, medalMetal } from "@/components/gamification/AchievementBadgeArt";
+import { AchievementDetailPanel } from "@/components/gamification/AchievementDetailPanel";
+import { AchievementsSection } from "@/components/gamification/AchievementsSection";
 import { NextStampCard } from "@/components/gamification/NextStampCard";
 import { PassportStampArt, STAMP_LOOKS } from "@/components/gamification/PassportStampArt";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
@@ -18,6 +20,7 @@ import {
   momentWordsDelay,
 } from "@/components/gamification/StampMoment";
 import { StampDetailPanel } from "@/components/gamification/StampDetailPanel";
+import { computeAchievements } from "@/features/achievements/achievements";
 import { buildStampHistory } from "@/features/passport/stampHistory";
 import {
   MOMENT_DELAY_MS,
@@ -25,6 +28,7 @@ import {
   StampMomentHost,
 } from "@/components/gamification/StampMomentHost";
 import { AppBottomTabItem } from "@/components/ui/AppBottomTabItem";
+import { InfoPopup } from "@/components/ui/InfoPopup";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import {
   ALL_PASSPORT_CATEGORIES,
@@ -507,4 +511,92 @@ test("the Profile tab draws a ring only when there is progress to show", async (
   const plain = await html({});
   assert.equal(await html({ ringFraction: 0 }), plain, "an empty ring is not drawn");
   assert.notEqual(await html({ ringFraction: 0.5 }), plain, "progress draws the ring");
+});
+
+test("an achievement card opens a pop-up with every level and what earns it, and it closes again", async () => {
+  const rows = computeAchievements({
+    triedDishes: 12,
+    distinctCentres: 1,
+    stallsVisited: 2,
+    spicyDishes: 0,
+    sweetDishes: 0,
+    budgetDishes: 0,
+    reviewsWritten: 1,
+    dishesSaved: 0,
+  });
+  const view = await render(createElement(AchievementsSection, { rows }));
+  assert.equal(view.findByTestId("achievement-detail-dish-collector"), null, "closed at first");
+
+  await view.press(view.findByLabel(/^Dish collector, level 1 of 4/));
+  assert.ok(view.findByTestId("achievement-detail-dish-collector"), "the details pop up");
+  assert.ok(view.text().includes("Try 10 different dishes"));
+  assert.ok(view.text().includes("Try 100 different dishes"));
+  assert.ok(view.findByLabel("Level 1, Try 10 different dishes, reached"));
+  assert.ok(view.findByLabel("Level 2, Try 25 different dishes, not yet"));
+  assert.ok(view.text().includes("13 more dishes to reach level 2."));
+
+  await view.press(view.findByLabel("Close Dish collector"));
+  assert.equal(view.findByTestId("achievement-detail-dish-collector"), null, "closes again");
+});
+
+test("tapping outside the pop-up closes it", async () => {
+  const rows = computeAchievements({
+    triedDishes: 0,
+    distinctCentres: 0,
+    stallsVisited: 0,
+    spicyDishes: 0,
+    sweetDishes: 0,
+    budgetDishes: 0,
+    reviewsWritten: 0,
+    dishesSaved: 0,
+  });
+  const view = await render(createElement(AchievementsSection, { rows }));
+  await view.press(view.findByLabel(/^Critic, level 0 of 4/));
+  assert.ok(view.text().includes("Not started"));
+  await view.press(view.findByLabel("Dismiss pop-up"));
+  assert.equal(view.findByTestId("achievement-detail-critic"), null);
+});
+
+test("the detail panel names a finished achievement and has no next step", async () => {
+  const [row] = computeAchievements({
+    triedDishes: 100,
+    distinctCentres: 0,
+    stallsVisited: 0,
+    spicyDishes: 0,
+    sweetDishes: 0,
+    budgetDishes: 0,
+    reviewsWritten: 0,
+    dishesSaved: 0,
+  });
+  assert.ok(row);
+  let closed = 0;
+  const view = await render(
+    createElement(AchievementDetailPanel, { row, onClose: () => (closed += 1) }),
+  );
+  assert.ok(view.text().includes("Every level done"));
+  assert.ok(!view.text().includes("more dishes to reach"));
+  await view.press(view.findByLabel("Close Dish collector"));
+  assert.equal(closed, 1);
+});
+
+test("InfoPopup draws nothing while closed and shows its card when open", async () => {
+  const closed = await render(
+    createElement(InfoPopup, {
+      visible: false,
+      onClose: () => undefined,
+      label: "Details",
+      children: "Hello",
+    }),
+  );
+  assert.ok(!closed.text().includes("Hello"));
+  await closed.unmount();
+  const open = await render(
+    createElement(InfoPopup, {
+      visible: true,
+      onClose: () => undefined,
+      label: "Details",
+      children: "Hello",
+    }),
+  );
+  assert.ok(open.text().includes("Hello"));
 });

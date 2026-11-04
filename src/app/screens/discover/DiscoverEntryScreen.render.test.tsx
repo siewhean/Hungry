@@ -327,6 +327,20 @@ test("a failed live feed hands Home to the offline page, and Try again tries the
   assert.equal(view.findByTestId("home-offline-root"), null);
 });
 
+test("with no connection, Home shows the offline page at once instead of skeletons waiting on the feed", async () => {
+  const { useUIStore } = await import("@/store/useUIStore");
+  // The feed read never answers, as on a phone with no signal.
+  fake.rpc.get_discovery_feed_by_location = () => new Promise(() => undefined);
+  useUIStore.setState({ isOffline: true });
+  try {
+    const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+    assert.ok(view.findByTestId("home-offline-root"), "the offline page, not a skeleton Home");
+    assert.match(view.text(), /You're offline/);
+  } finally {
+    useUIStore.setState({ isOffline: false });
+  }
+});
+
 test("welcome_back_v2 on the live Home: shown to the test arm once content is on screen", async () => {
   const exposures = fakeFlags({ welcome_back_v2: "test" });
   m.useLifecycleStore.setState({

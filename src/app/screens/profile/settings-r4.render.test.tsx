@@ -86,11 +86,6 @@ afterEach(async () => {
 const settingsScreen = () => renderScreen(SettingsScreen as never, { name: "Settings" });
 type View = Awaited<ReturnType<typeof settingsScreen>>;
 
-/** Opens the folded "Your taste" section so its rows are on screen. */
-async function openYourTaste(view: View) {
-  await view.press(view.findByLabel(/^Your taste, /));
-}
-
 // --- SET4-1: sign out everywhere -----------------------------------------------------------
 
 test("SET4-1: signing out of all devices is not reported as an expired session", async () => {
@@ -168,7 +163,6 @@ test("SET4-6: Reset selected location reports a failure and does not claim succe
 
 test("SET4-7: Meal budget opens the dietary step at the budget, Dietary preferences does not", async () => {
   const view = await settingsScreen();
-  await openYourTaste(view);
 
   await view.press(view.findByLabel("Meal budget"));
   await view.press(view.findByLabel("Dietary preferences"));
@@ -366,7 +360,6 @@ test("every section title is a header, in the planned order", async () => {
 
 test("no two rows in one section share an icon", async () => {
   const view = await settingsScreen();
-  await openYourTaste(view);
   for (const title of [...SECTION_TITLES, "Notifications"]) {
     const heading = view.findByText(title) ?? view.findByLabel(new RegExp(`^${title}`));
     assert.ok(heading, title);
@@ -533,18 +526,17 @@ test("R5: in-place actions have no disclosure arrow; rows that open another scre
   );
 });
 
-test("R5: section headers are small secondary text, and a folded section's summary sits under its title", async () => {
+test("R5: section headers are small secondary text, and Your taste never folds", async () => {
   const view = await settingsScreen();
   const header = view.findByText("Privacy & data");
   assert.ok(header);
   assert.doesNotMatch(header.getAttribute("style") ?? "", /font-size: 24px/, "not a 24 px heading");
 
+  // Your taste is always open: a plain title with its rows showing, no fold button or summary.
   const title = view.findByText("Your taste");
-  const summary = view.findByText(/dietary/);
-  assert.ok(title && summary, "the folded section shows its title and its summary");
-  // One column inside the fold button (the summary no longer wraps beside the title).
-  assert.ok(title.parentElement === summary.parentElement, "title and summary share a column");
-  assert.ok(title.compareDocumentPosition(summary) & 4, "the summary comes after the title");
+  assert.ok(title, "the taste section has its title");
+  assert.equal(view.findByLabel(/^Your taste, /), null, "it does not fold");
+  assert.ok(view.findByText("Meal budget"), "its rows are showing");
 });
 
 test("R5: the analytics switch saves the choice on the account", async () => {

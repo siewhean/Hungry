@@ -6,6 +6,7 @@ import test, { afterEach, beforeEach } from "node:test";
 import { useDiscoverFeed } from "@/features/discover/useDiscoverFeed";
 import { useDiscoverFilters } from "@/features/discover/useDiscoverFilters";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, render } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -61,15 +62,24 @@ test("useDiscoverFilters starts with no chips and a chip taps on and off", async
   assert.deepEqual(filters().activeDiscoverChipIds, []);
 });
 
-test("the dietary chip points to settings when none are saved, and toggles once they are", async () => {
+test("the dietary chip points to settings when none are saved (before onboarding), and toggles once they are", async () => {
   useProfileStore.getState().setDietaryPreferences([]);
   useUIStore.setState({ toast: null } as never);
+  useSessionStore.setState({ hasCompletedOnboarding: false });
   const { view, filters } = await mountFilters();
 
   filters().toggleDiscoverChip("dietary");
   await view.settle();
   assert.deepEqual(filters().activeDiscoverChipIds, [], "nothing to filter by yet");
   assert.match(String(useUIStore.getState().toast?.message), /dietary needs/);
+
+  // Someone who has been through onboarding was asked already (they may have said none).
+  useUIStore.setState({ toast: null } as never);
+  useSessionStore.setState({ hasCompletedOnboarding: true });
+  await view.settle();
+  filters().toggleDiscoverChip("dietary");
+  await view.settle();
+  assert.equal(useUIStore.getState().toast, null, "no toast once onboarding is done");
 
   useProfileStore.getState().setDietaryPreferences(["halal"]);
   await view.settle();
