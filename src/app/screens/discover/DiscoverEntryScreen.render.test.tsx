@@ -1217,7 +1217,7 @@ test("H4-14: a diner with a saved dietary need still gets dishes above the class
   assert.ok(text.indexOf("Dishes across Singapore") < text.indexOf("Hawker classics"));
 });
 
-test("R11: Home adds sections of different foods and names each place by its own building", async () => {
+test("R11: Home adds personal sections, never food-type sections, and names each place by its own building", async () => {
   // The first ten stalls by distance fill the main rail; the sections come from the stalls after.
   const near = Array.from({ length: 10 }, (_, i) =>
     feedRow(i + 1, { venue_name: `Corner ${i + 1}`, top_dish_name: "Mystery plate" }),
@@ -1242,9 +1242,10 @@ test("R11: Home adds sections of different foods and names each place by its own
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const text = view.text();
   assert.doesNotMatch(text, /Open now/, "the Open now rail is replaced by the food sections");
-  assert.ok(view.findByLabel("See all: Noodles"), "a Noodles section with a chevron");
-  assert.ok(view.findByLabel("See all: Rice dishes"), "a Rice dishes section with a chevron");
-  assert.ok(view.findByTestId("home-noodles"), "the section renders its stalls");
+  assert.ok(view.findByLabel("See all: Just for you"), "a personal section with a chevron");
+  assert.ok(view.findByTestId("home-recommended"), "the section renders its stalls");
+  assert.equal(view.findByLabel("See all: Noodles"), null, "no section is a kind of food");
+  assert.equal(view.findByLabel("See all: Rice dishes"), null, "no section is a kind of food");
   assert.match(text, /Malls and hawker centres nearby/);
   assert.ok(view.findByTestId("nearby-places"), "the places rail renders");
   assert.ok(view.findByLabel(/^See stalls at Lau Pa Sat/), "a place is named by its building");
@@ -1317,7 +1318,7 @@ test("R12: Home leads with a Recommended section of different foods and adds a t
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   const recommended = view.findByTestId("home-recommended");
   assert.ok(recommended, "the Recommended section renders");
-  assert.match(view.text(), /Recommended for you/);
+  assert.match(view.text(), /Just for you/);
   const dishes = Array.from(recommended.querySelectorAll("[data-testid='stall-rail-card']")).map(
     (card) => card.getAttribute("aria-label"),
   );
