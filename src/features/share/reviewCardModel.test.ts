@@ -73,6 +73,7 @@ test("photo templates lead when the review has a photo", () => {
   assert.deepEqual(availableReviewCardTemplates(model), [
     "photo",
     "snapshot",
+    "mini",
     "quote",
     "chit",
     "sticker",
@@ -80,8 +81,13 @@ test("photo templates lead when the review has a photo", () => {
 });
 
 test("a review without a photo or words still gets the chit and the sticker", () => {
-  assert.deepEqual(availableReviewCardTemplates(buildReviewCardModel(base)), ["chit", "sticker"]);
+  assert.deepEqual(availableReviewCardTemplates(buildReviewCardModel(base)), [
+    "mini",
+    "chit",
+    "sticker",
+  ]);
   assert.deepEqual(availableReviewCardTemplates(buildReviewCardModel({ ...base, text: "Good" })), [
+    "mini",
     "quote",
     "chit",
     "sticker",
@@ -93,8 +99,9 @@ test("card heights follow Story 9:16 and Post 4:5", () => {
   assert.equal(reviewCardHeight("post", 360), 450);
 });
 
-test("only the see-through sticker is saved as a PNG", () => {
+test("only the see-through cards are saved as a PNG", () => {
   assert.equal(reviewCardImageFormat("sticker"), "png");
+  assert.equal(reviewCardImageFormat("mini"), "png");
   assert.equal(reviewCardImageFormat("photo"), "jpg");
   assert.equal(reviewCardImageFormat("chit"), "jpg");
 });

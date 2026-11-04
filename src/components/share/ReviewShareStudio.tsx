@@ -83,7 +83,7 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
   const usesPhoto = REVIEW_CARD_TEMPLATES[template].needsPhoto && Boolean(model.photoUrl);
   const captureKey = `${template}:${size}:${model.photoUrl ?? ""}`;
   const ready = !usesPhoto || photoSettledKey === captureKey || photoWaitOverKey === captureKey;
-  const quoteToggleShown = Boolean(model.quote) && template !== "sticker";
+  const quoteToggleShown = Boolean(model.quote) && !REVIEW_CARD_TEMPLATES[template].seeThrough;
 
   useEffect(() => {
     trackAnalyticsEvent("review_card_opened", {
@@ -248,7 +248,7 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
                   shadowRadius: 16,
                 }}
               >
-                {candidate === "sticker" ? (
+                {REVIEW_CARD_TEMPLATES[candidate].seeThrough ? (
                   // A see-through card shown over a stand-in photo so the white type reads.
                   <LinearGradient
                     colors={[palette.navy, palette.orangeDark]}
@@ -273,9 +273,7 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
 
       <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingTop: spacing[3] }}>
         <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-          {template === "sticker"
-            ? "See-through: place it over your own photo in Instagram."
-            : REVIEW_CARD_TEMPLATES[template].description}
+          {REVIEW_CARD_TEMPLATES[template].description}
         </AppText>
         <ScrollView
           horizontal

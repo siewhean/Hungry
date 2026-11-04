@@ -493,6 +493,73 @@ function QuoteTemplate({ model, u, size, showQuote }: TemplateProps) {
   );
 }
 
+/**
+ * Mini: a small tag in the bottom corner and nothing else, so your own photo keeps the screen.
+ * No border and no panel; a soft shadow keeps the white type readable on any photo.
+ */
+function MiniTemplate({ model, u, size }: TemplateProps) {
+  const shadow: TextStyle = {
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 0, height: 1 * u },
+    textShadowRadius: 4 * u,
+  };
+  return (
+    <View
+      style={{
+        backgroundColor: "transparent",
+        flex: 1,
+        justifyContent: "flex-end",
+        paddingBottom: (size === "story" ? 96 : 32) * u,
+        paddingHorizontal: 24 * u,
+      }}
+    >
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 * u, maxWidth: 240 * u }}>
+        <AccessibleImage
+          decorative
+          source={HUNGRY_LOGO_ICON}
+          transition={0}
+          style={{ height: 22 * u, width: 22 * u }}
+        />
+        <View style={{ flexShrink: 1, gap: 2 * u }}>
+          <Text
+            numberOfLines={2}
+            style={[
+              {
+                color: brand.white,
+                fontFamily: FONT.display,
+                fontSize: 17 * u,
+                lineHeight: 20 * u,
+              },
+              shadow,
+            ]}
+          >
+            {model.dishName}
+          </Text>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 6 * u }}>
+            <Stars rating={model.rating} size={10 * u} emptyColor="rgba(255,255,255,0.6)" />
+            {model.venueName ? (
+              <Text
+                numberOfLines={1}
+                style={[
+                  {
+                    color: brand.white,
+                    flexShrink: 1,
+                    fontFamily: FONT.bodySemi,
+                    fontSize: 11 * u,
+                  },
+                  shadow,
+                ]}
+              >
+                {model.venueName}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 function StickerTemplate({ model, u }: TemplateProps) {
   const shadow: TextStyle = {
     textShadowColor: "rgba(0,0,0,0.55)",
@@ -586,6 +653,7 @@ const TEMPLATE_VIEWS: Record<ReviewCardTemplate, (props: TemplateProps) => React
   snapshot: SnapshotTemplate,
   chit: ChitTemplate,
   quote: QuoteTemplate,
+  mini: MiniTemplate,
   sticker: StickerTemplate,
 };
 

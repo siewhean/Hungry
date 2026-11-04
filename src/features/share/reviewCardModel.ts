@@ -2,7 +2,7 @@
 // review can use, and how big the picture is. The card artwork lives in
 // src/components/share/ReviewShareCard.tsx; this file holds no React so it is easy to test.
 
-export type ReviewCardTemplate = "photo" | "snapshot" | "chit" | "quote" | "sticker";
+export type ReviewCardTemplate = "photo" | "snapshot" | "chit" | "quote" | "mini" | "sticker";
 export type ReviewCardSize = "story" | "post";
 
 /** Cards are laid out at this width (points) and scaled; every size in the artwork is relative to it. */
@@ -19,42 +19,68 @@ export const REVIEW_CARD_SIZES: Record<
 
 export const REVIEW_CARD_TEMPLATES: Record<
   ReviewCardTemplate,
-  { label: string; description: string; needsPhoto: boolean; needsQuote: boolean }
+  {
+    label: string;
+    description: string;
+    needsPhoto: boolean;
+    needsQuote: boolean;
+    /** No background: saved as a PNG to lay over your own photo. */
+    seeThrough: boolean;
+  }
 > = {
   photo: {
     label: "Photo",
     description: "Your photo, full size",
     needsPhoto: true,
     needsQuote: false,
+    seeThrough: false,
   },
   snapshot: {
     label: "Snapshot",
     description: "A printed photo on paper",
     needsPhoto: true,
     needsQuote: false,
+    seeThrough: false,
   },
   quote: {
     label: "Big quote",
     description: "Your words, large",
     needsPhoto: false,
     needsQuote: true,
+    seeThrough: false,
   },
   chit: {
     label: "Order chit",
     description: "A kopitiam order chit",
     needsPhoto: false,
     needsQuote: false,
+    seeThrough: false,
   },
   sticker: {
     label: "Sticker",
-    description: "See-through, to place over your own photo",
+    description: "See-through: place it over your own photo in Instagram.",
     needsPhoto: false,
     needsQuote: false,
+    seeThrough: true,
+  },
+  mini: {
+    label: "Mini",
+    description: "Small and see-through: a corner tag over your own photo.",
+    needsPhoto: false,
+    needsQuote: false,
+    seeThrough: true,
   },
 };
 
 /** The order templates are offered in. Photo templates lead when there is a photo to show. */
-const TEMPLATE_ORDER: ReviewCardTemplate[] = ["photo", "snapshot", "quote", "chit", "sticker"];
+const TEMPLATE_ORDER: ReviewCardTemplate[] = [
+  "photo",
+  "snapshot",
+  "mini",
+  "quote",
+  "chit",
+  "sticker",
+];
 
 /** Longest quote a card prints; longer reviews are cut at a word and end with an ellipsis. */
 export const REVIEW_CARD_QUOTE_MAX = 140;
@@ -157,7 +183,7 @@ export function reviewCardHeight(size: ReviewCardSize, width: number): number {
   return Math.round((width * pixelHeight) / pixelWidth);
 }
 
-/** The sticker keeps its see-through background, so it is saved as a PNG; the rest as JPEG. */
+/** See-through cards keep their empty background, so they are saved as PNG; the rest as JPEG. */
 export function reviewCardImageFormat(template: ReviewCardTemplate): "png" | "jpg" {
-  return template === "sticker" ? "png" : "jpg";
+  return REVIEW_CARD_TEMPLATES[template].seeThrough ? "png" : "jpg";
 }

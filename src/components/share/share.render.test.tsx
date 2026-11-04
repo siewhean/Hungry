@@ -54,7 +54,7 @@ const events = (name: string) =>
 
 test("every card template prints the dish, the stall and the Hungry address", async () => {
   const model = buildReviewCardModel({ ...card, photoUrl: "https://example.com/laksa.jpg" });
-  for (const template of ["photo", "snapshot", "quote", "chit", "sticker"] as const) {
+  for (const template of ["photo", "snapshot", "mini", "quote", "chit", "sticker"] as const) {
     const view = await render(
       createElement(ReviewShareCard, {
         model,
@@ -67,7 +67,8 @@ test("every card template prints the dish, the stall and the Hungry address", as
     assert.match(text, /Katong Laksa/, `${template} shows the dish`);
     assert.match(text, /Laksa Stall/, `${template} shows the stall`);
     assert.ok(view.findByLabel(/rated 4 out of 5/), `${template} card has a spoken summary`);
-    if (template !== "sticker") assert.match(text, /usehungry\.com/, `${template} names the site`);
+    if (template !== "sticker" && template !== "mini")
+      assert.match(text, /usehungry\.com/, `${template} names the site`);
     await view.unmount();
   }
 });
@@ -102,11 +103,18 @@ test("the share screen offers only the templates a review without a photo can fi
   assert.ok(view.findByText("Sticker"));
   assert.equal(view.findByText("Photo"), null, "no photo, no photo template");
   assert.equal(view.findByText("Snapshot"), null);
-  assert.ok(view.findByLabel("Show my words on the card"));
+  assert.equal(
+    view.findByLabel("Show my words on the card"),
+    null,
+    "the small see-through tag comes first and never prints words",
+  );
   const opened = events("review_card_opened");
   assert.equal(opened.length, 1);
   assert.equal(opened[0].properties.source, "review_page");
-  assert.equal(opened[0].properties.template_count, 3);
+  assert.equal(opened[0].properties.template_count, 4);
+  assert.ok(view.findByText("Mini"));
+  await view.press(view.findByText("Big quote"));
+  assert.ok(view.findByLabel("Show my words on the card"));
 
   await view.press(view.findByText("Sticker"));
   assert.equal(
@@ -115,6 +123,14 @@ test("the share screen offers only the templates a review without a photo can fi
     "the sticker never prints words",
   );
   assert.match(view.text(), /place it over your own photo/);
+
+  await view.press(view.findByText("Mini"));
+  assert.equal(
+    view.findByLabel("Show my words on the card"),
+    null,
+    "the mini tag never prints words",
+  );
+  assert.match(view.text(), /corner tag over your own photo/);
 
   await view.press(view.findByLabel("Close"));
   assert.equal(closed, 1);
