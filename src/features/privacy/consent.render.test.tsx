@@ -7,6 +7,7 @@ import { createElement, Fragment } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { WelcomeScreen } from "@/app/screens/onboarding/WelcomeScreen";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isAnalyticsEnabled } from "@/lib/analytics";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useConsentStore } from "@/store/useConsentStore";
@@ -14,6 +15,10 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
+
+// These tests cover the original flow (retired when the slider flow ships); the slider flow has its
+// own tests. It is switched off here.
+(FEATURE_FLAGS as unknown as Record<string, boolean>).sliderOnboardingEnabled = false;
 
 import { AiSearchConsentPrompt } from "./AiSearchConsentPrompt";
 import { AnalyticsConsentDialog } from "./AnalyticsConsentDialog";

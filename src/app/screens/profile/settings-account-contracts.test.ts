@@ -43,7 +43,8 @@ test("Settings location rows respect the OS permission and return from the picke
 
   const submit = segmentBetween(picker, "const finish", "const choose");
   assert.ok(
-    submit.indexOf("navigation.goBack()") < submit.indexOf('navigation.navigate("TasteQuiz")'),
+    submit.indexOf("navigation.goBack()") <
+      submit.indexOf('navigation.navigate(nextOnboardingRoute("ManualLocationPicker"))'),
     "settings mode must go back before the onboarding path continues to the quiz",
   );
   assert.match(submit, /if \(!isOnboarding\)/);

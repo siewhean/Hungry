@@ -93,13 +93,16 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.doesNotMatch(quiz, /progressAnim|progressTrack/);
 
   // Welcome -> Location (GPS or pick area) -> quiz -> done -> Home.
-  assert.match(welcome, /navigation\.navigate\("LocationPermission"\)/);
-  assert.match(location, /const next = \(\) => \{\s*navigation\.navigate\("TasteQuiz"\);/);
+  assert.match(welcome, /navigation\.navigate\(nextOnboardingRoute\("OnboardingWelcome"\)\)/);
+  assert.match(
+    location,
+    /const next = \(\) => \{\s*navigation\.navigate\(nextOnboardingRoute\("LocationPermission"\)\);/,
+  );
   assert.match(
     location,
     /navigation\.navigate\("ManualLocationPicker", \{ mode: "onboarding" \}\)/,
   );
-  assert.match(picker, /navigation\.navigate\("TasteQuiz"\)/);
+  assert.match(picker, /navigation\.navigate\(nextOnboardingRoute\("ManualLocationPicker"\)\)/);
   assert.match(
     quiz,
     /navigation\.navigate\("DietaryPreferences", \{[\s\S]*initialPhase: "dietary"[\s\S]*\}\)/,
@@ -122,7 +125,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.doesNotMatch(types, /DietaryPreferences:[\s\S]{0,200}answers\?: TasteVector;/);
   assert.match(quiz, /navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/);
   // Openness: Continue saves the choice; Skip saves nothing (the default applies); both go to done.
-  assert.match(openness, /navigation\.navigate\("TasteProfileResult"\)/);
+  assert.match(openness, /navigation\.navigate\(nextOnboardingRoute\("FoodOpenness"\)\)/);
   assert.doesNotMatch(openness, /finish\(DEFAULT_FOOD_OPENNESS\)/);
   // The taste questions are optional, but Skip still asks about dietary needs
   // (without taste answers), and the quiz stays marked as skipped.
@@ -134,7 +137,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.match(quiz, /const answeredAny = hasAnsweredAnyQuestion\(answeredKeys\)/);
   assert.match(
     quiz,
-    /setSkippedTasteQuiz\(!hasTasteAnswers\);\s*navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/,
+    /setSkippedTasteQuiz\(!hasTasteAnswers\);\s*const nextRoute = nextOnboardingRoute\("DietaryPreferences"\);\s*if \(nextRoute === "FoodOpenness"\) navigation\.navigate\("FoodOpenness", \{ mode: "onboarding" \}\)/,
   );
   assert.doesNotMatch(quiz, /navigation\.navigate\("LocationPermission"\)/);
 

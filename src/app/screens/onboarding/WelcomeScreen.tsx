@@ -10,6 +10,7 @@ import { AccessibleImage, AppSymbol, AppText, Button, type AppSymbolName } from 
 import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { clearPendingDishSave } from "@/features/auth/pendingDishSave";
+import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { AnalyticsConsentDialog } from "@/features/privacy/AnalyticsConsentDialog";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useRiseIn } from "@/lib/motion/uiMotion";
@@ -48,7 +49,7 @@ export function WelcomeScreen({ navigation }: Props) {
   const goToLocation = () => {
     setReturningAccountIntent(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("LocationPermission");
+    navigation.navigate(nextOnboardingRoute("OnboardingWelcome"));
   };
 
   // The one-time analytics question comes before the first step; either answer continues.

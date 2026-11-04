@@ -82,8 +82,13 @@ test("M5 and L3: the result fallback respects every dietary flag, and says so wh
   // One builder tops the ranked picks up with popular dishes and filters both by diet and budget.
   assert.equal(
     source.match(/buildResultPicks\(/g)?.length,
-    4,
+    3,
     "every path builds the grid the same way",
+  );
+  // The server picks (and the new flow's shared dish pool) are built by the same function.
+  assert.ok(
+    read("src/app/screens/onboarding/tastePicks.ts").match(/buildResultPicks\(/g)?.length === 3,
+    "the server picks use it too",
   );
   assert.match(source, /noDietaryPicksMessage\(/);
 

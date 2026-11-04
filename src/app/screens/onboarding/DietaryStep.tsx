@@ -19,6 +19,8 @@ interface DietaryStepProps {
   onClear: () => void;
   budget: number | undefined;
   onBudgetChange: (value: number | undefined) => void;
+  /** false: the slider onboarding asks the budget on its own screen after this one. */
+  showBudget?: boolean;
   /** Reports where the budget block starts in the parent scroll content, to scroll to it. */
   onBudgetLayout?: (y: number) => void;
 }
@@ -34,6 +36,7 @@ export function DietaryStep({
   onClear,
   budget,
   onBudgetChange,
+  showBudget = true,
   onBudgetLayout,
 }: DietaryStepProps) {
   const { palette, spacing } = useHungryTheme();
@@ -112,28 +115,30 @@ export function DietaryStep({
       {searching && visible.length === 0 ? (
         <EmptyState title="No match" body="Try another word, like halal, vegetarian or nuts." />
       ) : null}
-      <View
-        onLayout={(event) => {
-          budgetY.current = event.nativeEvent.layout.y;
-          reportBudgetOffset();
-        }}
-        style={{ gap: spacing[3] }}
-      >
-        <AppText variant="h3" style={{ marginTop: spacing[1] }}>
-          Usual budget per dish
-        </AppText>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-          {BUDGET_OPTIONS.map((option) => (
-            <Chip
-              key={option.label}
-              label={option.label}
-              accessibilityLabel={`Budget ${option.label}`}
-              selected={budget === option.value}
-              onPress={() => onBudgetChange(option.value)}
-            />
-          ))}
+      {showBudget ? (
+        <View
+          onLayout={(event) => {
+            budgetY.current = event.nativeEvent.layout.y;
+            reportBudgetOffset();
+          }}
+          style={{ gap: spacing[3] }}
+        >
+          <AppText variant="h3" style={{ marginTop: spacing[1] }}>
+            Usual budget per dish
+          </AppText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            {BUDGET_OPTIONS.map((option) => (
+              <Chip
+                key={option.label}
+                label={option.label}
+                accessibilityLabel={`Budget ${option.label}`}
+                selected={budget === option.value}
+                onPress={() => onBudgetChange(option.value)}
+              />
+            ))}
+          </View>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }

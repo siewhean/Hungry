@@ -1,6 +1,9 @@
 import { View } from "react-native";
 
+import { FlowProgressBar } from "@/components/onboarding/FlowProgressBar";
 import { AppText } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import type { OnboardingFlowScreen } from "@/features/onboarding/onboardingFlow";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useHungryTheme } from "@/theme";
 
@@ -62,8 +65,19 @@ export function trackOnboardingAreaPickerViewed() {
   trackAnalyticsEvent("onboarding_area_picker_viewed", { surface: "onboarding" });
 }
 
+/** Where each step sits in the 22-screen slider flow (the taste step here is the dietary part). */
+const SLIDER_FLOW_SCREEN: Record<OnboardingStep, OnboardingFlowScreen> = {
+  welcome: "splash",
+  location: "location",
+  taste: "dietary",
+  openness: "openness",
+  done: "results",
+  account: "account",
+};
+
 /**
- * The one progress indicator every onboarding screen shows: "Step x of N".
+ * The one progress indicator every onboarding screen shows: "Step x of N". With the slider
+ * onboarding on it is the single bar across all 22 screens instead.
  * `subProgress` (0 to 1) fills part of the current segment, for the questions inside a step;
  * `detail` is the sentence that goes with it ("Question 3 of 7").
  */
@@ -77,6 +91,9 @@ export function OnboardingProgress({
   detail?: string;
 }) {
   const { palette, radii, spacing } = useHungryTheme();
+  if (FEATURE_FLAGS.sliderOnboardingEnabled) {
+    return <FlowProgressBar screen={SLIDER_FLOW_SCREEN[step]} />;
+  }
   const current = visibleStepNumber(step);
   const total = PROGRESS_STEPS.length;
   if (current === 0) return null;

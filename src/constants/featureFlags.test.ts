@@ -12,6 +12,7 @@ const SHIPPED_SURFACE_FLAGS = [
   "favouritesEnabled",
   "portfoliosEnabled",
   "stallAlertsEnabled",
+  "sliderOnboardingEnabled",
 ] as const;
 
 // Archived surfaces (owner decision 2026-10-24): off everywhere unless a build opts in.

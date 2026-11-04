@@ -6,10 +6,20 @@ import { hungryPersistStorage } from "./persistStorage";
 
 /** The onboarding screens a relaunch can reopen, in the order the flow shows them. */
 export const ONBOARDING_RESUME_ROUTES = [
+  "OnboardingName",
   "LocationPermission",
+  "OnboardingAreas",
+  "OnboardingMealTimes",
+  "OnboardingPalateIntro",
   "TasteQuiz",
+  "OnboardingPalateReveal",
   "DietaryPreferences",
+  "OnboardingDishGrid",
+  "OnboardingPrice",
   "FoodOpenness",
+  "OnboardingSwipe",
+  "OnboardingResults",
+  "OnboardingMealPicks",
   "TasteProfileResult",
 ] as const;
 export type OnboardingResumeRoute = (typeof ONBOARDING_RESUME_ROUTES)[number];

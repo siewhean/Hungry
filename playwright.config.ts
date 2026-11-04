@@ -72,6 +72,8 @@ export default defineConfig({
           EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
           EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
           EXPO_PUBLIC_ENABLE_MESSAGES: "1",
+          // The browser onboarding specs walk today's flow; the slider flow is on in dev builds.
+          EXPO_PUBLIC_ENABLE_SLIDER_ONBOARDING: "0",
         },
       }
     : undefined,

@@ -28,6 +28,10 @@ import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
+// These tests cover the original flow (retired when the slider flow ships); the slider flow has its
+// own tests. It is switched off here.
+(FEATURE_FLAGS as unknown as Record<string, boolean>).sliderOnboardingEnabled = false;
+
 const restores: (() => void)[] = [];
 const originalAlert = Alert.alert;
 

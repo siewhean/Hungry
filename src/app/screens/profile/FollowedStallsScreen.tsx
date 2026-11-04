@@ -54,7 +54,6 @@ export function FollowedStallsScreen({ navigation }: Props) {
       active = false;
     };
     // idsKey stands for followedStallIds.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey, lookupRetry]);
   const venues = lookup?.venues ?? [];
   const missingCount = lookup && lookup.key === idsKey ? lookup.missingCount : 0;

@@ -57,6 +57,10 @@ export function resolveFeatureFlags(
   // "AI search" switch in Settings; the build that wires mood search turns it on.
   const aiSearchEnabled = surface("EXPO_PUBLIC_ENABLE_AI_SEARCH", false);
 
+  // The slider onboarding (Cloey-style, 22 screens) replaces the original first-run flow on every
+  // surface. Set EXPO_PUBLIC_ENABLE_SLIDER_ONBOARDING=0 to fall back to the original flow.
+  const sliderOnboardingEnabled = surface("EXPO_PUBLIC_ENABLE_SLIDER_ONBOARDING", true);
+
   return {
     appEnv,
     // Narrow Release 0.1 core-only surface (read-only detail, release profile,
@@ -70,6 +74,7 @@ export function resolveFeatureFlags(
     mapEnabled,
     hungryWheelEnabled,
     craveEnabled,
+    sliderOnboardingEnabled,
     aiSearchEnabled,
     wheelPartyEnabled: hungryWheelEnabled && nonProductionSurfaceEnabled,
     // Favourites are MVP scope: on in every environment. Writes are authenticated
