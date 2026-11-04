@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 86.7,
-    "branches": 86.1,
-    "functions": 83.3
+    "lines": 86.9,
+    "branches": 86.3,
+    "functions": 83.5
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -85,7 +85,7 @@
     "src/features/discover/feedCache.ts": 93.1,
     "src/features/discover/feedMerge.ts": 100,
     "src/features/discover/hawkerClassics.ts": 92.3,
-    "src/features/discover/homeCategories.ts": 97.4,
+    "src/features/discover/homeCategories.ts": 98.4,
     "src/features/discover/homeChips.ts": 97.7,
     "src/features/discover/homeFilters.ts": 100,
     "src/features/discover/homeRails.ts": 100,
@@ -95,7 +95,8 @@
     "src/features/discover/mallMode.ts": 98.9,
     "src/features/discover/personalFeedback.ts": 95.6,
     "src/features/discover/personalRails.ts": 99.3,
-    "src/features/discover/rankingBalance.ts": 91.7,
+    "src/features/discover/rankingBalance.ts": 97,
+    "src/features/discover/stallTaste.ts": 98.8,
     "src/features/discover/warmHomeFeed.ts": 100,
     "src/features/discovery/decideForMeCandidates.ts": 96.9,
     "src/features/discovery/decideQuiz.ts": 99.4,
@@ -220,7 +221,7 @@
     "src/lib/security/merchantLinks.ts": 100,
     "src/lib/services/catalog/excelFallback.ts": 96.3,
     "src/lib/services/catalog/favourites.ts": 100,
-    "src/lib/services/catalog/index.ts": 92.4,
+    "src/lib/services/catalog/index.ts": 94.1,
     "src/lib/services/catalog/media.ts": 100,
     "src/lib/services/catalog/paging.ts": 92.9,
     "src/lib/services/excel/excelService.ts": 70.3,
@@ -236,7 +237,7 @@
     "src/lib/services/postTransforms.ts": 98,
     "src/lib/services/realtime/MockRealtimeChannel.ts": 99,
     "src/lib/services/searchCategoryMatch.ts": 100,
-    "src/lib/services/serviceProvider.ts": 87.3,
+    "src/lib/services/serviceProvider.ts": 88.6,
     "src/lib/services/storyGalleryAssets.ts": 95,
     "src/lib/services/supabase/authStorage.ts": 97.9,
     "src/lib/services/supabase/client.ts": 97.1,
@@ -254,6 +255,7 @@
     "src/store/useChecklistStore.ts": 80.6,
     "src/store/useChoiceSheetStore.ts": 100,
     "src/store/useConsentStore.ts": 100,
+    "src/store/useDeveloperToolsStore.ts": 100,
     "src/store/useDiscoveryStore.ts": 88.4,
     "src/store/useFeedbackStore.ts": 100,
     "src/store/useFeedFeedbackStore.ts": 100,

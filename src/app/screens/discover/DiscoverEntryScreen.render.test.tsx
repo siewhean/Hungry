@@ -743,6 +743,47 @@ test("in a mall Home also lists the stalls around it, not only the mall's", asyn
   );
 });
 
+test("in a mall with no menus yet Home still recommends its stalls in more sections", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, tasteVector: SPICY_PALATE },
+  }));
+  const tags = ["thai", "indian", "korean", "japanese", "bakery", "dessert", "italian", "burger"];
+  serveLiveFeed([
+    // The only menus are outside the mall.
+    feedRow(1, { building_id: "building-2", building_name: "Amoy Street" }),
+    feedRow(2, { building_id: "building-2", building_name: "Amoy Street" }),
+    feedRow(3, { building_id: "building-2", building_name: "Amoy Street" }),
+    ...Array.from({ length: 24 }, (_, i) =>
+      coldRow(10 + i, {
+        venue_name: `Mall kitchen ${10 + i}`,
+        cuisine_tags: [tags[i % tags.length]],
+      }),
+    ),
+  ]);
+  setLocation({ permission: "granted" });
+  const service = m.provider.getCatalogRawService() as unknown as Record<string, unknown>;
+  service.listPlaces = async () => [
+    {
+      id: "building-1",
+      name: "Maxwell Food Centre",
+      venueCount: 24,
+      latitude: DEFAULT_LOCATION.latitude,
+      longitude: DEFAULT_LOCATION.longitude,
+    },
+  ];
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const text = view.text();
+  assert.match(text, /For you nearby/, "the dishes are from around the mall, and it says so");
+  assert.doesNotMatch(text, /For you at Maxwell Food Centre/);
+  const recommended = view.findByTestId("home-recommended");
+  assert.ok(recommended, "Just for you renders inside a mall");
+  assert.match(recommended.textContent ?? "", /Mall kitchen/, "led by the mall's own stalls");
+  const sections = Array.from(document.body.querySelectorAll("[data-testid^='home-']")).map(
+    (element) => element.getAttribute("data-testid"),
+  );
+  assert.ok(sections.length >= 3, `more than one personal section: ${sections.join(", ")}`);
+});
+
 test("H4-22: pulling to refresh keeps the cards on screen until the new ones land", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
@@ -828,7 +869,8 @@ function mixedFeed(menus: number, bare: number) {
       feedRow(i + 1, { top_dish_review_count: 0, top_dish_rating: null }),
     ),
     ...Array.from({ length: bare }, (_, i) =>
-      coldRow(menus + i + 1, { venue_name: `Bare Stall ${i + 1}` }),
+      // No cuisine either, so nothing about them can be recommended.
+      coldRow(menus + i + 1, { venue_name: `Bare Stall ${i + 1}`, cuisine_tags: [] }),
     ),
   ];
 }
@@ -882,6 +924,27 @@ test("H4-1: stalls without menus fold into one row under the stalls that have th
       .map((event) => event.properties),
     [{ surface: "home", count: 5 }],
   );
+});
+
+test("a stall with no menu yet is still recommended by its cuisine, and stays folded in the list", async () => {
+  m.useProfileStore.setState((state) => ({
+    profile: { ...state.profile, tasteVector: SPICY_PALATE },
+  }));
+  serveLiveFeed([
+    ...mixedFeed(3, 5),
+    ...["thai", "indian", "korean", "thai"].map((tag, i) =>
+      coldRow(20 + i, { venue_name: `Kitchen ${20 + i}`, cuisine_tags: [tag] }),
+    ),
+  ]);
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  const recommended = view.findByTestId("home-recommended");
+  assert.ok(recommended, "Just for you renders");
+  assert.match(
+    recommended.textContent ?? "",
+    /Kitchen 2\d/,
+    "a menu-less Thai or Indian stall is in it",
+  );
+  assert.doesNotMatch(recommended.textContent ?? "", /Bare Stall/, "a bare stall is not");
 });
 
 test("H4-1: a stall with a menu and no reviews asks for the first one", async () => {

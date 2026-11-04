@@ -1044,6 +1044,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     matchesDiscoverChipSelection,
     unfilteredAreaStallCards,
   ]);
+  // The mall's own menus may not be in yet; then "For you" holds dishes from around it and says so.
+  const forYouTitle =
+    currentPlace && forYouPicks.some((pick) => pick.dish.buildingId === currentPlaceId)
+      ? `For you at ${currentPlace.name}`
+      : "For you nearby";
   // Inside a mall: the nearest stalls that are not in it, so Home also shows what is around.
   const stallsAroundPlace = useMemo(
     () =>
@@ -1067,22 +1072,32 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         return item ? [{ id: item.id, label: item.label, query: item.query }] : [];
       }),
       familiarNames: familiarDishNames,
-      excludeVenueIds: new Set(areaStallCards.map((card) => card.venue.id)),
+      // Inside a mall the stall list is not shown ("What's here" lists every stall instead), so
+      // the sections may hold the mall's stalls, led by them; only "More near" is not repeated.
+      excludeVenueIds: new Set(
+        (inMallMode ? stallsAroundPlace : areaStallCards).map((card) => card.venue.id),
+      ),
       compare: compareHomeStalls,
       isOpenNow: (card) => openStateOf(card.venue).status === "open",
       palate: rankingTasteVector,
       palateTrusted: hasTasteProfile,
       avoidSpicy: chipContext.avoidSpicy,
+      preferBuildingId: inMallMode ? currentPlaceId : undefined,
+      openness: rankingOpenness,
     });
   }, [
     allAreaStallCards,
     areaStallCards,
     chipContext.avoidSpicy,
     currentHour,
+    currentPlaceId,
     familiarDishNames,
     favouriteFoodStyleIds,
     hasTasteProfile,
+    inMallMode,
+    rankingOpenness,
     rankingTasteVector,
+    stallsAroundPlace,
     unfilteredPopularFoodStyleItems,
   ]);
   // Chips that fit this diner now, with the foods they know (had, or pinned) first.
@@ -2146,7 +2161,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 }}
               >
                 <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
-                  {`For you at ${currentPlace.name}`}
+                  {forYouTitle}
                 </AppText>
                 <ChevronRight
                   color={themeTints.isDark ? palette.white : palette.textMuted}
