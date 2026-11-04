@@ -1,7 +1,8 @@
 /**
  * ReviewFeedScreen — the Reviews tab.
- * A photo grid of diners' reviews, like Instagram's explore page: only reviews with a photo,
- * newest first, filtered by the diner's taste, a kind of food or an area.
+ * A grid of diners' reviews, like Instagram's explore page: newest first, filtered by the diner's
+ * taste, a kind of food or an area. A review with a photo is a photo tile; one without (photos
+ * are optional since 2026-11-04) is a text tile with the dish, the stars and its first words.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, FlatList, Keyboard, RefreshControl, View, useWindowDimensions } from "react-native";
@@ -60,7 +61,6 @@ import {
   filterReviewExplore,
   resolveActiveReviewChip,
   reviewTileHoldAction,
-  reviewsWithPhotos,
   visibleGridReviews,
   withSelectedReviewChip,
 } from "@/features/review/reviewExplore";
@@ -185,6 +185,8 @@ const ReviewTile = memo(function ReviewTile({
   onLongPress: (item: ReviewFeedItem) => void;
 }) {
   const { palette, radii, spacing } = useHungryTheme();
+  const tilePhoto = item.review.photoThumbnails?.[0] || item.review.photos[0];
+  const hasPhoto = Boolean(tilePhoto?.trim());
   const photoCount = item.review.photos.length;
   const dateLabel = formatReviewDate(item.review.createdAt);
   const holdLabel = holdAction === "manage" ? "Edit or delete" : "Report or block";
@@ -209,19 +211,53 @@ const ReviewTile = memo(function ReviewTile({
       onLongPress={holdAction ? () => onLongPress(item) : undefined}
       style={{ height: size, width: size }}
     >
-      <AccessibleImage
-        // The small copy keeps a 3-column grid light; older reviews have only the full photo.
-        source={{ uri: item.review.photoThumbnails?.[0] || item.review.photos[0] }}
-        style={{ backgroundColor: palette.bgSoft, height: size, width: size }}
-        contentFit="cover"
-        decorative
-      />
+      {hasPhoto ? (
+        <AccessibleImage
+          // The small copy keeps a 3-column grid light; older reviews have only the full photo.
+          source={{ uri: tilePhoto }}
+          style={{ backgroundColor: palette.bgSoft, height: size, width: size }}
+          contentFit="cover"
+          decorative
+        />
+      ) : (
+        // No photo: the dish, the stars and the first words, on a soft tile. The label above
+        // already says all of it, so a screen reader hears the tile once.
+        <View
+          testID="review-text-tile"
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden
+          style={{
+            backgroundColor: palette.orangeLight,
+            gap: spacing[1],
+            height: size,
+            overflow: "hidden",
+            padding: spacing[2],
+            width: size,
+          }}
+        >
+          <AppText variant="micro" numberOfLines={2} style={{ fontWeight: "700" }}>
+            {item.dishName}
+          </AppText>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+            <AppSymbol name="rating" size={10} color={palette.starStroke} />
+            <AppText variant="micro" tone="secondary">
+              {item.review.rating}
+            </AppText>
+          </View>
+          {item.review.text.trim() ? (
+            <AppText variant="micro" tone="secondary" numberOfLines={3}>
+              {item.review.text.trim()}
+            </AppText>
+          ) : null}
+        </View>
+      )}
       {photoCount > 1 ? (
         <View style={{ position: "absolute", right: spacing[1.5], top: spacing[1.5] }}>
           <AppSymbol name="square.on.square" fallback={Images} color={palette.white} size={16} />
         </View>
       ) : null}
-      {showLabels ? (
+      {/* A text tile already names the dish and stars: only a photo needs the labels over it. */}
+      {showLabels && hasPhoto ? (
         <View
           testID="review-tile-labels"
           style={{
@@ -357,8 +393,6 @@ export function ReviewFeedScreen() {
       try {
         const page = await getHungryService().reviews.listRecentReviewsPage({
           limit: REVIEW_FEED_PAGE_SIZE,
-          // Only photo reviews belong on the grid: the server skips text-only ones.
-          withPhotos: true,
           ...(mode === "append" ? { before: cursor?.before, beforeId: cursor?.beforeId } : {}),
           ...(mode === "prepend" && newestCreatedAtRef.current
             ? { after: newestCreatedAtRef.current }
@@ -463,7 +497,6 @@ export function ReviewFeedScreen() {
       .reviews.searchReviewsPage({
         query: activeQuery,
         limit: REVIEW_FEED_PAGE_SIZE,
-        withPhotos: true,
       })
       .then((page) => {
         if (loadId !== searchLoadIdRef.current) return;
@@ -493,7 +526,6 @@ export function ReviewFeedScreen() {
       const page = await getHungryService().reviews.searchReviewsPage({
         query: current.query,
         limit: REVIEW_FEED_PAGE_SIZE,
-        withPhotos: true,
         before: current.cursor.before,
         beforeId: current.cursor.beforeId,
       });
@@ -609,10 +641,10 @@ export function ReviewFeedScreen() {
     [buildingCoordinates, viewerOrigin],
   );
 
-  // Every review with a photo, newest first.
+  // Every review, with or without a photo, newest first.
   const gridReviews = useCallback(
     (source: readonly ReviewFeedItem[]): ReviewFeedItem[] => {
-      const reviews = visibleGridReviews(reviewsWithPhotos(source), {
+      const reviews = visibleGridReviews(source, {
         viewerId,
         isHidden: (item) =>
           isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
@@ -958,9 +990,9 @@ export function ReviewFeedScreen() {
                   }
                   body={
                     activeChip.kind === "taste"
-                      ? "None of the latest photo reviews match your palette. See them all instead."
+                      ? "None of the latest reviews match your palette. See them all instead."
                       : activeChip.kind === "near"
-                        ? "None of the latest photo reviews are within 2 km of you. See them all instead."
+                        ? "None of the latest reviews are within 2 km of you. See them all instead."
                         : "Try another filter, or see every review."
                   }
                   ctaLabel="Show all reviews"
@@ -969,7 +1001,7 @@ export function ReviewFeedScreen() {
               ) : (
                 <EmptyState
                   title="Be the first to review a dish"
-                  body="Snap your next meal and rate it. Reviews with a photo show here."
+                  body="Rate your next meal, with a photo if you like. Reviews show here."
                   ctaLabel="Write a review"
                   onPress={handleWriteReview}
                 />

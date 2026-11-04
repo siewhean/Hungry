@@ -16,11 +16,6 @@ export const NEAR_YOU_MAX_METERS = 2000;
 const MAX_FOOD_CHIPS = 6;
 const MAX_AREA_CHIPS = 6;
 
-/** Only reviews with a photo belong on the Reviews page. */
-export function reviewsWithPhotos(items: readonly ReviewFeedItem[]): ReviewFeedItem[] {
-  return items.filter((item) => item.review.photos.some((photo) => photo.trim().length > 0));
-}
-
 /** The kind of food a review is about: the dish's food type, else its name. */
 export function reviewFoodLabel(item: ReviewFeedItem): string {
   return (item.dish?.foodTypeTag ?? item.dishName).trim();

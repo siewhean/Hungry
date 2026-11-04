@@ -44,7 +44,7 @@ test("successful mock authentication is required before the app shell mounts", a
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
 
   // The app shell opens on Discover, the home page.
-  await expect(page.getByText(/^(You are at|Across Singapore)/).first()).toBeVisible({
+  await expect(page.getByText(/^(You are at|Picks across|Showing food in)/).first()).toBeVisible({
     timeout: 30_000,
   });
   await expect(page.getByText("Sign in to Hungry", { exact: true })).toHaveCount(0);

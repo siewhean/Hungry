@@ -205,12 +205,12 @@ test("'How did it taste?' answers are saved with the draft, per dish (REV-X2)", 
   assert.deepEqual(store.getState().feltTaste.values, {});
 });
 
-test("the first missing field follows the editor order: dish, photo, rating (REV-7)", () => {
-  const draft = { rating: 0, photos: [] as string[] };
+test("the first missing field follows the editor order: dish, then rating; a photo is optional", () => {
+  const draft = { rating: 0 };
   assert.equal(firstMissingReviewField(draft, false)?.field, "dish");
-  assert.equal(firstMissingReviewField(draft, true)?.field, "photo");
-  assert.equal(firstMissingReviewField({ rating: 0, photos: ["a"] }, true)?.field, "rating");
-  assert.equal(firstMissingReviewField({ rating: 4, photos: ["a"] }, true), null);
+  assert.equal(firstMissingReviewField(draft, true)?.field, "rating");
+  // No photo and a rating: the review can be published (sh, 2026-11-04).
+  assert.equal(firstMissingReviewField({ rating: 4 }, true), null);
 });
 
 test("a draft with only tags or a recommend answer still counts as content (REV-13)", () => {
