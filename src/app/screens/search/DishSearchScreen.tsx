@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   Animated,
   Easing,
+  Keyboard,
   Pressable,
   ScrollView,
   TextInput,
@@ -278,6 +279,7 @@ export function DishSearchScreen() {
   }, [entryOpacity, motion.screenTransition, reduceMotion]);
 
   const openResults = (query: string, source: SearchHomeSource, browseMode?: BrowseMode) => {
+    Keyboard.dismiss();
     // The results grid saves a submitted query as a recent search, once it commits it.
     const trimmedQuery = query.trim();
     navigation.navigate("SearchResults", {
@@ -289,6 +291,7 @@ export function DishSearchScreen() {
   };
 
   const openSuggestion = (suggestion: CatalogSuggestion, surface: "typeahead" | "popular") => {
+    Keyboard.dismiss();
     trackAnalyticsEvent("search_suggestion_opened", { kind: suggestion.kind, surface });
     setSearchText(suggestion.label);
     if (suggestion.kind === "place" && suggestion.placeId) {
@@ -310,6 +313,7 @@ export function DishSearchScreen() {
   };
 
   const openMatchedDish = (dish: CatalogRawDishCard, position: number) => {
+    Keyboard.dismiss();
     trackAnalyticsEvent("search_typeahead_opened", { kind: "dish", position });
     // The offline copy has only the read-only catalog page.
     if (matches.releaseId?.startsWith("excel-fallback")) {
@@ -328,6 +332,7 @@ export function DishSearchScreen() {
   };
 
   const openMatchedStall = (stall: CatalogRawVenueCard, position: number) => {
+    Keyboard.dismiss();
     trackAnalyticsEvent("search_typeahead_opened", { kind: "stall", position });
     if (matches.releaseId?.startsWith("excel-fallback")) {
       navigation.navigate("CatalogRawDetail", {

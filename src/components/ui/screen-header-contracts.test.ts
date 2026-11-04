@@ -646,7 +646,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   // and hides on failure.
   assert.match(
     discover,
-    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<SlideText\s+value="–"[\s\S]*?\) : null/,
+    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<NumericText\s+value="–"[\s\S]*?\) : null/,
   );
   assert.match(
     discover,

@@ -37,6 +37,7 @@ export * from "./SegmentedControl";
 export * from "./SelectField";
 export * from "./Skeleton";
 export * from "./InfoPopup";
+export * from "./NumericText";
 export * from "./SlideText";
 export * from "./SwipeAwayView";
 export * from "./StatusChip";

@@ -17,7 +17,7 @@ import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
 import { StampDetailPanel } from "@/components/gamification/StampDetailPanel";
 import { WeeklyGoalCard } from "@/components/gamification/WeeklyGoalCard";
-import { AppText, EmptyState, InfoPopup, SlideText } from "@/components/ui";
+import { AppText, EmptyState, InfoPopup, NumericText } from "@/components/ui";
 import {
   ALL_PASSPORT_CATEGORIES,
   PASSPORT_STAMP_DEFINITIONS,
@@ -375,7 +375,7 @@ export function PassportScreen({ navigation }: Props) {
                 }}
               >
                 <View style={{ alignItems: "baseline", flexDirection: "row" }}>
-                  <SlideText
+                  <NumericText
                     value={String(totalStamps)}
                     variant="h3"
                     style={{ color: palette.textOnDark }}

@@ -3,6 +3,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -888,6 +889,7 @@ function RawCatalogBrowseGrid({
 
   const selectPlace = useCallback(
     (next: BrowsePlace) => {
+      Keyboard.dismiss();
       trackAnalyticsEvent("search_place_selected", { mode });
       setItems([]);
       updateSearchText("");

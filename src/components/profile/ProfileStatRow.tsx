@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWindowDimensions, View, type LayoutChangeEvent } from "react-native";
 
-import { AppText, PressableScale, SlideText } from "@/components/ui";
+import { AppText, PressableScale, NumericText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 /** A stat whose read failed: a dash on screen, "unavailable" to a screen reader. */
@@ -72,7 +72,7 @@ function StatBlock({ stat, stacked }: { stat: ProfileStat; stacked: boolean }) {
   const content = (
     <>
       {/* No grey placeholder while the count loads: a dash shows, then the number rolls in. */}
-      <SlideText
+      <NumericText
         value={value === null ? "–" : String(value)}
         variant="h2"
         style={{ color: palette.text }}
