@@ -332,3 +332,17 @@ test("dishes the diner has had make a Just for you section even before a palate 
   assert.equal(lead?.title, "Just for you");
   assert.ok(lead?.cards[0]?.venue.id.startsWith("curry"));
 });
+
+test("the hour's section follows the diner's own meal times", async () => {
+  const { dinerMealAt, hourSectionTitle } = await import("./homeSections");
+  // Lunch at 13:00: from 12:00 to 14:59 it is their lunch.
+  assert.equal(dinerMealAt(12, { lunch: "13:00" }), "lunch");
+  assert.equal(dinerMealAt(14, { lunch: "13:00" }), "lunch");
+  assert.equal(dinerMealAt(15, { lunch: "13:00" }), undefined);
+  // Supper past midnight wraps round.
+  assert.equal(dinerMealAt(23, { supper: "00:30" }), "supper");
+  assert.equal(dinerMealAt(9, undefined), undefined);
+  assert.equal(hourSectionTitle(15, false, "lunch"), "Lunch nearby");
+  assert.equal(hourSectionTitle(23, true, "supper"), "Supper here");
+  assert.equal(hourSectionTitle(23, false), "Late night");
+});

@@ -55,8 +55,13 @@ import { ForYouCard } from "@/components/discover/ForYouCard";
 import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
 import { WhatsHerePanel } from "@/components/discover/WhatsHerePanel";
+import { UsualAreaChips } from "@/components/discover/UsualAreaChips";
+import { usualAreasFor } from "@/features/discover/usualAreas";
+import { useOnboardingAnswersStore } from "@/store/useOnboardingAnswersStore";
+import { useLocationStore } from "@/store/useLocationStore";
 import { HomeFeedbackCard } from "@/components/feedback/HomeFeedbackCard";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
+import { MealPicksCard } from "@/components/home/MealPicksCard";
 import { NextStampCard } from "@/components/gamification/NextStampCard";
 import {
   DISCOVER_FEED_LIMIT,
@@ -1065,6 +1070,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // for you, this hour or Late night, Popular in the area, pinned dishes, New and worth a try),
   // never a kind of food, and the malls and hawker centres around. A stall sits in one section
   // only and never repeats the main rail.
+  const usualAreaIds = useOnboardingAnswersStore((state) => state.usualAreaIds);
+  const usualMealTimes = useOnboardingAnswersStore((state) => state.mealTimes);
+  const setManualSelection = useLocationStore((state) => state.setManualSelection);
+  const usualAreas = useMemo(() => usualAreasFor(usualAreaIds), [usualAreaIds]);
   const categorySections = useMemo(() => {
     const byId = new Map(unfilteredPopularFoodStyleItems.map((item) => [item.id, item]));
     return buildHomeSections(allAreaStallCards, {
@@ -1086,8 +1095,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       avoidSpicy: chipContext.avoidSpicy,
       preferBuildingId: inMallMode ? currentPlaceId : undefined,
       openness: rankingOpenness,
+      mealTimes: usualMealTimes,
     });
   }, [
+    usualMealTimes,
     allAreaStallCards,
     areaStallCards,
     chipContext.avoidSpicy,
@@ -1867,6 +1878,15 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               </AppText>
             </Pressable>
           ) : null}
+          {needsDiscoverAreaChoice ? (
+            <UsualAreaChips
+              areas={usualAreas}
+              onPick={(area) => {
+                trackAnalyticsEvent("home_usual_area_picked", { area_id: area.id });
+                setManualSelection(area.name, area.coordinate);
+              }}
+            />
+          ) : null}
           {
             needsDiscoverAreaChoice ? null : isFeedFallbackEmpty ||
               discoverAreaCountLabel === null ? (
@@ -2015,6 +2035,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           />
         ) : null}
 
+        {/* The meal-picks push, offered after the first save or tried (not in onboarding). */}
+        {hasDiscoverContent && isFocused ? <MealPicksCard horizontalPadding={0} /> : null}
+
         {/* Next stamp (or weekly goal): always something within reach. Off with the
             achievements_loop_v1 kill switch. */}
         {hasDiscoverContent ? (
@@ -2049,7 +2072,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 minHeight: 56,
                 opacity: pressed ? 0.92 : 1,
                 overflow: "hidden",
-                width: decisionCardWidth,
+                flex: 1,
               },
             ]}
           >
@@ -2097,67 +2120,37 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             </View>
           </Pressable>
 
-          {/* WheelStack is registered only when the wheel ships; party mode is non-production. */}
-          {FEATURE_FLAGS.hungryWheelEnabled ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={wheelCtaLabel}
-              accessibilityHint={
-                FEATURE_FLAGS.wheelPartyEnabled
-                  ? "Opens the Hungry Wheel to spin together with your group"
-                  : "Opens the Hungry Wheel to pick between a few options"
-              }
-              onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-              style={({ pressed }) => [
-                {
-                  alignItems: "center",
-                  backgroundColor: "transparent",
-                  borderColor: palette.border,
-                  borderRadius: componentRadii.button,
-                  borderWidth: 1,
-                  flexDirection: "row",
-                  gap: decisionCardInnerGap,
-                  minHeight: 56,
-                  justifyContent: "center",
-                  opacity: pressed ? 0.92 : 1,
-                  padding: decisionCardPadding,
-                  width: decisionCardWidth,
-                },
-              ]}
-            >
-              <View
-                style={{
-                  alignItems: "center",
-                  backgroundColor: palette.bgSoft,
-                  borderRadius: radii.pill,
-                  height: decisionCardIconSize,
-                  justifyContent: "center",
-                  width: decisionCardIconSize,
-                }}
-              >
-                <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
-              </View>
-              <AppText
-                variant="bodyBold"
-                numberOfLines={2}
-                style={{
-                  color: themeTints.text,
-                  includeFontPadding: false,
-                  flexShrink: 1,
-                  fontSize: decisionCardLabelFontSize,
-                  lineHeight: decisionCardLabelLineHeight,
-                  maxWidth: decisionCardLabelMaxWidth,
-                  minWidth: 0,
-                  textAlign: "center",
-                  textAlignVertical: "center",
-                }}
-              >
-                {wheelCtaLabel}
-              </AppText>
-            </Pressable>
-          ) : null}
         </View>
+        {/* One "pick for me" on Home: Decide for me leads, the wheel is a quiet second way.
+            WheelStack is registered only when the wheel ships; party mode is non-production. */}
+        {FEATURE_FLAGS.hungryWheelEnabled ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={wheelCtaLabel}
+            accessibilityHint={
+              FEATURE_FLAGS.wheelPartyEnabled
+                ? "Opens the Hungry Wheel to spin together with your group"
+                : "Opens the Hungry Wheel to pick between a few options"
+            }
+            hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
+            onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
+            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+            style={({ pressed }) => ({
+              alignItems: "center",
+              alignSelf: "center",
+              flexDirection: "row",
+              gap: spacing[1],
+              justifyContent: "center",
+              minHeight: 44,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Users color={themeTints.secondaryText} size={16} />
+            <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
+              {FEATURE_FLAGS.wheelPartyEnabled ? "Or spin with friends" : "Or spin the wheel"}
+            </AppText>
+          </Pressable>
+        ) : null}
 
         {inMallMode && currentPlace ? (
           <>

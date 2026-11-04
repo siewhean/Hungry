@@ -70,6 +70,8 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { SUPPORT_EMAIL } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { ReviewFirstList } from "@/components/review/ReviewFirstList";
+import { useVisitedStalls } from "@/features/saved/useSavedStalls";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -840,6 +842,8 @@ export function ReviewFeedScreen() {
   );
 
   const keyExtractor = useCallback((item: ReviewFeedItem) => item.interactionId, []);
+  // Before any review exists the tab lists the places the diner has been, to review first.
+  const visitedForReview = useVisitedStalls(allReviews.length === 0 && !searchQuery);
   const handleWriteReview = useCallback(() => {
     trackAnalyticsEvent("review_empty_state_cta_pressed", {});
     navigation.navigate("ReviewStack", { screen: "ReviewMain" });
@@ -990,7 +994,7 @@ export function ReviewFeedScreen() {
                   }
                   body={
                     activeChip.kind === "taste"
-                      ? "None of the latest reviews match your palette. See them all instead."
+                      ? "None of the latest reviews match your taste. See them all instead."
                       : activeChip.kind === "near"
                         ? "None of the latest reviews are within 2 km of you. See them all instead."
                         : "Try another filter, or see every review."
@@ -999,12 +1003,25 @@ export function ReviewFeedScreen() {
                   onPress={() => setChipId("all")}
                 />
               ) : (
-                <EmptyState
-                  title="Be the first to review a dish"
-                  body="Rate your next meal, with a photo if you like. Reviews show here."
-                  ctaLabel="Write a review"
-                  onPress={handleWriteReview}
-                />
+                <View style={{ gap: spacing[4] }}>
+                  <EmptyState
+                    title="Be the first to review a dish"
+                    body="Rate your next meal, with a photo if you like. Reviews show here."
+                    ctaLabel="Write a review"
+                    onPress={handleWriteReview}
+                  />
+                  {/* Places the diner has been: each one tap from its review. */}
+                  <ReviewFirstList
+                    stalls={visitedForReview.status === "ready" ? visitedForReview.stalls : []}
+                    onReview={(stall) => {
+                      trackAnalyticsEvent("review_first_stall_tapped", {});
+                      navigation.navigate("ReviewStack", {
+                        screen: "ReviewMain",
+                        params: { venueId: stall.id },
+                      });
+                    }}
+                  />
+                </View>
               )
             }
           />

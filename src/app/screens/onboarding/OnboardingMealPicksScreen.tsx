@@ -17,8 +17,6 @@ import {
 } from "@/features/onboarding/mealTimes";
 import { useOnboardingScreenViewed } from "@/features/onboarding/useOnboardingScreenViewed";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
-import { reportError } from "@/lib/monitoring/reportError";
-import { registerForStallAlerts } from "@/lib/notifications/push";
 import { useOnboardingAnswersStore } from "@/store/useOnboardingAnswersStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
@@ -57,16 +55,11 @@ export function OnboardingMealPicksScreen({ navigation }: Props) {
     }
   };
 
-  const turnOn = async () => {
+  // A yes here is only the wish: the phone's own prompt waits until the diner has saved or tried
+  // something in the app (MealPicksCard on Home), so a "Don't Allow" is not spent before any food.
+  const turnOn = () => {
     confirmHaptic();
-    // The opt-in is kept even if the phone refuses: Settings shows why nothing arrives.
     useOnboardingAnswersStore.getState().setWantsMealPicks(true);
-    try {
-      await registerForStallAlerts({ askPermission: true });
-    } catch (error) {
-      // A guest has no account to store the token on yet; it is registered after sign-in.
-      reportError(error, { screen: "OnboardingMealPicks", action: "ask_permission" });
-    }
     finish();
   };
 
@@ -76,7 +69,7 @@ export function OnboardingMealPicksScreen({ navigation }: Props) {
       onBack={() => navigation.goBack()}
       footer={
         <>
-          <Button label="Turn on meal picks" onPress={() => void turnOn()} />
+          <Button label="Turn on meal picks" onPress={turnOn} />
           <Button
             label="Not now"
             variant="ghost"
@@ -121,8 +114,8 @@ export function OnboardingMealPicksScreen({ navigation }: Props) {
         </View>
       </Card>
       <AppText variant="bodySmall" tone="secondary">
-        Only on days you have not opened Hungry yet, and never more than once per meal. Switch it
-        off any time in Settings.
+        Your phone asks once you have saved your first dish. Only on days you have not opened
+        Hungry yet, never more than once per meal, and off any time in Settings.
       </AppText>
     </OnboardingFrame>
   );
