@@ -32,8 +32,7 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /import \{ DiscoverHomeScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ProfileStack \}/);
-  assert.match(tabs, /lazy:\s*!tabPreloadEnabled/);
-  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>\s*<TabScreenLoadingPlaceholder \/>/);
+  assert.match(tabs, /mountAllPages=\{tabPreloadEnabled\}/);
   assert.match(
     tabs,
     /scheduleIdleWork|InteractionManager\.runAfterInteractions|requestIdleCallback|setTimeout\(/,
@@ -49,10 +48,8 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /ActivityIndicator/);
   assert.doesNotMatch(tabs, /preloadRoute\(navigation, route\.name\)/);
   assert.match(tabs, /tabPreloadEnabled/);
-  assert.match(tabs, /const MAIN_TAB_PRELOAD_DISTANCE = 2/);
   assert.match(tabs, /const MAIN_TAB_WARMUP_TIMEOUT_MS = 350/);
   assert.match(tabs, /fallbackDelayMs: MAIN_TAB_WARMUP_FALLBACK_DELAY_MS/);
-  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? MAIN_TAB_PRELOAD_DISTANCE : 0/);
 });
 
 test("startup does not block indefinitely on fonts or analytics", () => {

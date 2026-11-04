@@ -1278,12 +1278,12 @@ const R12_DISHES = [
   "Bak Kut Teh Soup",
   "Kaya Toast",
 ];
-// Ten stalls fill the main rail; the sections are built from the 30 after them.
+// Ten stalls fill the main rail; the sections are built from the 60 after them.
 function r12Rows() {
   const near = Array.from({ length: 10 }, (_, i) =>
     feedRow(i + 1, { venue_name: `Corner ${i + 1}`, top_dish_name: "Mystery plate" }),
   );
-  const far = Array.from({ length: 30 }, (_, i) =>
+  const far = Array.from({ length: 60 }, (_, i) =>
     feedRow(i + 11, {
       venue_name: `Far stall ${i + 11}`,
       top_dish_name: R12_DISHES[i % R12_DISHES.length],
