@@ -22,6 +22,7 @@ import { mainTabOrder } from "@/features/navigation/swipeIntent";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useHungryTheme } from "@/theme";
 import { createEdgeSwipeTabNavigator } from "./EdgeSwipeTabs";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
@@ -261,6 +262,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const styles = createStyles();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>();
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -272,17 +274,24 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
   // The middle button writes a review; it looks like any other tab.
   const tabItems = [
-    { key: "Discover", route: routeByName.get("Discover"), icon: House, label: "Home" },
+    { key: "Discover", route: routeByName.get("Discover"), icon: House, label: t("tab.home") },
     ...(FEATURE_FLAGS.socialFeedEnabled
-      ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: "Feed" }]
+      ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: t("tab.feed") }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Post" }]
+      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: t("tab.post") }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Reviews" }]
+      ? [
+          {
+            key: "Review",
+            route: routeByName.get("Review"),
+            icon: BookOpenText,
+            label: t("tab.reviews"),
+          },
+        ]
       : []),
-    { key: "Profile", route: routeByName.get("Profile"), icon: User, label: "Profile" },
+    { key: "Profile", route: routeByName.get("Profile"), icon: User, label: t("tab.profile") },
   ].filter((item) => item.isCreateAction || item.route);
 
   return (

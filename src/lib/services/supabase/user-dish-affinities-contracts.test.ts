@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { withEnglishCopy } from "@/test/englishCopy";
 import path from "node:path";
 import test from "node:test";
 
 import { AFFINITY_WEIGHTS } from "@/lib/ai/foodHistory";
 
 const root = process.cwd();
-const read = (relativePath: string) => readFileSync(path.join(root, relativePath), "utf8");
+const read = (relativePath: string) =>
+  withEnglishCopy(readFileSync(path.join(root, relativePath), "utf8"));
 const migration = read("supabase/migrations/20261020080000_user_dish_affinities.sql");
 
 test("food history table is read/delete-own; only the definer function writes it", () => {

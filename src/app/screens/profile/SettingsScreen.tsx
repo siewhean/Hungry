@@ -49,6 +49,13 @@ import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
 import { useConsentStore } from "@/store/useConsentStore";
 import { useDeveloperToolsStore } from "@/store/useDeveloperToolsStore";
 import { useUIStore } from "@/store/useUIStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
+import {
+  LOCALE_NATIVE_NAMES,
+  SUPPORTED_LOCALES,
+  type LanguagePreference,
+} from "@/lib/i18n/locales";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
@@ -78,6 +85,10 @@ export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const rootNavigation = getRootNavigation(navigation);
   const { palette } = useHungryTheme();
+  const { t, locale } = useTranslation();
+  const languagePreference = useLanguageStore((state) => state.preference);
+  const setLanguagePreference = useLanguageStore((state) => state.setPreference);
+  const [languageSheetVisible, setLanguageSheetVisible] = useState(false);
 
   const setAuthNotice = useSessionStore((state) => state.setAuthNotice);
   const { signOut, isAuthenticated } = useSessionStore(
@@ -662,7 +673,7 @@ export function SettingsScreen() {
     .join(", ");
 
   return (
-    <ProfileScreenShell title="Settings">
+    <ProfileScreenShell title={t("settings.title")}>
       {/* First, so a pending deletion and Keep my account are the first thing seen. */}
       {isAuthenticated ? (
         <PendingDeletionBanner onPendingChange={handlePendingDeletionChange} />
@@ -699,12 +710,12 @@ export function SettingsScreen() {
         editorial
         collapsible
         defaultCollapsed={diningVariant === "control"}
-        title="Your taste"
+        title={t("settings.section.taste")}
         collapsedSummary={diningSummary}
       >
         <SettingsRow
           {...neutralRow}
-          label="Dietary preferences"
+          label={t("settings.row.dietary")}
           description="Choose the dietary flags used for your recommendations."
           icon={<AppSymbol name="dietary" size={20} color={iconColor} />}
           type="navigation"
@@ -723,7 +734,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Flavour profile"
+          label={t("settings.row.flavour")}
           description="Review the taste answers behind your recommendations."
           icon={<AppSymbol name="flavourProfile" size={20} color={iconColor} />}
           type="navigation"
@@ -737,7 +748,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Meal budget"
+          label={t("settings.row.budget")}
           icon={<AppSymbol name="mealBudget" size={20} color={iconColor} />}
           type="navigation"
           value={profile.maxDishBudget ? `Up to S$${profile.maxDishBudget}` : "Not set"}
@@ -751,7 +762,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Trying new food"
+          label={t("settings.row.tryingNew")}
           icon={<AppSymbol name="tryingNewFood" size={20} color={iconColor} />}
           type="navigation"
           value={foodOpenness}
@@ -787,7 +798,7 @@ export function SettingsScreen() {
         />
       ) : null}
 
-      <SettingsSection editorial title="Privacy & data">
+      <SettingsSection editorial title={t("settings.section.privacy")}>
         {/* Archived with followers and following: back when a build opts in to follow connections. */}
         {isAuthenticated && FEATURE_FLAGS.followConnectionsEnabled ? (
           <SettingsRow
@@ -819,7 +830,7 @@ export function SettingsScreen() {
         ) : null}
         <SettingsRow
           {...neutralRow}
-          label="Share usage analytics"
+          label={t("settings.row.analytics")}
           description="Helps us see what to fix. Crash reports are still sent."
           icon={<AppSymbol name="analytics" size={20} color={iconColor} />}
           type="toggle"
@@ -892,7 +903,7 @@ export function SettingsScreen() {
         {isAuthenticated ? (
           <SettingsRow
             {...neutralRow}
-            label={isExportingData ? "Preparing your data…" : "Download my data"}
+            label={isExportingData ? "Preparing your data…" : t("settings.row.downloadData")}
             icon={<AppSymbol name="downloadData" size={20} color={iconColor} />}
             type="action"
             onPress={handleExportData}
@@ -902,7 +913,7 @@ export function SettingsScreen() {
         ) : null}
         <SettingsRow
           {...neutralRow}
-          label="Clear local cache"
+          label={t("settings.row.clearCache")}
           icon={<AppSymbol name="clearCache" size={20} color={iconColor} />}
           type="action"
           onPress={handleClearLocalData}
@@ -919,11 +930,11 @@ export function SettingsScreen() {
       </SettingsSection>
 
       {isAuthenticated ? (
-        <SettingsSection editorial title="Account & security">
+        <SettingsSection editorial title={t("settings.section.account")}>
           {canChangePassword ? (
             <SettingsRow
               {...neutralRow}
-              label="Change password"
+              label={t("settings.row.changePassword")}
               icon={<AppSymbol name="changePassword" size={20} color={iconColor} />}
               onPress={() => rootNavigation.navigate("ChangePassword")}
               isLast={false}
@@ -931,7 +942,7 @@ export function SettingsScreen() {
           ) : null}
           <SettingsRow
             {...neutralRow}
-            label="Sign out of all devices"
+            label={t("settings.row.signOutAll")}
             description="Ends your Hungry session on every phone, including this one."
             icon={<AppSymbol name="signOutEverywhere" size={20} color={iconColor} />}
             type="action"
@@ -942,7 +953,7 @@ export function SettingsScreen() {
           {deletionPending ? null : (
             <SettingsRow
               {...neutralRow}
-              label="Delete account"
+              label={t("settings.row.deleteAccount")}
               icon={<AppSymbol name="deleteAccount" size={20} color={palette.error} />}
               type="action"
               destructive
@@ -954,10 +965,22 @@ export function SettingsScreen() {
         </SettingsSection>
       ) : null}
 
-      <SettingsSection editorial title="On this phone">
+      <SettingsSection editorial title={t("settings.section.phone")}>
         <SettingsRow
           {...neutralRow}
-          label="Haptic feedback"
+          label={t("settings.language.label")}
+          value={
+            languagePreference === "system"
+              ? t("settings.language.system")
+              : LOCALE_NATIVE_NAMES[locale]
+          }
+          icon={<AppSymbol name="language" size={20} color={iconColor} />}
+          type="value"
+          onPress={() => setLanguageSheetVisible(true)}
+        />
+        <SettingsRow
+          {...neutralRow}
+          label={t("settings.row.haptics")}
           icon={<AppSymbol name="haptics" size={20} color={iconColor} />}
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
@@ -967,8 +990,8 @@ export function SettingsScreen() {
         {hasMerchantAccount ? (
           <SettingsRow
             {...neutralRow}
-            label="Left-handed mode"
-            description="Moves the add button on your merchant menu to the left side."
+            label={t("settings.row.leftHanded")}
+            description={t("settings.row.leftHandedHint")}
             icon={<AppSymbol name="leftHanded" size={20} color={iconColor} />}
             type="toggle"
             isEnabled={leftHandedMode}
@@ -978,10 +1001,10 @@ export function SettingsScreen() {
         ) : null}
       </SettingsSection>
 
-      <SettingsSection editorial title="Help & legal">
+      <SettingsSection editorial title={t("settings.section.help")}>
         <SettingsRow
           {...neutralRow}
-          label="Send feedback"
+          label={t("settings.row.feedback")}
           description="Tell us what you like or what to fix."
           icon={<AppSymbol name="feedback" size={20} color={iconColor} />}
           type="action"
@@ -993,7 +1016,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Contact us"
+          label={t("settings.row.contact")}
           description="Email us or open the help centre."
           icon={<AppSymbol name="contact" size={20} color={iconColor} />}
           type="action"
@@ -1002,7 +1025,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Privacy policy"
+          label={t("settings.row.privacyPolicy")}
           type="link"
           icon={<AppSymbol name="privacyPolicy" size={20} color={iconColor} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
@@ -1010,7 +1033,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Terms of service"
+          label={t("settings.row.terms")}
           type="link"
           icon={<AppSymbol name="legal" size={20} color={iconColor} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
@@ -1026,7 +1049,7 @@ export function SettingsScreen() {
         />
         <SettingsRow
           {...neutralRow}
-          label="Version"
+          label={t("settings.row.version")}
           icon={<AppSymbol name="version" size={20} color={iconColor} />}
           type="value"
           value={appVersion}
@@ -1050,7 +1073,7 @@ export function SettingsScreen() {
         <SettingsSection editorial>
           <SettingsRow
             {...neutralRow}
-            label="Sign out"
+            label={t("settings.row.signOut")}
             icon={<AppSymbol name="signOut" size={20} color={palette.error} />}
             type="action"
             onPress={handleSignOut}
@@ -1143,6 +1166,29 @@ export function SettingsScreen() {
         onSubmit={submitDeletionCode}
         onResend={resendDeletionCode}
         onCancel={() => setDeletionCodeVisible(false)}
+      />
+      <SettingsChoiceSheet<LanguagePreference>
+        visible={languageSheetVisible}
+        title={t("settings.language.title")}
+        message={t("settings.language.message")}
+        options={[
+          {
+            value: "system",
+            label: t("settings.language.system"),
+            description: t("settings.language.systemHint"),
+          },
+          ...SUPPORTED_LOCALES.map((code) => ({
+            value: code as LanguagePreference,
+            label: LOCALE_NATIVE_NAMES[code],
+          })),
+        ]}
+        selected={languagePreference}
+        onSelect={(choice) => {
+          setLanguageSheetVisible(false);
+          setLanguagePreference(choice);
+          trackAnalyticsEvent("settings_changed", { setting: "language", value: choice });
+        }}
+        onClose={() => setLanguageSheetVisible(false)}
       />
       <SettingsChoiceSheet
         visible={isAuthenticated && visibilitySheetVisible}

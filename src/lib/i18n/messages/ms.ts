@@ -1,0 +1,45 @@
+import type { MessageKey } from "./en";
+
+export const ms: Record<MessageKey, string> = {
+  "tab.home": "Utama",
+  "tab.feed": "Suapan",
+  "tab.post": "Pos",
+  "tab.reviews": "Ulasan",
+  "tab.profile": "Profil",
+  "tab.menu": "Menu",
+  "tab.performance": "Prestasi",
+
+  "settings.title": "Tetapan",
+  "settings.section.taste": "Citarasa anda",
+  "settings.section.privacy": "Privasi & data",
+  "settings.section.account": "Akaun & keselamatan",
+  "settings.section.phone": "Pada telefon ini",
+  "settings.section.help": "Bantuan & perundangan",
+
+  "settings.row.dietary": "Keutamaan pemakanan",
+  "settings.row.flavour": "Profil rasa",
+  "settings.row.budget": "Bajet makanan",
+  "settings.row.tryingNew": "Mencuba makanan baharu",
+  "settings.row.analytics": "Kongsi analitik penggunaan",
+  "settings.row.downloadData": "Muat turun data saya",
+  "settings.row.clearCache": "Kosongkan cache setempat",
+  "settings.row.changePassword": "Tukar kata laluan",
+  "settings.row.signOutAll": "Log keluar daripada semua peranti",
+  "settings.row.deleteAccount": "Padam akaun",
+  "settings.row.haptics": "Maklum balas haptik",
+  "settings.row.leftHanded": "Mod kidal",
+  "settings.row.leftHandedHint":
+    "Mengalihkan butang tambah pada menu peniaga anda ke sebelah kiri.",
+  "settings.row.feedback": "Hantar maklum balas",
+  "settings.row.contact": "Hubungi kami",
+  "settings.row.privacyPolicy": "Dasar privasi",
+  "settings.row.terms": "Syarat perkhidmatan",
+  "settings.row.version": "Versi",
+  "settings.row.signOut": "Log keluar",
+
+  "settings.language.label": "Bahasa",
+  "settings.language.title": "Bahasa",
+  "settings.language.message": "Nama hidangan dan gerai kekal seperti asal.",
+  "settings.language.system": "Bahasa telefon",
+  "settings.language.systemHint": "Ikut bahasa yang ditetapkan pada telefon ini.",
+};
