@@ -52,7 +52,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import {
   LOCALE_NATIVE_NAMES,
-  SUPPORTED_LOCALES,
+  getOfferedLocales,
   type LanguagePreference,
 } from "@/lib/i18n/locales";
 import { useTranslation } from "@/lib/i18n/useTranslation";
@@ -966,18 +966,21 @@ export function SettingsScreen() {
       ) : null}
 
       <SettingsSection editorial title={t("settings.section.phone")}>
-        <SettingsRow
-          {...neutralRow}
-          label={t("settings.language.label")}
-          value={
-            languagePreference === "system"
-              ? t("settings.language.system")
-              : LOCALE_NATIVE_NAMES[locale]
-          }
-          icon={<AppSymbol name="language" size={20} color={iconColor} />}
-          type="value"
-          onPress={() => setLanguageSheetVisible(true)}
-        />
+        {/* Hidden while English is the only language offered (locales.ts). */}
+        {getOfferedLocales().length > 1 ? (
+          <SettingsRow
+            {...neutralRow}
+            label={t("settings.language.label")}
+            value={
+              languagePreference === "system"
+                ? t("settings.language.system")
+                : LOCALE_NATIVE_NAMES[locale]
+            }
+            icon={<AppSymbol name="language" size={20} color={iconColor} />}
+            type="value"
+            onPress={() => setLanguageSheetVisible(true)}
+          />
+        ) : null}
         <SettingsRow
           {...neutralRow}
           label={t("settings.row.haptics")}
@@ -1177,7 +1180,7 @@ export function SettingsScreen() {
             label: t("settings.language.system"),
             description: t("settings.language.systemHint"),
           },
-          ...SUPPORTED_LOCALES.map((code) => ({
+          ...getOfferedLocales().map((code) => ({
             value: code as LanguagePreference,
             label: LOCALE_NATIVE_NAMES[code],
           })),

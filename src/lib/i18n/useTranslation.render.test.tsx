@@ -2,14 +2,19 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import test, { afterEach } from "node:test";
 
+import { SUPPORTED_LOCALES, setOfferedLocalesForTests } from "@/lib/i18n/locales";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import { cleanup, render } from "@/test/render";
 
 import { useTranslation } from "./useTranslation";
 
-afterEach(cleanup);
+afterEach(async () => {
+  await cleanup();
+  setOfferedLocalesForTests(undefined);
+});
 
 test("useTranslation re-renders in the new language when the choice changes", async () => {
+  setOfferedLocalesForTests(SUPPORTED_LOCALES);
   useLanguageStore.setState({ preference: "en" });
   const box: { current: ReturnType<typeof useTranslation> | null } = { current: null };
   function Probe() {

@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { detectDeviceLocale } from "@/lib/i18n/detectDeviceLocale";
-import { isSupportedLocale, type LanguagePreference, type LocaleCode } from "@/lib/i18n/locales";
+import {
+  isSupportedLocale,
+  offeredLocale,
+  type LanguagePreference,
+  type LocaleCode,
+} from "@/lib/i18n/locales";
 
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -36,7 +41,7 @@ export const useLanguageStore = create<LanguageState>()(
 
 /** The language to show right now. */
 export function resolveLocale(preference: LanguagePreference): LocaleCode {
-  return preference === "system" ? detectDeviceLocale() : preference;
+  return offeredLocale(preference === "system" ? detectDeviceLocale() : preference);
 }
 
 /** For code outside React (toasts, alerts). Components should use `useTranslation`. */

@@ -5,11 +5,12 @@ import test from "node:test";
 
 const read = (relativePath: string) => readFileSync(path.join(process.cwd(), relativePath), "utf8");
 
-test("Settings has a Language row that opens a sheet with every supported language", () => {
+test("Settings has a Language row, shown only when more than English is offered, listing the offered languages", () => {
   const source = read("src/app/screens/profile/SettingsScreen.tsx");
   assert.match(source, /label=\{t\("settings\.language\.label"\)\}/);
   assert.match(source, /setLanguageSheetVisible\(true\)/);
-  assert.match(source, /SUPPORTED_LOCALES\.map/);
+  assert.match(source, /getOfferedLocales\(\)\.length > 1 \? \(/);
+  assert.match(source, /getOfferedLocales\(\)\.map/);
   assert.match(source, /LOCALE_NATIVE_NAMES\[code\]/);
   assert.match(source, /setLanguagePreference\(choice\)/);
   // The default entry follows the phone.

@@ -1,9 +1,22 @@
 import assert from "node:assert/strict";
-import test, { beforeEach } from "node:test";
+import test, { afterEach, beforeEach } from "node:test";
+
+import { SUPPORTED_LOCALES, setOfferedLocalesForTests } from "@/lib/i18n/locales";
 
 import { getActiveLocale, resolveLocale, useLanguageStore } from "./useLanguageStore";
 
-beforeEach(() => useLanguageStore.setState({ preference: "system" }));
+beforeEach(() => {
+  setOfferedLocalesForTests(SUPPORTED_LOCALES);
+  useLanguageStore.setState({ preference: "system" });
+});
+afterEach(() => setOfferedLocalesForTests(undefined));
+
+test("languages not offered yet show as English, whatever was picked or the phone uses", () => {
+  setOfferedLocalesForTests(undefined);
+  assert.equal(resolveLocale("hi"), "en");
+  assert.equal(resolveLocale("zh"), "en");
+  assert.equal(resolveLocale("system"), "en");
+});
 
 test("defaults to following the phone", () => {
   assert.equal(useLanguageStore.getState().preference, "system");
