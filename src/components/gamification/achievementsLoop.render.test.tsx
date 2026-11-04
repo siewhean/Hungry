@@ -11,7 +11,12 @@ import { AchievementBadgeArt, medalMetal } from "@/components/gamification/Achie
 import { NextStampCard } from "@/components/gamification/NextStampCard";
 import { PassportStampArt, STAMP_LOOKS } from "@/components/gamification/PassportStampArt";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
-import { StampMoment } from "@/components/gamification/StampMoment";
+import {
+  MEDAL_LAND_MS,
+  STAMP_IMPACT_MS,
+  StampMoment,
+  momentWordsDelay,
+} from "@/components/gamification/StampMoment";
 import {
   MOMENT_DELAY_MS,
   MOMENT_SETTLE_MS,
@@ -189,6 +194,47 @@ test("an achievement moment names the tier and what was done", async () => {
   assert.ok(view.findByText("Achievement unlocked"));
   assert.ok(view.findByText("Critic"));
   assert.ok(view.text().includes("Level 2 of 4. Write 5 reviews."));
+});
+
+test("an achievement moment tosses its medal and lights a pip for each level", async () => {
+  const unlock = {
+    achievementId: "critic" as const,
+    title: "Critic",
+    icon: "pen" as const,
+    level: 2,
+    totalLevels: 4,
+    reached: "Write 5 reviews",
+  };
+  const view = await render(
+    createElement(StampMoment, {
+      content: { kind: "achievement", unlock },
+      reduceMotion: false,
+      onOpenPassport: () => undefined,
+      onDismiss: () => undefined,
+    }),
+  );
+  assert.ok(view.findByTestId("medal-reveal"), "achievements get the medal toss, not the stamp");
+  assert.equal(view.findByTestId("stamp-landing"), null);
+  assert.ok(view.findByLabel("Level 2 of 4"));
+  // The words wait for the medal to land and its pips to light.
+  const wordsAt = momentWordsDelay({ kind: "achievement", unlock });
+  assert.ok(wordsAt > MEDAL_LAND_MS + 4 * 100);
+});
+
+test("a stamp moment lands the stamp, and its words wait for the stars", () => {
+  const stamp = PASSPORT_STAMP_DEFINITIONS.find((item) => item.id === "cuisine-malay-3");
+  const category = ALL_PASSPORT_CATEGORIES.find((item) => item.id === "cuisine-malay");
+  assert.ok(stamp && category);
+  const wordsAt = momentWordsDelay({ kind: "stamp", stamp, category, triedCount: 3 });
+  assert.ok(wordsAt > STAMP_IMPACT_MS, "words come after the stamp hits the page");
+  const first = PASSPORT_STAMP_DEFINITIONS.find(
+    (item) => item.categoryId === "cuisine-malay" && item.index === 0,
+  );
+  assert.ok(first);
+  assert.ok(
+    wordsAt > momentWordsDelay({ kind: "stamp", stamp: first, category, triedCount: 1 }),
+    "more stars to pop means a later reveal",
+  );
 });
 
 function seedPassport(counts: () => Record<string, number>) {
