@@ -592,7 +592,14 @@ export function ReviewScreen({ navigation, route }: Props) {
       });
 
       // One confirmation: the success modal.
-      useUIStore.getState().showReviewSuccess(successPayload);
+      useUIStore.getState().showReviewSuccess({
+        ...successPayload,
+        // For the share card on the confirmation.
+        text: reviewText,
+        tags: reviewTags,
+        photoUrl: draft.photos[0],
+        authorName: useProfileStore.getState().profile.displayName,
+      });
       resetDraft();
       // The editor is the only screen in its stack: leave the stack so the user
       // lands back where they started (usually the dish they reviewed).

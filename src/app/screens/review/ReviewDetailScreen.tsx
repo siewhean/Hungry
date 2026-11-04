@@ -32,10 +32,12 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { ReviewShareStudioModal } from "@/components/share/ReviewShareStudio";
 import { webShareUrl } from "@/constants/links";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { shareLink } from "@/features/share/messagingShare";
+import { canShareCardImage } from "@/features/share/shareCardImage";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   isContentHiddenForSession,
@@ -137,6 +139,7 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [deleted, setDeleted] = useState(false);
+  const [shareStudioOpen, setShareStudioOpen] = useState(false);
   // Bumped after a report or block so the page re-checks whether the review is hidden.
   const [, setSafetyVersion] = useState(0);
   const loadedIdRef = useRef<string | null>(null);
@@ -266,7 +269,7 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
     year: "numeric",
   })}${review.editedAt ? " · edited" : ""}`;
 
-  const shareReview = () =>
+  const shareLinkOnly = () =>
     shareLink(
       {
         kind: "review",
@@ -279,6 +282,12 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
       reportError(error, { screen: "ReviewDetailScreen", action: "share_review" });
       showToast({ message: "Couldn't open sharing. Try again.", tone: "warning" });
     });
+  // Your own review shares as a picture card (Strava style); someone else's review as a link,
+  // so nobody's photo lands on a stranger's Story. Builds without the picture modules share links.
+  const shareReview = () => {
+    if (isOwn && canShareCardImage()) setShareStudioOpen(true);
+    else void shareLinkOnly();
+  };
 
   const menuButton =
     isOwn && !ownReviewEditor.enabled ? null : (
@@ -465,6 +474,25 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
         />
       ) : null}
       {ownReviewEditor.dialog}
+      {isOwn ? (
+        <ReviewShareStudioModal
+          visible={shareStudioOpen}
+          source="review_page"
+          link={webShareUrl("review", review.id)}
+          card={{
+            reviewId: review.id,
+            dishName: entry.dishName,
+            venueName: entry.venueName,
+            rating: review.rating,
+            text: review.text,
+            tags: review.tags,
+            photoUrl: review.photos[0],
+            authorName: review.authorName,
+            createdAt: review.createdAt,
+          }}
+          onClose={() => setShareStudioOpen(false)}
+        />
+      ) : null}
     </Screen>
   );
 }
