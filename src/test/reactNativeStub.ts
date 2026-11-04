@@ -6,6 +6,10 @@ export const Platform = {
   select: (spec: Record<string, any>) => spec.default,
 } as const;
 
+export const PixelRatio = { get: () => 3 } as const;
+export const NativeModules: Record<string, unknown> = {};
+export const TurboModuleRegistry = { get: (_name: string): unknown => null } as const;
+
 export function useWindowDimensions() {
   return { width: 390, height: 844, scale: 3, fontScale: 1 };
 }
