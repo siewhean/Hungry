@@ -9,7 +9,7 @@ import { REVIEW_TASTE_TAG_META } from "@/types/domain";
 const HOME_FILES = [
   "src/app/screens/discover/DiscoverHomeScreen.tsx",
   "src/app/screens/discover/QuickBitesScreen.tsx",
-  "src/app/screens/discover/CatalogDiscoverHome.tsx",
+  "src/app/screens/discover/HomeOfflineScreen.tsx",
   "src/components/discover/TrendingList.tsx",
   "src/components/discover/home/DiscoverBiteRail.tsx",
   "src/components/discover/home/PopularFoodStyleItem.tsx",

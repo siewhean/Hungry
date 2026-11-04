@@ -1,5 +1,5 @@
 // The Home that Supabase builds ship: DiscoverEntryScreen renders the redesigned DiscoverHomeScreen
-// on the live discovery feed, and the offline catalog Home only when that read fails. The real
+// on the live discovery feed, and the offline Home page only when that read fails. The real
 // supabaseService runs against a fake supabase-js client, so the feed rows below are in the shape
 // get_discovery_feed_by_location returns. Run with `node scripts/test-render.mjs <file>`.
 import assert from "node:assert/strict";
@@ -143,35 +143,6 @@ function fakeFlags(flags: Record<string, string>) {
   return state;
 }
 
-/** Swaps the catalog read service's page reads (the offline Home reads only these). */
-function stubCatalog(releaseId: string) {
-  const service = m.provider.getCatalogRawService() as unknown as Record<string, unknown>;
-  const state = { calls: 0 };
-  const card = {
-    id: "dish-9",
-    venueId: "venue-9",
-    name: "Mee Rebus",
-    venueName: "Offline Stall",
-    buildingName: "Tekka Centre",
-    price: 4,
-    cuisineTags: [],
-    dietaryFlags: [],
-    sectionTags: [],
-    verificationStatus: "approved",
-  };
-  service.listDishes = async () => {
-    state.calls += 1;
-    return { items: [card], releaseId, totals: { dishes: 1, venues: 1 } };
-  };
-  service.listVenues = async () => ({
-    items: [{ id: "venue-9", name: "Offline Stall", menuCount: 1, buildingName: "Tekka Centre" }],
-    releaseId,
-    totals: { dishes: 1, venues: 1 },
-  });
-  service.clearCache = () => undefined;
-  return state;
-}
-
 beforeEach(async () => {
   resetSharedReads();
   // Every test starts as a first launch: no feed saved by an earlier visit.
@@ -221,7 +192,7 @@ test("Supabase builds show the redesigned Home from the live feed, with no full-
   assert.match(view.text(), /Dishes across Singapore/);
   assert.match(view.text(), /Hajjah Mariam/);
   assert.match(view.text(), /Chicken Rice/);
-  assert.equal(view.findByTestId("catalog-discover-root"), null, "not the offline Home");
+  assert.equal(view.findByTestId("home-offline-root"), null, "not the offline Home");
 
   const feedCalls = fake.callsTo("get_discovery_feed_by_location");
   assert.equal(feedCalls.length, 2, "a small first read and the full feed read");
@@ -324,43 +295,30 @@ test("without a GPS fix or a pick the header says Singapore, offers to turn loca
   assert.ok(picked.findByLabel("Use current location"));
 });
 
-test("a failed live feed hands Home to the offline catalog, and Retry tries the live Home again", async () => {
+test("a failed live feed hands Home to the offline page, and Try again tries the live Home again", async () => {
   fake.rpc.get_discovery_feed_by_location = () => ({
     data: null,
     error: { message: "network request failed" },
   });
-  const catalog = stubCatalog("excel-fallback-v1");
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  assert.ok(view.findByTestId("catalog-source-excel"), "the offline copy is on screen");
-  assert.match(view.text(), /Offline catalog/);
-  assert.match(view.text(), /Mee Rebus/);
-  assert.equal(catalog.calls, 1);
-
-  await view.press(view.findByLabel(/^Mee Rebus, Offline Stall/));
-  assert.deepEqual(view.navigation.calls.at(-1)?.args, [
-    "CatalogRawDetail",
-    { kind: "dish", id: "dish-9", releaseId: "excel-fallback-v1" },
-  ]);
+  assert.ok(view.findByTestId("home-offline-root"), "the offline page is on screen");
+  assert.match(view.text(), /Can't reach Hungry/);
+  assert.doesNotMatch(view.text(), /menu items/, "no catalog rows with empty menus");
+  // One saved dish (beforeEach) stays in reach.
+  assert.match(view.text(), /Your saved dishes/);
 
   serveLiveFeed();
   const feedReads = fake.callsTo("get_discovery_feed_by_location").length;
-  // The empty state's Retry is not shown (there is content); pull-to-refresh is the gesture.
-  const node = view.findByTestId("catalog-discover-screen") as unknown as Record<string, unknown>;
-  const fiberKey = Object.keys(node).find((key) => key.startsWith("__reactFiber$"))!;
-  let fiber = node[fiberKey] as { memoizedProps?: Record<string, unknown>; return?: unknown };
-  while (fiber && !fiber.memoizedProps?.refreshControl) fiber = fiber.return as typeof fiber;
-  const control = fiber.memoizedProps!.refreshControl as { props: { onRefresh(): void } };
-  const { act } = await import("react");
-  await act(async () => control.props.onRefresh());
+  await view.press(view.findByTestId("home-offline-retry"));
   await view.settle();
   assert.equal(
     fake.callsTo("get_discovery_feed_by_location").length,
     feedReads + 2,
-    "a refresh reads the first page and the full feed again",
+    "Try again reads the first page and the full feed again",
   );
   assert.match(view.text(), /Hawker classics/, "back on the live Home");
-  assert.equal(view.findByTestId("catalog-discover-root"), null);
+  assert.equal(view.findByTestId("home-offline-root"), null);
 });
 
 test("welcome_back_v2 on the live Home: shown to the test arm once content is on screen", async () => {

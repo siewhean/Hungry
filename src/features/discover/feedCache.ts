@@ -45,6 +45,26 @@ export async function readCachedDiscoverFeed(
   }
 }
 
+/**
+ * The last saved feed whatever area it was for, with when it was saved. The offline Home lists
+ * its stalls as "From your last visit" while Hungry can't be reached.
+ */
+export async function readLastCachedDiscoverFeed(
+  now: number = Date.now(),
+): Promise<{ feed: DiscoveryLocationFeed; savedAt: number } | null> {
+  let entry = memoryEntry;
+  if (!entry) {
+    try {
+      const raw = await safeAsyncStorage.getItem(STORAGE_KEY);
+      entry = raw ? (JSON.parse(raw) as CachedEntry) : null;
+    } catch {
+      return null;
+    }
+  }
+  if (!entry || !isUsable(entry, entry.feedKey, now)) return null;
+  return { feed: entry.feed, savedAt: entry.savedAt };
+}
+
 /** Saves a live feed. A fallback (offline copy) or empty feed is never saved over a good one. */
 export async function writeCachedDiscoverFeed(
   feedKey: string,
