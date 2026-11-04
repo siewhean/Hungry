@@ -48,6 +48,7 @@ import {
   Screen,
   Skeleton,
   SkeletonText,
+  SlideText,
 } from "@/components/ui";
 import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
 import { ForYouCard } from "@/components/discover/ForYouCard";
@@ -1825,13 +1826,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     : "You are at"}
               </AppText>
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-                <AppText
+                {/* The place slides to the new name when the diner moves or picks another area. */}
+                <SlideText
+                  value={discoverHeaderLabel}
                   variant="h2"
-                  style={{ color: themeTints.text, flexShrink: 1 }}
+                  style={{ color: themeTints.text }}
                   numberOfLines={1}
-                >
-                  {discoverHeaderLabel}
-                </AppText>
+                  containerStyle={{ flexShrink: 1 }}
+                />
                 <ChevronDown
                   color={themeTints.isDark ? palette.white : palette.textMuted}
                   size={20}
@@ -1872,9 +1874,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <SkeletonText variant="micro" width={150} />
               ) : null
             ) : discoverAreaCountLabel !== "0" ? (
-              <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                {`${discoverAreaCountLabel} stalls ${discoverAreaName ? "in this area" : "near you"}`}
-              </AppText>
+              <View style={{ alignItems: "baseline", flexDirection: "row" }}>
+                {/* Only the number slides when the count changes. */}
+                <SlideText
+                  value={discoverAreaCountLabel}
+                  variant="micro"
+                  style={{ color: themeTints.secondaryText }}
+                />
+                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                  {` stalls ${discoverAreaName ? "in this area" : "near you"}`}
+                </AppText>
+              </View>
             ) : null /* 0 in-area venues: the page shows city-wide fallbacks, so "0 places" misleads. */
           }
           {hasManualAreaPick ? (

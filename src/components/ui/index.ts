@@ -36,6 +36,7 @@ export * from "./Screen";
 export * from "./SegmentedControl";
 export * from "./SelectField";
 export * from "./Skeleton";
+export * from "./SlideText";
 export * from "./StatusChip";
 export * from "./StickyBottomBar";
 export * from "./UnderlineTabs";

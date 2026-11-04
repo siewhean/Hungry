@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWindowDimensions, View, type LayoutChangeEvent } from "react-native";
 
-import { AppText, PressableScale, Skeleton } from "@/components/ui";
+import { AppText, PressableScale, Skeleton, SlideText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 /** A stat whose read failed: a dash on screen, "unavailable" to a screen reader. */
@@ -74,9 +74,7 @@ function StatBlock({ stat, stacked }: { stat: ProfileStat; stacked: boolean }) {
       {value === null ? (
         <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
       ) : (
-        <AppText variant="h2" style={{ color: palette.text }}>
-          {value}
-        </AppText>
+        <SlideText value={String(value)} variant="h2" style={{ color: palette.text }} />
       )}
       {/* One line that shrinks a little rather than breaking inside a word ("Follower / s"). */}
       <AppText
