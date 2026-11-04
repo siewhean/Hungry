@@ -3,6 +3,7 @@
 import { merchantAccount } from "@/lib/services/mock/data";
 import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
 import { setConfiguredDataSource } from "@/lib/services/supabase/client";
+import { useConsentStore } from "@/store/useConsentStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -17,6 +18,14 @@ export async function enterScenario(scenario: Scenario): Promise<void> {
   // Drop whatever the previous scenario left in account-scoped stores (social, activity, profile).
   useSessionStore.getState().clearSession();
   useUIStore.setState({ toast: null, signInPrompt: null, safetyMenu: null });
+  // Scenarios are people who have already answered the one-time analytics question; the tests
+  // for the question itself set `analyticsAsked: false`.
+  useConsentStore.setState({
+    analyticsAsked: true,
+    aiSearchAllowed: false,
+    accountChecked: false,
+    aiSearchNotice: null,
+  });
   useMerchantStore.getState().setAccount(null);
   useMerchantStore.getState().setMerchantModeActive(false);
   useMerchantStore.getState().setDeveloperMerchantMode(false);

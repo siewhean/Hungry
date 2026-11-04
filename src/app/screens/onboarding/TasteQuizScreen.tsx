@@ -34,6 +34,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { DietaryFlag, TasteKey, TasteVector } from "@/types/domain";
 import { DietaryStep } from "./DietaryStep";
+import { OnboardingHeader } from "./OnboardingHeader";
 import {
   OnboardingProgress,
   trackOnboardingQuestionViewed,
@@ -88,11 +89,14 @@ const LABELS = {
 const SHORT_STEPS: TasteKey[] = ["spicy", "sweet", "rich"];
 /** Time to see the picked tile before the next question fades in. */
 const AUTO_ADVANCE_MS = 400;
-/** Each half of the crossfade between questions: 200 ms in all, never an empty screen. */
-const STEP_FADE_MS = 100;
+/** The crossfade between questions: out fast, in a little slower, never an empty screen. */
+// The crossfade runs on core Animated (native-driven opacity), so it takes React Native's Easing.
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1);
+const STEP_FADE_OUT_MS = 120;
+const STEP_FADE_IN_MS = 180;
 
 export function TasteQuizScreen({ navigation, route }: Props) {
-  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, radii, spacing, typography } = useHungryTheme();
   const { fontScale, height, width } = useWindowDimensions();
   const reduceMotion = useReduceMotion();
   // A screen reader user moves on with Next: an answer that auto-advances would skip its readout.
@@ -116,7 +120,8 @@ export function TasteQuizScreen({ navigation, route }: Props) {
       subscription.remove();
     };
   }, []);
-  const fadeDuration = reduceMotion ? 0 : STEP_FADE_MS;
+  const fadeOutDuration = reduceMotion ? 0 : STEP_FADE_OUT_MS;
+  const fadeInDuration = reduceMotion ? 0 : STEP_FADE_IN_MS;
   const setTasteVector = useProfileStore((state) => state.setTasteVector);
   const profile = useProfileStore((state) => state.profile);
   const setDietaryPreferences = useProfileStore((state) => state.setDietaryPreferences);
@@ -125,7 +130,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const showToast = useUIStore((state) => state.showToast);
   const flowMode = route.params?.mode ?? "onboarding";
   const isDietaryRoute = route.name === "DietaryPreferences";
-  const initialPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
+  const requestedPhase = isDietaryRoute ? "dietary" : (route.params?.initialPhase ?? "taste");
+  // "budget" is the dietary step opened at its budget chips.
+  const startAtBudget = requestedPhase === "budget";
+  const initialPhase = startAtBudget ? "dietary" : requestedPhase;
   // A relaunch reopens this step with the answers given so far (a draft under 24 hours old).
   const [draft] = useState(() => (flowMode === "onboarding" ? getFreshOnboardingDraft() : null));
   // The dietary step is a separate route instance, so the taste answers come from the draft the
@@ -172,6 +180,9 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const optionsFadeAnim = useRef(new Animated.Value(1)).current;
   const quizScrollX = useRef(new Animated.Value(0)).current;
   const carouselRef = useRef<FlatList<number> | null>(null);
+  // Opening at the budget (Settings, Meal budget): scroll there once its position is known.
+  const dietaryScrollRef = useRef<ScrollView | null>(null);
+  const scrolledToBudget = useRef(false);
   const stepTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -212,7 +223,10 @@ export function TasteQuizScreen({ navigation, route }: Props) {
   const currentKey = questionKeys[step] ?? questionKeys[0]!;
   const labels = LABELS[currentKey];
   const choiceFoods = TASTE_QUESTION_FOODS[currentKey];
-  const totalSteps = questionKeys.length + 1;
+  // The count is the taste questions only: the dietary step is not a question, but it still
+  // fills the last part of the progress bar (totalSteps).
+  const questionCount = questionKeys.length;
+  const totalSteps = questionCount + 1;
   const inDietaryStep = phase === "dietary";
   const { scrollIndex, selectedIndex } = resolveQuestionCard(values, currentKey, answeredKeys);
   const scrollIndexRef = useRef(scrollIndex);
@@ -277,16 +291,16 @@ export function TasteQuizScreen({ navigation, route }: Props) {
     optionsFadeAnim.setValue(1);
     Animated.timing(optionsFadeAnim, {
       toValue: 0,
-      duration: fadeDuration,
-      easing: Easing.linear,
+      duration: fadeOutDuration,
+      easing: EASE_OUT,
       useNativeDriver: true,
     }).start(() => {
       setStep(nextStep);
       stepTimerRef.current = setTimeout(() => {
         Animated.timing(optionsFadeAnim, {
           toValue: 1,
-          duration: fadeDuration,
-          easing: Easing.linear,
+          duration: fadeInDuration,
+          easing: EASE_OUT,
           useNativeDriver: true,
         }).start(() => {
           setIsTransitioning(false);
@@ -424,7 +438,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
         <OnboardingProgress
           step="taste"
           subProgress={inDietaryStep ? 1 : (step + 1) / totalSteps}
-          detail={inDietaryStep ? undefined : `Question ${step + 1} of ${totalSteps}`}
+          detail={inDietaryStep ? undefined : `Question ${step + 1} of ${questionCount}`}
         />
       </View>
     ) : (
@@ -433,22 +447,19 @@ export function TasteQuizScreen({ navigation, route }: Props) {
         tone="muted"
         style={{ paddingHorizontal: spacing[3], textAlign: "center" }}
       >
-        {inDietaryStep
-          ? `Question ${totalSteps} of ${totalSteps}`
-          : `Question ${step + 1} of ${totalSteps}`}
+        {inDietaryStep ? "Dietary needs" : `Question ${step + 1} of ${questionCount}`}
       </AppText>
     );
   const headingBlock = (
     <View style={{ gap: spacing[2], paddingHorizontal: spacing[3] }}>
       {/* One heading per screen: the question itself. */}
-      <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
-        {headingText}
-      </AppText>
+      <OnboardingHeader title={headingText} />
       {inDietaryStep ? null : (
-        // Always on screen, so the options do not jump when the first answer arrives.
-        <AppText variant="micro" tone="muted" style={{ minHeight: 18, textAlign: "center" }}>
+        // Always on screen and always a line tall, so the options sit at the same height on
+        // every question (both texts fit one line on the smallest phone).
+        <AppText variant="micro" tone="muted" style={{ minHeight: typography.micro.lineHeight }}>
           {selectedIndex < 0
-            ? "Tap one to answer, or go Next to leave this one out."
+            ? "Tap one to answer, or go Next to skip."
             : `Picked: ${labels[selectedIndex]}`}
         </AppText>
       )}
@@ -481,10 +492,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
           // One scroll for the whole step: at large text sizes the heading and the chips
           // scroll together, so the budget below them is never out of reach.
           <ScrollView
+            ref={dietaryScrollRef}
             testID="dietary-step-scroll"
             style={{ flex: 1 }}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             contentContainerStyle={{
               gap: spacing[3],
               paddingBottom: spacing[6] + accessibilityFooterReserve,
@@ -500,6 +513,14 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               budget={maxDishBudget}
               onBudgetChange={setMaxDishBudgetState}
               showBudget={!FEATURE_FLAGS.sliderOnboardingEnabled}
+              onBudgetLayout={(budgetY) => {
+                if (!startAtBudget || scrolledToBudget.current) return;
+                scrolledToBudget.current = true;
+                dietaryScrollRef.current?.scrollTo?.({
+                  y: budgetY - spacing[3],
+                  animated: false,
+                });
+              }}
             />
           </ScrollView>
         ) : (

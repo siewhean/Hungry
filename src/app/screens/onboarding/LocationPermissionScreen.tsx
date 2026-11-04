@@ -11,6 +11,7 @@ import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
+import { OnboardingHeader } from "./OnboardingHeader";
 import { OnboardingProgress, trackOnboardingStepViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import {
@@ -212,12 +213,10 @@ export function LocationPermissionScreen({ navigation }: Props) {
                 maxWidth: 230,
               }}
             />
-            <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
-              Discover the best bites{"\n"}around you.
-            </AppText>
-            <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-              We use your location to show stalls near you. You can change it anytime.
-            </AppText>
+            <OnboardingHeader
+              title="Discover the best bites around you."
+              subtitle="We use your location to show stalls near you. You can change it anytime."
+            />
           </View>
 
           <View style={{ gap: spacing[2] }}>

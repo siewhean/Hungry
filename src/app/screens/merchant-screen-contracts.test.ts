@@ -205,7 +205,7 @@ test("Merchant screen contract: merchant route params match editable sub-screen 
   assert.match(navigationTypes, /OCRDrafts: undefined;/);
   assert.match(
     navigationTypes,
-    /CustomerInbox: \{ filter\?: "unreplied"; replyToId\?: string \} \| undefined;/,
+    /CustomerInbox: \{ filter\?: "all" \| "unreplied"; replyToId\?: string \} \| undefined;/,
   );
   assert.match(navigationTypes, /FeaturedVisitors: undefined;/);
   assert.match(navigationTypes, /PromotionList: undefined;/);
@@ -361,7 +361,8 @@ test("Merchant screen contract: inbox, promotions, assistant, and settings scree
   assert.doesNotMatch(assistant, /merchant\.getWeeklySummary\(/);
 
   assert.match(settings, /merchant\.getMerchantNotifications\(/);
-  assert.match(settings, /merchant\.getWeeklySummaryStats\(/);
+  // The weekly numbers moved to Performance (R4-31).
+  assert.doesNotMatch(settings, /getWeeklySummaryStats|Weekly numbers will appear/);
   // Low-rating detection is a database trigger; Settings no longer rescans every review.
   assert.doesNotMatch(settings, /merchant\.syncLowRatingNotifications\(/);
   assert.doesNotMatch(settings, /Team Management|Invite staff|Every active team member/);

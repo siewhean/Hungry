@@ -1,0 +1,14 @@
+{
+  "version": "20261029090000",
+  "name": "20261029090000_settings_account_data_fixes",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T06:43:17Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "4a641ad282de9e15caa4c7bcdcc1132dc3be9934",
+  "up_sha256": "6d9f0113d44cb6b65ba869019bcc3b84ec398f644d82ccadf3bf4f400362201b",
+  "down_sha256": "26a6997ead9d049735a4fae58179709c34e891629c18e310b1dbe070d857df9a",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/account_deletion_keeps_accepted_submissions.sql","supabase/smoke/profile_card_hides_deactivated.sql","supabase/smoke/export_my_data_complete.sql"]
+}

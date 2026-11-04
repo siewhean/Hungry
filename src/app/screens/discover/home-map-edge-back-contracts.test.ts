@@ -9,29 +9,16 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("Discover map keeps left-edge swipe back enabled", () => {
+test("Discover map has no swipe-back gesture, so panning the map never closes it", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const homeMap = read("src/app/screens/discover/HomeMapScreen.tsx");
 
+  // The native swipe-back and the custom edge swipe both treated a rightward pan (to see the
+  // left side of the map) as "go back". Pan wins; the back button and List toggle still leave.
   assert.match(
     rootNavigator,
-    /<RootStack\.Screen[\s\S]*getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*options=\{\{ gestureEnabled: true \}\}/,
+    /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*options=\{\{ gestureEnabled: false \}\}/,
   );
-  assert.match(homeMap, /const edgeBackPanResponder = useMemo/);
-  // The capture rule (edge zone, above the sheet, mostly horizontal) is unit-tested in
-  // src/features/discovery/mapEdgeBack.test.ts.
-  assert.match(homeMap, /isMapEdgeBackSwipe\(gestureState, \{/);
-  assert.match(homeMap, /sheetHeight: sheetTargetHeightRef\.current/);
-  assert.match(homeMap, /gestureState\.dx > 64 \|\| gestureState\.vx > 0\.35/);
-  // The swipe lands where the List toggle does.
-  assert.match(homeMap, /gestureState\.vx > 0\.35\) \{\s*backToList\(\);/);
-  assert.match(homeMap, /\{\.\.\.edgeBackPanResponder\.panHandlers\}/);
-  // No overlay strip: the root captures only a horizontal move that starts at the edge,
-  // so taps on the map, legend and cards are never swallowed.
-  assert.doesNotMatch(homeMap, /edgeBackGestureZone|pointerEvents="box-only"/);
-  assert.match(homeMap, /const edgeBackZoneWidth = Math\.max\(28, insets\.left \+ 24\)/);
-  assert.match(
-    homeMap,
-    /onMoveShouldSetPanResponderCapture:[\s\S]*edgeZoneWidth: edgeBackZoneWidth/,
-  );
+  assert.doesNotMatch(homeMap, /PanResponder|edgeBack|isMapEdgeBackSwipe/);
+  assert.match(homeMap, /onPress=\{backToList\}/);
 });

@@ -168,7 +168,7 @@ test("follow button shows Requested and tapping it cancels the request", () => {
   assert.match(profile, /setFollowRequested\(resolvedAuthorId, serverFollowStatus === "pending"\)/);
   assert.match(profile, /\? "Requested"/);
   assert.match(profile, /Cancels your follow request/);
-  assert.match(connections, /isRequested \? "Requested"/);
+  assert.match(connections, /isRequested\s*\? "Requested"/);
   assert.match(home, /isFollowRequested \? "Requested"/);
 });
 
@@ -200,12 +200,11 @@ test("Follow Requests screen is a protected root route reached from Profile and 
   assert.match(screen, /service\.approveFollowRequest\(request\.userId\)/);
   assert.match(screen, /service\.declineFollowRequest\(request\.userId\)/);
 
-  // Profile row only when there are requests or the account is private.
+  // Settings holds the row (flagged); the Profile header's settings icon shows the count.
   assert.match(
-    profileHome,
-    /\(followRequestCount \?\? 0\) > 0 \|\| profile\.profileVisibility === "private"/,
+    read("src/app/screens/profile/SettingsScreen.tsx"),
+    /FEATURE_FLAGS\.followConnectionsEnabled[\s\S]*id: "follow-requests"[\s\S]*rootNavigation\.navigate\("FollowRequests"\)/,
   );
-  assert.match(profileHome, /rootNavigation\.navigate\("FollowRequests"\)/);
   assert.match(profileHome, /social\.getFollowRequestCount\(\)/);
 
   const activityMapping = read("src/features/home/activity.ts");

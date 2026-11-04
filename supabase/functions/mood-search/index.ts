@@ -147,6 +147,21 @@ serveWithSentry("mood-search", async (request) => {
     return toJson(429, { error: "rate_limited" });
   }
 
+  // The typed text is sent to the AI provider (Anthropic or Google), so the person must have
+  // allowed AI search in the app (App Review 5.1.2(i)). Checked here as well as in the app so an
+  // old or modified build cannot send text without it.
+  const { data: consentRow, error: consentError } = await client
+    .from("privacy_settings")
+    .select("ai_search_consent")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (consentError) {
+    return toJson(500, { error: "consent_lookup_failed" });
+  }
+  if (consentRow?.ai_search_consent !== true) {
+    return toJson(403, { error: "ai_search_consent_required" });
+  }
+
   const payload = (await request.json().catch(() => ({}))) as JsonObject;
   const query = normalizeQuery(payload.query);
   if (query.length < 2) {

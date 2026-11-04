@@ -2,6 +2,7 @@
 /* eslint-disable import/no-unresolved */
 import { Webhook } from "npm:standardwebhooks@^1";
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
+import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 type EmailAction =
   | "signup"
@@ -59,6 +60,13 @@ function parseAction(value: unknown): EmailAction | null {
 }
 
 function getTemplateId(action: EmailAction): string {
+  // The emailed sign-in code is a "magiclink" email. It gets its own template when one is set,
+  // so the wording can say "sign in" without touching the re-authentication email; without it
+  // the magic-link template is used, as before.
+  if (action === "magiclink") {
+    const signIn = Deno.env.get("RESEND_TEMPLATE_SIGNIN_ID")?.trim();
+    if (signIn) return signIn;
+  }
   const envName = {
     signup: "RESEND_TEMPLATE_SIGNUP_ID",
     recovery: "RESEND_TEMPLATE_RECOVERY_ID",
@@ -108,6 +116,7 @@ async function sendTemplatedEmail(args: {
   let response: Response;
   try {
     response = await fetch("https://api.resend.com/emails", {
+      signal: AbortSignal.timeout(TIMEOUT_MS.email),
       method: "POST",
       headers: {
         Authorization: `Bearer ${args.apiKey}`,

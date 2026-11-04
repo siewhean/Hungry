@@ -43,7 +43,7 @@ test("meal-time suggestions: opt-in, skip users already active today, open Decid
   const settings = read("src/components/settings/StallAlertsSettings.tsx");
   assert.match(settings, /handleToggle\("mealtimeSuggestions", value\)/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
-  assert.match(service, /mealtime_suggestions: next\.mealtimeSuggestions/);
+  assert.match(service, /row\.mealtime_suggestions = updates\.mealtimeSuggestions/);
 });
 
 test("welcome back: only after more than a week away, behind welcome_back_v2", () => {
@@ -63,7 +63,12 @@ test("welcome back: only after more than a week away, behind welcome_back_v2", (
 
 test("passport weekly goal: counted from tried items, celebrated once per week", () => {
   const screen = read("src/app/screens/profile/PassportScreen.tsx");
-  assert.match(screen, /computeWeeklyGoal\(\[\.\.\.triedAtByItem\.values\(\)\]\)/);
+  // The count lives in useWeeklyGoal, shared with the Home next-stamp card and the tab ring.
+  assert.match(
+    read("src/features/passport/useWeeklyGoal.ts"),
+    /computeWeeklyGoal\(\[\.\.\.triedAtByItem\.values\(\)\]\)/,
+  );
+  assert.match(screen, /useWeeklyGoal\(\)/);
   assert.match(screen, /celebratedGoalWeeks\[weeklyGoal\.weekKey\]/);
   assert.match(screen, /markGoalWeekCelebrated\(weeklyGoal\.weekKey\)/);
   assert.match(screen, /trackAnalyticsEvent\("weekly_goal_completed"/);

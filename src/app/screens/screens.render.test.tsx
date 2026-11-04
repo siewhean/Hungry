@@ -52,6 +52,7 @@ before(async () => {
     checklist: { checklistId: checklist.id },
     checklistPicker: { checklistId: checklist.id, mode: "dish" },
     dish: { id: dish.id },
+    dishReviews: { dishId: dish.id },
     portfolio: { portfolioId: portfolio.id },
     portfolioPicker: { portfolioId: portfolio.id, mode: "dish" },
     report: { venueId: dish.venueId, dishId: dish.id, subjectName: dish.name },
@@ -59,6 +60,7 @@ before(async () => {
     socialGrid: { type: "saved" },
     socialPost: { postId: post.id, type: "saved" },
     stall: { id: dish.venueId, venueId: dish.venueId },
+    stallVisited: { venueId: dish.venueId },
     story: { initialStoryId: stories[0]?.id ?? "story-1" },
     otherUser: { authorId: "user-emma", authorName: "Emma" },
   };

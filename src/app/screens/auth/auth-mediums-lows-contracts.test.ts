@@ -13,7 +13,7 @@ import {
 import { formatCooldown } from "@/features/auth/useResendCooldown";
 import { hungryService } from "@/lib/services/mock/mockService";
 import { useSessionStore } from "@/store/useSessionStore";
-import { AUTH_COPY, getSignUpProviderSuccessMessage } from "./authCopy";
+import { AUTH_COPY } from "./authCopy";
 
 function read(path: string) {
   return readFileSync(resolve(process.cwd(), path), "utf8");
@@ -45,11 +45,14 @@ test("auth-M1: a profile read that fails after sign-in does not fail the sign-in
 // ── M2 / L5 / L6 / L17 ───────────────────────────────────────────────────────
 
 test("auth-M2: signing up never says 'Account created' before the email is confirmed", () => {
-  assert.equal(AUTH_COPY.signUp.emailVerificationToast, "Check your email");
+  // AUTH4-5: the headline already says "Verify your email", so no arrival toast says it again.
+  assert.doesNotMatch(
+    read("src/app/screens/auth/SignUpScreen.tsx"),
+    /Check your email|emailVerificationToast/,
+  );
   const verify = read("src/app/screens/auth/EmailVerificationScreen.tsx");
   assert.match(verify, /Already have an account\?/);
   assert.match(verify, /label="Sign in"[\s\S]*navigate\("Login", \{ email \}\)/);
-  assert.match(verify, /label="Reset password"[\s\S]*navigate\("ForgotPassword"\)/);
 });
 
 test("auth-L5: one wording for sign in, sentence case, no unused strings", () => {
@@ -57,7 +60,6 @@ test("auth-L5: one wording for sign in, sentence case, no unused strings", () =>
   assert.doesNotMatch(copy, /Log in|Back to login|OR USE EMAIL|helperText:|emailPlaceholder/);
   assert.equal(AUTH_COPY.signUp.footerAction, "Sign in");
   assert.equal(AUTH_COPY.forgotPassword.backToLogin, "Back to sign in");
-  assert.equal(getSignUpProviderSuccessMessage("google"), "Signed in with Google");
   assert.doesNotMatch(
     read("src/app/screens/auth/EmailVerificationScreen.tsx"),
     /Change Email Address/,
@@ -138,7 +140,10 @@ test("auth-M4: an email change has its own redirect and screen, not the sign-up 
 test("auth-M5: email sign-in leaves the onboarding decision to the account, not the screen", () => {
   const login = read("src/app/screens/auth/LoginScreen.tsx");
   assert.doesNotMatch(login, /completeAuth\(\{ completedOnboarding: true \}\)/);
-  assert.match(login, /completedOnboarding: getConfiguredDataSource\(\) !== "supabase"/);
+  assert.match(
+    login,
+    /const isMock = getConfiguredDataSource\(\) !== "supabase";[\s\S]*?completedOnboarding: isMock/,
+  );
   const store = read("src/store/useSessionStore.ts");
   assert.match(store, /function markAccountOnboarded\(\)/);
   assert.match(store, /markOnboarded\(\)/);

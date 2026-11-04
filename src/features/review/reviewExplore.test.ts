@@ -9,7 +9,6 @@ import {
   resolveActiveReviewChip,
   reviewFoodLabel,
   reviewTileHoldAction,
-  reviewsWithPhotos,
   clearDeletedReviewsForSession,
   isReviewDeletedForSession,
   markReviewDeletedForSession,
@@ -55,20 +54,12 @@ const items = [
 ];
 const areaOf = (entry: ReviewFeedItem) => (entry as ReviewFeedItem & { area: string }).area;
 
-test("only reviews with a photo are shown", () => {
-  assert.deepEqual(
-    reviewsWithPhotos(items).map((entry) => entry.review.id),
-    ["1", "2", "3"],
-  );
-  assert.equal(reviewsWithPhotos([item("5", "X", "Y", NEUTRAL_TASTE_VECTOR, [" "])]).length, 0);
-});
-
-test("chips: your taste first, then all, most reviewed foods, then areas", () => {
-  const shown = reviewsWithPhotos(items);
+test("chips: all first, then your taste, most reviewed foods, then areas (REV-15)", () => {
+  const shown = items.slice(0, 3);
   const chips = buildReviewExploreChips(shown, { userVector: spicyLover, areaOf });
   assert.deepEqual(
     chips.map((chip) => chip.label),
-    ["For your taste", "All", "Laksa", "Chicken Rice", "Maxwell", "Amoy"],
+    ["All", "For your taste", "Laksa", "Chicken Rice", "Maxwell", "Amoy"],
   );
   // No palette: no taste chip.
   const plain = buildReviewExploreChips(shown, { userVector: NEUTRAL_TASTE_VECTOR, areaOf });
@@ -76,7 +67,7 @@ test("chips: your taste first, then all, most reviewed foods, then areas", () =>
 });
 
 test("filters by taste, food and area", () => {
-  const shown = reviewsWithPhotos(items);
+  const shown = items.slice(0, 3);
   const chips = buildReviewExploreChips(shown, { userVector: spicyLover, areaOf });
   const pick = (label: string) =>
     filterReviewExplore(
@@ -95,7 +86,8 @@ test("a picked food that drops out of the top six stays selected; a lost chip fa
     userVector: spicyLover,
     areaOf: (i) => (i as unknown as { area: string }).area,
   });
-  assert.equal(chips[0]?.id, "taste", "taste is first for a diner with a palette");
+  assert.equal(chips[0]?.id, "all", "All comes first, taste second, for a diner with a palette");
+  assert.equal(chips[1]?.id, "taste");
 
   // "food:Satay" is not on the page any more: it is kept, not swapped for "For your taste".
   const kept = withSelectedReviewChip(chips, "food:Satay");
@@ -177,4 +169,29 @@ test("chips and filters without a palette, without a chip, and for unknown ids",
   assert.equal(withSelectedReviewChip(chips, "area:").length, chips.length);
   assert.equal(withSelectedReviewChip(chips, "area:Bugis:East").at(-1)?.label, "Bugis:East");
   assert.equal(resolveActiveReviewChip([], "all"), undefined);
+});
+
+test("Near you: the chip shows only when a review's dish is within 2 km, and filters to those", () => {
+  const meters: Record<string, number | undefined> = { "1": 400, "2": 5000, "3": undefined };
+  const distanceMetersOf = (entry: ReviewFeedItem) => meters[entry.review.id];
+  const chips = buildReviewExploreChips(items, { areaOf, distanceMetersOf });
+  assert.equal(chips[1]?.kind, "near", "right after All");
+  const near = chips.find((chip) => chip.kind === "near");
+  assert.deepEqual(
+    filterReviewExplore(items, near, { areaOf, distanceMetersOf }).map((entry) => entry.review.id),
+    ["1"],
+  );
+});
+
+test("Near you: no chip without a location, or when nothing is close", () => {
+  assert.equal(
+    buildReviewExploreChips(items, { areaOf }).some((chip) => chip.kind === "near"),
+    false,
+  );
+  assert.equal(
+    buildReviewExploreChips(items, { areaOf, distanceMetersOf: () => 9000 }).some(
+      (chip) => chip.kind === "near",
+    ),
+    false,
+  );
 });

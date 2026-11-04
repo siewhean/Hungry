@@ -161,7 +161,7 @@ test("ONB-X6: a provider failure is logged against the tab the user was on", asy
   const source = readFileSync("src/app/screens/onboarding/OnboardingAuthScreen.tsx", "utf8");
   assert.match(
     source,
-    /trackAuthFailed\(tab === "login" \? "sign_in" : "sign_up", provider, err\)/,
+    /trackAuthFailed\(tab === "login" \? "sign_in" : "sign_up", provider, err, "onboarding_auth"\)/,
   );
-  assert.doesNotMatch(source, /trackAuthFailed\("sign_up", provider, err\)/);
+  assert.doesNotMatch(source, /trackAuthFailed\("sign_up", provider, err/);
 });

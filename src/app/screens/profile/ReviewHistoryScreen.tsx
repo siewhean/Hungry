@@ -2,11 +2,11 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useIsFocused } from "@react-navigation/native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
-import { PenLine, Star, Store } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ReviewModerationNotice } from "@/components/review";
-import { AccessibleImage, AppText, Button, EmptyState } from "@/components/ui";
+import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
+import { AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
+import { pluralLabel } from "@/features/profile/plural";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import {
   getDataRepository,
@@ -16,10 +16,11 @@ import {
 import { tapHaptic } from "@/lib/haptics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { OwnReviewMenuButton, useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
+import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { Review } from "@/types/domain";
+import type { Review, ReviewStats } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
@@ -50,6 +51,8 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   const loadedRowsRef = useRef(0);
   loadedRowsRef.current = loadedRows;
   const [hasMore, setHasMore] = useState(false);
+  // Totals over every review, not just the pages loaded; undefined until read or on an older backend.
+  const [stats, setStats] = useState<ReviewStats | undefined>();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   // Coming back from "Write another review" shows the new review without reopening the screen.
@@ -70,14 +73,6 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       profile.reviewedDishIds.map((dishId) => repository.getDishById(dishId)).filter(isDishDetail),
     [profile.reviewedDishIds, repository],
   );
-  const remoteHistory = useMemo(
-    () =>
-      remoteReviews.map((review) => ({
-        review,
-        dish: review.dishId ? repository.getDishById(review.dishId) : undefined,
-      })),
-    [remoteReviews, repository],
-  );
 
   useEffect(() => {
     if (!isFocused) return;
@@ -87,10 +82,32 @@ export function ReviewHistoryScreen({ navigation }: Props) {
     if (serviceProviderMode === "mock" || !profile.id || profile.id === "guest-user") {
       setRemoteReviews([]);
       setRemoteLoaded(true);
+      // Mock mode has the same review rows the profile shows, with the rating and the note; the
+      // on-device entries below are only the fallback when it has none.
+      if (serviceProviderMode === "mock" && profile.id && profile.id !== "guest-user") {
+        void getHungryService()
+          .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: 0 })
+          .then((reviews) => {
+            if (active) setRemoteReviews(reviews);
+          })
+          .catch((error) => {
+            reportError(error, { screen: "ReviewHistory", action: "load_mock_reviews" });
+          });
+      }
       return () => {
         active = false;
       };
     }
+
+    void getHungryService()
+      .reviews.getMyReviewStats()
+      .then((result) => {
+        if (active) setStats(result);
+      })
+      .catch((error) => {
+        // The totals are a bonus: the list still shows, with the average of what is loaded.
+        reportError(error, { screen: "ReviewHistory", action: "load_review_stats" });
+      });
 
     void getHungryService()
       .reviews.getUserReviews(profile.id, { limit: REVIEW_HISTORY_PAGE_SIZE, offset: 0 })
@@ -146,28 +163,48 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       .finally(() => setIsLoadingMore(false));
   };
 
-  const historyItems =
-    serviceProviderMode === "supabase"
-      ? remoteHistory
-      : remoteHistory.length > 0
-        ? remoteHistory
-        : mockHistory.map((dish) => ({
-            dish,
-            review: undefined,
-          }));
-  const hasHistory = historyItems.length > 0;
-  // Only some pages are loaded: the server's counter (distinct dishes reviewed) covers them all.
-  const reviewedCount = hasMore
-    ? Math.max(profile.stats.dishesReviewed, historyItems.length)
-    : historyItems.length;
-  const ownRatings = historyItems
-    .map(
-      ({ review, dish }) => review?.rating ?? (dish ? reviewEntries[dish.id]?.rating : undefined),
-    )
-    .filter((rating): rating is number => typeof rating === "number" && rating > 0);
-  const averageRating = ownRatings.length
-    ? (ownRatings.reduce((total, rating) => total + rating, 0) / ownRatings.length).toFixed(1)
-    : undefined;
+  // Mock mode has no review rows: build one per reviewed dish from the on-device entries.
+  const historyReviews: Review[] = useMemo(() => {
+    if (serviceProviderMode === "supabase" || remoteReviews.length > 0) return remoteReviews;
+    return mockHistory.map((dish) => {
+      const entry = reviewEntries[dish.id];
+      return {
+        id: `local-${dish.id}`,
+        dishId: dish.id,
+        authorId: profile.id,
+        authorName: profile.displayName,
+        rating: entry?.rating ?? 0,
+        createdAt: entry?.createdAt ?? "",
+        text: entry?.text ?? "",
+        tags: entry?.tags ?? [],
+        wouldRecommend: true,
+        photos: [],
+      };
+    });
+  }, [
+    mockHistory,
+    profile.displayName,
+    profile.id,
+    remoteReviews,
+    reviewEntries,
+    serviceProviderMode,
+  ]);
+  const { infoFor } = useReviewDishDetails(historyReviews);
+  const hasHistory = historyReviews.length > 0;
+  // Server totals first; on an older backend, the distinct-dishes counter while more pages exist.
+  const reviewedCount =
+    stats?.reviewCount ??
+    (hasMore
+      ? Math.max(profile.stats.dishesReviewed, historyReviews.length)
+      : historyReviews.length);
+  const ownRatings = historyReviews.map((review) => review.rating).filter((rating) => rating > 0);
+  const averageRating =
+    stats && stats.reviewCount > 0
+      ? (stats.averageRating?.toFixed(1) ?? undefined)
+      : ownRatings.length
+        ? (ownRatings.reduce((total, rating) => total + rating, 0) / ownRatings.length).toFixed(1)
+        : undefined;
+  const maxStarCount = stats ? Math.max(1, ...stats.ratingCounts) : 1;
 
   const openReviewFlow = () => {
     tapHaptic();
@@ -176,12 +213,15 @@ export function ReviewHistoryScreen({ navigation }: Props) {
   };
 
   const openDish = (dishId: string) => {
-    getRootNavigation(navigation as any).navigate("DishDetail", { dishId });
+    getRootNavigation(navigation as any).navigate("DishDetail", {
+      dishId,
+      source: "review_history",
+    });
   };
 
   return (
     <View style={{ flex: 1 }}>
-      <ProfileScreenShell title="Reviews">
+      <ProfileScreenShell title="Your reviews">
         {hasHistory ? (
           <View
             style={{
@@ -198,7 +238,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 {reviewedCount}
               </AppText>
               <AppText variant="micro" tone="secondary">
-                Reviewed
+                {pluralLabel(reviewedCount, "Review")}
               </AppText>
             </View>
             {averageRating ? (
@@ -206,188 +246,93 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 <View style={{ width: 1, height: spacing[8], backgroundColor: palette.border }} />
                 <View style={{ alignItems: "center", gap: spacing[1] }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                    <Star size={18} color={palette.starStroke} fill={palette.starFill} />
+                    <AppSymbol name="rating" size={18} color={palette.starStroke} />
                     <AppText variant="h1">{averageRating}</AppText>
                   </View>
                   <AppText variant="micro" tone="secondary">
-                    Your avg score
+                    Average rating
                   </AppText>
                 </View>
               </>
             ) : null}
           </View>
         ) : null}
+        {stats && stats.reviewCount > 0 ? (
+          <View
+            accessible
+            accessibilityLabel={`Ratings: ${[5, 4, 3, 2, 1]
+              .map((star) => `${stats.ratingCounts[star - 1]} at ${star} stars`)
+              .join(", ")}`}
+            style={{ gap: spacing[1] }}
+            testID="review-history-histogram"
+          >
+            {[5, 4, 3, 2, 1].map((star) => (
+              <View
+                key={star}
+                style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+              >
+                <View
+                  style={{
+                    alignItems: "center",
+                    flexDirection: "row",
+                    gap: 2,
+                    width: spacing[8],
+                  }}
+                >
+                  <AppText variant="micro" tone="secondary">
+                    {star}
+                  </AppText>
+                  <AppSymbol name="rating" size={10} color={palette.starStroke} />
+                </View>
+                <View
+                  style={{
+                    backgroundColor: palette.bgSoft,
+                    borderRadius: radii.pill,
+                    flex: 1,
+                    height: spacing[2],
+                    overflow: "hidden",
+                  }}
+                >
+                  <View
+                    style={{
+                      backgroundColor: palette.starFill,
+                      borderRadius: radii.pill,
+                      height: "100%",
+                      width: `${(stats.ratingCounts[star - 1] / maxStarCount) * 100}%`,
+                    }}
+                  />
+                </View>
+                <AppText
+                  variant="micro"
+                  tone="secondary"
+                  style={{ textAlign: "right", width: spacing[8] }}
+                >
+                  {stats.ratingCounts[star - 1]}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        ) : null}
         {!remoteLoaded && !hasHistory ? (
           <ProfileReviewsSkeleton />
         ) : hasHistory ? (
           <>
-            {historyItems.map(({ review, dish }, index) => {
-              const entry = dish ? reviewEntries[dish.id] : undefined;
-              const tags = review?.tags ?? entry?.tags ?? [];
-              // Only the user's own rating: the dish average is never shown as theirs.
-              const rating = review?.rating ?? entry?.rating;
-              const reviewText = review?.text || entry?.text || "No written notes";
-              const dishId = review?.dishId ?? dish?.id;
-              const dishName = dish?.name ?? "Reviewed dish";
-              const venue = dish ? repository.getVenueById(dish.venueId) : undefined;
-              const imageUrl = review?.photos[0] ?? dish?.imageUrl;
-              const ratingPill = rating ? (
-                <View
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.imageLabelSurface,
-                    borderRadius: radii.pill,
-                    flexDirection: "row",
-                    gap: spacing[1],
-                    paddingHorizontal: spacing[3],
-                    paddingVertical: spacing[1],
-                  }}
-                >
-                  <Star size={14} color={palette.starStroke} fill={palette.starFill} />
-                  <AppText variant="bodySmallBold" tone="inverse">
-                    {rating.toFixed(1)}
-                  </AppText>
-                </View>
-              ) : null;
-              const cardBody = (
-                <>
-                  {imageUrl ? (
-                    <View style={{ height: 210 }}>
-                      <AccessibleImage
-                        source={{ uri: imageUrl }}
-                        decorative
-                        contentFit="cover"
-                        style={{ width: "100%", height: "100%" }}
-                      />
-                      {ratingPill ? (
-                        <View style={{ position: "absolute", top: spacing[3], right: spacing[3] }}>
-                          {ratingPill}
-                        </View>
-                      ) : null}
-                    </View>
-                  ) : null}
-                  <View style={{ padding: spacing[4], gap: spacing[2] }}>
-                    <View
-                      style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
-                    >
-                      <AppText variant="h2" style={{ flex: 1 }}>
-                        {dishName}
-                      </AppText>
-                      {dish ? (
-                        <AppText variant="h2" style={{ color: palette.orange }}>
-                          S${dish.price.toFixed(2)}
-                        </AppText>
-                      ) : null}
-                    </View>
-                    {!imageUrl && ratingPill ? (
-                      <View style={{ alignSelf: "flex-start" }}>{ratingPill}</View>
-                    ) : null}
-                    {venue ? (
-                      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[1] }}>
-                        <Store size={15} color={palette.orange} />
-                        <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                          {venue.name}
-                          {venue.unitNumber ? ` · ${venue.unitNumber}` : ""}
-                        </AppText>
-                      </View>
-                    ) : null}
-                    {rating ? (
-                      <AppText variant="bodySmall" style={{ color: palette.ratingStar }}>
-                        {"★".repeat(Math.round(rating))}
-                        {"☆".repeat(5 - Math.round(rating))}
-                      </AppText>
-                    ) : null}
-                    {tags.length ? (
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[1] }}>
-                        {tags.map((tag) => (
-                          <View
-                            key={tag}
-                            style={{
-                              backgroundColor: palette.orangeLight,
-                              borderRadius: radii.pill,
-                              paddingHorizontal: spacing[2],
-                              paddingVertical: 2,
-                            }}
-                          >
-                            <AppText variant="micro" style={{ color: palette.orangeDark }}>
-                              {tag}
-                            </AppText>
-                          </View>
-                        ))}
-                      </View>
-                    ) : null}
-                    {review?.moderationState ? (
-                      <ReviewModerationNotice
-                        state={review.moderationState}
-                        reviewId={review.id}
-                        dishName={dishName}
-                      />
-                    ) : null}
-                    <View
-                      style={{
-                        backgroundColor: palette.surfaceRaised,
-                        borderRadius: componentRadii.card,
-                        padding: spacing[3],
-                      }}
-                    >
-                      <AppText variant="bodySmall" tone="secondary" numberOfLines={4}>
-                        {reviewText}
-                      </AppText>
-                    </View>
-                    {review?.createdAt ? (
-                      <AppText variant="micro" tone="secondary">
-                        {new Date(review.createdAt).toLocaleDateString()}
-                        {review.editedAt ? " · Edited" : ""}
-                      </AppText>
-                    ) : null}
-                  </View>
-                </>
-              );
-              const key = review?.id ?? dish?.id ?? `review-history-entry-${index}`;
-
-              // The menu sits beside the card's pressable, not inside it, so a screen reader can
-              // reach it (an accessible Pressable hides its children).
-              return (
-                <View
-                  key={key}
-                  style={[
-                    shadows.card,
-                    {
-                      backgroundColor: palette.surface,
-                      borderRadius: componentRadii.card,
-                      overflow: "hidden",
-                      borderWidth: 1,
-                      borderColor: palette.border,
-                      marginBottom: spacing[4],
-                    },
-                  ]}
-                >
-                  {dishId ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`Review of ${dishName}${rating ? `, rated ${rating} out of 5` : ""}`}
-                      accessibilityHint="Opens the dish"
-                      onPress={() => openDish(dishId)}
-                    >
-                      {cardBody}
-                    </Pressable>
-                  ) : (
-                    cardBody
-                  )}
-                  {review && ownReviewEditor.enabled ? (
-                    <View
-                      style={{
-                        alignSelf: "flex-end",
-                        paddingBottom: spacing[2],
-                        paddingHorizontal: spacing[2],
-                      }}
-                    >
-                      <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
-                    </View>
-                  ) : null}
-                </View>
-              );
-            })}
+            {historyReviews.map((review, index) => (
+              <ProfileReviewCard
+                key={review.id}
+                variant="row"
+                first={index === 0}
+                review={review}
+                dish={infoFor(review.dishId)}
+                showTags
+                onOpenDish={review.dishId ? () => openDish(review.dishId as string) : undefined}
+                menu={
+                  serviceProviderMode === "supabase" && ownReviewEditor.enabled ? (
+                    <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
+                  ) : undefined
+                }
+              />
+            ))}
             {hasMore ? (
               <Button
                 label="Load more"
@@ -431,7 +376,7 @@ export function ReviewHistoryScreen({ navigation }: Props) {
           },
         ]}
       >
-        <PenLine size={24} color={palette.textOnPrimary} />
+        <AppSymbol name="compose" size={24} color={palette.textOnPrimary} />
       </Pressable>
     </View>
   );

@@ -45,7 +45,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   const floorSelector = readRepoFile("src/components/map/FloorSelector.tsx");
 
   assertSourceIncludes(discover, [/<FilterChipRail[\s\S]*options=\{sortedChips\}/], "Discover");
-  assertSourceIncludes(review, [/<FilterChipRail[\s\S]*options=\{chips\.map\(/], "Review");
+  assertSourceIncludes(review, [/<FilterChipRail[\s\S]*options=\{filterChips\.map\(/], "Review");
   assertSourceIncludes(
     reviewComposer,
     [/<ChipGroup[\s\S]*options=\{REVIEW_EDITOR_TAGS\.map/],
@@ -63,7 +63,7 @@ test("primary user filter surfaces use shared chip primitives", () => {
   );
   assertSourceIncludes(
     searchResults,
-    [/<FilterChipRail[\s\S]*options=\{RAW_BROWSE_FILTER_OPTIONS\}/],
+    [/<ChipGroup[\s\S]*options=\{RAW_BROWSE_FILTER_OPTIONS\}/],
     "Search Results browse filters",
   );
   assertSourceIncludes(

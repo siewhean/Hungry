@@ -1,0 +1,14 @@
+{
+  "version": "20261029113000",
+  "name": "20261029113000_catalog_search_relevance",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T17:38:58Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "bde8f1e56cdd5d787414b5b775e3cbba97d50680",
+  "up_sha256": "67b0e216b3531435796a7b3d300c669457dcdbe5e6fb34fbbcb78e171cbdfe91",
+  "down_sha256": "9da2ea00ca46f79b2509e695108cacecc0b296d32fb350a1bf0452ff93c72211",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/catalog_search_relevance.sql"]
+}

@@ -47,14 +47,14 @@ test("sign-up and reset check-your-email screens verify the emailed code", () =>
   );
 
   const verify = read("src/app/screens/auth/EmailVerificationScreen.tsx");
-  assert.match(verify, /<EmailCodeField onSubmit=\{confirmWithEmailCode\}/);
+  assert.match(verify, /<EmailCodeField[^>]*onSubmit=\{confirmWithEmailCode\}/);
   assert.match(
     verify,
     /verifyEmailCode\(email, code, "signup"\)[\s\S]*?finishVerifiedSession\(session\)/,
   );
 
   const forgot = read("src/app/screens/auth/ForgotPasswordScreen.tsx");
-  assert.match(forgot, /<EmailCodeField onSubmit=\{handleResetCode\}/);
+  assert.match(forgot, /<EmailCodeField[^>]*onSubmit=\{handleResetCode\}/);
   // Verifying signs the user in: hold RootNavigator's redirect before it, release on failure.
   assert.match(
     forgot,

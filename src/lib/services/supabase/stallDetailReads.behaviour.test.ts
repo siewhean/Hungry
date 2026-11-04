@@ -102,3 +102,93 @@ test("no merchant profile and no schedule are still plain empty answers", async 
   assert.equal(await service.discovery.getPublicMerchantProfile(VENUE), undefined);
   assert.equal(await service.discovery.getVenueOpeningSchedule(VENUE), undefined);
 });
+
+// R4-STALL-13: the three merchant reads ride along with get_venue_detail.
+
+const withMerchantColumns = (id: string, extra: Record<string, unknown>) => ({
+  id,
+  name: "Merchant Stall",
+  dishes: dishRows(2),
+  ...extra,
+});
+
+test("R4-STALL-13: opening a stall makes one request; the merchant reads come back with it", async () => {
+  const venue = "55555555-5555-4555-8555-555555555551";
+  fake.rpc.get_venue_detail = () => ({
+    data: [
+      withMerchantColumns(venue, {
+        merchant_profile: {
+          outlet_id: "o1",
+          contact_phone: "+6591234567",
+          temporary_closure: "Closed for renovation",
+          is_verified: true,
+        },
+        active_promotions: [],
+        claim_status: "contacted",
+      }),
+    ],
+  });
+  await service.discovery.getVenue(venue);
+  const profile = await service.discovery.getPublicMerchantProfile(venue);
+  const promotions = await service.discovery.listActivePromotionsForTarget({ venueId: venue });
+  const claim = await service.supply.getMerchantClaimStatus(venue);
+  assert.equal(profile?.contactPhone, "+6591234567");
+  assert.equal(profile?.temporaryClosure, "Closed for renovation");
+  assert.deepEqual(promotions, []);
+  assert.equal(claim, "in_review");
+  assert.equal(fake.rpcCalls.length, 1, "one request for the stall, profile, promotions and claim");
+  assert.equal(fake.callsTo("get_venue_detail").length, 1);
+  assert.equal(fake.queries.length, 0, "no separate claim-status query");
+});
+
+test("R4-STALL-13: a stall with no verified owner and no claim reads as empty answers", async () => {
+  const venue = "55555555-5555-4555-8555-555555555552";
+  fake.rpc.get_venue_detail = () => ({
+    data: [
+      withMerchantColumns(venue, {
+        merchant_profile: null,
+        active_promotions: [],
+        claim_status: null,
+      }),
+    ],
+  });
+  await service.discovery.getVenue(venue);
+  assert.equal(await service.discovery.getPublicMerchantProfile(venue), undefined);
+  assert.equal(await service.supply.getMerchantClaimStatus(venue), "none");
+  assert.equal(fake.rpcCalls.length, 1);
+});
+
+test("R4-STALL-13: a database without the new columns falls back to the separate reads", async () => {
+  const venue = "55555555-5555-4555-8555-555555555553";
+  fake.rpc.get_venue_detail = () => ({ data: [withMerchantColumns(venue, {})] });
+  fake.rpc.get_public_merchant_profile = () => ({
+    data: [{ outlet_id: "o2", contact_phone: "+6580000000", is_verified: true }],
+  });
+  await service.discovery.getVenue(venue);
+  const profile = await service.discovery.getPublicMerchantProfile(venue);
+  assert.equal(profile?.contactPhone, "+6580000000");
+  assert.equal(fake.callsTo("get_public_merchant_profile").length, 1);
+});
+
+test("R4-STALL-13: a dish page's promotion read and a read with no stall call keep their own RPCs", async () => {
+  const venue = "55555555-5555-4555-8555-555555555554";
+  fake.rpc.list_customer_active_promotions = () => ({ data: [] });
+  fake.rpc.get_public_merchant_profile = () => ({ data: [] });
+  // No get_venue_detail has run for this stall: the profile read must not start one.
+  await service.discovery.getPublicMerchantProfile(venue);
+  assert.equal(fake.callsTo("get_venue_detail").length, 0);
+  assert.equal(fake.callsTo("get_public_merchant_profile").length, 1);
+
+  fake.rpc.get_venue_detail = () => ({
+    data: [
+      withMerchantColumns(venue, {
+        merchant_profile: null,
+        active_promotions: [],
+        claim_status: null,
+      }),
+    ],
+  });
+  await service.discovery.getVenue(venue);
+  await service.discovery.listActivePromotionsForTarget({ venueId: venue, dishId: "dish-1" });
+  assert.equal(fake.callsTo("list_customer_active_promotions").length, 1);
+});

@@ -32,7 +32,7 @@ test("peak hours read as Singapore clock hours, with midnight as 12 AM", () => {
 
   const migration = read(`${MIGRATIONS}/20261020060000_merchant_analytics_sgt_peak_hours.sql`);
   assert.match(migration, /extract\(hour from occurred_at at time zone 'Asia\/Singapore'\)/);
-  assert.match(read("src/app/screens/merchant/MerchantAnalyticsScreen.tsx"), /formatPeakHour\(/);
+  assert.match(read("src/components/merchant/PeakHoursChart.tsx"), /formatPeakHour\(/);
 });
 
 test("a live outlet without readable hours is labelled live on Hungry, not open", () => {
@@ -63,7 +63,7 @@ test("an empty promotion price yields no label, and diner and merchant cards hid
     read("src/components/promotion/CustomerPromotionCard.tsx"),
     /\) : pricing\.label \? \(/,
   );
-  assert.match(read("src/app/screens/merchant/PromotionListScreen.tsx"), /\{pricing\.label \? \(/);
+  assert.match(read("src/app/screens/merchant/PromotionListScreen.tsx"), /pricing\.label \? \(/);
 });
 
 test("merchant notification links resolve to Merchant Centre screens", () => {
@@ -92,10 +92,10 @@ test("unverified merchants can prepare their profile and always reach an exit", 
   const tabs = read("src/app/navigation/MerchantTabs.tsx");
   assert.match(tabs, /function useMerchantAccessLevel\(\)/);
   assert.match(tabs, /function MerchantSignInGate\(/);
-  assert.equal(tabs.match(/label="Sign In as Mock Merchant"/g)?.length, 1);
+  assert.equal(tabs.match(/label="Sign in as mock merchant"/g)?.length, 1);
   const gate = tabs.slice(tabs.indexOf("function MerchantAccessGate("));
   assert.match(gate, /const access = useMerchantAccessLevel\(\);/);
-  assert.match(gate, /label="Switch to Customer Mode"/);
+  assert.match(gate, /label="Switch to customer mode"/);
   assert.match(gate, /label="Sign out"/);
 });
 

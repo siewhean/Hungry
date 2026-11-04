@@ -167,8 +167,9 @@ test("signed-out app entry requires an account (no guest mode)", () => {
   );
   assert.match(splash, /name: "MainTabs"[\s\S]*params: \{ screen: "Home" \}/);
   assert.match(profileHome, /setReturnRoute\("Profile"\)/);
+  // Sign out lives at the bottom of Settings only, and sends the diner to Login.
   assert.match(
-    profileHome,
+    read("src/app/screens/profile/SettingsScreen.tsx"),
     /rootNavigation\.reset\(\{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
   );
   assert.doesNotMatch(profileHome, /Unlock your taste profile|Sign In \/ Create Account/);

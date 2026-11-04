@@ -121,3 +121,86 @@ test("stallPriceLabel shows one price or a range", () => {
   );
   assert.equal(stallPriceLabel({ venue: venue("a"), dishes: [] }), "");
 });
+
+test("rankForYou shows no match percent while the profile is not trusted", () => {
+  const spicy = dish("hot", { tasteVector: { ...NEUTRAL, spicy: 9 } });
+  const picks = rankForYou([spicy], {
+    tasteVector: { ...NEUTRAL, spicy: 9 },
+    dietaryFlags: [],
+    profileTrusted: false,
+  });
+  assert.equal(picks[0]?.matchPercent, undefined);
+  assert.match(picks[0]?.reason ?? "", /spicy/i, "the reason line still shows");
+});
+
+test("rankForYou hides the match percent for a dish with low-confidence tags only", () => {
+  const sure = dish("sure", { tasteVector: { ...NEUTRAL, spicy: 9 }, tasteConfidence: 0.9 });
+  const unsure = dish("unsure", { tasteVector: { ...NEUTRAL, spicy: 9 }, tasteConfidence: 0.4 });
+  const picks = rankForYou([sure, unsure], {
+    tasteVector: { ...NEUTRAL, spicy: 9 },
+    dietaryFlags: [],
+    profileTrusted: true,
+  });
+  assert.equal(typeof picks.find((pick) => pick.dish.id === "sure")?.matchPercent, "number");
+  assert.equal(picks.find((pick) => pick.dish.id === "unsure")?.matchPercent, undefined);
+});
+
+const SPICY_FAN: TasteVector = { sweet: 3, spicy: 9, sour: 4, salty: 6, rich: 5, aromatic: 6 };
+
+test("reserveFresh gives slot 4 to the best-ranked dish with few reviews", () => {
+  const dishes = Array.from({ length: 6 }, (_, index) =>
+    dish(`p${index}`, {
+      tasteVector: { ...SPICY_FAN, spicy: 9 - index * 0.5 },
+      reviewCount: index === 4 ? 0 : 30,
+    }),
+  );
+  const plain = rankForYou(dishes, {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    limit: 6,
+  }).map((pick) => pick.dish.id);
+  const reserved = rankForYou(dishes, {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    limit: 6,
+    reserveFresh: true,
+  }).map((pick) => pick.dish.id);
+  assert.notEqual(plain[3], "p4");
+  assert.equal(reserved[3], "p4");
+});
+
+test("a well-reviewed dish edges out an equal match with no reviews", () => {
+  const proven = dish("proven", { tasteVector: SPICY_FAN, rating: 4.8, reviewCount: 60 });
+  const unknown = dish("unknown", { tasteVector: SPICY_FAN, rating: 0, reviewCount: 0 });
+  const order = rankForYou([unknown, proven], {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    likedDishes: [],
+  }).map((pick) => pick.dish.id);
+  assert.deepEqual(order, ["proven", "unknown"]);
+});
+
+test("with liked dishes, a dish that shares their tags moves up among close matches", () => {
+  const liked = [dish("liked", { tasteTags: ["noodle"], foodTypeTag: "laksa" })];
+  const alike = dish("alike", {
+    tasteVector: { ...SPICY_FAN, spicy: 8 },
+    tasteTags: ["noodle"],
+    foodTypeTag: "laksa",
+  });
+  const other = dish("other", {
+    tasteVector: { ...SPICY_FAN, spicy: 8.2 },
+    tasteTags: ["grilled"],
+    foodTypeTag: "satay",
+  });
+  const withoutHistory = rankForYou([other, alike], {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+  }).map((pick) => pick.dish.id);
+  const withHistory = rankForYou([other, alike], {
+    tasteVector: SPICY_FAN,
+    dietaryFlags: [],
+    likedDishes: liked,
+  }).map((pick) => pick.dish.id);
+  assert.equal(withoutHistory[0], "other");
+  assert.equal(withHistory[0], "alike");
+});

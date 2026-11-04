@@ -34,6 +34,10 @@ function resolveBuilding(buildingId?: string, selectedName?: string) {
   return getBuildingById(DEFAULT_BUILDING_ID)!;
 }
 
+// Not for diners (MD-M15): it reads the synchronous venue cache, which is partial against Supabase,
+// and a building outside the 32-building static list falls back to Maxwell. The diner map is
+// HomeMapScreen, which reads the catalog. Keep this behind the developer launcher until it is
+// rebuilt on the catalog or deleted.
 export function MapZoomedInScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const { palette, radii, spacing, shadows } = useHungryTheme();

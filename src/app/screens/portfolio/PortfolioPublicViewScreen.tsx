@@ -200,7 +200,11 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
                 }
               }}
               onPress={() => {
-                if (item.dishId) navigation.navigate("DishDetail", { dishId: item.dishId });
+                if (item.dishId)
+                  navigation.navigate("DishDetail", {
+                    dishId: item.dishId,
+                    source: "collection_view",
+                  });
                 else if (item.stallId)
                   navigation.navigate("StallDetail", { venueId: item.stallId });
               }}

@@ -2,9 +2,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, LockKeyhole, Mail, MailCheck } from "lucide-react-native";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input, AppSymbol } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import {
@@ -26,6 +25,7 @@ import { getConfiguredDataSource } from "@/lib/services/supabase/client";
 import { useHungryTheme } from "@/theme";
 import type { AuthStackParamList } from "./AuthStack";
 import { AuthScreenShell } from "./AuthScreenShell";
+import { EmailSuggestionHint, useEmailSuggestion } from "./EmailSuggestion";
 import { AUTH_COPY } from "./authCopy";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
@@ -42,9 +42,11 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
   const [sentTo, setSentTo] = useState<string | null>(null);
   // Another reset email within the server's 60s limit only fails, so "Send again" waits.
   const { seconds: resendSeconds, restart: restartResendCooldown } = useResendCooldown(false);
+  const emailSuggestion = useEmailSuggestion();
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ defaultValues: { email: route.params?.email ?? "" } });
   // A signed-in user ("Forgot current password?") stays signed in and returns to Settings.
@@ -72,7 +74,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
       await getHungryService().auth.verifyEmailCode(sentTo, code, "recovery");
     } catch (error) {
       if (!fromSignedIn) setPasswordRecoveryInProgress(false);
-      trackAuthFailed("password_reset", "email", error);
+      trackAuthFailed("password_reset", "email", error, "forgot_password");
       if (isUnexpectedAuthError(error)) reportError(error, { flow: "password_reset_code" });
       throw error;
     }
@@ -92,7 +94,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
       setSentTo(email.trim().toLowerCase());
       restartResendCooldown();
     } catch (error) {
-      trackAuthFailed("password_reset", "email", error);
+      trackAuthFailed("password_reset", "email", error, "forgot_password");
       if (isUnexpectedAuthError(error)) reportError(error, { flow: "password_reset_request" });
       // A 429 means an email went out within the last minute: wait it out, don't retry.
       if (getAuthErrorKind(error) === "rate_limited") restartResendCooldown();
@@ -109,8 +111,8 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
       body={AUTH_COPY.forgotPassword.errorBody}
     >
       <AuthScreenShell
-        title={AUTH_COPY.forgotPassword.title}
-        subtitle={AUTH_COPY.forgotPassword.subtitle}
+        title={sentTo ? AUTH_COPY.forgotPassword.sentShellTitle : AUTH_COPY.forgotPassword.title}
+        subtitle={sentTo ? undefined : AUTH_COPY.forgotPassword.subtitle}
         compact
         footer={
           <Pressable
@@ -135,7 +137,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
               minHeight: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={14} />
+            <AppSymbol name="back" color={palette.text} size={14} />
             <AppText tone="accent" style={{ fontWeight: "700" }}>
               {backLabel}
             </AppText>
@@ -155,13 +157,10 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                   width: 80,
                 }}
               >
-                <MailCheck color={palette.orange} size={30} />
+                <AppSymbol name="emailSent" color={palette.orange} size={30} />
               </View>
             </View>
             <View accessible accessibilityLiveRegion="polite" style={{ gap: spacing[2] }}>
-              <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
-                {AUTH_COPY.forgotPassword.sentTitle}
-              </AppText>
               <AppText tone="secondary" style={{ textAlign: "center" }}>
                 {AUTH_COPY.forgotPassword.sentBody.replace("{email}", sentTo)}
               </AppText>
@@ -169,7 +168,11 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                 {AUTH_COPY.forgotPassword.sentSpamHint}
               </AppText>
             </View>
-            <EmailCodeField onSubmit={handleResetCode} submitLabel="Reset password" />
+            <EmailCodeField
+              screen="forgot_password"
+              onSubmit={handleResetCode}
+              submitLabel="Reset password"
+            />
             {/* The code is the one primary action; the rest are plain text links. */}
             <View style={{ alignItems: "center", gap: spacing[1] }}>
               <Pressable
@@ -218,7 +221,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                   width: 80,
                 }}
               >
-                <LockKeyhole color={palette.orange} size={30} />
+                <AppSymbol name="resetPassword" color={palette.orange} size={30} />
               </View>
             </View>
 
@@ -226,7 +229,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
               control={control}
               name="email"
               rules={{ validate: validateEmail }}
-              render={({ field: { onChange, value } }) => (
+              render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -237,12 +240,28 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                   onSubmitEditing={() => void handleSend()}
                   label={AUTH_COPY.forgotPassword.emailLabel}
                   value={value}
-                  onChangeText={onChange}
-                  leftIcon={<Mail color={palette.textMuted} size={16} />}
+                  onChangeText={(next) => {
+                    emailSuggestion.clear();
+                    onChange(next);
+                  }}
+                  onBlur={() => {
+                    onBlur();
+                    emailSuggestion.check(value);
+                  }}
+                  leftIcon={
+                    <AppSymbol name="email" color={palette.textMuted} size={16} weight="regular" />
+                  }
                   error={!!errors.email}
                   errorText={errors.email?.message}
                 />
               )}
+            />
+            <EmailSuggestionHint
+              suggestion={emailSuggestion.suggestion}
+              onAccept={(address) => {
+                setValue("email", address, { shouldValidate: true });
+                emailSuggestion.clear();
+              }}
             />
             <Button
               label={AUTH_COPY.forgotPassword.primaryButton}

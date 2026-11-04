@@ -28,6 +28,7 @@ export type ParamKey =
   | "checklist"
   | "checklistPicker"
   | "dish"
+  | "dishReviews"
   | "portfolio"
   | "portfolioPicker"
   | "report"
@@ -35,6 +36,7 @@ export type ParamKey =
   | "socialGrid"
   | "socialPost"
   | "stall"
+  | "stallVisited"
   | "story"
   | "otherUser";
 
@@ -76,7 +78,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "LoginScreen",
     file: "src/app/screens/auth/LoginScreen.tsx",
     scenario: "user",
-    expect: /Welcome back/,
+    expect: /Sign in to Hungry/,
   },
   {
     name: "ResetPasswordScreen",
@@ -131,10 +133,24 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     params: "dish",
   },
   {
+    name: "DishReviewsScreen",
+    file: "src/app/screens/detail/DishReviewsScreen.tsx",
+    scenario: "user",
+    expect: /Reviews/,
+    params: "dishReviews",
+  },
+  {
     name: "MerchantClaimExplainerScreen",
     file: "src/app/screens/detail/MerchantClaimExplainerScreen.tsx",
     scenario: "user",
     expect: /Claim Verification/,
+  },
+  {
+    name: "StallVisitedScreen",
+    file: "src/app/screens/detail/StallVisitedScreen.tsx",
+    scenario: "user",
+    expect: /Visited/,
+    params: "stallVisited",
   },
   {
     name: "NotFoundScreen",
@@ -177,19 +193,19 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DecideForMeQuizScreen",
     file: "src/app/screens/discover/DecideForMeQuizScreen.tsx",
     scenario: "user",
-    expect: /What kind of food\?/,
+    expect: /What kind of food\?|Where are you eating\?/,
   },
   {
     name: "DecideForMeResultScreen",
     file: "src/app/screens/discover/DecideForMeResultScreen.tsx",
     scenario: "user",
-    expect: /Recommended for you/,
+    expect: /Your pick/,
   },
   {
     name: "DiscoverHomeScreen",
     file: "src/app/screens/discover/DiscoverHomeScreen.tsx",
     scenario: "user",
-    expect: /Choose where you are|You are at/,
+    expect: /Choose where you are|You are at|Picks across/,
   },
   {
     name: "DiscoverEntryScreen",
@@ -197,7 +213,14 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     scenario: "user",
     // Mock mode renders DiscoverHomeScreen; the Supabase branch (live feed, offline hand-off)
     // is covered in src/app/screens/discover/DiscoverEntryScreen.render.test.tsx.
-    expect: /Choose where you are|You are at/,
+    expect: /Choose where you are|You are at|Picks across/,
+  },
+  {
+    name: "HomeOfflineScreen",
+    file: "src/app/screens/discover/HomeOfflineScreen.tsx",
+    scenario: "user",
+    // Shown in place of Home when the live feed fails; behaviour in HomeOfflineScreen.render.test.tsx.
+    expect: /Can't reach Hungry|You're offline/,
   },
   {
     name: "HomeMapScreen",
@@ -354,7 +377,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "VerificationCentreScreen",
     file: "src/app/screens/merchant/VerificationCentreScreen.tsx",
     scenario: "merchant",
-    expect: /Verification Centre/,
+    expect: /Verification centre/,
   },
   {
     name: "FoodOpennessScreen",
@@ -604,6 +627,20 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /What's wrong\?/,
   },
   {
+    name: "SuggestOpeningHoursScreen",
+    file: "src/app/screens/detail/SuggestOpeningHoursScreen.tsx",
+    scenario: "user",
+    params: "stallVisited",
+    expect: /Every day/,
+  },
+  {
+    name: "SuggestDishScreen",
+    file: "src/app/screens/detail/SuggestDishScreen.tsx",
+    scenario: "user",
+    params: "stallVisited",
+    expect: /Dish name/,
+  },
+  {
     name: "CollectionsScreen",
     file: "src/app/screens/profile/CollectionsScreen.tsx",
     scenario: "user",
@@ -637,7 +674,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ProfileHomeScreen",
     file: "src/app/screens/profile/ProfileHomeScreen.tsx",
     scenario: "user",
-    expect: /Collections/,
+    expect: /Taste Fingerprint/,
   },
   {
     name: "ReleaseProfileScreen",
@@ -649,7 +686,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewHistoryScreen",
     file: "src/app/screens/profile/ReviewHistoryScreen.tsx",
     scenario: "user",
-    expect: /Reviewed/,
+    expect: /Your reviews/,
+  },
+  {
+    name: "DeveloperToolsScreen",
+    file: "src/app/screens/profile/DeveloperToolsScreen.tsx",
+    scenario: "user",
+    expect: /Developer tools/,
   },
   {
     name: "SettingsScreen",
@@ -719,13 +762,19 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "DishSearchScreen",
     file: "src/app/screens/search/DishSearchScreen.tsx",
     scenario: "user",
-    expect: /Dishes to Discover/,
+    expect: /Dishes to discover/,
   },
   {
     name: "BrowseDishesScreen",
     file: "src/app/screens/search/SearchResultsScreen.tsx",
     scenario: "user",
     expect: /Under S\$6/,
+  },
+  {
+    name: "FoodStylesScreen",
+    file: "src/app/screens/discover/FoodStylesScreen.tsx",
+    scenario: "user",
+    expect: /Popular dishes/,
   },
   {
     name: "BrowseStallsScreen",
@@ -749,7 +798,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "WheelLobbyScreen",
     file: "src/app/screens/wheel/WheelLobbyScreen.tsx",
     scenario: "user",
-    expect: /Your wheel/,
+    expect: /Hungry Wheel/,
   },
   {
     name: "WheelSpinScreen",

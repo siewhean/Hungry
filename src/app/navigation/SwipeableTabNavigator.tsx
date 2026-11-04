@@ -1,24 +1,33 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type {
   MaterialTopTabBarProps,
   MaterialTopTabNavigationProp,
 } from "@react-navigation/material-top-tabs";
-import { useFocusEffect, useNavigation, type NavigationProp } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+  type NavigationProp,
+} from "@react-navigation/native";
 import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { PostTabPage } from "@/components/review/PostTabPage";
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { useAchievementsLoopEnabled, useNextStamp } from "@/features/passport/useNextStamp";
+import { mainTabOrder } from "@/features/navigation/swipeIntent";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
+import { createEdgeSwipeTabNavigator } from "./EdgeSwipeTabs";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
+import { tabBarBottomPadding } from "./tabBarMetrics";
 
-const Tab = createMaterialTopTabNavigator<MainTabParamList>();
-const MAIN_TAB_PRELOAD_DISTANCE = 2;
+const Tab = createEdgeSwipeTabNavigator<MainTabParamList>();
 const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
 const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
 const MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0;
@@ -130,9 +139,34 @@ function TabScreenLoadingPlaceholder() {
   );
 }
 
+const MAIN_TAB_ORDER = mainTabOrder({
+  socialFeedEnabled: FEATURE_FLAGS.socialFeedEnabled,
+  reviewCreationEnabled: FEATURE_FLAGS.reviewCreationEnabled,
+});
+
+/**
+ * Opens the Post card (the review composer) from the bottom, the way the Post button does. A
+ * guest signs in first and lands on the composer afterwards.
+ */
+function useOpenCreateReview() {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const rootNavigation = navigation.getParent<NavigationProp<RootStackParamList>>() ?? navigation;
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  return useCallback(() => {
+    if (!isAuthenticated) {
+      setReturnRoute({ name: "ReviewStack", params: { screen: "ReviewMain" } });
+      rootNavigation.navigate("AuthStack", { screen: "Login" });
+      return;
+    }
+    rootNavigation.navigate("ReviewStack", { screen: "ReviewMain" });
+  }, [isAuthenticated, rootNavigation, setReturnRoute]);
+}
+
 function createDeferredTabScreen(loader: TabScreenLoader) {
   function DeferredTabScreen(props: object) {
     const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
+    const route = useRoute();
 
     useEffect(() => {
       if (Component) return undefined;
@@ -144,7 +178,11 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
       };
     }, [Component, loader]);
 
-    return Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />;
+    return (
+      <View style={styles.tabPage}>
+        {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
+      </View>
+    );
   }
 
   DeferredTabScreen.displayName = "DeferredTabScreen";
@@ -190,6 +228,16 @@ const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
 const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
 const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
 
+/** The Post page in the swipe order; its button opens the review card, like the Post button. */
+function CreateWrapper() {
+  const openCreateReview = useOpenCreateReview();
+  return (
+    <View style={styles.tabPage}>
+      <PostTabPage onStart={openCreateReview} />
+    </View>
+  );
+}
+
 /**
  * Release builds keep the Home/Review routes registered (many flows reset to
  * `MainTabs > Home`) but hide them from the tab bar. The redirect must stay
@@ -217,16 +265,19 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const loopEnabled = useAchievementsLoopEnabled();
+  const nextStamp = useNextStamp();
+  const profileRing = loopEnabled && isAuthenticated ? nextStamp?.fraction : undefined;
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
   // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
-  // The round middle button writes a review.
+  // The middle button writes a review; it looks like any other tab.
   const tabItems = [
     { key: "Discover", route: routeByName.get("Discover"), icon: House, label: "Home" },
     ...(FEATURE_FLAGS.socialFeedEnabled
       ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: "Feed" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review" }]
+      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: "Post" }]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
       ? [{ key: "Review", route: routeByName.get("Review"), icon: BookOpenText, label: "Reviews" }]
@@ -241,8 +292,8 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         styles.tabBarContainer,
         {
           backgroundColor: palette.bg,
-          height: componentSizes.bottomTabBar + Math.max(insets.bottom, spacing[2]),
-          paddingBottom: Math.max(insets.bottom, spacing[2]),
+          height: componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]),
+          paddingBottom: tabBarBottomPadding(insets.bottom, spacing[2]),
           paddingTop: spacing[2],
         },
       ]}
@@ -253,7 +304,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const routeName = route?.name;
         const routeKey = route?.key ?? "create-post-action";
         const routeIndex = route ? state.routes.indexOf(route) : -1;
-        const isFocused = !isCreateAction && state.index === routeIndex;
+        // The Post button reads as selected while the Post page is on show (reached by a swipe).
+        const isFocused = isCreateAction
+          ? state.routes[state.index]?.name === "Create"
+          : state.index === routeIndex;
 
         const onPress = () => {
           if (isCreateAction) {
@@ -297,14 +351,14 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         return (
           <AppBottomTabItem
             key={routeKey}
-            accessibilityLabel={item.label}
+            accessibilityLabel={isCreateAction ? "Post a review" : item.label}
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}
             label={item.label}
             onPress={onPress}
             onPressIn={onPressIn}
-            showLabel={!isCreateAction}
+            ringFraction={routeName === "Profile" ? profileRing : undefined}
           />
         );
       })}
@@ -313,6 +367,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 }
 
 export function SwipeableTabNavigator() {
+  const reduceMotion = useReduceMotion();
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
   useEffect(() => {
@@ -324,34 +379,29 @@ export function SwipeableTabNavigator() {
     <Tab.Navigator
       id="Tabs"
       initialRouteName="Discover"
-      tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
-      screenOptions={{
-        swipeEnabled: !FEATURE_FLAGS.release01CoreOnly,
-        animationEnabled: false,
-        lazy: !tabPreloadEnabled,
-        lazyPlaceholder: () => <TabScreenLoadingPlaceholder />,
-        lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
-      }}
+      // The pages in the swipe order come first; a route that only redirects sits after them, so a
+      // drag never uncovers it. Edge swipes drag the pages along; the tab bar switches at once.
+      pageCount={MAIN_TAB_ORDER.length}
+      mountAllPages={tabPreloadEnabled}
+      reduceMotion={reduceMotion}
     >
-      {/* With the feed hidden, the next pager page is the Home redirect, which bounces a
-          swipe straight back here. Swiping is off on Discover then; the tab bar still works. */}
-      <Tab.Screen
-        name="Discover"
-        component={DiscoverWrapper}
-        options={{ swipeEnabled: FEATURE_FLAGS.socialFeedEnabled }}
-      />
-      {/* The social posts feed. No pager swipe: its photo carousels own horizontal swipes. */}
-      <Tab.Screen
-        name="Home"
-        component={FEATURE_FLAGS.socialFeedEnabled ? HomeWrapper : ReleaseLandingRedirect}
-        options={{ swipeEnabled: false }}
-      />
-      <Tab.Screen
-        name="Review"
-        component={FEATURE_FLAGS.reviewCreationEnabled ? ReviewWrapper : ReleaseLandingRedirect}
-      />
+      <Tab.Screen name="Discover" component={DiscoverWrapper} />
+      {/* The social posts feed. Its photo carousels own horizontal swipes, so only the edges page. */}
+      {FEATURE_FLAGS.socialFeedEnabled ? <Tab.Screen name="Home" component={HomeWrapper} /> : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <Tab.Screen name="Create" component={CreateWrapper} />
+      ) : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <Tab.Screen name="Review" component={ReviewWrapper} />
+      ) : null}
       <Tab.Screen name="Profile" component={ProfileWrapper} />
+      {FEATURE_FLAGS.socialFeedEnabled ? null : (
+        <Tab.Screen name="Home" component={ReleaseLandingRedirect} />
+      )}
+      {FEATURE_FLAGS.reviewCreationEnabled ? null : (
+        <Tab.Screen name="Review" component={ReleaseLandingRedirect} />
+      )}
     </Tab.Navigator>
   );
 }
@@ -367,6 +417,7 @@ const createStyles = () =>
   });
 
 const styles = StyleSheet.create({
+  tabPage: { flex: 1 },
   loadingPlaceholder: {
     alignItems: "center",
     flex: 1,

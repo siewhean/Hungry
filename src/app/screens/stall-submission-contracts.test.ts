@@ -15,15 +15,14 @@ test("Profile exposes the add-stall contribution section and route", () => {
   assert.match(navigationTypes, /AddStall: undefined/);
   assert.match(profileStack, /import \{ AddStallScreen \} from "\.\/AddStallScreen"/);
   assert.match(profileStack, /<Stack\.Screen name="AddStall" component=\{AddStallScreen\}/);
-  assert.match(profileHome, /function StallContributionCard/);
+  assert.match(profileHome, /function StallContributionRow/);
   assert.match(profileHome, /loadStallSubmissions/);
   // One name everywhere: "Add a stall" (menu, card and screen).
-  assert.match(profileHome, /label="Add a stall"/);
+  assert.match(profileHome, /accessibilityLabel="Add a stall"/);
   assert.doesNotMatch(profileHome, /Add Discovered Stall|Add stalls from online finds/);
   assert.match(profileHome, /navigation\.navigate\("AddStall"\)/);
   assert.match(profileHome, /navigation\.navigate\("StallSubmissions"\)/);
-  assert.match(profileHome, /Submitted/);
-  assert.match(profileHome, /With menu/);
+  assert.match(profileHome, /submitted/);
   // The Scout level tile is a gamification surface and stays behind its flag.
   assert.match(profileHome, /FEATURE_FLAGS\.gamificationEnabled/);
 });

@@ -44,3 +44,18 @@ export function buildTasteShareMessage(vector: TasteVector): string {
   const traits = top.length > 0 ? `\n\nTop taste traits: ${top.join(", ")}` : "";
   return `Check out my Taste Fingerprint on Hungry!${traits}`;
 }
+
+/** Low, Medium or High for one 0-10 taste level, in the same bands as the palate summary. */
+export function tasteLevelLabel(level: number): "Low" | "Medium" | "High" {
+  if (level >= 7) return "High";
+  if (level <= 3) return "Low";
+  return "Medium";
+}
+
+/** Spoken summary of the whole radar: "Taste: Sweet medium, Spicy high, ...". */
+export function describeTasteVector(vector: TasteVector): string {
+  return `Taste: ${TASTE_DIMENSIONS.map(
+    ({ key, label }) =>
+      `${label} ${tasteLevelLabel(vector[key] ?? NEUTRAL_TASTE_VECTOR[key]).toLowerCase()}`,
+  ).join(", ")}`;
+}

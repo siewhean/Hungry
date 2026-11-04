@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 
 import { AccessibleImage, AppText, Button } from "@/components/ui";
 import {
@@ -46,33 +46,41 @@ export function MerchantImageField({
   return (
     <View style={{ gap: spacing[2] }}>
       <AppText variant="bodyBold">{label}</AppText>
-      {value.trim() ? (
-        <AccessibleImage
-          source={{ uri: value.trim() }}
-          style={[
-            styles.photoPreview,
-            { borderRadius: componentRadii.input, borderColor: palette.border },
-          ]}
-          accessibilityLabel={`${label} preview`}
-        />
-      ) : (
-        <View
-          accessibilityLabel={`${label} preview`}
-          style={[
-            styles.photoPlaceholder,
-            {
-              backgroundColor: palette.bgSoft,
-              borderColor: palette.border,
-              borderRadius: componentRadii.input,
-            },
-          ]}
-        >
-          {icon}
-          <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
-            Upload from your phone or gallery.
-          </AppText>
-        </View>
-      )}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          value.trim() ? `Replace ${label.toLowerCase()}` : `Add ${label.toLowerCase()}`
+        }
+        onPress={() => void handlePick("library")}
+      >
+        {value.trim() ? (
+          <AccessibleImage
+            source={{ uri: value.trim() }}
+            style={[
+              styles.photoPreview,
+              { borderRadius: componentRadii.input, borderColor: palette.border },
+            ]}
+            accessibilityLabel={`${label} preview`}
+          />
+        ) : (
+          <View
+            accessibilityLabel={`${label} preview`}
+            style={[
+              styles.photoPlaceholder,
+              {
+                backgroundColor: palette.bgSoft,
+                borderColor: palette.border,
+                borderRadius: componentRadii.input,
+              },
+            ]}
+          >
+            {icon}
+            <AppText variant="micro" tone="muted" style={{ marginTop: 4 }}>
+              Tap to choose from your phone or gallery.
+            </AppText>
+          </View>
+        )}
+      </Pressable>
       {isSaving && value ? (
         <AppText variant="micro" tone="muted">
           Uploading and saving image...
@@ -84,11 +92,6 @@ export function MerchantImageField({
         </AppText>
       ) : null}
       <View style={{ flexDirection: "row", gap: spacing[2] }}>
-        <Button
-          label={value ? "Replace" : "Upload"}
-          variant="secondary"
-          onPress={() => void handlePick("library")}
-        />
         {Platform.OS !== "web" ? (
           <Button
             label="Take photo"

@@ -1,0 +1,14 @@
+{
+  "version": "20261029100000",
+  "name": "20261029100000_search_dishes_decide_filters",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T08:12:13Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "89190351899de5864cad48eea6bf19d7c744fdcb",
+  "up_sha256": "31d99955b946f4eea3c7b5e925a9cfa020e3935c909814f1b618bfb42ec13a8e",
+  "down_sha256": "ab95452bda29b93def1ca6e358d25639aa8d7dbee438c65876d198081f53e884",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/search_dishes_decide_filters.sql"]
+}

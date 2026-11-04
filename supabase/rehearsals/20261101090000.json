@@ -1,0 +1,14 @@
+{
+  "version": "20261101090000",
+  "name": "20261101090000_discovery_feed_nearby_prefilter",
+  "result": "pass",
+  "rehearsed_at": "2026-11-01T09:56:32Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "fddd438cbe470b989fb53e0d3aeca26f4b528890",
+  "up_sha256": "4377ffe4a56732c26c70e9a75134534a9f4b62d52fc8182e438645a58df79edf",
+  "down_sha256": "07e3f2ee2e8101ed92b017f02772d8f8654182ed9f437556e95186b59a68a2c0",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/discovery_feed_nearby_prefilter.sql"]
+}

@@ -129,42 +129,29 @@ test("mandatory-auth native flows reject guest entry and protected deep-link byp
     assert.match(flow, /assertNotVisible: "Continue as Guest"/);
     assert.match(flow, /assertNotVisible: "Skip login"/);
     assert.match(flow, /Already have an account\.\*Sign in/);
-    assert.match(flow, /visible: "Welcome back"/);
+    assert.match(flow, /visible: "Sign in to Hungry"/);
     assert.match(flow, /openLink: "hungry:\/(?:\/)?(?:dish|venue)\//);
     assert.match(flow, /assertNotVisible: "Discover"/);
   }
 });
 
-test("authenticated fallback smoke requires staging credentials and an offline catalog badge", () => {
+test("authenticated outage smoke requires staging credentials and lands on the offline Home", () => {
   const runner = read("scripts/run-maestro-smoke.mjs");
   const flow = read(".maestro/ios-authenticated-fallback-smoke.yaml");
-  const discover = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
+  const offline = read("src/app/screens/discover/HomeOfflineScreen.tsx");
 
   assert.match(runner, /ios-authenticated-fallback requires HUNGRY_STAGING_EMAIL/);
   assert.match(flow, /\$\{STAGING_EMAIL\}/);
   assert.match(flow, /\$\{STAGING_PASSWORD\}/);
-  assert.match(flow, /id: "catalog-source-excel"/);
-  assert.match(flow, /assertVisible: "Offline catalog"/);
-  assert.match(discover, /testID=\{isOfflineCatalog \? "catalog-source-excel"/);
-  assert.match(discover, /releaseId\?\.startsWith\("excel-fallback"\)/);
-  // Supabase builds show the redesigned Home, which hands off to the Excel Home only when
-  // the discovery feed fails too, so the outage smokes must take that RPC down as well.
+  // A failed live feed swaps Home for the offline page, so the outage smokes look for it.
+  assert.match(flow, /id: "home-offline-root"/);
+  assert.match(flow, /assertVisible: "Try again"/);
+  assert.match(offline, /testID="home-offline-root"/);
+  assert.match(offline, /label="Try again"/);
   const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
   assert.match(flow, /get_discovery_feed_by_location unavailable/);
   assert.match(spec, /catalog_raw_\|get_discovery_feed_by_location/);
-  assert.doesNotMatch(spec, /catalog-source-supabase/);
-});
-
-test("HOME-V4: outage smokes accept the rail title Home shows without a GPS fix", () => {
-  const flow = read(".maestro/ios-authenticated-fallback-smoke.yaml");
-  const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
-  const discover = read("src/app/screens/discover/CatalogDiscoverHome.tsx");
-  // Fresh installs have no location grant, so Home titles the rail "Stalls".
-  assert.match(discover, /showDistance \? "Stalls near you" : "Stalls"/);
-  assert.doesNotMatch(flow, /assertVisible: "Stalls near you"/);
-  assert.match(flow, /assertVisible: "Stalls\( near you\)\?"/);
-  assert.doesNotMatch(spec, /getByText\("Stalls near you"/);
-  assert.match(spec, /getByText\(\/\^Stalls\( near you\)\?\$\/\)/);
+  assert.match(spec, /getByTestId\("home-offline-root"\)/);
   // The Discover tab is labelled Home.
   assert.match(flow, /tapOn:\n\s+text: "Home"/);
   assert.match(spec, /getByText\("Home", \{ exact: true \}\)\.click\(\)/);
@@ -196,10 +183,9 @@ test("native source-smoke coverage still includes gestures and keyboard-aware sh
 
   assert.match(
     rootNavigator,
-    /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*gestureEnabled: true/,
+    /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*gestureEnabled: false/,
   );
-  assert.match(homeMap, /edgeBackPanResponder/);
-  assert.match(homeMap, /gestureState\.dx > 64 \|\| gestureState\.vx > 0\.35/);
+  assert.doesNotMatch(homeMap, /PanResponder/);
   assert.match(homeFeed, /<BottomSheetModal/);
   assert.match(homeFeed, /<BottomSheetFooter/);
   assert.match(reviewComments, /<BottomSheetModal/);

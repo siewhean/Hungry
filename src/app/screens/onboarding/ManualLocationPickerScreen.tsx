@@ -14,23 +14,15 @@ import { ArrowLeft, Building2, Check, LocateFixed, MapPin, Search, X } from "luc
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
-import { SingaporeAreaMap } from "@/components/location/SingaporeAreaMap";
 import { AppText, Button } from "@/components/ui";
 import {
   AREA_SEARCH_MIN_CHARS,
   buildAreaSearchResults,
-  mapAreaSearchResult,
+  postalCodeAnchor,
   nearestAreaName,
-  placeSearchResult,
   type AreaSearchPlace,
   type AreaSearchResult,
 } from "@/features/location/areaSearch";
-import {
-  MAP_PLACE_DOTS_ZOOM,
-  mapViewArea,
-  planningAreasFor,
-  type MapView,
-} from "@/features/location/singaporeAreaMap";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
 import { selectHaptic } from "@/lib/haptics";
 import { searchOneMapAddresses, type OneMapAddress } from "@/lib/geo/oneMap";
@@ -47,8 +39,8 @@ import { SORTED_SINGAPORE_AREAS } from "./singaporeAreas";
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
 const SEARCH_DEBOUNCE_MS = 300;
-/** Waits for the map to settle before reading the places in view. */
-const MAP_PLACES_DEBOUNCE_MS = 400;
+/** Malls and food courts within this distance of a typed postal code are offered. */
+const POSTAL_CODE_RADIUS_METERS = 1200;
 const SEARCH_PLACEHOLDER_PHRASES = [
   "Area, mall, hawker centre or address",
   "Try Tampines",
@@ -60,11 +52,12 @@ const WEB_NO_OUTLINE = { outlineStyle: "none", outlineWidth: 0 } as unknown as T
 
 /**
  * Where the diner is, by search only: an area, a mall / hawker centre / food court, or an
- * address (shown as its area). There is no scrolling list to pick from.
+ * address (shown as its area). Only the onboarding Location step opens it, for someone who
+ * turned location off; everywhere else the area follows the phone's location.
  */
 export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const isSettingsMode = route.params?.mode === "settings";
-  const { palette, radii, shadows, spacing } = useHungryTheme();
+  const { palette, radii, spacing } = useHungryTheme();
   const setManualSelection = useLocationStore((state) => state.setManualSelection);
   const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
   const grantLocation = useLocationStore((state) => state.grantLocation);
@@ -82,8 +75,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   });
   const [isSearching, setIsSearching] = useState(false);
   const [selected, setSelected] = useState<AreaSearchResult | null>(null);
-  const [mapView, setMapView] = useState<MapView | null>(null);
-  const [mapPlaces, setMapPlaces] = useState<AreaSearchPlace[]>([]);
   const movingPlaceholder = useMovingSearchPlaceholder({
     phrases: SEARCH_PLACEHOLDER_PHRASES,
     tickMs: 55,
@@ -92,11 +83,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     pauseMs: 950,
     totalCycleMs: 6200,
   });
-  const manualLocation = useLocationStore((state) => state.manualLocation);
-  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
-  const [mapBox, setMapBox] = useState<{ width: number; height: number } | null>(null);
-  // The search options sit over the map until the diner picks something.
-  const [optionsOpen, setOptionsOpen] = useState(true);
   // The Location step passes mode "onboarding"; the global flag is only a fallback for
   // links that pass nothing, so a retake after onboarding still continues to the quiz.
   const isOnboarding =
@@ -131,19 +117,29 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     let active = true;
     setIsSearching(true);
     const timer = setTimeout(() => {
-      const placeLookup = getCatalogRawService()
-        .listPlaces({ query: trimmedQuery, limit: 5 })
+      const addressLookup = searchOneMapAddresses(trimmedQuery)
+        .then((items) => {
+          if (active) setAddresses({ query: trimmedQuery, items });
+          return items;
+        })
+        .catch(() => [] as OneMapAddress[]); // Offline: areas and places still show.
+      // A postal code is never listed itself: it finds the malls and food courts around it
+      // (and its area), so the diner picks a place, not a code.
+      const placeLookup = addressLookup
+        .then((found) => {
+          const anchor = postalCodeAnchor(trimmedQuery, found);
+          return getCatalogRawService().listPlaces(
+            anchor
+              ? { coordinate: anchor.coordinate, radiusMeters: POSTAL_CODE_RADIUS_METERS, limit: 5 }
+              : { query: trimmedQuery, limit: 5 },
+          );
+        })
         .then((items) => {
           if (active) setPlaces({ query: trimmedQuery, items });
         })
         .catch((error: unknown) => {
           reportError(error, { screen: "ManualLocationPicker", action: "listPlaces" });
         });
-      const addressLookup = searchOneMapAddresses(trimmedQuery)
-        .then((items) => {
-          if (active) setAddresses({ query: trimmedQuery, items });
-        })
-        .catch(() => undefined); // Offline: areas and places still show.
       void Promise.allSettled([placeLookup, addressLookup]).then(() => {
         if (active) setIsSearching(false);
       });
@@ -153,45 +149,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
       clearTimeout(timer);
     };
   }, [trimmedQuery]);
-
-  // Zoomed in far enough, the malls, food courts and hawker centres in view load as dots.
-  const showsPlaceDots = (mapView?.zoom ?? 1) >= MAP_PLACE_DOTS_ZOOM;
-  useEffect(() => {
-    if (!mapView || !showsPlaceDots) return;
-    let active = true;
-    const timer = setTimeout(() => {
-      const { center, radiusMeters } = mapViewArea(mapView);
-      getCatalogRawService()
-        .listPlaces({ coordinate: center, radiusMeters, limit: 20 })
-        .then((items) => {
-          if (active) setMapPlaces(items);
-        })
-        .catch((error: unknown) => {
-          reportError(error, { screen: "ManualLocationPicker", action: "listMapPlaces" });
-        });
-    }, MAP_PLACES_DEBOUNCE_MS);
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [mapView, showsPlaceDots]);
-  const mapPlaceDots = useMemo(
-    () =>
-      mapPlaces.flatMap((place) =>
-        place.latitude === undefined || place.longitude === undefined
-          ? []
-          : [
-              {
-                id: place.id,
-                name: place.name,
-                coordinate: { latitude: place.latitude, longitude: place.longitude },
-              },
-            ],
-      ),
-    [mapPlaces],
-  );
-  const areaForCoordinate = (coordinate: { latitude: number; longitude: number }) =>
-    nearestAreaName(coordinate, SORTED_SINGAPORE_AREAS);
 
   const results = useMemo(
     () =>
@@ -218,11 +175,10 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     navigation.navigate(nextOnboardingRoute("ManualLocationPicker"));
   };
 
-  // A tap shows the choice on the map first; "Set as my location" saves it.
+  // A tap marks the choice; "Set as my location" saves it.
   const choose = (result: AreaSearchResult) => {
     selectHaptic();
     setSelected(result);
-    setOptionsOpen(false);
   };
   const confirm = () => {
     if (!selected) return;
@@ -230,13 +186,6 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     setManualSelection(selected.areaName, selected.coordinate, selected.placeName);
     finish(`You are at ${selected.placeName ?? selected.areaName}.`);
   };
-  const mapArea = selected
-    ? planningAreasFor(selected.areaName, selected.coordinate)
-    : manualLocation
-      ? planningAreasFor(manualLocation, manualCoordinate ?? undefined)
-      : [];
-  const mapPin = selected && selected.kind !== "area" ? selected.coordinate : undefined;
-
   const chooseCurrentLocation = async () => {
     selectHaptic();
     if (permission === "granted") {
@@ -258,7 +207,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
   const showNoResults =
     trimmedQuery.length >= AREA_SEARCH_MIN_CHARS && !isSearching && results.length === 0;
 
-  // Results appear silently over the map; tell a screen reader how many there are.
+  // Results appear silently under the search; tell a screen reader how many there are.
   const searchSettled = trimmedQuery.length >= AREA_SEARCH_MIN_CHARS && !isSearching;
   useEffect(() => {
     if (!searchSettled) return;
@@ -320,11 +269,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               autoCapitalize="words"
               autoCorrect={false}
               ref={searchInputRef}
-              onChangeText={(text) => {
-                setQuery(text);
-                setOptionsOpen(true);
-              }}
-              onFocus={() => setOptionsOpen(true)}
+              onChangeText={setQuery}
               placeholder={movingPlaceholder}
               placeholderTextColor={palette.textMuted}
               returnKeyType="search"
@@ -339,10 +284,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Clear search"
-                onPress={() => {
-                  setQuery("");
-                  setOptionsOpen(true);
-                }}
+                onPress={() => setQuery("")}
                 style={{
                   alignItems: "center",
                   height: 44,
@@ -370,97 +312,48 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
           </AppText>
         ) : null}
 
-        {/* The map fills the space between the search bar and the button; results float on it. */}
-        <View
+        {/* The results fill the space between the search bar and the button. */}
+        <ScrollView
+          contentContainerStyle={{ gap: spacing[1], paddingVertical: spacing[2] }}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
           style={{ flex: 1, marginTop: spacing[2] }}
-          onLayout={(event) => {
-            const { width, height } = event.nativeEvent.layout;
-            setMapBox((box) =>
-              box && box.width === width && box.height === height ? box : { width, height },
-            );
-          }}
         >
-          {mapBox ? (
-            <SingaporeAreaMap
-              width={mapBox.width}
-              height={mapBox.height}
-              highlighted={mapArea}
-              pin={mapPin}
-              places={showsPlaceDots ? mapPlaceDots : []}
-              onViewChange={setMapView}
-              onAreaPress={(planningArea, coordinate) =>
-                choose(mapAreaSearchResult(planningArea, coordinate, SORTED_SINGAPORE_AREAS))
+          <ResultRow
+            icon={<LocateFixed color={palette.orange} size={18} />}
+            title="Use my current location"
+            subtitle={
+              permission === "granted" ? "Follows you as you move" : "Asks for location access"
+            }
+            accessibilityLabel="Use my current location"
+            onPress={() => void chooseCurrentLocation()}
+          />
+
+          {results.map((result) => (
+            <ResultRow
+              key={result.key}
+              icon={
+                result.kind === "place" ? (
+                  <Building2 color={palette.orange} size={18} />
+                ) : (
+                  <MapPin color={palette.orange} size={18} />
+                )
               }
-              onPlacePress={(dot) => {
-                const place = mapPlaces.find((entry) => entry.id === dot.id);
-                const result = place ? placeSearchResult(place, areaForCoordinate) : null;
-                if (result) choose(result);
-              }}
+              title={result.title}
+              subtitle={result.subtitle}
+              accessibilityLabel={`Choose ${result.title}`}
+              selected={selected?.key === result.key}
+              onPress={() => choose(result)}
             />
-          ) : null}
-          {optionsOpen ? (
-            <View
-              style={[
-                shadows.card,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: radii.lg,
-                  borderWidth: 1,
-                  left: spacing[2],
-                  maxHeight: "60%",
-                  position: "absolute",
-                  // Clear of the zoom buttons on the map's right edge.
-                  right: spacing[2] + 44,
-                  top: spacing[2],
-                },
-              ]}
-            >
-              <ScrollView
-                contentContainerStyle={{ gap: spacing[1], padding: spacing[1] }}
-                keyboardDismissMode="on-drag"
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-              >
-                <ResultRow
-                  icon={<LocateFixed color={palette.orange} size={18} />}
-                  title="Use my current location"
-                  subtitle={
-                    permission === "granted"
-                      ? "Follows you as you move"
-                      : "Asks for location access"
-                  }
-                  accessibilityLabel="Use my current location"
-                  onPress={() => void chooseCurrentLocation()}
-                />
+          ))}
 
-                {results.map((result) => (
-                  <ResultRow
-                    key={result.key}
-                    icon={
-                      result.kind === "place" ? (
-                        <Building2 color={palette.orange} size={18} />
-                      ) : (
-                        <MapPin color={palette.orange} size={18} />
-                      )
-                    }
-                    title={result.title}
-                    subtitle={result.subtitle}
-                    accessibilityLabel={`Choose ${result.title}`}
-                    selected={selected?.key === result.key}
-                    onPress={() => choose(result)}
-                  />
-                ))}
-
-                {showNoResults ? (
-                  <AppText tone="secondary" style={{ padding: spacing[3], textAlign: "center" }}>
-                    {`No areas or places match "${trimmedQuery}". Try a nearby MRT station or street.`}
-                  </AppText>
-                ) : null}
-              </ScrollView>
-            </View>
+          {showNoResults ? (
+            <AppText tone="secondary" style={{ padding: spacing[3], textAlign: "center" }}>
+              {`No areas or places match "${trimmedQuery}". Try a nearby MRT station or street.`}
+            </AppText>
           ) : null}
-        </View>
+        </ScrollView>
 
         <View style={{ gap: spacing[1], paddingBottom: spacing[3], paddingTop: spacing[3] }}>
           <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
@@ -468,7 +361,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               ? selected.placeName
                 ? `${selected.placeName}, ${selected.areaName}`
                 : selected.areaName
-              : "Search, or tap an area on the map"}
+              : "Search for an area, mall or address"}
           </AppText>
           <Button label="Set as my location" disabled={!selected} onPress={confirm} />
         </View>

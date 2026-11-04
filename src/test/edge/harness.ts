@@ -93,12 +93,19 @@ export class FakeSupabase {
           new Proxy(
             {},
             {
-              get:
-                (_, method: string) =>
-                async (...args: unknown[]) => {
+              get: (_, method: string) => {
+                // supabase-js builds a public URL without a request, so this one is synchronous.
+                if (method === "getPublicUrl") {
+                  return (path: string) => {
+                    fake.storageCalls.push({ bucket, method, args: [path] });
+                    return { data: { publicUrl: `https://storage.example/${bucket}/${path}` } };
+                  };
+                }
+                return async (...args: unknown[]) => {
                   fake.storageCalls.push({ bucket, method, args });
                   return orDefault(await fake.storage[method]?.({ bucket, args }));
-                },
+                };
+              },
             },
           ),
       },

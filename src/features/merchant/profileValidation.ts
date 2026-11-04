@@ -1,6 +1,7 @@
 import type { MerchantOutlet } from "@/types/domain";
 import { isInSingapore, SINGAPORE_POSTAL_CODE_PATTERN } from "@/lib/geo/oneMap";
 import { validateOpeningSchedule } from "@/utils/openingSchedule";
+import { MAX_CLOSURE_DAYS } from "@/features/merchant/closure";
 
 const MAX_NAME_LENGTH = 80;
 const MAX_DESCRIPTION_LENGTH = 600;
@@ -100,6 +101,17 @@ export function validateMerchantProfileUpdates(
     throw new Error(
       `Temporary closure notice must be at most ${MAX_TEMPORARY_CLOSURE_LENGTH} characters.`,
     );
+  }
+
+  if (normalized.closedUntil) {
+    const until = new Date(normalized.closedUntil).getTime();
+    const now = Date.now();
+    if (!Number.isFinite(until) || until <= now) {
+      throw new Error("Choose a closing date in the future.");
+    }
+    if (until - now > MAX_CLOSURE_DAYS * 86_400_000) {
+      throw new Error(`A closure can last at most ${MAX_CLOSURE_DAYS} days.`);
+    }
   }
 
   if (normalized.contactEmail && normalized.contactEmail.length > MAX_CONTACT_EMAIL_LENGTH) {

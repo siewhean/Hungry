@@ -16,7 +16,7 @@ test("Decide For Me shows distance, Directions and Save, and respects the budget
   assert.match(screen, /formatDistance\(dish\.distanceMeters\)/);
   assert.match(screen, /label="Directions"/);
   assert.match(screen, /trackAnalyticsEvent\("directions_opened"/);
-  assert.match(screen, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress\)\)/);
+  assert.match(screen, /openTrustedMapsUrl\(directionsUrl\)/);
   assert.match(screen, /toggleFavourite\(dish\)/);
   // Budget logic lives in the candidate helper.
   const candidates = read("src/features/discovery/decideForMeCandidates.ts");

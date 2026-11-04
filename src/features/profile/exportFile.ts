@@ -15,6 +15,8 @@ export function canShareExportAsText(json: string): boolean {
 type FileSystemModule = typeof import("expo-file-system");
 
 function loadFileSystem(): FileSystemModule | null {
+  // The web build has no file system: expo-file-system logs an error on every use there.
+  if (typeof document !== "undefined") return null;
   try {
     // Lazy so non-native runtimes (tests) and stores can import this file safely.
     return require("expo-file-system") as FileSystemModule;

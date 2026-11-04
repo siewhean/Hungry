@@ -27,11 +27,11 @@ const taste = (v: number[]): TasteVector => ({
   aromatic: v[5],
 });
 
-test("M1: a guest's neutral vector gives a neutral 50, not an inflated 88", () => {
+test("M1: a guest's neutral vector scores by plain per-axis distance, not an inflated 88", () => {
   const guest = taste([5, 5, 5, 5, 5, 5]);
   const dish = taste([8, 2, 3, 6, 7, 4]);
   assert.equal(hasPersonalTasteProfile(guest), false);
-  assert.equal(tasteMatchPercent(guest, dish), 50);
+  assert.equal(tasteMatchPercent(guest, dish), 60);
 });
 
 test("M1: a real profile still separates a match from its opposite", () => {

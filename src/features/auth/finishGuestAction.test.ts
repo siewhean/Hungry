@@ -4,7 +4,6 @@ import test from "node:test";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { useAchievementTallyStore } from "@/store/useAchievementTallyStore";
-import { useDishLikeStore } from "@/store/useDishLikeStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { DishDetail } from "@/types/domain";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -13,7 +12,6 @@ import { useStallFollowStore } from "@/store/useStallFollowStore";
 import {
   followStallAfterSignIn,
   followUserAfterSignIn,
-  likeDishAfterSignIn,
   likePostAfterSignIn,
   markDishTried,
   markDishTriedAfterSignIn,
@@ -136,15 +134,6 @@ test("a guest's Tried tap is finished after sign-in like a signed-in tap (DISH-X
     useProfileStore.setState({ setDishTried: original });
     useStallInteractionStore.setState(originalStalls);
   }
-});
-
-test("a guest's Like is finished after sign-in and never toggles an existing like off (DISH-X4)", () => {
-  const userId = useProfileStore.getState().profile.id;
-  useDishLikeStore.setState({ likedDishIdsByUser: {} });
-  likeDishAfterSignIn("dish-pending-like");
-  assert.equal(useDishLikeStore.getState().isLiked(userId, "dish-pending-like"), true);
-  likeDishAfterSignIn("dish-pending-like");
-  assert.equal(useDishLikeStore.getState().isLiked(userId, "dish-pending-like"), true);
 });
 
 function stubStallWrites(serverSaved: string[]) {

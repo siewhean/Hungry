@@ -132,12 +132,12 @@ test("Settings can sign out of every device, and a password change offers it (M3
   assert.match(change, /Sign out other devices/);
 });
 
-test("Sign-in and security groups email and password in Settings (L3)", () => {
+test("Account & security groups the password and session rows; the profile card holds the email (L3)", () => {
   const screen = settings();
-  assert.match(screen, /title="Sign-in and security"/);
+  assert.match(screen, /title="Account & security"/);
   assert.match(screen, /label="Change password"/);
   assert.match(screen, /rootNavigation\.navigate\("ChangePassword"\)/);
-  assert.match(screen, /description="Change it in Edit profile\."/);
+  assert.match(screen, /<SettingsProfileCard[\s\S]*email=\{profile\.email\}/);
 });
 
 test("change password has autofill hints, a reveal toggle and a forgot link (L10)", () => {
@@ -180,7 +180,7 @@ test("guests can open Settings and see only guest-safe rows (M8, L15)", () => {
   ]) {
     const index = screen.indexOf(accountOnly);
     assert.ok(index > 0, accountOnly);
-    assert.match(screen.slice(Math.max(0, index - 700), index), /isAuthenticated \?/, accountOnly);
+    assert.match(screen.slice(Math.max(0, index - 1600), index), /isAuthenticated \?/, accountOnly);
   }
   // Theme, accessibility, location and the legal links stay open to guests.
   assert.doesNotMatch(
@@ -204,7 +204,7 @@ test("deletion dialog says the profile is hidden, resends codes and is destructi
   // AUTH-12: one cooldown (useResendCooldown, 65 s from an end time) for every auth screen.
   assert.match(field, /EMAIL_CODE_RESEND_SECONDS = RESEND_COOLDOWN_SECONDS/);
   assert.match(field, /useResendCooldown\(true\)/);
-  assert.match(field, /Resend code in \$\{cooldown\}s/);
+  assert.match(field, /Resend code in \$\{formatCooldown\(cooldown\)\}/);
   assert.match(field, /variant=\{submitVariant\}/);
   assert.match(screen, /onResend=\{resendDeletionCode\}/);
 });
@@ -340,9 +340,10 @@ test("reset food history copy matches what it clears (L2)", () => {
   assert.match(settings(), /Your taste profile, favourites and reviews stay\./);
 });
 
-test("theme and visibility use radio sheets, not Alert buttons or a check glyph (L7)", () => {
+test("visibility uses a radio sheet, not Alert buttons or a check glyph; there is no app Theme row (L7)", () => {
   const screen = settings();
-  assert.match(screen, /<SettingsChoiceSheet[\s\S]*title="Theme"/);
+  // iOS owns appearance and Reduce Motion; Settings only follows them (HIG: no redundant copies).
+  assert.doesNotMatch(screen, /title="Theme"|label="Theme"|label="Reduce motion"/);
   assert.match(screen, /<SettingsChoiceSheet[\s\S]*title="Profile visibility"/);
   assert.doesNotMatch(screen, /✓/);
   const sheet = read("src/components/settings/SettingsChoiceSheet.tsx");
@@ -353,15 +354,10 @@ test("theme and visibility use radio sheets, not Alert buttons or a check glyph 
 
 test("web-opening rows are links with an external icon and hint (L8)", () => {
   const row = read("src/components/settings/SettingsRow.tsx");
-  assert.match(row, /ExternalLink/);
+  assert.match(row, /name="external"/);
   assert.match(row, /"Opens in browser"/);
   const screen = settings();
-  for (const label of [
-    "Contact us",
-    "Privacy policy",
-    "Terms of service",
-    "How account deletion works",
-  ]) {
+  for (const label of ["Privacy policy", "Terms of service", "How account deletion works"]) {
     const index = screen.indexOf(`label="${label}"`);
     assert.ok(index > 0, label);
     assert.match(screen.slice(index, index + 200), /type="link"/, label);
@@ -374,7 +370,8 @@ test("secondary controls meet 44pt and labels are consistent (L9, L11)", () => {
   // Tapping a result saves it: there is no separate Save button.
   assert.doesNotMatch(picker, /"Save location"/);
   const screen = settings();
-  assert.match(screen, /locationPermission === "granted" \? "Use GPS" : "Not set"/);
+  // The area follows the phone, so Settings has no row that opens the area search.
+  assert.doesNotMatch(screen, /label="Location"|ManualLocationPicker/);
   assert.match(screen, /label="Change password"/);
 });
 

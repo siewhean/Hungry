@@ -1,5 +1,7 @@
 import PostHog from "posthog-react-native";
 
+import { reportError } from "@/lib/monitoring/reportError";
+
 import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
 import { sanitizeAnalyticsProperties } from "./privacy";
 
@@ -95,6 +97,18 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
   }
 
   client.identify(userId, toPostHogProperties(sanitizeAnalyticsProperties(properties)));
+}
+
+/** Stops PostHog capturing (or resumes it); PostHog remembers the choice across launches. */
+export function setPostHogOptOut(optedOut: boolean): void {
+  const client = getPostHogClient();
+  if (!client) {
+    return;
+  }
+
+  void (optedOut ? client.optOut() : client.optIn()).catch((error: unknown) =>
+    reportError(error, { area: "posthog_opt_out" }),
+  );
 }
 
 export function resetPostHogUser(): void {

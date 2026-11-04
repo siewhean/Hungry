@@ -10,14 +10,19 @@ import {
   cardAccessibilityLabel,
   cardSubtitle,
   describeMatchCount,
+  describeMoodResults,
   describeResultsSummary,
   effectiveSort,
   effectiveSortLabel,
   isTooShortQuery,
+  looksLikeMoodQuery,
   mergeStallOutlets,
+  moodIntentIsUseful,
   normalizeQuery,
   parseFilterIds,
   ratingPillText,
+  stallCardDetail,
+  stallCardImage,
   toggleFilterId,
   type StallRow,
 } from "./browseGrid";
@@ -114,6 +119,46 @@ test("the request maps chips to RPC filters; Noodles and Rice use food keywords 
   assert.equal(request.radiusMeters, 3_000, "browsing without text is radius-bound");
   assert.equal(request.sort, "nearby", "best match needs text, so it falls back to nearest");
   assert.equal(request.query, undefined);
+});
+
+test("typed filters add dietary flags and a price cap to the chips; the lower cap wins (SR4-2)", () => {
+  const parsedOnly = buildBrowseRequest({
+    query: "laksa",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: ["halal", "pork_free"], maxPrice: 5 },
+  });
+  assert.deepEqual(parsedOnly.dietaryFlags, ["halal", "pork_free"]);
+  assert.equal(parsedOnly.maxPrice, 5);
+  // Halal typed and chosen is one flag, and the Under S$6 chip does not raise a typed S$5 cap.
+  const both = buildBrowseRequest({
+    query: "laksa",
+    filters: ["Halal", "Under S$6"],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: ["halal"], maxPrice: 5 },
+  });
+  assert.deepEqual(both.dietaryFlags, ["halal"]);
+  assert.equal(both.maxPrice, 5);
+  const raised = buildBrowseRequest({
+    query: "laksa",
+    filters: ["Under S$6"],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: [], maxPrice: 9 },
+  });
+  assert.equal(raised.maxPrice, 6);
+  // Filters alone (the whole query was "halal") still browse near the user.
+  const filtersOnly = buildBrowseRequest({
+    query: "",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: ["halal"] },
+  });
+  assert.equal(filtersOnly.query, undefined);
+  assert.equal(filtersOnly.radiusMeters, 3_000);
 });
 
 test("typed text searches everywhere, keeps the release only for next pages (search-M1)", () => {
@@ -238,6 +283,19 @@ test("the sort control names the order the results are really in (SEARCH-X8)", (
   assert.equal(effectiveSortLabel("price", false), "Price: low to high");
 });
 
+test("picked food types join the Noodles and Rice keywords (SR4-24)", () => {
+  const base = { query: "", sort: "relevance" as const, coordinate };
+  assert.deepEqual(buildBrowseRequest({ ...base, filters: [] }).foodKeywords, []);
+  const request = buildBrowseRequest({
+    ...base,
+    filters: ["Noodles"],
+    foodTypes: ["Laksa", "Chicken Rice"],
+  });
+  assert.ok(request.foodKeywords?.includes("Laksa"));
+  assert.ok(request.foodKeywords?.includes("Chicken Rice"));
+  assert.ok((request.foodKeywords?.length ?? 0) > 2, "the Noodles keywords are still there");
+});
+
 test("the summary names the place instead of a radius (SEARCH-X2, SEARCH-12)", () => {
   const base = { count: 24, mode: "stalls" as const, hasQuery: false, widened: false };
   assert.equal(describeResultsSummary(base), "24 stalls within 3 km");
@@ -247,6 +305,22 @@ test("the summary names the place instead of a radius (SEARCH-X2, SEARCH-12)", (
     "24 stalls at Maxwell Food Centre",
   );
   assert.equal(describeResultsSummary({ ...base, hasQuery: true }), "24 stalls");
+  // The summary echoes the typed text (SR4-25).
+  assert.equal(
+    describeResultsSummary({ ...base, hasQuery: true, query: "laksa" }),
+    "24 stalls for “laksa”",
+  );
+  assert.equal(
+    describeResultsSummary({
+      ...base,
+      count: 1,
+      mode: "dishes",
+      hasQuery: true,
+      query: "laksa",
+      placeName: "Maxwell Food Centre",
+    }),
+    "1 dish for “laksa” at Maxwell Food Centre",
+  );
 });
 
 test("a share link keeps the place and the sort (SEARCH-5)", () => {
@@ -318,5 +392,132 @@ test("a stall seen in a second building counts one more outlet only once", () =>
   assert.deepEqual(
     rows.map((row) => [row.id, row.extraOutlets]),
     [["v1", 1]],
+  );
+});
+
+test("stallCardDetail names the matched dish with its price, else the typical price of the mains", () => {
+  const matched = {
+    ...stall("v1", "Laksa House", "b1"),
+    mainPrice: 5,
+    matchedDish: {
+      id: "d1",
+      name: "Signature Laksa",
+      price: 6,
+      verificationStatus: "raw" as const,
+    },
+  };
+  assert.equal(stallCardDetail(matched), "Signature Laksa · S$6.00");
+  assert.equal(
+    stallCardDetail({ ...matched, matchedDish: { ...matched.matchedDish, price: undefined } }),
+    "Signature Laksa",
+  );
+  assert.equal(stallCardDetail({ ...matched, matchedDish: undefined }), "Mains around S$5.00");
+  assert.equal(stallCardDetail(stall("v2", "Plain", "b1")), undefined);
+});
+
+test("stallCardImage prefers the stall photo, then the matched dish, then the top dish", () => {
+  const dish = (imageUrl?: string) => ({
+    id: "d1",
+    name: "Laksa",
+    imageUrl,
+    verificationStatus: "raw" as const,
+  });
+  const base = stall("v1", "Laksa House", "b1");
+  assert.equal(
+    stallCardImage({
+      ...base,
+      imageUrl: "https://x/stall.jpg",
+      matchedDish: dish("https://x/matched.jpg"),
+      representativeDish: dish("https://x/top.jpg"),
+    }),
+    "https://x/stall.jpg",
+  );
+  assert.equal(
+    stallCardImage({
+      ...base,
+      matchedDish: dish("https://x/matched.jpg"),
+      representativeDish: dish("https://x/top.jpg"),
+    }),
+    "https://x/matched.jpg",
+  );
+  assert.equal(
+    stallCardImage({ ...base, representativeDish: dish("https://x/top.jpg") }),
+    "https://x/top.jpg",
+  );
+  assert.equal(stallCardImage(base), undefined);
+});
+
+test("a stall card's screen reader label includes its matched dish", () => {
+  const label = cardAccessibilityLabel("stalls", {
+    ...stall("v1", "Laksa House", "b1"),
+    matchedDish: { id: "d1", name: "Signature Laksa", price: 6, verificationStatus: "raw" },
+  });
+  assert.match(label, /Signature Laksa · S\$6\.00/);
+});
+
+test("stalls that share a logo file merge into one card with an outlet count", () => {
+  const logo = "https://project.supabase.co/storage/v1/object/public/brand-logos/yakun.png";
+  const rows = mergeStallOutlets([
+    { ...stall("v1", "Ya Kun Kaya Toast", "b1"), logoUrl: logo },
+    { ...stall("v2", "Ya Kun Kaya Toast", "b2"), logoUrl: logo },
+    stall("v3", "Ya Kun Kaya Toast", "b3"),
+  ]);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0]?.extraOutlets, 1);
+});
+
+const SOUPY = {
+  tasteShift: { sweet: 0, spicy: -2, sour: 0, salty: 0, rich: -1, aromatic: 0 },
+  maxPrice: 8,
+  dietaryFlags: ["halal" as const],
+  keywords: ["soup", "noodle"],
+  summary: "soupy, mild, under $8",
+};
+
+test("buildBrowseRequest swaps the typed text for what mood search read out of it", () => {
+  const request = buildBrowseRequest({
+    query: "something soupy and mild",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    mood: SOUPY,
+  });
+  assert.equal(request.query, undefined, "the typed words are not searched");
+  assert.deepEqual(request.foodKeywords, ["soup", "noodle"]);
+  assert.deepEqual(request.dietaryFlags, ["halal"]);
+  assert.equal(request.maxPrice, 8);
+  assert.equal(request.sort, "nearby", "no text means nearest first");
+  assert.equal(request.radiusMeters, 3_000);
+});
+
+test("buildBrowseRequest keeps the lower of a typed cap and the one mood search read", () => {
+  const request = buildBrowseRequest({
+    query: "cheap and soupy",
+    filters: [],
+    sort: "relevance",
+    coordinate,
+    parsed: { dietary: [], maxPrice: 5 },
+    mood: SOUPY,
+  });
+  assert.equal(request.maxPrice, 5);
+});
+
+test("looksLikeMoodQuery needs two words, and moodIntentIsUseful needs something to filter on", () => {
+  assert.equal(looksLikeMoodQuery("laksa"), false);
+  assert.equal(looksLikeMoodQuery("  something soupy "), true);
+  assert.equal(moodIntentIsUseful(null), false);
+  assert.equal(
+    moodIntentIsUseful({ ...SOUPY, keywords: [], dietaryFlags: [], maxPrice: undefined }),
+    false,
+  );
+  assert.equal(moodIntentIsUseful({ ...SOUPY, keywords: [], dietaryFlags: [] }), true);
+  assert.equal(moodIntentIsUseful(SOUPY), true);
+});
+
+test("describeMoodResults says what was understood, falling back to the dish words", () => {
+  assert.match(describeMoodResults(SOUPY), /"soupy, mild, under \$8"/);
+  assert.match(
+    describeMoodResults({ summary: " ", keywords: ["soup", "noodle"] }),
+    /"soup, noodle"/,
   );
 });

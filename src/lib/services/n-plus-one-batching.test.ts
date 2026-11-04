@@ -82,10 +82,12 @@ test("the Supabase service reads many rows with one batched call, not one call p
   const repository = read("src/lib/services/supabase/supabaseRepository.ts");
 
   assert.match(repository, /rpcRows\("get_venue_summaries", \{ p_venue_ids: ids \}\)/);
+  // Item details go out in chunks of 200 ids at once, not one call per id.
   assert.match(
     repository,
-    /rpcRows\("get_item_details", \{ p_dish_ids: dishIds, p_stall_ids: stallIds \}\)/,
+    /rpcRows\("get_item_details", \{ p_dish_ids: dishes, p_stall_ids: stalls \}\)/,
   );
+  assert.match(repository, /dishIds\.slice\(start, start \+ 200\)/);
   assert.match(service, /client\.rpc\("merchant_set_dishes_availability_flag"/);
   assert.match(service, /client\.rpc\("reorder_popular_visitor_pins"/);
   // Draft accept reads the drafts once with .in(), then the outlets once.
@@ -101,7 +103,7 @@ test("screens use the batched reads", () => {
   );
   assert.match(
     read("src/app/screens/discover/DecideForMeResultScreen.tsx"),
-    /discovery\.getVenuesByIds\(venueIds\)/,
+    /discovery\.getVenuesByIds\(unread\)/,
   );
   assert.match(
     read("src/app/screens/merchant/MerchantMenuScreen.tsx"),

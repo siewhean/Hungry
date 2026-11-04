@@ -8,6 +8,7 @@ import type {
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { getVenueOpenState } from "@/utils/operatingHours";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
+import { isClosureActive } from "@/features/merchant/closure";
 
 /** Longest public reply a merchant can post under a review (also a database CHECK). */
 export const MERCHANT_REPLY_MAX_LENGTH = 1000;
@@ -62,7 +63,7 @@ export function getMerchantOutletStatus(
   now: Date = new Date(),
 ): MerchantOutletStatus {
   if (!outlet || !outlet.isLive) return "offline";
-  if (hasText(outlet.temporaryClosure)) return "closed";
+  if (hasText(outlet.temporaryClosure) || isClosureActive(outlet.closedUntil, now)) return "closed";
   const state = hasWeeklyHours(outlet.openingSchedule)
     ? getScheduleOpenState(outlet.openingSchedule, true, now)
     : getVenueOpenState(outlet.operatingHours, true, now);
@@ -225,7 +226,20 @@ export function formatReviewCountLabel(
   return `${reviewCount} ${reviewCount === 1 ? "review" : "reviews"} ${rangeLabel}`;
 }
 
-/** Rating change in stars ("+0.2★"), not a percentage; a rating has no percent scale. */
+/**
+ * A Singapore number as "+65 9123 4567". The 8 digits may arrive with or without +65 or spaces;
+ * anything that is not a Singapore number is shown as typed.
+ */
+export function formatContactPhone(phone?: string | null): string {
+  const text = phone?.trim() ?? "";
+  const digits = text.replace(/[\s-]/g, "").replace(/^\+?65(?=\d{8}$)/, "");
+  return /^[3689]\d{7}$/.test(digits) ? `+65 ${digits.slice(0, 4)} ${digits.slice(4)}` : text;
+}
+
+/**
+ * Rating change in stars ("+0.2"), not a percentage; a rating has no percent scale. The screen
+ * draws the star symbol after a number.
+ */
 export function formatRatingChange(
   current: number,
   previous: number,
@@ -235,9 +249,9 @@ export function formatRatingChange(
   if (currentCount <= 0) return "No reviews yet";
   if (previousCount <= 0) return "New";
   const change = Math.round((current - previous) * 10) / 10;
-  if (change > 0) return `+${change.toFixed(1)}★`;
-  if (change < 0) return `-${Math.abs(change).toFixed(1)}★`;
-  return "0.0★";
+  if (change > 0) return `+${change.toFixed(1)}`;
+  if (change < 0) return `-${Math.abs(change).toFixed(1)}`;
+  return "0.0";
 }
 
 export function resolvePromotionRuntimeStatus(

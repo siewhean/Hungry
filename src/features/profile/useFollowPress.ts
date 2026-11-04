@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 
 import { followUserAfterSignIn } from "@/features/auth/finishGuestAction";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
+import { confirmHaptic } from "@/lib/haptics";
 import { useSocialStore } from "@/store/useSocialStore";
 
 export type FollowTarget = {
@@ -37,6 +38,8 @@ export function useFollowPress() {
         return;
       }
       if (!useSocialStore.getState().followedUserIds[userId]) {
+        // One soft thud when the follow lands, in the same frame as the button changing.
+        confirmHaptic();
         toggleFollow(userId, { isPrivate });
         return;
       }

@@ -230,9 +230,57 @@ test("EAS pre-install strips release-only native capabilities in its isolated wo
       assert.equal(manifest.includes(value), false);
     }
     assert.equal(manifest.includes("android.permission.ACCESS_FINE_LOCATION"), true);
+
+    // Universal links and push are written for the released build only (App Store 2.1: the
+    // share links and stall alerts must work in the shipped app).
+    const entitlements = readFileSync(
+      join(fixture, "ios", "Hungry", "Hungry.entitlements"),
+      "utf8",
+    );
+    assert.match(entitlements, /<key>aps-environment<\/key>\s*<string>production<\/string>/);
+    assert.match(entitlements, /<string>applinks:usehungry\.com<\/string>/);
+    assert.match(entitlements, /<string>applinks:www\.usehungry\.com<\/string>/);
   } finally {
     rmSync(fixture, { force: true, recursive: true });
   }
+});
+
+test("the committed iOS entitlements stay empty so a free Personal Team can still sign dev builds", () => {
+  const entitlements = read("ios/Hungry/Hungry.entitlements");
+  assert.equal(entitlements.includes("aps-environment"), false);
+  assert.equal(entitlements.includes("associated-domains"), false);
+  assert.match(
+    read("scripts/configure-eas-native-profile.mjs"),
+    /writeReleasedEntitlements\(root\)/,
+  );
+});
+
+test("privacy manifest declares the data the app collects and never claims tracking", () => {
+  const manifest = read("ios/Hungry/PrivacyInfo.xcprivacy");
+  assert.match(manifest, /<key>NSPrivacyTracking<\/key>\s*<false\/>/);
+  // Typed search text is stored for personalisation, so Search History must be declared.
+  for (const type of [
+    "EmailAddress",
+    "Name",
+    "UserID",
+    "CoarseLocation",
+    "PreciseLocation",
+    "PhotosorVideos",
+    "UserContent",
+    "SearchHistory",
+    "ProductInteraction",
+    "CrashData",
+  ]) {
+    assert.ok(
+      manifest.includes(`<string>NSPrivacyCollectedDataType${type}</string>`),
+      `${type} must be declared`,
+    );
+  }
+  // Every declared type must say it is not used for tracking.
+  const declared = manifest.match(/<key>NSPrivacyCollectedDataType<\/key>/g)?.length ?? 0;
+  const untracked =
+    manifest.match(/<key>NSPrivacyCollectedDataTypeTracking<\/key>\s*<false\/>/g)?.length ?? 0;
+  assert.equal(untracked, declared);
 });
 
 test("EAS archive excludes non-runtime catalog and QA material without excluding build inputs", () => {

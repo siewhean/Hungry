@@ -51,13 +51,13 @@ from actual;
 select 'missing_anon_execute' as check_name, 'search_dishes' as detail
 where not has_function_privilege(
   'anon',
-  'public.search_dishes(text,double precision,double precision,integer,text[],integer,double precision,text,text,text,text[],numeric,boolean)',
+  'public.search_dishes(text,double precision,double precision,integer,text[],integer,double precision,text,text,text,text[],numeric,boolean,text[],text[])',
   'execute'
 );
 select 'missing_authenticated_execute' as check_name, 'search_dishes' as detail
 where not has_function_privilege(
   'authenticated',
-  'public.search_dishes(text,double precision,double precision,integer,text[],integer,double precision,text,text,text,text[],numeric,boolean)',
+  'public.search_dishes(text,double precision,double precision,integer,text[],integer,double precision,text,text,text,text[],numeric,boolean,text[],text[])',
   'execute'
 );
 select 'missing_anon_execute' as check_name, 'get_dish_detail' as detail

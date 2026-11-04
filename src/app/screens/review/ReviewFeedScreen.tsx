@@ -1,20 +1,13 @@
 /**
  * ReviewFeedScreen — the Reviews tab.
- * A photo grid of diners' reviews, like Instagram's explore page: only reviews with a photo,
- * newest first, filtered by the diner's taste, a kind of food or an area.
+ * A grid of diners' reviews, like Instagram's explore page: newest first, filtered by the diner's
+ * taste, a kind of food or an area. A review with a photo is a photo tile; one without (photos
+ * are optional since 2026-11-04) is a text tile with the dish, the stars and its first words.
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Alert,
-  FlatList,
-  Keyboard,
-  Pressable,
-  RefreshControl,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { Alert, FlatList, Keyboard, RefreshControl, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Images, Star } from "lucide-react-native";
+import { Images } from "lucide-react-native";
 import {
   useFocusEffect,
   useIsFocused,
@@ -29,11 +22,15 @@ import type { RecentReviewFeedEntry } from "@/lib/services/types";
 import {
   AccessibleImage,
   AppHeader,
+  AppSymbol,
   AppText,
   EmptyState,
   ExpandableSearchLauncher,
   FilterChipRail,
+  PressableScale,
   Skeleton,
+  SwipeSections,
+  UnderlineTabs,
 } from "@/components/ui";
 import {
   isContentHiddenForSession,
@@ -49,6 +46,8 @@ import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSessionStore } from "@/store/useSessionStore";
+import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
+import { getDistanceMetersFromCoordinates } from "@/lib/geo/distance";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import {
@@ -56,12 +55,12 @@ import {
   makeReviewInteractionId,
   type ReviewFeedItem,
 } from "@/features/review/reviewFeed";
+import { REVIEW_SEARCH_MIN_LENGTH, reviewMatchesQuery } from "@/features/review/reviewSearch";
 import {
   buildReviewExploreChips,
   filterReviewExplore,
   resolveActiveReviewChip,
   reviewTileHoldAction,
-  reviewsWithPhotos,
   visibleGridReviews,
   withSelectedReviewChip,
 } from "@/features/review/reviewExplore";
@@ -84,6 +83,17 @@ const REVIEW_FEED_PAGE_SIZE = 50;
 /** A focus refetch runs when the loaded page is older than this (e.g. after posting a review). */
 const REVIEW_FEED_STALE_MS = 15_000;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/** Wait for a pause in typing before asking the server to search every review. */
+const REVIEW_SEARCH_DEBOUNCE_MS = 300;
+
+/** One server search: the query it answers, its results so far and where the next page starts. */
+interface ReviewSearchState {
+  query: string;
+  items: ReviewFeedItem[];
+  hasMore: boolean;
+  cursor?: { before: string; beforeId: string };
+  status: "loading" | "ready" | "failed";
+}
 
 /** "3h ago" within a week; otherwise the date, with the year when it is not this year. */
 function formatReviewDate(createdAt: string): string {
@@ -116,23 +126,36 @@ function ReviewFeedSkeleton() {
   );
 }
 
-function ReviewSearchQuerySummary({ query }: { query: string }) {
-  const trimmedQuery = query.trim();
+const SECTION_TABS = [
+  { value: "all", label: "All", accessibilityLabel: "Show all reviews" },
+  { value: "taste", label: "For you", accessibilityLabel: "Show reviews for your taste" },
+] as const;
+
+/** One line under the chips while searching: how many reviews matched. */
+function ReviewSearchQuerySummary({
+  query,
+  count,
+  hasMore,
+}: {
+  query: string;
+  count: number;
+  hasMore: boolean;
+}) {
   const { spacing } = useHungryTheme();
 
-  if (!trimmedQuery) {
+  if (!query.trim()) {
     return null;
   }
 
   return (
-    <View style={{ gap: spacing[0.5], paddingHorizontal: spacing[1] }}>
-      <AppText variant="micro" tone="secondary">
-        Showing results for
-      </AppText>
-      <AppText variant="bodySmallBold" style={{ flexShrink: 1 }}>
-        {trimmedQuery}
-      </AppText>
-    </View>
+    <AppText
+      variant="micro"
+      tone="secondary"
+      accessibilityLiveRegion="polite"
+      style={{ paddingHorizontal: spacing[1] }}
+    >
+      {`${count}${hasMore ? "+" : ""} ${count === 1 && !hasMore ? "result" : "results"}`}
+    </AppText>
   );
 }
 
@@ -162,14 +185,16 @@ const ReviewTile = memo(function ReviewTile({
   onLongPress: (item: ReviewFeedItem) => void;
 }) {
   const { palette, radii, spacing } = useHungryTheme();
+  const tilePhoto = item.review.photoThumbnails?.[0] || item.review.photos[0];
+  const hasPhoto = Boolean(tilePhoto?.trim());
   const photoCount = item.review.photos.length;
   const dateLabel = formatReviewDate(item.review.createdAt);
   const holdLabel = holdAction === "manage" ? "Edit or delete" : "Report or block";
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, ${dateLabel}`}
+      accessibilityLabel={`${item.review.authorName}'s review of ${item.dishName} at ${item.venueName}, rated ${item.review.rating} of 5, ${dateLabel}`}
       accessibilityHint={
         holdAction === "manage"
           ? "Opens the review. Hold to edit or delete it"
@@ -184,20 +209,55 @@ const ReviewTile = memo(function ReviewTile({
       testID={`review-tile-${item.review.id}`}
       onPress={() => onPress(item, index)}
       onLongPress={holdAction ? () => onLongPress(item) : undefined}
-      style={({ pressed }) => ({ height: size, opacity: pressed ? 0.85 : 1, width: size })}
+      style={{ height: size, width: size }}
     >
-      <AccessibleImage
-        source={{ uri: item.review.photos[0] }}
-        style={{ backgroundColor: palette.bgSoft, height: size, width: size }}
-        contentFit="cover"
-        decorative
-      />
+      {hasPhoto ? (
+        <AccessibleImage
+          // The small copy keeps a 3-column grid light; older reviews have only the full photo.
+          source={{ uri: tilePhoto }}
+          style={{ backgroundColor: palette.bgSoft, height: size, width: size }}
+          contentFit="cover"
+          decorative
+        />
+      ) : (
+        // No photo: the dish, the stars and the first words, on a soft tile. The label above
+        // already says all of it, so a screen reader hears the tile once.
+        <View
+          testID="review-text-tile"
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden
+          style={{
+            backgroundColor: palette.orangeLight,
+            gap: spacing[1],
+            height: size,
+            overflow: "hidden",
+            padding: spacing[2],
+            width: size,
+          }}
+        >
+          <AppText variant="micro" numberOfLines={2} style={{ fontWeight: "700" }}>
+            {item.dishName}
+          </AppText>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+            <AppSymbol name="rating" size={10} color={palette.starStroke} />
+            <AppText variant="micro" tone="secondary">
+              {item.review.rating}
+            </AppText>
+          </View>
+          {item.review.text.trim() ? (
+            <AppText variant="micro" tone="secondary" numberOfLines={3}>
+              {item.review.text.trim()}
+            </AppText>
+          ) : null}
+        </View>
+      )}
       {photoCount > 1 ? (
         <View style={{ position: "absolute", right: spacing[1.5], top: spacing[1.5] }}>
-          <Images color={palette.white} size={16} />
+          <AppSymbol name="square.on.square" fallback={Images} color={palette.white} size={16} />
         </View>
       ) : null}
-      {showLabels ? (
+      {/* A text tile already names the dish and stars: only a photo needs the labels over it. */}
+      {showLabels && hasPhoto ? (
         <View
           testID="review-tile-labels"
           style={{
@@ -219,7 +279,7 @@ const ReviewTile = memo(function ReviewTile({
             {item.dishName}
           </AppText>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-            <Star size={10} color={palette.starStroke} fill={palette.starFill} />
+            <AppSymbol name="rating" size={10} color={palette.starStroke} />
             <AppText variant="micro" numberOfLines={1} style={{ color: palette.white }}>
               {`${item.review.rating}${dateLabel ? ` · ${dateLabel}` : ""}`}
             </AppText>
@@ -242,7 +302,7 @@ const ReviewTile = memo(function ReviewTile({
           </AppText>
         </View>
       )}
-    </Pressable>
+    </PressableScale>
   );
 });
 
@@ -250,7 +310,6 @@ const ReviewTile = memo(function ReviewTile({
 
 export function ReviewFeedScreen() {
   const navigation = useNavigation<RootNavigation>();
-  const isTabSwipeLockedRef = useRef(false);
   const { palette, spacing, semanticSpacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const repository = getDataRepository();
@@ -265,6 +324,9 @@ export function ReviewFeedScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceReviewItems, setServiceReviewItems] = useState<ReviewFeedItem[] | null>(null);
   const [serviceLoadFailed, setServiceLoadFailed] = useState(false);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [searchState, setSearchState] = useState<ReviewSearchState | null>(null);
+  const searchLoadIdRef = useRef(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMoreServiceReviews, setHasMoreServiceReviews] = useState(false);
@@ -282,17 +344,6 @@ export function ReviewFeedScreen() {
   const newestCreatedAtRef = useRef<string | undefined>(undefined);
   const searchBarWidth = screenWidth - spacing[8];
   const tileSize = (screenWidth - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS;
-  const setTabSwipeLocked = useCallback(
-    (isLocked: boolean) => {
-      if (isTabSwipeLockedRef.current === isLocked) {
-        return;
-      }
-
-      isTabSwipeLockedRef.current = isLocked;
-      navigation.setOptions({ swipeEnabled: !isLocked });
-    },
-    [navigation],
-  );
   const headerActionSize = spacing[8] + spacing[2.5];
   const isServiceFeedLoading =
     serviceProviderMode !== "mock" && serviceReviewItems === null && !serviceLoadFailed;
@@ -315,15 +366,6 @@ export function ReviewFeedScreen() {
       isMounted = false;
     };
   }, [bumpSafetyFilter]);
-
-  useEffect(
-    () => () => {
-      if (isTabSwipeLockedRef.current) {
-        navigation.setOptions({ swipeEnabled: true });
-      }
-    },
-    [navigation],
-  );
 
   const toServiceFeedItem = useCallback(
     (entry: RecentReviewFeedEntry): ReviewFeedItem => ({
@@ -351,8 +393,6 @@ export function ReviewFeedScreen() {
       try {
         const page = await getHungryService().reviews.listRecentReviewsPage({
           limit: REVIEW_FEED_PAGE_SIZE,
-          // Only photo reviews belong on the grid: the server skips text-only ones.
-          withPhotos: true,
           ...(mode === "append" ? { before: cursor?.before, beforeId: cursor?.beforeId } : {}),
           ...(mode === "prepend" && newestCreatedAtRef.current
             ? { after: newestCreatedAtRef.current }
@@ -407,6 +447,8 @@ export function ReviewFeedScreen() {
     useCallback(() => {
       // Re-filter on every focus: a review deleted on its own page leaves the loaded pages.
       bumpSafetyFilter();
+      // Once per focus: the tab is preloaded, and a preloaded tab is not focused.
+      trackAnalyticsEvent("review_feed_viewed", { source: "tab" });
       if (serviceProviderMode === "mock") {
         setServiceReviewItems(null);
         return undefined;
@@ -427,6 +469,87 @@ export function ReviewFeedScreen() {
     [],
   );
 
+  // Search asks the server to look through every review, not only the pages already loaded. The
+  // grid keeps filtering the loaded pages while the person types and while the answer is on its
+  // way, so typing never feels slow.
+  const trimmedQuery = searchQuery.trim();
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(trimmedQuery), REVIEW_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [trimmedQuery]);
+  // Clearing the box shows the grid at once, without waiting out the debounce.
+  const activeQuery = trimmedQuery ? debouncedQuery : "";
+  const serverSearching =
+    serviceProviderMode !== "mock" && activeQuery.length >= REVIEW_SEARCH_MIN_LENGTH;
+
+  useEffect(() => {
+    const loadId = ++searchLoadIdRef.current;
+    if (!serverSearching) {
+      setSearchState(null);
+      return;
+    }
+    setSearchState((current) =>
+      current?.query === activeQuery
+        ? current
+        : { query: activeQuery, items: [], hasMore: false, status: "loading" },
+    );
+    getHungryService()
+      .reviews.searchReviewsPage({
+        query: activeQuery,
+        limit: REVIEW_FEED_PAGE_SIZE,
+      })
+      .then((page) => {
+        if (loadId !== searchLoadIdRef.current) return;
+        setSearchState({
+          query: activeQuery,
+          items: page.entries.map(toServiceFeedItem),
+          hasMore: page.hasMore,
+          cursor: page.nextCursor,
+          status: "ready",
+        });
+      })
+      .catch((error: unknown) => {
+        if (loadId !== searchLoadIdRef.current) return;
+        reportError(error, { screen: "ReviewFeedScreen", action: "search_reviews" });
+        setSearchState({ query: activeQuery, items: [], hasMore: false, status: "failed" });
+      });
+    return () => {
+      searchLoadIdRef.current += 1;
+    };
+  }, [activeQuery, serverSearching, toServiceFeedItem]);
+
+  const loadMoreSearchResults = useCallback(async () => {
+    const current = searchState;
+    if (!current || current.status !== "ready" || !current.hasMore || !current.cursor) return;
+    const loadId = ++searchLoadIdRef.current;
+    try {
+      const page = await getHungryService().reviews.searchReviewsPage({
+        query: current.query,
+        limit: REVIEW_FEED_PAGE_SIZE,
+        before: current.cursor.before,
+        beforeId: current.cursor.beforeId,
+      });
+      if (loadId !== searchLoadIdRef.current) return;
+      setSearchState((latest) => {
+        if (!latest || latest.query !== current.query) return latest;
+        const known = new Set(latest.items.map((item) => item.review.id));
+        return {
+          ...latest,
+          items: [
+            ...latest.items,
+            ...page.entries.map(toServiceFeedItem).filter((item) => !known.has(item.review.id)),
+          ],
+          hasMore: page.hasMore,
+          cursor: page.nextCursor ?? latest.cursor,
+        };
+      });
+    } catch (error) {
+      if (loadId !== searchLoadIdRef.current) return;
+      reportError(error, { screen: "ReviewFeedScreen", action: "search_reviews_more" });
+      showToast({ message: "Could not load more reviews.", tone: "warning" });
+    }
+  }, [searchState, showToast, toServiceFeedItem]);
+
   const handleRefresh = useCallback(async () => {
     if (serviceProviderMode === "mock") return;
     setIsRefreshing(true);
@@ -445,9 +568,17 @@ export function ReviewFeedScreen() {
 
   const handleLoadMore = useCallback(async () => {
     // A load-more during a refresh would win the shared load id and throw the refresh away.
-    if (serviceProviderMode === "mock" || !hasMoreServiceReviews || isLoadingMore || isRefreshing) {
+    if (serviceProviderMode === "mock" || isLoadingMore || isRefreshing) return;
+    if (serverSearching) {
+      setIsLoadingMore(true);
+      try {
+        await loadMoreSearchResults();
+      } finally {
+        setIsLoadingMore(false);
+      }
       return;
     }
+    if (!hasMoreServiceReviews) return;
     const cursor = feedCursorRef.current;
     if (!cursor) return;
     setIsLoadingMore(true);
@@ -456,7 +587,15 @@ export function ReviewFeedScreen() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [hasMoreServiceReviews, isLoadingMore, isRefreshing, loadServiceReviews, serviceProviderMode]);
+  }, [
+    hasMoreServiceReviews,
+    isLoadingMore,
+    isRefreshing,
+    loadMoreSearchResults,
+    loadServiceReviews,
+    serverSearching,
+    serviceProviderMode,
+  ]);
 
   const requireAccount = useRequireAccount();
   const requireAccountForReviewAction = useCallback(
@@ -474,53 +613,105 @@ export function ReviewFeedScreen() {
     (item: ReviewFeedItem) => (item.dish ? buildingNames.get(item.dish.buildingId) : undefined),
     [buildingNames],
   );
+  // "Near you" needs a real fix (GPS or a picked place), not the built-in default point.
+  const permission = useLocationStore((state) => state.permission);
+  const currentLocation = useLocationStore((state) => state.currentLocation);
+  const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
+  const viewerOrigin = useMemo(() => {
+    const { coordinate, isApproximate } = getEffectiveLocation({
+      permission,
+      currentLocation,
+      manualCoordinate,
+    });
+    return isApproximate ? undefined : coordinate;
+  }, [currentLocation, manualCoordinate, permission]);
+  const buildingCoordinates = useMemo(
+    () => new Map(repository.listBuildings().map((building) => [building.id, building.coordinate])),
+    [repository],
+  );
+  const distanceMetersOf = useMemo(
+    () =>
+      viewerOrigin
+        ? (item: ReviewFeedItem) =>
+            getDistanceMetersFromCoordinates(
+              viewerOrigin,
+              item.dish ? buildingCoordinates.get(item.dish.buildingId) : undefined,
+            )
+        : undefined,
+    [buildingCoordinates, viewerOrigin],
+  );
 
-  // Every review with a photo, newest first.
-  const allReviews = useMemo<ReviewFeedItem[]>(() => {
-    const reviews = visibleGridReviews(
-      reviewsWithPhotos(
+  // Every review, with or without a photo, newest first.
+  const gridReviews = useCallback(
+    (source: readonly ReviewFeedItem[]): ReviewFeedItem[] => {
+      const reviews = visibleGridReviews(source, {
+        viewerId,
+        isHidden: (item) =>
+          isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
+      });
+      return [...reviews].sort(
+        (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
+      );
+    },
+    // safetyFilterVersion: a report, block or deletion changes what is hidden.
+
+    [safetyFilterVersion, viewerId],
+  );
+  const allReviews = useMemo<ReviewFeedItem[]>(
+    () =>
+      gridReviews(
         serviceProviderMode === "mock"
           ? listReviewFeedItems(repository)
           : (serviceReviewItems ?? []),
       ),
-      {
-        viewerId,
-        isHidden: (item) =>
-          isContentHiddenForSession({ id: item.review.id, authorId: item.review.authorId }),
-      },
-    );
-    return [...reviews].sort(
-      (a, b) => new Date(b.review.createdAt).getTime() - new Date(a.review.createdAt).getTime(),
-    );
-  }, [repository, safetyFilterVersion, serviceProviderMode, serviceReviewItems, viewerId]);
+    [gridReviews, repository, serviceProviderMode, serviceReviewItems],
+  );
+  // The server's answer for the query in force; null until it arrives (and for short queries).
+  const serverSearchItems = useMemo(
+    () =>
+      serverSearching && searchState?.status === "ready" && searchState.query === activeQuery
+        ? gridReviews(searchState.items)
+        : null,
+    [activeQuery, gridReviews, searchState, serverSearching],
+  );
 
   // Chips follow the diner's palette, the foods and the areas on the page.
   // The picked food or area stays in the rail even when a reload drops it from the top values.
   const chips = useMemo(
     () =>
       withSelectedReviewChip(
-        buildReviewExploreChips(allReviews, { userVector: tasteVector, areaOf }),
+        buildReviewExploreChips(allReviews, {
+          userVector: tasteVector,
+          areaOf,
+          distanceMetersOf,
+        }),
         chipId,
       ),
-    [allReviews, areaOf, chipId, tasteVector],
+    [allReviews, areaOf, chipId, distanceMetersOf, tasteVector],
   );
   const activeChip = resolveActiveReviewChip(chips, chipId);
+  const hasTasteTab = chips.some((chip) => chip.kind === "taste");
+  const filterChips = chips.filter((chip) => chip.kind !== "all" && chip.kind !== "taste");
 
   const filteredReviews = useMemo(() => {
-    const byChip = filterReviewExplore(allReviews, activeChip, {
+    const byChip = filterReviewExplore(serverSearchItems ?? allReviews, activeChip, {
       userVector: tasteVector,
       areaOf,
+      distanceMetersOf,
     });
-    if (!searchQuery.trim()) return byChip;
-    const q = searchQuery.toLowerCase();
-    return byChip.filter(
-      (item) =>
-        item.dishName.toLowerCase().includes(q) ||
-        item.venueName.toLowerCase().includes(q) ||
-        item.review.text.toLowerCase().includes(q) ||
-        item.review.tags.some((t) => t.toLowerCase().includes(q)),
-    );
-  }, [activeChip, allReviews, areaOf, searchQuery, tasteVector]);
+    // The server already matched its results; the loaded pages are matched here.
+    if (serverSearchItems || !trimmedQuery) return byChip;
+    return byChip.filter((item) => reviewMatchesQuery(item, trimmedQuery));
+  }, [
+    activeChip,
+    allReviews,
+    areaOf,
+    distanceMetersOf,
+    serverSearchItems,
+    tasteVector,
+    trimmedQuery,
+  ]);
+  const searchHasMore = Boolean(serverSearchItems && searchState?.hasMore);
 
   // review_tile_labels_v1: exposure only once a focused, non-empty live grid is on screen (the
   // tab is preloaded, and mock tiles open the dish page). Latched, so a tab swipe never flips
@@ -612,7 +803,7 @@ export function ReviewFeedScreen() {
       });
       // Mock reviews live on their dish; live reviews open on their own page.
       if (serviceProviderMode === "mock") {
-        navigation.navigate("DishDetail", { dishId: item.dishId });
+        navigation.navigate("DishDetail", { dishId: item.dishId, source: "review_feed" });
         return;
       }
       navigation.navigate("ReviewDetail", { reviewId: item.review.id });
@@ -649,6 +840,10 @@ export function ReviewFeedScreen() {
   );
 
   const keyExtractor = useCallback((item: ReviewFeedItem) => item.interactionId, []);
+  const handleWriteReview = useCallback(() => {
+    trackAnalyticsEvent("review_empty_state_cta_pressed", {});
+    navigation.navigate("ReviewStack", { screen: "ReviewMain" });
+  }, [navigation]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["top"]}>
@@ -694,87 +889,126 @@ export function ReviewFeedScreen() {
           }
         />
 
-        {/* Filter chips: your taste, foods and areas */}
-        <FilterChipRail
-          options={chips.map((chip) => ({ id: chip.id, label: chip.label }))}
-          selectedId={activeChip?.id ?? "all"}
-          onSelect={setChipId}
-          onSwipeLockChange={setTabSwipeLocked}
-          gap={spacing[2]}
-        />
+        {/* Sections like TikTok's tabs: every review, or the ones that fit your taste. */}
+        {hasTasteTab ? (
+          <UnderlineTabs
+            accessibilityLabel="Review sections"
+            tabs={SECTION_TABS}
+            value={activeChip?.kind === "taste" ? "taste" : "all"}
+            onChange={setChipId}
+          />
+        ) : null}
 
-        <ReviewSearchQuerySummary query={searchQuery} />
+        {/* Filter chips: near you, foods and areas. Tap the chosen one again to clear it. */}
+        {filterChips.length > 0 ? (
+          <FilterChipRail
+            options={filterChips.map((chip) => ({ id: chip.id, label: chip.label }))}
+            selectedId={
+              activeChip && activeChip.kind !== "all" && activeChip.kind !== "taste"
+                ? activeChip.id
+                : undefined
+            }
+            onSelect={(id) => setChipId(activeChip?.id === id ? "all" : id)}
+            gap={spacing[2]}
+          />
+        ) : null}
+
+        <ReviewSearchQuerySummary
+          query={searchQuery}
+          count={filteredReviews.length}
+          hasMore={searchHasMore}
+        />
       </View>
 
       {/* Photo grid */}
       {showInitialSkeleton ? (
         <ReviewFeedSkeleton />
       ) : (
-        <FlatList
-          data={filteredReviews}
-          key={`grid-${GRID_COLUMNS}`}
-          numColumns={GRID_COLUMNS}
-          columnWrapperStyle={{ gap: GRID_GAP }}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{
-            gap: GRID_GAP,
-            paddingBottom: spacing[20],
-            paddingTop: spacing[2],
-          }}
-          extraData={showTileLabels}
-          refreshControl={
-            serviceProviderMode === "mock" ? undefined : (
-              <RefreshControl
-                refreshing={isRefreshing}
-                onRefresh={() => void handleRefresh()}
-                tintColor={palette.orange}
-              />
-            )
+        <SwipeSections
+          style={{ flex: 1 }}
+          onSwipeLeft={
+            hasTasteTab && activeChip?.kind !== "taste" ? () => setChipId("taste") : undefined
           }
-          onEndReached={() => void handleLoadMore()}
-          onEndReachedThreshold={0.5}
-          ListEmptyComponent={
-            serviceLoadFailed ? (
-              <EmptyState
-                title="Couldn't load reviews"
-                body="Check your connection and try again."
-                ctaLabel="Try again"
-                onPress={handleRetry}
-              />
-            ) : searchQuery ? (
-              <EmptyState
-                title="No reviews found"
-                body={
-                  hasMoreServiceReviews
-                    ? "No match in the latest reviews. Try a dish or stall name."
-                    : "Try a different search term."
-                }
-              />
-            ) : activeChip && activeChip.kind !== "all" && allReviews.length > 0 ? (
-              <EmptyState
-                title={
-                  activeChip.kind === "taste"
-                    ? "No reviews for your taste yet"
-                    : `No ${activeChip.label} reviews here`
-                }
-                body={
-                  activeChip.kind === "taste"
-                    ? "None of the latest photo reviews match your palette. See them all instead."
-                    : "Try another filter, or see every review."
-                }
-                ctaLabel="Show all reviews"
-                onPress={() => setChipId("all")}
-              />
-            ) : (
-              <EmptyState
-                title="No photo reviews yet"
-                body="Reviews with a photo show here. Tap the pen button below to write one."
-              />
-            )
+          onSwipeRight={
+            hasTasteTab && activeChip?.kind === "taste" ? () => setChipId("all") : undefined
           }
-        />
+        >
+          <FlatList
+            data={filteredReviews}
+            key={`grid-${GRID_COLUMNS}`}
+            numColumns={GRID_COLUMNS}
+            columnWrapperStyle={{ gap: GRID_GAP }}
+            keyExtractor={keyExtractor}
+            renderItem={renderItem}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              gap: GRID_GAP,
+              paddingBottom: spacing[4],
+              paddingTop: spacing[2],
+            }}
+            extraData={showTileLabels}
+            refreshControl={
+              serviceProviderMode === "mock" ? undefined : (
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={() => void handleRefresh()}
+                  tintColor={palette.orange}
+                />
+              )
+            }
+            onEndReached={() => void handleLoadMore()}
+            onEndReachedThreshold={0.5}
+            ListEmptyComponent={
+              serviceLoadFailed ? (
+                <EmptyState
+                  title="Couldn't load reviews"
+                  body="Check your connection and try again."
+                  ctaLabel="Try again"
+                  onPress={handleRetry}
+                />
+              ) : searchQuery ? (
+                <EmptyState
+                  title="No reviews found"
+                  body={
+                    serverSearchItems
+                      ? "Try a different dish, stall or taste."
+                      : searchState?.status === "failed"
+                        ? "Couldn't search every review. Showing the latest ones only."
+                        : serverSearching
+                          ? "Searching every review…"
+                          : "Try a different search term."
+                  }
+                />
+              ) : activeChip && activeChip.kind !== "all" && allReviews.length > 0 ? (
+                <EmptyState
+                  title={
+                    activeChip.kind === "taste"
+                      ? "No reviews for your taste yet"
+                      : activeChip.kind === "near"
+                        ? "No reviews near you yet"
+                        : `No ${activeChip.label} reviews here`
+                  }
+                  body={
+                    activeChip.kind === "taste"
+                      ? "None of the latest reviews match your palette. See them all instead."
+                      : activeChip.kind === "near"
+                        ? "None of the latest reviews are within 2 km of you. See them all instead."
+                        : "Try another filter, or see every review."
+                  }
+                  ctaLabel="Show all reviews"
+                  onPress={() => setChipId("all")}
+                />
+              ) : (
+                <EmptyState
+                  title="Be the first to review a dish"
+                  body="Rate your next meal, with a photo if you like. Reviews show here."
+                  ctaLabel="Write a review"
+                  onPress={handleWriteReview}
+                />
+              )
+            }
+          />
+        </SwipeSections>
       )}
       {ownReviewEditor.dialog}
     </SafeAreaView>

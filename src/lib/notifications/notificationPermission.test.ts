@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, { beforeEach } from "node:test";
 
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
-import { resolveNotificationPermission } from "./notificationPermission";
+import { isPushUnsupportedByBuild, resolveNotificationPermission } from "./notificationPermission";
 
 const results = () =>
   getTrackedAnalyticsEvents().filter((record) => record.event === "notification_permission_result");
@@ -50,4 +50,14 @@ test("without permission and without leave to ask, nothing is asked or tracked",
   assert.equal(await resolveNotificationPermission({ askPermission: false, ...phone }), null);
   assert.equal(phone.prompts(), 0);
   assert.equal(results().length, 0);
+});
+
+test("SENTRY-1X: a build without the push entitlement is recognised so it is not reported", () => {
+  const iosError = new Error(
+    "UnexpectedException: no valid “aps-environment” entitlement string found for application",
+  );
+  assert.equal(isPushUnsupportedByBuild(iosError), true);
+  assert.equal(isPushUnsupportedByBuild("no valid aps-environment entitlement"), true);
+  assert.equal(isPushUnsupportedByBuild(new Error("Network request failed")), false);
+  assert.equal(isPushUnsupportedByBuild(undefined), false);
 });

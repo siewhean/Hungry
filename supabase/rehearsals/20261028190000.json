@@ -1,0 +1,14 @@
+{
+  "version": "20261028190000",
+  "name": "20261028190000_venue_detail_merchant_reads",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T15:28:54Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "b5d283d7525ae9e7110cb46fd35a58d4de17296f",
+  "up_sha256": "b3fe0dbb1e0e7281e85d539f2d954e4c95744028442ab903b179f20beadbf3eb",
+  "down_sha256": "d20faa1637f5452abdae4cf7b5a864eeaa040b1bac2e3a8a1fd6286cb1ab78db",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/venue_detail_merchant_reads.sql"]
+}

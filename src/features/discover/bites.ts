@@ -51,6 +51,8 @@ export const LATE_NIGHT_END_HOUR = 4;
 const LATE_NIGHT_CLOSING_HOUR = 22;
 /** How many stalls the Discover feed (and so every rail and "See all") reads. */
 export const DISCOVER_FEED_LIMIT = 100;
+/** Home's first, small read: the nearest stalls draw while the full read is still out. */
+export const DISCOVER_FIRST_PAGE_LIMIT = 10;
 
 /** True from 21:00 to 03:59; pass the Singapore hour, not the device's. */
 export function isLateNightHour(hour: number) {

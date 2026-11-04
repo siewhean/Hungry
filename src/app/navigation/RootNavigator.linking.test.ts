@@ -9,6 +9,8 @@ import {
   createRootLinking,
   parseAuthCallbackParams,
   parseOrderDeepLinkQuery,
+  stripEmailQuery,
+  withoutEmailParam,
 } from "@/app/navigation/linking";
 
 test("linking exposes authenticated dish, venue, post and order entry points", () => {
@@ -66,7 +68,10 @@ test("fresh users are sent to onboarding before protected catalog deep links", (
     name: "OnboardingStack",
     params: { screen: "OnboardingWelcome" },
   });
-  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+  assert.deepEqual(capturedRoute, {
+    name: "DishDetail",
+    params: { dishId: "dish-123", source: "deep_link" },
+  });
 });
 
 test("a deep-link cold start with the account step pending resumes OnboardingAuth, not Login", () => {
@@ -88,7 +93,10 @@ test("a deep-link cold start with the account step pending resumes OnboardingAut
     name: "OnboardingStack",
     params: { screen: "OnboardingAuth" },
   });
-  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+  assert.deepEqual(capturedRoute, {
+    name: "DishDetail",
+    params: { dishId: "dish-123", source: "deep_link" },
+  });
 });
 
 test("onboarded signed-out users are sent to login and retain a safe return route", () => {
@@ -110,7 +118,10 @@ test("onboarded signed-out users are sent to login and retain a safe return rout
     name: "AuthStack",
     params: { screen: "Login" },
   });
-  assert.deepEqual(capturedRoute, { name: "DishDetail", params: { dishId: "dish-123" } });
+  assert.deepEqual(capturedRoute, {
+    name: "DishDetail",
+    params: { dishId: "dish-123", source: "deep_link" },
+  });
 
   // Cold start before auth settles: nothing opens, but the link is remembered.
   authState = { ...authState, isAuthReady: false };
@@ -120,7 +131,7 @@ test("onboarded signed-out users are sent to login and retain a safe return rout
   authState = { ...authState, isAuthReady: true, isAuthenticated: true };
   assert.deepEqual(linking.getStateFromPath("dish/dish-123")?.routes?.[1], {
     name: "DishDetail",
-    params: { dishId: "dish-123" },
+    params: { dishId: "dish-123", source: "deep_link" },
   });
 });
 
@@ -278,4 +289,61 @@ test("review/:id links open the review page once signed in (sign-in only)", () =
   assert.notEqual(signedOut?.routes?.at(-1)?.name, "ReviewDetail");
   assert.equal(getStateFromPath("review/"), undefined);
   assert.equal(getStateFromPath("review/%3Cscript%3E"), undefined);
+});
+
+test("a web URL never carries the email a screen was opened with (AUTH4-19)", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  const options = linking.config as Parameters<typeof getPathFromState>[1];
+  const pathFor = withoutEmailParam(getPathFromState);
+  for (const [screen, params] of [
+    ["Login", { email: "mei@example.sg" }],
+    ["ForgotPassword", { email: "mei@example.sg" }],
+    ["ResetPassword", { email: "mei@example.sg", code: "pkce-code" }],
+  ] as const) {
+    const state = {
+      routes: [{ name: "AuthStack", state: { routes: [{ name: screen, params }] } }],
+    };
+    const raw = getPathFromState(state, options);
+    assert.match(raw, /email=/, `${screen}: the default path would carry the address`);
+    const clean = pathFor(state, options);
+    assert.doesNotMatch(clean, /email/i, screen);
+    assert.ok(clean.startsWith("/"), clean);
+  }
+  // The rest of the query is kept.
+  assert.equal(stripEmailQuery("/auth/reset?code=abc&email=a%40b.sg"), "/auth/reset?code=abc");
+  assert.equal(stripEmailQuery("/login?email=a%40b.sg"), "/login");
+  assert.equal(stripEmailQuery("/login?email=a%40b.sg#top"), "/login#top");
+  assert.equal(stripEmailQuery("/search?q=email&mode=stalls"), "/search?q=email&mode=stalls");
+  assert.equal(stripEmailQuery("/home"), "/home");
+});
+
+test("both navigators build web URLs without the email", () => {
+  for (const file of ["RootNavigator.tsx", "PreAuthNavigator.tsx"]) {
+    const source = readFileSync(path.join(process.cwd(), "src/app/navigation", file), "utf8");
+    assert.match(source, /getPathFromState: withoutEmailParam\(getPathFromState\)/, file);
+  }
+});
+
+test("a dish page URL carries neither the in-app source nor the prefill object", () => {
+  const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+  const options = linking.config as Parameters<typeof getPathFromState>[1];
+  const pathFor = withoutEmailParam(getPathFromState);
+  const state = {
+    routes: [
+      {
+        name: "DishDetail",
+        params: {
+          dishId: "dish-1",
+          source: "more_from_stall",
+          prefill: { name: "Laksa", price: 5 },
+        },
+      },
+    ],
+  };
+  assert.match(getPathFromState(state, options), /prefill=%5Bobject/, "the default path leaks it");
+  assert.equal(pathFor(state, options), "/dish/dish-1");
+
+  // `source` on other pages (search) is a real param and stays.
+  assert.equal(stripEmailQuery("/search?source=search_typed"), "/search?source=search_typed");
+  assert.equal(stripEmailQuery("/dish/d1?source=home&prefill=x&x=1"), "/dish/d1?x=1");
 });

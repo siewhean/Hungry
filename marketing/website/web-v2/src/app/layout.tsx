@@ -13,11 +13,11 @@ import "./globals.css";
 const nunito = localFont({
   variable: "--font-nunito",
   src: [
-    { path: "./fonts/Nunito_400Regular.ttf", weight: "400", style: "normal" },
-    { path: "./fonts/Nunito_500Medium.ttf", weight: "500", style: "normal" },
-    { path: "./fonts/Nunito_600SemiBold.ttf", weight: "600", style: "normal" },
-    { path: "./fonts/Nunito_700Bold.ttf", weight: "700", style: "normal" },
-    { path: "./fonts/Nunito_800ExtraBold.ttf", weight: "800", style: "normal" },
+    { path: "./fonts/Nunito_400Regular.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Nunito_500Medium.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/Nunito_600SemiBold.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/Nunito_700Bold.woff2", weight: "700", style: "normal" },
+    { path: "./fonts/Nunito_800ExtraBold.woff2", weight: "800", style: "normal" },
   ],
 });
 
@@ -62,9 +62,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/hungry_logo_icon_transparent.png",
-    shortcut: "/hungry_logo_icon_transparent.png",
-    apple: "/hungry_logo_icon_transparent.png",
+    icon: [{ url: "/hungry_logo_icon_192.png", type: "image/png", sizes: "192x192" }],
+    shortcut: "/hungry_logo_icon_192.png",
+    apple: [{ url: "/hungry_apple_touch_icon.png", sizes: "180x180" }],
   },
 };
 
@@ -75,12 +75,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang={siteConfig.language} className={nunito.variable} data-scroll-behavior="smooth">
-      <head>
-        <link rel="icon" href="/hungry_logo_icon_transparent.png" type="image/png" sizes="32x32" />
-        <link rel="shortcut icon" href="/hungry_logo_icon_transparent.png" type="image/png" sizes="16x16" />
-        <link rel="apple-touch-icon" href="/hungry_logo_icon_transparent.png" />
-        <link rel="preconnect" href="https://images.unsplash.com" />
-      </head>
       <body>
         <JsonLd data={hungryJsonLd} />
         <Analytics />

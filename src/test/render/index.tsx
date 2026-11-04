@@ -30,6 +30,7 @@ export function createFakeNavigation() {
     replace: record("replace"),
     goBack: record("goBack"),
     popToTop: record("popToTop"),
+    popTo: record("popTo"),
     reset: record("reset"),
     setParams: record("setParams"),
     setOptions: record("setOptions"),

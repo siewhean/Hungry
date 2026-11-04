@@ -10,7 +10,10 @@ test("Achievements uses real passport progress in the Stitch layout", () => {
   assert.match(screen, /ProfileScreenShell title="Achievements"/);
   assert.match(screen, /getEarnedPassportStamps\(progressMap\)/);
   assert.match(screen, /getNextPassportStamp\(progressMap\)/);
-  assert.match(screen, /\{totalStamps\} \/ \{PASSPORT_STAMP_DEFINITIONS\.length\} stamps/);
+  assert.match(
+    screen,
+    /value=\{String\(totalStamps\)\}[\s\S]{0,400}\/ \$\{PASSPORT_STAMP_DEFINITIONS\.length\} stamps/,
+  );
   assert.match(screen, /<WeeklyGoalCard[\s\S]*progress=\{weeklyGoal\}/);
   assert.match(screen, /<HeritageStampTile[\s\S]*?earned=\{earned\}/);
   assert.match(screen, /passportRankTitle\(totalStamps\)/);
@@ -20,10 +23,12 @@ test("Achievements uses real passport progress in the Stitch layout", () => {
 test("Settings follows the Stitch groups with working account and privacy controls", () => {
   const screen = read("src/app/screens/profile/SettingsScreen.tsx");
   const sections = [
-    'title="Dining preferences"',
-    'title="Location & notifications"',
-    'title="Account & sync"',
-    'title="Data & privacy"',
+    'title="Your taste"',
+    "<StallAlertsSettings",
+    'title="Privacy & data"',
+    'title="Account & security"',
+    'title="On this phone"',
+    'title="Help & legal"',
   ];
 
   for (const section of sections) assert.match(screen, new RegExp(section));
@@ -33,7 +38,8 @@ test("Settings follows the Stitch groups with working account and privacy contro
   );
   assert.match(screen, /label="Dietary preferences"[\s\S]*initialPhase: "dietary"/);
   assert.match(screen, /label="Flavour profile"[\s\S]*initialPhase: "taste"/);
-  assert.match(screen, /label="Meal budget"[\s\S]*profile\.maxDishBudget/);
+  assert.match(screen, /label="Meal budget"[\s\S]*initialPhase: "budget"/);
+  assert.match(screen, /<SettingsProfileCard[\s\S]*navigation\.navigate\("EditProfile"\)/);
   assert.match(screen, /label="Download my data"|"Preparing your data…"/);
   assert.match(screen, /onPress=\{handleSignOut\}/);
   assert.match(screen, /onPress=\{handleDeleteAccount\}/);

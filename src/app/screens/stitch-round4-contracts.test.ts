@@ -8,7 +8,7 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallCard = dish.indexOf("stall details`}");
   const orderOn = dish.search(/Order on\s*<\/AppText>/);
-  const radar = dish.indexOf("<TasteRadarChart");
+  const radar = dish.indexOf("<DishTasteCard");
   assert.ok(stallCard > 0 && orderOn > stallCard && radar > orderOn);
   // No rating before the dish is tried; marking it tried opens an optional rate + taste popup.
   assert.doesNotMatch(dish, /Rate this dish/);
@@ -16,17 +16,19 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
   const followUp = read("src/features/detail/TriedFollowUp.tsx");
   assert.match(dish, /"Marked as tried\."[\s\S]*?setTriedFollowUpPending\(true\)/);
   assert.match(followUp, /<StarRating value=\{rating\} editable onChange=\{setRating\}/);
-  assert.match(followUp, /How did it taste\?[\s\S]*?<ChipGroup/);
+  assert.match(followUp, /How did it taste\?[\s\S]*?<TasteRatingInput/);
   assert.match(followUp, /label="Not now"/);
   // Not tried: grey circle, no tick. Tried: orange tick.
   assert.match(
     dish,
-    /icon: isDishTried \? CheckCircle : Circle,\s+active: isDishTried,\s+mutedWhenInactive: true/,
+    /icon: isDishTried \? TriedOnSymbol : TriedOffSymbol,\s+active: isDishTried,\s+mutedWhenInactive: true/,
   );
   assert.doesNotMatch(dish, /dish\.tasteTags/);
   assert.match(dish, /<DietaryFlagChips flags=\{dish\.dietaryFlags\}/);
-  // The review's stars and its like share the card's last line.
-  assert.match(dish, /<ReviewReaderActions\s+key=\{review\.id\}\s+rating=\{review\.rating\}/);
+  // The review's stars sit under the author; the like and the "..." share the card's actions.
+  const reviewCard = read("src/components/dish/DishReviewCard.tsx");
+  assert.match(reviewCard, /<ReviewStars/);
+  assert.match(reviewCard, /<ReviewReaderActions/);
 });
 
 test("radar: reviews in grey, how it tastes to the diner in orange on top", () => {
@@ -76,15 +78,12 @@ test("stall page: description only, hours on one row, website, filter beside the
   assert.ok(card > 0 && orderOn > card && menu > orderOn);
 });
 
-test("area search: animated placeholder and a map you can tap and zoom", () => {
+test("area search: animated placeholder and a results list with no map", () => {
   const picker = read("src/app/screens/onboarding/ManualLocationPickerScreen.tsx");
   assert.match(picker, /placeholder=\{movingPlaceholder\}/);
-  assert.match(picker, /onAreaPress=\{/);
-  assert.match(picker, /onPlacePress=\{/);
-  assert.match(picker, /listPlaces\(\{ coordinate: center, radiusMeters, limit: 20 \}\)/);
-  // The map fills the space between the search bar and the button; the options float above it.
-  assert.match(picker, /width=\{mapBox\.width\}\s+height=\{mapBox\.height\}/);
-  assert.match(picker, /\{optionsOpen \? \(\s+<View[\s\S]*?position: "absolute"/);
+  // The Singapore map is gone: the area follows the phone, the search is for people without it.
+  assert.doesNotMatch(picker, /SingaporeAreaMap|onAreaPress|onPlacePress|mapBox|optionsOpen/);
+  assert.match(picker, /<ScrollView[\s\S]*?title="Use my current location"/);
   assert.match(picker, /<Button label="Set as my location" disabled=\{!selected\}/);
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
   assert.match(search, /enableMovingPlaceholder\s+movingPlaceholderPhrases=/);

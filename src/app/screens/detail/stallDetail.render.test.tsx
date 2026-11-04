@@ -2,7 +2,9 @@
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
+import { Linking } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
+import type * as ClipboardModule from "expo-clipboard";
 
 import { StallDetailScreen } from "@/app/screens/detail/StallDetailScreen";
 import { ReportProblemScreen } from "@/app/screens/detail/ReportProblemScreen";
@@ -20,6 +22,8 @@ import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
+
+const Clipboard = require("expo-clipboard") as typeof ClipboardModule;
 
 const STALL = "venue-tian-tian";
 const restores: (() => void)[] = [];
@@ -221,7 +225,7 @@ test("STALL-12: See more reviews follows the server's hasMore, even when rows we
   assert.ok(view.findByText("See more reviews"));
 });
 
-test("STALL-X6: an empty Reviews section offers Write a review", async () => {
+test("STALL-X6 / R5-STALL-1: an empty Reviews section points at the one Write a review button, in the bar", async () => {
   override(getHungryService().reviews, "listRecentReviewsPage", async () => ({
     entries: [],
     hasMore: false,
@@ -231,8 +235,9 @@ test("STALL-X6: an empty Reviews section offers Write a review", async () => {
   const ctas = Array.from(view.container.querySelectorAll('[role="button"]')).filter(
     (node) => node.textContent?.trim() === "Write a review",
   );
-  // One in the empty state, one in the bottom bar.
-  assert.ok(ctas.length >= 2);
+  // The bottom bar's button is the page's only filled one: the empty state does not add a second.
+  assert.equal(ctas.length, 1);
+  assert.match(view.text(), /Be the first to review this stall/);
 });
 
 // Not saved in the mock account (Tian Tian and Satay Street are).
@@ -448,4 +453,49 @@ test("STALL-X7: with nothing to go back to, the stall page goes to the Home tab 
   await view.press(view.findByText("Go to Home"));
   const call = navigation.calls.find((entry) => entry.method === "navigate");
   assert.deepEqual(call?.args, ["MainTabs", { screen: "Discover" }]);
+});
+
+test("STALL-LOC1: tapping the stall name copies it and says Copied", async () => {
+  const copied: string[] = [];
+  override(Clipboard, "setStringAsync", (async (value: string) => {
+    copied.push(value);
+    return true;
+  }) as typeof Clipboard.setStringAsync);
+  const view = await openStall();
+  await view.press(view.findByLabel("Tian Tian Chicken Rice, copy stall name"));
+  await view.settle();
+  assert.deepEqual(copied, ["Tian Tian Chicken Rice"]);
+  assert.equal(useUIStore.getState().toast?.message, "Copied");
+});
+
+test("STALL-LOC1: a failed copy says so instead of claiming Copied", async () => {
+  override(Clipboard, "setStringAsync", (async () => {
+    throw new Error("clipboard unavailable");
+  }) as typeof Clipboard.setStringAsync);
+  const view = await openStall();
+  await view.press(view.findByLabel("Tian Tian Chicken Rice, copy stall name"));
+  await view.settle();
+  assert.match(useUIStore.getState().toast?.message ?? "", /Couldn't copy/);
+});
+
+test("STALL-LOC2 / R5-STALL-6: the subtitle opens the stall in Google Maps by name, not its coordinates", async () => {
+  const opened: string[] = [];
+  override(Linking, "openURL", async (url: string) => {
+    opened.push(url);
+  });
+  const view = await openStall();
+  const row = view.findByLabel(/^Directions to Tian Tian Chicken Rice, /);
+  assert.ok(row, "the subtitle is a Directions button");
+  // Centre and unit only: no postcode, and the stall name is not repeated in the subtitle.
+  const shown = (row.getAttribute("aria-label") ?? "").replace(
+    /^Directions to Tian Tian Chicken Rice, /,
+    "",
+  );
+  assert.doesNotMatch(shown, /Singapore \d{6}|\d{6}/);
+  assert.doesNotMatch(shown, /Tian Tian Chicken Rice/);
+  await view.press(row);
+  assert.equal(opened.length, 1);
+  const query = new URL(opened[0]).searchParams.get("query") ?? "";
+  assert.match(query, /^Tian Tian Chicken Rice/, "searches by the stall name first");
+  assert.doesNotMatch(query, /^-?\d+\.\d+,-?\d+\.\d+$/, "never a bare coordinate pair");
 });

@@ -31,33 +31,3 @@ export function withoutRemovedReview(
       review.id !== removedId && !(review.authorId && blockedAuthorIds.has(review.authorId)),
   );
 }
-
-function isOlderReview(review: Review, boundary: Review): boolean {
-  const a = Date.parse(review.createdAt);
-  const b = Date.parse(boundary.createdAt);
-  if (a !== b) return a < b;
-  return review.id < boundary.id;
-}
-
-/**
- * The list after a refresh on return: the fresh first page, then the older reviews the diner
- * had already paged to (older than the fresh page's last row). A short fresh page is the whole
- * list. With nothing shown for this dish (`shown` null) the fresh page is used as is.
- */
-export function mergeRefreshedReviews(
-  shown: { reviews: Review[]; hasMore: boolean } | null,
-  fresh: Review[],
-  pageSize: number,
-): { reviews: Review[]; hasMore: boolean } {
-  const freshIsFull = fresh.length >= pageSize;
-  const boundary = fresh[fresh.length - 1];
-  if (!shown || !freshIsFull || !boundary) return { reviews: fresh, hasMore: freshIsFull };
-  const known = new Set(fresh.map((review) => review.id));
-  const older = shown.reviews.filter(
-    (review) => !known.has(review.id) && isOlderReview(review, boundary),
-  );
-  return {
-    reviews: [...fresh, ...older],
-    hasMore: older.length > 0 ? shown.hasMore : freshIsFull,
-  };
-}

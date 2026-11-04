@@ -45,26 +45,26 @@ do $$
 declare
   v_awarded integer;
 begin
-  -- A client-supplied amount is ignored: stall_marked_tried pays its default 5.
+  -- A client-supplied amount is ignored: photo_uploaded pays its default 5.
   select points_awarded into v_awarded
-  from public.award_food_cred('stall_marked_tried', 'smoke-stall', 'stall', 100000);
+  from public.award_food_cred('photo_uploaded', 'smoke-stall', 'stall', 100000);
   if v_awarded <> 5 then
     raise exception 'Expected the default 5 points, got %', v_awarded;
   end if;
 
   -- Same stall again today earns nothing.
   select points_awarded into v_awarded
-  from public.award_food_cred('stall_marked_tried', 'smoke-stall', 'stall', 100000);
+  from public.award_food_cred('photo_uploaded', 'smoke-stall', 'stall', 100000);
   if v_awarded <> 0 then
     raise exception 'Expected 0 points for a repeat award on the same stall, got %', v_awarded;
   end if;
 
-  -- Repeats earn 0 and do not use up the daily cap (stall_marked_tried cap is 5).
+  -- Repeats earn 0 and do not use up the daily cap (photo_uploaded cap is 5).
   for i in 1..5 loop
-    perform public.award_food_cred('stall_marked_tried', 'smoke-stall', 'stall', null);
+    perform public.award_food_cred('photo_uploaded', 'smoke-stall', 'stall', null);
   end loop;
   select points_awarded into v_awarded
-  from public.award_food_cred('stall_marked_tried', 'smoke-stall-2', 'stall', null);
+  from public.award_food_cred('photo_uploaded', 'smoke-stall-2', 'stall', null);
   if v_awarded <> 5 then
     raise exception 'Expected a new stall to still pay 5 after repeats, got %', v_awarded;
   end if;

@@ -41,7 +41,8 @@ create table weekly_missions (id text primary key);
 create table user_mission_progress (user_id uuid, mission_id text);
 -- pins
 create table merchant_outlets (id uuid primary key);
-create table reviews (id uuid primary key default gen_random_uuid(), dish_id text, user_id uuid, rating numeric, text text, venue_id text);
+create table reviews (id uuid primary key default gen_random_uuid(), dish_id text, user_id uuid, rating numeric, text text, venue_id text, tags text[] not null default '{}', would_recommend boolean not null default true);
+create table review_photos (id uuid primary key default gen_random_uuid(), review_id uuid not null references reviews(id) on delete cascade, url text not null, storage_bucket text, storage_path text, thumb_path text, sort_order int not null default 0, unique (review_id, sort_order));
 create table merchant_popular_visitor_pins (id uuid primary key default gen_random_uuid(), outlet_id uuid not null, venue_id text, review_id uuid not null, sort_order int not null default 0, is_active boolean not null default true, unique(outlet_id, review_id));
 -- chat
 create table conversation_participants (conversation_id uuid, participant_user_id uuid, last_read_at timestamptz);

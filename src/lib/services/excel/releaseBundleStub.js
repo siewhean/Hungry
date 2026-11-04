@@ -12,6 +12,9 @@ module.exports = new Proxy(
       if (property === "__esModule" || property === "then" || typeof property === "symbol") {
         return undefined;
       }
+      // serviceProvider asks this before choosing mock/Excel, so a bundle that still carries the
+      // stub falls back to Supabase instead of crashing on the first data read.
+      if (property === "__hungryReleaseStub") return true;
       throw new Error(`${message} (accessed "${String(property)}")`);
     },
   },

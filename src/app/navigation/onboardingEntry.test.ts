@@ -1,12 +1,21 @@
 import assert from "node:assert/strict";
-import test, { beforeEach } from "node:test";
+import test, { afterEach, beforeEach } from "node:test";
 
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { onboardingEntryRoute } from "@/app/navigation/onboardingEntry";
 import { useOnboardingDraftStore } from "@/store/useOnboardingDraftStore";
 
+// These cover the original flow; the slider flow has its own tests (onboardingEntry.sliderFlow).
+const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+const original = flags.sliderOnboardingEnabled;
+
 beforeEach(() => {
+  flags.sliderOnboardingEnabled = false;
   useOnboardingDraftStore.getState().clearDraft();
+});
+afterEach(() => {
+  flags.sliderOnboardingEnabled = original;
 });
 
 test("a fresh install starts at Welcome", () => {

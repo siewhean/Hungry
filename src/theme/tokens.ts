@@ -31,11 +31,22 @@ export const colors = {
     /** Rating star icons: a yellow fill, edged in gold so the shape reads on white (3:1). */
     starFill: "#FFC21A",
     starStroke: "#B8860B",
+    /** A saved heart. Its own pink-red so "saved" is never read as the error red (4.58:1 on white). */
+    saved: "#E0245E",
     /** Hungry Passport: a navy blue cover with gold foil and a cream page. */
     passportCover: "#1D3A6E",
     passportGold: "#D9B45A",
     passportPage: "#FBF4E4",
     passportInk: "#5B4A2E",
+    // Achievement medals: struck metal, the same in both themes.
+    medalBronze: "#B87333",
+    medalBronzeRim: "#8A5424",
+    medalSilver: "#B7C0CA",
+    medalSilverRim: "#7D8894",
+    medalGold: "#E2BC55",
+    medalGoldRim: "#A97E1F",
+    medalEngraveLight: "#FFF8EC",
+    medalEngraveDark: "#3A2F1C",
     teal: "#14B8A6",
     success: "#4F7E17",
     successText: "#4F7E17",
@@ -118,10 +129,20 @@ export const colors = {
     ratingStar: "#F5A623",
     starFill: "#FFC21A",
     starStroke: "#FFC21A",
+    saved: "#FF6B8A",
     passportCover: "#172F59",
     passportGold: "#D9B45A",
     passportPage: "#2A2620",
     passportInk: "#E8D9B5",
+    // Achievement medals: struck metal, the same in both themes.
+    medalBronze: "#B87333",
+    medalBronzeRim: "#8A5424",
+    medalSilver: "#B7C0CA",
+    medalSilverRim: "#7D8894",
+    medalGold: "#E2BC55",
+    medalGoldRim: "#A97E1F",
+    medalEngraveLight: "#FFF8EC",
+    medalEngraveDark: "#3A2F1C",
     teal: "#14B8A6",
     success: "#4ADE80",
     successText: "#4ADE80",
@@ -381,7 +402,12 @@ const baseTypography = {
     fontFamily: "Nunito_500Medium",
     letterSpacing: 0.6,
   },
-  price: { fontSize: 16, lineHeight: 24, fontFamily: "DMMono_400Regular" },
+  price: {
+    fontSize: 14,
+    lineHeight: 22,
+    fontFamily: "Nunito_600SemiBold",
+    fontVariant: ["tabular-nums"] as "tabular-nums"[],
+  },
   code: { fontSize: 14, lineHeight: 22, fontFamily: "DMMono_400Regular" },
 } as const;
 

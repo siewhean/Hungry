@@ -89,7 +89,7 @@ test("Dialog and BottomSheet expose native modal semantics and labelled dismiss 
   assert.match(bottomSheet, /accessibilityViewIsModal/);
 
   assert.match(reviewSuccess, /<Modal[\s\S]*accessibilityViewIsModal/);
-  assert.match(reviewSuccess, /accessibilityLabel="Close review success"/);
+  assert.match(reviewSuccess, /accessibilityLabel="Done"/);
   assert.match(reviewSuccess, /accessibilityHint="Dismisses the review confirmation"/);
   assert.match(wheelEntry, /<Modal[\s\S]*accessibilityViewIsModal/);
   assert.match(wheelEntry, /accessibilityLabel="Close add option sheet"/);

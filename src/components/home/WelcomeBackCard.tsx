@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 import { X } from "lucide-react-native";
 
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isReturningAfterBreak } from "@/features/lifecycle/lifecycle";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
@@ -32,7 +33,9 @@ export function WelcomeBackCard(props: WelcomeBackCardProps) {
   // The card's actions are saved dishes and new dishes at followed stalls; with neither there
   // is nothing to tap, so those diners are not eligible in either arm.
   const hasSavedDishes = useProfileStore((state) => state.profile.favouriteDishIds.length > 0);
-  const followsAStall = useStallFollowStore((state) => state.followedStallIds.length > 0);
+  const followsAStall = useStallFollowStore(
+    (state) => FEATURE_FLAGS.stallFollowEnabled && state.followedStallIds.length > 0,
+  );
 
   // Read the experiment only for eligible users, so exposure counts only them.
   if (!snapshot || dismissed || !isReturningAfterBreak(snapshot.state)) return null;
@@ -58,7 +61,7 @@ function WelcomeBackExperiment({
   const showCard = visible && variant === "test";
 
   useEffect(() => {
-    if (!showCard || !snapshot.previousActiveDate) return;
+    if (!showCard || !snapshot.previousActiveDate || !FEATURE_FLAGS.stallFollowEnabled) return;
     let cancelled = false;
     void getHungryService()
       .lifecycle.getWelcomeBackDishes(snapshot.previousActiveDate)

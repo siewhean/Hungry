@@ -5,6 +5,7 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import type { DishDetail, StallPost } from "@/types/domain";
@@ -92,6 +93,10 @@ export async function publishComposerPost(options: PublishComposerPostOptions) {
   const applyReviewProfileState = () => {
     const profileStore = useProfileStore.getState();
     profileStore.addReviewedDish(dish.id);
+    // A stall marked visited before this review earns its visit points now.
+    void useStallInteractionStore
+      .getState()
+      .awardVisitAfterReview(profileStore.profile.id, dish.venueId);
     profileStore.addReview(dish);
     profileStore.recordReviewEntry(dish.id, {
       rating: state.rating,

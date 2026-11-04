@@ -123,9 +123,11 @@ test("H27: passport celebration is marked at start and persisted per user", () =
 test("H29: other-profile stats, tabs and post actions have labels", () => {
   const content = read("src/app/screens/profile/UserProfileContent.tsx");
   const post = read("src/app/screens/profile/SocialPostDetailScreen.tsx");
+  // Stats come from the shared stat row; each is named "<label> <value>" (or loading/unavailable).
+  assert.match(content, /<ProfileStatRow stats=\{stats\}/);
   assert.match(
-    content,
-    /accessibilityLabel=\{value === null \? `\$\{label\}, loading` : `\$\{value\} \$\{label\}`\}/,
+    read("src/components/profile/ProfileStatRow.tsx"),
+    /\? `\$\{label\}, loading`[\s\S]*?: `\$\{label\} \$\{value\}`/,
   );
   assert.match(content, /accessibilityRole="tab"/);
   assert.match(post, /accessibilityLabel=\{`Like, \$\{interaction\.likeCount\}/);
@@ -196,7 +198,7 @@ test("H36: collaborators are picked from people you follow and shown by name", a
   assert.doesNotMatch(screen, /Paste a Hungry user id|isn't available yet/);
   assert.match(screen, /social\.listFollowing\(profileId,/);
   assert.match(screen, /addCollaborator\(portfolioId, person\.userId, role\)/);
-  assert.match(screen, /removeCollaborator\(portfolioId, collaborator\.userId\)/);
+  assert.match(screen, /removeCollaborator\(portfolioId, target\.userId\)/);
   assert.match(screen, /label="Viewer"[\s\S]*label="Editor"/);
   // Ids are keys only: rows render names and avatars, never userId text.
   assert.doesNotMatch(row, />\s*\{collaborator\.userId\}/);

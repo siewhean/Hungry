@@ -133,29 +133,28 @@ export function countNegativeTasteSignals(
   ).length;
 }
 
-/**
- * Match percent for display, 0-100. Both vectors are centred on the neutral 5
- * before the cosine, so an all-positive 0-10 dish no longer looks close to
- * everyone. 50 means no particular lean either way; opposite tastes go to 0.
- * (The blended score above keeps ranking; this one is only for showing a number.)
- */
-export function tasteMatchPercent(user: TasteVector, dish: TasteVector): number {
-  const centre = (vector: TasteVector): TasteVector => ({
-    sweet: vector.sweet - NEUTRAL_AXIS,
-    spicy: vector.spicy - NEUTRAL_AXIS,
-    sour: vector.sour - NEUTRAL_AXIS,
-    salty: vector.salty - NEUTRAL_AXIS,
-    rich: vector.rich - NEUTRAL_AXIS,
-    aromatic: vector.aromatic - NEUTRAL_AXIS,
-  });
-  const cos = cosineSimilarity(centre(user), centre(dish));
-  // cosineSimilarity returns 0 for a zero vector, which maps to the neutral 50.
-  return Math.round(((Math.max(-1, Math.min(1, cos)) + 1) / 2) * 100);
-}
-
 /** Per-axis match for the "Palate match" bars: a 5-point gap or more reads as 0. */
 export function tasteAxisMatchPercent(userValue: number, dishValue: number): number {
   return Math.round(Math.max(0, 1 - Math.abs(userValue - dishValue) / 5) * 100);
+}
+
+/**
+ * Match percent for display and for ranking, 0-100: a weighted average of the six per-axis
+ * matches the "Palate match" bars show, so the headline number can never sit above the best bar
+ * or below the worst. Axes the diner feels strongly about (far from the neutral 5) weigh more, so
+ * a bland dish does not score well for someone who lives for heat. 100 means every axis agrees;
+ * a dish that is "more of everything" than the diner does not score 100 (a cosine of the centred
+ * vectors did).
+ */
+export function tasteMatchPercent(user: TasteVector, dish: TasteVector): number {
+  let weighted = 0;
+  let weights = 0;
+  for (const axis of TASTE_AXES) {
+    const weight = 1 + Math.abs(user[axis] - NEUTRAL_AXIS);
+    weighted += weight * Math.max(0, 1 - Math.abs(user[axis] - dish[axis]) / 5);
+    weights += weight;
+  }
+  return Math.round((weighted / weights) * 100);
 }
 
 // ─── Recommendation ───────────────────────────────────────────────────────────
@@ -392,6 +391,27 @@ export interface PipelineContext {
   openness?: FoodOpenness;
   /** What the user ate or liked before; with liked dishes, stage 4 mixes familiar and new food by openness */
   history?: FoodHistory;
+  /**
+   * How distance counts. "additive" (default) adds a 15% distance term to the score, so a far
+   * perfect match can beat a near good one. "decay" scores relevance first and multiplies it by
+   * a walking-distance decay, so nearer food wins unless the far dish is clearly better.
+   */
+  distanceMode?: DistanceMode;
+}
+
+export type DistanceMode = "additive" | "decay";
+
+/** Metres over which the "decay" distance factor falls to about a third (a short walk). */
+export const DISTANCE_DECAY_METERS = 400;
+/** The factor never falls below this, so far dishes still rank among themselves by relevance. */
+export const DISTANCE_DECAY_FLOOR = 0.25;
+
+/** 1 at the diner's feet, falling toward DISTANCE_DECAY_FLOOR with distance. */
+export function distanceDecayFactor(distanceMeters: number): number {
+  const meters = Math.max(0, Number.isFinite(distanceMeters) ? distanceMeters : 0);
+  return (
+    DISTANCE_DECAY_FLOOR + (1 - DISTANCE_DECAY_FLOOR) * Math.exp(-meters / DISTANCE_DECAY_METERS)
+  );
 }
 
 export interface PipelineResult {
@@ -494,6 +514,7 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
   contextVector: TasteVector,
   userVector: TasteVector,
   tagAffinity: Map<string, number> = new Map(),
+  distanceMode: DistanceMode = "additive",
 ): (T & { _precisionScore: number })[] {
   // Find max distance for normalization
   const maxDist = Math.max(...candidates.map((d) => d.distanceMeters), 1);
@@ -513,6 +534,19 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
 
     const confidence = Math.min(1, Math.max(0, dish.tasteConfidence ?? 1));
     const shiftedWeight = RECOMMENDATION_SCORE_WEIGHTS.taste * (1 - confidence);
+
+    if (distanceMode === "decay") {
+      // Relevance without distance (its weights sum to 1 minus the distance weight), scaled to
+      // 0-1, then multiplied by the walking-distance factor.
+      const relevanceWeight = 1 - RECOMMENDATION_SCORE_WEIGHTS.distance;
+      const relevance =
+        (RECOMMENDATION_SCORE_WEIGHTS.taste * confidence * tasteScore +
+          RECOMMENDATION_SCORE_WEIGHTS.context * contextScore +
+          (RECOMMENDATION_SCORE_WEIGHTS.rating + shiftedWeight) * ratingScore +
+          RECOMMENDATION_SCORE_WEIGHTS.novelty * noveltyScore) /
+        relevanceWeight;
+      return { ...dish, _precisionScore: relevance * distanceDecayFactor(dish.distanceMeters) };
+    }
 
     const precisionScore =
       RECOMMENDATION_SCORE_WEIGHTS.taste * confidence * tasteScore +
@@ -753,6 +787,7 @@ export function runRecommendationPipeline(
     contextVector,
     ctx.userVector,
     tagAffinity,
+    ctx.distanceMode,
   );
 
   // Sort by precision score

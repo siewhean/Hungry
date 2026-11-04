@@ -1,46 +1,80 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { View, StyleSheet, Pressable, KeyboardAvoidingView, Modal, Platform } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  RefreshControl,
+} from "react-native";
 import { MessageSquare, Star, Send, MoreVertical, CheckCircle2, X } from "lucide-react-native";
 import { useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import {
+  AppSymbol,
   AppText,
   Button,
+  ChipGroup,
   IconButton,
   FilterChipRail,
+  type FilterChipRailOption,
   Input,
   Screen,
   Avatar,
   Skeleton,
   EmptyState,
 } from "@/components/ui";
+import { confirmHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { reportError } from "@/lib/monitoring/reportError";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
 import { MERCHANT_REPLY_MAX_LENGTH } from "@/features/merchant/merchantReadiness";
+import {
+  getSentimentStats,
+  isRatingFilter,
+  matchesRatingFilter,
+  type RatingFilter,
+} from "@/features/merchant/inboxFilters";
+import { formatRelativeDate } from "@/features/profile/relativeDate";
+import {
+  REPLY_SUGGESTION_LABELS,
+  buildReplySuggestion,
+  canFillReplySuggestion,
+  orderReplySuggestionKinds,
+  type ReplySuggestionKind,
+} from "@/features/merchant/replySuggestions";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog, type ShowMerchantAlert } from "@/features/merchant/useMerchantDialog";
 import type { CustomerInteraction, InteractionType } from "@/types/domain";
 
-type InboxFilter = InteractionType | "all" | "unreplied";
+type InboxFilter = InteractionType | RatingFilter | "all" | "unreplied";
 
 /** Reviews loaded per page; "Load more" fetches the next older page. */
 const INBOX_PAGE_SIZE = 30;
+/** A quoted review longer than this gets a More / Less toggle in the reply composer. */
+const REVIEW_QUOTE_EXPAND_FROM = 160;
 
 // The inbox is fed by reviews only; comments and mentions are not collected yet.
-const INBOX_FILTER_OPTIONS: { id: InboxFilter; label: string }[] = [
+const INBOX_FILTER_OPTIONS: FilterChipRailOption<InboxFilter>[] = [
   { id: "all", label: "All" },
   { id: "unreplied", label: "Unreplied" },
-  { id: "review", label: "Reviews" },
+  { id: "rating_low", label: "1–2", accessibilityLabel: "1 to 2 stars" },
+  { id: "rating_mid", label: "3", accessibilityLabel: "3 stars" },
+  { id: "rating_high", label: "4–5", accessibilityLabel: "4 to 5 stars" },
 ];
 
 const INBOX_EMPTY_LABELS: Record<InboxFilter, string> = {
   all: "No customer reviews to show yet.",
   unreplied: "No unreplied reviews.",
   review: "No reviews to show yet.",
+  rating_low: "No 1–2 star reviews in the reviews loaded so far.",
+  rating_mid: "No 3 star reviews in the reviews loaded so far.",
+  rating_high: "No 4–5 star reviews in the reviews loaded so far.",
   comment: "No comments to show.",
   post_mention: "No mentions to show.",
   question: "No questions to show.",
@@ -52,6 +86,11 @@ const REPORT_REASONS = [
   "Contains personal information",
   "Not about this stall",
 ];
+
+/** Id plus reply state of each review: equal signatures mean the loaded page is current. */
+function inboxSignature(items: readonly CustomerInteraction[]): string {
+  return items.map((item) => `${item.id}:${item.reply?.repliedAt ?? ""}`).join("|");
+}
 
 export function CustomerInboxScreen() {
   const { palette, radii, spacing } = useHungryTheme();
@@ -75,6 +114,11 @@ export function CustomerInboxScreen() {
   // "Unreplied" asks the server for unreplied reviews. Filtering one loaded page could say
   // "All caught up" while older reviews still wait for a reply.
   const unrepliedOnly = filter === "unreplied";
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const interactionsRef = useRef(interactions);
+  useEffect(() => {
+    interactionsRef.current = interactions;
+  }, [interactions]);
 
   // A Dashboard link can ask for a filter while the screen is already open. The tab stays
   // mounted, so the param is cleared once applied: the same link tapped again (after the
@@ -122,13 +166,55 @@ export function CustomerInboxScreen() {
     void fetchInteractions();
   }, [fetchInteractions]);
 
+  // The tab stays mounted, so coming back to it (or pulling down) re-reads the newest page
+  // without the loading state. Loaded older pages stay unless the newest page changed (R4-7).
+  const refreshInbox = useCallback(async () => {
+    if (!activeOutletId) return;
+    const loadId = latestLoadId.current;
+    try {
+      const data = await getHungryService().merchant.getInbox(activeOutletId, {
+        type: "review",
+        limit: INBOX_PAGE_SIZE,
+        unrepliedOnly,
+      });
+      if (loadId !== latestLoadId.current) return;
+      const current = interactionsRef.current;
+      if (inboxSignature(current.slice(0, data.length)) !== inboxSignature(data)) {
+        setInteractions(data);
+        setHasMore(data.length >= INBOX_PAGE_SIZE);
+      }
+      setError(null);
+    } catch (e) {
+      // The visible list is still right; say nothing on a quiet refocus.
+      reportError(e, { screen: "CustomerInbox", action: "refresh_inbox" });
+    }
+  }, [activeOutletId, unrepliedOnly]);
+
+  // Read by the focus event, so a chip change is neither another inbox view nor a refetch.
+  const refreshInboxRef = useRef(refreshInbox);
+  useEffect(() => {
+    refreshInboxRef.current = refreshInbox;
+  }, [refreshInbox]);
+  const hasFocusedOnce = useRef(false);
   useFocusEffect(
     useCallback(() => {
       trackMerchantEvent("merchant_customer_inbox_viewed", activeOutletId, {
         filter: filterRef.current,
       });
+      // The first focus is the mount load above.
+      if (hasFocusedOnce.current) void refreshInboxRef.current();
+      hasFocusedOnce.current = true;
     }, [activeOutletId]),
   );
+
+  const handlePullToRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refreshInbox();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refreshInbox]);
 
   // Opened from a Dashboard review card: start the reply to that review once it has loaded,
   // then clear the param so a later Reply on the same review opens the composer again.
@@ -177,10 +263,10 @@ export function CustomerInboxScreen() {
           "merchant_customer_interaction_reported",
           useMerchantStore.getState().activeOutletId ?? undefined,
         );
-        showAlert("Reported", "Interaction sent for moderation review.");
+        showAlert("Reported", "Thanks, our team will look at this review.");
       } catch (e) {
         reportError(e, { screen: "CustomerInbox", action: "report_interaction" });
-        showAlert("Error", "Failed to report interaction.");
+        showAlert("Couldn't report this review", "Please try again in a moment.");
       }
     },
     [showAlert],
@@ -221,7 +307,7 @@ export function CustomerInboxScreen() {
               );
             } catch (e) {
               reportError(e, { screen: "CustomerInbox", action: "remove_reply" });
-              showAlert("Error", "Failed to remove the reply.");
+              showAlert("Couldn't remove your reply", "Please try again in a moment.");
             }
           },
         },
@@ -231,6 +317,7 @@ export function CustomerInboxScreen() {
   );
 
   const handleReplySent = useCallback((interactionId: string, text: string) => {
+    confirmHaptic();
     setReplyingTo(null);
     // Patch in place, keeping the scroll position and every page already loaded.
     setInteractions((current) =>
@@ -243,18 +330,43 @@ export function CustomerInboxScreen() {
   }, []);
 
   const visibleInteractions = useMemo(
-    () => (unrepliedOnly ? interactions.filter((item) => !item.reply) : interactions),
-    [unrepliedOnly, interactions],
+    () =>
+      unrepliedOnly
+        ? interactions.filter((item) => !item.reply)
+        : isRatingFilter(filter)
+          ? interactions.filter((item) => matchesRatingFilter(item, filter))
+          : interactions,
+    [filter, unrepliedOnly, interactions],
   );
 
   return (
-    <Screen title="Customer inbox">
+    <Screen
+      title="Customer inbox"
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefreshing}
+          onRefresh={() => void handlePullToRefresh()}
+          tintColor={palette.orange}
+        />
+      }
+    >
       <View style={{ gap: spacing[4], width: "100%" }}>
         {/* Filters */}
         <FilterChipRail
           options={INBOX_FILTER_OPTIONS}
           selectedId={filter}
           onSelect={setFilter}
+          renderLeftIcon={(option, selected) =>
+            option.id.startsWith("rating_") ? (
+              <AppSymbol
+                name="star.fill"
+                fallback={Star}
+                filled
+                size={12}
+                color={selected ? palette.orange : palette.textSecondary}
+              />
+            ) : undefined
+          }
           gap={spacing[2]}
         />
 
@@ -283,7 +395,7 @@ export function CustomerInboxScreen() {
             <View style={[styles.emptyContainer, { padding: 60 }]}>
               <CheckCircle2 size={48} color={palette.success} />
               <AppText variant="bodyBold" style={{ marginTop: spacing[3] }}>
-                All caught up!
+                {isRatingFilter(filter) ? "Nothing here" : "All caught up!"}
               </AppText>
               <AppText variant="bodySmall" tone="muted">
                 {INBOX_EMPTY_LABELS[filter]}
@@ -335,19 +447,7 @@ function SentimentSummary({
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
 
-  const stats = useMemo(() => {
-    if (interactions.length === 0) return null;
-    const total = interactions.length;
-    const positive = interactions.filter((i) => (i.rating || 0) >= 4).length;
-    const negative = interactions.filter((i) => (i.rating || 0) > 0 && (i.rating || 0) <= 2).length;
-    const neutral = total - positive - negative;
-    return {
-      total,
-      positive: Math.round((positive / total) * 100),
-      negative: Math.round((negative / total) * 100),
-      neutral: Math.round((neutral / total) * 100),
-    };
-  }, [interactions]);
+  const stats = useMemo(() => getSentimentStats(interactions), [interactions]);
 
   if (!stats) return null;
 
@@ -367,8 +467,8 @@ function SentimentSummary({
       <AppText variant="bodyBold">Sentiment summary</AppText>
       <AppText variant="micro" tone="muted">
         {hasMore
-          ? `Your ${stats.total} most recent reviews`
-          : `All ${stats.total} ${stats.total === 1 ? "review" : "reviews"}`}
+          ? `Your ${stats.total} most recent rated reviews`
+          : `All ${stats.total} rated ${stats.total === 1 ? "review" : "reviews"}`}
       </AppText>
       <View
         style={{
@@ -458,7 +558,7 @@ function InteractionCard({
           <View>
             <AppText variant="bodyBold">{interaction.authorName}</AppText>
             <AppText variant="micro" tone="muted">
-              {new Date(interaction.createdAt).toLocaleDateString()} • {typeLabel}
+              {formatRelativeDate(interaction.createdAt)} • {typeLabel}
             </AppText>
           </View>
         </View>
@@ -515,7 +615,7 @@ function InteractionCard({
             </AppText>
             <AppText variant="micro" tone="muted">
               {" "}
-              • {new Date(interaction.reply.repliedAt).toLocaleDateString()}
+              • {formatRelativeDate(interaction.reply.repliedAt)}
             </AppText>
           </View>
           <AppText variant="bodySmall">{interaction.reply.text}</AppText>
@@ -567,8 +667,18 @@ function ReplyComposer({
   const [text, setText] = useState(initialText);
   const nearReplyLimit = text.length >= MERCHANT_REPLY_MAX_LENGTH * 0.9;
   const [isSending, setIsSending] = useState(false);
+  // Exposure is the composer opening on a review with no reply yet: the only place chips show.
+  const suggestionsVariant = useExperimentVariant("merchant_reply_suggestions_v1", {
+    enabled: !interaction.reply,
+  });
+  const showSuggestions = !interaction.reply && suggestionsVariant === "chips";
+  const [suggestion, setSuggestion] = useState<{
+    kind: ReplySuggestionKind;
+    text: string;
+  } | null>(null);
   // Its own dialog: the composer is a Modal, and a dialog from the screen would sit behind it.
   const { showAlert, dialog } = useMerchantDialog();
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   // A tap on the backdrop or the Android back button must not throw away a typed reply.
   const requestClose = () => {
@@ -593,10 +703,20 @@ function ReplyComposer({
         useMerchantStore.getState().activeOutletId ?? undefined,
         { interaction_type: interaction.type },
       );
+      if (suggestion) {
+        trackMerchantEvent(
+          "merchant_reply_suggestion_used",
+          useMerchantStore.getState().activeOutletId ?? undefined,
+          { kind: suggestion.kind, edited: text !== suggestion.text },
+        );
+      }
       onSent(text);
     } catch (e) {
       reportError(e, { screen: "CustomerInbox", action: "send_reply" });
-      showAlert("Error", e instanceof Error ? e.message : "Failed to send reply.");
+      showAlert(
+        "Couldn't send your reply",
+        e instanceof Error ? e.message : "Please try again in a moment.",
+      );
     } finally {
       setIsSending(false);
     }
@@ -644,6 +764,79 @@ function ReplyComposer({
               onPress={requestClose}
             />
           </View>
+
+          {/* The review being answered stays in view while typing. */}
+          <View
+            accessible
+            accessibilityLabel={`Review by ${interaction.authorName}${
+              interaction.rating ? `, ${interaction.rating} out of 5` : ""
+            }: ${interaction.text}`}
+            style={{
+              backgroundColor: palette.bgSoft,
+              borderRadius: componentRadii.card,
+              gap: spacing[1],
+              marginBottom: spacing[3],
+              padding: spacing[3],
+            }}
+          >
+            {typeof interaction.rating === "number" && interaction.rating > 0 ? (
+              <View style={{ flexDirection: "row", gap: 2 }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={12}
+                    color={star <= interaction.rating! ? palette.starStroke : palette.border}
+                    fill={star <= interaction.rating! ? palette.starFill : "transparent"}
+                  />
+                ))}
+              </View>
+            ) : null}
+            <AppText variant="bodySmall" numberOfLines={reviewExpanded ? undefined : 4}>
+              {interaction.text}
+            </AppText>
+            {interaction.text.length > REVIEW_QUOTE_EXPAND_FROM ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  reviewExpanded ? "Show less of the review" : "Show the full review"
+                }
+                hitSlop={8}
+                onPress={() => setReviewExpanded((open) => !open)}
+              >
+                <AppText variant="bodySmall" tone="secondary">
+                  {reviewExpanded ? "Less" : "More"}
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {showSuggestions ? (
+            <View style={{ marginBottom: spacing[3] }}>
+              <ChipGroup
+                options={orderReplySuggestionKinds(interaction.rating).map((kind) => ({
+                  id: kind,
+                  label: REPLY_SUGGESTION_LABELS[kind],
+                }))}
+                selectedIds={suggestion ? [suggestion.kind] : []}
+                onSelect={(kind) => {
+                  const next = buildReplySuggestion(kind, interaction.authorName);
+                  const fill = () => {
+                    setText(next);
+                    setSuggestion({ kind, text: next });
+                  };
+                  // Words the merchant typed are never replaced without asking.
+                  if (canFillReplySuggestion(text, suggestion?.text ?? null)) {
+                    fill();
+                    return;
+                  }
+                  showAlert("Replace your reply?", "The suggestion will replace what you typed.", [
+                    { text: "Keep mine", style: "cancel" },
+                    { text: "Replace", onPress: fill },
+                  ]);
+                }}
+              />
+            </View>
+          ) : null}
 
           <Input
             accessibilityLabel="Your public reply"

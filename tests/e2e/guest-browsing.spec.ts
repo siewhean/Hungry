@@ -52,12 +52,12 @@ test.describe("guest mode is prohibited", () => {
   test("signed-out dish, venue, and create links cannot expose app content", async ({ page }) => {
     await clearSignedOutState(page);
     await page.getByRole("button", { name: "Sign in to existing account" }).click();
-    await expect(page.getByText("Welcome back", { exact: true })).toBeVisible();
+    await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible();
     await expect(page.getByText(/Continue without an account/i)).toHaveCount(0);
 
     for (const path of ["/dish/dish-chicken-rice", "/venue/venue-test", "/order"]) {
       await page.goto(path);
-      await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({
+      await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({
         timeout: CONTENT_TIMEOUT_MS,
       });
       await expect(page.getByText("Chicken Rice", { exact: true })).toHaveCount(0);

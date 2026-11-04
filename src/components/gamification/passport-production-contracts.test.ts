@@ -17,7 +17,8 @@ test("passport visuals use orange Hungry theme and cached image assets", () => {
   assert.match(cover, /borderColor: palette\.orangeDark/);
   assert.match(cover, /PASSPORT_TEXTURE_ASSETS\.cover/);
   assert.match(badge, /cachePolicy="memory-disk"/);
-  assert.match(stamp, /cachePolicy="memory-disk"/);
+  // Stamps are drawn per category in vector art (PassportStampArt), not one shared bitmap.
+  assert.match(stamp, /<PassportStampArt/);
   assert.match(assets, /passport-cover-orange\.png/);
   assert.match(assets, /passport-paper-spread\.png/);
 });
@@ -53,7 +54,7 @@ test("passport art is generated as bitmap assets, not SVG placeholders", () => {
   assert.match(generator, /stamp-cuisine-hawker\.png/);
   assert.doesNotMatch(generator, /<svg/i);
   assert.doesNotMatch(stamp, /lucide-react-native/);
-  assert.match(stamp, /contentFit="contain"/);
+  assert.match(stamp, /<PassportStampArt/);
 });
 
 test("passport screen announces and marks one-time stamp celebrations", () => {
@@ -64,6 +65,9 @@ test("passport screen announces and marks one-time stamp celebrations", () => {
   assert.match(screen, /markStampCelebrated\(celebrateMarker\.stampId\)/);
   assert.match(screen, /reduceMotion/);
   assert.match(screen, /PassportPageFlip/);
+  // An unlock shows the stamp earned as a card until dismissed, not only a flip of the hero card.
+  assert.match(screen, /testID="passport-unlock-card"/);
+  assert.match(screen, /<PassportStampCard[^>]*celebrating/);
 });
 
 test("passport screen surfaces portfolio contribution stats", () => {

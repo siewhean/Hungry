@@ -8,9 +8,9 @@ import {
   type ViewStyle,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { ArrowLeft } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "./AppSymbol";
 import { AppText } from "./AppText";
 
 interface AppHeaderProps {
@@ -56,7 +56,7 @@ export function AppHeader({
       onPress={resolvedOnBackPress}
       style={styles.backButton}
     >
-      <ArrowLeft size={backIconSize} color={palette.text} />
+      <AppSymbol name="back" size={backIconSize} weight="medium" color={palette.text} />
     </Pressable>
   ) : (
     left

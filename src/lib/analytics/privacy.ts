@@ -139,3 +139,13 @@ export function sanitizeSentryBreadcrumb<T extends object>(breadcrumb: T): T {
       : {}),
   } as T;
 }
+
+const USAGE_BREADCRUMB_CATEGORY = /^(navigation|ui\.|touch|user)/;
+
+/**
+ * Breadcrumbs that record which screens and buttons someone used. Dropped while "Share usage
+ * analytics" is off; network and console breadcrumbs stay so crash reports remain useful.
+ */
+export function isUsageBreadcrumb(breadcrumb: { category?: string | null }): boolean {
+  return USAGE_BREADCRUMB_CATEGORY.test(breadcrumb.category ?? "");
+}

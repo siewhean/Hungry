@@ -186,6 +186,15 @@ test("send-email picks the template per action and leaves the link out of code-o
     assert.equal("CONFIRMATION_URL" in sent[0].body.template.variables, hasLink, action);
   }
 
+  // A dedicated sign-in template takes the magic-link action only; re-authentication keeps its own.
+  const withSignIn = await load({ env: { RESEND_TEMPLATE_SIGNIN_ID: "tpl-signin" } });
+  await withSignIn.handler(signed(hook("magiclink")));
+  await withSignIn.handler(signed(hook("reauthentication", {}, {})));
+  assert.deepEqual(
+    withSignIn.sent.map((email) => email.body.template.id),
+    ["tpl-signin", "tpl-magic"],
+  );
+
   const noTemplate = await load({ env: { RESEND_TEMPLATE_RECOVERY_ID: "" } });
   assert.deepEqual(await status(await noTemplate.handler(signed(hook("recovery")))), [
     500,

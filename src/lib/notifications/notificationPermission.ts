@@ -23,3 +23,13 @@ export async function resolveNotificationPermission(options: {
   trackAnalyticsEvent("notification_permission_result", { status });
   return status;
 }
+
+/**
+ * True when the build itself cannot receive push: a phone build signed with a free Personal Team
+ * has no `aps-environment` entitlement, so iOS refuses to hand out a push token. That is how the
+ * build was made, not a fault to report, and retrying cannot fix it.
+ */
+export function isPushUnsupportedByBuild(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /aps-environment/i.test(message);
+}

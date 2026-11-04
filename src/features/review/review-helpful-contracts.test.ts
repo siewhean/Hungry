@@ -91,7 +91,7 @@ test("review feed has no Helpful button and its chips follow taste, food and are
   // Round 6: the A–Z chips gave way to taste, food and area chips.
   assert.match(
     feed,
-    /buildReviewExploreChips\(allReviews, \{ userVector: tasteVector, areaOf \}\)/,
+    /buildReviewExploreChips\(allReviews, \{[^}]*userVector: tasteVector[^}]*areaOf/,
   );
   assert.doesNotMatch(feed, /By Dish|By Location|A–Z dish/);
   // Owner decision (round 2): the Helpful vote is gone from review cards.

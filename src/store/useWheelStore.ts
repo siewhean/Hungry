@@ -95,7 +95,14 @@ interface WheelState {
     avatarUrl?: string,
     dietaryPreferences?: DietaryFlag[],
   ): Promise<void>;
-  addEntry(venueId: string, buildingId: string, label: string, imageUrl: string): void;
+  /** `source` tells a stall the diner picked from one the app put on a new wheel. */
+  addEntry(
+    venueId: string,
+    buildingId: string,
+    label: string,
+    imageUrl: string,
+    source?: "manual" | "prefill",
+  ): void;
   removeEntry(entryId: string): void;
   triggerSpin(): void;
   /** Settles a finished spin: classic resolves the winner, elimination drops the landed entry. */
@@ -159,9 +166,14 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     mockPartyStore.set(code, { party, members: [hostMember], entries: [] });
 
     const channel = new MockRealtimeChannel(`party:${partyId}`);
+    // A closed wheel's channel can still deliver one late callback; it must not touch the next one.
     channel.subscribe(
-      (event) => get()._onEvent(event),
-      (state) => get()._onPresence(state),
+      (event) => {
+        if (get()._channel === channel) get()._onEvent(event);
+      },
+      (state) => {
+        if (get()._channel === channel) get()._onPresence(state);
+      },
     );
     channel.track(hostMember);
 
@@ -202,9 +214,14 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     };
 
     const channel = new MockRealtimeChannel(`party:${party.id}`);
+    // A closed wheel's channel can still deliver one late callback; it must not touch the next one.
     channel.subscribe(
-      (event) => get()._onEvent(event),
-      (state) => get()._onPresence(state),
+      (event) => {
+        if (get()._channel === channel) get()._onEvent(event);
+      },
+      (state) => {
+        if (get()._channel === channel) get()._onPresence(state);
+      },
     );
     channel.track(member);
 
@@ -222,7 +239,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
 
   // ── addEntry ───────────────────────────────────────────────────────────────
 
-  addEntry(venueId, buildingId, label, imageUrl) {
+  addEntry(venueId, buildingId, label, imageUrl, source = "manual") {
     const { party, myMemberId, entries, _channel } = get();
     if (!party || !myMemberId || !_channel) return;
 
@@ -257,6 +274,7 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     trackAnalyticsEvent("wheel_option_added", {
       party_id: party.id,
       entry_count: get().entries.length,
+      source,
     });
   },
 

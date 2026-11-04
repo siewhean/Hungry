@@ -6,13 +6,16 @@ import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { useHungryTheme } from "@/theme";
 import { AUTH_COPY } from "./authCopy";
 
-/** "By creating an account, you agree to..." shown on every account-creation form. */
-export function AuthTermsNotice() {
+/**
+ * "By creating an account, you agree to..." shown on every account-creation form. The email-code
+ * form can create an account from either screen, so it passes "By continuing, you agree to".
+ */
+export function AuthTermsNotice({ prefix = AUTH_COPY.signUp.termsPrefix }: { prefix?: string }) {
   const { spacing } = useHungryTheme();
   return (
     <View style={{ alignItems: "center" }}>
       <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-        {AUTH_COPY.signUp.termsPrefix}
+        {prefix}
       </AppText>
       {/* Separate links so each has its own 44pt target and link role. */}
       <View

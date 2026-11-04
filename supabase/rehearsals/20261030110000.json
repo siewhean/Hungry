@@ -1,0 +1,14 @@
+{
+  "version": "20261030110000",
+  "name": "20261030110000_catalog_stall_name_lookup_split",
+  "result": "pass",
+  "rehearsed_at": "2026-10-30T08:34:13Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "24cc7ee2ba31460faa147433edfc217cedb63b3f",
+  "up_sha256": "1d268de11736d30405570db937c9fd270150cf5cad8ac1aa7aa9014e05ed575b",
+  "down_sha256": "5d8f7adcd981b2d628136c3b7f8769d936ac0b468016fcafaecfe6b57a054de9",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/catalog_stall_search_candidates.sql"]
+}

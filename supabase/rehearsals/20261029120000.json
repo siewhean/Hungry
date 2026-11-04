@@ -1,0 +1,14 @@
+{
+  "version": "20261029120000",
+  "name": "20261029120000_catalog_venue_card_logo_main_price",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T18:50:16Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "472ada8c49d45c282e14a07be2b7f74d5f2111e0",
+  "up_sha256": "697d0ecad84a0c6d2309cf9b55133ebc4fdfd284b93c6b9569528a69f7843838",
+  "down_sha256": "7abea9647efcdcb21254bb1ad6f422967339e494009db26e4177d5ef6997e23a",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/catalog_venue_card_logo_main_price.sql"]
+}

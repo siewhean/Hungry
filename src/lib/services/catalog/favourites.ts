@@ -1,43 +1,53 @@
-import { CatalogAccessError, type CatalogRawDishDetail } from "@/lib/services/catalog";
-import { settleWithConcurrency } from "@/lib/services/catalog/paging";
-
-/** No batch catalog read exists; cap parallel dish-detail requests instead. */
-const FAVOURITE_DETAIL_CONCURRENCY = 4;
+import type { SavedDishCard } from "@/lib/services/types";
 
 export type CatalogFavouritesLoadResult =
-  | { status: "loaded"; dishes: CatalogRawDishDetail[]; unavailableCount: number }
+  | {
+      status: "loaded";
+      /** The saved dish ids, in the order the server returned them (newest save first). */
+      savedIds: string[];
+      /** Cards for the saved ids and the extra ids, in no particular order. */
+      cards: SavedDishCard[];
+      /** Saved ids with no card (gone or hidden). */
+      unavailableCount: number;
+    }
   | { status: "error"; message: string };
 
+const LOAD_ERROR = "We couldn't load your saved dishes.";
+
 /**
- * Resolves the signed-in user's saved dish ids into catalog records. The saved
- * ids are read from the server so a failed read is reported as an error rather
- * than an empty list. If no saved dish resolves and any failure was a
- * classified access failure (session, network, outage), that is also an error
- * with retry; plain not-found results are reported as unavailable records.
+ * Resolves the signed-in user's saved dish ids into cards with one batched read for all of them
+ * (never one request per dish). The saved ids are read from the server so a failed read is
+ * reported as an error rather than an empty list; a failed card read is also an error with
+ * retry, not a short list. `extraDishIds` (the dishes marked tried) ride in the same batch.
  */
 export async function loadCatalogFavourites(deps: {
   getFavouriteDishIds: () => Promise<string[]>;
-  getDish: (id: string) => Promise<CatalogRawDishDetail>;
-  concurrency?: number;
+  getSavedDishCards: (dishIds: string[]) => Promise<SavedDishCard[]>;
+  extraDishIds?: readonly string[];
+  /** Called with the cause of a failed read, for error tracking. */
+  onError?: (error: unknown, step: "read_saved_ids" | "read_cards") => void;
 }): Promise<CatalogFavouritesLoadResult> {
-  let ids: string[];
+  let savedIds: string[];
   try {
-    ids = [...new Set(await deps.getFavouriteDishIds())];
-  } catch {
-    return { status: "error", message: "We couldn't load your saved dishes." };
+    savedIds = [...new Set(await deps.getFavouriteDishIds())];
+  } catch (error) {
+    deps.onError?.(error, "read_saved_ids");
+    return { status: "error", message: LOAD_ERROR };
   }
-  if (ids.length === 0) return { status: "loaded", dishes: [], unavailableCount: 0 };
-  const results = await settleWithConcurrency(
-    ids,
-    deps.concurrency ?? FAVOURITE_DETAIL_CONCURRENCY,
-    deps.getDish,
-  );
-  const dishes = results.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
-  const hasAccessFailure = results.some(
-    (result) => result.status === "rejected" && result.reason instanceof CatalogAccessError,
-  );
-  if (dishes.length === 0 && hasAccessFailure) {
-    return { status: "error", message: "We couldn't load your saved dishes." };
+  const wanted = [...new Set([...savedIds, ...(deps.extraDishIds ?? [])])];
+  if (wanted.length === 0) return { status: "loaded", savedIds, cards: [], unavailableCount: 0 };
+  let cards: SavedDishCard[];
+  try {
+    cards = await deps.getSavedDishCards(wanted);
+  } catch (error) {
+    deps.onError?.(error, "read_cards");
+    return { status: "error", message: LOAD_ERROR };
   }
-  return { status: "loaded", dishes, unavailableCount: results.length - dishes.length };
+  const found = new Set(cards.map((card) => card.id));
+  return {
+    status: "loaded",
+    savedIds,
+    cards,
+    unavailableCount: savedIds.filter((id) => !found.has(id)).length,
+  };
 }

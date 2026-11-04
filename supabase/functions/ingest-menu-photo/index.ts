@@ -2,6 +2,7 @@
 /* eslint-disable import/no-unresolved */
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
+import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 type JsonObject = Record<string, unknown>;
 
@@ -128,6 +129,7 @@ function fallbackExtract(text: string): ExtractionDish[] {
 async function runVision(visionApiKey: string, imageBase64: string): Promise<string> {
   const endpoint = `https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`;
   const response = await fetch(endpoint, {
+    signal: AbortSignal.timeout(TIMEOUT_MS.vision),
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -175,6 +177,7 @@ async function runLlmExtraction(apiKey: string, text: string): Promise<Extractio
   const response = await fetch(
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent",
     {
+      signal: AbortSignal.timeout(TIMEOUT_MS.ai),
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -314,6 +317,21 @@ serveWithSentry("ingest-menu-photo", async (request) => {
     return toJson(429, { error: "rate_limited" }, allowedOrigin);
   }
 
+  // The photo is sent to Google (Cloud Vision, then Gemini), so the person must have allowed AI
+  // features in the app (App Review 5.1.2(i)). Checked here as well as in the app so an old or
+  // modified build cannot send a photo without it.
+  const { data: consentRow, error: consentError } = await client
+    .from("privacy_settings")
+    .select("ai_search_consent")
+    .eq("user_id", callerUserId)
+    .maybeSingle();
+  if (consentError) {
+    return toJson(500, { error: "consent_lookup_failed" }, allowedOrigin);
+  }
+  if (consentRow?.ai_search_consent !== true) {
+    return toJson(403, { error: "ai_search_consent_required" }, allowedOrigin);
+  }
+
   const ocrJobId = crypto.randomUUID();
   // race-ok: compare-and-set below, the UPDATE only matches the status and attempt count just read
   const { data: processingSubmission, error: claimError } = await client
@@ -345,7 +363,9 @@ serveWithSentry("ingest-menu-photo", async (request) => {
       throw new Error(signed.error?.message ?? "signed_url_failed");
     }
 
-    const imageResponse = await fetch(signed.data.signedUrl);
+    const imageResponse = await fetch(signed.data.signedUrl, {
+      signal: AbortSignal.timeout(TIMEOUT_MS.photoDownload),
+    });
     if (!imageResponse.ok) {
       throw new Error(`image_fetch_failed:${imageResponse.status}`);
     }
@@ -354,7 +374,11 @@ serveWithSentry("ingest-menu-photo", async (request) => {
     const imageBase64 = bytesToBase64(imageBytes);
 
     const ocrText = await runVision(visionApiKey, imageBase64);
-    const llmResult = await runLlmExtraction(llmApiKey, ocrText);
+    // The AI step is optional: if it times out, fall back to the plain OCR text parse.
+    const llmResult = await runLlmExtraction(llmApiKey, ocrText).catch(async (llmError) => {
+      await reportFunctionError("ingest-menu-photo", llmError, { stage: "llm_extraction" }, request);
+      return null;
+    });
     const extracted = (
       llmResult && llmResult.length > 0 ? llmResult : fallbackExtract(ocrText)
     ).slice(0, 50);

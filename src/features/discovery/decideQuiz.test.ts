@@ -6,8 +6,10 @@ import {
   DECIDE_FOR_ME_OPTION_ID,
   DECIDE_QUESTIONS,
   decideAnswerMaxPrice,
+  decideServerFilters,
   describeDecideAnswers,
   filterByDecideAnswers,
+  givenServerAnswers,
   hasDecideConstraints,
 } from "./decideQuiz";
 import type { DishDetail, TasteVector } from "@/types/domain";
@@ -136,4 +138,27 @@ test("the result screen gets the chosen price and the answer labels", () => {
     ),
     ["Malay", "Spicy"],
   );
+});
+
+test("MD-D4 cuisine tags and the course count as text, the same fields the server matches", () => {
+  const laksa = dish("Laksa", { cuisineTags: ["Malay"], foodTypeTag: "Noodles", course: "Main" });
+  const tea = dish("Teh Tarik", { course: "Drink", cuisineTags: ["Local"] });
+  assert.deepEqual(filterByDecideAnswers([laksa, tea], { cuisine: "malay" }), [laksa]);
+  assert.deepEqual(filterByDecideAnswers([laksa, tea], { staple: "dessert" }), [tea]);
+  assert.deepEqual(filterByDecideAnswers([laksa, tea], { staple: "noodles" }), [laksa]);
+});
+
+test("MD-D4 the server gets the keywords and price of the answers still in play", () => {
+  const answers = { cuisine: "chinese", staple: "noodles", price: "under8", flavour: "spicy" };
+  assert.deepEqual(givenServerAnswers(answers), ["staple", "cuisine", "price"]);
+  const all = decideServerFilters(answers);
+  assert.ok(all.cuisineKeywords?.includes("chinese"));
+  assert.ok(all.stapleKeywords?.includes("noodle"));
+  assert.equal(all.maxPrice, 8);
+  const noStaple = decideServerFilters(answers, ["staple"]);
+  assert.equal(noStaple.stapleKeywords, undefined);
+  assert.ok(noStaple.cuisineKeywords);
+  assert.deepEqual(decideServerFilters(answers, ["staple", "cuisine", "price"]), {});
+  assert.deepEqual(decideServerFilters({}), {});
+  assert.deepEqual(givenServerAnswers({ cuisine: DECIDE_FOR_ME_OPTION_ID }), []);
 });

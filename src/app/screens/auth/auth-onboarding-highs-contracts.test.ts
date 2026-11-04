@@ -135,7 +135,8 @@ test("H111/H112/H113/H114/H120/H121: auth forms hide disabled OAuth, autofill, s
   assert.doesNotMatch(shell, /contentOffsetTop|scroll=\{scroll\}/);
 
   const onboardingAuth = read("src/app/screens/onboarding/OnboardingAuthScreen.tsx");
-  assert.match(onboardingAuth, /\{oauthEnabled \? \(/);
+  // Providers render only through AuthProviderButtons, which lists just the enabled ones.
+  assert.match(onboardingAuth, /<AuthProviderButtons/);
   assert.doesNotMatch(onboardingAuth, /disabled=\{!oauthEnabled\}/);
   assert.match(onboardingAuth, /<KeyboardAvoidingView/);
   assert.match(onboardingAuth, /keyboardShouldPersistTaps="handled"/);

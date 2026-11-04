@@ -1,4 +1,5 @@
 import { Image, type ImageProps } from "expo-image";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { HUNGRY_LOGO_ICON } from "@/constants/brandAssets";
 import { stableCacheKeyForUri } from "@/lib/images/stableCacheKey";
@@ -25,7 +26,13 @@ type DecorativeImageProps = SharedAccessibleImageProps & {
   accessibilityHint?: never;
 };
 
-export type AccessibleImageProps = MeaningfulImageProps | DecorativeImageProps;
+export type AccessibleImageProps = (MeaningfulImageProps | DecorativeImageProps) & {
+  /** Shown in place of the photo if it fails to load; the photo fades in when it does load. */
+  fallback?: ReactNode;
+};
+
+/** How long a photo takes to fade in when the caller gave a fallback. */
+const FALLBACK_FADE_MS = 150;
 
 /** A signed storage URL gets a cacheKey that survives re-signing (see stableCacheKey). */
 function withStableCacheKey(source: ImageProps["source"]): ImageProps["source"] {
@@ -44,6 +51,34 @@ function withStableCacheKey(source: ImageProps["source"]): ImageProps["source"] 
  * - Do not pass raw `expo-image` renders from production UI unless a source contract excludes it.
  */
 export function AccessibleImage(props: AccessibleImageProps) {
+  if (props.fallback !== undefined) return <ImageWithFallback {...props} />;
+  return <PlainAccessibleImage {...props} />;
+}
+
+function ImageWithFallback({ fallback, onError, transition, ...props }: AccessibleImageProps) {
+  const uri =
+    props.source && typeof props.source === "object" && "uri" in props.source
+      ? props.source.uri
+      : undefined;
+  const [failedUri, setFailedUri] = useState<string | undefined>();
+  // A new photo gets a fresh try.
+  useEffect(() => {
+    setFailedUri(undefined);
+  }, [uri]);
+  if (failedUri !== undefined && failedUri === uri) return <>{fallback}</>;
+  return (
+    <PlainAccessibleImage
+      {...(props as AccessibleImageProps)}
+      transition={transition ?? FALLBACK_FADE_MS}
+      onError={(event) => {
+        setFailedUri(uri ?? "");
+        onError?.(event);
+      }}
+    />
+  );
+}
+
+function PlainAccessibleImage(props: AccessibleImageProps) {
   const resolvedSource = withStableCacheKey(
     props.source &&
       typeof props.source === "object" &&
@@ -55,7 +90,7 @@ export function AccessibleImage(props: AccessibleImageProps) {
   );
 
   if (props.decorative) {
-    const { decorative: _decorative, source: _source, ...imageProps } = props;
+    const { decorative: _decorative, source: _source, fallback: _fallback, ...imageProps } = props;
     return (
       <Image
         source={resolvedSource}
@@ -72,6 +107,7 @@ export function AccessibleImage(props: AccessibleImageProps) {
     accessibilityLabel,
     accessibilityHint,
     source: _source,
+    fallback: _fallback,
     ...imageProps
   } = props;
   return (

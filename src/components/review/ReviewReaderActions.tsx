@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { Heart, Star } from "lucide-react-native";
 
+import { HelpfulSymbol } from "@/components/dish/dishSymbols";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import {
   createHelpfulVoteQueue,
@@ -17,7 +17,7 @@ import type { PendingRoute } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
-import { AppText } from "../ui";
+import { AppSymbol, AppText } from "../ui";
 
 /**
  * One queue for every like button: a review's votes go to the server one at a time, so a
@@ -32,18 +32,18 @@ interface ReviewReaderActionsProps {
   review: Pick<Review, "id" | "authorId" | "authorName" | "helpfulCount" | "viewerFoundHelpful">;
   /** The viewer wrote this review: they edit it instead (OwnReviewActions). */
   isOwn: boolean;
-  /** Where a guest returns to after signing in to like or report. */
+  /** Where a guest returns to after signing in to vote or report. */
   returnRoute: PendingRoute;
   /** Called after a report or block succeeds, so the page drops the review. */
   onRemoved: () => void;
-  /** The review's stars, shown on the same line as the like, at the left. */
+  /** The review's stars, shown on the same line as the vote, at the left. */
   rating?: number;
 }
 
 /**
- * The last line of a review card on a stall or dish page: the stars on the left and, on someone
- * else's review, a like (heart) on the right. Likes are stored as the review's helpful votes.
- * Holding the heart opens Report / Block.
+ * The vote on someone else's review: a thumbs-up with the word "Helpful", which says what a vote
+ * means, the same on stall, dish and review pages. With `rating`, the stars sit on the left of the
+ * same line. Holding the button opens Report / Block.
  */
 export function ReviewReaderActions({
   review,
@@ -75,7 +75,7 @@ export function ReviewReaderActions({
   if (isOwn && rating === undefined) return null;
 
   const onLikePress = () => {
-    if (!requireAccount("Sign in to like reviews.", returnRoute)) return;
+    if (!requireAccount("Sign in to mark reviews helpful.", returnRoute)) return;
     const previous = liked;
     const next = toggleReviewHelpful(previous);
     if (next.helpful) confirmHaptic();
@@ -85,7 +85,7 @@ export function ReviewReaderActions({
     setPendingVotes((count) => count + 1);
     void submitHelpfulVote(review.id, next.helpful, previous.helpful, (serverHelpful) => {
       setLiked(helpfulStateFor(confirmed, serverHelpful));
-      showToast({ message: "Could not save your like.", tone: "warning" });
+      showToast({ message: "Could not save your vote. Try again.", tone: "warning" });
     }).finally(() => {
       setPendingVotes((count) => count - 1);
     });
@@ -115,11 +115,11 @@ export function ReviewReaderActions({
           style={{ alignItems: "center", flexDirection: "row", gap: 2 }}
         >
           {Array.from({ length: 5 }).map((_, index) => (
-            <Star
+            <AppSymbol
               key={index}
+              name={index < rating ? "rating" : "ratingEmpty"}
               size={14}
-              color={index < rating ? palette.starStroke : palette.border}
-              fill={index < rating ? palette.starFill : "transparent"}
+              color={index < rating ? palette.starFill : palette.border}
             />
           ))}
         </View>
@@ -129,7 +129,11 @@ export function ReviewReaderActions({
       {isOwn ? null : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={liked.count === 1 ? "Like, 1 like" : `Like, ${liked.count} likes`}
+          accessibilityLabel={
+            liked.count === 0
+              ? "Helpful"
+              : `Helpful, ${liked.count} ${liked.count === 1 ? "person" : "people"} found this helpful`
+          }
           accessibilityHint="Hold to report this review or block its author"
           accessibilityState={{ selected: liked.helpful }}
           accessibilityActions={[{ name: "longpress", label: "Report or block" }]}
@@ -139,23 +143,22 @@ export function ReviewReaderActions({
           delayLongPress={320}
           onLongPress={openSafetyActions}
           onPress={onLikePress}
-          hitSlop={4}
+          hitSlop={6}
           style={({ pressed }) => ({
             alignItems: "center",
             flexDirection: "row",
             gap: spacing[1],
             justifyContent: "center",
-            minHeight: 44,
+            // The thumbs-up sits on the date's line: 32pt tall plus 6pt of hit slop on each side.
+            minHeight: 32,
             minWidth: 44,
-            transform: [{ scale: pressed ? 0.88 : 1 }],
+            transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          <Heart color={color} fill={liked.helpful ? palette.orange : "transparent"} size={20} />
-          {liked.count > 0 ? (
-            <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
-              {liked.count}
-            </AppText>
-          ) : null}
+          <HelpfulSymbol color={color} fill={liked.helpful ? palette.orange : "none"} size={18} />
+          <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
+            {liked.count > 0 ? `Helpful · ${liked.count}` : "Helpful"}
+          </AppText>
         </Pressable>
       )}
     </View>

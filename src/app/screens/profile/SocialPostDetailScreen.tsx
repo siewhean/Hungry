@@ -196,7 +196,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
             }}
             onPress={() => {
               if (primaryDish) {
-                rootNavigation.navigate("DishDetail", { dishId: primaryDish.id });
+                rootNavigation.navigate("DishDetail", {
+                  dishId: primaryDish.id,
+                  source: "social_post",
+                });
               }
             }}
             style={StyleSheet.absoluteFill}

@@ -32,14 +32,14 @@ appId: ${APP_ID}
 - tapOn:
     text: "Already have an account.*Sign in"
 - extendedWaitUntil:
-    visible: "Welcome back"
+    visible: "Sign in to Hungry"
     timeout: 30000
 - assertVisible: "Email address"
-- assertVisible: "Password"
+- assertVisible: "Use a password instead"
 - assertVisible: "Create account"
 - openLink: "hungry://venue/mandatory-auth-test"
 - extendedWaitUntil:
-    visible: "Welcome back"
+    visible: "Sign in to Hungry"
     timeout: 10000
 - assertNotVisible: "Discover"
 - takeScreenshot: "android-mandatory-auth"

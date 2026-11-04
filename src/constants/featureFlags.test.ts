@@ -12,10 +12,17 @@ const SHIPPED_SURFACE_FLAGS = [
   "favouritesEnabled",
   "portfoliosEnabled",
   "stallAlertsEnabled",
+  "sliderOnboardingEnabled",
 ] as const;
 
 // Archived surfaces (owner decision 2026-10-24): off everywhere unless a build opts in.
-const ARCHIVED_FLAGS = ["socialFeedEnabled", "activityEnabled", "directMessagesEnabled"] as const;
+const ARCHIVED_FLAGS = [
+  "socialFeedEnabled",
+  "activityEnabled",
+  "directMessagesEnabled",
+  "followConnectionsEnabled",
+  "stallFollowEnabled",
+] as const;
 
 // Surfaces that stay out of production (mock-backed or not launch-ready).
 const NON_PRODUCTION_FLAGS = [
@@ -29,7 +36,6 @@ const NON_PRODUCTION_FLAGS = [
   "merchantCentreEnabled",
   "merchantClaimCtaEnabled",
   "prototypeRoutesEnabled",
-  "sliderOnboardingEnabled",
 ] as const;
 
 test("production ships main's core surfaces and keeps advanced surfaces closed", () => {
@@ -44,7 +50,7 @@ test("production ships main's core surfaces and keeps advanced surfaces closed",
   }
 });
 
-test("the archived social feed, Activity and Messages are off until a build opts in", () => {
+test("the archived social feed, Activity, Messages and Follow stall are off until a build opts in", () => {
   for (const appEnv of ["development", "staging", "production"] as const) {
     const flags = resolveFeatureFlags(appEnv, "production", {});
     for (const flag of ARCHIVED_FLAGS) {
@@ -55,6 +61,8 @@ test("the archived social feed, Activity and Messages are off until a build opts
     EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
     EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
     EXPO_PUBLIC_ENABLE_MESSAGES: "1",
+    EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS: "1",
+    EXPO_PUBLIC_ENABLE_STALL_FOLLOW: "1",
   });
   for (const flag of ARCHIVED_FLAGS) {
     assert.equal(optedIn[flag], true, `${flag} can be opted back in`);
@@ -131,4 +139,14 @@ test("wheel solo spin ships everywhere; wheel parties and Crave stay out of prod
     assert.equal(flags.wheelPartyEnabled, true);
     assert.equal(flags.craveEnabled, true);
   }
+});
+
+test("AI search (typed text sent to Anthropic) is off in every environment until a build opts in", () => {
+  for (const appEnv of ["development", "staging", "production"] as const) {
+    assert.equal(resolveFeatureFlags(appEnv, "production", {}).aiSearchEnabled, false);
+  }
+  const optedIn = resolveFeatureFlags("production", "production", {
+    EXPO_PUBLIC_ENABLE_AI_SEARCH: "1",
+  });
+  assert.equal(optedIn.aiSearchEnabled, true);
 });

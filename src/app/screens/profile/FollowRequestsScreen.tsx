@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, View } from "react-native";
+import { ActivityIndicator, Pressable, useWindowDimensions, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, Avatar, Button, Card, EmptyState } from "@/components/ui";
+import { AppSymbol, Avatar, Button, EmptyState, ListRow } from "@/components/ui";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { confirmHaptic } from "@/lib/haptics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -37,11 +39,13 @@ function mergeRequests(current: FollowRequestItem[], next: FollowRequestItem[]) 
 }
 
 export function FollowRequestsScreen({ navigation }: Props) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
+  // On a 320pt phone two labelled buttons leave no room for the name, so Delete becomes an X.
+  const compact = useWindowDimensions().width < 360;
   const [requests, setRequests] = useState<FollowRequestItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   // Server rows fetched so far (offset for the next page) and whether another page may exist.
   const [loadedRowCount, setLoadedRowCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -53,7 +57,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
   const loadFirstPage = useCallback(() => {
     let isActive = true;
     setIsLoading(true);
-    setLoadError(null);
+    setLoadFailed(false);
     void getHungryService()
       .social.listFollowRequests({ limit: FOLLOW_REQUESTS_PAGE_SIZE, offset: 0 })
       .then((rows) => {
@@ -63,9 +67,9 @@ export function FollowRequestsScreen({ navigation }: Props) {
         setHasMore(rows.length === FOLLOW_REQUESTS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load follow requests:", error);
+        reportError(error, { screen: "FollowRequests", action: "load_requests" });
         if (!isActive) return;
-        setLoadError(error instanceof Error ? error.message : String(error));
+        setLoadFailed(true);
       })
       .finally(() => {
         if (!isActive) return;
@@ -89,7 +93,8 @@ export function FollowRequestsScreen({ navigation }: Props) {
         setHasMore(rows.length === FOLLOW_REQUESTS_PAGE_SIZE);
       })
       .catch((error) => {
-        console.error("Failed to load more follow requests:", error);
+        reportError(error, { screen: "FollowRequests", action: "load_more_requests" });
+        showToast({ message: "Couldn't load more requests. Try again.", tone: "error" });
       })
       .finally(() => setIsLoadingMore(false));
   };
@@ -110,6 +115,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
             target_user_id: request.userId,
           },
         );
+        if (action === "approve") confirmHaptic();
         setRequests((current) => current.filter((item) => item.userId !== request.userId));
         // The answered row left the server list, so the next page starts one earlier.
         setLoadedRowCount((current) => Math.max(0, current - 1));
@@ -122,7 +128,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
         });
       })
       .catch((error) => {
-        console.error(`Failed to ${action} follow request:`, error);
+        reportError(error, { screen: "FollowRequests", action: `${action}_request` });
         showToast({
           message:
             action === "approve"
@@ -146,77 +152,77 @@ export function FollowRequestsScreen({ navigation }: Props) {
             body="Fetching people who asked to follow you."
           />
         </View>
-      ) : loadError ? (
+      ) : loadFailed ? (
         <EmptyState
           title="Couldn't load follow requests"
           body="Check your connection and try again."
-          errorMessage={loadError}
-          sendErrorContext="Follow requests"
           ctaLabel="Try again"
           onPress={loadFirstPage}
         />
       ) : requests.length ? (
-        <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
-          {requests.map((request) => {
+        <View style={{ paddingBottom: spacing[5] }}>
+          {requests.map((request, index) => {
             const action = pendingAction[request.userId];
             return (
-              <Card key={request.userId} style={{ padding: spacing[3] }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[3] }}>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${request.name}'s profile`}
-                    onPress={() =>
-                      navigation.navigate("UserProfile", {
-                        authorName: request.name,
-                        authorAvatarUrl: request.avatarUrl,
-                        authorId: request.userId,
-                      })
-                    }
-                    style={({ pressed }) => ({
-                      flex: 1,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      gap: spacing[3],
-                      minWidth: 0,
-                      borderRadius: componentRadii.button,
-                      opacity: pressed ? 0.7 : 1,
-                    })}
-                  >
-                    <Avatar name={request.name} uri={request.avatarUrl} size={44} />
-                    <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-                      <AppText variant="bodyBold" numberOfLines={1}>
-                        {request.name}
-                      </AppText>
-                      <AppText variant="micro" tone="secondary">
-                        Wants to follow you
-                      </AppText>
-                    </View>
-                  </Pressable>
-                </View>
-                <View style={{ flexDirection: "row", gap: spacing[2], marginTop: spacing[3] }}>
-                  <Button
-                    label="Approve"
-                    size="sm"
-                    fullWidth={false}
-                    style={{ flex: 1 }}
-                    loading={action === "approve"}
-                    disabled={Boolean(action)}
-                    accessibilityLabel={`Approve follow request from ${request.name}`}
-                    onPress={() => respond(request, "approve")}
-                  />
-                  <Button
-                    label="Decline"
-                    variant="secondary"
-                    size="sm"
-                    fullWidth={false}
-                    style={{ flex: 1 }}
-                    loading={action === "decline"}
-                    disabled={Boolean(action)}
-                    accessibilityLabel={`Decline follow request from ${request.name}`}
-                    onPress={() => respond(request, "decline")}
-                  />
-                </View>
-              </Card>
+              <ListRow
+                key={request.userId}
+                first={index === 0}
+                title={request.name}
+                accessibilityLabel={`Open ${request.name}'s profile`}
+                leading={<Avatar name={request.name} uri={request.avatarUrl} size={44} />}
+                onPress={() =>
+                  navigation.navigate("UserProfile", {
+                    authorName: request.name,
+                    authorAvatarUrl: request.avatarUrl,
+                    authorId: request.userId,
+                  })
+                }
+                trailing={
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+                    <Button
+                      label="Confirm"
+                      size="sm"
+                      fullWidth={false}
+                      loading={action === "approve"}
+                      disabled={Boolean(action)}
+                      accessibilityLabel={`Approve follow request from ${request.name}`}
+                      onPress={() => respond(request, "approve")}
+                    />
+                    {compact ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Decline follow request from ${request.name}`}
+                        accessibilityState={{
+                          disabled: Boolean(action),
+                          busy: action === "decline",
+                        }}
+                        disabled={Boolean(action)}
+                        hitSlop={4}
+                        onPress={() => respond(request, "decline")}
+                        style={{
+                          alignItems: "center",
+                          height: 44,
+                          justifyContent: "center",
+                          width: 40,
+                        }}
+                      >
+                        <AppSymbol name="close" size={18} color={palette.textSecondary} />
+                      </Pressable>
+                    ) : (
+                      <Button
+                        label="Delete"
+                        variant="ghost"
+                        size="sm"
+                        fullWidth={false}
+                        loading={action === "decline"}
+                        disabled={Boolean(action)}
+                        accessibilityLabel={`Decline follow request from ${request.name}`}
+                        onPress={() => respond(request, "decline")}
+                      />
+                    )}
+                  </View>
+                }
+              />
             );
           })}
           {hasMore ? (
@@ -233,6 +239,14 @@ export function FollowRequestsScreen({ navigation }: Props) {
         <EmptyState
           title="No follow requests"
           body="When someone asks to follow your private account, they'll show up here."
+          icon={
+            <AppSymbol
+              name="followRequests"
+              size={36}
+              weight="regular"
+              color={palette.textSecondary}
+            />
+          }
         />
       )}
     </ProfileScreenShell>

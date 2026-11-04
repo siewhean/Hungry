@@ -403,6 +403,32 @@ test("sendAccountDeletionCode emails a one-time code to the signed-in address wi
   await rejectsWith(service.auth.sendAccountDeletionCode(), /./);
 });
 
+test("signInWithEmailCode emails a code to the normalised address and may create the account", async () => {
+  await service.auth.signInWithEmailCode("  Mei@Example.SG ");
+  const [sent] = auth.calls.filter((call) => call.method === "signInWithOtp");
+  const args = sent.args[0] as { email: string; options: Record<string, unknown> };
+  assert.equal(args.email, "mei@example.sg");
+  assert.equal(args.options.shouldCreateUser, true);
+  assert.ok(args.options.emailRedirectTo);
+  assert.equal("data" in args.options, false, "no name, no metadata");
+
+  auth.calls.length = 0;
+  await service.auth.signInWithEmailCode("mei@example.sg", { displayName: "  Mei  " });
+  const named = auth.calls.find((call) => call.method === "signInWithOtp")!.args[0] as {
+    options: { data?: { display_name?: string } };
+  };
+  assert.deepEqual(named.options.data, { display_name: "Mei" });
+
+  auth.failures.signInWithOtp = { message: "email rate limit exceeded" };
+  await rejectsWith(service.auth.signInWithEmailCode("mei@example.sg"), /rate limit/);
+});
+
+test("verifyEmailCode checks a sign-in code as an email OTP", async () => {
+  await service.auth.verifyEmailCode("Mei@Example.SG", " 12345678 ", "email");
+  const [verified] = auth.calls.filter((call) => call.method === "verifyOtp");
+  assert.deepEqual(verified.args[0], { email: "mei@example.sg", token: "12345678", type: "email" });
+});
+
 test("adjustCommunityTasteVector saves numeric axes through submit_dish_taste_rating", async () => {
   await service.ai.adjustCommunityTasteVector(
     "dish-1",
@@ -437,6 +463,11 @@ test("listRecentReviewsPage withPhotos inner-joins review_photos; dish and stall
     { id: "r2", dish_id: "d1", created_at: "2026-10-02T00:00:00Z", rating: 5, text: "a" },
     { id: "r1", dish_id: "d1", created_at: "2026-10-01T00:00:00Z", rating: 4, text: "b" },
   ];
+  // A backend without get_review_feed_page is read table by table (the fallback path).
+  fake.rpc.get_review_feed_page = () => ({
+    data: null,
+    error: { code: "PGRST202", message: "Could not find the function" },
+  });
   fake.tables.reviews = () => ({ data: rows, error: null });
   const select = (table: string) =>
     fake.queriesOn(table)[0].ops.find(([method]) => method === "select")?.[1][0] as string;

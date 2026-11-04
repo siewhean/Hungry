@@ -33,9 +33,10 @@ test("M10: a pin selects its card, a card swipe selects its pin, and an empty ma
   assert.match(map, /minRating: mapFilters\.topRated \? TOP_RATED_MIN_RATING : undefined/);
 });
 
-test("M11/M12: the map no longer offers a stored-flag Open Now, and Top Rated needs reviews", () => {
-  assert.doesNotMatch(map, /openNow|Open Now|openOnly/);
-  assert.doesNotMatch(map, /venue\.isOpen/);
+test("M11/M12: Open now reads each stall's hours, never the stored flag, and Top Rated needs reviews", () => {
+  assert.match(map, /\{ id: "openNow", label: "Open now" \}/);
+  assert.match(map, /openLabelByVenue\.get\(card\.id\) === "Open"/);
+  assert.doesNotMatch(map, /venue\.isOpen|\.isOpen\b/);
   const migration = readRepoFile(
     "supabase/migrations/20261022040000_catalog_raw_map_view_query_rating_nearest.sql",
   );
@@ -47,12 +48,13 @@ test("M13/M14: every pin is a labelled button, memoised, and the count is capped
   assert.match(surface, /accessibilityLabel=\{marker\.accessibilityLabel \?\? marker\.label\}/);
   assert.match(surface, /const MapMarkerButton = memo\(/);
   assert.equal(surface.match(/<MapMarkerButton/g)?.length, 2);
-  assert.match(map, /rawMapItems\.slice\(0, MAX_RENDERED_MARKERS\)/);
+  assert.match(map, /\.slice\(0, MAX_RENDERED_MARKERS\)/);
 });
 
 test("M19: a map search stays on the map as a query on the pins and the cards", () => {
   assert.doesNotMatch(map, /navigation\.navigate\("SearchResults", \{ initialQuery: query/);
-  assert.equal(map.match(/\bquery,\n/g)?.length, 2);
+  // The pins, the cards and (for the dish a card names) the dishes all carry the query.
+  assert.equal(map.match(/\bquery,\n/g)?.length, 3);
   assert.match(map, /setMapQuery\(query\)/);
   const catalog = readRepoFile("src/lib/services/catalog/index.ts");
   assert.match(catalog, /p_query: request\.query\.trim\(\)/);
@@ -73,7 +75,8 @@ test("L5: dead floorplan viewers are gone and unused imports removed", () => {
   );
   assertRepoFileExists("src/components/map/FloorSelector.tsx");
   assert.doesNotMatch(readRepoFile("src/components/map/index.ts"), /FloorPlanViewer|FloorSelector/);
-  assert.doesNotMatch(map, /\b(Star|Filter|Heart),/);
+  // Star is the fallback of the rating symbol on Android and web.
+  assert.doesNotMatch(map, /\b(Filter|Heart),/);
   const zoomed = readRepoFile("src/app/screens/discover/MapZoomedInScreen.tsx");
   assert.doesNotMatch(zoomed, /\bStar\b/);
   assert.match(zoomed, /getEffectiveLocation/);
@@ -93,7 +96,9 @@ test("L10: push opens are logged as a push surface and the map events exist", ()
 
 test("L11: sheet heights follow the screen", () => {
   assert.match(map, /const FULL_HEIGHT = Math\.min\(620, Math\.round\(screenHeight \* 0\.7\)\)/);
-  assert.match(map, /snapTo\(displayMode === "list" \? sheetHeightsRef\.current\.list/);
+  // The list rests collapsed, half-way (LIST_HEIGHT) or full; the cards rest collapsed or open.
+  assert.match(map, /\[MINIMIZED_HEIGHT, LIST_HEIGHT, FULL_HEIGHT\]/);
+  assert.match(map, /\[MINIMIZED_HEIGHT, CAROUSEL_HEIGHT\]/);
 });
 
 test("L13: pressing the Map toggle does not preload the Mapbox screen", () => {

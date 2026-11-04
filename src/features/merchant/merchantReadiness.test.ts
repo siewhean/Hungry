@@ -150,9 +150,9 @@ test("review helpers count only reviews, and the rating tiles never invent a num
   assert.equal(formatReviewCountLabel(3, "this week"), "3 reviews this week");
   assert.equal(formatRatingChange(4, 3, 0, 2), "No reviews yet");
   assert.equal(formatRatingChange(4, 3, 2, 0), "New");
-  assert.equal(formatRatingChange(4.2, 4, 2, 2), "+0.2★");
-  assert.equal(formatRatingChange(3.5, 4, 2, 2), "-0.5★");
-  assert.equal(formatRatingChange(4, 4, 2, 2), "0.0★");
+  assert.equal(formatRatingChange(4.2, 4, 2, 2), "+0.2");
+  assert.equal(formatRatingChange(3.5, 4, 2, 2), "-0.5");
+  assert.equal(formatRatingChange(4, 4, 2, 2), "0.0");
   assert.deepEqual(getMetricDelta(0, 0), { label: "0%", trend: "flat" });
   assert.deepEqual(getMetricDelta(5, 0), { label: "New", trend: "up" });
 });

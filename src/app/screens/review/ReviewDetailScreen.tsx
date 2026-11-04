@@ -3,10 +3,17 @@
  * One review on its own page: what a shared review link (usehungry.com/review/:id) opens.
  */
 import { useCallback, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { MoreHorizontal } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -16,6 +23,7 @@ import {
 } from "@/components/review";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Avatar,
   Button,
@@ -24,10 +32,12 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { ReviewShareStudioModal } from "@/components/share/ReviewShareStudio";
 import { webShareUrl } from "@/constants/links";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useOwnReviewEditor } from "@/features/profile/useOwnReviewEditor";
 import { shareLink } from "@/features/share/messagingShare";
+import { canShareCardImage } from "@/features/share/shareCardImage";
 import { reportError } from "@/lib/monitoring/reportError";
 import {
   isContentHiddenForSession,
@@ -41,6 +51,83 @@ import { useHungryTheme } from "@/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ReviewDetail">;
 
+/** Photo shape on the review page: 4 wide to 5 tall, the way the grid sells it. */
+const HERO_ASPECT_RATIO = 4 / 5;
+
+/**
+ * The review's photos at full width, one at a time with dots under them. A tap opens the
+ * full-screen viewer on that photo.
+ */
+function ReviewPhotoHero({
+  photos,
+  onOpen,
+}: {
+  photos: string[];
+  onOpen: (index: number) => void;
+}) {
+  const { palette, radii, spacing } = useHungryTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  // The page's own width once laid out; until then a width that fits a phone's screen padding.
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+  const [index, setIndex] = useState(0);
+  const width = measuredWidth ?? Math.max(windowWidth - spacing[4] * 2, 1);
+  const height = Math.round(width / HERO_ASPECT_RATIO);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const next = Math.round(event.nativeEvent.layout.width);
+    if (next > 0 && next !== measuredWidth) setMeasuredWidth(next);
+  };
+  const handleScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    setIndex(Math.round(event.nativeEvent.contentOffset.x / Math.max(width, 1)));
+  };
+
+  return (
+    <View testID="review-photo-hero" onLayout={handleLayout} style={{ gap: spacing[2] }}>
+      <ScrollView
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onMomentumScrollEnd={handleScrollEnd}
+        style={{ borderRadius: radii.md, height, width: "100%" }}
+      >
+        {photos.map((uri, photoIndex) => (
+          <Pressable
+            key={`${photoIndex}:${uri}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Open photo ${photoIndex + 1} of ${photos.length}`}
+            onPress={() => onOpen(photoIndex)}
+          >
+            <AccessibleImage
+              source={{ uri }}
+              decorative
+              style={{ backgroundColor: palette.bgSoft, height, width }}
+              contentFit="cover"
+            />
+          </Pressable>
+        ))}
+      </ScrollView>
+      {photos.length > 1 ? (
+        <View
+          accessibilityLabel={`Photo ${Math.min(index + 1, photos.length)} of ${photos.length}`}
+          style={{ flexDirection: "row", gap: spacing[1.5], justifyContent: "center" }}
+        >
+          {photos.map((uri, dotIndex) => (
+            <View
+              key={`${dotIndex}:${uri}`}
+              style={{
+                backgroundColor: dotIndex === index ? palette.orange : palette.border,
+                borderRadius: radii.pill,
+                height: 6,
+                width: 6,
+              }}
+            />
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 export function ReviewDetailScreen({ navigation, route }: Props) {
   const { palette, radii, spacing } = useHungryTheme();
   const { reviewId } = route.params;
@@ -52,6 +139,7 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [deleted, setDeleted] = useState(false);
+  const [shareStudioOpen, setShareStudioOpen] = useState(false);
   // Bumped after a report or block so the page re-checks whether the review is hidden.
   const [, setSafetyVersion] = useState(0);
   const loadedIdRef = useRef<string | null>(null);
@@ -181,8 +269,28 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
     year: "numeric",
   })}${review.editedAt ? " · edited" : ""}`;
 
+  const shareLinkOnly = () =>
+    shareLink(
+      {
+        kind: "review",
+        id: review.id,
+        message: `${review.authorName} reviewed ${entry.dishName} at ${entry.venueName} on Hungry`,
+        url: webShareUrl("review", review.id),
+      },
+      "system_share",
+    ).catch((error: unknown) => {
+      reportError(error, { screen: "ReviewDetailScreen", action: "share_review" });
+      showToast({ message: "Couldn't open sharing. Try again.", tone: "warning" });
+    });
+  // Your own review shares as a picture card (Strava style); someone else's review as a link,
+  // so nobody's photo lands on a stranger's Story. Builds without the picture modules share links.
+  const shareReview = () => {
+    if (isOwn && canShareCardImage()) setShareStudioOpen(true);
+    else void shareLinkOnly();
+  };
+
   const menuButton =
-    isOwn && !ownReviewEditor.enabled ? undefined : (
+    isOwn && !ownReviewEditor.enabled ? null : (
       <IconButton
         variant="ghost"
         accessibilityLabel={isOwn ? "Manage your review" : "More options"}
@@ -190,12 +298,28 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           isOwn ? "Edit or delete this review" : "Report this review or block its author"
         }
         onPress={openMenu}
-        icon={<MoreHorizontal color={palette.textSecondary} size={20} />}
+        icon={<AppSymbol name="rowActions" color={palette.textSecondary} size={20} />}
       />
     );
+  // Share sits in the top bar, next to the menu (a hidden or removed review is not shared).
+  const shareButton = review.moderationState ? null : (
+    <IconButton
+      variant="ghost"
+      accessibilityLabel="Share this review"
+      onPress={shareReview}
+      icon={<AppSymbol name="share" color={palette.textSecondary} size={20} />}
+    />
+  );
+  const headerActions =
+    shareButton || menuButton ? (
+      <View style={{ alignItems: "center", flexDirection: "row" }}>
+        {shareButton}
+        {menuButton}
+      </View>
+    ) : undefined;
 
   return (
-    <Screen title={entry.dishName} subtitle={entry.venueName} headerRight={menuButton}>
+    <Screen title="Review" headerRight={headerActions}>
       <View style={{ gap: spacing[4] }}>
         {review.moderationState ? (
           <ReviewModerationNotice
@@ -234,6 +358,10 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           </View>
         </Pressable>
 
+        {review.photos.length > 0 ? (
+          <ReviewPhotoHero photos={review.photos} onOpen={setViewerIndex} />
+        ) : null}
+
         {/* The stars (read-only, 14pt) and, on someone else's review, the like. */}
         <ReviewReaderActions
           key={review.id}
@@ -244,27 +372,39 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           onRemoved={refreshSafety}
         />
 
-        {review.photos.length > 0 ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              {review.photos.map((uri, index) => (
-                <Pressable
-                  key={`${index}:${uri}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open photo ${index + 1} of ${review.photos.length}`}
-                  onPress={() => setViewerIndex(index)}
-                >
-                  <AccessibleImage
-                    source={{ uri }}
-                    decorative
-                    style={{ borderRadius: radii.md, height: 180, width: 180 }}
-                    contentFit="cover"
-                  />
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
-        ) : null}
+        <View style={{ gap: spacing[1] }}>
+          <AppText variant="h3" accessibilityRole="header">
+            {entry.dishName}
+          </AppText>
+          {entry.venueId ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Open ${entry.venueName || "the stall"}`}
+              onPress={() => navigation.navigate("StallDetail", { id: entry.venueId })}
+              style={{
+                alignItems: "center",
+                alignSelf: "flex-start",
+                flexDirection: "row",
+                gap: spacing[1],
+                minHeight: 44,
+              }}
+            >
+              <AppText
+                variant="bodySmall"
+                tone="secondary"
+                numberOfLines={1}
+                style={{ flexShrink: 1 }}
+              >
+                {entry.venueName}
+              </AppText>
+              <AppSymbol name="chevronRight" color={palette.textMuted} size={14} />
+            </Pressable>
+          ) : entry.venueName ? (
+            <AppText variant="bodySmall" tone="secondary">
+              {entry.venueName}
+            </AppText>
+          ) : null}
+        </View>
 
         <AppText variant="body">{review.text}</AppText>
 
@@ -307,25 +447,19 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
         ) : null}
 
         <Button
-          label={`See ${entry.dishName}`}
-          onPress={() => navigation.navigate("DishDetail", { dishId: entry.dishId })}
+          label="View dish"
+          onPress={() =>
+            navigation.navigate("DishDetail", { dishId: entry.dishId, source: "review_detail" })
+          }
         />
-        {review.moderationState ? null : (
+        {isOwn ? null : (
           <Button
-            label="Share this review"
+            label="I had this too"
             variant="secondary"
             onPress={() =>
-              shareLink(
-                {
-                  kind: "review",
-                  id: review.id,
-                  message: `${review.authorName} reviewed ${entry.dishName} at ${entry.venueName} on Hungry`,
-                  url: webShareUrl("review", review.id),
-                },
-                "system_share",
-              ).catch((error: unknown) => {
-                reportError(error, { screen: "ReviewDetailScreen", action: "share_review" });
-                showToast({ message: "Couldn't open sharing. Try again.", tone: "warning" });
+              navigation.navigate("ReviewStack", {
+                screen: "ReviewMain",
+                params: { dishId: entry.dishId, venueId: entry.venueId || undefined },
               })
             }
           />
@@ -340,6 +474,25 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
         />
       ) : null}
       {ownReviewEditor.dialog}
+      {isOwn ? (
+        <ReviewShareStudioModal
+          visible={shareStudioOpen}
+          source="review_page"
+          link={webShareUrl("review", review.id)}
+          card={{
+            reviewId: review.id,
+            dishName: entry.dishName,
+            venueName: entry.venueName,
+            rating: review.rating,
+            text: review.text,
+            tags: review.tags,
+            photoUrl: review.photos[0],
+            authorName: review.authorName,
+            createdAt: review.createdAt,
+          }}
+          onClose={() => setShareStudioOpen(false)}
+        />
+      ) : null}
     </Screen>
   );
 }

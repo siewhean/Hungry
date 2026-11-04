@@ -135,14 +135,18 @@ test("a guest's taste quiz stays on the device and uploads on sign-in", () => {
     "src/app/screens/auth/EmailVerificationScreen.tsx",
     "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
   ]) {
-    assert.match(read(screen), /applySignedInProfile\(/, `${screen} must merge guest taste`);
+    assert.match(
+      read(screen),
+      /useSignedInProfileSync\(/,
+      `${screen} must merge guest taste (useSignedInProfileSync calls applySignedInProfile)`,
+    );
   }
 });
 
 test("search and browse load only for a signed-in user; the taste signal too", () => {
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.match(search, /if \(!isAuthenticated\) return;\s*const startedAt = Date\.now\(\);/);
-  assert.match(search, /if \(initialQueryRecordedRef\.current\) return;/);
+  assert.match(search, /if \(initialQueryRecordedRef\.current === initialSearchQuery\) return;/);
   assert.match(search, /recordTaste: isAuthenticated && !fromDiscoverChip/);
 });
 

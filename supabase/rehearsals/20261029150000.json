@@ -1,0 +1,14 @@
+{
+  "version": "20261029150000",
+  "name": "20261029150000_merchant_closed_until_and_daily_series",
+  "result": "pass",
+  "rehearsed_at": "2026-10-30T09:20:39Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "f6d950781420d5dff276d6562b648723491db46d",
+  "up_sha256": "55b8c8feabe6b659b263d4cedfef9bd9581de5362d12437055e26da0c9b37e9f",
+  "down_sha256": "b87c541e61d1048b507a8440bfe79193db2309e777328730f30a4378b56c5b73",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/merchant_closed_until_and_daily_series.sql"]
+}

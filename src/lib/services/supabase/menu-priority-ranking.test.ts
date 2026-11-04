@@ -112,5 +112,5 @@ test("Discovery feed lists venues without menus after venues with menus", () => 
   assert.match(migration, /\(candidates\.top_dish_id\s+is\s+not\s+null\)\s+desc/i);
 
   const screen = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
-  assert.match(screen, /\{topDish \? null : \([\s\S]{0,400}Menu coming soon/);
+  assert.match(screen, /\) : isColdStartGrouped \? null : \([\s\S]{0,400}Menu coming soon/);
 });

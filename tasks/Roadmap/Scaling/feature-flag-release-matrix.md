@@ -25,7 +25,8 @@ Production defaults must stay MVP-safe. Advanced surfaces may be visible in deve
 | `storiesEnabled` | true | true | false | Disabled until moderation and safety proof |
 | `collectionsEnabled` | true | true | false | Disabled until MVP launch approval |
 | `gamificationEnabled` | true | true | false | Passport/Missions disabled in production MVP |
-| `oauthProvidersEnabled` | true | true | false | Disabled until live provider credentials are verified |
+| `oauthProvidersEnabled` | true | true | false | Apple. Disabled until live provider credentials are verified |
+| `googleSignInEnabled` | true | true | false | Google, Android and web only (never iPhone before Sign in with Apple, App Store 4.8). Production opts in with `EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN=1` once the Supabase Google provider is configured |
 | `floorplansEnabled` | false | false | false | Hidden until floorplan release gates pass |
 
 ## Route Exposure Contract

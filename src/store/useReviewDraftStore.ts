@@ -69,11 +69,14 @@ export const useReviewDraftStore = create<ReviewDraftState>()(
           ) {
             return state;
           }
-          trackAnalyticsEvent("review_started", {
-            trigger: "review_flow",
-            venue_id: selectedVenueId,
-            dish_id: selectedDishId,
-          });
+          // Once per draft: switching from one dish to another continues the same attempt.
+          if (!state.draft.selectedDishId) {
+            trackAnalyticsEvent("review_started", {
+              trigger: "review_flow",
+              venue_id: selectedVenueId,
+              dish_id: selectedDishId,
+            });
+          }
           // Picking the first dish keeps whatever was already filled in
           // (rating, text, photos); only switching from one dish to another
           // starts a fresh draft.

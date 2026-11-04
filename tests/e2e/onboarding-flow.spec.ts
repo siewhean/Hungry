@@ -7,9 +7,9 @@ import { expect, test } from "./fixtures";
 // an SVG (R4-ONB-12) or a React warning on these screens would surface.
 
 const SINGAPORE = { latitude: 1.2806, longitude: 103.8505 };
-// Six taste questions; the diet step is the seventh of the counter's seven.
+// Six taste questions; the diet step is not counted as a question.
 const TASTE_QUESTIONS = 6;
-const COUNTED_QUESTIONS = 7;
+const COUNTED_QUESTIONS = 6;
 
 test.use({ geolocation: SINGAPORE, permissions: ["geolocation"] });
 
@@ -31,6 +31,9 @@ const progressLabel = (page: Page) => page.getByRole("progressbar").first();
 async function startOnboarding(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Get started" }).click({ timeout: 60_000 });
+  // The one-time analytics question comes first; either answer moves on.
+  await expect(page.getByRole("heading", { name: "Help improve Hungry?" })).toBeVisible();
+  await page.getByRole("button", { name: "Don't share" }).click();
   await page.getByRole("button", { name: "Allow location" }).click();
   await expect(progressLabel(page)).toHaveAttribute("aria-label", /Step 2 of 5/);
 }
@@ -63,7 +66,7 @@ test("the quiz, the diet step and the result run in one bar, with the picked til
   await expect(page.getByTestId("taste-tile-2")).toBeVisible();
   await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
   await page.getByTestId("taste-tile-1").click();
-  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 6/);
 
   // The rest of the questions: one h2 each, and the progress label never changes shape.
   for (let question = 2; question <= TASTE_QUESTIONS; question += 1) {
@@ -106,7 +109,7 @@ test("closing the app mid-quiz reopens the same question with the answers kept",
 }) => {
   await startOnboarding(page);
   await page.getByTestId("taste-tile-2").click();
-  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 6/);
 
   await page.reload();
   await expect(progressLabel(page)).toHaveAttribute("aria-label", /Step 2 of 5/, {
@@ -140,10 +143,12 @@ test("Welcome > Sign in > relaunch returns to Login, and onboarding stays open",
   await page.getByRole("button", { name: "Sign in to existing account" }).click({
     timeout: 60_000,
   });
-  await expect(page.getByText("Welcome back", { exact: true })).toBeVisible();
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible();
 
   await page.reload();
-  await expect(page.getByText("Welcome back", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("Sign in to Hungry", { exact: true })).toBeVisible({
+    timeout: 60_000,
+  });
   await expect(page.getByRole("button", { name: "Get started" })).toHaveCount(0);
 });
 
@@ -157,15 +162,23 @@ test("an account made after the quiz lands on Home with the diner's picks or a w
   await page.getByRole("button", { name: "Continue" }).click();
   await page.getByRole("button", { name: /^(Start exploring|Save my picks)$/ }).click();
 
-  await page.getByPlaceholder("Your name").fill("Mei");
-  await page.getByPlaceholder("Email address").first().fill("mei.onboarding@hungry.test");
-  await page.getByPlaceholder("Password").first().fill("Password123!");
+  // The account step is the fifth of five and leads with an emailed code; this run uses the password form.
+  await expect(page.getByRole("progressbar", { name: "Step 5 of 5" })).toBeVisible();
+  await page.getByRole("button", { name: "Use a password instead" }).click();
+  await page.getByLabel("Name shown on your reviews").fill("Mei");
+  await page
+    .getByLabel("Email address", { exact: true })
+    .first()
+    .fill("mei.onboarding@hungry.test");
+  await page.getByLabel("Create password", { exact: true }).first().fill("Password123!");
   await page.getByRole("button", { name: "Create account" }).last().click();
 
   // The mock build opens the developer launcher after sign-in; open the normal app flow.
   await page.getByRole("button", { name: "Open normal app flow" }).click({ timeout: 60_000 });
   // Home: a signed-in diner with a halal need sees a dish or a clear next step, never a blank page.
-  await expect(page.getByText(/^You are at/).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/^(You are at|Picks across|Showing food in)/).first()).toBeVisible({
+    timeout: 60_000,
+  });
   const food = page.getByRole("button", { name: /halal|Chicken Rice|Laksa|Satay/i }).first();
   const wayForward = page.getByText(/no dishes|nothing yet|check back|explore|search/i).first();
   await expect(food.or(wayForward).first()).toBeVisible({ timeout: 30_000 });
@@ -189,10 +202,11 @@ async function expectRowsFit(page: Page) {
   const next = (await page.getByRole("button", { name: "Next" }).boundingBox())!;
   expect(next.y).toBeGreaterThanOrEqual(previousBottom);
   expect(next.y + next.height).toBeLessThanOrEqual(viewport.height);
-  const truncated = await page.evaluate(() =>
-    Array.from(document.querySelectorAll('[data-testid^="taste-tile-"] *')).filter(
-      (el) => el.children.length === 0 && el.textContent && el.scrollWidth > el.clientWidth,
-    ).length,
+  const truncated = await page.evaluate(
+    () =>
+      Array.from(document.querySelectorAll('[data-testid^="taste-tile-"] *')).filter(
+        (el) => el.children.length === 0 && el.textContent && el.scrollWidth > el.clientWidth,
+      ).length,
   );
   expect(truncated).toBe(0);
   const labels = await page.evaluate(() =>
@@ -236,7 +250,7 @@ test("a tap moves to the next question with a short crossfade, never a blank scr
   });
   const startedAt = Date.now();
   await page.getByTestId("taste-tile-1").click();
-  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 7/);
+  await expect(progressLabel(page)).toHaveAttribute("aria-label", /Question 2 of 6/);
   expect(Date.now() - startedAt).toBeLessThan(1500);
   const fade = await page.evaluate(
     () => (window as unknown as { __fade: { dimMs: number } }).__fade,

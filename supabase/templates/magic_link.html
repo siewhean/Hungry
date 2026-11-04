@@ -1,5 +1,7 @@
-<!-- Magic Link. The app sends this only to confirm account deletion (sendAccountDeletionCode),
-     so it carries a code and no sign-in link. -->
+<!-- Magic Link. The app sends this for two things: the sign-in code of an existing account
+     (signInWithEmailCode) and the code that confirms account deletion (sendAccountDeletionCode).
+     GoTrue sends both as "magiclink", so the wording fits both. It carries a code and no sign-in
+     link. A new address gets the Confirm signup email instead. -->
 <div
   style="
     font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif;
@@ -9,18 +11,18 @@
     color: #1a1a1a;
   "
 >
-  <h2 style="margin: 0 0 16px">Your Hungry confirmation code</h2>
+  <h2 style="margin: 0 0 16px">Your Hungry code</h2>
   <p style="margin: 0 0 16px">Enter this code in the Hungry app to confirm it's you:</p>
   <p style="margin: 0 0 24px; font-size: 32px; font-weight: 700; letter-spacing: 6px">
     {{ .Token }}
   </p>
-  <p style="margin: 0 0 16px">
-    You asked to delete your Hungry account. After you enter the code, your account is scheduled for
-    deletion in 30 days. To keep it, sign in before then and choose Keep my account.
+  <p style="margin: 0 0 16px; color: #666; font-size: 13px">
+    Deleting your account? After you enter the code in the delete screen, your account is scheduled
+    for deletion in 30 days. To keep it, sign in before then and choose Keep my account.
   </p>
   <p style="margin: 0 0 8px; color: #666; font-size: 13px">
-    The code expires in 1 hour. If you didn't ask for this, don't share the code with anyone, and
-    email us.
+    The code expires in 1 hour. If you didn't ask for this, you can ignore this email and don't
+    share the code with anyone.
   </p>
   <p style="margin: 0; color: #666; font-size: 13px">
     Questions? Email <a href="mailto:usehungrysingapore@gmail.com">usehungrysingapore@gmail.com</a>.

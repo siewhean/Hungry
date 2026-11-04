@@ -336,7 +336,7 @@ export function HomeFeedScreen() {
     navigation.navigate("AuthStack", { screen: "Login" });
   }, [navigation, setReturnRoute]);
   const openDishFromEmptyFeed = useCallback(
-    (dishId: string) => navigation.navigate("DishDetail", { dishId }),
+    (dishId: string) => navigation.navigate("DishDetail", { dishId, source: "feed" }),
     [navigation],
   );
 
@@ -1039,7 +1039,7 @@ export function HomeFeedScreen() {
         navigation.navigate("StallDetail", { venueId: item.venueId });
         return;
       }
-      navigation.navigate("DishDetail", { dishId: primaryDish.id });
+      navigation.navigate("DishDetail", { dishId: primaryDish.id, source: "feed" });
       scheduleIdleWork(
         () => {
           recordTasteInteraction({
@@ -1158,12 +1158,14 @@ export function HomeFeedScreen() {
         />
         <WelcomeBackCard
           horizontalPadding={semanticSpacing.screenEdge}
-          onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onOpenDish={(dishId) =>
+            navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
+          }
           onOpenSaved={() => navigation.navigate("Favourites")}
         />
         <WeeklyPicksRail
           horizontalPadding={semanticSpacing.screenEdge}
-          onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId })}
+          onOpenDish={(dishId) => navigation.navigate("DishDetail", { dishId, source: "home" })}
           onDecideForMe={() => navigation.navigate("DecideForMeResult", { surface: "home" })}
         />
         {storiesEnabled ? (

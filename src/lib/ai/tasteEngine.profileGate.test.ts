@@ -21,9 +21,9 @@ test("one click from a neutral vector does not count as a taste profile for a qu
     dishConfidence: 1,
     timestamp: Date.now(),
   });
-  // The old check flips on any drift, and the match then reads as near-perfect.
+  // The old check flips on any drift; the match number stays moderate, not near-perfect.
   assert.equal(hasPersonalTasteProfile(drifted), true);
-  assert.ok(tasteMatchPercent(drifted, DISH) >= 90);
+  assert.ok(tasteMatchPercent(drifted, DISH) < 70);
 
   assert.equal(hasTrustedTasteProfile(drifted, { skippedTasteQuiz: true, signalCount: 1 }), false);
   assert.equal(

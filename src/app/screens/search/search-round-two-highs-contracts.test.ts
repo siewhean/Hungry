@@ -43,7 +43,7 @@ test("H21: map and Quick Bites keep raw text locally and open results with the q
   ]) {
     const source = read(file);
     assert.match(source, /const \[searchText, setSearchText\] = useState\(""\)/);
-    assert.match(source, /onQueryChange=\{setSearchText\}/);
+    assert.match(source, /onQueryChange=\{setSearchText\}|onChangeText=\{setSearchText\}/);
     assert.match(source, /const query = sanitizeSearchQuery\(searchText\)/);
     assert.doesNotMatch(source, /state\.filters\.query|navigate\("SearchHome"\)/);
   }
@@ -77,7 +77,7 @@ test("H23: searches match building names and stall search matches the stall's di
 
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.match(grid, /<RawCatalogBrowseGrid\s+allowModeSwitch/);
-  assert.match(grid, /accessibilityRole="tablist"/);
+  assert.match(grid, /<UnderlineTabs[\s\S]*accessibilityLabel="Search results"/);
   assert.match(grid, /trackAnalyticsEvent\("search_mode_changed"/);
 });
 
@@ -108,7 +108,7 @@ test("H24: Search home suggests as you type and shows popular food types", () =>
 test("H25: cards without a photo show the stall's initials, not a grey caption", () => {
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
   assert.doesNotMatch(grid, /Image unavailable/);
-  assert.match(grid, /<StallLogoMark name=\{stallName\}/);
+  assert.match(grid, /<StallLogoMark[\s\S]*?name=\{stallName\}/);
 });
 
 test("H26: raw cards store only images cleared by catalog_display_image_url", () => {

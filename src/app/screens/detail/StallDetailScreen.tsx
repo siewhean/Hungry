@@ -1,40 +1,24 @@
 import {
-  Alert,
-  Animated,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
   type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
   useWindowDimensions,
-  Text,
 } from "react-native";
+import Animated, {
+  runOnJS,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
+import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useState, useRef, useMemo, type ReactNode } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Bookmark,
-  ChevronDown,
-  ChevronRight,
-  ChevronUp,
-  CircleHelp,
-  Clock3,
-  Globe,
-  Mail,
-  MapPin,
-  MessageCircle,
-  Phone,
-  MessageCircleMore,
-  Share as ShareIos,
-  Share2,
-  Utensils,
-} from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
@@ -49,8 +33,23 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { PhotoPager } from "@/components/dish/PhotoPager";
+import { RatingStarSymbol, ShareSymbol } from "@/components/dish/dishSymbols";
+import {
+  ChevronDownSymbol,
+  ChevronRightSymbol,
+  ChevronUpSymbol,
+  EmailSymbol,
+  HelpSymbol,
+  HoursSymbol,
+  NoReviewsSymbol,
+  PhoneSymbol,
+  SavedCountSymbol,
+  WebsiteSymbol,
+} from "@/components/stall/stallSymbols";
+import { PressableScale } from "@/components/ui/PressableScale";
 import { DetailHeroFade } from "@/components/detail/DetailHeroFade";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
+import { DetailCollapsingHeader } from "@/components/detail/DetailCollapsingHeader";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import {
@@ -61,7 +60,17 @@ import {
 } from "@/components/review";
 import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
+import { ensureAiSearchConsent } from "@/features/privacy/consent";
+import { StallReviewCard } from "@/components/stall/StallReviewCard";
+import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
+import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import {
+  getStallDishPhotos,
+  shouldUseMenuList,
+  StallMenuDishCard,
+  StallMenuDishRow,
+} from "@/components/stall/StallMenuDish";
 import { MenuFilterDropdown } from "@/components/stall/MenuFilterDropdown";
 import {
   deriveStallCommunityReviews,
@@ -73,6 +82,7 @@ import {
 } from "@/features/merchantClaim/submitClaimFromStall";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { sectionScrollOffset } from "@/features/detail/scrollToSection";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import {
   getDataRepository,
@@ -80,7 +90,8 @@ import {
   getServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
-import { formatDishPrice } from "@/features/detail/dishPrice";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
+import { formatSgPhone } from "@/features/detail/formatSgPhone";
 import type {
   MerchantClaimStatus,
   RecentReviewFeedEntry,
@@ -88,16 +99,23 @@ import type {
 } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { openMerchantProfileLink, openTrustedMapsUrl } from "@/lib/security/safeLinking";
-import { getDishSection, isSectionFlag, isSoldOut } from "@/features/merchant/menuSections";
+import { isSoldOut, isStallsPick } from "@/features/merchant/menuSections";
 import {
-  buildMapsSearchUrl,
+  ALL_MENU_CATEGORY,
+  compareMenuCategories,
+  inferDishCategory,
+} from "@/features/detail/menuCategory";
+import {
+  buildStallMapsUrl,
   formatDistanceFromUser,
-  formatFullStallAddress,
   formatStallPriceBand,
   getStallPin,
   summarizeStallRating,
 } from "@/features/detail/stallLocation";
+import { DETAIL_ACTION_BAR_CLEARANCE } from "@/components/detail/DetailActionBar";
 import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
+import { askMediaSource } from "@/lib/permissions/mediaSource";
+import { askChoice } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useSocialStore } from "@/store/useSocialStore";
@@ -121,10 +139,8 @@ import type {
 } from "@/types/domain";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
-const CommentIcon = MessageCircle ?? MessageCircleMore;
-/** The platform's own share glyph: the box-and-arrow on iOS, the three dots on Android. */
-const ShareIcon = Platform.OS === "ios" ? ShareIos : Share2;
 const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
   none: "Claim this stall",
   submitted: "Claim submitted",
@@ -141,20 +157,7 @@ const MENU_SEARCH_MIN_ITEMS = 20;
 const STALL_REVIEW_PAGE_SIZE = 10;
 /** Photos in the hero pager: owner cover, stall photo, dish photos, then review photos. */
 const HERO_PHOTO_LIMIT = 8;
-const ALL_MENU_CATEGORY = "All";
 const MENU_GRID_COLUMNS = 2;
-const MENU_CATEGORY_ORDER = [
-  "Popular",
-  "Rice",
-  "Noodles",
-  "Chicken",
-  "Seafood",
-  "Vegetarian",
-  "Drinks",
-  "Dessert",
-  "Sets",
-  "Sides",
-];
 
 /**
  * A failed read because the diner is offline is not a defect: opening a stall offline would
@@ -228,7 +231,7 @@ function ContactRow({
           {value}
         </AppText>
       </View>
-      <ChevronRight color={palette.textMuted} size={18} />
+      <ChevronRightSymbol color={palette.textMuted} size={18} />
     </Pressable>
   );
 }
@@ -277,185 +280,30 @@ function formatWebsiteLabel(url: string) {
     .replace(/\/$/, "");
 }
 
-function formatMenuCategoryLabel(value: string) {
-  return value
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-const STATUS_AVAILABILITY_FLAGS = new Set(["sold_out", "featured"]);
-
-function inferDishCategory(dish: DishDetail) {
-  // A section the stall owner picked wins over name-based guesses.
-  const merchantSection = getDishSection(dish.availabilityFlags);
-  if (merchantSection) return merchantSection;
-  const name = dish.name.toLowerCase();
-  if (dish.mustOrder) return "Popular";
-  // Whole words only: "Steak" is not tea, "Watercress soup" is not water.
-  if (/\b(rice|nasi|biryani|donburi|porridge|congee)\b/.test(name)) return "Rice";
-  if (/\b(noodles?|mee|hor fun|kway teow|ramen|pasta|spaghetti|bee hoon|udon|soba)\b/.test(name)) {
-    return "Noodles";
-  }
-  if (/\b(chicken|ayam|wings?|drumsticks?)\b/.test(name)) return "Chicken";
-  if (/\b(fish|prawns?|crabs?|seafood|squid|sotong|salmon)\b/.test(name)) return "Seafood";
-  if (/\b(vegetarian|vegan|tofu|mushrooms?|salad)\b/.test(name)) return "Vegetarian";
-  if (/\b(coffee|tea|milo|juice|drinks?|latte|smoothie|water|soda|kopi|teh)\b/.test(name)) {
-    return "Drinks";
-  }
-  if (/\b(cakes?|dessert|ice cream|pudding|waffles?|tarts?|muffins?)\b/.test(name)) {
-    return "Dessert";
-  }
-  if (/\b(set|combo|meal|bundle|platter)\b/.test(name)) return "Sets";
-  if (/\b(sides?|fries|snacks?|toast|bread)\b/.test(name)) return "Sides";
-
-  const dietaryLabels = dish.dietaryFlags ?? [];
-  if (dietaryLabels.some((label) => /vegetarian|vegan/i.test(label))) return "Vegetarian";
-
-  const availabilityCategory = (dish.availabilityFlags ?? [])
-    .filter(
-      (flag) =>
-        !isSectionFlag(flag) &&
-        !STATUS_AVAILABILITY_FLAGS.has(flag.toLowerCase().replace(/[\s-]+/g, "_")),
-    )
-    .map(formatMenuCategoryLabel)
-    .find((tag) => tag.length > 0);
-  if (availabilityCategory) return availabilityCategory;
-
-  return "Menu";
-}
-
-/** The first photo of the dish's own: a menu tile shows one still image, never the stall's. */
-function getStallDishPhotos(dish: DishDetail) {
-  // A menu tile only ever cycles the dish's own photos, so the image, name,
-  // price and tap target always describe the same dish. URLs go through the
-  // shared catalog sanitizer so unsafe or placeholder hosts fall back to NoDishPhoto.
-  return Array.from(
-    new Set(
-      [dish.imageUrl, ...(dish.gallery ?? [])]
-        .map((url) => sanitizeCatalogImageUrl(url))
-        .filter((url): url is string => Boolean(url?.trim())),
-    ),
-  );
-}
-
-/** Screen-reader label for a menu tile: name, price or sold out. */
-function menuDishAccessibilityLabel(dish: DishDetail) {
-  const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
-  return [dish.name, dish.mustOrder ? "must order" : null, status].filter(Boolean).join(", ");
-}
-
-function StallMenuDishCard({
-  dish,
-  onPress,
-  width,
-  isLeftColumn,
-}: {
-  dish: DishDetail;
-  onPress: (dish: DishDetail) => void;
-  width: number;
-  /** The left tile draws the hairline between the two columns. */
-  isLeftColumn: boolean;
-}) {
-  const { palette, radii, spacing } = useHungryTheme();
-  // One still photo per tile: no per-tile timers or measuring, and a swipe never fights the tap.
-  const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
-  const imageStyle = {
-    width: "100%" as const,
-    height: width * 0.7,
-  };
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={menuDishAccessibilityLabel(dish)}
-      accessibilityHint="Opens this dish detail page"
-      onPress={() => onPress(dish)}
-      // Square-cornered tiles that meet in the middle and run edge to edge.
-      style={{
-        width,
-        backgroundColor: palette.surface,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderColor: palette.border,
-        borderRightWidth: isLeftColumn ? StyleSheet.hairlineWidth : 0,
-        overflow: "hidden",
-      }}
-    >
-      <View>
-        {photo ? (
-          <AccessibleImage
-            source={{ uri: photo }}
-            accessibilityLabel={`${dish.name} photo`}
-            style={imageStyle}
-            contentFit="cover"
-            placeholder={dish.blurhash}
-            transition={180}
-          />
-        ) : (
-          <NoDishPhoto dishName={dish.name} style={imageStyle} />
-        )}
-        {dish.mustOrder ? (
-          <View
-            style={{
-              backgroundColor: palette.mediaScrim,
-              borderRadius: radii.pill,
-              left: spacing[2],
-              paddingHorizontal: spacing[2],
-              paddingVertical: 2,
-              position: "absolute",
-              top: width * 0.7 - spacing[2] - 22,
-            }}
-          >
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "800", letterSpacing: 0.5 }}
-            >
-              MUST ORDER
-            </AppText>
-          </View>
-        ) : null}
-        <View style={{ gap: spacing[1], padding: spacing[3] }}>
-          <AppText variant="bodyBold" numberOfLines={2}>
-            {dish.name}
-          </AppText>
-          {dish.description?.trim() ? (
-            <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-              {dish.description}
-            </AppText>
-          ) : null}
-          {/* Price on the left, rating on the right of the same row. */}
-          <View
-            style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}
-          >
-            {isSoldOut(dish.availabilityFlags) ? (
-              <AppText variant="bodySmallBold" style={{ color: palette.error }}>
-                Sold out today
-              </AppText>
-            ) : (
-              <AppText variant="price" style={{ color: palette.text }}>
-                {formatDishPrice(dish)}
-              </AppText>
-            )}
-            {dish.reviewCount > 0 ? (
-              <AppText variant="micro" tone="secondary">
-                <Text style={{ color: palette.starFill }}>★</Text> {dish.rating.toFixed(1)}
-              </AppText>
-            ) : null}
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
 export function StallDetailScreen({ navigation, route }: Props) {
-  // Drives the photo fading out as the page scrolls.
-  const [heroScrollY] = useState(() => new Animated.Value(0));
+  // The scroll offset, written on the UI thread: the photo fades and the title bar fades in
+  // from it without a React render per scroll event. Loading the next batch of menu items is
+  // the only thing that reaches back to JS, once, when the diner nears the end of the menu.
+  const heroScrollY = useSharedValue(0);
+  const menuLoadAt = useSharedValue(Number.POSITIVE_INFINITY);
+  const nearMenuEnd = useSharedValue(false);
+  const loadMoreMenuItemsRef = useRef<() => void>(() => undefined);
+  const loadMoreMenuItems = useCallback(() => loadMoreMenuItemsRef.current(), []);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    heroScrollY.value = event.contentOffset.y;
+    const reached = event.contentOffset.y + event.layoutMeasurement.height >= menuLoadAt.value;
+    if (reached !== nearMenuEnd.value) {
+      nearMenuEnd.value = reached;
+      if (reached) runOnJS(loadMoreMenuItems)();
+    }
+  });
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
-  const cachedVenue = repository.getVenueById(venueId);
+  // Live builds read this page through its RPCs only. The synchronous repository's first read
+  // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
+  const readsLocalData = serviceProviderMode !== "supabase";
+  const cachedVenue = readsLocalData ? repository.getVenueById(venueId) : undefined;
   const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   // A failed venue read (offline, timeout) is not "Stall not found".
@@ -495,10 +343,18 @@ export function StallDetailScreen({ navigation, route }: Props) {
     };
   }, [cachedVenue, serviceProviderMode, venueId, venueReloadKey]);
 
-  const building = venue ? getBuildingById(venue.buildingId) : undefined;
+  const venueBuildingId = venue?.buildingId;
+  // The bundled building list first; mock data's own list only when that misses. Memoised on
+  // the building id: the screen re-renders on every menu page, review page and scroll batch.
+  const building = useMemo(() => {
+    if (!venueBuildingId) return undefined;
+    const bundled = getBuildingById(venueBuildingId);
+    if (bundled || !readsLocalData) return bundled;
+    return repository.listBuildings().find((candidate) => candidate.id === venueBuildingId);
+  }, [readsLocalData, repository, venueBuildingId]);
   const cachedDishes = useMemo(
-    () => (venue ? repository.listDishesByVenue(venue.id) : []),
-    [repository, venue],
+    () => (venue && readsLocalData ? repository.listDishesByVenue(venue.id) : EMPTY_DISHES),
+    [readsLocalData, repository, venue],
   );
   const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
   const [menuLoadFailed, setMenuLoadFailed] = useState(false);
@@ -524,6 +380,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
+  const openSignInPrompt = useUIStore((state) => state.openSignInPrompt);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -535,7 +393,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const showDeferredDetailControls = !FEATURE_FLAGS.release01CoreOnly;
 
   const submitMenuPhotoFrom = useCallback(
-    async (source: "camera" | "library") => {
+    async (source: "camera" | "library", kind: "menu" | "stall") => {
       if (!venue) return;
       const permission =
         source === "camera"
@@ -545,8 +403,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
         showToast({
           message:
             source === "camera"
-              ? "Camera permission is needed to snap a menu photo."
-              : "Photo library permission is needed to pick a menu photo.",
+              ? `Camera permission is needed to snap a ${kind} photo.`
+              : `Photo library permission is needed to pick a ${kind} photo.`,
           tone: "warning",
         });
         return;
@@ -563,6 +421,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
           : await ImagePicker.launchImageLibraryAsync(pickerOptions);
       if (result.canceled || result.assets.length === 0) return;
       const asset = result.assets[0];
+      // A menu photo is read by Google, so ask first (App Review 5.1.2(i)). Declining still saves it.
+      // A stall photo is never sent anywhere, so there is nothing to ask.
+      const allowAiReading = kind === "menu" ? await ensureAiSearchConsent() : false;
       setIsSubmittingMenuPhoto(true);
       try {
         await getHungryService().supply.submitMenuPhoto({
@@ -570,15 +431,25 @@ export function StallDetailScreen({ navigation, route }: Props) {
           photoUri: asset.uri,
           photoMimeType: asset.mimeType ?? undefined,
           photoFileSizeBytes: asset.fileSize ?? undefined,
+          photoKind: kind,
+          allowAiReading,
         });
-        showToast({ message: "Thanks, we'll add the menu soon.", tone: "success" });
+        showToast({
+          message:
+            kind === "stall"
+              ? "Thanks, we'll check your stall photo and add it soon."
+              : allowAiReading
+                ? "Thanks, we'll add the menu soon."
+                : "Thanks. Your photo is saved and was not sent to Google.",
+          tone: "success",
+        });
       } catch (error) {
         reportStallError(error, "submit_menu_photo");
         showToast({
           message:
             error instanceof Error && error.message
               ? error.message
-              : "Couldn't upload the menu photo. Please try again.",
+              : `Couldn't upload the ${kind} photo. Please try again.`,
           tone: "error",
         });
       } finally {
@@ -588,12 +459,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [showToast, venue],
   );
 
-  const promptMenuPhoto = useCallback(() => {
-    Alert.alert("Add a menu photo", "Snap or pick a photo of this stall's menu.", [
-      { text: "Take photo", onPress: () => void submitMenuPhotoFrom("camera") },
-      { text: "Choose from library", onPress: () => void submitMenuPhotoFrom("library") },
-      { text: "Cancel", style: "cancel" },
-    ]);
+  // One button covers both: say what the photo shows, then where it comes from.
+  const promptMenuPhoto = useCallback(async () => {
+    const kind = await askChoice({
+      title: "Add a menu/stall photo",
+      message: "What does your photo show?",
+      options: [
+        { id: "menu", label: "The menu" },
+        { id: "stall", label: "The stall or its food" },
+      ],
+    });
+    if (kind !== "menu" && kind !== "stall") return;
+    const source = await askMediaSource(kind === "menu" ? "Menu photo" : "Stall photo");
+    if (source) void submitMenuPhotoFrom(source, kind);
   }, [submitMenuPhotoFrom]);
   const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
   const [isClaimPending, setIsClaimPending] = useState(() =>
@@ -619,6 +497,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [visibleMenuItemCount, setVisibleMenuItemCount] = useState(INITIAL_MENU_ITEM_COUNT);
   const contentBodyLayoutRef = useRef<{ y: number; height: number } | null>(null);
   const menuSectionLayoutRef = useRef<{ y: number; height: number } | null>(null);
+  const reviewsSectionLayoutRef = useRef<{ y: number; height: number } | null>(null);
+  const scrollRef = useRef<ScrollView | null>(null);
   const trackedStallViewId = useRef<string | null>(null);
   const trackedPromotionEvents = useRef<Set<string>>(new Set());
   const detailSaveActions = useDetailSaveActions({
@@ -631,30 +511,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
     },
   });
   const buildingLocation = {
-    name: venue?.buildingName ?? building?.name,
+    // Last resort when the building is not in the catalogue: the area, not a bare "#01-10".
+    name: venue?.buildingName ?? building?.name ?? venue?.planningArea,
     address: venue?.address ?? (building as { address?: string } | undefined)?.address,
     postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
   };
-  const stallAddress = venue ? formatFullStallAddress(venue, buildingLocation) : "";
+  // ALL CAPS licence names read as shouting; display only, the stored name is what is copied.
+  const displayName = toDisplayName(venue?.name ?? "Stall");
 
   const shareReviewTarget = useMemo<ReviewShareTarget>(() => {
     return {
       kind: "stall",
       reviewId: `stall-${venue?.id ?? ""}`,
       postId: "",
-      title: venue?.name ?? "Stall",
+      title: displayName,
       subtitle: [buildingLocation.name, venue?.unitNumber?.trim()].filter(Boolean).join(" · "),
       imageUrl: leadDish?.imageUrl ?? "",
       authorName: profile.displayName,
-      message: `Check out ${venue?.name ?? "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
+      message: `Check out ${venue ? displayName : "this stall"} at ${buildingLocation.name ?? "Hungry"}!`,
       link: webShareUrl("stall", venue?.id ?? ""),
     };
   }, [
     buildingLocation.name,
     leadDish?.imageUrl,
+    displayName,
     profile.displayName,
+    venue,
     venue?.id,
-    venue?.name,
     venue?.unitNumber,
   ]);
 
@@ -898,27 +781,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
   }, [dishes]);
   const menuCategories = useMemo(() => {
     const categorySet = new Set(Object.values(menuCategoryByDishId));
-    const sortedCategories = [...categorySet].sort((left, right) => {
-      const leftIndex = MENU_CATEGORY_ORDER.indexOf(left);
-      const rightIndex = MENU_CATEGORY_ORDER.indexOf(right);
-      if (leftIndex === -1 && rightIndex === -1) return left.localeCompare(right);
-      if (leftIndex === -1) return 1;
-      if (rightIndex === -1) return -1;
-      return leftIndex - rightIndex;
-    });
+    const sortedCategories = [...categorySet].sort(compareMenuCategories);
     return [ALL_MENU_CATEGORY, ...sortedCategories];
   }, [menuCategoryByDishId]);
   // The server returns the menu in search-rank order, which reads as random on a menu:
-  // group by category (the chip order), then A-Z within it.
+  // group by category (the chip order), then A-Z within it. Dishes the stall features go
+  // first (R4-2) unless they are sold out, so "Stall's pick" is something the diner can order.
   const orderedMenuDishes = useMemo(() => {
-    const categoryRank = (dish: DishDetail) => {
-      const index = MENU_CATEGORY_ORDER.indexOf(menuCategoryByDishId[dish.id] ?? "");
-      return index === -1 ? MENU_CATEGORY_ORDER.length : index;
-    };
     return [...dishes].sort(
       (left, right) =>
-        categoryRank(left) - categoryRank(right) ||
-        (menuCategoryByDishId[left.id] ?? "").localeCompare(menuCategoryByDishId[right.id] ?? "") ||
+        Number(isStallsPick(right.availabilityFlags)) -
+          Number(isStallsPick(left.availabilityFlags)) ||
+        compareMenuCategories(
+          menuCategoryByDishId[left.id] ?? "",
+          menuCategoryByDishId[right.id] ?? "",
+        ) ||
         left.name.localeCompare(right.name),
     );
   }, [dishes, menuCategoryByDishId]);
@@ -951,6 +828,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
     [filteredMenuDishes, visibleMenuItemCount],
   );
   const hasMoreMenuItems = visibleMenuDishes.length < filteredMenuDishes.length;
+  // List rows when most of the menu has no photo, tiles when it does (R4-STALL-5).
+  const menuAsList = useMemo(() => shouldUseMenuList(dishes), [dishes]);
   // The next menu page is read when the diner reaches the end of what is loaded, or filters
   // or searches (which need the whole menu).
   const menuFilterActive =
@@ -998,6 +877,40 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }
   }, [activeMenuCategory, menuCategories]);
 
+  // Derived once per input change, not on every scroll batch or review page.
+  const ratingSummary = useMemo(() => summarizeStallRating(dishes), [dishes]);
+  const priceBand = useMemo(() => formatStallPriceBand(dishes), [dishes]);
+  // Owner cover, then the stall photo, then each dish's photo, then review photos.
+  const heroPhotos = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            merchantProfile?.coverPhotoUrl,
+            venue?.imageUrl,
+            ...dishes.map((dish) => getStallDishPhotos(dish)[0]),
+            ...stallReviewPhotos,
+          ]
+            .map((url) => sanitizeCatalogImageUrl(url))
+            .filter((url): url is string => Boolean(url?.trim())),
+        ),
+      ).slice(0, HERO_PHOTO_LIMIT),
+    [dishes, merchantProfile?.coverPhotoUrl, stallReviewPhotos, venue?.imageUrl],
+  );
+  // One shared helper so the stall page and the dish page always agree: the owner's
+  // temporary closure, then the weekly schedule with special hours, then the listed text.
+  const openInfo = useMemo(
+    () =>
+      venue
+        ? resolveStallOpenInfo({
+            venue,
+            schedule: openingSchedule,
+            temporaryClosure: merchantProfile?.temporaryClosure,
+          })
+        : undefined,
+    [merchantProfile?.temporaryClosure, openingSchedule, venue],
+  );
+
   const requireAuthForProtectedAction = (message: string, onSignedIn?: () => void) =>
     requireAccount(
       message,
@@ -1036,7 +949,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  if (!venue) {
+  // openInfo exists whenever venue does; naming it here narrows it for the rest of the render.
+  if (!venue || !openInfo) {
     return (
       <FeedErrorBoundary
         title="Stall details unavailable"
@@ -1062,49 +976,45 @@ export function StallDetailScreen({ navigation, route }: Props) {
   // Distance from the user to the stall (its own pin when it has one, else its building);
   // hidden when either is unknown.
   const userOrigin = locationPermission === "granted" ? currentLocation : manualCoordinate;
-  const buildingCoordinate =
-    building?.coordinate ??
-    repository.listBuildings().find((candidate) => candidate.id === venue.buildingId)?.coordinate;
+  const buildingCoordinate = building?.coordinate;
   const stallPin = getStallPin(venue, buildingCoordinate);
   const distanceLabel = formatDistanceFromUser(userOrigin, stallPin ?? buildingCoordinate);
-  const ratingSummary = summarizeStallRating(dishes);
   const stallSavedCount = venue.savedCount ?? 0;
   const savedCountLabel =
     stallSavedCount > 0
       ? `${stallSavedCount} ${stallSavedCount === 1 ? "person" : "people"} saved this`
       : null;
-  const priceBand = formatStallPriceBand(dishes);
   const deliveryLinks = venue.deliveryLinks ?? [];
-  // Owner cover, then the stall photo, then each dish's photo, then review photos.
-  const heroPhotos = Array.from(
-    new Set(
-      [
-        merchantProfile?.coverPhotoUrl,
-        venue.imageUrl,
-        ...dishes.map((dish) => getStallDishPhotos(dish)[0]),
-        ...stallReviewPhotos,
-      ]
-        .map((url) => sanitizeCatalogImageUrl(url))
-        .filter((url): url is string => Boolean(url?.trim())),
-    ),
-  ).slice(0, HERO_PHOTO_LIMIT);
-  // One shared helper so the stall page and the dish page always agree: the owner's
-  // temporary closure, then the weekly schedule with special hours, then the listed text.
-  const openInfo = resolveStallOpenInfo({
-    venue,
-    schedule: openingSchedule,
-    temporaryClosure: merchantProfile?.temporaryClosure,
-  });
   const operatingStatusLabel = openInfo.statusLabel;
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
-  // Short enough that hours, address and Order on show without scrolling.
-  const heroHeight = Math.min(screenWidth * 0.45, 190);
+  // 4:3 when there are photos, so they show whole. With none the page still opens on a hero: a
+  // shorter brand band with the stall's logo or initials, so a stall nobody has added to yet
+  // looks like every other stall page and not like a bare form.
+  const hasPhotos = heroPhotos.length > 0;
+  const heroHeight = hasPhotos
+    ? Math.min(screenWidth * 0.75, 420)
+    : Math.min(screenWidth * 0.6, 300);
+  const headerFadeHeight = heroHeight;
+  const subtitle = [buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
+    .filter(Boolean)
+    .join(" · ");
+  // The street and postcode are the only address facts the subtitle lacks (R5-STALL-6).
+  const streetAddress = [
+    buildingLocation.address?.trim(),
+    buildingLocation.postalCode ? `Singapore ${buildingLocation.postalCode}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(", ");
   const hoursRows = openInfo.weekRows;
+  // A single listed "Hours" line that today's row already repeats has nothing more to expand.
+  const hoursExpandable = hoursRows.some(
+    (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
+  );
   const hoursHeader = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-      <Clock3 color={palette.orange} size={18} />
+      <HoursSymbol color={palette.orange} size={18} />
       <AppText
         variant="bodyBold"
         tone={openInfo.isOpen ? "success" : "default"}
@@ -1114,41 +1024,49 @@ export function StallDetailScreen({ navigation, route }: Props) {
       >
         {operatingStatusLabel}
       </AppText>
-      {hoursRows.length > 0 ? (
+      {hoursExpandable ? (
         hoursExpanded ? (
-          <ChevronUp color={palette.orange} size={20} />
+          <ChevronUpSymbol color={palette.orange} size={20} />
         ) : (
-          <ChevronDown color={palette.orange} size={20} />
+          <ChevronDownSymbol color={palette.orange} size={20} />
         )
       ) : null}
     </View>
   );
+  const heroFallback = (
+    <StallHeroFallback
+      name={displayName}
+      logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
+      width={screenWidth}
+      height={heroHeight}
+    />
+  );
+  // Nothing to show yet: one card that asks for it replaces the Menu and Reviews sections.
+  const hoursMissing = hoursRows.length === 0 && openInfo.openState.status === "unknown";
+  const stallIsEmpty =
+    showDeferredDetailControls &&
+    menuStatus === "ready" &&
+    dishes.length === 0 &&
+    reviewsStatus === "ready" &&
+    communityReviews.length === 0;
   const reviewedDishIds = profile.reviewedDishIds;
   const hasReviewedDishAtVenue = dishes.some((dish) => reviewedDishIds.includes(dish.id));
-  const nextUnreviewedDish = dishes.find((dish) => !reviewedDishIds.includes(dish.id));
 
-  // Only the signed-in bar calls this: guests are sent to sign in before they get here.
-  const handleReviewRequiredForTried = () => {
-    // Without a clear next dish, let the reviewer pick one instead of guessing.
-    const targetDishId = nextUnreviewedDish?.id;
-    if (!dishes.length) {
-      showToast({
-        message: "No dish available for review yet. Add a dish first.",
-        tone: "warning",
-        duration: 3000,
-      });
+  // "What did you have?" is a system form sheet. Only the id travels: on web the params
+  // become the URL, and the sheet reads the menu and the diner's reviews itself.
+  const openVisitedSheet = () => navigation.navigate("StallVisited", { venueId: venue.id });
+
+  const openReportHours = () => {
+    const params = { venueId: venue.id, subjectName: displayName };
+    if (
+      !requireAccount("Sign in to add opening hours for this stall.", {
+        name: "SuggestOpeningHours",
+        params,
+      })
+    ) {
       return;
     }
-
-    showToast({
-      message: "Try or review a dish here first, then mark this stall visited.",
-      tone: "info",
-      duration: 3000,
-    });
-    navigation.navigate("ReviewStack", {
-      screen: "ReviewMain",
-      params: targetDishId ? { venueId: venue.id, dishId: targetDishId } : { venueId: venue.id },
-    });
+    navigation.navigate("SuggestOpeningHours", params);
   };
 
   const openWriteReview = () => {
@@ -1177,10 +1095,33 @@ export function StallDetailScreen({ navigation, route }: Props) {
   };
 
   const openStallMaps = () => {
-    if (!stallAddress && !stallPin) return;
-    trackAnalyticsEvent("directions_opened", { stall_id: venue?.id, source: "stall_detail" });
+    if (!venue) return;
+    trackAnalyticsEvent("directions_opened", { stall_id: venue.id, source: "stall_detail" });
     recordTap("direction_tap");
-    void openTrustedMapsUrl(buildMapsSearchUrl(stallAddress, stallPin));
+    // Searches Google Maps by name + building + postcode so it lands on the stall's listing;
+    // the map pin is used only when the stall has no building or address to search by.
+    void openTrustedMapsUrl(
+      buildStallMapsUrl(
+        {
+          name: venue.name,
+          buildingName: buildingLocation.name,
+          address: buildingLocation.address,
+          postalCode: buildingLocation.postalCode,
+        },
+        stallPin,
+      ),
+    );
+  };
+
+  const copyStallName = async () => {
+    if (!venue) return;
+    try {
+      await Clipboard.setStringAsync(venue.name);
+      showToast({ message: "Copied", tone: "success", duration: 1500 });
+    } catch (error) {
+      reportStallError(error, "copy_stall_name");
+      showToast({ message: "Couldn't copy. Try again.", tone: "error" });
+    }
   };
 
   const openMerchantContact = (kind: "phone" | "email", value: string) => {
@@ -1193,25 +1134,45 @@ export function StallDetailScreen({ navigation, route }: Props) {
     void openMerchantProfileLink("web", url);
   };
 
+  // The scroll offset at which the next batch of menu items is wanted, for the UI-thread handler.
+  const syncMenuLoadAt = () => {
+    const body = contentBodyLayoutRef.current;
+    const menu = menuSectionLayoutRef.current;
+    if (!body || !menu) return;
+    menuLoadAt.value = body.y + menu.y + menu.height - MENU_LOAD_THRESHOLD_PX;
+    // Re-check on the next scroll event against the new end of the menu.
+    nearMenuEnd.value = false;
+  };
+
   const handleContentBodyLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     contentBodyLayoutRef.current = { y, height };
+    syncMenuLoadAt();
+  };
+
+  const handleReviewsSectionLayout = (event: LayoutChangeEvent) => {
+    const { y, height } = event.nativeEvent.layout;
+    reviewsSectionLayoutRef.current = { y, height };
+  };
+
+  const scrollToReviews = () => {
+    const offset = sectionScrollOffset(
+      contentBodyLayoutRef.current,
+      reviewsSectionLayoutRef.current,
+      insets.top + 60,
+    );
+    if (offset !== undefined) scrollRef.current?.scrollTo({ y: offset, animated: true });
   };
 
   const handleMenuSectionLayout = (event: LayoutChangeEvent) => {
     const { y, height } = event.nativeEvent.layout;
     menuSectionLayoutRef.current = { y, height };
+    syncMenuLoadAt();
   };
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  // Called from the scroll handler when the diner nears the end of the loaded menu.
+  loadMoreMenuItemsRef.current = () => {
     if (!hasMoreMenuItems) return;
-    const contentBodyLayout = contentBodyLayoutRef.current;
-    const menuSectionLayout = menuSectionLayoutRef.current;
-    if (!contentBodyLayout || !menuSectionLayout) return;
-    const { contentOffset, layoutMeasurement } = event.nativeEvent;
-    const viewportBottom = contentOffset.y + layoutMeasurement.height;
-    const menuSectionBottom = contentBodyLayout.y + menuSectionLayout.y + menuSectionLayout.height;
-    if (viewportBottom < menuSectionBottom - MENU_LOAD_THRESHOLD_PX) return;
     setVisibleMenuItemCount((current) =>
       current !== visibleMenuItemCount
         ? current
@@ -1256,7 +1217,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
       dishId: activeDish.id,
       userId: isAuthenticated ? profile.id : undefined,
     });
-    navigation.navigate("DishDetail", { dishId: activeDish.id });
+    navigation.navigate("DishDetail", {
+      dishId: activeDish.id,
+      source: "stall_menu",
+      prefill: dishPrefillFrom({ ...activeDish, venueName: venue.name }),
+    });
   };
 
   const handleClaimThisStall = async () => {
@@ -1280,10 +1245,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
       });
 
       if (result.status === "needs_auth") {
-        showToast({
-          message: "Please sign in before claiming this stall.",
-          tone: "warning",
-        });
+        // The session ended while the page was open: open sign-in and come back to this stall.
+        setReturnRoute({ name: "StallDetail", params: { venueId: venue.id } });
+        openSignInPrompt({ title: "Sign in before claiming this stall" });
       } else if (result.status === "created") {
         setIsClaimPending(true);
         setClaimStatus("submitted");
@@ -1317,52 +1281,40 @@ export function StallDetailScreen({ navigation, route }: Props) {
     >
       <SafeAreaView style={{ flex: 1, backgroundColor: palette.bg }} edges={["left", "right"]}>
         <View style={{ flex: 1 }}>
-          {/* Back and Share come first in the tree so screen readers reach them first. A later
-              sibling draws on top on iOS and web, so this wrapper's zIndex/elevation keeps them
-              above the hero photo; box-none lets taps between the buttons reach the photo. */}
-          <View
-            pointerEvents="box-none"
-            testID="stall-detail-top-chrome"
-            style={{
-              elevation: 10,
-              height: insets.top + 64,
-              left: 0,
-              position: "absolute",
-              right: 0,
-              top: 0,
-              zIndex: 10,
-            }}
-          >
-            <FloatingBackButton onPress={goBackOrHome} />
-            {showDeferredDetailControls ? (
-              // Share sits over the photo so the bottom bar has room for a whole "Write a review".
-              <FloatingBackButton
-                accessibilityLabel="Share stall"
-                icon={ShareIcon}
-                onPress={openShareSheet}
-                side="right"
-              />
-            ) : null}
-          </View>
+          {/* Back and Share come first in the tree so screen readers reach them first. The
+              wrapper's zIndex/elevation keeps them above the hero photo on iOS and web (a later
+              sibling draws on top); box-none lets taps between the buttons reach the photo.
+              Once the photo has faded, a bar with the stall name fades in behind them. */}
+          <DetailCollapsingHeader
+            scrollY={heroScrollY}
+            heroHeight={headerFadeHeight}
+            title={displayName}
+            onBack={goBackOrHome}
+            onShare={showDeferredDetailControls ? openShareSheet : undefined}
+            shareLabel="Share stall"
+            shareIcon={ShareSymbol}
+            chromeTestID="stall-detail-top-chrome"
+          />
           <Animated.ScrollView
+            ref={scrollRef as never}
             showsVerticalScrollIndicator={false}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: heroScrollY } } }], {
-              listener: handleScroll,
-              useNativeDriver: Platform.OS !== "web",
-            })}
+            onScroll={onScroll}
             scrollEventThrottle={16}
             contentContainerStyle={{
-              paddingBottom: insets.bottom + 96,
+              paddingBottom:
+                Math.max(insets.bottom, spacing[3]) + DETAIL_ACTION_BAR_CLEARANCE + spacing[4],
             }}
           >
-            {/* Hero: swipeable photos (owner cover, stall, dishes, reviews), else a short branded header */}
+            {/* Hero: swipeable photos (owner cover, stall, dishes, reviews). With none there is no
+                hero: a gap for Back and Share, then the compact header below. */}
             <DetailHeroFade scrollY={heroScrollY} height={heroHeight}>
-              {heroPhotos.length > 0 ? (
+              {hasPhotos ? (
                 <PhotoPager
                   photos={heroPhotos}
                   width={screenWidth}
                   height={heroHeight}
-                  subject={venue.name}
+                  subject={displayName}
+                  fallback={heroFallback}
                 >
                   {/* White fade at the foot of the photo, into the page. */}
                   <LinearGradient
@@ -1378,20 +1330,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   />
                 </PhotoPager>
               ) : (
-                <View
-                  accessibilityRole="image"
-                  accessibilityLabel={`${venue.name} photo unavailable`}
-                  style={{
-                    alignItems: "center",
-                    backgroundColor: palette.surfaceRaised,
-                    height: heroHeight,
-                    justifyContent: "flex-end",
-                    paddingBottom: spacing[4],
-                    width: screenWidth,
-                  }}
-                >
-                  <Utensils color={palette.orange} size={32} />
-                </View>
+                heroFallback
               )}
             </DetailHeroFade>
 
@@ -1406,40 +1345,70 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Header Content */}
               <View style={{ gap: spacing[3] }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
-                  {sanitizeCatalogImageUrl(venue.logoUrl) ? (
+                  {/* The logo beside the name only when the photo above is a photo; the brand band
+                      already shows the logo or initials when there is none. */}
+                  {hasPhotos && sanitizeCatalogImageUrl(venue.logoUrl) ? (
                     <StallLogoMark
                       logoUrl={sanitizeCatalogImageUrl(venue.logoUrl)}
-                      name={venue.name}
+                      name={displayName}
                     />
                   ) : null}
                   <View style={{ flex: 1, gap: spacing[1] }}>
-                    <AppText variant="h1">{venue.name}</AppText>
-                    <AppText variant="body" tone="secondary">
-                      {/* Centre · unit · distance; the full address lives in the Address card. */}
-                      {[buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${venue.name}, copy stall name`}
+                      accessibilityHint="Copies the stall name"
+                      onPress={() => void copyStallName()}
+                    >
+                      <AppText variant="h1">{displayName}</AppText>
+                    </Pressable>
+                    {/* Centre · unit · distance; a tap opens Directions. */}
+                    {subtitle ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Directions to ${displayName}, ${subtitle}`}
+                        accessibilityHint="Opens the stall in Google Maps"
+                        onPress={openStallMaps}
+                        // The line is 26pt tall; the slop brings the target to 44pt+ (round six).
+                        hitSlop={{ bottom: 10, top: 10 }}
+                      >
+                        <AppText variant="body" tone="secondary">
+                          {subtitle}
+                        </AppText>
+                      </Pressable>
+                    ) : null}
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   {ratingSummary ? (
-                    <View
+                    <PressableScale
+                      accessibilityRole="button"
+                      accessibilityLabel={`${ratingSummary.rating.toFixed(1)} stars from ${ratingSummary.reviewCount} dish ${ratingSummary.reviewCount === 1 ? "rating" : "ratings"}`}
+                      accessibilityHint={
+                        showDeferredDetailControls ? "Scrolls to the reviews" : undefined
+                      }
+                      disabled={!showDeferredDetailControls}
+                      onPress={scrollToReviews}
+                      hitSlop={{ bottom: 6, top: 6 }}
                       style={{
+                        alignItems: "center",
                         backgroundColor: palette.bgSoft,
                         borderRadius: radii.pill,
+                        flexDirection: "row",
+                        gap: spacing[1],
                         paddingHorizontal: spacing[3],
                         paddingVertical: spacing[1],
                       }}
                     >
+                      <RatingStarSymbol size={14} color={palette.starFill} />
                       <AppText variant="bodySmallBold">
-                        <Text style={{ color: palette.starFill }}>★</Text>{" "}
                         {ratingSummary.rating.toFixed(1)}{" "}
                         <AppText variant="bodySmall" tone="secondary">
-                          ({ratingSummary.reviewCount} reviews)
+                          · {ratingSummary.reviewCount} dish{" "}
+                          {ratingSummary.reviewCount === 1 ? "rating" : "ratings"}
                         </AppText>
                       </AppText>
-                    </View>
+                    </PressableScale>
                   ) : null}
                   {savedCountLabel ? (
                     <View
@@ -1455,7 +1424,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         paddingVertical: spacing[1],
                       }}
                     >
-                      <Bookmark color={palette.textSecondary} size={14} />
+                      <SavedCountSymbol color={palette.textSecondary} size={14} />
                       <AppText variant="bodySmallBold" tone="secondary">
                         {savedCountLabel}
                       </AppText>
@@ -1463,9 +1432,32 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : null}
                   {/* Open now / hours sit in the card just below, not repeated here. */}
                   {priceBand ? (
-                    <AppText variant="bodySmall" tone="secondary" style={{ alignSelf: "center" }}>
+                    <AppText variant="price" tone="secondary" style={{ alignSelf: "center" }}>
                       {priceBand}
                     </AppText>
+                  ) : null}
+                  {merchantProfile?.contactPhone ? (
+                    <PressableScale
+                      accessibilityRole="button"
+                      accessibilityLabel={`Call ${displayName} on ${formatSgPhone(merchantProfile.contactPhone)}`}
+                      onPress={() =>
+                        openMerchantContact("phone", merchantProfile.contactPhone ?? "")
+                      }
+                      // A 32pt chip; 6pt above and below makes the target 44pt (round six).
+                      hitSlop={{ bottom: 6, top: 6 }}
+                      style={{
+                        alignItems: "center",
+                        backgroundColor: palette.bgSoft,
+                        borderRadius: radii.pill,
+                        flexDirection: "row",
+                        gap: spacing[1],
+                        minHeight: 32,
+                        paddingHorizontal: spacing[3],
+                      }}
+                    >
+                      <PhoneSymbol color={palette.orange} size={14} />
+                      <AppText variant="bodySmallBold">Call</AppText>
+                    </PressableScale>
                   ) : null}
                 </View>
                 {/* Only when the hours card does not already say it. */}
@@ -1494,7 +1486,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     {websiteLink ? (
                       <Pressable
                         accessibilityRole="link"
-                        accessibilityLabel={`Open ${venue.name} website`}
+                        accessibilityLabel={`Open ${displayName} website`}
                         onPress={() => openMerchantWebLink(websiteLink.platform, websiteLink.url)}
                         style={{
                           flexDirection: "row",
@@ -1503,7 +1495,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           minHeight: 44,
                         }}
                       >
-                        <Globe color={palette.orange} size={16} />
+                        <WebsiteSymbol color={palette.orange} size={16} />
                         <AppText variant="body" tone="accent" numberOfLines={1} style={{ flex: 1 }}>
                           {formatWebsiteLabel(websiteLink.url)}
                         </AppText>
@@ -1513,7 +1505,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 ) : null}
                 {/* Only the header toggles; today and the week are plain text a screen reader reads. */}
                 <View style={{ gap: spacing[1.5] }}>
-                  {hoursRows.length > 0 ? (
+                  {hoursExpandable ? (
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`Opening hours, ${operatingStatusLabel}`}
@@ -1522,6 +1514,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       }
                       accessibilityState={{ expanded: hoursExpanded }}
                       onPress={() => setHoursExpanded((open) => !open)}
+                      hitSlop={{ bottom: 10, top: 10 }}
                       style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
                     >
                       {hoursHeader}
@@ -1574,31 +1567,30 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     : null}
                 </View>
 
-                <View
-                  style={{
-                    borderTopColor: palette.border,
-                    borderTopWidth: 1,
-                    gap: spacing[1.5],
-                    paddingTop: spacing[3],
-                  }}
-                >
-                  <AppText variant="bodyBold">Address</AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open maps for ${stallAddress}`}
-                    onPress={openStallMaps}
-                    style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
+                {/* The subtitle already says centre and unit; this only adds the street and postcode. */}
+                {streetAddress ? (
+                  <View
+                    style={{
+                      borderTopColor: palette.border,
+                      borderTopWidth: 1,
+                      gap: spacing[1.5],
+                      paddingTop: spacing[3],
+                    }}
                   >
-                    <View
-                      style={{ alignItems: "flex-start", flexDirection: "row", gap: spacing[2] }}
+                    <AppText variant="bodyBold">Address</AppText>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Open maps for ${streetAddress}`}
+                      accessibilityHint="Opens the stall in Google Maps"
+                      onPress={openStallMaps}
+                      style={({ pressed }) => [{ minHeight: 44, opacity: pressed ? 0.8 : 1 }]}
                     >
-                      <MapPin color={palette.orange} size={18} />
-                      <AppText variant="body" tone="secondary" style={{ flex: 1 }}>
-                        {stallAddress}
+                      <AppText variant="body" tone="secondary">
+                        {streetAddress}
                       </AppText>
-                    </View>
-                  </Pressable>
-                </View>
+                    </Pressable>
+                  </View>
+                ) : null}
               </Card>
               {deliveryLinks.length > 0 ? (
                 <View style={{ gap: spacing[2] }}>
@@ -1609,142 +1601,160 @@ export function StallDetailScreen({ navigation, route }: Props) {
                 </View>
               ) : null}
               {/* Menu */}
-              <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
-                <View style={{ gap: spacing[1] }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      flexWrap: "wrap",
-                      gap: spacing[2],
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <AppText variant="h2">Menu</AppText>
-                    {menuStatus === "ready" &&
-                    dishes.length > 0 &&
-                    (menuCategories.length > 2 || stallDietarySummary.length > 0) ? (
-                      <MenuFilterDropdown
-                        categories={
-                          menuCategories.length > 2 ? menuCategories : [ALL_MENU_CATEGORY]
-                        }
-                        activeCategory={activeMenuCategory}
-                        onCategoryChange={setActiveMenuCategory}
-                        allCategory={ALL_MENU_CATEGORY}
-                        dietaryOptions={stallDietarySummary}
-                        activeDietaryFlags={activeDietaryFlags}
-                        onDietaryFlagsChange={setActiveDietaryFlags}
-                        resultCount={filteredMenuDishes.length}
-                      />
-                    ) : null}
-                  </View>
-                  {filteredMenuDishes.length > 0 ? (
-                    <AppText variant="bodySmall" tone="secondary">
-                      Showing {visibleMenuDishes.length} of {filteredMenuDishes.length}
-                      {menuNextCursor ? "+" : ""} items
-                    </AppText>
-                  ) : null}
-                </View>
-                {menuStatus === "loading" ? (
-                  <View
-                    accessibilityLabel="Loading menu"
-                    style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}
-                  >
-                    <Skeleton width="45%" height={160} borderRadius={radii.lg} />
-                    <Skeleton width="45%" height={160} borderRadius={radii.lg} />
-                  </View>
-                ) : menuStatus === "error" ? (
-                  <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
-                    <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-                      Couldn&apos;t load this stall&apos;s menu.
-                    </AppText>
-                    <Button
-                      label="Retry"
-                      variant="secondary"
-                      onPress={() => setMenuReloadKey((key) => key + 1)}
-                    />
-                  </Card>
-                ) : dishes.length > 0 ? (
-                  <View style={{ gap: spacing[4] }}>
-                    {dishes.length > MENU_SEARCH_MIN_ITEMS ? (
-                      <Input
-                        placeholder="Search this menu"
-                        value={menuQuery}
-                        onChangeText={setMenuQuery}
-                        accessibilityLabel="Search this menu"
-                        returnKeyType="search"
-                        autoCorrect={false}
-                      />
-                    ) : null}
-                    {visibleMenuDishes.length > 0 ? (
-                      <View
-                        style={{
-                          borderColor: palette.border,
-                          borderTopWidth: StyleSheet.hairlineWidth,
-                          flexDirection: "row",
-                          flexWrap: "wrap",
-                          // Out to the screen edges, past the body's spacing[3] padding.
-                          marginHorizontal: -spacing[3],
-                        }}
-                      >
-                        {visibleMenuDishes.map((dish, index) => (
-                          <StallMenuDishCard
-                            key={dish.id}
-                            dish={dish}
-                            // Two columns with no gap between them.
-                            width={screenWidth / MENU_GRID_COLUMNS}
-                            isLeftColumn={index % MENU_GRID_COLUMNS === 0}
-                            onPress={openMenuDish}
-                          />
-                        ))}
-                      </View>
-                    ) : menuNextCursor && menuPageStatus !== "error" ? (
-                      <Skeleton width="100%" height={72} borderRadius={radii.lg} />
-                    ) : (
-                      <Card style={{ padding: spacing[4], alignItems: "center" }}>
-                        <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-                          {trimmedMenuQuery
-                            ? `No dishes match "${menuQuery.trim()}".`
-                            : activeDietaryFlags.length > 0
-                              ? "No dishes here match those filters."
-                              : "No items in this category yet."}
-                        </AppText>
-                      </Card>
-                    )}
-                    {menuPageStatus === "error" ? (
-                      <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
-                        <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
-                          Couldn&apos;t load the rest of the menu.
-                        </AppText>
-                        <Button
-                          label="Retry"
-                          variant="secondary"
-                          onPress={() => setMenuPageStatus("idle")}
-                        />
-                      </Card>
-                    ) : null}
-                  </View>
-                ) : (
-                  <Card style={{ padding: spacing[4], alignItems: "center" }}>
-                    <AppText
-                      variant="body"
-                      tone="secondary"
-                      style={{ textAlign: "center", marginBottom: spacing[2] }}
+              {stallIsEmpty ? (
+                <StallHelpFillCard
+                  missing={["menu", ...(hoursMissing ? (["hours"] as const) : []), "reviews"]}
+                  onAddMenuPhoto={canSubmitMenuPhoto ? promptMenuPhoto : undefined}
+                  isAddingMenuPhoto={isSubmittingMenuPhoto}
+                  onAddHours={hoursMissing ? openReportHours : undefined}
+                  onWriteReview={FEATURE_FLAGS.reviewCreationEnabled ? openWriteReview : undefined}
+                />
+              ) : (
+                <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
+                  <View style={{ gap: spacing[1] }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        flexWrap: "wrap",
+                        gap: spacing[2],
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
                     >
-                      No menu available for this stall yet.
-                    </AppText>
-                    {/* Uploads a menu photo for the team to add the menu from. */}
-                    {showDeferredDetailControls && canSubmitMenuPhoto ? (
-                      <Button
-                        label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu photo"}
-                        variant="secondary"
-                        disabled={isSubmittingMenuPhoto}
-                        onPress={promptMenuPhoto}
-                      />
+                      <AppText variant="h2">Menu</AppText>
+                      {menuStatus === "ready" &&
+                      dishes.length > 0 &&
+                      (menuCategories.length > 2 || stallDietarySummary.length > 0) ? (
+                        <MenuFilterDropdown
+                          categories={
+                            menuCategories.length > 2 ? menuCategories : [ALL_MENU_CATEGORY]
+                          }
+                          activeCategory={activeMenuCategory}
+                          onCategoryChange={setActiveMenuCategory}
+                          allCategory={ALL_MENU_CATEGORY}
+                          dietaryOptions={stallDietarySummary}
+                          activeDietaryFlags={activeDietaryFlags}
+                          onDietaryFlagsChange={setActiveDietaryFlags}
+                          resultCount={filteredMenuDishes.length}
+                        />
+                      ) : null}
+                    </View>
+                    {/* A count only says something when the list is filtered or cut off. */}
+                    {filteredMenuDishes.length > 0 &&
+                    (menuFilterActive || hasMoreMenuItems || Boolean(menuNextCursor)) ? (
+                      <AppText variant="bodySmall" tone="secondary">
+                        Showing {visibleMenuDishes.length} of {filteredMenuDishes.length}
+                        {menuNextCursor ? "+" : ""} items
+                      </AppText>
                     ) : null}
-                  </Card>
-                )}
-              </View>
+                  </View>
+                  {menuStatus === "loading" ? (
+                    <View
+                      accessibilityLabel="Loading menu"
+                      style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}
+                    >
+                      <Skeleton width="45%" height={160} borderRadius={radii.lg} />
+                      <Skeleton width="45%" height={160} borderRadius={radii.lg} />
+                    </View>
+                  ) : menuStatus === "error" ? (
+                    <Card style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}>
+                      <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                        Couldn&apos;t load this stall&apos;s menu.
+                      </AppText>
+                      <Button
+                        label="Retry"
+                        variant="secondary"
+                        onPress={() => setMenuReloadKey((key) => key + 1)}
+                      />
+                    </Card>
+                  ) : dishes.length > 0 ? (
+                    <View style={{ gap: spacing[4] }}>
+                      {dishes.length > MENU_SEARCH_MIN_ITEMS ? (
+                        <Input
+                          placeholder="Search this menu"
+                          value={menuQuery}
+                          onChangeText={setMenuQuery}
+                          accessibilityLabel="Search this menu"
+                          returnKeyType="search"
+                          autoCorrect={false}
+                        />
+                      ) : null}
+                      {visibleMenuDishes.length > 0 ? (
+                        <View
+                          testID={menuAsList ? "stall-menu-list" : "stall-menu-grid"}
+                          style={{
+                            borderColor: palette.border,
+                            borderTopWidth: StyleSheet.hairlineWidth,
+                            // Out to the screen edges, past the body's spacing[3] padding.
+                            marginHorizontal: -spacing[3],
+                            ...(menuAsList ? {} : { flexDirection: "row", flexWrap: "wrap" }),
+                          }}
+                        >
+                          {visibleMenuDishes.map((dish, index) =>
+                            menuAsList ? (
+                              <StallMenuDishRow key={dish.id} dish={dish} onPress={openMenuDish} />
+                            ) : (
+                              <StallMenuDishCard
+                                key={dish.id}
+                                dish={dish}
+                                // Two columns with no gap between them.
+                                width={screenWidth / MENU_GRID_COLUMNS}
+                                isLeftColumn={index % MENU_GRID_COLUMNS === 0}
+                                onPress={openMenuDish}
+                              />
+                            ),
+                          )}
+                        </View>
+                      ) : menuNextCursor && menuPageStatus !== "error" ? (
+                        <Skeleton width="100%" height={72} borderRadius={radii.lg} />
+                      ) : (
+                        <Card style={{ padding: spacing[4], alignItems: "center" }}>
+                          <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                            {trimmedMenuQuery
+                              ? `No dishes match "${menuQuery.trim()}".`
+                              : activeDietaryFlags.length > 0
+                                ? "No dishes here match those filters."
+                                : "No items in this category yet."}
+                          </AppText>
+                        </Card>
+                      )}
+                      {menuPageStatus === "error" ? (
+                        <Card
+                          style={{ padding: spacing[4], alignItems: "center", gap: spacing[2] }}
+                        >
+                          <AppText variant="body" tone="secondary" style={{ textAlign: "center" }}>
+                            Couldn&apos;t load the rest of the menu.
+                          </AppText>
+                          <Button
+                            label="Retry"
+                            variant="secondary"
+                            onPress={() => setMenuPageStatus("idle")}
+                          />
+                        </Card>
+                      ) : null}
+                    </View>
+                  ) : (
+                    <Card style={{ padding: spacing[4], alignItems: "center" }}>
+                      <AppText
+                        variant="body"
+                        tone="secondary"
+                        style={{ textAlign: "center", marginBottom: spacing[2] }}
+                      >
+                        No menu available for this stall yet.
+                      </AppText>
+                      {/* Uploads a menu photo for the team to add the menu from. */}
+                      {showDeferredDetailControls && canSubmitMenuPhoto ? (
+                        <Button
+                          label={isSubmittingMenuPhoto ? "Uploading..." : "Add a menu/stall photo"}
+                          variant="secondary"
+                          disabled={isSubmittingMenuPhoto}
+                          onPress={promptMenuPhoto}
+                        />
+                      ) : null}
+                    </Card>
+                  )}
+                </View>
+              )}
               {showDeferredDetailControls && activePromotions.length > 0 ? (
                 <View style={{ gap: spacing[3] }}>
                   <AppText variant="h2">Active promotions</AppText>
@@ -1752,7 +1762,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     <CustomerPromotionCard
                       key={promotion.id}
                       promotion={promotion}
-                      ctaLabel={promotion.targetDishId ? "View dish" : undefined}
                       onPress={
                         promotion.targetDishId
                           ? () => {
@@ -1763,7 +1772,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
                                 dishId: promotion.targetDishId,
                                 userId: isAuthenticated ? profile.id : undefined,
                               });
-                              navigation.navigate("DishDetail", { dishId: promotion.targetDishId });
+                              navigation.navigate("DishDetail", {
+                                dishId: promotion.targetDishId,
+                                source: "stall_promotion",
+                              });
                             }
                           : undefined
                       }
@@ -1771,31 +1783,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ))}
                 </View>
               ) : null}
-              {merchantProfile?.contactPhone || merchantProfile?.contactEmail ? (
+              {/* The phone is the Call chip under the name, so it is not repeated here. */}
+              {merchantProfile?.contactEmail ? (
                 <Card style={{ gap: spacing[1], padding: spacing[4] }}>
                   <AppText variant="bodyBold">Contact details</AppText>
-                  {merchantProfile.contactPhone ? (
-                    <ContactRow
-                      icon={<Phone color={palette.orange} size={18} />}
-                      label="Call"
-                      value={merchantProfile.contactPhone}
-                      accessibilityLabel={`Call ${venue.name} on ${merchantProfile.contactPhone}`}
-                      onPress={() =>
-                        openMerchantContact("phone", merchantProfile.contactPhone ?? "")
-                      }
-                    />
-                  ) : null}
-                  {merchantProfile.contactEmail ? (
-                    <ContactRow
-                      icon={<Mail color={palette.orange} size={18} />}
-                      label="Email"
-                      value={merchantProfile.contactEmail}
-                      accessibilityLabel={`Email ${venue.name}`}
-                      onPress={() =>
-                        openMerchantContact("email", merchantProfile.contactEmail ?? "")
-                      }
-                    />
-                  ) : null}
+                  <ContactRow
+                    icon={<EmailSymbol color={palette.orange} size={18} />}
+                    label="Email"
+                    value={merchantProfile.contactEmail}
+                    accessibilityLabel={`Email ${displayName}`}
+                    onPress={() => openMerchantContact("email", merchantProfile.contactEmail ?? "")}
+                  />
                 </Card>
               ) : null}
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
@@ -1803,8 +1801,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
               {/* Reviews */}
               {/* Reading reviews does not depend on whether writing them is switched on. */}
-              {showDeferredDetailControls ? (
-                <View style={{ gap: spacing[4] }}>
+              {showDeferredDetailControls && !stallIsEmpty ? (
+                <View onLayout={handleReviewsSectionLayout} style={{ gap: spacing[4] }}>
                   <AppText variant="h2">Reviews</AppText>
                   {reviewsStatus === "loading" ? (
                     <Skeleton width="100%" height={72} borderRadius={radii.lg} />
@@ -1828,156 +1826,49 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           </AppText>
                           <ReviewPhotoStrip
                             photos={stallReviewPhotos}
-                            subject={`${venue.name}, from reviews`}
+                            subject={`${displayName}, from reviews`}
                             size={96}
                           />
                         </View>
                       ) : null}
-                      {communityReviews.map((review) => (
-                        <View
-                          key={review.id}
-                          style={{
-                            padding: spacing[4],
-                            borderRadius: componentRadii.card,
-                            backgroundColor: palette.surface,
-                            borderWidth: 1,
-                            borderColor: palette.border,
-                          }}
-                        >
-                          <View
-                            style={{
-                              alignItems: "center",
-                              flexDirection: "row",
-                              gap: spacing[3],
-                            }}
-                          >
-                            <Pressable
-                              accessibilityRole={review.authorId ? "link" : undefined}
-                              accessibilityLabel={`Open ${review.authorName}'s profile`}
-                              disabled={!review.authorId}
-                              onPress={() =>
-                                navigation.navigate("UserProfile", {
-                                  authorId: review.authorId,
-                                  authorName: review.authorName,
-                                  authorAvatarUrl: review.avatarUrl,
-                                })
-                              }
-                            >
-                              <Avatar uri={review.avatarUrl} name={review.authorName} size={40} />
-                            </Pressable>
-                            <View style={{ flex: 1 }}>
-                              <Pressable
-                                accessibilityRole={review.authorId ? "link" : undefined}
-                                accessibilityLabel={`Open ${review.authorName}'s profile`}
-                                disabled={!review.authorId}
-                                hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
-                                onPress={() =>
-                                  navigation.navigate("UserProfile", {
-                                    authorId: review.authorId,
-                                    authorName: review.authorName,
-                                    authorAvatarUrl: review.avatarUrl,
-                                  })
-                                }
-                              >
-                                <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
-                              </Pressable>
-                              <Pressable
-                                accessibilityRole="link"
-                                accessibilityLabel={`Open ${review.dishName}`}
-                                hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                                onPress={() =>
-                                  navigation.navigate("DishDetail", { dishId: review.dishId })
-                                }
-                              >
-                                <AppText variant="bodySmall" tone="accent" numberOfLines={1}>
-                                  on {review.dishName}
-                                </AppText>
-                              </Pressable>
-                            </View>
-                            <AppText variant="micro" tone="muted">
-                              {formatTimeAgo(review.createdAt)}
-                            </AppText>
-                          </View>
-                          <View style={{ marginTop: spacing[2] }}>
-                            <CaptionPreview text={review.text} />
-                          </View>
-
-                          {review.photos.length > 0 ? (
-                            <View style={{ marginTop: spacing[2] }}>
-                              <ReviewPhotoStrip
-                                photos={review.photos}
-                                subject={`${review.dishName}, review by ${review.authorName}`}
-                              />
-                            </View>
-                          ) : null}
-
-                          {isOwnReview(review, isAuthenticated ? profile.id : undefined) ? (
-                            <View style={{ marginTop: spacing[2] }}>
-                              <OwnReviewActions
-                                review={{
-                                  id: review.reviewId,
-                                  rating: review.rating,
-                                  text: review.text,
-                                }}
-                                onUpdated={(patch) =>
-                                  setReviewEntries((current) =>
-                                    current.map((entry) =>
-                                      entry.review.id === review.reviewId
-                                        ? { ...entry, review: { ...entry.review, ...patch } }
-                                        : entry,
-                                    ),
-                                  )
-                                }
-                                onDeleted={() =>
-                                  setReviewEntries((current) =>
-                                    current.filter((entry) => entry.review.id !== review.reviewId),
-                                  )
-                                }
-                              />
-                            </View>
-                          ) : null}
-
-                          {review.merchantReply ? (
-                            <View
-                              style={{
-                                marginTop: spacing[2],
-                                padding: spacing[3],
-                                borderRadius: componentRadii.card,
-                                backgroundColor: palette.bgSoft,
-                                gap: spacing[1],
-                              }}
-                            >
-                              <AppText variant="micro" style={{ fontWeight: "700" }}>
-                                Reply from the owner
-                              </AppText>
-                              <AppText variant="bodySmall" tone="secondary">
-                                {review.merchantReply.text}
-                              </AppText>
-                            </View>
-                          ) : null}
-
-                          <View style={{ marginTop: spacing[2] }}>
-                            <ReviewReaderActions
-                              key={review.reviewId}
-                              rating={review.rating}
-                              review={{
-                                id: review.reviewId,
+                      {communityReviews.map((review) => {
+                        const isOwn = isOwnReview(review, isAuthenticated ? profile.id : undefined);
+                        const removeReview = () =>
+                          setReviewEntries((current) =>
+                            current.filter((entry) => entry.review.id !== review.reviewId),
+                          );
+                        return (
+                          <StallReviewCard
+                            key={review.id}
+                            review={review}
+                            venueId={venue.id}
+                            isOwn={isOwn}
+                            onOpenAuthor={() =>
+                              navigation.navigate("UserProfile", {
                                 authorId: review.authorId,
                                 authorName: review.authorName,
-                                helpfulCount: review.helpfulCount,
-                                viewerFoundHelpful: review.viewerFoundHelpful,
-                              }}
-                              isOwn={isOwnReview(review, isAuthenticated ? profile.id : undefined)}
-                              returnRoute={{ name: "StallDetail", params: { venueId: venue.id } }}
-                              onRemoved={() =>
-                                setReviewEntries((current) =>
-                                  current.filter((entry) => entry.review.id !== review.reviewId),
-                                )
-                              }
-                            />
-                          </View>
-                        </View>
-                      ))}
+                                authorAvatarUrl: review.avatarUrl,
+                              })
+                            }
+                            onOpenDish={() =>
+                              navigation.navigate("DishDetail", {
+                                dishId: review.dishId,
+                                source: "stall_review",
+                              })
+                            }
+                            onUpdated={(patch) =>
+                              setReviewEntries((current) =>
+                                current.map((entry) =>
+                                  entry.review.id === review.reviewId
+                                    ? { ...entry, review: { ...entry.review, ...patch } }
+                                    : entry,
+                                ),
+                              )
+                            }
+                            onRemoved={removeReview}
+                          />
+                        );
+                      })}
                       {hasMoreReviews ? (
                         <Button
                           label="See more reviews"
@@ -1995,49 +1886,71 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           ? "Be the first to review this stall."
                           : "Reviews for this stall will show here."
                       }
-                      icon={<CommentIcon size={36} color={palette.textMuted} />}
-                      {...(FEATURE_FLAGS.reviewCreationEnabled
-                        ? { ctaLabel: "Write a review", onPress: openWriteReview }
-                        : {})}
+                      icon={<NoReviewsSymbol size={36} color={palette.textMuted} />}
                     />
                   )}
                 </View>
               ) : null}
+              {/* A quiet row, not a button: the bar's "Write a review" is the page's only filled button. */}
               {showDeferredDetailControls && FEATURE_FLAGS.merchantClaimCtaEnabled ? (
-                <Card style={{ padding: spacing[4], gap: spacing[4] }}>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
-                  >
-                    <AppText variant="h3">Own this stall?</AppText>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="View verification process"
-                      onPress={() => navigation.navigate("MerchantClaimExplainer")}
-                      hitSlop={13}
-                    >
-                      <CircleHelp color={palette.orange} size={18} />
-                    </Pressable>
-                  </View>
-                  <Button
-                    label={
+                <View
+                  style={{
+                    alignItems: "center",
+                    borderColor: palette.border,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    flexDirection: "row",
+                    gap: spacing[2],
+                  }}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={
                       isSubmittingClaim
-                        ? "Submitting..."
+                        ? "Submitting your claim"
                         : isClaimPending
                           ? CLAIM_STATUS_LABELS[claimStatus]
-                          : "Claim this stall"
+                          : "Own this stall? Claim it"
                     }
+                    accessibilityState={{ disabled: isSubmittingClaim || isClaimPending }}
+                    disabled={isSubmittingClaim || isClaimPending}
                     onPress={() => {
                       void handleClaimThisStall();
                     }}
-                    disabled={isSubmittingClaim || isClaimPending}
-                  />
-                </Card>
+                    style={({ pressed }) => ({
+                      alignItems: "center",
+                      flex: 1,
+                      flexDirection: "row",
+                      gap: spacing[2],
+                      minHeight: 52,
+                      opacity: pressed ? 0.7 : 1,
+                    })}
+                  >
+                    <AppText
+                      variant="body"
+                      tone={isClaimPending ? "secondary" : "default"}
+                      style={{ flex: 1 }}
+                    >
+                      {isSubmittingClaim
+                        ? "Submitting..."
+                        : isClaimPending
+                          ? CLAIM_STATUS_LABELS[claimStatus]
+                          : "Own this stall? Claim it"}
+                    </AppText>
+                    {isClaimPending ? null : (
+                      <ChevronRightSymbol color={palette.textMuted} size={16} />
+                    )}
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="View verification process"
+                    onPress={() => navigation.navigate("MerchantClaimExplainer")}
+                    hitSlop={13}
+                  >
+                    <HelpSymbol color={palette.orange} size={18} />
+                  </Pressable>
+                </View>
               ) : null}
-              <ReportProblemLink venueId={venue.id} subjectName={venue.name} />
+              <ReportProblemLink venueId={venue.id} subjectName={displayName} />
             </View>
           </Animated.ScrollView>
           {venue ? (
@@ -2081,10 +1994,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   userId: profile.id,
                 })
               }
-              onDirections={stallAddress || stallPin ? openStallMaps : undefined}
+              onDirections={venue ? openStallMaps : undefined}
               hasReviewedDishAtVenue={hasReviewedDishAtVenue}
-              reviewPromptText="Try or review a dish here first, then mark this stall visited."
-              onReviewRequired={isAuthenticated ? handleReviewRequiredForTried : undefined}
+              onVisited={openVisitedSheet}
               showVisited={showDeferredDetailControls && isAuthenticated}
               onAddToList={
                 showDeferredDetailControls && FEATURE_FLAGS.portfoliosEnabled

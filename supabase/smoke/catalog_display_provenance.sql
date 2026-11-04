@@ -260,7 +260,7 @@ begin
     raise exception 'Discovery feed should choose the approved seeded dish and approved image';
   end if;
 
-  select pg_get_functiondef('public.search_dishes(text, double precision, double precision, integer, text[], integer, double precision, text, text, text, text[], numeric, boolean)'::regprocedure)
+  select pg_get_functiondef('public.search_dishes(text, double precision, double precision, integer, text[], integer, double precision, text, text, text, text[], numeric, boolean, text[], text[])'::regprocedure)
     into search_def;
   select pg_get_functiondef('public.get_discovery_feed_by_location(text, double precision, double precision, integer, integer, text)'::regprocedure)
     into discovery_def;

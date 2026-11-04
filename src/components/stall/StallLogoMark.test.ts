@@ -27,4 +27,10 @@ test("StallLogoMark retries logo candidates and falls back to text identity", ()
   );
   assert.doesNotMatch(source, /Utensils/);
   assert.doesNotMatch(source, /representative_dish|topDish|imageUrl/);
+
+  // The logo fills the ring (cover, no inner padding) and the circle has no backdrop behind it.
+  assert.match(source, /contentFit="cover"/);
+  assert.match(source, /const imageSize = Math\.max\(1, size - borderWidth \* 2\)/);
+  assert.match(source, /backgroundColor: activeLogoUrl \? "transparent" : palette\.surfaceRaised/);
+  assert.doesNotMatch(source, /contentFit="contain"/);
 });

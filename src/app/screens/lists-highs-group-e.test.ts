@@ -222,7 +222,10 @@ test("H45: list rows open the dish or stall and show a photo, stall and rank", (
   assert.match(row, /detail\?\.stallName/);
 
   const detail = read("src/app/screens/portfolio/PortfolioDetailScreen.tsx");
-  assert.match(detail, /rootNavigation\.navigate\("DishDetail", \{ dishId: item\.dishId \}\)/);
+  assert.match(
+    detail,
+    /rootNavigation\.navigate\("DishDetail", \{\s*dishId: item\.dishId,\s*source: "collection",?\s*\}\)/,
+  );
   assert.match(detail, /rootNavigation\.navigate\("StallDetail", \{ venueId: item\.stallId \}\)/);
   assert.match(detail, /showRank=\{portfolio\.type === "ranking"\}/);
   assert.match(detail, /useItemDetailsState\(portfolioItems, portfolioId\)/);
