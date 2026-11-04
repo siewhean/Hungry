@@ -1662,6 +1662,11 @@ Use the smallest check that matches the change risk.
 - New tests: `personalFeedback.test.ts`, `useFeedFeedbackStore.test.ts`, `tasteEngine.distance.test.ts`, `home-personal-feedback-contracts.test.ts`, plus cases in `mallMode.test.ts` and `useProfileStore.feedback.test.ts`.
 - No database change, so no migration, race or rate-limit check applies.
 - Not run: a device build (long press, choice sheet and toast on a phone), PostHog flag for the distance option.
+### ACH-1, 2026-11-03
+- `npm run typecheck` clean; `npm test` 2804 (0 fail, 2 skips); `npm run test:render` 1190 pass; `npm run test:coverage` baseline updated (new files 94-100%); eslint 0 errors (3 set-state-in-effect warnings in StampMomentHost, same kind as existing code).
+- New tests: `nextStamp.test.ts`, `unlocks.test.ts`, `useMomentStore.test.ts`, gamification event cases, `achievementsLoop.render.test.tsx` (ring, Home card, moment, host incl. baseline, once-only, kill switch, achievement report), `useNextStamp.render.test.tsx`. Contract test for the weekly goal now reads `useWeeklyGoal.ts`.
+- No database change, so no migration, race or rate-limit check applies. The new startup read is `loadInteractions` (one existing query, once per launch).
+- Not run: a device build. To check on a phone: mark a stall tried that earns a stamp (moment after about 1.2 s, haptics), overlap with the Tried popup and review success modal, ring on the Profile tab, VoiceOver on the moment, Reduce Motion.
 ### AUDIT-R6, 2026-11-04
 - `npm run typecheck` clean; `npm test`, `npm run test:render` and `npm run test:coverage` pass (counts in the PR); eslint 0 errors on touched files; prettier clean.
 - New tests: `round-six-polish-contracts.test.ts`, `distanceFromDiner` cases in `distanceLabel.test.ts`, the map no-location distance case, the Reviews text-tile and every-review cases, Settings Follow requests hidden/shown, Home feedback-card order.

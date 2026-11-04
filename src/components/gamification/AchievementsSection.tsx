@@ -1,30 +1,9 @@
 import { View } from "react-native";
-import {
-  Bookmark,
-  Candy,
-  Coins,
-  Flame,
-  MapPin,
-  PenLine,
-  Store,
-  UtensilsCrossed,
-  type LucideIcon,
-} from "lucide-react-native";
 
+import { AchievementBadgeArt } from "@/components/gamification/AchievementBadgeArt";
 import { AppText } from "@/components/ui";
-import type { AchievementIcon, AchievementRow } from "@/features/achievements/achievements";
+import type { AchievementRow } from "@/features/achievements/achievements";
 import { useHungryTheme } from "@/theme";
-
-const ICONS: Record<AchievementIcon, LucideIcon> = {
-  utensils: UtensilsCrossed,
-  "map-pin": MapPin,
-  store: Store,
-  flame: Flame,
-  candy: Candy,
-  coins: Coins,
-  pen: PenLine,
-  bookmark: Bookmark,
-};
 
 interface AchievementsSectionProps {
   rows: AchievementRow[];
@@ -46,7 +25,6 @@ export function AchievementsSection({ rows }: AchievementsSectionProps) {
         </AppText>
       </View>
       {rows.map((row) => {
-        const Icon = ICONS[row.icon];
         const reached = row.level > 0;
         return (
           <View
@@ -63,18 +41,12 @@ export function AchievementsSection({ rows }: AchievementsSectionProps) {
               padding: spacing[4],
             }}
           >
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: reached ? palette.orangeLight : palette.bgSoft,
-                borderRadius: radii.pill,
-                height: 44,
-                justifyContent: "center",
-                width: 44,
-              }}
-            >
-              <Icon size={22} color={reached ? palette.orange : palette.textMuted} />
-            </View>
+            <AchievementBadgeArt
+              icon={row.icon}
+              level={row.level}
+              totalLevels={row.totalLevels}
+              size={60}
+            />
             <View style={{ flex: 1, gap: spacing[1] }}>
               <View
                 style={{

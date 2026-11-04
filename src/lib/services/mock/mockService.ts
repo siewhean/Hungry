@@ -1857,6 +1857,27 @@ export const hungryService: HungryService = {
       return resolve(venues.filter((v) => wanted.has(v.id)));
     },
 
+    async getStallStampFacts(ids) {
+      const wanted = new Set(ids);
+      return resolve(
+        venues
+          .filter((venue) => wanted.has(venue.id))
+          .map((venue) => {
+            const building = buildings.find((item) => item.id === venue.buildingId);
+            return {
+              stallId: venue.id,
+              name: venue.name,
+              cuisineTags: [],
+              buildingType: building?.type,
+              planningArea: venue.planningArea ?? building?.planningArea,
+              placeText: [building?.name ?? venue.buildingName, venue.address]
+                .filter(Boolean)
+                .join(" "),
+            };
+          }),
+      );
+    },
+
     async getItemDetails({ dishIds, stallIds }) {
       const dishRows = dishIds.flatMap((id) => {
         const dish = mockRepository.getDishById(id);

@@ -4354,6 +4354,48 @@ export const supabaseService: HungryService = {
       });
     },
 
+    async getStallStampFacts(ids) {
+      const unique = [...new Set(ids)];
+      const client = getSupabaseClient();
+      if (!client || unique.length === 0) return [];
+      // Two batched reads (the stalls, then their buildings), never one per stall. The catalog is
+      // public, so these need no sign-in. A failure throws so the Passport retries later.
+      const { data: venueRows, error: venueError } = await client
+        .from("venues")
+        .select("id,name,building_id,cuisine_tags,planning_area,address")
+        .in("id", unique);
+      if (venueError) throw venueError;
+      const venueList = (Array.isArray(venueRows) ? venueRows : []) as Row[];
+      const buildingIds = [
+        ...new Set(venueList.map((row) => String(row.building_id ?? "")).filter(Boolean)),
+      ];
+      const buildingById = new Map<string, Row>();
+      if (buildingIds.length > 0) {
+        const { data: buildingRows, error: buildingError } = await client
+          .from("buildings")
+          .select("id,name,building_type,planning_area,address")
+          .in("id", buildingIds);
+        if (buildingError) throw buildingError;
+        for (const row of (Array.isArray(buildingRows) ? buildingRows : []) as Row[]) {
+          buildingById.set(String(row.id), row);
+        }
+      }
+      return venueList.map((row) => {
+        const building = buildingById.get(String(row.building_id ?? ""));
+        const text = (value: unknown) => (typeof value === "string" ? value : "");
+        return {
+          stallId: String(row.id),
+          name: text(row.name) || undefined,
+          cuisineTags: asStringArray(row.cuisine_tags).map((tag) => tag.toLowerCase()),
+          buildingType: text(building?.building_type) || undefined,
+          planningArea: text(row.planning_area) || text(building?.planning_area) || undefined,
+          placeText: [text(building?.name), text(building?.address), text(row.address)]
+            .filter(Boolean)
+            .join(" "),
+        };
+      });
+    },
+
     async getItemDetails({ dishIds, stallIds }) {
       const rows = await getItemDetailsViaRpc({ dishIds, stallIds });
       if (!rows) throw new Error("Couldn't load item details.");
