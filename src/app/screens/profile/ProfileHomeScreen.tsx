@@ -830,6 +830,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           }
           onPressIn={() => preloadRoute(navigation, "Settings")}
           onPress={() => navigation.navigate("Settings")}
+          // 42pt square; 2pt of slop makes the target at least 44pt (round six).
+          hitSlop={2}
           style={{
             alignItems: "center",
             height: headerActionSize,

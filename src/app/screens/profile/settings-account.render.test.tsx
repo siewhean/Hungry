@@ -346,20 +346,35 @@ test("row labels and values are not cut off at 2x text", async () => {
 
 // --- SET-3, SET-16 --------------------------------------------------------------------------
 
-test("Notifications has a Follow requests switch that saves social_activity", async () => {
-  const updates: Record<string, unknown>[] = [];
+test("Notifications has no Follow requests switch while followers are archived", async () => {
   const push = getHungryService().push;
   stub(push, "getPreferences", async () => ({ ...DEFAULT_PUSH_PREFERENCES }));
-  stub(push, "updatePreferences", async (next) => {
-    updates.push(next);
-    return { ...DEFAULT_PUSH_PREFERENCES, ...next };
-  });
   const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
-  const row = view.findByLabel("Follow requests");
-  await view.press(row);
-  await view.settle();
-  // The row toggles to the opposite of what it shows, so false proves it showed on (the default).
-  assert.deepEqual(updates, [{ socialActivity: false }]);
+  assert.equal(view.findByLabel("Follow requests"), null);
+  assert.ok(view.findByLabel("Lunch and dinner ideas"));
+});
+
+test("Notifications has a Follow requests switch that saves social_activity when followers are on", async () => {
+  const flagValues = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = flagValues.followConnectionsEnabled;
+  flagValues.followConnectionsEnabled = true;
+  try {
+    const updates: Record<string, unknown>[] = [];
+    const push = getHungryService().push;
+    stub(push, "getPreferences", async () => ({ ...DEFAULT_PUSH_PREFERENCES }));
+    stub(push, "updatePreferences", async (next) => {
+      updates.push(next);
+      return { ...DEFAULT_PUSH_PREFERENCES, ...next };
+    });
+    const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+    const row = view.findByLabel("Follow requests");
+    await view.press(row);
+    await view.settle();
+    // The row toggles to the opposite of what it shows, so false proves it showed on (the default).
+    assert.deepEqual(updates, [{ socialActivity: false }]);
+  } finally {
+    flagValues.followConnectionsEnabled = saved;
+  }
 });
 
 test("while the phone blocks notifications, a saved alert still shows on and can be turned off", async () => {

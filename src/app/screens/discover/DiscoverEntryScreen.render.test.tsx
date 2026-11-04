@@ -216,8 +216,14 @@ test("Supabase builds show the redesigned Home from the live feed, with no full-
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
 
-  assert.match(view.text(), /Across Singapore/);
+  assert.match(view.text(), /Picks across\s*Singapore/);
   assert.match(view.text(), /Hawker classics/);
+  // Round six: the feedback card comes after the food, not above the first rail.
+  const feedbackAt = view.text().indexOf("Help us make Hungry better");
+  assert.ok(
+    feedbackAt > view.text().indexOf("Dishes across Singapore"),
+    "feedback after the rails",
+  );
   assert.match(view.text(), /Dishes across Singapore/);
   assert.match(view.text(), /Hajjah Mariam/);
   assert.match(view.text(), /Chicken Rice/);
@@ -303,7 +309,7 @@ test("a halal diner's Home shows only halal dishes, also when the profile arrive
 test("without a GPS fix or a pick the header says Singapore, offers to turn location on and hides made-up distances", async () => {
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.match(view.text(), /^Across Singapore/);
+  assert.match(view.text(), /^Picks across\s*Singapore/);
   assert.doesNotMatch(view.text(), /You are at/);
   assert.match(view.text(), /Turn on location for stalls near you/);
   assert.doesNotMatch(view.text(), /Location is off, so these are picks/);

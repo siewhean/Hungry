@@ -1783,7 +1783,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               accessibilityRole="button"
               accessibilityLabel={`Change location. ${
                 needsDiscoverAreaChoice
-                  ? `Across ${discoverHeaderLabel}`
+                  ? `Picks across ${discoverHeaderLabel}`
                   : `${hasManualAreaPick ? "Showing food in" : "You are at"} ${discoverHeaderLabel}`
               }`}
               accessibilityHint="Opens a search for an area, mall or hawker centre"
@@ -1796,18 +1796,22 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               }
               style={{ flex: 1, minHeight: 44, justifyContent: "center" }}
             >
-              {needsDiscoverAreaChoice ? null : (
-                <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-                  {hasManualAreaPick ? "Showing food in" : "You are at"}
-                </AppText>
-              )}
+              {/* A small line over the place name, so the name itself fits beside List / Map:
+                  "Across Singapore" as one title was cut to "Across Singap..." at 390 pt. */}
+              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
+                {needsDiscoverAreaChoice
+                  ? "Picks across"
+                  : hasManualAreaPick
+                    ? "Showing food in"
+                    : "You are at"}
+              </AppText>
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
                 <AppText
                   variant="h2"
                   style={{ color: themeTints.text, flexShrink: 1 }}
                   numberOfLines={1}
                 >
-                  {needsDiscoverAreaChoice ? `Across ${discoverHeaderLabel}` : discoverHeaderLabel}
+                  {discoverHeaderLabel}
                 </AppText>
                 <ChevronDown
                   color={themeTints.isDark ? palette.white : palette.textMuted}
@@ -2116,8 +2120,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             </Pressable>
           ) : null}
         </View>
-
-        <HomeFeedbackCard />
 
         {inMallMode && currentPlace ? (
           <>
@@ -2521,6 +2523,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           </>
         )}
         {moreSections}
+        {/* The feedback ask comes after the food, so the first screen is all food (round six). */}
+        <HomeFeedbackCard />
       </ScrollView>
     </Screen>
   );

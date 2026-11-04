@@ -179,6 +179,8 @@ export function Button({
         style,
         press.animatedStyle,
       ]}
+      // A small button is 36pt tall: 4pt of slop each side makes its target 44pt (round six).
+      hitSlop={size === "sm" ? 4 : undefined}
       {...props}
     >
       {loading ? (

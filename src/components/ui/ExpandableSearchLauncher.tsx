@@ -207,6 +207,8 @@ export function ExpandableSearchLauncher({
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel ?? placeholder}
           onPress={isSearchExpanded ? hideSearch : revealSearch}
+          // The slot is 42pt; 2pt of slop makes the target at least 44pt (round six).
+          hitSlop={2}
           style={{
             width: searchIconSlotWidth,
             height: resolvedBarHeight,
