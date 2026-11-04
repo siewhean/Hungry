@@ -1295,6 +1295,10 @@ function r12Rows() {
       top_dish_name: R12_DISHES[i % R12_DISHES.length],
       building_id: `building-${(i % 4) + 2}`,
       building_name: `Place ${(i % 4) + 2}`,
+      // Hours unknown, so the hour's section (open stalls only) stays empty whatever the clock
+      // says: this test is about the Recommended and taste sections.
+      operating_hours: null,
+      is_open: null,
     }),
   );
   tasteRows = far.map((row, i) => ({
