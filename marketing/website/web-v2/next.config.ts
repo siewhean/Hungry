@@ -111,6 +111,9 @@ const privateNoIndexHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    qualities: [60, 75],
+  },
   turbopack: {
     root: __dirname,
   },

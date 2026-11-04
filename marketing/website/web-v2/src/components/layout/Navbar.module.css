@@ -61,7 +61,7 @@
 }
 
 .ctaButton {
-  background-color: var(--color-primary);
+  background-color: var(--color-primary-accessible);
   color: var(--color-white);
   padding: var(--space-3) var(--space-6);
   border-radius: var(--radius-full);
@@ -76,7 +76,7 @@
 
 .ctaButton:hover {
   transform: translateY(-2px);
-  background-color: var(--color-primary-dark);
+  background-color: var(--color-primary-accessible-hover);
   box-shadow: var(--shadow-lg);
 }
 

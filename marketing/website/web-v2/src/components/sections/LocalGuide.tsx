@@ -26,10 +26,11 @@ export default function LocalGuide() {
                     src={card.image.src}
                     alt={card.image.alt}
                     fill
+                    quality={60}
                     sizes={
                       card.variant === "map" || card.variant === "open"
-                        ? "(max-width: 768px) 100vw, 66vw"
-                        : "(max-width: 768px) 100vw, 33vw"
+                        ? "(max-width: 819px) 100vw, 66vw"
+                        : "(max-width: 819px) 100vw, 33vw"
                     }
                     className={styles.cardImage}
                   />

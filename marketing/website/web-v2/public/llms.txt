@@ -4,20 +4,20 @@
 
 ## Canonical Website
 
-- Home: https://usehungry.com/
-- For Foodies: https://usehungry.com/for-foodies
-- For Merchants: https://usehungry.com/for-merchants
-- Join Waitlist: https://usehungry.com/join-waitlist
-- Singapore Food Hub: https://usehungry.com/singapore
-- Jurong East Food: https://usehungry.com/singapore/jurong-east/food
-- Chinatown Food: https://usehungry.com/singapore/chinatown/food
-- Chicken Rice: https://usehungry.com/dishes/chicken-rice
-- First-Timer Singapore Food Guide: https://usehungry.com/guides/what-to-eat-in-singapore-first-time
-- Halal Food Discovery: https://usehungry.com/guides/halal-food
-- Late-Night Supper: https://usehungry.com/guides/late-night-supper
-- Privacy Policy: https://usehungry.com/privacy
-- Terms of Service: https://usehungry.com/terms
-- Account Deletion: https://usehungry.com/account/delete
+- [Home](https://usehungry.com/)
+- [For Foodies](https://usehungry.com/for-foodies)
+- [For Merchants](https://usehungry.com/for-merchants)
+- [Join Waitlist](https://usehungry.com/join-waitlist)
+- [Singapore Food Hub](https://usehungry.com/singapore)
+- [Jurong East Food](https://usehungry.com/singapore/jurong-east/food)
+- [Chinatown Food](https://usehungry.com/singapore/chinatown/food)
+- [Chicken Rice](https://usehungry.com/dishes/chicken-rice)
+- [First-Timer Singapore Food Guide](https://usehungry.com/guides/what-to-eat-in-singapore-first-time)
+- [Halal Food Discovery](https://usehungry.com/guides/halal-food)
+- [Late-Night Supper](https://usehungry.com/guides/late-night-supper)
+- [Privacy Policy](https://usehungry.com/privacy)
+- [Terms of Service](https://usehungry.com/terms)
+- [Account Deletion](https://usehungry.com/account/delete)
 
 ## Product Summary
 
@@ -43,4 +43,4 @@ Hungry is a Singapore food discovery app that helps foodies decide what to eat a
 
 ## Full LLM Context
 
-- Extended context file: https://usehungry.com/llms-full.txt
+- [Extended context file](https://usehungry.com/llms-full.txt)
