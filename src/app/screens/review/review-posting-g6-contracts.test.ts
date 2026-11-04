@@ -1,6 +1,7 @@
 // Round-two medium and low fixes for Reviews and posting (G6).
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { withEnglishCopy } from "@/test/englishCopy";
 import path from "node:path";
 import test from "node:test";
 
@@ -13,7 +14,7 @@ import { hungryService } from "@/lib/services/mock/mockService";
 import { readHomeSource } from "@/test/sourceContracts";
 
 const root = process.cwd();
-const read = (file: string) => readFileSync(path.join(root, file), "utf8");
+const read = (file: string) => withEnglishCopy(readFileSync(path.join(root, file), "utf8"));
 
 test("M5: the feed pages by the service's cursor, so a dropped review is not the end", async () => {
   const feed = read("src/app/screens/review/ReviewFeedScreen.tsx");

@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { withEnglishCopy } from "@/test/englishCopy";
 import path from "node:path";
 import test from "node:test";
 
 const root = process.cwd();
 
 function read(relativePath: string): string {
-  return readFileSync(path.join(root, relativePath), "utf8");
+  return withEnglishCopy(readFileSync(path.join(root, relativePath), "utf8"));
 }
 
 test("Release 0.1 bottom navigation gates social, post, and review actions", () => {

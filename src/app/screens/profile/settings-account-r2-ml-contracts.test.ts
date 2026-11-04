@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
+import { withEnglishCopy } from "@/test/englishCopy";
 import path from "node:path";
 import test from "node:test";
 
@@ -17,7 +18,7 @@ import {
 import { hungryService } from "@/lib/services/mock/mockService";
 
 function read(relativePath: string): string {
-  return readFileSync(path.join(process.cwd(), relativePath), "utf8");
+  return withEnglishCopy(readFileSync(path.join(process.cwd(), relativePath), "utf8"));
 }
 
 const settings = () => read("src/app/screens/profile/SettingsScreen.tsx");

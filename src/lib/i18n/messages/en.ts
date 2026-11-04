@@ -1,0 +1,45 @@
+/** English is the source of truth: every other language is checked against these keys. */
+export const en = {
+  "tab.home": "Home",
+  "tab.feed": "Feed",
+  "tab.post": "Post",
+  "tab.reviews": "Reviews",
+  "tab.profile": "Profile",
+  "tab.menu": "Menu",
+  "tab.performance": "Performance",
+
+  "settings.title": "Settings",
+  "settings.section.taste": "Your taste",
+  "settings.section.privacy": "Privacy & data",
+  "settings.section.account": "Account & security",
+  "settings.section.phone": "On this phone",
+  "settings.section.help": "Help & legal",
+
+  "settings.row.dietary": "Dietary preferences",
+  "settings.row.flavour": "Flavour profile",
+  "settings.row.budget": "Meal budget",
+  "settings.row.tryingNew": "Trying new food",
+  "settings.row.analytics": "Share usage analytics",
+  "settings.row.downloadData": "Download my data",
+  "settings.row.clearCache": "Clear local cache",
+  "settings.row.changePassword": "Change password",
+  "settings.row.signOutAll": "Sign out of all devices",
+  "settings.row.deleteAccount": "Delete account",
+  "settings.row.haptics": "Haptic feedback",
+  "settings.row.leftHanded": "Left-handed mode",
+  "settings.row.leftHandedHint": "Moves the add button on your merchant menu to the left side.",
+  "settings.row.feedback": "Send feedback",
+  "settings.row.contact": "Contact us",
+  "settings.row.privacyPolicy": "Privacy policy",
+  "settings.row.terms": "Terms of service",
+  "settings.row.version": "Version",
+  "settings.row.signOut": "Sign out",
+
+  "settings.language.label": "Language",
+  "settings.language.title": "Language",
+  "settings.language.message": "Dish and stall names stay as they are.",
+  "settings.language.system": "Phone language",
+  "settings.language.systemHint": "Follow the language set on this phone.",
+} as const;
+
+export type MessageKey = keyof typeof en;

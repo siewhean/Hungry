@@ -17,6 +17,7 @@ import { prefetchMerchantTab, preloadRoute } from "@/features/navigation/prefetc
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { useTranslation } from "@/lib/i18n/useTranslation";
 import { useHungryTheme } from "@/theme";
 import { getActiveOutlet, useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -369,6 +370,7 @@ type MerchantTabConfig = {
 function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const account = useMerchantStore((storeState) => storeState.account);
   const activeOutlet = useMerchantStore(getActiveOutlet);
 
@@ -420,22 +422,22 @@ function MerchantTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           route.name === "Dashboard"
             ? {
                 icon: LayoutDashboard,
-                label: "Home",
+                label: t("tab.home"),
                 symbol: "house",
                 focusedSymbol: "house.fill",
               }
             : route.name === "Menu"
-              ? { icon: UtensilsCrossed, label: "Menu", symbol: "fork.knife" }
+              ? { icon: UtensilsCrossed, label: t("tab.menu"), symbol: "fork.knife" }
               : route.name === "Analytics"
                 ? {
                     icon: BarChart3,
-                    label: "Performance",
+                    label: t("tab.performance"),
                     symbol: "chart.bar",
                     focusedSymbol: "chart.bar.fill",
                   }
                 : {
                     icon: Store,
-                    label: "Profile",
+                    label: t("tab.profile"),
                     symbol: "storefront",
                     focusedSymbol: "storefront.fill",
                   };

@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { withEnglishCopy } from "@/test/englishCopy";
 import { test } from "node:test";
 
-const read = (path: string) => readFileSync(path, "utf8");
+const read = (path: string) => withEnglishCopy(readFileSync(path, "utf8"));
 
 test("Achievements uses real passport progress in the Stitch layout", () => {
   const screen = read("src/app/screens/profile/PassportScreen.tsx");
