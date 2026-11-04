@@ -74,3 +74,27 @@ test("the down migration restores the previous hook body and removes the new tri
   assert.doesNotMatch(down, /^\s*(begin|commit);/im);
   assert.doesNotMatch(up, /^\s*(begin|commit);/im);
 });
+
+test("the profile email follows the token and direct waitlist inserts are capped", () => {
+  assert.match(
+    up,
+    /create trigger trg_user_profiles_email_from_auth\s+before insert or update of email on public\.user_profiles/,
+  );
+  assert.match(up, /->> 'email'/);
+  assert.match(up, /new\.email := coalesce\(v_email, old\.email\);/);
+  assert.match(up, /\('website_waitlist_entries', 5, 5,/);
+  assert.match(
+    down,
+    /drop trigger if exists trg_user_profiles_email_from_auth on public\.user_profiles;/,
+  );
+  assert.match(down, /insert into rollback_archive\.request_rate_rules_20261104/);
+});
+
+test("the website's production script policy has no unsafe-eval", () => {
+  const config = readRepoFile("marketing/website/web-v2/next.config.ts");
+  assert.match(
+    config,
+    /`script-src 'self' 'unsafe-inline'\$\{process\.env\.NODE_ENV === "development" \? " 'unsafe-eval'" : ""\}`/,
+  );
+  assert.doesNotMatch(config, /"script-src 'self' 'unsafe-inline' 'unsafe-eval'"/);
+});

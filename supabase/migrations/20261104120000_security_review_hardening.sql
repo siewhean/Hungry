@@ -1,5 +1,5 @@
 -- smoke: supabase/smoke/security_review_hardening.sql
--- Security review fixes (2026-11-04). Four changes, each one closes a write the app never makes
+-- Security review fixes (2026-11-04). Each change closes a write the app never makes
 -- but anyone holding the public app key could:
 --
 -- 1. PostGIS's own tables (spatial_ref_sys, geometry_columns, geography_columns) live in public
@@ -17,6 +17,9 @@
 --    <project URL>/storage/v1/object/public/avatars/<user id>/<file name>. The project URL comes
 --    from the iss claim of the caller's token. Clearing the photo and keeping the current one
 --    always work. Service role and database jobs are not checked.
+-- 3b. user_profiles.email could be set to any address by its owner. For app callers it now
+--     follows the email claim of the caller's token.
+-- 3c. website_waitlist_entries (anon insert) gets a 5 per minute cap per caller.
 -- 4. promote_staging_to_production and set_post_moderation_state (ops tools, run from the
 --    database) were executable by anon and authenticated. Nothing in the app, website or Edge
 --    Functions calls them. Execute is now service_role only.
@@ -239,6 +242,54 @@ create trigger trg_user_profiles_check_avatar_url
   before insert or update of avatar_url on public.user_profiles
   for each row
   execute function app_private.user_profiles_check_avatar_url();
+
+-- 3b. Profile email: the sign-in address, never a typed one. The app copies the auth email in at
+--     sign-in; for app callers the stored value is now taken from the token's email claim (or
+--     kept as it was when the token has none), so nobody can show another person's address.
+create or replace function app_private.user_profiles_email_from_auth()
+returns trigger
+language plpgsql
+security invoker
+set search_path = pg_catalog
+as $$
+declare
+  v_email text;
+begin
+  if current_user not in ('anon', 'authenticated') then
+    return new;
+  end if;
+
+  begin
+    v_email := nullif(btrim(nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'email'), '');
+  exception when others then
+    v_email := null;
+  end;
+
+  if tg_op = 'UPDATE' then
+    new.email := coalesce(v_email, old.email);
+  else
+    new.email := coalesce(
+      v_email,
+      (select up.email from public.user_profiles up where up.id = new.id)
+    );
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function app_private.user_profiles_email_from_auth() from public, anon, authenticated;
+
+drop trigger if exists trg_user_profiles_email_from_auth on public.user_profiles;
+create trigger trg_user_profiles_email_from_auth
+  before insert or update of email on public.user_profiles
+  for each row
+  execute function app_private.user_profiles_email_from_auth();
+
+-- 3c. Website waitlist: direct API inserts get their own small cap (the website itself writes
+--     with the service role, which is never limited).
+insert into app_private.request_rate_rules (route, anon_per_minute, user_per_minute, note) values
+  ('website_waitlist_entries', 5, 5, 'website waitlist sign-ups sent straight to the API')
+on conflict (route) do nothing;
 
 -- 4. Ops-only functions: service role only.
 revoke execute on function public.promote_staging_to_production(uuid) from public, anon, authenticated;

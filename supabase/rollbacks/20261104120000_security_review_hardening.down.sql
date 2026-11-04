@@ -1,7 +1,7 @@
 -- Undo 20261104120000_security_review_hardening: puts the request hook back to its
--- 20261022120000 body (no PostGIS write block), drops the review and avatar triggers and their
--- functions, and gives anon and authenticated back execute on the two ops functions, as they
--- had it before. No table or row is touched.
+-- 20261022120000 body (no PostGIS write block), drops the review, avatar and email triggers and
+-- their functions, removes the waitlist rate rule (copied to rollback_archive first), and gives
+-- anon and authenticated back execute on the two ops functions, as they had it before.
 
 create or replace function app_private.check_request_rate()
 returns void
@@ -113,6 +113,17 @@ drop function if exists app_private.reviews_reset_server_fields();
 
 drop trigger if exists trg_user_profiles_check_avatar_url on public.user_profiles;
 drop function if exists app_private.user_profiles_check_avatar_url();
+
+drop trigger if exists trg_user_profiles_email_from_auth on public.user_profiles;
+drop function if exists app_private.user_profiles_email_from_auth();
+
+create schema if not exists rollback_archive;
+create table if not exists rollback_archive.request_rate_rules_20261104
+  (like app_private.request_rate_rules including all);
+insert into rollback_archive.request_rate_rules_20261104
+select * from app_private.request_rate_rules where route = 'website_waitlist_entries'
+on conflict (route) do nothing;
+delete from app_private.request_rate_rules where route = 'website_waitlist_entries';
 
 grant execute on function public.promote_staging_to_production(uuid) to public, anon, authenticated;
 grant execute on function public.set_post_moderation_state(uuid, text, text, uuid, jsonb) to anon, authenticated;

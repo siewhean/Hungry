@@ -5,7 +5,9 @@
 --    back-dated time; a service-role insert keeps what it sets.
 -- 3. A profile photo address must be this project's avatars bucket, in the caller's own folder;
 --    clearing it, keeping it and service-role writes still work.
--- 4. anon and authenticated can no longer run the two ops functions.
+--    The profile email follows the token's email claim, not what the client sends.
+-- 4. anon and authenticated can no longer run the two ops functions, and direct waitlist
+--    inserts have their own rate rule.
 -- Runs in a transaction and rolls back.
 --   author: 00000000-0000-0411-b000-000000000001
 --   other:  00000000-0000-0411-b000-000000000002
@@ -88,7 +90,7 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-0411-b000-000000000001', true);
 select set_config(
   'request.jwt.claims',
-  '{"role":"authenticated","sub":"00000000-0000-0411-b000-000000000001","iss":"https://smoke-ref.supabase.co/auth/v1"}',
+  '{"role":"authenticated","sub":"00000000-0000-0411-b000-000000000001","email":"security-smoke-1@example.test","iss":"https://smoke-ref.supabase.co/auth/v1"}',
   true
 );
 set local role authenticated;
@@ -197,6 +199,14 @@ begin
   if pg_temp.set_avatar(null) <> 'ok' or pg_temp.set_avatar('') <> 'ok' then
     raise exception 'removing the photo must work';
   end if;
+
+  -- A typed email is replaced by the sign-in address from the token.
+  update user_profiles set email = 'someone-else@example.test'
+  where id = '00000000-0000-0411-b000-000000000001';
+  if (select email from user_profiles where id = '00000000-0000-0411-b000-000000000001')
+    is distinct from 'security-smoke-1@example.test' then
+    raise exception 'the profile email must follow the token, not the client';
+  end if;
 end;
 $$;
 
@@ -223,7 +233,19 @@ select set_config(
 );
 update user_profiles set avatar_url = 'https://cdn.example/imported.jpg', bio = 'Still here'
 where id = '00000000-0000-0411-b000-000000000002';
+-- With no email claim, a typed email does not replace the stored one.
+update user_profiles set email = 'someone-else@example.test'
+where id = '00000000-0000-0411-b000-000000000002';
 reset role;
+
+do $$
+begin
+  if (select email from user_profiles where id = '00000000-0000-0411-b000-000000000002')
+    is not distinct from 'someone-else@example.test' then
+    raise exception 'without an email claim the stored profile email must be kept';
+  end if;
+end;
+$$;
 
 -- 4. Ops functions.
 do $$
@@ -238,6 +260,12 @@ begin
   end if;
   if not has_function_privilege('service_role', 'public.promote_staging_to_production(uuid)', 'execute') then
     raise exception 'service_role must keep promote_staging_to_production';
+  end if;
+  if not exists (
+    select 1 from app_private.request_rate_rules
+    where route = 'website_waitlist_entries' and anon_per_minute <= 10
+  ) then
+    raise exception 'direct waitlist inserts need their own rate rule';
   end if;
 end;
 $$;
