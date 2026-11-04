@@ -128,10 +128,10 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
                   borderRadius: radii.pill,
                   borderStyle: "dashed",
                   borderWidth: 1.5,
-                  height: 56,
+                  height: 60,
                   justifyContent: "center",
                   opacity: 0.45,
-                  width: 56,
+                  width: 60,
                 }}
               >
                 <Stamp size={20} color={palette.passportInk} />

@@ -760,6 +760,8 @@ test("HeritageStampTile shows the detail when earned and Locked otherwise", asyn
       detail: "3 tried",
       earned: true,
       width: 110,
+      categoryId: "cuisine-hawker",
+      level: 1,
     }),
   );
   assert.match(earned.text(), /3 tried/);
@@ -771,6 +773,8 @@ test("HeritageStampTile shows the detail when earned and Locked otherwise", asyn
       detail: "0 tried",
       earned: false,
       width: 110,
+      categoryId: "hood-bugis",
+      level: 0,
     }),
   );
   assert.match(locked.text(), /Locked/);

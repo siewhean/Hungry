@@ -82,8 +82,9 @@ test("achievements stalls count and visited stalls list share one source", () =>
 
   assert.match(hook, /interaction\.isTried/);
   assert.match(input, /interaction\.isTried/);
-  assert.match(passport, /screen: "VisitedStalls"/);
-  assert.match(visited, /useVisitedStallIds\(\)/);
+  assert.match(passport, /setStallTab\("visited"\)/);
+  assert.match(passport, /navigate\("Favourites", \{ section: "stalls" \}\)/);
+  assert.match(visited, /useVisitedStalls\(\)/);
   assert.match(visited, /title="Visited stalls"/);
   assert.doesNotMatch(visited, /Visited stores/);
 });

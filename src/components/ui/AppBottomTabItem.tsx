@@ -6,6 +6,7 @@ import type { LucideProps } from "lucide-react-native";
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 import { AppSymbol } from "./AppSymbol";
+import { ProgressRing } from "./ProgressRing";
 import { AppText } from "./AppText";
 
 interface AppBottomTabItemProps {
@@ -21,6 +22,8 @@ interface AppBottomTabItemProps {
   onPress: () => void;
   onPressIn?: () => void;
   accessibilityLabel?: string;
+  /** 0 to 1: draws a thin progress ring around the icon (the next stamp). Hidden at 0 or less. */
+  ringFraction?: number;
 }
 
 export function AppBottomTabItem({
@@ -35,6 +38,7 @@ export function AppBottomTabItem({
   onPress,
   onPressIn,
   accessibilityLabel,
+  ringFraction,
 }: AppBottomTabItemProps) {
   const { componentSizes, fontScaling, palette, spacing } = useHungryTheme();
   // orangeText keeps the small active label above 4.5:1 (brand orange is 3.69:1 on white).
@@ -68,6 +72,16 @@ export function AppBottomTabItem({
           width: componentSizes.bottomTabIconSlotWidth,
         }}
       >
+        {ringFraction !== undefined && ringFraction > 0 ? (
+          <View pointerEvents="none" style={{ position: "absolute" }}>
+            <ProgressRing
+              decorative
+              fraction={ringFraction}
+              size={8 + componentSizes.bottomTabIcon}
+              strokeWidth={2.5}
+            />
+          </View>
+        ) : null}
         {/* The write button is an ordinary tab glyph: same size, slot and colours as the rest. */}
         {symbol ? (
           <AppSymbol
