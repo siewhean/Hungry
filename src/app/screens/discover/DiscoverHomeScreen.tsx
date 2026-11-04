@@ -47,10 +47,9 @@ import {
   RailScrollView,
   Screen,
   Skeleton,
-  SkeletonText,
   SlideText,
 } from "@/components/ui";
-import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
+import { SavedViewSwitch } from "@/components/saved/SavedViewSwitch";
 import { ForYouCard } from "@/components/discover/ForYouCard";
 import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
@@ -1859,7 +1858,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             </Pressable>
             {/* Every signed-in diner can switch Discover to the map (when the map ships). */}
             {FEATURE_FLAGS.mapEnabled ? (
-              <DiscoverViewToggle
+              <SavedViewSwitch
+                accessibilityLabel="Show Home as a list or on a map"
                 value="list"
                 onPressInMap={() => preloadRoute(navigation, "DiscoverMap")}
                 onChange={() => navigation.navigate("DiscoverMap")}
@@ -1897,7 +1897,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             needsDiscoverAreaChoice ? null : isFeedFallbackEmpty ||
               discoverAreaCountLabel === null ? (
               isSupabaseDiscoveryFeedLoading ? (
-                <SkeletonText variant="micro" width={150} />
+                <View style={{ alignItems: "baseline", flexDirection: "row" }}>
+                  {/* A dash while the count loads; the number then rolls in. No grey placeholder. */}
+                  <SlideText
+                    value="–"
+                    variant="micro"
+                    style={{ color: themeTints.secondaryText }}
+                  />
+                  <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                    {` stalls ${discoverAreaName ? "in this area" : "near you"}`}
+                  </AppText>
+                </View>
               ) : null
             ) : discoverAreaCountLabel !== "0" ? (
               <View style={{ alignItems: "baseline", flexDirection: "row" }}>
@@ -2079,7 +2089,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 minHeight: 56,
                 opacity: pressed ? 0.92 : 1,
                 overflow: "hidden",
-                flex: 1,
+                width: decisionCardWidth,
               },
             ]}
           >
@@ -2126,37 +2136,68 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               </AppText>
             </View>
           </Pressable>
+
+          {/* WheelStack is registered only when the wheel ships; party mode is non-production. */}
+          {FEATURE_FLAGS.hungryWheelEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={wheelCtaLabel}
+              accessibilityHint={
+                FEATURE_FLAGS.wheelPartyEnabled
+                  ? "Opens the Hungry Wheel to spin together with your group"
+                  : "Opens the Hungry Wheel to pick between a few options"
+              }
+              onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
+              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+              style={({ pressed }) => [
+                {
+                  alignItems: "center",
+                  backgroundColor: "transparent",
+                  borderColor: palette.border,
+                  borderRadius: componentRadii.button,
+                  borderWidth: 1,
+                  flexDirection: "row",
+                  gap: decisionCardInnerGap,
+                  minHeight: 56,
+                  justifyContent: "center",
+                  opacity: pressed ? 0.92 : 1,
+                  padding: decisionCardPadding,
+                  width: decisionCardWidth,
+                },
+              ]}
+            >
+              <View
+                style={{
+                  alignItems: "center",
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.pill,
+                  height: decisionCardIconSize,
+                  justifyContent: "center",
+                  width: decisionCardIconSize,
+                }}
+              >
+                <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
+              </View>
+              <AppText
+                variant="bodyBold"
+                numberOfLines={2}
+                style={{
+                  color: themeTints.text,
+                  includeFontPadding: false,
+                  flexShrink: 1,
+                  fontSize: decisionCardLabelFontSize,
+                  lineHeight: decisionCardLabelLineHeight,
+                  maxWidth: decisionCardLabelMaxWidth,
+                  minWidth: 0,
+                  textAlign: "center",
+                  textAlignVertical: "center",
+                }}
+              >
+                {wheelCtaLabel}
+              </AppText>
+            </Pressable>
+          ) : null}
         </View>
-        {/* One "pick for me" on Home: Decide for me leads, the wheel is a quiet second way.
-            WheelStack is registered only when the wheel ships; party mode is non-production. */}
-        {FEATURE_FLAGS.hungryWheelEnabled ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={wheelCtaLabel}
-            accessibilityHint={
-              FEATURE_FLAGS.wheelPartyEnabled
-                ? "Opens the Hungry Wheel to spin together with your group"
-                : "Opens the Hungry Wheel to pick between a few options"
-            }
-            hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
-            onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-            onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              alignSelf: "center",
-              flexDirection: "row",
-              gap: spacing[1],
-              justifyContent: "center",
-              minHeight: 44,
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <Users color={themeTints.secondaryText} size={16} />
-            <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-              {FEATURE_FLAGS.wheelPartyEnabled ? "Or spin with friends" : "Or spin the wheel"}
-            </AppText>
-          </Pressable>
-        ) : null}
 
         {inMallMode && currentPlace ? (
           <>

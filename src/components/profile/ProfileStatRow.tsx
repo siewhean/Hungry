@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useWindowDimensions, View, type LayoutChangeEvent } from "react-native";
 
-import { AppText, PressableScale, Skeleton, SlideText } from "@/components/ui";
+import { AppText, PressableScale, SlideText } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 /** A stat whose read failed: a dash on screen, "unavailable" to a screen reader. */
@@ -71,11 +71,12 @@ function StatBlock({ stat, stacked }: { stat: ProfileStat; stacked: boolean }) {
 
   const content = (
     <>
-      {value === null ? (
-        <Skeleton width={spacing[6]} height={spacing[5]} borderRadius={4} />
-      ) : (
-        <SlideText value={String(value)} variant="h2" style={{ color: palette.text }} />
-      )}
+      {/* No grey placeholder while the count loads: a dash shows, then the number rolls in. */}
+      <SlideText
+        value={value === null ? "–" : String(value)}
+        variant="h2"
+        style={{ color: palette.text }}
+      />
       {/* One line that shrinks a little rather than breaking inside a word ("Follower / s"). */}
       <AppText
         variant="micro"

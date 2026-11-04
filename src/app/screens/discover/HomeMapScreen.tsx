@@ -63,7 +63,7 @@ import {
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import { getCatalogRawService, getHungryService } from "@/lib/services/serviceProvider";
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
-import { DiscoverViewToggle } from "@/components/discover/DiscoverViewToggle";
+import { SavedViewSwitch } from "@/components/saved/SavedViewSwitch";
 import { LocationGate } from "@/components/discover/LocationGate";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
@@ -1267,7 +1267,11 @@ export function HomeMapScreen() {
             />
           </Pressable>
 
-          <DiscoverViewToggle value="map" onChange={backToList} />
+          <SavedViewSwitch
+            accessibilityLabel="Show the map or go back to the list"
+            value="map"
+            onChange={backToList}
+          />
 
           <Pressable
             accessibilityRole="button"

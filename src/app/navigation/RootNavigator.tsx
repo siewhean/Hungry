@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
-import { AppText, FloatingToast } from "@/components/ui";
+import { AppText, FloatingToast, SwipeAwayView } from "@/components/ui";
 import { trackScreen } from "@/features/feedback/screenTracking";
 import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
@@ -417,8 +417,14 @@ function OfflineBanner() {
   const { palette, radii, shadows, spacing, zIndex } = useHungryTheme();
   const isOffline = useUIStore((state) => state.isOffline);
   const setOffline = useUIStore((state) => state.setOffline);
+  // Swiped away: stays hidden until the connection has come back and gone again.
+  const [dismissed, setDismissed] = useState(false);
+  const dismissBanner = useCallback(() => setDismissed(true), []);
+  useEffect(() => {
+    if (!isOffline) setDismissed(false);
+  }, [isOffline]);
 
-  if (!isOffline) {
+  if (!isOffline || dismissed) {
     return null;
   }
 
@@ -429,38 +435,40 @@ function OfflineBanner() {
 
   return (
     <View pointerEvents="box-none" style={[styles.offlineBannerWrap, { zIndex: zIndex.toast }]}>
-      <View
-        accessibilityLiveRegion="polite"
-        accessibilityRole="alert"
-        style={[
-          styles.offlineBanner,
-          {
-            ...shadows.floating,
-            backgroundColor: palette.navy,
-            borderRadius: radii.pill,
-            gap: spacing[2],
-            marginHorizontal: spacing[4],
-            marginTop: insets.top + spacing[1],
-            paddingLeft: spacing[3],
-          },
-        ]}
-      >
-        <WifiOff color={palette.textOnDark} size={16} />
-        <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
-          {"You're offline. Saved content stays visible."}
-        </AppText>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Retry connection"
-          hitSlop={4}
-          onPress={() => void retryConnection()}
-          style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
+      <SwipeAwayView onDismiss={dismissBanner}>
+        <View
+          accessibilityLiveRegion="polite"
+          accessibilityRole="alert"
+          style={[
+            styles.offlineBanner,
+            {
+              ...shadows.floating,
+              backgroundColor: palette.navy,
+              borderRadius: radii.pill,
+              gap: spacing[2],
+              marginHorizontal: spacing[4],
+              marginTop: insets.top + spacing[1],
+              paddingLeft: spacing[3],
+            },
+          ]}
         >
-          <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
-            Retry
+          <WifiOff color={palette.textOnDark} size={16} />
+          <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
+            {"You're offline. Saved content stays visible."}
           </AppText>
-        </Pressable>
-      </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Retry connection"
+            hitSlop={4}
+            onPress={() => void retryConnection()}
+            style={{ justifyContent: "center", minHeight: 44, paddingHorizontal: spacing[3] }}
+          >
+            <AppText variant="bodySmallBold" style={{ color: palette.textOnDark }}>
+              Retry
+            </AppText>
+          </Pressable>
+        </View>
+      </SwipeAwayView>
     </View>
   );
 }

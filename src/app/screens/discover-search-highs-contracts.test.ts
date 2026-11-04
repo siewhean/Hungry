@@ -222,26 +222,26 @@ test("Home map recentres only when the chosen building changes", () => {
 test("Map is open to every diner from a List/Map toggle on Discover, guests included", () => {
   const discover = readHomeSource();
   const map = readRepoFile("src/app/screens/discover/HomeMapScreen.tsx");
-  const toggle = readRepoFile("src/components/discover/DiscoverViewToggle.tsx");
+  const toggle = readRepoFile("src/components/ui/SegmentedControl.tsx");
   const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
 
   // No merchant/dev-only gate on the Discover map entry.
   assert.match(
     discover,
-    /<DiscoverViewToggle\s+value="list"[\s\S]*?onChange=\{\(\) => navigation\.navigate\("DiscoverMap"\)\}/,
+    /<SavedViewSwitch[\s\S]*?value="list"[\s\S]*?onChange=\{\(\) => navigation\.navigate\("DiscoverMap"\)\}/,
   );
   assert.doesNotMatch(
     discover,
     /\{isUserMode \? null : \(\s*<View style=\{\{ marginTop: -spacing\[0\.5\] \}\}>/,
   );
-  assert.match(map, /<DiscoverViewToggle value="map" onChange=\{backToList\} \/>/);
+  assert.match(map, /<SavedViewSwitch[\s\S]*?value="map"[\s\S]*?onChange=\{backToList\}/);
   // List always returns to the Discover tab, even when the stack below the map is Home.
   const backToList =
     map.match(/const backToList = useCallback\([\s\S]*?\}, \[navigation\]\);/)?.[0] ?? "";
   assert.match(backToList, /navigation\.popTo\("MainTabs", \{ screen: "Discover" \}\)/);
   assert.doesNotMatch(backToList, /goBack\(\)/);
-  assert.match(toggle, /accessibilityRole="tab"/);
-  assert.match(toggle, /accessibilityState=\{\{ selected \}\}/);
+  assert.match(toggle, /accessibilityRole="radio"/);
+  assert.match(toggle, /accessibilityState=\{\{ checked: selected \}\}/);
 
   // DiscoverMap is not an auth-required route; guests see the map and its pins.
   const protectedRoutes = navigator.match(/const PROTECTED_ROOT_ROUTES[\s\S]*?\]\);/)?.[0] ?? "";

@@ -577,10 +577,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
   assert.match(
     discover,
-    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*<\/View>[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*"Or spin the wheel"/,
+    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*<\/View>[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*\{wheelCtaLabel\}/,
   );
-  // HOME-X8 / HOME-26: the wheel link needs its route, and says "with friends" only when
-  // party mode ships. Audit 2026-11-04: Decide for me leads; the wheel is a quiet second way.
+  // HOME-X8 / HOME-26: the wheel button needs its route, and says "with friends" only when
+  // party mode ships. Decide for me and the wheel sit side by side (sh, 2026-11-04 16:07Z).
   assert.match(discover, /\{FEATURE_FLAGS\.hungryWheelEnabled \? \(\s*<Pressable/);
   assert.match(
     discover,
@@ -642,10 +642,11 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*rpcCount: supabaseDiscoverAreaCount,[\s\S]*: String\(areaVenues\.length\)/,
   );
-  // The count line shows a skeleton only while the feed loads, and hides on failure.
+  // The count line shows a dash that the number rolls in from while the feed loads (no skeleton),
+  // and hides on failure.
   assert.match(
     discover,
-    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<SkeletonText variant="micro" width=\{150\} \/>\s*\) : null/,
+    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<SlideText\s+value="–"[\s\S]*?\) : null/,
   );
   assert.match(
     discover,

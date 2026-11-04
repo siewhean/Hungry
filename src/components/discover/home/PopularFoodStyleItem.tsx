@@ -24,6 +24,7 @@ function FoodStyleButton({
   imageSource,
   label,
   isFavourite,
+  showPinHint,
   onPressIn,
   onPress,
   onLongPress,
@@ -31,6 +32,7 @@ function FoodStyleButton({
   imageSource: ImageSourcePropType;
   label: string;
   isFavourite: boolean;
+  showPinHint: boolean;
   onPressIn?: () => void;
   onPress: () => void;
   onLongPress?: () => void;
@@ -125,6 +127,26 @@ function FoodStyleButton({
           >
             <AppSymbol name="rating" size={14} color={palette.starFill} />
           </View>
+        ) : showPinHint ? (
+          // Edit mode: a greyed-out star on every dish that is not a favourite yet.
+          <View
+            testID="favourite-star-empty"
+            style={{
+              position: "absolute",
+              top: -2,
+              right: -2,
+              width: 24,
+              height: 24,
+              borderRadius: radii.pill,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: palette.surfaceRaised,
+              borderWidth: 1,
+              borderColor: palette.border,
+            }}
+          >
+            <AppSymbol name="ratingEmpty" size={14} color={palette.textMuted} />
+          </View>
         ) : null}
       </View>
       <AppText
@@ -151,6 +173,7 @@ const MemoFoodStyleButton = memo(FoodStyleButton);
 export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
   item,
   isFavourite = false,
+  showPinHint = false,
   onPress,
   onPrefetch,
   onToggleFavourite,
@@ -158,6 +181,8 @@ export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
   item: PopularFoodStyleItemData;
   /** Pinned to Home: the label says so for screen readers. */
   isFavourite?: boolean;
+  /** While editing favourites: a greyed-out star on the dishes that are not pinned. */
+  showPinHint?: boolean;
   onPress: (item: PopularFoodStyleItemData) => void;
   onPrefetch: (item: PopularFoodStyleItemData) => void;
   /** Holding the tile pins it to the front of Popular dishes, or unpins it. */
@@ -180,6 +205,7 @@ export const PopularFoodStyleItem = memo(function PopularFoodStyleItem({
       imageSource={item.imageSource}
       label={item.label}
       isFavourite={isFavourite}
+      showPinHint={showPinHint}
       onPressIn={handlePressIn}
       onPress={handlePress}
       onLongPress={onToggleFavourite ? handleLongPress : undefined}

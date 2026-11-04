@@ -164,6 +164,14 @@ export function FavouritesScreen({ navigation, route }: Props) {
     });
   }, [search.query, search.results, search.status]);
 
+  // List / Map at the top right (where Home has it), for Dishes and Stalls once there is
+  // something to put on a map, and not while a search is showing.
+  const showMapSwitch =
+    isLiveMapAvailable() &&
+    !searching &&
+    ((activeSection === "dishes" && searchableDishes.length > 0) ||
+      (activeSection === "stalls" && savedStalls.stalls.length > 0));
+
   const chooseSection = (next: SavedSection) => {
     if (next === activeSection) return;
     setSection(next);
@@ -192,6 +200,15 @@ export function FavouritesScreen({ navigation, route }: Props) {
   return (
     <ProfileScreenShell
       title="Saved"
+      headerRight={
+        showMapSwitch ? (
+          <SavedViewSwitch
+            accessibilityLabel={`Show saved ${activeSection === "stalls" ? "stalls" : "dishes"} as a list or on a map`}
+            value={mode}
+            onChange={setMode}
+          />
+        ) : undefined
+      }
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
     >
       <SavedSearchBox value={query} onChangeText={setQuery} />
@@ -528,10 +545,11 @@ function SavedStallsList({
     [mapped],
   );
 
-  const chooseMode = (next: "list" | "map") => {
-    if (next === mode) return;
-    setMode(next);
-    if (next === "map") {
+  // The List / Map switch lives in the page header; the map opening is counted here, where the
+  // pins are known. Only a change while this section is open counts, not arriving on a Map choice.
+  const previousMode = useRef(mode);
+  useEffect(() => {
+    if (previousMode.current !== "map" && mode === "map") {
       trackAnalyticsEvent("saved_map_opened", {
         section: "stalls",
         pin_count: pins.length,
@@ -539,7 +557,10 @@ function SavedStallsList({
         has_location: origin !== undefined,
       });
     }
-  };
+    previousMode.current = mode;
+    // Counts are read at the moment the map opens, not re-sent when they change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const renderRow = (venue: VenueSummary, source: "list" | "map") => (
     <SavedStallRow
@@ -595,15 +616,6 @@ function SavedStallsList({
 
   return (
     <View style={{ gap: spacing[3] }}>
-      {mapAvailable ? (
-        <View style={{ alignSelf: "flex-start" }}>
-          <SavedViewSwitch
-            accessibilityLabel="Show saved stalls as a list or on a map"
-            value={mode}
-            onChange={chooseMode}
-          />
-        </View>
-      ) : null}
       {mode === "map" ? (
         <SavedMapView
           pins={pins}
