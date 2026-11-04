@@ -79,6 +79,8 @@ assertContains("src/proxy.ts", 'matcher: ["/((?!_next/static|_next/image|favicon
 assertContains("src/proxy.ts", "hungry_merchant_access_token", "Merchant page proxy cookie contract failed");
 assertContains("src/proxy.ts", "validateConsoleBasicAuth", "Console page proxy basic-auth contract failed");
 assertContains("src/proxy.ts", "consoleBasicAuthChallengeHeader", "Console page proxy challenge contract failed");
+assertContains("src/proxy.ts", "consoleLoginRetryAfterSeconds", "Console login brute-force throttle contract failed");
+assertContains("src/proxy.ts", "recordConsoleLoginFailure", "Console login failure counting contract failed");
 assertContains("src/proxy.ts", 'pathname.startsWith("/api/console")', "Console API proxy basic-auth contract failed");
 assertNotContains("src/proxy.ts", "NODE_ENV !== \"production\"", "Console must not have a dev bypass");
 assertNotContains("src/proxy.ts", "HUNGRY_ALLOW_UNPROTECTED_CONSOLE_API", "Console must not have an unprotected bypass");

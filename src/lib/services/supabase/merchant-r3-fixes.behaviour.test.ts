@@ -71,6 +71,31 @@ test("MERCH-23: inbox pages use a (created_at, id) keyset so rows sharing a time
   assert.deepEqual(ops.find(([op]) => op === "is")?.[1], ["merchant_reply_text", null]);
 });
 
+test("security review A1: a crafted inbox cursor is refused before it reaches the filter", async () => {
+  fake.tables.reviews = () => ({ data: [], error: null });
+  for (const cursor of [
+    { before: '2026-10-01T10:00:00Z",venue_id.neq."x', beforeId: "review-50" },
+    { before: "2026-10-01T10:00:00Z", beforeId: 'review-50"),or(id.gt."0' },
+    { before: "not a date", beforeId: "review-50" },
+    { before: "2026-10-01T10:00:00Z,venue_id.neq.x" },
+  ]) {
+    await assert.rejects(
+      service.merchant.getInbox(OUTLET, { type: "review", ...cursor }),
+      /Invalid page cursor/,
+    );
+  }
+  assert.equal(
+    fake.queriesOn("reviews").filter((q) => q.ops.some(([op]) => op === "or")).length,
+    0,
+  );
+  // A server timestamp with microseconds and an offset is accepted.
+  await service.merchant.getInbox(OUTLET, {
+    type: "review",
+    before: "2026-10-01T10:00:00.123456+00:00",
+    beforeId: "6f1c2a90-1b2c-4d5e-8f90-0123456789ab",
+  });
+});
+
 test("MERCH-23: Featured visitor candidates page on the same keyset", async () => {
   fake.tables.reviews = () => ({ data: [], error: null });
   fake.tables.popular_visitor_pins = () => ({ data: [], error: null });

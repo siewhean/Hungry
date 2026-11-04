@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { clientIpFromHeaders } from "./clientIp";
+
 type RateLimitOptions = {
   key: string;
   limit: number;
@@ -21,26 +23,8 @@ const RATE_LIMIT_REDIS_TOKEN =
   process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ||
   "";
 
-// Basic IPv4 and IPv6 pattern — rejects crafted keys like "scope:attacker"
-const SAFE_IP_RE = /^[0-9a-fA-F:.]{2,45}$/;
-
-function sanitizeIp(raw: string | null | undefined): string {
-  if (!raw) return "unknown";
-  const first = raw.split(",")[0]?.trim() ?? "";
-  return SAFE_IP_RE.test(first) ? first : "unknown";
-}
-
-function getClientIp(request: NextRequest) {
-  return (
-    sanitizeIp(request.headers.get("x-forwarded-for")) ||
-    sanitizeIp(request.headers.get("x-real-ip")) ||
-    "unknown"
-  );
-}
-
-
 export function clientRequestKey(request: NextRequest, scope: string) {
-  return `${scope}:${getClientIp(request)}`;
+  return `${scope}:${clientIpFromHeaders(request.headers)}`;
 }
 
 export function jsonError(message: string, status: number) {

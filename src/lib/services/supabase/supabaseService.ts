@@ -3131,11 +3131,21 @@ export function buildVerificationSubmitPayload(outletId: string, method: string,
  * Keyset page on (created_at, id) for the merchant review lists. A plain `created_at < before`
  * skipped every row that shared the boundary timestamp with the last row of the previous page.
  */
+const MERCHANT_KEYSET_TIME_PATTERN =
+  /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?(Z|[+-]\d{2}(:?\d{2})?)?$/;
+const MERCHANT_KEYSET_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+
 function applyMerchantReviewKeyset<
   Q extends { lt(column: string, value: string): Q; or(filter: string): Q },
 >(query: Q, before: string | undefined, beforeId: string | undefined): Q {
   if (!before) return query;
+  // The cursor is written into a PostgREST filter string, so only a timestamp and a plain id
+  // may go in: a quote, comma or bracket could change the filter.
+  if (!MERCHANT_KEYSET_TIME_PATTERN.test(before) || Number.isNaN(Date.parse(before))) {
+    throw new Error("Invalid page cursor.");
+  }
   if (!beforeId) return query.lt("created_at", before);
+  if (!MERCHANT_KEYSET_ID_PATTERN.test(beforeId)) throw new Error("Invalid page cursor.");
   return query.or(`created_at.lt."${before}",and(created_at.eq."${before}",id.lt."${beforeId}")`);
 }
 
