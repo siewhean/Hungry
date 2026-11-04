@@ -103,6 +103,18 @@ test("menu tiles and rows are buttons that open their own dish", async () => {
   assert.deepEqual(opened, ["card:dish-9", "row:dish-9"]);
 });
 
+test("a dish close to the diner's palate says Likely a match, out loud too", async () => {
+  const dish = dishOf({ id: "dish-3", name: "Laksa" });
+  const row = await render(
+    createElement(StallMenuDishRow, { dish, onPress: () => undefined, likelyMatch: true }),
+  );
+  assert.match(row.text(), /LIKELY A MATCH/);
+  assert.ok(row.findByLabel(/likely a match for your taste/));
+  await cleanup();
+  const plain = await render(createElement(StallMenuDishRow, { dish, onPress: () => undefined }));
+  assert.doesNotMatch(plain.text(), /LIKELY A MATCH/);
+});
+
 test("StallVisitedSheet offers dishes, writes a review without one, and skips", async () => {
   const events: string[] = [];
   const handlers = {

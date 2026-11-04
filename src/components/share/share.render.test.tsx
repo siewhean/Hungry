@@ -211,7 +211,9 @@ test("a dish shared without a review gets a picture card with no stars or rating
   assert.equal(dishCard.venueName, "Laksa Stall");
   const model = buildReviewCardModel(dishCard);
   assert.equal(model.verdict, "On my list");
-  const chit = await render(createElement(ReviewShareCard, { model, template: "chit", size: "post" }));
+  const chit = await render(
+    createElement(ReviewShareCard, { model, template: "chit", size: "post" }),
+  );
   assert.match(chit.text(), /Not yet/);
   assert.doesNotMatch(chit.text(), /\/ 5/);
   assert.ok(chit.findByLabel("Order chit card: Katong Laksa at Laksa Stall"));

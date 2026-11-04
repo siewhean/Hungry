@@ -262,7 +262,9 @@ export function PassportScreen({ navigation }: Props) {
 
   const nextStampSection = nextStamp ? (
     <View style={{ gap: spacing[2] }} testID="passport-next-stamp">
-      <AppText variant="h3">{earnedStamps.length === 0 ? "Your first stamp" : "Next stamp"}</AppText>
+      <AppText variant="h3">
+        {earnedStamps.length === 0 ? "Your first stamp" : "Next stamp"}
+      </AppText>
       <PassportStampCard
         category={nextStamp.category}
         nextStamp={nextStamp}

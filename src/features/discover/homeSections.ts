@@ -401,9 +401,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
 
   // 4. This hour: only stalls that are open now, the foods people reach for at this time first.
   const meal = dinerMealAt(options.hour, options.mealTimes);
-  const wanted = new Set<HomeCategoryId>(
-    timeOfDayPriority(meal ? MEAL_HOUR[meal] : options.hour),
-  );
+  const wanted = new Set<HomeCategoryId>(timeOfDayPriority(meal ? MEAL_HOUR[meal] : options.hour));
   const isOpen = options.isOpenNow ?? (() => true);
   add({
     id: "hour",

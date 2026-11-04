@@ -56,7 +56,10 @@ test("welcome back: only after more than a week away, behind welcome_back_v2", (
   assert.match(card, /!hasSavedDishes && !followsAStall && !canPickArea\) return null/);
   assert.match(card, /See what's good in \$\{usualArea\.name\}/);
   const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
-  assert.match(discover, /onPickArea=\{\(area\) => setManualSelection\(area\.name, area\.coordinate\)\}/);
+  assert.match(
+    discover,
+    /onPickArea=\{\(area\) => setManualSelection\(area\.name, area\.coordinate\)\}/,
+  );
   const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(home, /<WelcomeBackCard[\s\S]*?<WeeklyPicksRail/);
   const service = read("src/lib/services/supabase/supabaseService.ts");

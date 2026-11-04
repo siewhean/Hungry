@@ -479,6 +479,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     enabled: isFocused && hasTasteProfile && discoverBiteCollections.quickBites.length >= 6,
   });
   const rankByTaste = tasteRankVariant === "taste" && hasTasteProfile;
+  const distanceDecayVariant = useExperimentVariant("home_distance_decay_v1", {
+    enabled: isFocused && rankByTaste,
+  });
+  const distanceDecay = rankByTaste && distanceDecayVariant === "decay";
   // A chip filters the whole nearby pool first; only then do the cards get cut to the rail size.
   const quickBitePool = useMemo(
     () =>
@@ -517,11 +521,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             preferBuildingId: currentPlaceId,
             likedDishes,
             openness: rankingOpenness,
+            distanceDecay,
           })
         : { bites: quickBitePool, reasons: NO_BITE_REASONS },
     [
       currentPlaceId,
       discoverDishById,
+      distanceDecay,
       likedDishes,
       quickBitePool,
       rankByTaste,
@@ -2120,7 +2126,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               </AppText>
             </View>
           </Pressable>
-
         </View>
         {/* One "pick for me" on Home: Decide for me leads, the wheel is a quiet second way.
             WheelStack is registered only when the wheel ships; party mode is non-production. */}

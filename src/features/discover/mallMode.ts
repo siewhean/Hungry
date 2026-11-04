@@ -11,7 +11,12 @@ import {
   isUnprovenDish,
   reserveFreshSlots,
 } from "@/features/discover/rankingBalance";
-import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
+import {
+  DISTANCE_DECAY_FLOOR,
+  distanceDecayFactor,
+  hasPersonalTasteProfile,
+  tasteMatchPercent,
+} from "@/lib/ai/tasteEngine";
 import type {
   DietaryFlag,
   DishDetail,
@@ -94,17 +99,27 @@ export function rankForYou(
     reserveFresh?: boolean;
     /** The diner's food openness: how hard liked dishes steer the order and how many new dishes get slots. */
     openness?: FoodOpenness;
+    /** Scale each score by walking distance (home_distance_decay_v1), so a close match beats a far one. */
+    distanceDecay?: boolean;
   },
 ): ForYouPick[] {
   const hasPalate = hasPersonalTasteProfile(options.tasteVector);
+  const homeScorer = options.likedDishes
+    ? buildHomeScorer(options.likedDishes, options.openness)
+    : undefined;
+  const adjustScore = options.distanceDecay
+    ? (dish: DishDetail, score: number) =>
+        (homeScorer ? homeScorer(dish, score) : score) *
+        (Number.isFinite(dish.distanceMeters)
+          ? distanceDecayFactor(dish.distanceMeters)
+          : DISTANCE_DECAY_FLOOR)
+    : homeScorer;
   const ranked = rankDecideCandidates(dishes, {
     tasteVector: options.tasteVector,
     dietaryFlags: options.dietaryFlags,
     radiusMeters: NO_RADIUS_LIMIT_METERS,
     maxDishBudget: options.maxDishBudget,
-    adjustScore: options.likedDishes
-      ? buildHomeScorer(options.likedDishes, options.openness)
-      : undefined,
+    adjustScore,
   });
   // Stable partition keeps the taste order inside each group.
   const here = options.preferBuildingId

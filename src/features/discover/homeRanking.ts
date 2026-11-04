@@ -14,6 +14,8 @@ export type TasteOrderOptions = {
   likedDishes?: readonly DishDetail[];
   /** The diner's food openness: how hard liked dishes steer the order, how many new dishes get slots. */
   openness?: FoodOpenness;
+  /** Walking distance scales the order (home_distance_decay_v1, off by default). */
+  distanceDecay?: boolean;
 };
 
 /**

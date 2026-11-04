@@ -117,6 +117,8 @@ import { ReportProblemLink } from "@/components/stall/ReportProblemLink";
 import { askMediaSource } from "@/lib/permissions/mediaSource";
 import { askChoice } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { likelyMatchDishIds } from "@/features/detail/menuPalate";
+import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
@@ -787,6 +789,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
   // The server returns the menu in search-rank order, which reads as random on a menu:
   // group by category (the chip order), then A-Z within it. Dishes the stall features go
   // first (R4-2) unless they are sold out, so "Stall's pick" is something the diner can order.
+  // With a trusted palate, dishes close to it are tagged "Likely a match" and lead their category.
+  const skippedTasteQuiz = useSessionStore((state) => state.hasSkippedTasteQuiz);
+  const tasteInteractionEvents = useProfileStore((state) => state.tasteInteractionEvents);
+  const palate = useMemo(
+    () =>
+      hasTrustedTasteProfile(profile.tasteVector, {
+        skippedTasteQuiz,
+        signalCount: profile.recommendationSignals?.signalCount,
+        negativeSignalCount: countNegativeTasteSignals(tasteInteractionEvents),
+      })
+        ? profile.tasteVector
+        : null,
+    [
+      profile.recommendationSignals?.signalCount,
+      profile.tasteVector,
+      skippedTasteQuiz,
+      tasteInteractionEvents,
+    ],
+  );
+  const likelyMatchIds = useMemo(() => likelyMatchDishIds(dishes, palate), [dishes, palate]);
   const orderedMenuDishes = useMemo(() => {
     return [...dishes].sort(
       (left, right) =>
@@ -796,9 +818,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
           menuCategoryByDishId[left.id] ?? "",
           menuCategoryByDishId[right.id] ?? "",
         ) ||
+        Number(likelyMatchIds.has(right.id)) - Number(likelyMatchIds.has(left.id)) ||
         left.name.localeCompare(right.name),
     );
-  }, [dishes, menuCategoryByDishId]);
+  }, [dishes, likelyMatchIds, menuCategoryByDishId]);
   const trimmedMenuQuery = menuQuery.trim().toLowerCase();
   const filteredMenuDishes = useMemo(() => {
     const inCategory =
@@ -1692,7 +1715,12 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         >
                           {visibleMenuDishes.map((dish, index) =>
                             menuAsList ? (
-                              <StallMenuDishRow key={dish.id} dish={dish} onPress={openMenuDish} />
+                              <StallMenuDishRow
+                                key={dish.id}
+                                dish={dish}
+                                onPress={openMenuDish}
+                                likelyMatch={likelyMatchIds.has(dish.id)}
+                              />
                             ) : (
                               <StallMenuDishCard
                                 key={dish.id}
@@ -1701,6 +1729,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                                 width={screenWidth / MENU_GRID_COLUMNS}
                                 isLeftColumn={index % MENU_GRID_COLUMNS === 0}
                                 onPress={openMenuDish}
+                                likelyMatch={likelyMatchIds.has(dish.id)}
                               />
                             ),
                           )}

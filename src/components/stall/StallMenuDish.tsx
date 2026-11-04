@@ -37,12 +37,13 @@ export function shouldUseMenuList(dishes: readonly DishDetail[]) {
 }
 
 /** Screen-reader label for a menu tile: name, price or sold out. */
-export function menuDishAccessibilityLabel(dish: DishDetail) {
+export function menuDishAccessibilityLabel(dish: DishDetail, likelyMatch = false) {
   const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
   return [
     dish.name,
     isStallsPick(dish.availabilityFlags) ? "stall's pick" : null,
     dish.mustOrder ? "must order" : null,
+    likelyMatch ? "likely a match for your taste" : null,
     status,
   ]
     .filter(Boolean)
@@ -69,11 +70,23 @@ function MenuDishRating({ rating }: { rating: number }) {
 type MenuDishProps = {
   dish: DishDetail;
   onPress: (dish: DishDetail) => void;
+  /** Close to the diner's palate (features/detail/menuPalate). */
+  likelyMatch?: boolean;
 };
+
+function LikelyMatchLabel() {
+  const { palette } = useHungryTheme();
+  return (
+    <AppText variant="micro" style={{ color: palette.successText, fontWeight: "800" }}>
+      LIKELY A MATCH
+    </AppText>
+  );
+}
 
 export function StallMenuDishCard({
   dish,
   onPress,
+  likelyMatch = false,
   width,
   isLeftColumn,
 }: MenuDishProps & {
@@ -93,7 +106,7 @@ export function StallMenuDishCard({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={menuDishAccessibilityLabel(dish)}
+      accessibilityLabel={menuDishAccessibilityLabel(dish, likelyMatch)}
       accessibilityHint="Opens this dish detail page"
       onPress={() => onPress(dish)}
       // Square-cornered tiles that meet in the middle and run edge to edge.
@@ -140,6 +153,7 @@ export function StallMenuDishCard({
           </View>
         ) : null}
         <View style={{ gap: spacing[1], padding: spacing[3] }}>
+          {likelyMatch ? <LikelyMatchLabel /> : null}
           <AppText variant="bodyBold" numberOfLines={2}>
             {dish.name}
           </AppText>
@@ -176,7 +190,7 @@ const ROW_THUMBNAIL = 56;
  * A full-width menu row: name and description on the left, price on the right, a small
  * photo only when the dish has one. Used when most of a menu has no photos.
  */
-export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
+export function StallMenuDishRow({ dish, onPress, likelyMatch = false }: MenuDishProps) {
   const { palette, radii, spacing } = useHungryTheme();
   const photo = useMemo(() => getStallDishPhotos(dish)[0], [dish]);
   const soldOut = isSoldOut(dish.availabilityFlags);
@@ -185,7 +199,7 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={menuDishAccessibilityLabel(dish)}
+      accessibilityLabel={menuDishAccessibilityLabel(dish, likelyMatch)}
       accessibilityHint="Opens this dish detail page"
       onPress={() => onPress(dish)}
       style={({ pressed }) => ({
@@ -210,8 +224,9 @@ export function StallMenuDishRow({ dish, onPress }: MenuDishProps) {
             {dish.description}
           </AppText>
         ) : null}
-        {dish.mustOrder || featured || dish.reviewCount > 0 ? (
+        {dish.mustOrder || featured || likelyMatch || dish.reviewCount > 0 ? (
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            {likelyMatch ? <LikelyMatchLabel /> : null}
             {featured ? (
               <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
                 {"STALL'S PICK"}

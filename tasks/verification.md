@@ -1674,3 +1674,8 @@ Use the smallest check that matches the change risk.
 - No database change, so no migration, race or rate-limit check applies. Not run: a device build.
 | 2026-10-24 | ONBOARD-SLIDERS-01 slider taste questions | typecheck; full npm test; `test:render`; `eslint src`; `test:coverage` + baseline update; prettier | Pass (npm test 1892/0, test:render 174/0 plus new, eslint 0 errors, tsc, coverage baseline updated) | Native haptics, drag feel and the arc animation need a device check; mascot poses and scene images not in yet. |
 | 2026-10-28 | ONBOARD-SLIDERS-02 new onboarding screens (flagged) | typecheck; full npm test; full `test:render`; `test:coverage` + baseline update; eslint (0 errors); prettier; check:n-plus-one; check:rate-limits; audit:assets | Pass (npm test 2212/0, test:render 510/0, coverage baseline updated) | Native haptics, swipe feel and the loading screen on a device; mascot art is a placeholder; areas, meal times and the personal meal-time push are not saved to the server yet (migration needs sh's staging rehearsal). |
+
+## 2026-11-04 AUDIT-2026-11-04 batches A-C
+- `npm run typecheck` pass; `npm test` 2974 pass; `npm run test:render` 1259 pass; `npm run test:coverage` OK and baseline updated; `npm run lint` 0 errors; `npm run check:n-plus-one` ok.
+- New tests: usualAreas, UsualAreaChips, MealPicksCard, mealPicksNudge, useHomeNudgeStore, ReviewFirstList, menuPalate, meal-times section title, dish picture card, Passport first stamp, Likely a match row, distance decay ranking.
+- No database change, so no migration, race or rate-limit check applies. Not run: a device build.

@@ -3,7 +3,12 @@ import { Platform, View } from "react-native";
 
 import { AppSymbol, AppText, Button, Card } from "@/components/ui";
 import { shouldOfferMealPicks } from "@/features/home/mealPicksNudge";
-import { previewMeal, MEAL_LABELS, formatMealTime, pushTimeFor } from "@/features/onboarding/mealTimes";
+import {
+  previewMeal,
+  MEAL_LABELS,
+  formatMealTime,
+  pushTimeFor,
+} from "@/features/onboarding/mealTimes";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";

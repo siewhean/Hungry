@@ -204,3 +204,22 @@ test("with liked dishes, a dish that shares their tags moves up among close matc
   assert.equal(withoutHistory[0], "other");
   assert.equal(withHistory[0], "alike");
 });
+
+test("distance decay lets a close good match beat a slightly better one across town", () => {
+  const spicyUser: TasteVector = { ...NEUTRAL, spicy: 9, rich: 7 };
+  const far = dish("far", {
+    tasteVector: { ...NEUTRAL, spicy: 9, rich: 7 },
+    distanceMeters: 4000,
+  });
+  const near = dish("near", {
+    tasteVector: { ...NEUTRAL, spicy: 8, rich: 7 },
+    distanceMeters: 150,
+  });
+  const base = { tasteVector: spicyUser, dietaryFlags: [], likedDishes: [], limit: 2 };
+  assert.equal(rankForYou([far, near], base)[0].dish.id, "far", "palate alone picks the far dish");
+  assert.equal(
+    rankForYou([far, near], { ...base, distanceDecay: true })[0].dish.id,
+    "near",
+    "with decay the close dish leads",
+  );
+});

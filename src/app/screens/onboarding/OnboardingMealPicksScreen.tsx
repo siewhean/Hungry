@@ -114,8 +114,8 @@ export function OnboardingMealPicksScreen({ navigation }: Props) {
         </View>
       </Card>
       <AppText variant="bodySmall" tone="secondary">
-        Your phone asks once you have saved your first dish. Only on days you have not opened
-        Hungry yet, never more than once per meal, and off any time in Settings.
+        Your phone asks once you have saved your first dish. Only on days you have not opened Hungry
+        yet, never more than once per meal, and off any time in Settings.
       </AppText>
     </OnboardingFrame>
   );
