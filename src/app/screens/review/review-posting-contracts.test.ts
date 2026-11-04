@@ -77,13 +77,13 @@ test("recommend is unanswered by default and derived from the rating when skippe
 test("review editor: dish first, helper text, modal picker, route wins over a stale draft", () => {
   const review = read("src/app/screens/review/ReviewScreen.tsx");
   const order = [
-    // The required photo comes right after the dish (REV-7), before rating and text.
+    // Required parts first (dish, rating), then the optional photo (sh, 2026-11-04), then text.
     "{dishSection}",
-    "{photoSection}",
     "{ratingSection}",
+    "{photoSection}",
     "{textSection}",
   ];
-  assert.match(review, /title="Photo \(required\)"/);
+  assert.match(review, /title="Photo \(optional\)"/);
   const positions = order.map((marker) => review.indexOf(marker));
   assert.ok(positions.every((position, index) => position > (positions[index - 1] ?? -1)));
   // The blocked-publish copy lives in firstMissingReviewField and scrolls to the field.

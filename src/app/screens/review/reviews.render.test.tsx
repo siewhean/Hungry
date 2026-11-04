@@ -183,7 +183,7 @@ test("ReviewDetail: someone else's review has a Report / Block menu and a like (
   });
   const menu = view.findByLabel("More options");
   assert.ok(menu, "header menu is shown");
-  assert.ok(view.findByLabel(/^Like, /), "the like is shown");
+  assert.ok(view.findByLabel(/^Helpful/), "the Helpful vote is shown");
   assert.ok(view.findByLabel("Rated 4 out of 5"), "compact read-only stars (REV-14)");
   await view.press(menu);
   assert.equal(
@@ -201,7 +201,7 @@ test("ReviewDetail: your own review has Manage, not Report, and no like (REV-2)"
   });
   assert.ok(view.findByLabel("Manage your review"));
   assert.equal(view.findByLabel("More options"), null);
-  assert.equal(view.findByLabel(/^Like, /), null);
+  assert.equal(view.findByLabel(/^Helpful/), null);
 });
 
 test("ReviewDetail: a missing review says so without blaming its author (REV-X4)", async () => {
@@ -269,7 +269,7 @@ test("Reviews grid: an empty live grid and mock mode never expose the experiment
   assert.deepEqual(flags.exposures, []);
 });
 
-test("Reviews grid asks the server for photo reviews only (REV-3)", async () => {
+test("Reviews grid asks for every review, photo or not (photos optional, sh 2026-11-04)", async () => {
   const seen: unknown[] = [];
   useLiveReviews({
     listRecentReviewsPage: async (options) => {
@@ -278,7 +278,25 @@ test("Reviews grid asks the server for photo reviews only (REV-3)", async () => 
     },
   });
   await renderScreen(ReviewFeedScreen as never, { name: "Review" });
-  assert.deepEqual(seen, [true]);
+  assert.deepEqual(seen, [undefined]);
+});
+
+test("Reviews grid: a review without a photo is a text tile with the dish, stars and words", async () => {
+  useLiveReviews({
+    listRecentReviewsPage: async () => ({
+      entries: [entry("r-text", "user-emma", { photos: [] }), entry("r-photo", "user-emma")],
+      hasMore: false,
+    }),
+  });
+  const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
+  const textTile = view.findByTestId("review-tile-r-text");
+  assert.ok(textTile, "the text-only review is on the grid");
+  assert.ok(textTile.querySelector("[data-testid='review-text-tile']"), "drawn as a text tile");
+  assert.match(textTile.textContent ?? "", /Katong Laksa/);
+  assert.match(textTile.textContent ?? "", /Silky noodles/);
+  const photoTile = view.findByTestId("review-tile-r-photo");
+  assert.ok(photoTile);
+  assert.equal(photoTile.querySelector("[data-testid='review-text-tile']"), null);
 });
 
 test("Reviews grid: your own moderated review is left out of the public grid (REV-X5)", async () => {
@@ -317,7 +335,7 @@ test("like, unlike, like quickly: one request in flight, the final state wins (R
         onRemoved: () => undefined,
       }),
     );
-    const like = () => view.findByLabel(/^Like, /);
+    const like = () => view.findByLabel(/^Helpful/);
     await view.press(like());
     await view.press(like());
     await view.press(like());
@@ -325,7 +343,7 @@ test("like, unlike, like quickly: one request in flight, the final state wins (R
     release();
     await view.settle();
     assert.deepEqual(sent, [true]);
-    assert.equal(like()?.getAttribute("aria-label"), "Like, 1 like");
+    assert.equal(like()?.getAttribute("aria-label"), "Helpful, 1 person found this helpful");
     assert.equal(
       getTrackedAnalyticsEvents().filter((event) => event.event === "review_helpful_toggled")
         .length,
@@ -353,13 +371,16 @@ test("ReviewDetail refetches on refocus without a skeleton and takes the new lik
     navigation,
   });
   assert.equal(reads, 1);
-  assert.ok(view.findByLabel("Like, 1 like"));
+  assert.ok(view.findByLabel("Helpful, 1 person found this helpful"));
   emit("blur");
   emit("focus");
   await view.settle();
   assert.equal(reads, 2, "coming back reads the review again");
   assert.equal(view.findByLabel("Loading review"), null, "no skeleton on a refocus");
-  assert.ok(view.findByLabel("Like, 5 likes"), "the heart shows the refetched count");
+  assert.ok(
+    view.findByLabel("Helpful, 5 people found this helpful"),
+    "the vote shows the refetched count",
+  );
 });
 
 test("the success modal's View review opens the posted review (REV-2)", async () => {
@@ -695,9 +716,11 @@ test("the editor is the compact one for everyone: Cancel and one Publish in the 
   assert.ok(view.findByLabel("Cancel"), "Cancel sits in the header");
   const headerPublish = view.findByText("Publish")?.closest("[role=button], button");
   assert.ok(headerPublish, "Publish is in the header");
-  assert.equal(headerPublish.getAttribute("aria-disabled"), "true", "no photo yet");
+  assert.equal(headerPublish.getAttribute("aria-disabled"), "true", "no rating yet");
   assert.equal(view.findByText("Publish review"), null, "no second Publish at the bottom");
-  assert.ok(view.findByText("Add a photo of the dish to publish."), "the reason is still said");
+  assert.ok(view.findByText("Add a star rating to publish."), "the reason is still said");
+  assert.equal(view.findByText("Add a photo of the dish to publish."), null, "a photo is optional");
+  assert.ok(view.findByText("Photo (optional)"));
   assert.equal(view.findByText("Taste tags"), null, "tags are folded away");
   await view.press(view.findByLabel("Add more detail (optional)"));
   assert.ok(view.findByText("Taste tags"));
