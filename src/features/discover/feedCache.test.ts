@@ -5,6 +5,7 @@ import {
   DISCOVER_FEED_CACHE_MAX_AGE_MS,
   clearCachedDiscoverFeed,
   readCachedDiscoverFeed,
+  readLastCachedDiscoverFeed,
   writeCachedDiscoverFeed,
 } from "@/features/discover/feedCache";
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
@@ -41,4 +42,15 @@ test("clearing forgets the saved feed", async () => {
   await writeCachedDiscoverFeed("area-a", feed, 1_000);
   await clearCachedDiscoverFeed();
   assert.equal(await readCachedDiscoverFeed("area-a", 2_000), null);
+});
+
+test("the offline Home reads the last saved feed whatever area it was for", async () => {
+  assert.equal(await readLastCachedDiscoverFeed(2_000), null);
+  await writeCachedDiscoverFeed("area-a", feed, 1_000);
+  assert.deepEqual(await readLastCachedDiscoverFeed(2_000), { feed, savedAt: 1_000 });
+  assert.equal(
+    await readLastCachedDiscoverFeed(1_000 + DISCOVER_FEED_CACHE_MAX_AGE_MS + 1),
+    null,
+    "too old to show",
+  );
 });

@@ -216,6 +216,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Choose where you are|You are at|Picks across/,
   },
   {
+    name: "HomeOfflineScreen",
+    file: "src/app/screens/discover/HomeOfflineScreen.tsx",
+    scenario: "user",
+    // Shown in place of Home when the live feed fails; behaviour in HomeOfflineScreen.render.test.tsx.
+    expect: /Can't reach Hungry|You're offline/,
+  },
+  {
     name: "HomeMapScreen",
     file: "src/app/screens/discover/HomeMapScreen.tsx",
     scenario: "user",
