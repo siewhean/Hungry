@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -178,6 +179,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
 
   // A tap marks the choice; "Set as my location" saves it.
   const choose = (result: AreaSearchResult) => {
+    Keyboard.dismiss();
     selectHaptic();
     setSelected(result);
   };
@@ -188,6 +190,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
     finish(`You are at ${selected.placeName ?? selected.areaName}.`);
   };
   const chooseCurrentLocation = async () => {
+    Keyboard.dismiss();
     selectHaptic();
     if (permission === "granted") {
       await clearManualLocation();

@@ -54,7 +54,7 @@ test("profile home contract: profile stats use dynamic profile and social store 
   );
   assert.match(
     read("src/components/profile/ProfileStatRow.tsx"),
-    /<SlideText\s+value=\{value === null \? "–" : String\(value\)\}\s+variant="h2"/,
+    /<NumericText\s+value=\{value === null \? "–" : String\(value\)\}\s+variant="h2"/,
   );
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
   assert.match(source, /height: headerActionSize/);

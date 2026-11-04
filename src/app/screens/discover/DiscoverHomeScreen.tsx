@@ -47,6 +47,7 @@ import {
   RailScrollView,
   Screen,
   Skeleton,
+  NumericText,
   SlideText,
 } from "@/components/ui";
 import { SavedViewSwitch } from "@/components/saved/SavedViewSwitch";
@@ -1906,7 +1907,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               isSupabaseDiscoveryFeedLoading ? (
                 <View style={{ alignItems: "baseline", flexDirection: "row" }}>
                   {/* A dash while the count loads; the number then rolls in. No grey placeholder. */}
-                  <SlideText
+                  <NumericText
                     value="–"
                     variant="micro"
                     style={{ color: themeTints.secondaryText }}
@@ -1918,8 +1919,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               ) : null
             ) : discoverAreaCountLabel !== "0" ? (
               <View style={{ alignItems: "baseline", flexDirection: "row" }}>
-                {/* Only the number slides when the count changes. */}
-                <SlideText
+                {/* Only the number rolls when the count changes. */}
+                <NumericText
                   value={discoverAreaCountLabel}
                   variant="micro"
                   style={{ color: themeTints.secondaryText }}
