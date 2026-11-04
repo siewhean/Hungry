@@ -75,6 +75,8 @@ export type AnalyticsEventName =
   | "directions_opened"
   | "dish_shared"
   | "review_shared"
+  | "review_card_opened"
+  | "review_card_shared"
   | "stall_shared"
   | "stall_viewed"
   | "stall_menu_dish_opened"
