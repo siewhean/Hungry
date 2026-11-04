@@ -4,6 +4,7 @@
 // `node scripts/test-render.mjs src/app/screens/profile/savedV2.render.test.tsx`.
 
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 import { Text } from "react-native";
@@ -157,6 +158,12 @@ test("SavedViewSwitch is two icon radios named List view and Map view, and repor
   assert.equal(view.findByText("Map"), null, "icons only, no text label");
   await view.press(view.findByLabel("Map view"));
   assert.deepEqual(changes, ["map"]);
+});
+
+test("the compact List / Map switch never stretches: icon segments are fixed 44pt targets", () => {
+  const source = readFileSync("src/components/ui/SegmentedControl.tsx", "utf8");
+  assert.match(source, /compact && \{ flexGrow: 0, flexShrink: 0 \}/, "compact track hugs content");
+  assert.match(source, /option\.icon\s*\?\s*\{ flexBasis: "auto", flexGrow: 0, flexShrink: 0 \}/);
 });
 
 // ─── SavedSortMenu ───────────────────────────────────────────────────────────────────────────

@@ -504,7 +504,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /stalls \$\{discoverAreaName/);
   assert.match(
     discover,
-    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*\}\}/,
+    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*paddingBottom: spacing\[4\],\s*\}\}/,
   );
   assert.match(discover, /paddingTop: spacing\[1\]/);
   assert.match(discover, /Dishes/);

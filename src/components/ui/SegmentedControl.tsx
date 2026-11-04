@@ -55,6 +55,9 @@ export function SegmentedControl<T extends string>({
           flexDirection: "row",
           padding: 2,
         },
+        // A compact control is as wide as its segments and never stretches to fill a row: a
+        // grow-able segment inside an auto-width track fills the whole space it is offered.
+        compact && { flexGrow: 0, flexShrink: 0 },
         style,
       ]}
     >
@@ -79,11 +82,16 @@ export function SegmentedControl<T extends string>({
               borderColor: selected ? palette.border : "transparent",
               borderRadius: componentRadii.button - 2,
               borderWidth: 1,
-              // Compact segments share the row by content, so a long label is not cut short.
-              ...(compact ? { flexBasis: "auto", flexGrow: 1, flexShrink: 1 } : { flex: 1 }),
+              // Compact segments share the row by content, so a long label is not cut short. An
+              // icon segment is a fixed 44pt target that never grows.
+              ...(option.icon
+                ? { flexBasis: "auto", flexGrow: 0, flexShrink: 0 }
+                : compact
+                  ? { flexBasis: "auto", flexGrow: 1, flexShrink: 1 }
+                  : { flex: 1 }),
               justifyContent: "center",
               minHeight: 44 - 4,
-              minWidth: option.icon ? 40 : undefined,
+              minWidth: option.icon ? 44 : undefined,
               paddingHorizontal: compact ? spacing[1] : spacing[2],
             }}
           >

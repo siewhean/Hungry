@@ -1797,6 +1797,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         contentContainerStyle={{
           gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
+          paddingBottom: spacing[4],
         }}
         refreshControl={
           <RefreshControl
