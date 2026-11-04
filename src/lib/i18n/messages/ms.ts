@@ -28,7 +28,8 @@ export const ms: Record<MessageKey, string> = {
   "settings.row.deleteAccount": "Padam akaun",
   "settings.row.haptics": "Maklum balas haptik",
   "settings.row.leftHanded": "Mod kidal",
-  "settings.row.leftHandedHint": "Mengalihkan butang tambah pada menu peniaga anda ke sebelah kiri.",
+  "settings.row.leftHandedHint":
+    "Mengalihkan butang tambah pada menu peniaga anda ke sebelah kiri.",
   "settings.row.feedback": "Hantar maklum balas",
   "settings.row.contact": "Hubungi kami",
   "settings.row.privacyPolicy": "Dasar privasi",

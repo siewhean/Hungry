@@ -50,7 +50,11 @@ import { useConsentStore } from "@/store/useConsentStore";
 import { useDeveloperToolsStore } from "@/store/useDeveloperToolsStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
-import { LOCALE_NATIVE_NAMES, SUPPORTED_LOCALES, type LanguagePreference } from "@/lib/i18n/locales";
+import {
+  LOCALE_NATIVE_NAMES,
+  SUPPORTED_LOCALES,
+  type LanguagePreference,
+} from "@/lib/i18n/locales";
 import { useTranslation } from "@/lib/i18n/useTranslation";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";

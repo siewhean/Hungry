@@ -3,8 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-const read = (relativePath: string) =>
-  readFileSync(path.join(process.cwd(), relativePath), "utf8");
+const read = (relativePath: string) => readFileSync(path.join(process.cwd(), relativePath), "utf8");
 
 test("Settings has a Language row that opens a sheet with every supported language", () => {
   const source = read("src/app/screens/profile/SettingsScreen.tsx");

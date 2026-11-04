@@ -7,7 +7,8 @@ import test from "node:test";
 import { AFFINITY_WEIGHTS } from "@/lib/ai/foodHistory";
 
 const root = process.cwd();
-const read = (relativePath: string) => withEnglishCopy(readFileSync(path.join(root, relativePath), "utf8"));
+const read = (relativePath: string) =>
+  withEnglishCopy(readFileSync(path.join(root, relativePath), "utf8"));
 const migration = read("supabase/migrations/20261020080000_user_dish_affinities.sql");
 
 test("food history table is read/delete-own; only the definer function writes it", () => {
