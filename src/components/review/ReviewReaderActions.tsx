@@ -32,23 +32,18 @@ interface ReviewReaderActionsProps {
   review: Pick<Review, "id" | "authorId" | "authorName" | "helpfulCount" | "viewerFoundHelpful">;
   /** The viewer wrote this review: they edit it instead (OwnReviewActions). */
   isOwn: boolean;
-  /** Where a guest returns to after signing in to like or report. */
+  /** Where a guest returns to after signing in to vote or report. */
   returnRoute: PendingRoute;
   /** Called after a report or block succeeds, so the page drops the review. */
   onRemoved: () => void;
-  /** The review's stars, shown on the same line as the like, at the left. */
+  /** The review's stars, shown on the same line as the vote, at the left. */
   rating?: number;
-  /**
-   * "heart" (stall pages): a heart and the count. "helpful" (dish pages): a thumbs-up with the word
-   * "Helpful", which says what a vote means. Both write the review's helpful vote.
-   */
-  variant?: "heart" | "helpful";
 }
 
 /**
- * The last line of a review card on a stall or dish page: the stars on the left and, on someone
- * else's review, a like (heart) on the right. Likes are stored as the review's helpful votes.
- * Holding the heart opens Report / Block.
+ * The vote on someone else's review: a thumbs-up with the word "Helpful", which says what a vote
+ * means, the same on stall, dish and review pages. With `rating`, the stars sit on the left of the
+ * same line. Holding the button opens Report / Block.
  */
 export function ReviewReaderActions({
   review,
@@ -56,7 +51,6 @@ export function ReviewReaderActions({
   returnRoute,
   onRemoved,
   rating,
-  variant = "heart",
 }: ReviewReaderActionsProps) {
   const { palette, spacing } = useHungryTheme();
   const requireAccount = useRequireAccount();
@@ -81,7 +75,7 @@ export function ReviewReaderActions({
   if (isOwn && rating === undefined) return null;
 
   const onLikePress = () => {
-    if (!requireAccount("Sign in to like reviews.", returnRoute)) return;
+    if (!requireAccount("Sign in to mark reviews helpful.", returnRoute)) return;
     const previous = liked;
     const next = toggleReviewHelpful(previous);
     if (next.helpful) confirmHaptic();
@@ -91,7 +85,7 @@ export function ReviewReaderActions({
     setPendingVotes((count) => count + 1);
     void submitHelpfulVote(review.id, next.helpful, previous.helpful, (serverHelpful) => {
       setLiked(helpfulStateFor(confirmed, serverHelpful));
-      showToast({ message: "Could not save your like.", tone: "warning" });
+      showToast({ message: "Could not save your vote. Try again.", tone: "warning" });
     }).finally(() => {
       setPendingVotes((count) => count - 1);
     });
@@ -110,7 +104,6 @@ export function ReviewReaderActions({
   };
 
   const color = liked.helpful ? palette.orange : palette.textSecondary;
-  const isHelpfulVariant = variant === "helpful";
 
   return (
     <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
@@ -137,13 +130,9 @@ export function ReviewReaderActions({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={
-            isHelpfulVariant
-              ? liked.count === 0
-                ? "Helpful"
-                : `Helpful, ${liked.count} ${liked.count === 1 ? "person" : "people"} found this helpful`
-              : liked.count === 1
-                ? "Like, 1 like"
-                : `Like, ${liked.count} likes`
+            liked.count === 0
+              ? "Helpful"
+              : `Helpful, ${liked.count} ${liked.count === 1 ? "person" : "people"} found this helpful`
           }
           accessibilityHint="Hold to report this review or block its author"
           accessibilityState={{ selected: liked.helpful }}
@@ -154,32 +143,22 @@ export function ReviewReaderActions({
           delayLongPress={320}
           onLongPress={openSafetyActions}
           onPress={onLikePress}
-          hitSlop={isHelpfulVariant ? 6 : 4}
+          hitSlop={6}
           style={({ pressed }) => ({
             alignItems: "center",
             flexDirection: "row",
             gap: spacing[1],
             justifyContent: "center",
             // The thumbs-up sits on the date's line: 32pt tall plus 6pt of hit slop on each side.
-            minHeight: isHelpfulVariant ? 32 : 44,
+            minHeight: 32,
             minWidth: 44,
             transform: [{ scale: pressed ? 0.97 : 1 }],
           })}
         >
-          {isHelpfulVariant ? (
-            <HelpfulSymbol color={color} fill={liked.helpful ? palette.orange : "none"} size={18} />
-          ) : (
-            <AppSymbol name={liked.helpful ? "saved" : "save"} color={color} size={20} />
-          )}
-          {isHelpfulVariant ? (
-            <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
-              {liked.count > 0 ? `Helpful · ${liked.count}` : "Helpful"}
-            </AppText>
-          ) : liked.count > 0 ? (
-            <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
-              {liked.count}
-            </AppText>
-          ) : null}
+          <HelpfulSymbol color={color} fill={liked.helpful ? palette.orange : "none"} size={18} />
+          <AppText variant="bodySmall" style={{ color, fontWeight: "600" }}>
+            {liked.count > 0 ? `Helpful · ${liked.count}` : "Helpful"}
+          </AppText>
         </Pressable>
       )}
     </View>

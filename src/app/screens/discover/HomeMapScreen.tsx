@@ -70,7 +70,7 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useSearchStore } from "@/store/useSearchStore";
 import { useUIStore } from "@/store/useUIStore";
 import { getVenueOpenStateNow } from "@/features/discovery/decideForMeCandidates";
-import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
+import { distanceFromDiner, formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import {
   formatMapCardDish,
   formatMapCardHours,
@@ -316,6 +316,8 @@ export function HomeMapScreen() {
       currentLocation: gpsLocation,
       manualCoordinate,
     });
+  /** Where the diner really is, for distances; undefined without a GPS fix or a picked area. */
+  const dinerLocation = isLocationApproximate ? undefined : currentLocation;
   const selectedBuilding = useDiscoveryStore((state) => state.selectedBuilding);
   const highlightedStallVenueId = useDiscoveryStore((state) => state.highlightedStallVenueId);
   const setHighlightedStallVenueId = useDiscoveryStore((state) => state.setHighlightedStallVenueId);
@@ -857,7 +859,8 @@ export function HomeMapScreen() {
   const cardText = (venue: CatalogRawVenueCard) => {
     const rating = formatMapCardRating(venue);
     const hours = hoursTextByVenue.get(venue.id);
-    const distance = formatDistanceLabel(venue.distanceMeters);
+    // From the diner, never from the map's centre; none when their location is unknown.
+    const distance = formatDistanceLabel(distanceFromDiner(venue, dinerLocation));
     const location = formatMapCardLocation(venue);
     // What a search matched is the one dish worth naming; otherwise the card is about the stall.
     const matched = matchedDishByVenue.get(venue.id);
@@ -1489,7 +1492,7 @@ export function HomeMapScreen() {
         loading={clusterPick?.loading ?? false}
         stalls={(clusterPick?.venues ?? []).map<ClusterStallRow>((venue) => {
           const hours = clusterPick?.hoursById.get(venue.id);
-          const distance = formatDistanceLabel(venue.distanceMeters);
+          const distance = formatDistanceLabel(distanceFromDiner(venue, dinerLocation));
           const location = formatMapCardLocation(venue);
           const detail = [hours, distance].filter(Boolean).join(" · ");
           return {

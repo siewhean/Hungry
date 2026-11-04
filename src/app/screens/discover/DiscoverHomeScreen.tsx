@@ -1045,6 +1045,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     matchesDiscoverChipSelection,
     unfilteredAreaStallCards,
   ]);
+  // The mall's own menus may not be in yet; then "For you" holds dishes from around it and says so.
+  const forYouTitle =
+    currentPlace && forYouPicks.some((pick) => pick.dish.buildingId === currentPlaceId)
+      ? `For you at ${currentPlace.name}`
+      : "For you nearby";
   // Inside a mall: the nearest stalls that are not in it, so Home also shows what is around.
   const stallsAroundPlace = useMemo(
     () =>
@@ -1068,22 +1073,32 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         return item ? [{ id: item.id, label: item.label, query: item.query }] : [];
       }),
       familiarNames: familiarDishNames,
-      excludeVenueIds: new Set(areaStallCards.map((card) => card.venue.id)),
+      // Inside a mall the stall list is not shown ("What's here" lists every stall instead), so
+      // the sections may hold the mall's stalls, led by them; only "More near" is not repeated.
+      excludeVenueIds: new Set(
+        (inMallMode ? stallsAroundPlace : areaStallCards).map((card) => card.venue.id),
+      ),
       compare: compareHomeStalls,
       isOpenNow: (card) => openStateOf(card.venue).status === "open",
       palate: rankingTasteVector,
       palateTrusted: hasTasteProfile,
       avoidSpicy: chipContext.avoidSpicy,
+      preferBuildingId: inMallMode ? currentPlaceId : undefined,
+      openness: rankingOpenness,
     });
   }, [
     allAreaStallCards,
     areaStallCards,
     chipContext.avoidSpicy,
     currentHour,
+    currentPlaceId,
     familiarDishNames,
     favouriteFoodStyleIds,
     hasTasteProfile,
+    inMallMode,
+    rankingOpenness,
     rankingTasteVector,
+    stallsAroundPlace,
     unfilteredPopularFoodStyleItems,
   ]);
   // Chips that fit this diner now, with the foods they know (had, or pinned) first.
@@ -1787,7 +1802,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               accessibilityRole="button"
               accessibilityLabel={`Change location. ${
                 needsDiscoverAreaChoice
-                  ? `Across ${discoverHeaderLabel}`
+                  ? `Picks across ${discoverHeaderLabel}`
                   : `${hasManualAreaPick ? "Showing food in" : "You are at"} ${discoverHeaderLabel}`
               }`}
               accessibilityHint="Opens a search for an area, mall or hawker centre"
@@ -1800,18 +1815,22 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               }
               style={{ flex: 1, minHeight: 44, justifyContent: "center" }}
             >
-              {needsDiscoverAreaChoice ? null : (
-                <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
-                  {hasManualAreaPick ? "Showing food in" : "You are at"}
-                </AppText>
-              )}
+              {/* A small line over the place name, so the name itself fits beside List / Map:
+                  "Across Singapore" as one title was cut to "Across Singap..." at 390 pt. */}
+              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
+                {needsDiscoverAreaChoice
+                  ? "Picks across"
+                  : hasManualAreaPick
+                    ? "Showing food in"
+                    : "You are at"}
+              </AppText>
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
                 <AppText
                   variant="h2"
                   style={{ color: themeTints.text, flexShrink: 1 }}
                   numberOfLines={1}
                 >
-                  {needsDiscoverAreaChoice ? `Across ${discoverHeaderLabel}` : discoverHeaderLabel}
+                  {discoverHeaderLabel}
                 </AppText>
                 <ChevronDown
                   color={themeTints.isDark ? palette.white : palette.textMuted}
@@ -2130,8 +2149,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           ) : null}
         </View>
 
-        <HomeFeedbackCard />
-
         {inMallMode && currentPlace ? (
           <>
             {/* In a mall, "For you" and "What's here" are two sections of the page, not two buttons. */}
@@ -2156,7 +2173,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 }}
               >
                 <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
-                  {`For you at ${currentPlace.name}`}
+                  {forYouTitle}
                 </AppText>
                 <ChevronRight
                   color={themeTints.isDark ? palette.white : palette.textMuted}
@@ -2534,6 +2551,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           </>
         )}
         {moreSections}
+        {/* The feedback ask comes after the food, so the first screen is all food (round six). */}
+        <HomeFeedbackCard />
       </ScrollView>
     </Screen>
   );

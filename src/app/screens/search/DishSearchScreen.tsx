@@ -779,7 +779,7 @@ export function DishSearchScreen() {
               }}
             >
               <AppText variant="h2" accessibilityRole="header">
-                Dishes to Discover
+                Dishes to discover
               </AppText>
               <Pressable
                 accessibilityRole="button"

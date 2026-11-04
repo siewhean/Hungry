@@ -23,7 +23,10 @@ export function CustomerPromotionCard({
 
   const content = (
     <Card style={{ gap: spacing[3], padding: spacing[4] }}>
-      <View style={{ alignItems: "flex-start", gap: spacing[2] }}>
+      {/* Both badges on one line, wrapping only when the text is enlarged (round six). */}
+      <View
+        style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+      >
         <Badge label="Promotion" tone="orange" />
         {discountLabel ? <Badge label={discountLabel} tone="amber" /> : null}
       </View>

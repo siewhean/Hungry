@@ -242,7 +242,7 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["onboarding_area_picker_viewed", "onboarding_step_skipped"],
   },
   /**
-   * Search home "Dishes to Discover": island-wide top 3 by rating (control) vs the top 6 within
+   * Search home "Dishes to discover": island-wide top 3 by rating (control) vs the top 6 within
    * 1.5 km (near, falls back to the island-wide list under 3 nearby dishes). Draft until the
    * catalog stores a Bayesian score to rank on (SEARCH-7 follow-up migration).
    */

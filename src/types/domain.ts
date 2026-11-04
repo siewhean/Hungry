@@ -179,6 +179,8 @@ export interface VenueSummary {
   longitude?: number;
   /** Metres from the search point; set only on stalls read from the discovery feed. */
   distanceMeters?: number;
+  /** The catalogue's cuisine tags ("thai", "coffee_shop"); set on stalls read from the discovery feed. */
+  cuisineTags?: string[];
 }
 
 /** What the Passport needs to know about a stall to decide which stamps it counts toward. */
