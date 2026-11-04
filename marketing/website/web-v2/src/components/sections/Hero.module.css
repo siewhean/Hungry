@@ -134,13 +134,13 @@
 }
 
 .primaryCta {
-  background: var(--color-primary);
+  background: var(--color-primary-accessible);
   color: var(--color-white);
   box-shadow: var(--shadow-lg);
 }
 
 .primaryCta:hover {
-  background: var(--color-primary-dark);
+  background: var(--color-primary-accessible-hover);
   box-shadow: var(--shadow-float);
   transform: translateY(-3px);
 }

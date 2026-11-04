@@ -2,6 +2,8 @@
   /* Brand Colors */
   --color-primary: #E8531E;
   --color-primary-dark: #C43E10;
+  --color-primary-accessible: #C43E10; /* 5.2:1 on white, 4.9:1 on --color-bg: use for text and white-on-orange buttons */
+  --color-primary-accessible-hover: #A93308;
   --color-bg: #FFF7EE;
   --color-bg-soft: #F8EFE4;
   --color-bg-warm: #FFE9DA;
