@@ -70,6 +70,7 @@ import type {
   UserStallSubmission,
   UserProfile,
   VerificationEvidence,
+  StallStampFacts,
   VenueSummary,
   WeeklyMission,
 } from "@/types/domain";
@@ -993,6 +994,11 @@ export interface HungryService {
     getSavedDishCards(dishIds: string[]): Promise<SavedDishCard[]>;
     /** Stall summaries (hours, open flag, building) for a set of ids in one call; no menus. */
     getVenuesByIds(ids: string[]): Promise<VenueSummary[]>;
+    /**
+     * Cuisine, building type and area for a set of stalls in two batched reads, for the
+     * Passport stamps. Stalls that are gone are left out. Throws when a read fails.
+     */
+    getStallStampFacts(ids: string[]): Promise<StallStampFacts[]>;
     listActivePromotionsForTarget(input: {
       venueId: string;
       dishId?: string;

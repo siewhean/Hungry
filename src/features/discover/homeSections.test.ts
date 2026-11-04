@@ -219,3 +219,116 @@ test("palateFit is 1 for the same taste and falls as they differ", () => {
   assert.equal(palateFit(SPICY_LOVER, SPICY_LOVER), 1);
   assert.ok(palateFit(SPICY_LOVER, vec({ spicy: 0, rich: 0, sweet: 10 })) < 0.7);
 });
+
+// Stalls with no menu in the app: only a name and the catalogue's cuisine tags.
+function stall(id: string, name: string, cuisineTags: string[] = [], buildingId = "b-out") {
+  return { venue: { id, name, cuisineTags, buildingId } } as HomeSectionCard;
+}
+// Enough copies that every section finds its own.
+const NO_MENUS: HomeSectionCard[] = Array.from({ length: 10 }, (_, copy) => copy).flatMap(
+  (copy) => [
+    stall(`thai-${copy}`, `Baan Thai ${copy}`, ["thai"]),
+    stall(`mala-${copy}`, `Mala Hotpot ${copy}`, ["chinese"]),
+    stall(`curry-${copy}`, `Spice Route ${copy}`, ["indian"]),
+    stall(`kimchi-${copy}`, `Seoul Kitchen ${copy}`, ["korean"]),
+    stall(`cake-${copy}`, `Sweet Bakery ${copy}`, ["bakery"]),
+    stall(`gelato-${copy}`, `Gelato Bar ${copy}`, ["dessert"]),
+    stall(`salad-${copy}`, `Green Salad ${copy}`, ["salad"]),
+    stall(`plain-${copy}`, `Unit 0${copy}`),
+  ],
+);
+
+test("stalls without a menu are still recommended by their cuisine and name", () => {
+  const sections = buildHomeSections(NO_MENUS, {
+    hour: 12,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    maxSections: 10,
+  });
+  const lead = sections.find((section) => section.id === "recommended");
+  assert.equal(lead?.title, "Just for you");
+  // The spicy lover's first picks are the spicy kitchens, not the dessert or salad bars.
+  const firstThree = lead?.cards.slice(0, 3).map((c) => c.venue.id.split("-")[0]) ?? [];
+  for (const kind of firstThree)
+    assert.ok(["thai", "mala", "curry", "kimchi"].includes(kind), kind);
+  // A stall known only by a bare unit name is never a recommendation.
+  const ids = sections.flatMap((section) => section.cards.map((c) => c.venue.id));
+  assert.equal(
+    ids.some((id) => id.startsWith("plain")),
+    false,
+  );
+  // The palate's strongest taste gets its own section from the stalls' leans.
+  const heat = sections.find((section) => section.id === "taste-spicy");
+  assert.ok(heat && heat.cards.length >= 3);
+});
+
+test("a dish's own tagged taste wins over the stall's name", () => {
+  // "Baan Thai" leans spicy, but its tagged top dish is sweet: it is not in the spicy section.
+  const sweetAtThai: HomeSectionCard = {
+    venue: { id: "thai-sweet", name: "Baan Thai", cuisineTags: ["thai"] },
+    topDish: { name: "Mango Sticky Rice", tasteVector: vec({ sweet: 9, spicy: 1 }) },
+  };
+  const sections = buildHomeSections([sweetAtThai, ...NO_MENUS], {
+    hour: 12,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    maxSections: 10,
+  });
+  const heat = sections.find((section) => section.id === "taste-spicy");
+  assert.equal(
+    heat?.cards.some((c) => c.venue.id === "thai-sweet"),
+    false,
+  );
+});
+
+test("inside a mall its own stalls lead and the hour's section says here", () => {
+  const inMall = NO_MENUS.map((c, index) =>
+    index % 3 === 0 ? { ...c, venue: { ...c.venue, buildingId: "b-mall" } } : c,
+  );
+  const sections = buildHomeSections(inMall, {
+    hour: 12,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    preferBuildingId: "b-mall",
+    maxSections: 10,
+  });
+  const lead = sections.find((section) => section.id === "recommended");
+  assert.equal(lead?.cards[0]?.venue.buildingId, "b-mall");
+  assert.equal(hourSectionTitle(12, true), "Lunch here");
+  assert.equal(hourSectionTitle(19, true), "Dinner here");
+  assert.equal(hourSectionTitle(23, true), "Late night");
+});
+
+test("Try something different holds kinds the diner has not had, unless they keep to favourites", () => {
+  const options = {
+    hour: 12,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    maxSections: 10,
+    perSection: 4,
+    familiarNames: ["chicken rice"],
+  };
+  const different = buildHomeSections(HUGE, options).find((s) => s.id === "different");
+  assert.equal(different?.title, "Try something different");
+  assert.ok(different && different.cards.length >= 3);
+  assert.equal(
+    different.cards.some((c) => /rice/i.test(c.topDish?.name ?? "")),
+    false,
+  );
+  const favourites = buildHomeSections(HUGE, { ...options, openness: "favourites" as const });
+  assert.equal(
+    favourites.some((s) => s.id === "different"),
+    false,
+  );
+});
+
+test("dishes the diner has had make a Just for you section even before a palate is trusted", () => {
+  const sections = buildHomeSections(NO_MENUS, {
+    hour: 12,
+    familiarNames: ["roti prata"],
+    maxSections: 10,
+  });
+  const lead = sections.find((section) => section.id === "recommended");
+  assert.equal(lead?.title, "Just for you");
+  assert.ok(lead?.cards[0]?.venue.id.startsWith("curry"));
+});

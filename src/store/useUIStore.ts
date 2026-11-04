@@ -30,6 +30,11 @@ export interface ReviewSuccessPayload {
   pointsEarned?: number;
   tagCount?: number;
   rating?: number;
+  /** What the share card prints: the review's words, tags, first photo and author. */
+  text?: string;
+  tags?: string[];
+  photoUrl?: string;
+  authorName?: string;
 }
 
 export type ThemePreference = "system" | "light" | "dark";

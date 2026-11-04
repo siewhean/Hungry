@@ -1,6 +1,6 @@
-import { View } from "react-native";
-import { Lock, Stamp } from "lucide-react-native";
+import { Pressable, View } from "react-native";
 
+import { PassportStampArt } from "@/components/gamification/PassportStampArt";
 import { AppText } from "@/components/ui/AppText";
 import { useHungryTheme } from "@/theme";
 
@@ -11,58 +11,54 @@ type Props = {
   detail: string;
   earned: boolean;
   width: number;
+  categoryId: string;
+  /** The stamp's level, from 0 (first stamp) to 3 (completed). */
+  level: number;
+  /** Opens or closes the stamp's details. Without it the tile is not a button. */
+  onPress?: () => void;
+  /** The tile whose details are open. */
+  selected?: boolean;
 };
 
 /** One circular stamp in the Passport's three-column "Heritage Stamps" grid. */
-export function HeritageStampTile({ title, subtitle, detail, earned, width }: Props) {
+export function HeritageStampTile({
+  title,
+  subtitle,
+  detail,
+  earned,
+  width,
+  categoryId,
+  level,
+  onPress,
+  selected = false,
+}: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const ring = Math.min(76, width - spacing[4]);
+  const ring = Math.min(84, width - spacing[3]);
   return (
-    <View
+    <Pressable
       accessible
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityState={onPress ? { expanded: selected } : undefined}
+      accessibilityHint={onPress ? "Shows when you earned it and the stalls that count" : undefined}
       accessibilityLabel={`${title}, ${subtitle}. ${earned ? detail : "Locked"}`}
-      style={{
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => ({
         alignItems: "center",
         backgroundColor: earned ? palette.surface : palette.bgSoft,
-        borderColor: palette.border,
+        borderColor: selected ? palette.orange : palette.border,
         borderRadius: componentRadii.card,
-        borderWidth: 1,
+        borderWidth: selected ? 1.5 : 1,
         gap: spacing[1],
-        opacity: earned ? 1 : 0.72,
+        opacity: (earned ? 1 : 0.72) * (pressed ? 0.85 : 1),
         paddingHorizontal: spacing[1.5],
         paddingVertical: spacing[3],
+        transform: [{ scale: pressed ? 0.97 : 1 }],
         width,
-      }}
+      })}
     >
-      <View
-        style={{
-          alignItems: "center",
-          backgroundColor: earned ? palette.orangeLight : palette.border,
-          borderRadius: ring / 2,
-          height: ring,
-          justifyContent: "center",
-          marginBottom: spacing[1],
-          width: ring,
-        }}
-      >
-        <View
-          style={{
-            alignItems: "center",
-            borderColor: earned ? palette.orange : palette.textMuted,
-            borderRadius: (ring - 12) / 2,
-            borderStyle: "dashed",
-            borderWidth: 1.5,
-            height: ring - 12,
-            justifyContent: "center",
-            width: ring - 12,
-          }}
-        >
-          {earned ? (
-            <Stamp color={palette.orange} size={26} />
-          ) : (
-            <Lock color={palette.textMuted} size={22} />
-          )}
-        </View>
+      <View style={{ marginBottom: spacing[1] }}>
+        <PassportStampArt categoryId={categoryId} level={level} earned={earned} size={ring} />
       </View>
       <AppText variant="bodySmallBold" numberOfLines={2} style={{ textAlign: "center" }}>
         {title}
@@ -81,6 +77,6 @@ export function HeritageStampTile({ title, subtitle, detail, earned, width }: Pr
       >
         {earned ? detail : "Locked"}
       </AppText>
-    </View>
+    </Pressable>
   );
 }

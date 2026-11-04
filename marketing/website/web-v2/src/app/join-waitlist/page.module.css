@@ -230,7 +230,7 @@ select.input {
 }
 
 .primaryCta {
-  background: var(--color-primary);
+  background: var(--color-primary-accessible);
   box-shadow: var(--shadow-lg);
   color: var(--color-white);
 }

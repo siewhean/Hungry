@@ -17,6 +17,7 @@ import { PostTabPage } from "@/components/review/PostTabPage";
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { useAchievementsLoopEnabled, useNextStamp } from "@/features/passport/useNextStamp";
 import { mainTabOrder } from "@/features/navigation/swipeIntent";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -264,6 +265,9 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const loopEnabled = useAchievementsLoopEnabled();
+  const nextStamp = useNextStamp();
+  const profileRing = loopEnabled && isAuthenticated ? nextStamp?.fraction : undefined;
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
   // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
   // The middle button writes a review; it looks like any other tab.
@@ -354,6 +358,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             label={item.label}
             onPress={onPress}
             onPressIn={onPressIn}
+            ringFraction={routeName === "Profile" ? profileRing : undefined}
           />
         );
       })}

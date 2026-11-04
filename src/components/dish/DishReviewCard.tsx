@@ -116,7 +116,6 @@ export function DishReviewCard({
           isOwn={isOwn}
           returnRoute={returnRoute}
           onRemoved={onRemoved}
-          variant="helpful"
         />
       </View>
     </View>

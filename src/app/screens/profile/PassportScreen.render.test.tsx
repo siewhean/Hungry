@@ -55,3 +55,46 @@ test("a stamp already celebrated shows no unlock card", async () => {
   const view = await renderScreen(PassportScreen as never, { name: "PassportScreen" });
   assert.equal(view.findByTestId("passport-unlock-card"), null);
 });
+
+test("tapping a Heritage stamp opens when it was earned and the stalls that count, and closes again", async () => {
+  const { useStallInteractionStore } = await import("@/store/useStallInteractionStore");
+  const before = useStallInteractionStore.getState().interactions;
+  usePassportStore.setState({
+    celebratedStampIds: { "cuisine-hawker-1": true },
+    stallFacts: {
+      "stall-hawker-1": {
+        stallId: "stall-hawker-1",
+        name: "Ah Seng Hokkien Mee",
+        cuisineTags: [],
+        buildingType: "hawker_centre",
+      },
+    },
+  });
+  useStallInteractionStore.setState({
+    interactions: {
+      "stall-hawker-1": {
+        userId: "user",
+        stallId: "stall-hawker-1",
+        isSaved: false,
+        isTried: true,
+        isReviewed: false,
+        triedAt: "2026-11-03T04:00:00Z",
+      },
+    },
+  });
+  try {
+    const view = await renderScreen(PassportScreen as never, { name: "PassportScreen" });
+    assert.equal(view.findByTestId("stamp-detail-cuisine-hawker"), null, "closed at first");
+    const tile = view.findByLabel(/^Hawker Food Explorer: First stamp/);
+    assert.ok(tile, "the hawker stamp is a button");
+    await view.press(tile as HTMLElement);
+    assert.ok(view.findByTestId("stamp-detail-cuisine-hawker"), "the details open under its row");
+    assert.ok(view.text().includes("Earned 3 Nov 2026 at Ah Seng Hokkien Mee"));
+    assert.ok(view.findByLabel("Ah Seng Hokkien Mee, visited 3 Nov 2026"), "the stall is listed");
+    await view.press(view.findByLabel("Close Hawker Food Explorer") as HTMLElement);
+    assert.equal(view.findByTestId("stamp-detail-cuisine-hawker"), null, "closes again");
+  } finally {
+    useStallInteractionStore.setState({ interactions: before });
+    usePassportStore.setState({ stallFacts: {} });
+  }
+});

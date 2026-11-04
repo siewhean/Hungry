@@ -63,3 +63,21 @@ test("the paused-stall read is already out while the taste read is still waiting
   assert.equal(closuresAskedBeforeTasteAnswered, true);
   assert.equal(fake.callsTo("get_venue_closures").length, 1, "still one call for the whole page");
 });
+
+test("a stall's cuisine tags come through on the venue, even when it has no menu", async () => {
+  fake.rpc.get_discovery_feed_by_location = () => ({
+    data: [
+      { venue_id: "venue-thai", building_id: "b1", venue_name: "Baan", cuisine_tags: ["thai"] },
+      { venue_id: "venue-plain", building_id: "b1", venue_name: "Unit 3", cuisine_tags: [] },
+    ],
+    error: null,
+  });
+  fake.rpc.get_venue_closures = () => ({ data: [], error: null });
+  fake.tables.dish_taste_vectors = () => ({ data: [], error: null });
+
+  const feed = await service.discovery.listDiscoveryFeedByLocation({ areaName: "Tampines" });
+  const [thai, plain] = feed?.venues ?? [];
+  assert.deepEqual(thai?.cuisineTags, ["thai"]);
+  assert.equal(plain?.cuisineTags, undefined);
+  assert.equal(feed?.results.length, 0, "no menu, no dish card");
+});

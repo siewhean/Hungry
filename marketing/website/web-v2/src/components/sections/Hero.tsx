@@ -105,6 +105,8 @@ export default function Hero() {
           className={`${styles.atmosphereImage} ${styles.parallaxSlow}`}
           fill
           priority
+          fetchPriority="high"
+          quality={60}
           sizes="100vw"
         />
         <div className={styles.atmosphereVeil} />
@@ -176,6 +178,7 @@ export default function Hero() {
                     className={styles.foodCardImage}
                     fill
                     sizes="(max-width: 760px) 30vw, 14vw"
+                    quality={60}
                     draggable={false}
                   />
                 </div>

@@ -1,9 +1,8 @@
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { TriedOnSymbol } from "@/components/dish/dishSymbols";
 import { ChevronRightSymbol } from "@/components/stall/stallSymbols";
-import { AppText, Button } from "@/components/ui";
+import { AppText, Button, DismissibleSheet } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 
 /** A dish the sheet offers. */
@@ -24,9 +23,10 @@ type Props = {
 
 /**
  * What the "What did you have?" sheet shows, after a stall is marked visited: the visit is
- * already saved, this only offers to say what the diner had. The system sheet around it
- * (grabber, swipe to dismiss, detents) is the route's formSheet presentation. Skipping costs
- * nothing and nothing here is required.
+ * already saved, this only offers to say what the diner had. The sheet around it is the app's own
+ * DismissibleSheet (grabber, swipe down or tap outside to dismiss) over a transparent route: the
+ * system formSheet it replaced came up empty on iOS. Skipping costs nothing and nothing here is
+ * required.
  */
 export function StallVisitedSheet({
   stallName,
@@ -37,19 +37,16 @@ export function StallVisitedSheet({
   loading = false,
 }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const insets = useSafeAreaInsets();
   const hasDishes = !loading && dishes.length > 0;
 
   return (
-    <View
-      testID="stall-visited-sheet"
-      style={{ backgroundColor: palette.surface, flex: 1, paddingBottom: insets.bottom }}
-    >
-      <ScrollView
-        contentContainerStyle={{ gap: spacing[4], padding: spacing[5] }}
-        contentInsetAdjustmentBehavior="automatic"
-      >
-        <View style={{ alignItems: "center", gap: spacing[1] }}>
+    <DismissibleSheet
+      visible
+      onClose={onSkip}
+      closeLabel="Close"
+      maxHeightRatio={0.85}
+      header={
+        <View style={{ alignItems: "center", gap: spacing[1], padding: spacing[5] }}>
           <TriedOnSymbol color={palette.orange} size={32} />
           <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
             {hasDishes ? "Visited. What did you have?" : "Visited"}
@@ -62,6 +59,16 @@ export function StallVisitedSheet({
                 : `Saved to your visited stalls. Want to write the first review of ${stallName}?`}
           </AppText>
         </View>
+      }
+    >
+      <ScrollView
+        testID="stall-visited-sheet"
+        contentContainerStyle={{
+          gap: spacing[3],
+          paddingBottom: spacing[3],
+          paddingHorizontal: spacing[5],
+        }}
+      >
         {loading ? (
           <ActivityIndicator accessibilityLabel="Loading dishes" color={palette.orange} />
         ) : hasDishes ? (
@@ -101,6 +108,6 @@ export function StallVisitedSheet({
         )}
         <Button label="Skip" variant="ghost" onPress={onSkip} />
       </ScrollView>
-    </View>
+    </DismissibleSheet>
   );
 }

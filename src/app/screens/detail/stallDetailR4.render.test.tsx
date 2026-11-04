@@ -415,12 +415,13 @@ test("R5-STALL-3: Mark visited opens 'What did you have?' as a system form sheet
   assert.equal(useStallInteractionStore.getState().interactions[UNSAVED_STALL]?.isTried, true);
 });
 
-test("R5-STALL-3: the Visited route is a formSheet with a grabber and a half-height detent (source contract)", () => {
+test("R5-STALL-3: the Visited route is a transparent route holding the app's own sheet (source contract)", () => {
   const navigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
   const route = navigator.slice(navigator.indexOf('name="StallVisited"'));
-  assert.match(route, /presentation: "formSheet"/);
-  assert.match(route, /sheetGrabberVisible: true/);
-  assert.match(route, /sheetAllowedDetents: \[0\.5, 1\]/);
+  assert.match(route.slice(0, 600), /presentation: "transparentModal"/);
+  assert.doesNotMatch(route.slice(0, 600), /presentation: "formSheet"/);
+  const sheet = readRepoFile("src/components/stall/StallVisitedSheet.tsx");
+  assert.match(sheet, /<DismissibleSheet/);
 });
 
 test("R5-STALL-3: the Visited sheet reads the stall's dishes, skips back, and picking a dish replaces it with the composer", async () => {

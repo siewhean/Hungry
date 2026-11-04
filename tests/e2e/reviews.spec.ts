@@ -66,18 +66,19 @@ test.describe("Reviews editor", () => {
     // One Publish, in the header; the optional parts sit under a fold.
     const publish = page.getByRole("button", { name: "Publish", exact: true });
     await expect(publish).toBeDisabled();
-    const missing = page.getByText("Add a photo of the dish to publish.");
+    // A star rating is the one thing still needed; a photo is optional (sh, 2026-11-04).
+    await expect(page.getByText("Add a photo of the dish to publish.")).toHaveCount(0);
+    const missing = page.getByText("Add a star rating to publish.");
     await expect(missing).toBeVisible();
     await missing.click();
 
-    // A photo is required before anything else can be published.
+    await page.getByTestId("star-4").first().click();
+    await expect(publish).toBeEnabled();
+
+    // A photo can still be added.
     const chooser = page.waitForEvent("filechooser");
     await page.getByRole("button", { name: /^Add a photo, \d/ }).click();
     await (await chooser).setFiles({ name: "dish.png", mimeType: "image/png", buffer: PIXEL_PNG });
-    await expect(page.getByText("Add a star rating to publish.")).toBeVisible();
-
-    await page.getByTestId("star-4").first().click();
-    await expect(publish).toBeEnabled();
 
     await page.getByRole("button", { name: "Add more detail (optional)" }).click();
     await page.getByRole("button", { name: "Yes", exact: true }).click();

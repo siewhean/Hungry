@@ -482,6 +482,39 @@ function ReviewSuccessModalHost({
   return <ReviewSuccessModal onOpenHistory={onOpenHistory} onOpenReview={onOpenReview} />;
 }
 
+/** Root routes the system presents as a modal: anything drawn at the root sits underneath them. */
+const MODAL_ROOT_ROUTES = new Set<RootRouteName>([
+  "StallVisited",
+  "ReviewStack",
+  "MerchantClaimExplainer",
+  "StoryViewer",
+  "AddStory",
+]);
+
+function topRootRouteIsModal(): boolean {
+  const state = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
+  const name = state?.routes[state.index]?.name;
+  return name !== undefined && MODAL_ROOT_ROUTES.has(name as RootRouteName);
+}
+
+function StampMomentHostMount({ onOpenPassport }: { onOpenPassport: () => void }) {
+  const [modalRouteOpen, setModalRouteOpen] = useState(topRootRouteIsModal);
+  const reviewSuccessOpen = useUIStore((state) => state.reviewSuccess != null);
+  useEffect(() => {
+    setModalRouteOpen(topRootRouteIsModal());
+    return navigationRef.addListener("state", () => setModalRouteOpen(topRootRouteIsModal()));
+  }, []);
+  const { StampMomentHost } =
+    require("@/components/gamification/StampMomentHost") as typeof import("@/components/gamification/StampMomentHost");
+  // A celebration drawn while a sheet or modal is up would be hidden and time out unseen.
+  return (
+    <StampMomentHost
+      blocked={modalRouteOpen || reviewSuccessOpen}
+      onOpenPassport={onOpenPassport}
+    />
+  );
+}
+
 function CredEarnedToastHost() {
   if (!FEATURE_FLAGS.gamificationEnabled) {
     return null;
@@ -789,11 +822,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             getComponent={loadStallVisitedScreen}
             name="StallVisited"
             options={{
-              presentation: "formSheet",
+              // The sheet is the app's own DismissibleSheet over this transparent route: the
+              // system formSheet it replaced came up empty on iOS.
+              presentation: "transparentModal",
+              animation: "fade",
               headerShown: false,
-              sheetAllowedDetents: [0.5, 1],
-              sheetGrabberVisible: true,
-              sheetCornerRadius: 24,
+              contentStyle: { backgroundColor: "transparent" },
             }}
           />
           <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />
@@ -917,6 +951,7 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
+      <StampMomentHostMount onOpenPassport={() => navigationRef.navigate("PassportScreen")} />
     </>
   );
 }

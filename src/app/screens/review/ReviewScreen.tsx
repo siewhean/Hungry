@@ -592,7 +592,14 @@ export function ReviewScreen({ navigation, route }: Props) {
       });
 
       // One confirmation: the success modal.
-      useUIStore.getState().showReviewSuccess(successPayload);
+      useUIStore.getState().showReviewSuccess({
+        ...successPayload,
+        // For the share card on the confirmation.
+        text: reviewText,
+        tags: reviewTags,
+        photoUrl: draft.photos[0],
+        authorName: useProfileStore.getState().profile.displayName,
+      });
       resetDraft();
       // The editor is the only screen in its stack: leave the stack so the user
       // lands back where they started (usually the dish they reviewed).
@@ -626,7 +633,7 @@ export function ReviewScreen({ navigation, route }: Props) {
     }
   };
 
-  // Where each required section sits, so the "Add a photo…" line can scroll to it.
+  // Where each required section sits, so the "Add a star rating…" line can scroll to it.
   const rememberSectionY = (field: ReviewRequiredField) => (event: LayoutChangeEvent) => {
     sectionYRef.current[field] = event.nativeEvent.layout.y;
   };
@@ -755,11 +762,12 @@ export function ReviewScreen({ navigation, route }: Props) {
     </View>
   );
 
-  // Photo: required (sh, STITCH-BUILD-03), so it comes right after the dish.
+  // Photo: optional (sh, 2026-11-04; it was required since STITCH-BUILD-03). It comes after the
+  // rating, which is required, and before the words.
   const photoSection = (
-    <View onLayout={rememberSectionY("photo")}>
+    <View>
       <MediaPicker
-        title="Photo (required)"
+        title="Photo (optional)"
         photos={draft.photos}
         videoUri={reviewVideoEnabled ? draft.videoUri : undefined}
         onAddPhoto={(uri) => {
@@ -963,8 +971,8 @@ export function ReviewScreen({ navigation, route }: Props) {
         >
           <View style={{ gap: spacing[6] }}>
             {dishSection}
-            {photoSection}
             {ratingSection}
+            {photoSection}
             {textSection}
             {musicSection}
             <View style={{ gap: spacing[4] }}>

@@ -179,6 +179,22 @@ export interface VenueSummary {
   longitude?: number;
   /** Metres from the search point; set only on stalls read from the discovery feed. */
   distanceMeters?: number;
+  /** The catalogue's cuisine tags ("thai", "coffee_shop"); set on stalls read from the discovery feed. */
+  cuisineTags?: string[];
+}
+
+/** What the Passport needs to know about a stall to decide which stamps it counts toward. */
+export interface StallStampFacts {
+  stallId: string;
+  /** The stall's name, to show which visit earned a stamp. */
+  name?: string;
+  /** The stall's cuisine tags, lower case (for example "chinese", "ramen"). */
+  cuisineTags: string[];
+  /** The kind of building it is in (for example "hawker_centre", "mall"). */
+  buildingType?: string;
+  planningArea?: string;
+  /** Building name and address together, for neighbourhoods that are not a planning area. */
+  placeText?: string;
 }
 
 export type UserStallSubmissionStatus =
