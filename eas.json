@@ -29,8 +29,8 @@
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://frluxwpqqyomiqmjzavd.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZybHV4d3BxcXlvbWlxbWp6YXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2NTIwMDEsImV4cCI6MjEwODIyODAwMX0.ZZCy_SsRdlG-SSJWDqaioOg8rdruXExVwH8lgO3Mil0",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uuylnktiipkmcweyqnpd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1eWxua3RpaXBrbWN3ZXlxbnBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MzY2NzQsImV4cCI6MjEwODIxMjY3NH0.PV06xHHwT-jiMrvtKrlNdL0RITBSHZugbbGmW-YaVL4",
         "EXPO_PUBLIC_RELEASE_01_CORE_ONLY": "1",
         "EXPO_PUBLIC_ENABLE_SOCIAL_FEED": "0",
         "EXPO_PUBLIC_ENABLE_POSTS": "0",
@@ -52,8 +52,8 @@
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_HUNGRY_DATA_SOURCE": "supabase",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://frluxwpqqyomiqmjzavd.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZybHV4d3BxcXlvbWlxbWp6YXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2NTIwMDEsImV4cCI6MjEwODIyODAwMX0.ZZCy_SsRdlG-SSJWDqaioOg8rdruXExVwH8lgO3Mil0"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://uuylnktiipkmcweyqnpd.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1eWxua3RpaXBrbWN3ZXlxbnBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MzY2NzQsImV4cCI6MjEwODIxMjY3NH0.PV06xHHwT-jiMrvtKrlNdL0RITBSHZugbbGmW-YaVL4"
       }
     },
     "preview-simulator": {
