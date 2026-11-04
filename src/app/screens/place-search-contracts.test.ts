@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
+import { readHomeSource } from "@/test/sourceContracts";
+
 function read(relativePath: string): string {
   return readFileSync(path.join(process.cwd(), relativePath), "utf8");
 }
@@ -64,7 +66,7 @@ test("place suggestions open the stalls of that building, not a fuzzy text searc
 });
 
 test("Discover names the mall the phone is inside and lists its stalls first", () => {
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   // Only a real GPS fix counts; a picked area is never "inside" a place.
   assert.match(discover, /locationPermission === "granted" && !manualCoordinate/);
   assert.match(discover, /\{discoverHeaderLabel\}/);

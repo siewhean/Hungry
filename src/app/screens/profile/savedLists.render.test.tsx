@@ -18,6 +18,7 @@ import {
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
@@ -35,11 +36,17 @@ function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K
   });
 }
 
+const originalMapboxToken = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+
 beforeEach(async () => {
+  process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN = "test-token"; // a build that can draw the map
   await enterScenario("user");
+  useSavedViewStore.getState().reset();
   clearTrackedAnalyticsEvents();
 });
 afterEach(async () => {
+  if (originalMapboxToken === undefined) delete process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
+  else process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN = originalMapboxToken;
   await cleanup();
   while (restores.length) restores.pop()?.();
   setExperimentFlagSource(undefined);
@@ -156,10 +163,14 @@ test("Saved has no Posts tab with the social feed off; tabs are tabs; the headin
   const stallsTab = view.findByLabel("Saved stalls");
   assert.ok(stallsTab);
   assert.equal(stallsTab?.getAttribute("role"), "tab");
-  assert.ok(view.findByText("Saved dishes"));
-  await view.press(stallsTab);
-  assert.ok(view.findByText("Saved stalls"));
+  // One title, "Saved": the section tab names the section, so there is no second heading.
   assert.equal(view.findByText("Saved dishes"), null);
+  assert.equal(view.findByLabel("Saved collections"), null);
+  assert.ok(view.findByLabel("Saved lists"));
+  await view.press(stallsTab);
+  await view.settle();
+  assert.ok(view.findByLabel("Show saved stalls as a list or on a map"));
+  assert.equal(view.findByText("Nothing saved yet"), null);
 });
 
 // ─── SAVED-1, SAVED-5 ────────────────────────────────────────────────────────────────────────
@@ -177,19 +188,19 @@ test("Collections search finds a saved dish outside the local cache by its serve
   assert.equal(getDataRepository().getDishById("server-only-dish"), undefined);
 
   const view = await renderScreen(CollectionsScreen as never, { name: "Collections" });
-  const search = view.findByLabel("Search your collections");
+  const search = view.findByLabel("Search your lists");
   await view.type(search, "nam sing");
   assert.ok(view.findByText("Hokkien Mee"));
-  assert.match(view.text(), /1 item in your collections/);
+  assert.match(view.text(), /1 item in your lists/);
 });
 
 test("Collections says it is searching while item details are still loading", async () => {
   const discovery = getHungryService().discovery;
   stub(discovery, "getItemDetails", () => new Promise<never>(() => undefined));
   const view = await renderScreen(CollectionsScreen as never, { name: "Collections" });
-  await view.type(view.findByLabel("Search your collections"), "laksa");
-  assert.match(view.text(), /Searching your collections…/);
-  assert.doesNotMatch(view.text(), /Nothing in your collections matches/);
+  await view.type(view.findByLabel("Search your lists"), "laksa");
+  assert.match(view.text(), /Searching your lists…/);
+  assert.doesNotMatch(view.text(), /Nothing in your lists matches/);
 });
 
 // ─── SAVED-X4, SAVED-14 ──────────────────────────────────────────────────────────────────────
@@ -383,9 +394,9 @@ test("Saved > Collections shows an error with Retry and reports when lists fail 
   });
   const reports = captureReports();
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
-  await view.press(view.findByLabel("Saved collections"));
+  await view.press(view.findByLabel("Saved lists"));
   assert.ok(view.findByText("Couldn't load your lists"));
-  assert.doesNotMatch(view.text(), /Make albums like/);
+  assert.doesNotMatch(view.text(), /Make lists like/);
   assert.ok(reports.some((report) => report.label === "saved lists"));
   fail = false;
   await view.press(view.findByText("Retry"));

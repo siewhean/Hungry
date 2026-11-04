@@ -28,6 +28,12 @@ interface LocationState {
   setManualSelection: (label: string, coordinate: Coordinate, placeName?: string) => void;
   /** Drops the manual pick and returns to device location (fresh fix when allowed). */
   clearManualLocation: () => Promise<void>;
+  /**
+   * Follows the phone while the app is open, so "You are at" and the map move with the diner.
+   * Does nothing without permission or while an area is picked by hand. Never prompts.
+   */
+  startLocationWatch: () => Promise<void>;
+  stopLocationWatch: () => void;
   /** Re-reads the OS permission without prompting, e.g. when the app returns to the foreground. */
   syncLocationPermission: () => Promise<void>;
   resetLocationState: () => void;
@@ -43,7 +49,10 @@ export function isDefaultLocation(coordinate: Coordinate) {
   );
 }
 
-export const LOCATION_REFRESH_MAX_AGE_MS = 10 * 60 * 1000;
+export const LOCATION_REFRESH_MAX_AGE_MS = 2 * 60 * 1000;
+/** A moving phone reports a new fix after this far or this long, whichever comes first. */
+export const LOCATION_WATCH_DISTANCE_METERS = 75;
+export const LOCATION_WATCH_INTERVAL_MS = 30 * 1000;
 export const LOCATION_FIX_TIMEOUT_MS = 10 * 1000;
 
 // Manual picks go to analytics at ~1 km precision, not the exact point.
@@ -58,6 +67,10 @@ type ExpoLocationLike = {
   getCurrentPositionAsync: (options: { accuracy: number }) => Promise<{
     coords: { latitude: number; longitude: number };
   }>;
+  watchPositionAsync?: (
+    options: { accuracy: number; distanceInterval: number; timeInterval: number },
+    callback: (position: { coords: { latitude: number; longitude: number } }) => void,
+  ) => Promise<{ remove: () => void }>;
 };
 
 function loadExpoLocationModule(): ExpoLocationLike | null {
@@ -118,6 +131,9 @@ export function getEffectiveLocation(
 }
 
 let refreshInFlight: Promise<boolean> | null = null;
+let watchSubscription: { remove: () => void } | null = null;
+/** Bumped on every start and stop, so a watch that finishes starting after a stop is dropped. */
+let watchRun = 0;
 
 export const useLocationStore = create<LocationState>()(
   persist(
@@ -269,6 +285,49 @@ export const useLocationStore = create<LocationState>()(
         if (!refreshed && !get().manualCoordinate) {
           set({ currentLocation: defaultLocation, lastLocationFixAt: undefined });
         }
+      },
+      startLocationWatch: async () => {
+        if (watchSubscription) return;
+        const state = get();
+        if (state.permission !== "granted" || state.manualCoordinate) return;
+        const Location = loadExpoLocationModule();
+        if (!Location?.watchPositionAsync) return;
+        const run = ++watchRun;
+        try {
+          const permission = await Location.getForegroundPermissionsAsync?.();
+          if (permission && permission.status !== "granted") return;
+          const subscription = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              distanceInterval: LOCATION_WATCH_DISTANCE_METERS,
+              timeInterval: LOCATION_WATCH_INTERVAL_MS,
+            },
+            (position) => {
+              const current = get();
+              // A hand-picked area stays in effect until it is cleared.
+              if (current.permission !== "granted" || current.manualCoordinate) return;
+              set({
+                currentLocation: {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                },
+                lastLocationFixAt: Date.now(),
+              });
+            },
+          );
+          if (run !== watchRun) {
+            subscription.remove();
+            return;
+          }
+          watchSubscription = subscription;
+        } catch {
+          // No live updates; the launch and foreground refreshes still keep the location fresh.
+        }
+      },
+      stopLocationWatch: () => {
+        watchRun += 1;
+        watchSubscription?.remove();
+        watchSubscription = null;
       },
       syncLocationPermission: async () => {
         const getPermission = loadExpoLocationModule()?.getForegroundPermissionsAsync;

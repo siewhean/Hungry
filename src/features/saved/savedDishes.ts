@@ -112,3 +112,93 @@ export function buildSavedDirectionsUrl(dish: SavedDishCard): string | undefined
     savedDishCoordinate(dish),
   );
 }
+
+/** The sections of the one Saved page. Posts only show while the social feed is on. */
+export type SavedSection = "dishes" | "stalls" | "lists" | "posts";
+
+export const SAVED_SECTION_LABELS: Record<SavedSection, string> = {
+  dishes: "Dishes",
+  stalls: "Stalls",
+  lists: "Lists",
+  posts: "Posts",
+};
+
+/** The sections to show, in order. */
+export function visibleSavedSections(socialFeedEnabled: boolean): SavedSection[] {
+  return (Object.keys(SAVED_SECTION_LABELS) as SavedSection[]).filter(
+    (key) => key !== "posts" || socialFeedEnabled,
+  );
+}
+
+export type SavedLayout = "card" | "row";
+
+/**
+ * Photo cards only pay off when at least three in four saved dishes have a photo; otherwise a card is a 180pt grey
+ * box and a screen shows two and a half dishes. The list decides, so the density experiment only
+ * moves lists that can show either layout.
+ */
+export function savedListHasPhotos(dishes: readonly SavedDishCard[]): boolean {
+  if (dishes.length === 0) return false;
+  const withPhoto = dishes.filter((dish) => Boolean(dish.imageUrl)).length;
+  return withPhoto * 4 >= dishes.length * 3;
+}
+
+/** One pin on the Saved map: every saved dish at the same stall shares it. */
+export type SavedMapPin = {
+  id: string;
+  coordinate: Coordinate;
+  venueName: string;
+  dishes: SavedDishCard[];
+};
+
+/**
+ * Pins for the saved dishes that have a point, grouped by stall (else by the exact point), plus
+ * the dishes with no point, which the map names in an "N not on the map" note.
+ */
+export function groupSavedMapPins(dishes: readonly SavedDishCard[]): {
+  pins: SavedMapPin[];
+  notOnMap: SavedDishCard[];
+} {
+  const byKey = new Map<string, SavedMapPin>();
+  const notOnMap: SavedDishCard[] = [];
+  for (const dish of dishes) {
+    const coordinate = savedDishCoordinate(dish);
+    if (!coordinate) {
+      notOnMap.push(dish);
+      continue;
+    }
+    const key = dish.venueId ?? `${coordinate.latitude},${coordinate.longitude}`;
+    const existing = byKey.get(key);
+    if (existing) existing.dishes.push(dish);
+    else {
+      byKey.set(key, {
+        id: key,
+        coordinate,
+        venueName: dish.venueName ?? dish.name,
+        dishes: [dish],
+      });
+    }
+  }
+  return { pins: [...byKey.values()], notOnMap };
+}
+
+/** The middle of all pins and a zoom that fits them; Singapore's centre when there are none. */
+export function fitSavedPins(pins: readonly { coordinate: Coordinate }[]): {
+  center: Coordinate;
+  zoom: number;
+} {
+  if (pins.length === 0) return { center: { latitude: 1.3521, longitude: 103.8198 }, zoom: 11 };
+  const lats = pins.map((pin) => pin.coordinate.latitude);
+  const lngs = pins.map((pin) => pin.coordinate.longitude);
+  const center = {
+    latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
+    longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+  };
+  const span = Math.max(
+    Math.max(...lats) - Math.min(...lats),
+    Math.max(...lngs) - Math.min(...lngs),
+  );
+  // Mapbox zoom halves the visible span per level; ~0.35 degrees fills the island at zoom 11.
+  const zoom = span <= 0.002 ? 16 : Math.max(10, Math.min(16, 11 + Math.log2(0.35 / span)));
+  return { center, zoom };
+}

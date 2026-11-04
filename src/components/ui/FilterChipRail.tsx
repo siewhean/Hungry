@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import {
-  ScrollView,
   type ScrollViewProps,
   type StyleProp,
   type ViewStyle,
@@ -9,11 +8,13 @@ import {
 
 import { useHungryTheme } from "@/theme";
 import { Chip } from "./Chip";
+import { RailScrollView } from "./RailScrollView";
 
 export type FilterChipRailOption<T extends string = string> = {
   id: T;
   label: string;
   leftIcon?: ReactNode;
+  rightIcon?: ReactNode;
   accessibilityLabel?: string;
 };
 
@@ -23,6 +24,9 @@ interface FilterChipRailProps<T extends string = string> {
   selectedIds?: readonly T[];
   onSelect: (id: T) => void;
   renderLeftIcon?: (option: FilterChipRailOption<T>, selected: boolean) => ReactNode;
+  renderRightIcon?: (option: FilterChipRailOption<T>, selected: boolean) => ReactNode;
+  /** The chosen chips are solid orange, so they read clearly over a map. */
+  solidSelected?: boolean;
   onSwipeLockChange?: (locked: boolean) => void;
   unlockDelayMs?: number;
   gap?: number;
@@ -40,6 +44,8 @@ export function FilterChipRail<T extends string = string>({
   selectedIds,
   onSelect,
   renderLeftIcon,
+  renderRightIcon,
+  solidSelected = false,
   onSwipeLockChange,
   unlockDelayMs = DEFAULT_UNLOCK_DELAY_MS,
   gap,
@@ -100,7 +106,7 @@ export function FilterChipRail<T extends string = string>({
   );
 
   return (
-    <ScrollView
+    <RailScrollView
       horizontal
       directionalLockEnabled
       nestedScrollEnabled
@@ -128,11 +134,13 @@ export function FilterChipRail<T extends string = string>({
             label={option.label}
             accessibilityLabel={option.accessibilityLabel}
             selected={selected}
+            solid={solidSelected}
             onPress={() => onSelect(option.id)}
             leftIcon={renderLeftIcon ? renderLeftIcon(option, selected) : option.leftIcon}
+            rightIcon={renderRightIcon ? renderRightIcon(option, selected) : option.rightIcon}
           />
         );
       })}
-    </ScrollView>
+    </RailScrollView>
   );
 }

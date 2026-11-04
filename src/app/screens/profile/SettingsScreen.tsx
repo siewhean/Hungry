@@ -5,42 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState, Linking, Platform, Share, View } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import {
-  Accessibility,
-  BarChart3,
-  Compass,
-  Database,
-  Download,
-  Eraser,
-  Eye,
-  FileText,
-  Hand,
-  History,
-  Info,
-  KeyRound,
-  LocateFixed,
-  Lock,
-  LogOut,
-  MapPin,
-  MessageCircle,
-  RotateCcw,
-  Salad,
-  Scale,
-  Settings2,
-  Shield,
-  Smartphone,
-  Sparkles,
-  SunMoon,
-  Trash2,
-  UserX,
-  Vibrate,
-  Wallet,
-} from "lucide-react-native";
 import { useShallow } from "zustand/react/shallow";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { Button, Dialog } from "@/components/ui";
+import { FeedbackSheet } from "@/components/feedback/FeedbackSheet";
+import { AppSymbol, Dialog } from "@/components/ui";
 import { SettingsSection, SettingsRow } from "@/components/settings";
 import { StallAlertsSettings } from "@/components/settings/StallAlertsSettings";
 import { AccountDeletionCodeDialog } from "@/components/settings/AccountDeletionCodeDialog";
@@ -54,6 +24,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { foodOpennessLabel } from "@/constants/taste";
 import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { answerAnalyticsConsent, setAiSearchConsent } from "@/features/privacy/consent";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { confirmAction } from "@/lib/runtime/confirmAction";
@@ -75,19 +46,15 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
-import { ThemePreference, useUIStore } from "@/store/useUIStore";
+import { useConsentStore } from "@/store/useConsentStore";
+import { useDeveloperToolsStore } from "@/store/useDeveloperToolsStore";
+import { useUIStore } from "@/store/useUIStore";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { PendingDeletionBanner } from "@/features/auth/PendingDeletionBanner";
 import { useHungryTheme } from "@/theme";
 import { BLOCKED_AND_HIDDEN_TITLE } from "./BlockedAndHiddenScreen";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { SUPPORT_EMAIL, WEB_LINKS } from "@/constants/links";
-
-const THEME_LABELS: Record<ThemePreference, string> = {
-  system: "Automatic",
-  light: "Light",
-  dark: "Dark",
-};
 
 /** Supabase AuthErrors (wrong or expired code) keep the code dialog open. */
 function isAuthCodeError(error: unknown): boolean {
@@ -107,16 +74,10 @@ function describeDeletionDate(scheduledFor: string): string {
   return label === "soon" ? `in ${ACCOUNT_DELETION_GRACE_DAYS} days` : `on ${label}`;
 }
 
-const THEME_DESCRIPTIONS: Record<ThemePreference, string> = {
-  system: "Follows your phone's setting.",
-  light: "Always light.",
-  dark: "Always dark.",
-};
-
 export function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const rootNavigation = getRootNavigation(navigation);
-  const { palette, spacing } = useHungryTheme();
+  const { palette } = useHungryTheme();
 
   const setAuthNotice = useSessionStore((state) => state.setAuthNotice);
   const { signOut, isAuthenticated } = useSessionStore(
@@ -155,31 +116,21 @@ export function SettingsScreen() {
     })),
   );
   const {
-    themePreference,
-    setThemePreference,
     hapticFeedbackEnabled,
     setHapticFeedbackEnabled,
-    reducedMotionEnabled,
-    setReducedMotionEnabled,
     allowSearchHistory,
     setAllowSearchHistory,
     analyticsEnabled,
-    setAnalyticsEnabled,
     leftHandedMode,
     setLeftHandedMode,
     showToast,
   } = useUIStore(
     useShallow((state) => ({
-      themePreference: state.themePreference,
-      setThemePreference: state.setThemePreference,
       hapticFeedbackEnabled: state.hapticFeedbackEnabled,
       setHapticFeedbackEnabled: state.setHapticFeedbackEnabled,
-      reducedMotionEnabled: state.reducedMotionEnabled,
-      setReducedMotionEnabled: state.setReducedMotionEnabled,
       allowSearchHistory: state.allowSearchHistory,
       setAllowSearchHistory: state.setAllowSearchHistory,
       analyticsEnabled: state.analyticsEnabled,
-      setAnalyticsEnabled: state.setAnalyticsEnabled,
       leftHandedMode: state.leftHandedMode,
       setLeftHandedMode: state.setLeftHandedMode,
       showToast: state.showToast,
@@ -198,6 +149,57 @@ export function SettingsScreen() {
   // Neutral grey icons on grey discs; colour is kept for state (error red, accent actions).
   const iconColor = palette.textSecondary;
   const neutralRow = { editorial: true, iconTone: "neutral" } as const;
+  // SocialGrid and FollowedStalls live in the profile stack, which this screen sits in.
+  const navigateLoose = (name: string, params?: object) =>
+    (navigation as unknown as { navigate: (name: string, params?: object) => void }).navigate(
+      name,
+      params,
+    );
+  // What the profile's three-dot menu held, kept one tap from the settings icon. Each row
+  // keeps the flag it had there, so a build without the feature shows no row.
+  const profileShortcuts = [
+    FEATURE_FLAGS.merchantCentreEnabled && hasMerchantAccount
+      ? {
+          id: "merchant-dashboard",
+          label: "Merchant dashboard",
+          symbol: "stall" as const,
+          onPress: () => rootNavigation.navigate("MerchantTabs" as never),
+        }
+      : null,
+    FEATURE_FLAGS.merchantCentreEnabled && !hasMerchantAccount
+      ? {
+          id: "business",
+          label: "Hungry for Business",
+          symbol: "stall" as const,
+          onPress: () => rootNavigation.navigate("MerchantClaimExplainer"),
+        }
+      : null,
+    FEATURE_FLAGS.collectionsEnabled
+      ? {
+          id: "liked-content",
+          label: "Liked content",
+          symbol: "save" as const,
+          onPress: () => navigateLoose("SocialGrid", { type: "liked" }),
+        }
+      : null,
+    FEATURE_FLAGS.followConnectionsEnabled
+      ? {
+          id: "follow-requests",
+          label: "Follow requests",
+          symbol: "followRequests" as const,
+          onPress: () => rootNavigation.navigate("FollowRequests"),
+        }
+      : null,
+    FEATURE_FLAGS.stallFollowEnabled
+      ? {
+          id: "followed-stalls",
+          label: "Followed stalls",
+          symbol: "stall" as const,
+          onPress: () => navigateLoose("FollowedStalls"),
+        }
+      : null,
+  ].filter((shortcut): shortcut is NonNullable<typeof shortcut> => shortcut !== null);
+  const hasProfileShortcuts = profileShortcuts.length > 0;
   const isNative = Platform.OS !== "web";
 
   // The denominator for every Settings experiment: one view per time the screen comes into focus.
@@ -209,16 +211,12 @@ export function SettingsScreen() {
     }, []),
   );
 
-  const normalizedThemePreference: ThemePreference =
-    themePreference === "system" || themePreference === "light" || themePreference === "dark"
-      ? themePreference
-      : "system";
-
   const [deletionRequested, setDeletionRequested] = useState(false);
   const [deletionCodeVisible, setDeletionCodeVisible] = useState(false);
   const [isExportingData, setIsExportingData] = useState(false);
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
-  const [themeSheetVisible, setThemeSheetVisible] = useState(false);
+  const aiSearchAllowed = useConsentStore((state) => state.aiSearchAllowed);
+  const [isSavingAiSearch, setIsSavingAiSearch] = useState(false);
   const [visibilitySheetVisible, setVisibilitySheetVisible] = useState(false);
   const [canChangePassword, setCanChangePassword] = useState(false);
   const [deletionPending, setDeletionPending] = useState(false);
@@ -320,6 +318,7 @@ export function SettingsScreen() {
     })();
   };
 
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [accountDialog, setAccountDialog] = useState<
     | "signOut"
     | "deleteAccount"
@@ -424,11 +423,6 @@ export function SettingsScreen() {
 
   const resendDeletionCode = () => getHungryService().auth.sendAccountDeletionCode();
 
-  const selectTheme = (preference: ThemePreference) => {
-    setThemePreference(preference);
-    trackAnalyticsEvent("settings_changed", { setting: "theme", value: preference });
-  };
-
   const changeProfileVisibility = async (visibility: "public" | "private") => {
     if (visibility === profile.profileVisibility) return;
     setIsSavingVisibility(true);
@@ -487,11 +481,26 @@ export function SettingsScreen() {
     }
   };
 
-  // Turning it off sends nothing (not even this change); turning it on says so.
+  // Turning it off sends nothing (not even this change); turning it on says so. Saved on the
+  // account too, so the choice follows the person to another phone.
   const handleAnalyticsToggle = (enabled: boolean) => {
-    setAnalyticsEnabled(enabled);
-    if (enabled)
-      trackAnalyticsEvent("settings_changed", { setting: "usage_analytics", value: true });
+    void answerAnalyticsConsent(enabled);
+  };
+
+  // Saved on the account before the switch moves, so it never shows "allowed" for a choice the
+  // server does not have.
+  const handleAiSearchToggle = (allowed: boolean) => {
+    setIsSavingAiSearch(true);
+    void setAiSearchConsent(allowed)
+      .then(() => trackAnalyticsEvent("settings_changed", { setting: "ai_search", value: allowed }))
+      .catch((error: unknown) => {
+        reportError(error, { area: "settings_ai_search_consent" });
+        showToast({
+          message: "Couldn't save that. Check your connection and try again.",
+          tone: "error",
+        });
+      })
+      .finally(() => setIsSavingAiSearch(false));
   };
 
   const handleSearchHistoryToggle = (enabled: boolean) => {
@@ -633,6 +642,16 @@ export function SettingsScreen() {
       .catch((error: unknown) => reportError(error, { area: "settings_copy_version" }));
   };
 
+  // Seven quick taps on Version open the hidden Developer tools; each tap still copies the version.
+  const developerToolsUnlocked = useDeveloperToolsStore((state) => state.unlocked);
+  const handleVersionTap = () => {
+    if (useDeveloperToolsStore.getState().registerVersionTap()) {
+      showToast({ message: "Developer tools unlocked.", tone: "success" });
+      return;
+    }
+    handleCopyVersion();
+  };
+
   const foodOpenness = foodOpennessLabel(resolveFoodOpenness(profile.tasteProfile));
   const diningSummary = [
     profile.dietaryPreferences.length ? `${profile.dietaryPreferences.length} dietary` : null,
@@ -658,6 +677,22 @@ export function SettingsScreen() {
         />
       ) : null}
 
+      {isAuthenticated && hasProfileShortcuts ? (
+        <SettingsSection editorial title="Shortcuts">
+          {profileShortcuts.map((shortcut, index) => (
+            <SettingsRow
+              key={shortcut.id}
+              {...neutralRow}
+              label={shortcut.label}
+              icon={<AppSymbol name={shortcut.symbol} size={20} color={iconColor} />}
+              type="navigation"
+              onPress={shortcut.onPress}
+              isLast={index === profileShortcuts.length - 1}
+            />
+          ))}
+        </SettingsSection>
+      ) : null}
+
       <SettingsSection
         // Remount when the variant resolves after flags load, so the fold state follows it.
         key={`dining-${diningVariant}`}
@@ -671,7 +706,7 @@ export function SettingsScreen() {
           {...neutralRow}
           label="Dietary preferences"
           description="Choose the dietary flags used for your recommendations."
-          icon={<Salad size={20} color={iconColor} />}
+          icon={<AppSymbol name="dietary" size={20} color={iconColor} />}
           type="navigation"
           value={
             profile.dietaryPreferences.length
@@ -690,7 +725,7 @@ export function SettingsScreen() {
           {...neutralRow}
           label="Flavour profile"
           description="Review the taste answers behind your recommendations."
-          icon={<Compass size={20} color={iconColor} />}
+          icon={<AppSymbol name="flavourProfile" size={20} color={iconColor} />}
           type="navigation"
           onPress={() =>
             rootNavigation.navigate("OnboardingStack", {
@@ -703,7 +738,7 @@ export function SettingsScreen() {
         <SettingsRow
           {...neutralRow}
           label="Meal budget"
-          icon={<Wallet size={20} color={iconColor} />}
+          icon={<AppSymbol name="mealBudget" size={20} color={iconColor} />}
           type="navigation"
           value={profile.maxDishBudget ? `Up to S$${profile.maxDishBudget}` : "Not set"}
           onPress={() =>
@@ -717,7 +752,7 @@ export function SettingsScreen() {
         <SettingsRow
           {...neutralRow}
           label="Trying new food"
-          icon={<Sparkles size={20} color={iconColor} />}
+          icon={<AppSymbol name="tryingNewFood" size={20} color={iconColor} />}
           type="navigation"
           value={foodOpenness}
           onPress={() =>
@@ -732,7 +767,8 @@ export function SettingsScreen() {
           <SettingsRow
             {...neutralRow}
             label="Reset food history"
-            icon={<History size={20} color={iconColor} />}
+            icon={<AppSymbol name="foodHistory" size={20} color={iconColor} />}
+            type="action"
             onPress={handleResetFoodHistory}
             isLast
           />
@@ -752,16 +788,17 @@ export function SettingsScreen() {
       ) : null}
 
       <SettingsSection editorial title="Privacy & data">
-        {isAuthenticated ? (
+        {/* Archived with followers and following: back when a build opts in to follow connections. */}
+        {isAuthenticated && FEATURE_FLAGS.followConnectionsEnabled ? (
           <SettingsRow
             {...neutralRow}
             label="Profile visibility"
             icon={
-              isProfilePrivate ? (
-                <Lock size={20} color={iconColor} />
-              ) : (
-                <Eye size={20} color={iconColor} />
-              )
+              <AppSymbol
+                name={isProfilePrivate ? "profilePrivate" : "profilePublic"}
+                size={20}
+                color={iconColor}
+              />
             }
             type="navigation"
             value={isSavingVisibility ? "Saving…" : isProfilePrivate ? "Private" : "Public"}
@@ -770,11 +807,11 @@ export function SettingsScreen() {
             isLast={false}
           />
         ) : null}
-        {isAuthenticated ? (
+        {isAuthenticated && FEATURE_FLAGS.followConnectionsEnabled ? (
           <SettingsRow
             {...neutralRow}
             label={BLOCKED_AND_HIDDEN_TITLE}
-            icon={<UserX size={20} color={iconColor} />}
+            icon={<AppSymbol name="blocked" size={20} color={iconColor} />}
             type="navigation"
             onPress={() => rootNavigation.navigate("BlockedAndHidden")}
             isLast={false}
@@ -784,39 +821,39 @@ export function SettingsScreen() {
           {...neutralRow}
           label="Share usage analytics"
           description="Helps us see what to fix. Crash reports are still sent."
-          icon={<BarChart3 size={20} color={iconColor} />}
+          icon={<AppSymbol name="analytics" size={20} color={iconColor} />}
           type="toggle"
           isEnabled={analyticsEnabled}
           onToggle={handleAnalyticsToggle}
           isLast={false}
         />
+        {isAuthenticated ? (
+          <SettingsRow
+            {...neutralRow}
+            label="AI features"
+            description="Lets Hungry send the words you type in search to Anthropic, and a menu photo you add to Google, so they can be understood and read. Your name and account details are not sent."
+            icon={<AppSymbol name="aiSearch" size={20} color={iconColor} />}
+            type="toggle"
+            isEnabled={aiSearchAllowed}
+            busy={isSavingAiSearch}
+            onToggle={handleAiSearchToggle}
+            isLast={false}
+          />
+        ) : null}
         <SettingsRow
           {...neutralRow}
           label="Allow search history"
-          icon={<History size={20} color={iconColor} />}
+          icon={<AppSymbol name="foodHistory" size={20} color={iconColor} />}
           type="toggle"
           isEnabled={allowSearchHistory}
           onToggle={handleSearchHistoryToggle}
-          isLast={false}
-        />
-        <SettingsRow
-          {...neutralRow}
-          label="Location"
-          icon={<MapPin size={20} color={iconColor} />}
-          onPress={() =>
-            rootNavigation.navigate("OnboardingStack", {
-              screen: "ManualLocationPicker",
-              params: { mode: "settings" },
-            })
-          }
-          value={location || (locationPermission === "granted" ? "Use GPS" : "Not set")}
           isLast={false}
         />
         {isNative ? (
           <SettingsRow
             {...neutralRow}
             label="Location permission"
-            icon={<LocateFixed size={20} color={iconColor} />}
+            icon={<AppSymbol name="location" size={20} color={iconColor} />}
             type="navigation"
             value={
               locationPermission === "granted"
@@ -837,7 +874,8 @@ export function SettingsScreen() {
         <SettingsRow
           {...neutralRow}
           label="Reset selected location"
-          icon={<RotateCcw size={20} color={iconColor} />}
+          icon={<AppSymbol name="resetLocation" size={20} color={iconColor} />}
+          type="action"
           onPress={handleResetLocation}
           isLast={false}
         />
@@ -845,7 +883,7 @@ export function SettingsScreen() {
           <SettingsRow
             {...neutralRow}
             label="Phone permissions"
-            icon={<Settings2 size={20} color={iconColor} />}
+            icon={<AppSymbol name="phonePermissions" size={20} color={iconColor} />}
             onPress={openAppSettings}
             value="Open settings"
             isLast={false}
@@ -855,7 +893,8 @@ export function SettingsScreen() {
           <SettingsRow
             {...neutralRow}
             label={isExportingData ? "Preparing your data…" : "Download my data"}
-            icon={<Download size={20} color={iconColor} />}
+            icon={<AppSymbol name="downloadData" size={20} color={iconColor} />}
+            type="action"
             onPress={handleExportData}
             busy={isExportingData}
             isLast={false}
@@ -864,14 +903,15 @@ export function SettingsScreen() {
         <SettingsRow
           {...neutralRow}
           label="Clear local cache"
-          icon={<Eraser size={20} color={iconColor} />}
+          icon={<AppSymbol name="clearCache" size={20} color={iconColor} />}
+          type="action"
           onPress={handleClearLocalData}
           isLast={false}
         />
         <SettingsRow
           {...neutralRow}
           label="How account deletion works"
-          icon={<Shield size={20} color={iconColor} />}
+          icon={<AppSymbol name="accountDeletionInfo" size={20} color={iconColor} />}
           type="link"
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.accountDeletion)}
           isLast
@@ -884,7 +924,7 @@ export function SettingsScreen() {
             <SettingsRow
               {...neutralRow}
               label="Change password"
-              icon={<KeyRound size={20} color={iconColor} />}
+              icon={<AppSymbol name="changePassword" size={20} color={iconColor} />}
               onPress={() => rootNavigation.navigate("ChangePassword")}
               isLast={false}
             />
@@ -893,36 +933,32 @@ export function SettingsScreen() {
             {...neutralRow}
             label="Sign out of all devices"
             description="Ends your Hungry session on every phone, including this one."
-            icon={<Smartphone size={20} color={iconColor} />}
+            icon={<AppSymbol name="signOutEverywhere" size={20} color={iconColor} />}
+            type="action"
             onPress={handleSignOutEverywhere}
-            isLast
+            isLast={deletionPending}
           />
+          {/* While a request is pending, Keep my account (top) is the action; no second request. */}
+          {deletionPending ? null : (
+            <SettingsRow
+              {...neutralRow}
+              label="Delete account"
+              icon={<AppSymbol name="deleteAccount" size={20} color={palette.error} />}
+              type="action"
+              destructive
+              busy={deletionRequested}
+              onPress={handleDeleteAccount}
+              isLast
+            />
+          )}
         </SettingsSection>
       ) : null}
 
-      <SettingsSection editorial title="Display & accessibility">
-        <SettingsRow
-          {...neutralRow}
-          label="Theme"
-          icon={<SunMoon size={20} color={iconColor} />}
-          type="navigation"
-          value={THEME_LABELS[normalizedThemePreference]}
-          onPress={() => setThemeSheetVisible(true)}
-          isLast={false}
-        />
-        <SettingsRow
-          {...neutralRow}
-          label="Reduce motion"
-          icon={<Accessibility size={20} color={iconColor} />}
-          type="toggle"
-          isEnabled={reducedMotionEnabled}
-          onToggle={handleDeviceToggle("reduce_motion", setReducedMotionEnabled)}
-          isLast={false}
-        />
+      <SettingsSection editorial title="On this phone">
         <SettingsRow
           {...neutralRow}
           label="Haptic feedback"
-          icon={<Vibrate size={20} color={iconColor} />}
+          icon={<AppSymbol name="haptics" size={20} color={iconColor} />}
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
           onToggle={handleDeviceToggle("haptic_feedback", setHapticFeedbackEnabled)}
@@ -933,7 +969,7 @@ export function SettingsScreen() {
             {...neutralRow}
             label="Left-handed mode"
             description="Moves the add button on your merchant menu to the left side."
-            icon={<Hand size={20} color={iconColor} />}
+            icon={<AppSymbol name="leftHanded" size={20} color={iconColor} />}
             type="toggle"
             isEnabled={leftHandedMode}
             onToggle={handleDeviceToggle("left_handed_mode", setLeftHandedMode)}
@@ -945,10 +981,22 @@ export function SettingsScreen() {
       <SettingsSection editorial title="Help & legal">
         <SettingsRow
           {...neutralRow}
+          label="Send feedback"
+          description="Tell us what you like or what to fix."
+          icon={<AppSymbol name="feedback" size={20} color={iconColor} />}
+          type="action"
+          onPress={() => {
+            trackAnalyticsEvent("feedback_opened", { source: "settings" });
+            setFeedbackOpen(true);
+          }}
+          isLast={false}
+        />
+        <SettingsRow
+          {...neutralRow}
           label="Contact us"
           description="Email us or open the help centre."
-          icon={<MessageCircle size={20} color={iconColor} />}
-          type="navigation"
+          icon={<AppSymbol name="contact" size={20} color={iconColor} />}
+          type="action"
           onPress={() => setAccountDialog("contact")}
           isLast={false}
         />
@@ -956,7 +1004,7 @@ export function SettingsScreen() {
           {...neutralRow}
           label="Privacy policy"
           type="link"
-          icon={<FileText size={20} color={iconColor} />}
+          icon={<AppSymbol name="privacyPolicy" size={20} color={iconColor} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.privacy)}
           isLast={false}
         />
@@ -964,14 +1012,14 @@ export function SettingsScreen() {
           {...neutralRow}
           label="Terms of service"
           type="link"
-          icon={<Scale size={20} color={iconColor} />}
+          icon={<AppSymbol name="legal" size={20} color={iconColor} />}
           onPress={() => void openTrustedExternalUrl(WEB_LINKS.terms)}
           isLast={false}
         />
         <SettingsRow
           {...neutralRow}
           label="Open-source data"
-          icon={<Database size={20} color={iconColor} />}
+          icon={<AppSymbol name="openData" size={20} color={iconColor} />}
           type="value"
           description="Venue details include data © OpenStreetMap contributors (ODbL), Overture Maps Foundation and Foursquare Open Source Places."
           isLast={false}
@@ -979,14 +1027,23 @@ export function SettingsScreen() {
         <SettingsRow
           {...neutralRow}
           label="Version"
-          icon={<Info size={20} color={iconColor} />}
+          icon={<AppSymbol name="version" size={20} color={iconColor} />}
           type="value"
           value={appVersion}
           description="Tap to copy."
-          onPress={handleCopyVersion}
+          onPress={handleVersionTap}
           onLongPress={handleCopyVersion}
-          isLast
+          isLast={!developerToolsUnlocked}
         />
+        {developerToolsUnlocked ? (
+          <SettingsRow
+            {...neutralRow}
+            label="Developer tools"
+            icon={<AppSymbol name="developerTools" size={20} color={iconColor} />}
+            onPress={() => navigation.navigate("DeveloperTools" as never)}
+            isLast
+          />
+        ) : null}
       </SettingsSection>
 
       {isAuthenticated ? (
@@ -994,25 +1051,13 @@ export function SettingsScreen() {
           <SettingsRow
             {...neutralRow}
             label="Sign out"
-            icon={<LogOut size={20} color={palette.error} />}
+            icon={<AppSymbol name="signOut" size={20} color={palette.error} />}
+            type="action"
             onPress={handleSignOut}
             destructive
             isLast
           />
         </SettingsSection>
-      ) : null}
-
-      {/* While a request is pending, Keep my account (top) is the action; no second request. */}
-      {isAuthenticated && !deletionPending ? (
-        <View style={{ gap: spacing[3], marginBottom: spacing[4], marginTop: spacing[1] }}>
-          <Button
-            label="Delete account"
-            variant="destructive"
-            onPress={handleDeleteAccount}
-            loading={deletionRequested}
-            leftIcon={<Trash2 size={20} color={palette.white} />}
-          />
-        </View>
       ) : null}
 
       {/* Cross-platform confirm (Alert.alert is a no-op on web, so E2E can't drive it). */}
@@ -1026,6 +1071,7 @@ export function SettingsScreen() {
         ]}
         onClose={() => setAccountDialog(null)}
       />
+      <FeedbackSheet visible={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <Dialog
         visible={accountDialog === "contact"}
         title="Contact us"
@@ -1097,21 +1143,6 @@ export function SettingsScreen() {
         onSubmit={submitDeletionCode}
         onResend={resendDeletionCode}
         onCancel={() => setDeletionCodeVisible(false)}
-      />
-      <SettingsChoiceSheet
-        visible={themeSheetVisible}
-        title="Theme"
-        options={(["system", "light", "dark"] as const).map((preference) => ({
-          value: preference,
-          label: THEME_LABELS[preference],
-          description: THEME_DESCRIPTIONS[preference],
-        }))}
-        selected={normalizedThemePreference}
-        onSelect={(preference) => {
-          selectTheme(preference);
-          setThemeSheetVisible(false);
-        }}
-        onClose={() => setThemeSheetVisible(false)}
       />
       <SettingsChoiceSheet
         visible={isAuthenticated && visibilitySheetVisible}

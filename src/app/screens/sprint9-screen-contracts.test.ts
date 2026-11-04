@@ -213,7 +213,7 @@ test("Sprint 9 screen contract: onboarding icon controls and location rows are l
 });
 
 test("Sprint 9 screen contract: stall menu cards expose dish actions", () => {
-  const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
+  const stallDetail = read("src/components/stall/StallMenuDish.tsx");
 
   assert.match(
     stallDetail,
@@ -230,8 +230,8 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
   assert.match(search, /accessibilityLabel="Search dishes, stalls, or hawker centres"/);
-  assert.match(rootNavigator, /accessibilityLabel="Go back"/);
-  assert.match(rootNavigator, /accessibilityHint="Returns to the previous screen"/);
+  // The floating scroll-to-reveal back button is gone app-wide: screens keep their header Back.
+  assert.doesNotMatch(rootNavigator, /GlobalScrollBackButton/);
 });
 
 test("Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share", () => {
@@ -592,10 +592,12 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(source, /locations=\{\[0, 0\.58, 1\]\}/);
   assert.doesNotMatch(source, /Epicurean Discovery/);
   assert.doesNotMatch(source, /borderBottomWidth: 1,[\s\S]*Epicurean Discovery/);
-  assert.match(source, /How it tastes to you/);
+  assert.match(source, /<DishTasteCard/);
+  assert.match(read("src/components/dish/DishTasteCard.tsx"), /How it tastes to you/);
   // Owner decision (round 2): similar dishes nearby replace the hours on the dish page.
   assert.match(source, /useSimilarDishesNearby\(/);
-  assert.match(source, /More from \{venueName\}/);
+  assert.match(source, /More from this stall/);
+  assert.match(source, /\{venueName\}\s*<\/AppText>/);
   assert.match(source, /<AppText variant="h2">Reviews<\/AppText>/);
   assert.match(source, /const cachedVenueDishes = useMemo/);
   // Never repeats the dish being viewed.
@@ -630,15 +632,18 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   assert.match(launcherSource, /repository\.listPopularNearby\(\)\[0\] \?\? dishes\[0\]/);
   assert.match(launcherSource, /const openSampleDishDetail = \(\) =>/);
   assert.match(launcherSource, /completeAuth\(\);[\s\S]*completeOnboarding\(false\);/);
-  assert.match(launcherSource, /navigation\.navigate\("DishDetail", \{ dishId: dish\.id \}\)/);
+  assert.match(
+    launcherSource,
+    /navigation\.navigate\("DishDetail", \{ dishId: dish\.id, source: "developer" \}\)/,
+  );
   assert.match(launcherSource, /label="Dish"[\s\S]*onPress=\{\(\) => openSampleDishDetail\(\)\}/);
 });
 
-test("search home hands every query to the paged results and keeps a see-all action", () => {
+test("search home hands every query to the paged results; Search “text” is the first row", () => {
   const search = read("src/app/screens/search/DishSearchScreen.tsx");
 
   assert.doesNotMatch(search, /getSearchResultsAsync|inlineResults/);
-  assert.match(search, /"See all results"/);
+  assert.match(search, /Search “\$\{trimmedSearchText\}”/);
   assert.match(
     search,
     /navigation\.navigate\("SearchResults", \{[\s\S]*?initialQuery: trimmedQuery \|\| undefined,/,

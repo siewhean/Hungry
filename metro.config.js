@@ -27,6 +27,7 @@ if (process.env.EXPO_PUBLIC_APP_ENV === "production") {
       "excel/excelService.ts",
       "excel/repositories.ts",
       "excel/excelCatalog.generated.json",
+      "catalog/excelFallback.ts",
     ].map((file) => path.join(servicesDir, file)),
   );
   const releaseBundleStub = path.join(servicesDir, "excel/releaseBundleStub.js");

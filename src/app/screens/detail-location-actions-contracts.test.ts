@@ -14,7 +14,9 @@ test("detail screens show full food-centre location, weekly hours, and maps acti
 
   assert.match(stallDetail, /resolveStallOpenInfo\(\{\s*venue,/);
   assert.match(stallDetail, /hoursRows\.map/);
-  assert.match(stallDetail, /openTrustedMapsUrl\(buildMapsSearchUrl\(stallAddress, stallPin\)\)/);
+  // Maps opens the stall's listing by name + building + postcode, never bare coordinates.
+  assert.match(stallDetail, /openTrustedMapsUrl\(\s*buildStallMapsUrl\(/);
+  assert.doesNotMatch(stallDetail, /buildMapsSearchUrl\(stallAddress, stallPin\)/);
 
   // One listed range is never repeated as "Monday: ... Sunday: ...".
   assert.doesNotMatch(locationHelpers, /WEEKDAYS\.map/);

@@ -1,9 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View, type TextInput } from "react-native";
-import { Mail } from "lucide-react-native";
+import Animated from "react-native-reanimated";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, AppSymbol } from "@/components/ui";
 import {
   trackAuthFailed,
   trackEmailCodeRequested,
@@ -17,8 +17,12 @@ import {
   isUnexpectedAuthError,
 } from "@/features/auth/authErrors";
 import { EmailCodeField } from "@/features/auth/EmailCodeField";
+import { isReturningAccount } from "@/features/auth/returningAccount";
 import { useSignedInProfileSync } from "@/features/auth/useSignedInProfileSync";
 import { validateDisplayName, validateEmail } from "@/features/auth/validation";
+import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { successHaptic } from "@/lib/haptics";
+import { useFadeRiseIn } from "@/lib/motion/uiMotion";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
@@ -45,6 +49,20 @@ interface EmailCodeEntryProps {
   compact?: boolean;
 }
 
+/** "Welcome back, Sam"; an account with no name is greeted without the comma. */
+export function welcomeBackMessage(displayName?: string): string {
+  const name = displayName?.trim();
+  return name
+    ? AUTH_COPY.emailCode.welcomeBack.replace("{name}", name)
+    : AUTH_COPY.emailCode.welcomeBackNoName;
+}
+
+/** One step of the form fades in with a short rise, so the change from email to code is seen. */
+function StepFade({ children }: { children: ReactNode }) {
+  const style = useFadeRiseIn(useReduceMotion());
+  return <Animated.View style={style}>{children}</Animated.View>;
+}
+
 /**
  * The one email-code form behind Login, Create account and the onboarding account step: an
  * email (and, for a new account, the name) then the 8-digit code, no password. An address with
@@ -63,6 +81,8 @@ export function EmailCodeEntry({
   const { componentRadii, palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const [sentTo, setSentTo] = useState<string | null>(null);
+  // The first email step is already on screen; only a step reached later is animated in.
+  const [stepChanged, setStepChanged] = useState(false);
   // Inline copy of the last server error, so it is not only a passing toast.
   const [formError, setFormError] = useState<string | null>(null);
   const sentNameRef = useRef<string | undefined>(undefined);
@@ -102,6 +122,7 @@ export function EmailCodeEntry({
     if (askName) trackSignUpSubmitted(screen, "email_code");
     else trackSignInSubmitted(screen, "email_code");
     sentNameRef.current = displayName;
+    setStepChanged(true);
     setSentTo(email);
   });
 
@@ -129,52 +150,64 @@ export function EmailCodeEntry({
     }
     await profileSync.apply(session, {
       onSyncWarning: () => showToast({ message: AUTH_COPY.emailCode.syncWarning, tone: "warning" }),
-      onSynced: onSignedIn,
+      onSynced: async () => {
+        // "Create account" with an address that has an account signs that account in.
+        if (askName && isReturningAccount(session.profile)) {
+          showToast({
+            message: welcomeBackMessage(session.profile.displayName),
+            tone: "success",
+          });
+        }
+        successHaptic();
+        await onSignedIn();
+      },
     });
   };
 
   if (sentTo) {
     return (
-      <View style={{ gap: spacing[4] }}>
-        <View accessible accessibilityLiveRegion="polite" style={{ gap: spacing[1] }}>
-          <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
-            {AUTH_COPY.emailCode.sentTitle}
-          </AppText>
-          <AppText tone="secondary" style={{ textAlign: "center" }}>
-            {AUTH_COPY.emailCode.sentBody.replace("{email}", sentTo)}
-          </AppText>
-        </View>
-        {profileSync.failed ? (
-          <ProfileSyncFailureBanner
-            onRetry={() => void profileSync.retry()}
-            retrying={profileSync.isRetrying}
+      <StepFade key="code">
+        <View style={{ gap: spacing[4] }}>
+          <View accessible accessibilityLiveRegion="polite" style={{ gap: spacing[1] }}>
+            <AppText variant="h2" accessibilityRole="header" style={{ textAlign: "center" }}>
+              {AUTH_COPY.emailCode.sentTitle}
+            </AppText>
+            <AppText tone="secondary" style={{ textAlign: "center" }}>
+              {AUTH_COPY.emailCode.sentBody.replace("{email}", sentTo)}
+            </AppText>
+          </View>
+          {profileSync.failed ? (
+            <ProfileSyncFailureBanner
+              onRetry={() => void profileSync.retry()}
+              retrying={profileSync.isRetrying}
+            />
+          ) : null}
+          <EmailCodeField
+            screen={screen}
+            autoFocus
+            label={AUTH_COPY.emailCode.codeLabel}
+            submitLabel={AUTH_COPY.emailCode.verifyButton}
+            onSubmit={handleVerify}
+            onResend={handleResend}
           />
-        ) : null}
-        <EmailCodeField
-          screen={screen}
-          autoFocus
-          label={AUTH_COPY.emailCode.codeLabel}
-          submitLabel={AUTH_COPY.emailCode.verifyButton}
-          onSubmit={handleVerify}
-          onResend={handleResend}
-        />
-        <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
-          {AUTH_COPY.emailCode.sentSpamHint}
-        </AppText>
-        <View style={{ alignItems: "center" }}>
-          <AuthTextLink
-            label={AUTH_COPY.emailCode.wrongEmail}
-            onPress={() => {
-              setSentTo(null);
-              setFormError(null);
-            }}
-          />
+          <AppText variant="bodySmall" tone="muted" style={{ textAlign: "center" }}>
+            {AUTH_COPY.emailCode.sentSpamHint}
+          </AppText>
+          <View style={{ alignItems: "center" }}>
+            <AuthTextLink
+              label={AUTH_COPY.emailCode.wrongEmail}
+              onPress={() => {
+                setSentTo(null);
+                setFormError(null);
+              }}
+            />
+          </View>
         </View>
-      </View>
+      </StepFade>
     );
   }
 
-  return (
+  const emailStep = (
     <View style={{ gap: compact ? spacing[3] : spacing[4] }}>
       <View style={{ gap: spacing[2] }}>
         {askName ? (
@@ -218,7 +251,9 @@ export function EmailCodeEntry({
                 onBlur();
                 emailSuggestion.check(value);
               }}
-              leftIcon={<Mail color={palette.textMuted} size={18} />}
+              leftIcon={
+                <AppSymbol name="email" color={palette.textMuted} size={18} weight="regular" />
+              }
               error={!!errors.email}
               errorText={errors.email?.message}
             />
@@ -262,4 +297,6 @@ export function EmailCodeEntry({
       ) : null}
     </View>
   );
+
+  return stepChanged ? <StepFade key="email">{emailStep}</StepFade> : emailStep;
 }

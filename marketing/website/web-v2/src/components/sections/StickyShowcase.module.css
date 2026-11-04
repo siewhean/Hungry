@@ -13,7 +13,7 @@
 }
 
 .eyebrow {
-  color: var(--color-primary);
+  color: var(--color-primary-accessible);
   display: inline-flex;
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);

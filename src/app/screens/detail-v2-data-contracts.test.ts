@@ -46,13 +46,13 @@ test("dish detail V2 bottom bar is labelled, stateful and meets 44px targets", (
   assert.doesNotMatch(dish, /Missing dish data for ID/);
   assert.doesNotMatch(dish, /Sparkles/);
   assert.match(dish, /We can't find this dish/);
-  // Share, Tried, Save and Like sit in one bar of icon buttons; no three-dots menu.
+  // Tried and Save sit in one bar of icon buttons; Share is in the header; no Like, no three-dots menu.
   assert.match(dish, /<DetailActionBar\s+actions=\{barActions\}\s+cta=/);
   assert.match(dish, /testID="dish-action-bar"/);
   assert.doesNotMatch(dish, /secondaryActions/);
-  for (const label of ["Like", "Share", "Tried"]) {
-    assert.match(dish, new RegExp(`label: [^\\n]*"${label}`));
-  }
+  assert.match(dish, /label: isDishTried \? "Tried" : "Mark tried"/);
+  assert.doesNotMatch(dish, /id: "like"|useDishLikeStore/);
+  assert.match(dish, /onShare=\{showDeferredDetailControls \? openShareSheet : undefined\}/);
   assert.match(dish, /label: isSaved \? "Saved" : "Save"/);
   assert.match(dish, /active: isSaved/);
   assert.match(dish, /role: "checkbox"/);

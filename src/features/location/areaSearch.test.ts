@@ -10,6 +10,7 @@ import {
   nearestAreaName,
   placeSearchResult,
   placeTypeLabel,
+  postalCodeAnchor,
 } from "@/features/location/areaSearch";
 import {
   lookupPostalCode,
@@ -91,7 +92,7 @@ test("an address shows its area, once per area, never the street as the title", 
   });
   assert.equal(results.length, 1);
   assert.equal(results[0].title, "Bishan");
-  assert.equal(results[0].subtitle, "Near 123 Bishan Street 12 Singapore 570123");
+  assert.equal(results[0].subtitle, "Area");
   assert.equal(results[0].placeName, undefined);
 });
 
@@ -172,4 +173,16 @@ test("a map dot becomes a place result, and needs a position", () => {
   assert.equal(result?.kind, "place");
   assert.equal(result?.placeName, "Bedok Interchange");
   assert.equal(result?.areaName, "Bedok");
+});
+
+test("a typed postal code finds its address, and plain text or an unknown code finds none", () => {
+  const address = {
+    postalCode: "069184",
+    address: "1 KADAYANALLUR STREET MAXWELL FOOD CENTRE SINGAPORE 069184",
+    coordinate: { latitude: 1.2804, longitude: 103.8448 },
+  };
+  assert.equal(postalCodeAnchor("069184", [address]), address);
+  assert.equal(postalCodeAnchor(" 069184 ", [address]), address);
+  assert.equal(postalCodeAnchor("069185", [address]), null);
+  assert.equal(postalCodeAnchor("maxwell", [address]), null);
 });

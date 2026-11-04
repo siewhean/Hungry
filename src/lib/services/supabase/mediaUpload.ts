@@ -201,31 +201,73 @@ export function pathForReencodedImage(
   return dot > slash ? `${path.slice(0, dot)}.${extension}` : `${path}.${extension}`;
 }
 
-async function uploadViaSignedUrl(
+/** How long a stored photo may be cached. A path is written once, so its bytes never change. */
+export const STORED_MEDIA_CACHE_SECONDS = "31536000";
+
+/** Why a signed upload failed: the stage that broke and what storage said, for the error report. */
+type SignedUploadFailure = { stage: "sign" | "upload" | "read"; detail: string };
+
+function describeStorageError(error: unknown): string {
+  const status = (error as { statusCode?: unknown; status?: unknown } | null) ?? {};
+  const code = status.statusCode ?? status.status;
+  const message = (error as { message?: unknown } | null)?.message;
+  return [code, typeof message === "string" ? message : undefined].filter(Boolean).join(" ");
+}
+
+/** Resolves to null on success, or why it failed. */
+export async function uploadViaSignedUrl(
   client: SupabaseClient,
   bucket: string,
   path: string,
   blob: Blob | ArrayBuffer,
   contentType: string,
-): Promise<boolean> {
+): Promise<SignedUploadFailure | null> {
   try {
     const { data: signed, error: signedError } = await client.storage
       .from(bucket)
       .createSignedUploadUrl(path);
     if (signedError || !signed?.token) {
-      return false;
+      return { stage: "sign", detail: describeStorageError(signedError) };
+    }
+
+    // Raw bytes, not a Blob: storage sends a Blob as a form part named by the blob's own type,
+    // which is empty for a file read back on the phone, and the bucket then refuses it. Bytes go
+    // with an explicit content-type header.
+    let body: ArrayBuffer;
+    if (blob instanceof ArrayBuffer) {
+      body = blob;
+    } else {
+      try {
+        const bytes = await readBlobBytes(blob);
+        body = bytes.buffer.slice(
+          bytes.byteOffset,
+          bytes.byteOffset + bytes.byteLength,
+        ) as ArrayBuffer;
+      } catch (error) {
+        return { stage: "read", detail: describeStorageError(error) };
+      }
     }
 
     const { error: uploadError } = await client.storage
       .from(bucket)
-      .uploadToSignedUrl(path, signed.token, blob, {
+      .uploadToSignedUrl(path, signed.token, body, {
         contentType,
+        // Never overwritten (upsert is off), so browsers and the CDN may keep the file for a year.
+        cacheControl: STORED_MEDIA_CACHE_SECONDS,
         upsert: false,
       });
-    return !uploadError;
-  } catch {
-    return false;
+    return uploadError ? { stage: "upload", detail: describeStorageError(uploadError) } : null;
+  } catch (error) {
+    return { stage: "upload", detail: describeStorageError(error) };
   }
+}
+
+function uploadFailedError(failure: SignedUploadFailure): MediaUploadError {
+  // Raw text never reaches the user (publishErrorCopy); it is for the error report.
+  return new MediaUploadError(
+    "upload_failed",
+    `Signed upload failed at ${failure.stage}${failure.detail ? `: ${failure.detail}` : ""}`,
+  );
 }
 
 function startsWith(bytes: Uint8Array, signature: number[]): boolean {
@@ -344,10 +386,8 @@ export async function uploadImageFromUri(params: {
   );
   const path = pathForReencodedImage(requestedPath, originalContentType, contentType);
 
-  const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
-  if (!signedSucceeded) {
-    throw new MediaUploadError("upload_failed", "Signed upload URL creation failed.");
-  }
+  const uploadFailure = await uploadViaSignedUrl(client, bucket, path, blob, contentType);
+  if (uploadFailure) throw uploadFailedError(uploadFailure);
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
   return {
@@ -378,10 +418,8 @@ export async function uploadPostMediaFromUri(params: {
   }
   const path = pathForReencodedImage(requestedPath, originalContentType, contentType);
 
-  const signedSucceeded = await uploadViaSignedUrl(client, bucket, path, body, contentType);
-  if (!signedSucceeded) {
-    throw new MediaUploadError("upload_failed", "Signed upload URL creation failed.");
-  }
+  const uploadFailure = await uploadViaSignedUrl(client, bucket, path, body, contentType);
+  if (uploadFailure) throw uploadFailedError(uploadFailure);
 
   const { data } = client.storage.from(bucket).getPublicUrl(path);
   const sizeBytes =

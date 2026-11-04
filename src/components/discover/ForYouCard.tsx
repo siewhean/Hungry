@@ -9,6 +9,8 @@ interface ForYouCardProps {
   pick: ForYouPick;
   onPress: () => void;
   onPressIn?: () => void;
+  /** Set when the card sits in a sideways row: a fixed width, and no review quote so cards match. */
+  width?: number;
 }
 
 const REVIEW_SNIPPET_LENGTH = 110;
@@ -17,10 +19,10 @@ const REVIEW_SNIPPET_LENGTH = 110;
  * A recommendation laid out like a review card: photo, name and price, stall, why it suits
  * this diner, and what another diner said.
  */
-export function ForYouCard({ pick, onPress, onPressIn }: ForYouCardProps) {
+export function ForYouCard({ pick, onPress, onPressIn, width }: ForYouCardProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const { dish } = pick;
-  const review = dish.reviews.find((item) => item.text.trim().length > 0);
+  const review = width ? undefined : dish.reviews.find((item) => item.text.trim().length > 0);
   const snippet = review
     ? review.text.trim().length > REVIEW_SNIPPET_LENGTH
       ? `${review.text.trim().slice(0, REVIEW_SNIPPET_LENGTH).trimEnd()}…`
@@ -41,11 +43,12 @@ export function ForYouCard({ pick, onPress, onPressIn }: ForYouCardProps) {
         borderRadius: componentRadii.card,
         borderWidth: 1,
         overflow: "hidden",
+        ...(width ? { width } : {}),
       }}
       testID="for-you-card"
     >
       {dish.imageUrl ? (
-        <View style={{ height: 190 }}>
+        <View style={{ height: width ? 150 : 190 }}>
           <AccessibleImage
             source={{ uri: dish.imageUrl }}
             decorative

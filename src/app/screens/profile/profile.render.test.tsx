@@ -50,11 +50,12 @@ function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K
   });
 }
 
-/** Production defaults: the posts feed, Activity and the Passport are off. */
+/** Production defaults: the posts feed and Activity are off; the Passport is on. */
 function productionFlags() {
   flags.socialFeedEnabled = false;
   flags.activityEnabled = false;
   flags.gamificationEnabled = false;
+  flags.passportEnabled = true;
   flags.storiesEnabled = false;
   flags.merchantCentreEnabled = false;
 }
@@ -128,6 +129,7 @@ afterEach(async () => {
 });
 
 test("own profile in production: no dead Badges tile or post loads, follower lists reachable", async () => {
+  flags.followConnectionsEnabled = true;
   const social = getHungryService().social;
   let postReads = 0;
   stub(social, "listUserPosts", async () => {
@@ -145,14 +147,10 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome", navigation });
 
   assert.ok(view.findByText("Profile"), "the header says Profile, not Hungry");
-  assert.equal(
-    view.findByText("Hungry Passport"),
-    null,
-    "Passport is not registered in production",
-  );
+  assert.ok(view.findByText("Hungry Passport"), "the Passport shows in production");
   assert.equal(view.findByLabel("Show profile posts"), null, "no Posts tab with the feed archived");
   assert.equal(postReads, 0, "no post reads for an archived feed");
-  assert.deepEqual(interactionLoads, [], "tried stalls load only for the Passport");
+  assert.equal(interactionLoads.length, 1, "saved stalls load for the Saved count");
   assert.ok(view.findByText("Taste Fingerprint"), "the taste section is titled Taste Fingerprint");
   assert.equal(view.text().includes("Palate Fingerprint"), false, "the old Palate name is gone");
 
@@ -164,7 +162,38 @@ test("own profile in production: no dead Badges tile or post loads, follower lis
   );
 });
 
+test("Saved counts saved stalls as well as saved dishes", async () => {
+  flags.favouritesEnabled = true;
+  useProfileStore.setState({
+    profile: {
+      ...useProfileStore.getState().profile,
+      favouriteDishIds: [],
+      stats: { ...useProfileStore.getState().profile.stats, favouritesCount: 0 },
+    },
+  });
+  const interaction = (stallId: string) => ({
+    stallId,
+    isSaved: true,
+    isTried: false,
+    isReviewed: false,
+  });
+  useStallInteractionStore.setState({
+    loadInteractions: async () => undefined,
+    interactions: {
+      "stall-a": interaction("stall-a"),
+      "stall-b": interaction("stall-b"),
+      "stall-c": interaction("stall-c"),
+    } as never,
+  });
+  const view = await renderScreen(ProfileHomeScreen as never, {
+    name: "ProfileHome",
+    navigation: createFakeNavigation(),
+  });
+  assert.ok(view.findByLabel("Saved 3"), "three saved stalls and no saved dishes reads Saved 3");
+});
+
 test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not loading, and reports it", async () => {
+  flags.followConnectionsEnabled = true;
   const social = getHungryService().social;
   stub(social, "getFollowCounts", async () => {
     throw new Error("rate limited");
@@ -200,11 +229,39 @@ test("PROF-V1: a failed follower-count read shows the tiles as unavailable, not 
   }
 });
 
+test("Followers and Following are archived: no tiles and no count read until a build opts in", async () => {
+  let countReads = 0;
+  stub(getHungryService().social, "getFollowCounts", async () => {
+    countReads += 1;
+    return { followersCount: 3, followingCount: 5 };
+  });
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  await view.settle();
+  assert.equal(view.findByLabel("Followers 3"), null);
+  assert.equal(view.findByLabel("Following 5"), null);
+  assert.equal(view.findByText("Following"), null);
+  assert.equal(countReads, 0);
+});
+
 test("own profile shows the Passport card only with the Passport", async () => {
-  flags.gamificationEnabled = true;
+  flags.passportEnabled = true;
   const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.ok(view.findByText("Hungry Passport"));
+  assert.ok(view.findByText("Taste Fingerprint"));
+  assert.ok(
+    (view
+      .findByText("Hungry Passport")
+      ?.compareDocumentPosition(view.findByText("Taste Fingerprint") as Node) ?? 0) & 4,
+    "the Passport sits above the taste card",
+  );
   assert.equal(view.findByText("Badges"), null, "the old Badges tile is gone");
+});
+
+test("own profile hides the Passport card when the Passport is off", async () => {
+  flags.passportEnabled = false;
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(view.findByText("Taste Fingerprint"));
+  assert.ok(view.findByText("Hungry Passport") === null, "no Passport card");
 });
 
 test("the taste radar is capped at 260 and shrinks with its card", async () => {

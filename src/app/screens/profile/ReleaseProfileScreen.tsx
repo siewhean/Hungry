@@ -1,13 +1,10 @@
 import { Pressable, View } from "react-native";
-import { ChevronRight, Heart, LogOut, Pencil, Settings } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
-import { AppText, Avatar, Card, Screen } from "@/components/ui";
+import { AppSymbol, AppText, Avatar, Card, Screen } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { confirmAction } from "@/lib/runtime/confirmAction";
 import { useProfileStore } from "@/store/useProfileStore";
-import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 
 function ReleaseProfileRow({
@@ -57,7 +54,7 @@ function ReleaseProfileRow({
           {detail}
         </AppText>
       </View>
-      <ChevronRight color={palette.textMuted} size={18} />
+      <AppSymbol name="chevronRight" color={palette.textMuted} size={18} />
     </Pressable>
   );
 }
@@ -67,7 +64,6 @@ export function ReleaseProfileScreen() {
   const navigation = useNavigation();
   const rootNavigation = getRootNavigation(navigation as never);
   const profile = useProfileStore((state) => state.profile);
-  const signOut = useSessionStore((state) => state.signOut);
   const { palette, radii, spacing } = useHungryTheme();
 
   return (
@@ -94,57 +90,25 @@ export function ReleaseProfileScreen() {
       <View style={{ gap: spacing[2] }}>
         {FEATURE_FLAGS.favouritesEnabled ? (
           <ReleaseProfileRow
-            icon={<Heart color={palette.orange} size={20} />}
-            label="Saved dishes"
-            detail="Open your favourites"
+            icon={<AppSymbol name="save" color={palette.orange} size={20} />}
+            label="Saved"
+            detail="Your dishes, stalls and lists"
             onPress={() => rootNavigation.navigate("Favourites")}
           />
         ) : null}
         <ReleaseProfileRow
-          icon={<Pencil color={palette.text} size={20} />}
+          icon={<AppSymbol name="compose" color={palette.text} size={20} />}
           label="Edit profile"
           detail="Update your name, photo, and food preferences"
           onPress={() => rootNavigation.navigate("EditProfile")}
         />
         <ReleaseProfileRow
-          icon={<Settings color={palette.text} size={20} />}
+          icon={<AppSymbol name="settings" color={palette.text} size={20} />}
           label="Settings and privacy"
           detail="Manage privacy, support, account deletion, and app settings"
           onPress={() => rootNavigation.navigate("Settings")}
         />
       </View>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Sign out"
-        accessibilityHint="Signs out and returns to the authentication screen"
-        onPress={() =>
-          confirmAction({
-            title: "Sign out",
-            message: "You will be signed out from Hungry on this device.",
-            confirmLabel: "Sign out",
-            destructive: true,
-            onConfirm: signOut,
-          })
-        }
-        style={({ pressed }) => ({
-          alignItems: "center",
-          backgroundColor: pressed ? palette.bgSoft : palette.surface,
-          borderColor: palette.border,
-          borderRadius: radii.lg,
-          borderWidth: 1,
-          flexDirection: "row",
-          gap: spacing[2],
-          justifyContent: "center",
-          minHeight: 52,
-          paddingHorizontal: spacing[4],
-        })}
-      >
-        <LogOut color={palette.error} size={18} />
-        <AppText style={{ color: palette.error }} variant="bodyBold">
-          Sign out
-        </AppText>
-      </Pressable>
     </Screen>
   );
 }

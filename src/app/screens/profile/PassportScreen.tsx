@@ -4,7 +4,8 @@
 
 import { AccessibilityInfo, Pressable, View, useWindowDimensions } from "react-native";
 import { Award, ChevronRight, Flag, Star } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import Animated, { FadeIn, FadeInDown, FadeOut } from "react-native-reanimated";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Haptics from "@/lib/haptics";
@@ -15,8 +16,9 @@ import { AchievementsSection } from "@/components/gamification/AchievementsSecti
 import { PassportPageFlip } from "@/components/gamification/PassportPageFlip";
 import { HeritageStampTile } from "@/components/gamification/HeritageStampTile";
 import { PassportStampCard } from "@/components/gamification/PassportStampCard";
+import { StampDetailPanel } from "@/components/gamification/StampDetailPanel";
 import { WeeklyGoalCard } from "@/components/gamification/WeeklyGoalCard";
-import { AppText, EmptyState } from "@/components/ui";
+import { AppText, EmptyState, SlideText } from "@/components/ui";
 import {
   ALL_PASSPORT_CATEGORIES,
   PASSPORT_STAMP_DEFINITIONS,
@@ -27,12 +29,14 @@ import {
 } from "@/constants/passportConfig";
 import { computeAchievements } from "@/features/achievements/achievements";
 import { useAchievementInput } from "@/features/achievements/useAchievementInput";
-import { computeWeeklyGoal, milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
+import { buildStampHistory } from "@/features/passport/stampHistory";
+import { useWeeklyGoal } from "@/features/passport/useWeeklyGoal";
+import { milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { trackPassportViewed } from "@/lib/analytics/gamificationEvents";
-import { useChecklistStore } from "@/store/useChecklistStore";
-import { usePassportStore } from "@/store/usePassportStore";
+import { triedStallMatchesCategory, usePassportStore } from "@/store/usePassportStore";
+import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
 import type { PassportContributionStats, PassportProgressEvent } from "@/types/domain";
@@ -94,14 +98,18 @@ export function PassportScreen({ navigation }: Props) {
   const passportStamps = usePassportStore((s) => s.stamps);
   const passportEvents = usePassportStore((s) => s.events);
   const stallInteractions = useStallInteractionStore((state) => state.interactions);
-  const checklistItems = useChecklistStore((state) => state.items);
   const celebratedGoalWeeks = usePassportStore((s) => s.celebratedGoalWeeks);
   const markGoalWeekCelebrated = usePassportStore((s) => s.markGoalWeekCelebrated);
   const achievementInput = useAchievementInput();
   const achievements = useMemo(() => computeAchievements(achievementInput), [achievementInput]);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
+  // The stamp just earned stays on screen as a card until the diner dismisses it.
+  const [unlockedStampId, setUnlockedStampId] = useState<string | null>(null);
   const [celebratingGoal, setCelebratingGoal] = useState(false);
+  // The Heritage stamp whose details are open, if any.
+  const [openStampCategoryId, setOpenStampCategoryId] = useState<string | null>(null);
+  const stallFacts = usePassportStore((s) => s.stallFacts);
 
   const triedStallIds = useMemo(
     () =>
@@ -111,25 +119,7 @@ export function PassportScreen({ navigation }: Props) {
     [stallInteractions],
   );
 
-  // One entry per tried stall or dish (a stall tried and on a checklist counts once).
-  const weeklyGoal = useMemo(() => {
-    const triedAtByItem = new Map<string, string>();
-    for (const interaction of Object.values(stallInteractions)) {
-      if (interaction.isTried && interaction.triedAt) {
-        triedAtByItem.set(`stall:${interaction.stallId}`, interaction.triedAt);
-      }
-    }
-    for (const item of Object.values(checklistItems).flat()) {
-      if (!item.triedAt) continue;
-      const key = item.dishId
-        ? `dish:${item.dishId}`
-        : item.stallId
-          ? `stall:${item.stallId}`
-          : `item:${item.id}`;
-      if (!triedAtByItem.has(key)) triedAtByItem.set(key, item.triedAt);
-    }
-    return computeWeeklyGoal([...triedAtByItem.values()]);
-  }, [checklistItems, stallInteractions]);
+  const weeklyGoal = useWeeklyGoal();
 
   const earnedStamps = useMemo(() => getEarnedPassportStamps(progressMap), [progressMap]);
   const nextStamp = useMemo(() => getNextPassportStamp(progressMap), [progressMap]);
@@ -190,6 +180,30 @@ export function PassportScreen({ navigation }: Props) {
     };
   }).filter((item) => item.stamp !== undefined);
 
+  const openCategory = openStampCategoryId
+    ? ALL_PASSPORT_CATEGORIES.find((category) => category.id === openStampCategoryId)
+    : undefined;
+  const openHistory = useMemo(() => {
+    if (!openCategory) return null;
+    return buildStampHistory({
+      category: openCategory,
+      stamps: PASSPORT_STAMP_DEFINITIONS,
+      triedStalls: Object.values(stallInteractions)
+        .filter((interaction) => interaction.isTried)
+        .map((interaction) => ({ stallId: interaction.stallId, triedAt: interaction.triedAt })),
+      matches: (stallId) => triedStallMatchesCategory(stallId, openCategory.matchTag, stallFacts),
+      nameOf: (stallId) => stallFacts[stallId]?.name,
+    });
+  }, [openCategory, stallFacts, stallInteractions]);
+  // Three tiles to a row; an open stamp's details sit full width under its row.
+  const stampRows = useMemo(() => {
+    const rows: (typeof stampPreview)[] = [];
+    for (let index = 0; index < stampPreview.length; index += 3) {
+      rows.push(stampPreview.slice(index, index + 3));
+    }
+    return rows;
+  }, [stampPreview]);
+
   // Mark the stamp celebrated as soon as the celebration starts, so it never re-fires;
   // the visual flag is local state cleared by its own timer below.
   useEffect(() => {
@@ -197,6 +211,7 @@ export function PassportScreen({ navigation }: Props) {
 
     markStampCelebrated(celebrateMarker.stampId);
     setCelebratingStampId(celebrateMarker.stampId);
+    setUnlockedStampId(celebrateMarker.stampId);
     AccessibilityInfo.announceForAccessibility(`Achievement stamped: ${celebrateMarker.title}`);
     if (!reduceMotion) {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -238,9 +253,47 @@ export function PassportScreen({ navigation }: Props) {
     return () => clearTimeout(timeout);
   }, [celebratingStampId, reduceMotion]);
 
+  const unlockedStamp = unlockedStampId
+    ? earnedStamps.find((stamp) => stamp.id === unlockedStampId)
+    : undefined;
+  const unlockedCategory = unlockedStamp
+    ? ALL_PASSPORT_CATEGORIES.find((category) => category.id === unlockedStamp.categoryId)
+    : undefined;
+
   return (
     <ProfileScreenShell title="Achievements">
-      <View style={{ gap: spacing[5], paddingBottom: spacing[8] }}>
+      <View style={{ gap: spacing[5] }}>
+        {unlockedStamp && unlockedCategory ? (
+          <View testID="passport-unlock-card" style={{ gap: spacing[2] }}>
+            <View
+              style={{
+                alignItems: "center",
+                flexDirection: "row",
+                justifyContent: "space-between",
+              }}
+            >
+              <AppText variant="h3">New stamp</AppText>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss new stamp"
+                hitSlop={8}
+                onPress={() => setUnlockedStampId(null)}
+              >
+                <AppText variant="bodySmallBold" style={{ color: palette.orangeText }}>
+                  Got it
+                </AppText>
+              </Pressable>
+            </View>
+            <PassportStampCard
+              category={unlockedCategory}
+              stamp={unlockedStamp}
+              earned
+              celebrating
+              reduceMotion={reduceMotion}
+              triedInCategory={unlockedStamp.triedCount}
+            />
+          </View>
+        ) : null}
         <PassportPageFlip
           pageKey={`${totalStamps}-${celebratingStampId ?? "idle"}`}
           reduceMotion={reduceMotion}
@@ -307,9 +360,16 @@ export function PassportScreen({ navigation }: Props) {
                   justifyContent: "space-between",
                 }}
               >
-                <AppText variant="h3" style={{ color: palette.textOnDark }}>
-                  {totalStamps} / {PASSPORT_STAMP_DEFINITIONS.length} stamps
-                </AppText>
+                <View style={{ alignItems: "baseline", flexDirection: "row" }}>
+                  <SlideText
+                    value={String(totalStamps)}
+                    variant="h3"
+                    style={{ color: palette.textOnDark }}
+                  />
+                  <AppText variant="h3" style={{ color: palette.textOnDark }}>
+                    {` / ${PASSPORT_STAMP_DEFINITIONS.length} stamps`}
+                  </AppText>
+                </View>
                 <AppText variant="bodySmallBold" style={{ color: palette.amber }}>
                   {passportRankTitle(totalStamps)}
                 </AppText>
@@ -358,12 +418,12 @@ export function PassportScreen({ navigation }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Visited stalls, ${achievementInput.stallsVisited}`}
-          onPress={() =>
-            navigation.navigate("MainTabs", {
-              screen: "Profile",
-              params: { screen: "VisitedStalls" },
-            })
-          }
+          onPress={() => {
+            // Saved > Stalls > Visited is a root screen, so this never builds the Profile tab
+            // stack mid-transition (a cold Profile stack came up with Back going to Home, or blank).
+            useSavedViewStore.getState().setStallTab("visited");
+            navigation.navigate("Favourites", { section: "stalls" });
+          }}
           style={{
             alignItems: "center",
             backgroundColor: palette.surface,
@@ -397,19 +457,51 @@ export function PassportScreen({ navigation }: Props) {
             <Award color={palette.orange} size={18} />
             <AppText variant="h2">Heritage stamps ({totalStamps})</AppText>
           </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-            {stampPreview.map(({ category, stamp, earned }) =>
-              stamp ? (
-                <HeritageStampTile
-                  key={category.id}
-                  title={stamp.title}
-                  subtitle={stamp.subtitle}
-                  detail={`${progressMap[category.id]?.triedCount ?? 0} tried`}
-                  earned={earned}
-                  width={stampTileWidth}
-                />
-              ) : null,
-            )}
+          <View style={{ gap: spacing[2] }}>
+            {stampRows.map((row) => {
+              const openInRow = row.some((item) => item.category.id === openStampCategoryId);
+              return (
+                <Fragment key={row[0]?.category.id}>
+                  <View style={{ flexDirection: "row", gap: spacing[2] }}>
+                    {row.map(({ category, stamp, earned }) =>
+                      stamp ? (
+                        <HeritageStampTile
+                          key={category.id}
+                          title={stamp.title}
+                          subtitle={stamp.subtitle}
+                          detail={`${progressMap[category.id]?.triedCount ?? 0} tried`}
+                          earned={earned}
+                          width={stampTileWidth}
+                          categoryId={category.id}
+                          level={stamp.index}
+                          selected={category.id === openStampCategoryId}
+                          onPress={() => {
+                            void Haptics.selectionAsync();
+                            setOpenStampCategoryId((current) =>
+                              current === category.id ? null : category.id,
+                            );
+                          }}
+                        />
+                      ) : null,
+                    )}
+                  </View>
+                  {openInRow && openCategory && openHistory ? (
+                    <Animated.View
+                      key={openCategory.id}
+                      entering={reduceMotion ? FadeIn.duration(1) : FadeInDown.duration(260)}
+                      exiting={reduceMotion ? undefined : FadeOut.duration(160)}
+                    >
+                      <StampDetailPanel
+                        category={openCategory}
+                        history={openHistory}
+                        onClose={() => setOpenStampCategoryId(null)}
+                        onOpenStall={(venueId) => navigation.navigate("StallDetail", { venueId })}
+                      />
+                    </Animated.View>
+                  ) : null}
+                </Fragment>
+              );
+            })}
           </View>
         </View>
 

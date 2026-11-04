@@ -36,8 +36,8 @@ test("stall alerts only fire for verified merchant changes and respect user limi
 test("push alerts are opt-in and tapped alerts open through deep link rules", () => {
   assert.equal(DEFAULT_PUSH_PREFERENCES.stallUpdates, false);
   assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /<StallAlertsSettings/);
-  // Weekly picks is a separate opt-out (on by default, matching the DB default).
-  assert.equal(DEFAULT_PUSH_PREFERENCES.weeklyPicks, true);
+  // Weekly picks is a separate switch, off until turned on (App Review 4.5.4), like the DB default.
+  assert.equal(DEFAULT_PUSH_PREFERENCES.weeklyPicks, false);
   const alerts = read("src/components/settings/StallAlertsSettings.tsx");
   assert.match(alerts, /label="Weekly picks"/);
   assert.match(alerts, /isEnabled=\{preferences\.weeklyPicks\}/);
@@ -98,7 +98,7 @@ test("weekly picks push is a separate opt-out that reuses the outbox, cap and qu
   );
 
   const worker = read("supabase/functions/send-notifications/index.ts");
-  assert.match(worker, /weekly_picks: true/);
+  assert.match(worker, /weekly_picks: false/);
   assert.match(
     worker,
     /isWeeklyPicks\s*\? !pref\.weekly_picks\s*: !pref\.stall_updates\s*\)\s*skipReason = "opted_out"/,

@@ -1,0 +1,14 @@
+{
+  "version": "20261102090000",
+  "name": "20261102090000_catalog_raw_map_view_cluster_aggregate",
+  "result": "pass",
+  "rehearsed_at": "2026-11-02T08:55:37Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "1fd80e62d0c1a2e5e9c4573c7c00bd3f4462161a",
+  "up_sha256": "07266fefd457245005eebbe5b7a28a56dbf6dfdba4bd0215431c7842aa79278b",
+  "down_sha256": "7622f4eb1d51d4318ddaf44eef4872a83d0591a7205cf6199469ce7fdd89fa25",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/catalog_raw_map_view_cluster_aggregate.sql"]
+}

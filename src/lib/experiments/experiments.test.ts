@@ -11,6 +11,8 @@ import {
   resolveExperimentVariant,
   setExperimentFlagSource,
   setExperimentOverride,
+  setReleaseExperimentOverrides,
+  getExperimentOverride,
   type ExperimentDefinition,
   type ExperimentFlagSource,
   type ExperimentKey,
@@ -193,6 +195,25 @@ test("QA overrides win outside production and are ignored in production", () => 
   }
 });
 
+test("opening the developer tools lets a release build force a variant until they are locked", () => {
+  const fake = fakeSource({ welcome_back_v2: "test" });
+  setExperimentFlagSource(fake.source);
+  const previous = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  try {
+    setReleaseExperimentOverrides(true);
+    setExperimentOverride("welcome_back_v2", "control");
+    assert.equal(getExperimentOverride("welcome_back_v2"), "control");
+    assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "control");
+    setReleaseExperimentOverrides(false);
+    assert.equal(getExperimentOverride("welcome_back_v2"), undefined);
+    assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "test");
+  } finally {
+    process.env.NODE_ENV = previous;
+    setReleaseExperimentOverrides(false);
+  }
+});
+
 test("a boolean flag maps to test/control and unknown variants fall back", () => {
   const fake = fakeSource({ welcome_back_v2: false });
   setExperimentFlagSource(fake.source);
@@ -238,6 +259,16 @@ test("auth experiments state the sample they need per arm before a result may be
   }
 });
 
+test("a rollout stays on its fallback when PostHog reports no flag, and honours a control variant", () => {
+  // PostHog gives false for a flag that does not exist; a rollout has no flag until it is live.
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", false), "loop");
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", undefined), "loop");
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", "control"), "control");
+  assert.equal(resolveExperimentVariant("achievements_loop_v1", "loop"), "loop");
+  assert.equal(resolveExperimentVariant("auth_email_code_first_v1", false), "email_code");
+  assert.equal(resolveExperimentVariant("auth_email_code_first_v1", "control"), "control");
+});
+
 test("a running experiment with no PostHog flag is a rollout, not a test", () => {
   // Round-four finding AUTH4-2: no flag existed in PostHog, so every "running" test served
   // control. These predate the finding and run on their fallback until sh creates their flags;
@@ -245,22 +276,32 @@ test("a running experiment with no PostHog flag is a rollout, not a test", () =>
   // the arm everyone should get.
   const RUNNING_WITHOUT_FLAG: readonly string[] = [
     "welcome_back_v2",
-    "dish_tried_prompt_v1",
     "onboarding_account_framing_v1",
     "stall_bar_cta_v1",
     "catalog_save_to_list_v1",
     "review_tile_labels_v1",
     "profile_first_review_nudge_v1",
   ];
+  // These have a multivariate PostHog flag (created 2026-10-31), switched off until launch, so
+  // they serve their fallback until the flag is turned on: no app release needed to start them.
+  const FLAG_EXISTS_OFF_UNTIL_LAUNCH: readonly string[] = [
+    "saved_card_density_v1",
+    "saved_default_sort_v1",
+    "saved_remove_undo_v1",
+  ];
   const running = KEYS.filter(
     (key) => (EXPERIMENTS[key] as ExperimentDefinition).status === "running",
   );
   const unexpected = running.filter(
     (key) =>
-      !(EXPERIMENTS[key] as ExperimentDefinition).rollout && !RUNNING_WITHOUT_FLAG.includes(key),
+      !(EXPERIMENTS[key] as ExperimentDefinition).rollout &&
+      !RUNNING_WITHOUT_FLAG.includes(key) &&
+      !FLAG_EXISTS_OFF_UNTIL_LAUNCH.includes(key),
   );
   assert.deepEqual(unexpected, [], "new running experiments need a PostHog flag: start as draft");
-  const stale = RUNNING_WITHOUT_FLAG.filter((key) => !running.includes(key as ExperimentKey));
+  const stale = [...RUNNING_WITHOUT_FLAG, ...FLAG_EXISTS_OFF_UNTIL_LAUNCH].filter(
+    (key) => !running.includes(key as ExperimentKey),
+  );
   assert.deepEqual(stale, [], "these are no longer running: remove them from the list");
 });
 

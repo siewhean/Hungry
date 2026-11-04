@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
-import { Lock, MessageCircleMore, MoreHorizontal, Share2 } from "lucide-react-native";
 
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, type ProfileStat } from "@/components/profile/ProfileStatRow";
-import { AccessibleImage, AppText, Avatar, Button, EmptyState } from "@/components/ui";
+import { AccessibleImage, AppSymbol, AppText, Avatar, Button, EmptyState } from "@/components/ui";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { FollowPillButton } from "@/components/social/FollowPillButton";
@@ -16,6 +15,7 @@ import { promptContentSafetyActions } from "@/lib/security/communitySafety";
 import { useProfileStore } from "@/store/useProfileStore";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { formatMemberSince } from "@/features/profile/relativeDate";
+import { pluralLabel } from "@/features/profile/plural";
 import { useProfileFavouriteDishes } from "@/features/profile/useProfileFavouriteDishes";
 import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { useFollowPress } from "@/features/profile/useFollowPress";
@@ -450,29 +450,31 @@ export function UserProfileContent({
   const activeTitle = activeTab === "posts" ? "Post" : "Review";
   const activeItemsCount = activeTab === "posts" ? posts.length : reviews.length;
 
-  const followStats: ProfileStat[] = [
-    {
-      key: "followers",
-      label: "Followers",
-      value: followersCount,
-      accessibilityHint: `Opens ${authorName}'s followers`,
-      onPress: () => openProfileConnections("UserFollowers"),
-    },
-    {
-      key: "following",
-      label: "Following",
-      value: followingCount,
-      accessibilityHint: `Opens the people ${authorName} follows`,
-      onPress: () => openProfileConnections("UserFollowing"),
-    },
-  ];
+  const followStats: ProfileStat[] = FEATURE_FLAGS.followConnectionsEnabled
+    ? [
+        {
+          key: "followers",
+          label: pluralLabel(followersCount, "Follower"),
+          value: followersCount,
+          accessibilityHint: `Opens ${authorName}'s followers`,
+          onPress: () => openProfileConnections("UserFollowers"),
+        },
+        {
+          key: "following",
+          label: "Following",
+          value: followingCount,
+          accessibilityHint: `Opens the people ${authorName} follows`,
+          onPress: () => openProfileConnections("UserFollowing"),
+        },
+      ]
+    : [];
   // A private account you do not follow shows only the follow counts.
   const stats: ProfileStat[] = isPrivateLocked
     ? followStats
     : [
         {
           key: "reviews",
-          label: "Reviews",
+          label: pluralLabel(reviewCount, "Review"),
           value: reviewCount,
           accessibilityHint: `Shows ${authorName}'s reviews`,
           onPress: () => setActiveTab("reviews"),
@@ -499,7 +501,9 @@ export function UserProfileContent({
               ? "Check your connection and try again."
               : "This profile doesn't exist or isn't available."
           }
-          icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+          icon={
+            <AppSymbol name="noPosts" size={36} weight="regular" color={palette.textSecondary} />
+          }
           ctaLabel={failed ? "Retry" : undefined}
           onPress={failed ? () => setPublicProfileReloadKey((key) => key + 1) : undefined}
         />
@@ -525,7 +529,7 @@ export function UserProfileContent({
               }
               style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
             >
-              <Share2 color={palette.text} size={20} />
+              <AppSymbol name="share" size={20} color={palette.text} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -535,7 +539,7 @@ export function UserProfileContent({
               onPress={openProfileSafetyActions}
               style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
             >
-              <MoreHorizontal color={palette.text} size={22} />
+              <AppSymbol name="moreActions" size={24} weight="regular" color={palette.text} />
             </Pressable>
           </View>
         ) : undefined
@@ -612,7 +616,9 @@ export function UserProfileContent({
           <EmptyState
             title="Profile unavailable"
             body={`We can't open ${authorName}'s profile right now.`}
-            icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+            icon={
+              <AppSymbol name="noPosts" size={36} weight="regular" color={palette.textSecondary} />
+            }
           />
         ) : (
           <>
@@ -626,13 +632,22 @@ export function UserProfileContent({
                     ? `Follow ${authorName} to see their posts and reviews.`
                     : `Follow ${authorName} to see their reviews.`
                 }
-                icon={<Lock color={palette.textSecondary} size={36} />}
+                icon={
+                  <AppSymbol
+                    name="profilePrivate"
+                    size={36}
+                    weight="regular"
+                    color={palette.textSecondary}
+                  />
+                }
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
                 <FavouriteDishesRow
                   dishIds={pinnedDishIds}
-                  onOpenDish={(dishId) => rootNavigation.navigate("DishDetail", { dishId })}
+                  onOpenDish={(dishId) =>
+                    rootNavigation.navigate("DishDetail", { dishId, source: "user_profile" })
+                  }
                 />
                 <AppText variant="h2">{activeTab === "posts" ? "Posts" : "Reviews"}</AppText>
                 {showPosts() ? (
@@ -753,6 +768,7 @@ export function UserProfileContent({
                                   });
                                   rootNavigation.navigate("DishDetail", {
                                     dishId: review.dishId as string,
+                                    source: "user_profile",
                                   });
                                 }
                               : undefined
@@ -769,7 +785,14 @@ export function UserProfileContent({
                   <EmptyState
                     title="Couldn't load posts"
                     body="Check your connection and try again."
-                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    icon={
+                      <AppSymbol
+                        name="noPosts"
+                        size={36}
+                        weight="regular"
+                        color={palette.textSecondary}
+                      />
+                    }
                     ctaLabel="Retry"
                     onPress={() => {
                       setPostsLoaded(false);
@@ -780,7 +803,14 @@ export function UserProfileContent({
                   <EmptyState
                     title="Couldn't load reviews"
                     body="Check your connection and try again."
-                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    icon={
+                      <AppSymbol
+                        name="noPosts"
+                        size={36}
+                        weight="regular"
+                        color={palette.textSecondary}
+                      />
+                    }
                     ctaLabel="Retry"
                     onPress={() => {
                       setReviewsLoaded(false);
@@ -795,7 +825,14 @@ export function UserProfileContent({
                         ? `${authorName} hasn't posted anything yet.`
                         : `${authorName} hasn't reviewed anything yet.`
                     }
-                    icon={<MessageCircleMore color={palette.textSecondary} size={36} />}
+                    icon={
+                      <AppSymbol
+                        name="noPosts"
+                        size={36}
+                        weight="regular"
+                        color={palette.textSecondary}
+                      />
+                    }
                   />
                 )}
                 {activeTab === "reviews" && hasMoreReviews ? (

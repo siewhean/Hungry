@@ -1,8 +1,7 @@
 import { forwardRef } from "react";
 import { View, type TextInput } from "react-native";
-import { User } from "lucide-react-native";
 
-import { AppText, Input } from "@/components/ui";
+import { AppText, Input, AppSymbol } from "@/components/ui";
 import { MAX_DISPLAY_NAME_LENGTH } from "@/features/auth/validation";
 import { useHungryTheme } from "@/theme";
 import { AUTH_COPY } from "./authCopy";
@@ -44,7 +43,9 @@ export const DisplayNameField = forwardRef<TextInput, DisplayNameFieldProps>(
           returnKeyType="next"
           submitBehavior="submit"
           onSubmitEditing={onSubmitEditing}
-          leftIcon={<User color={palette.textMuted} size={18} />}
+          leftIcon={
+            <AppSymbol name="person" color={palette.textMuted} size={18} weight="regular" />
+          }
           error={!!errorText}
           errorText={errorText}
         />

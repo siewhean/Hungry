@@ -1,0 +1,14 @@
+{
+  "version": "20261101120000",
+  "name": "20261101120000_discovery_feed_candidates_follow_limit",
+  "result": "pass",
+  "rehearsed_at": "2026-11-01T12:56:00Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "ab33d96611259cad821eeaf41f3661d07f3b0ce9",
+  "up_sha256": "23c31624f86fda61ce16d6e1dd95f208b066121dc857513a6d0cae14448f8010",
+  "down_sha256": "e44f4c4c1d7e9ec4037e263403e2cdcf0913e6386046817c171329b3e63331fc",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/discovery_feed_candidates_follow_limit.sql"]
+}

@@ -10,6 +10,7 @@ const authGuards = [
   /TASTE_TAGGING_WORKER_TOKEN/,
   /NOTIFICATION_WORKER_TOKEN/,
   /ORPHAN_MEDIA_WORKER_TOKEN/,
+  /REPORT_DIGEST_TOKEN/,
   /GUEST_SESSION_API_KEY/,
   /app_can_make_ops_request/,
 ];

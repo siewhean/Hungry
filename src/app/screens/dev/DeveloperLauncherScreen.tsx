@@ -492,7 +492,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setMerchantModeActive(true);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Mode → Merchant", tone: "success" });
+    showToast({ message: "Merchant mode", tone: "success" });
     navigation.navigate("MerchantTabs" as any);
   };
 
@@ -505,7 +505,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     setMerchantAccount(null);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    showToast({ message: "Mode → Developer", tone: "success" });
+    showToast({ message: "Developer mode", tone: "success" });
     navigation.navigate("MainTabs", { screen: "Home" });
   };
 
@@ -517,7 +517,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     hideReviewSuccess();
 
     if (isAuthenticated && isUuidLikeUserId(authenticatedUserId)) {
-      showToast({ message: "Mode → User", tone: "info" });
+      showToast({ message: "User mode", tone: "info" });
       navigation.navigate("MainTabs", { screen: "Home" });
       return;
     }
@@ -541,7 +541,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
           skippedTasteQuiz: true,
           trackSignInEvent: false,
         });
-        showToast({ message: "Mode → User", tone: "info" });
+        showToast({ message: "User mode", tone: "info" });
         navigation.navigate("MainTabs", { screen: "Home" });
       })
       .catch(() => {
@@ -592,7 +592,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
       completeOnboarding(false);
     }
 
-    navigation.navigate("DishDetail", { dishId: dish.id });
+    navigation.navigate("DishDetail", { dishId: dish.id, source: "developer" });
   };
 
   return (

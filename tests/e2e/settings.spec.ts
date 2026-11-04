@@ -14,8 +14,7 @@ async function openSettings(page: Page, width: number) {
   await clickDevButton(page, "Profile", "Profile & Review");
   await page.setViewportSize({ width, height: 800 });
   await expect(page.getByText("Taste Fingerprint", { exact: true }).first()).toBeVisible();
-  await page.getByRole("button", { name: /^Open quick access/ }).click();
-  await page.getByRole("button", { name: "Settings", exact: true }).click();
+  await page.getByRole("button", { name: /^Open settings/ }).click();
   await expect(page.getByRole("heading", { name: "Privacy & data" })).toBeVisible();
 }
 
@@ -54,7 +53,7 @@ test.describe("settings page walk", () => {
       for (const title of [
         "Privacy & data",
         "Account & security",
-        "Display & accessibility",
+        "On this phone",
         "Help & legal",
       ]) {
         await expect(page.getByRole("heading", { name: title })).toBeVisible();
@@ -71,24 +70,23 @@ test.describe("settings page walk", () => {
     await expect(page.getByLabel(/Display name|Name/i).first()).toBeVisible();
   });
 
-  test("Theme opens a sheet that changes the theme", async ({ page }) => {
+  test("there is no app Theme or Reduce motion row (iOS owns both)", async ({ page }) => {
     await openSettings(page, 390);
-    await page.getByRole("button", { name: "Theme" }).click();
-    await expect(page.getByRole("radiogroup")).toBeVisible();
-    await page.getByRole("radio", { name: "Dark" }).click();
-    await expect(page.getByRole("button", { name: "Theme" })).toContainText("Dark");
+    await expect(page.getByRole("button", { name: "Theme" })).toHaveCount(0);
+    await expect(page.getByRole("switch", { name: "Reduce motion" })).toHaveCount(0);
   });
 
-  test("Profile visibility saves from its sheet", async ({ page }) => {
+  test("Profile visibility and Blocked people are archived with followers and following", async ({
+    page,
+  }) => {
     await openSettings(page, 390);
-    await page.getByRole("button", { name: "Profile visibility" }).click();
-    await page.getByRole("radio", { name: "Private" }).click();
-    await expect(page.getByRole("button", { name: "Profile visibility" })).toContainText("Private");
+    await expect(page.getByRole("button", { name: "Profile visibility" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Blocked people" })).toHaveCount(0);
   });
 
   test("switches flip when tapped", async ({ page }) => {
     await openSettings(page, 390);
-    for (const name of ["Share usage analytics", "Allow search history", "Reduce motion"]) {
+    for (const name of ["Share usage analytics", "Allow search history", "Haptic feedback"]) {
       const row = page.getByRole("switch", { name });
       const before = await row.getAttribute("aria-checked");
       await row.click();

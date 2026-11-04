@@ -92,9 +92,10 @@ apply_guarded() {
     echo 'set local statement_timeout = 0;'
     # Everything session-local is created inside the transaction and dropped at its end: behind a
     # transaction pooler (Supabase port 6543) a later psql call can reuse this backend connection.
-    echo "\\i $DB_DIR/sql/rowstats.sql"
+    # Quoted: a checkout under a folder with a space (/Users/Siew Hean/...) breaks a bare \i path.
+    echo "\\i '$DB_DIR/sql/rowstats.sql'"
     echo 'create temp table _before on commit drop as select * from pg_temp.hungry_rowstats(false);'
-    echo "\\i $file"
+    echo "\\i '$file'"
     if [ "$ledger" = insert ]; then
       echo "insert into supabase_migrations.schema_migrations(version, name) values ('$VERSION', '${MIG_NAME#*_}') on conflict do nothing;"
     else

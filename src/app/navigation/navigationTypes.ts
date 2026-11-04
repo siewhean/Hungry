@@ -1,5 +1,7 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { DecideAnswers } from "@/features/discovery/decideQuiz";
+import type { DishPrefill } from "@/features/detail/dishPrefill";
+import type { DishDetailSource } from "@/features/detail/dishSources";
 
 export type AuthStackParamList = {
   /**
@@ -52,7 +54,7 @@ export type OnboardingStackParamList = {
         mode?: "onboarding" | "profile";
         initialPhase?: "taste" | "dietary" | "budget"; // "budget": dietary step, scrolled to the budget
         /** The page the edit was opened from, for the preference events' surface. */
-        source?: "settings";
+        source?: "settings" | "home";
       }
     | undefined;
   DietaryPreferences:
@@ -79,7 +81,8 @@ export type OnboardingStackParamList = {
 };
 export type ProfileStackParamList = {
   ProfileHome: undefined;
-  Favourites: undefined;
+  /** Saved: opens on `section` (a deep link to Lists, say); else where the diner left it. */
+  Favourites: { section?: "dishes" | "stalls" | "lists" | "posts" } | undefined;
   /** One Lists area: Saved, your lists (portfolios) and checklists. */
   ListsHome: undefined;
   Collections: undefined;
@@ -89,6 +92,8 @@ export type ProfileStackParamList = {
   VisitedStalls: undefined;
   FollowedStalls: undefined;
   Settings: undefined;
+  /** Hidden: opened by tapping Version in Settings seven times. */
+  DeveloperTools: undefined;
   SocialGrid: { type: "liked" | "saved" };
   SocialPostDetail: { postId: string; type: "liked" | "saved" };
   EditProfile: undefined;
@@ -122,6 +127,8 @@ export type WheelStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
+  /** The Post page between Home and Reviews; reached by the edge swipe, never from the bar. */
+  Create: undefined;
   Review: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
@@ -135,11 +142,12 @@ export type MerchantTabParamList = {
   // Extended sections
   VerificationCentre: undefined;
   HomeBasedVerification: undefined;
-  BusinessProfileEditor: undefined;
+  /** `section` scrolls the long form to that part when it opens. */
+  BusinessProfileEditor: { section?: "location" | "hours" | "contact" } | undefined;
   DishEditor: { dishId?: string; ocrDraftId?: string } | undefined;
   OCRDrafts: undefined;
   /** `filter` opens a filtered list; `replyToId` opens the reply composer for that review. */
-  CustomerInbox: { filter?: "unreplied"; replyToId?: string } | undefined;
+  CustomerInbox: { filter?: "all" | "unreplied"; replyToId?: string } | undefined;
   FeaturedVisitors: undefined;
   PromotionBuilder: { promotionId?: string; duplicateFromId?: string } | undefined;
   PromotionList: undefined;
@@ -155,15 +163,30 @@ export type RootStackParamList = {
   MerchantTabs: NavigatorScreenParams<MerchantTabParamList>;
   StallDetail: { venueId?: string; id?: string };
   MerchantClaimExplainer: undefined;
-  ReportProblem: { venueId: string; dishId?: string; subjectName?: string };
+  /** "What did you have?" after a stall is marked visited; a system form sheet. */
+  StallVisited: { venueId: string };
+  /** "Add opening hours": pick every day, weekdays and weekends, or each day; sent for review. */
+  SuggestOpeningHours: { venueId: string; subjectName?: string };
+  SuggestDish: { venueId: string; subjectName?: string };
+  ReportProblem: {
+    venueId: string;
+    dishId?: string;
+    subjectName?: string;
+    /** Picks a reason up front, e.g. "wrong_hours" from the stall page's Add opening hours. */
+    initialKind?: "wrong_hours";
+  };
   /** `source` names where the dish was opened from, for the dish_viewed event. */
   DishDetail: {
     dishId?: string;
     id?: string;
-    source?: string;
+    source?: DishDetailSource;
+    /** What the card already knows: the page paints it at once and starts the stall reads. */
+    prefill?: DishPrefill;
     /** Opened from a catalog card: a dish page that can't be found shows the catalog record. */
     catalogFallback?: { releaseId?: string };
   };
+  /** Every written review of one dish, paged, with sort and a photo filter. */
+  DishReviews: { dishId: string };
   CatalogRawDetail: { kind: "dish" | "venue"; id: string; releaseId?: string };
   SearchHome: undefined;
   SearchResults:
@@ -186,6 +209,8 @@ export type RootStackParamList = {
       }
     | undefined;
   BrowseDishes: undefined;
+  /** Every popular dish as a picture circle, opened from the Home row's arrow. */
+  FoodStyles: undefined;
   BrowseStalls: undefined;
   DiscoverMap: undefined;
   /** `answers` pre-fills the quiz when "Change answers" reopens it from the result. */
@@ -230,7 +255,8 @@ export type RootStackParamList = {
       }
     | undefined;
   DeveloperLauncher: undefined;
-  Favourites: undefined;
+  /** Saved: opens on `section` (a deep link to Lists, say); else where the diner left it. */
+  Favourites: { section?: "dishes" | "stalls" | "lists" | "posts" } | undefined;
   ReviewHistory: undefined;
   Settings: undefined;
   EditProfile: undefined;

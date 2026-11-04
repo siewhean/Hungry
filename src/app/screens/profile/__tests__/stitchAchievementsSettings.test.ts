@@ -10,7 +10,10 @@ test("Achievements uses real passport progress in the Stitch layout", () => {
   assert.match(screen, /ProfileScreenShell title="Achievements"/);
   assert.match(screen, /getEarnedPassportStamps\(progressMap\)/);
   assert.match(screen, /getNextPassportStamp\(progressMap\)/);
-  assert.match(screen, /\{totalStamps\} \/ \{PASSPORT_STAMP_DEFINITIONS\.length\} stamps/);
+  assert.match(
+    screen,
+    /value=\{String\(totalStamps\)\}[\s\S]{0,400}\/ \$\{PASSPORT_STAMP_DEFINITIONS\.length\} stamps/,
+  );
   assert.match(screen, /<WeeklyGoalCard[\s\S]*progress=\{weeklyGoal\}/);
   assert.match(screen, /<HeritageStampTile[\s\S]*?earned=\{earned\}/);
   assert.match(screen, /passportRankTitle\(totalStamps\)/);
@@ -24,7 +27,7 @@ test("Settings follows the Stitch groups with working account and privacy contro
     "<StallAlertsSettings",
     'title="Privacy & data"',
     'title="Account & security"',
-    'title="Display & accessibility"',
+    'title="On this phone"',
     'title="Help & legal"',
   ];
 

@@ -5,6 +5,7 @@ import {
   assertRepoFileExists,
   assertSourceExcludes,
   assertSourceIncludes,
+  readHomeSource,
   readRepoFile,
   segmentBetween,
 } from "@/test/sourceContracts";
@@ -191,7 +192,7 @@ test("home feed post cards cover carousel media, captions, comments, reactions, 
 });
 
 test("discover routes diners to details, opens the map from a toggle, and search grids open catalog records", () => {
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const quickBites = readRepoFile("src/app/screens/discover/QuickBitesScreen.tsx");
   const searchResults = readRepoFile("src/app/screens/search/SearchResultsScreen.tsx");
   const rootNavigator = readRepoFile("src/app/navigation/RootNavigator.tsx");
@@ -204,7 +205,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /navigation\.navigate\("StallDetail", \{ venueId: venue\.id \}\)/,
       /navigation\.navigate\("MapZoomedIn", \{[\s\S]*buildingId: venue\.buildingId/,
       /navigation\.navigate\("BrowseStalls"\)/,
-      /navigation\.navigate\("BrowseDishes"\)/,
+      /navigation\.navigate\("FoodStyles"\)/,
       /navigation\.navigate\("DecideForMeQuiz"\)/,
       /navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)/,
       /recordTasteInteraction\(\{[\s\S]*type: "search_query"/,
@@ -218,7 +219,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /ExpandableSearchLauncher/,
       /accessibilityLabel="Search dishes"/,
       /iconAlignment="right"/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId \}\)/,
+      /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
       /accessibilityLabel=\{`Open \$\{item\.dishName\} at \$\{item\.venueName\}`\}/,
       /\{item\.dishName\}/,
     ],
@@ -227,6 +228,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
   assertSourceIncludes(
     searchResults,
     [
+      /navigation\.navigate\("StallDetail", \{ venueId: item\.id \}\)/,
       /navigation\.navigate\("CatalogRawDetail", \{\s*kind: openedMode === "dishes" \? "dish" : "venue",/,
       /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/,
       /type: "search_query"/,
@@ -251,10 +253,10 @@ test("discover routes diners to details, opens the map from a toggle, and search
 test("dish and stall details expose correct detail surfaces without user-mode map/cart regressions", () => {
   const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-  const discover = readRepoFile("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const userModeStallPress = segmentBetween(
     discover,
-    "if (isUserMode) {",
+    'buttonId: "vertical_stall_showcase_card"',
     'navigation.navigate("MapZoomedIn"',
   );
 
@@ -262,7 +264,7 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
     dishDetail,
     [
       /const heroPhotos = useMemo\(\(\) => \(dish \? buildDishHeroPhotos\(dish\) : \[\]\), \[dish\]\)/,
-      /perceivedTasteRows\(dish\.tasteVector, profile\.tasteVector\)/,
+      /<DishTasteCard/,
       /ReviewShareSheet/,
       /toggleFavourite\(dish\)/,
     ],
@@ -272,23 +274,23 @@ test("dish and stall details expose correct detail surfaces without user-mode ma
     stallDetail,
     [
       /height=\{heroHeight\}/,
-      /const stallAddress =/,
+      /const streetAddress = \[/,
       /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/,
       /logoUrl=\{sanitizeCatalogImageUrl\(venue\.logoUrl\)\}/,
       /<AppText variant="bodyBold">Address<\/AppText>/,
-      /\{stallAddress\}/,
+      /\{streetAddress\}/,
       /Loading stall/,
       /<AppText variant="h2">Menu<\/AppText>/,
       /const \[visibleMenuItemCount, setVisibleMenuItemCount\] = useState\(INITIAL_MENU_ITEM_COUNT\)/,
-      /listener: handleScroll/,
+      /useAnimatedScrollHandler\(/,
       /<DetailHeroFade scrollY=\{heroScrollY\} height=\{heroHeight\}>/,
       /onLayout=\{handleContentBodyLayout\}/,
       /onLayout=\{handleMenuSectionLayout\}/,
-      /contentBodyLayout\.y \+ menuSectionLayout\.y \+ menuSectionLayout\.height/,
+      /body\.y \+ menu\.y \+ menu\.height/,
       /filteredMenuDishes\.slice\(0, visibleMenuItemCount\)/,
       /setVisibleMenuItemCount\(\(current\) =>[\s\S]*MENU_ITEM_BATCH_SIZE[\s\S]*filteredMenuDishes\.length/,
       /<MenuFilterDropdown/,
-      /navigation\.navigate\("DishDetail", \{ dishId: activeDish\.id \}\)/,
+      /navigation\.navigate\("DishDetail", \{\s*dishId: activeDish\.id,\s*source: "stall_menu"/,
       /StallInteractionBar/,
       /ReviewShareSheet/,
     ],
@@ -469,12 +471,11 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
     [
       /profile\.avatarUrl && !avatarFailed \? \([\s\S]*<AccessibleImage[\s\S]*source=\{\{ uri: profile\.avatarUrl \}\}/,
       /avatarInitials/,
-      /<AppText variant="h2">Taste Fingerprint<\/AppText>/,
+      /<AppText[^>]*variant=\{compactTasteHeader \? "h3" : "h2"\}[^>]*numberOfLines=\{1\}[^>]*>\s*Taste Fingerprint\s*<\/AppText>/,
       /key: "reviews",/,
       /key: "saved",/,
       /<ProfileStatRow stats=\{stats\}/,
-      /menuOpen\s*\? "Close quick access"/,
-      /: "Open quick access"/,
+      /: "Open settings"/,
       /label="Edit"[\s\S]*onPress=\{\(\) => navigation\.navigate\("EditProfile"\)\}/,
       /accessibilityLabel="Share Taste Fingerprint"/,
       /<AppText variant="h1" numberOfLines=\{2\}[\s\S]*profile\.displayName/,
@@ -491,9 +492,9 @@ test("profile surfaces keep own and other-user layouts linked while hiding taste
       /<ProfileScreenShell\s+title="Profile"/,
       /Avatar name=\{authorName\} uri=\{resolvedAuthorAvatarUrl\}/,
       /<ProfileStatRow stats=\{stats\}/,
-      /label: "Followers"/,
+      /label: pluralLabel\(followersCount, "Follower"\)/,
       /label: "Following"/,
-      /label: "Reviews"/,
+      /label: pluralLabel\(reviewCount, "Review"\)/,
       /label: "Stalls"/,
       /activeTab === "posts"/,
       /activeTab === "reviews"/,

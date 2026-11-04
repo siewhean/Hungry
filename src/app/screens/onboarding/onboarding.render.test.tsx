@@ -596,6 +596,22 @@ test("ONB-11: the picker opened from the Location step is the onboarding step, e
   assert.ok(view.findByLabel("Step 1 of 5"));
 });
 
+test("ONB-14: the picker is search only, with no Singapore map to tap an area on", async () => {
+  const view = await renderScreen(ManualLocationPickerScreen as never, {
+    name: "ManualLocationPicker",
+    params: { mode: "onboarding", notice: "No problem. Pick your area instead." },
+  });
+  assert.equal(view.findByLabel(/Map of Singapore/), null);
+  assert.equal(view.container.querySelector("svg"), null, "nothing is drawn as a map");
+  assert.doesNotMatch(view.text(), /tap an area on the map/i);
+  // The search, the current-location row, the notice and the save button remain.
+  assert.ok(view.findByLabel("Search for an area, mall, hawker centre or address"));
+  assert.ok(view.findByLabel("Use my current location"));
+  assert.match(view.text(), /No problem\. Pick your area instead\./);
+  assert.match(view.text(), /Search for an area, mall or address/);
+  assert.ok(view.findByText("Set as my location"));
+});
+
 test("ONB-12, ONB-X8: no autofocus under a screen reader, a usable map label, and a spoken result count", async () => {
   const originalEnabled = AccessibilityInfo.isScreenReaderEnabled;
   const originalAnnounce = AccessibilityInfo.announceForAccessibility;

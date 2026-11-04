@@ -75,3 +75,60 @@ test("HEIC photos re-encoded to JPEG are stored under a .jpg path", async () => 
     );
   }
 });
+
+test("a signed upload sends raw bytes with the content type, and reports where it failed", async () => {
+  const { uploadViaSignedUrl } = await import("@/lib/services/supabase/mediaUpload");
+  const sent: { body: unknown; options: Record<string, unknown> }[] = [];
+  const clientWith = (overrides: {
+    signed?: { data: { token: string } | null; error: unknown };
+    upload?: { error: unknown };
+  }) =>
+    ({
+      storage: {
+        from: () => ({
+          createSignedUploadUrl: async () =>
+            overrides.signed ?? { data: { token: "t" }, error: null },
+          uploadToSignedUrl: async (
+            _path: string,
+            _token: string,
+            body: unknown,
+            options: Record<string, unknown>,
+          ) => {
+            sent.push({ body, options });
+            return overrides.upload ?? { error: null };
+          },
+        }),
+      },
+    }) as never;
+
+  // A photo read back from a file has no type of its own; the bytes still go out as image/jpeg.
+  const photo = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])]);
+  assert.equal(
+    await uploadViaSignedUrl(clientWith({}), "avatars", "u/a.jpg", photo, "image/jpeg"),
+    null,
+  );
+  assert.ok(sent[0].body instanceof ArrayBuffer, "bytes, not a Blob");
+  assert.equal((sent[0].body as ArrayBuffer).byteLength, 4);
+  assert.equal(sent[0].options.contentType, "image/jpeg");
+
+  assert.deepEqual(
+    await uploadViaSignedUrl(
+      clientWith({ upload: { error: { statusCode: "415", message: "mime type not supported" } } }),
+      "avatars",
+      "u/a.jpg",
+      photo,
+      "image/jpeg",
+    ),
+    { stage: "upload", detail: "415 mime type not supported" },
+  );
+  assert.deepEqual(
+    await uploadViaSignedUrl(
+      clientWith({ signed: { data: null, error: { message: "denied" } } }),
+      "avatars",
+      "u/a.jpg",
+      photo,
+      "image/jpeg",
+    ),
+    { stage: "sign", detail: "denied" },
+  );
+});

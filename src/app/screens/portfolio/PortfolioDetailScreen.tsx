@@ -434,7 +434,11 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
               showRank={portfolio.type === "ranking"}
               canEdit={canEdit}
               onOpen={() => {
-                if (item.dishId) rootNavigation.navigate("DishDetail", { dishId: item.dishId });
+                if (item.dishId)
+                  rootNavigation.navigate("DishDetail", {
+                    dishId: item.dishId,
+                    source: "collection",
+                  });
                 else if (item.stallId)
                   rootNavigation.navigate("StallDetail", { venueId: item.stallId });
               }}

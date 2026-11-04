@@ -1,4 +1,5 @@
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import {
   sanitizeCatalogCardImageUrl,
   sanitizeCatalogMediaUrl,
@@ -17,6 +18,7 @@ export type CatalogErrorKind =
   | "network"
   | "rpc"
   | "release_expired"
+  | "rate_limited"
   | "unavailable";
 
 /** Pages served from the bundled offline copy (the Excel fallback) carry this release id. */
@@ -116,7 +118,16 @@ export interface CatalogRawVenueCard {
   /** The stall's best displayable dish: its rating and review count (quality_rating columns). */
   qualityRating?: number;
   qualityReviewCount?: number;
+  /** The stall's own logo, when it has one. */
+  logoUrl?: string;
+  /** Median price of the stall's mains (drinks and sides left out), for "Mains from S$x". */
+  mainPrice?: number;
   representativeDish?: Pick<
+    CatalogRawDishCard,
+    "id" | "name" | "imageUrl" | "price" | "verificationStatus"
+  >;
+  /** The stall's best dish for the typed query; only on stall search results. */
+  matchedDish?: Pick<
     CatalogRawDishCard,
     "id" | "name" | "imageUrl" | "price" | "verificationStatus"
   >;
@@ -181,6 +192,10 @@ export interface CatalogSuggestion {
   label: string;
   /** Building id, on place suggestions. */
   placeId?: string;
+  /** Venue id, on a stall suggestion whose name belongs to one stall; a chain's name has none. */
+  venueId?: string;
+  /** The stall's building, shown under a stall suggestion that has a venue id. */
+  subtitle?: string;
 }
 
 /** A mall, hawker centre, food court or other building with several stalls. */
@@ -208,8 +223,11 @@ export interface CatalogPlacesRequest {
 
 /** A building needs this many stalls to count as a place (also enforced by the RPCs). */
 export const CATALOG_PLACE_MIN_STALLS = 3;
-/** Inside a place when a stall of it is within this many metres of the phone. */
-export const CATALOG_PLACE_ENTER_RADIUS_METERS = 100;
+/**
+ * Inside a place when a stall of it is within this many metres of the phone. A big mall is
+ * wider than 200 m and indoor GPS drifts, so 100 m missed people standing inside it.
+ */
+export const CATALOG_PLACE_ENTER_RADIUS_METERS = 150;
 
 /** Suggestions need at least this many characters; shorter text gets popular food types. */
 export const CATALOG_SUGGEST_MIN_CHARS = 2;
@@ -219,7 +237,14 @@ type CacheEntry<T> = { expiresAt: number; value: T };
 const PAGE_TTL_MS = 60_000;
 const DETAIL_TTL_MS = 5 * 60_000;
 const MAX_CACHE_ENTRIES = 40;
+/** Place lists (malls, hawker centres) change with a catalogue release, so they keep longer. */
+const PLACES_TTL_MS = 10 * 60_000;
+/** A list that already loaded this session is shown again if a later read of it fails. */
+const STALE_MAX_AGE_MS = 30 * 60_000;
+/** The phone stops waiting on a list read after this; the server gives up at 8 s on its own. */
+const RPC_TIMEOUT_MS = 15_000;
 const pageCache = new Map<string, CacheEntry<unknown>>();
+const lastGoodPages = new Map<string, { savedAt: number; value: unknown }>();
 const detailCache = new Map<string, CacheEntry<unknown>>();
 
 export class CatalogAccessError extends Error {
@@ -297,6 +322,17 @@ export class CatalogReleaseExpiredError extends CatalogAccessError {
   }
 }
 
+/**
+ * The request limiter answered 429: the caller is searching faster than the endpoint allows.
+ * Retrying straight away fails again, and it is not a connection problem, so it has its own copy.
+ */
+export class CatalogRateLimitedError extends CatalogAccessError {
+  constructor(message = "Too many searches in a minute. Try again in a moment.", cause?: unknown) {
+    super(message, { kind: "rate_limited", fallbackEligible: false, cause });
+    this.name = "CatalogRateLimitedError";
+  }
+}
+
 export class CatalogNetworkError extends CatalogAccessError {
   constructor(message = "The online catalog could not be reached.", cause?: unknown) {
     super(message, { kind: "network", fallbackEligible: true, cause });
@@ -369,6 +405,16 @@ function looksLikeNetworkFailure(value: unknown): boolean {
     message.includes("aborted") ||
     message.includes("socket") ||
     message.includes("connection")
+  );
+}
+
+/** The limiter answers 429 with {"code":"rate_limited"} (app_private.check_request_rate). */
+function looksLikeRateLimited(value: unknown): boolean {
+  const message = errorMessage(value).toLowerCase();
+  return (
+    errorStatus(value) === 429 ||
+    errorCode(value) === "rate_limited" ||
+    message.includes("too many requests")
   );
 }
 
@@ -449,6 +495,7 @@ export function classifyCatalogAccessError(value: unknown, context: "session" | 
   if (looksLikeConfigurationFailure(value)) return new CatalogConfigurationError(message, value);
   if (looksLikeInvalidSession(value)) return new CatalogSessionInvalidError(message, value);
   if (looksLikeAuthorizationFailure(value)) return new CatalogAuthorizationError(message, value);
+  if (looksLikeRateLimited(value)) return new CatalogRateLimitedError(undefined, value);
   if (looksLikeNetworkFailure(value)) return new CatalogNetworkError(message, value);
   if (looksLikeExpiredRelease(value)) return new CatalogReleaseExpiredError(undefined, value);
   if (looksLikeContractFailure(value)) return new CatalogContractError(message, value);
@@ -534,6 +581,7 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
   const representative = asRecord(row.representative_dish);
   const mediaRightsStatus = asString(row.media_rights_status) ?? "unverified";
   const representativeRightsStatus = asString(representative.media_rights_status) ?? "unverified";
+  const matched = asRecord(row.matched_dish);
   return {
     id: asString(row.id) ?? "",
     buildingId: asString(row.building_id) ?? "",
@@ -553,6 +601,19 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
     menuCount: asNumber(row.menu_count) ?? 0,
     qualityRating: asNumber(row.quality_rating),
     qualityReviewCount: asNumber(row.quality_review_count),
+    logoUrl: asString(row.logo_url),
+    mainPrice: asNumber(row.main_price),
+    matchedDish: asString(matched.id)
+      ? {
+          id: asString(matched.id) ?? "",
+          name: asString(matched.name) ?? "Unnamed dish",
+          imageUrl: sanitizeCatalogCardImageUrl(asString(matched.image_url), sourceRpc, {
+            rightsStatus: "unverified",
+          }),
+          price: asNumber(matched.price),
+          verificationStatus: verificationStatus(matched.verification_status),
+        }
+      : undefined,
     representativeDish: asString(representative.id)
       ? {
           id: asString(representative.id) ?? "",
@@ -595,7 +656,10 @@ function mapSuggestions(value: unknown): CatalogSuggestion[] {
     const kind = row.kind;
     if (!label || (kind !== "food_type" && kind !== "place" && kind !== "stall")) return [];
     const placeId = kind === "place" ? asString(row.id) : undefined;
-    return [placeId ? { kind, label, placeId } : { kind, label }];
+    if (placeId) return [{ kind, label, placeId }];
+    const venueId = kind === "stall" ? asString(row.id) : undefined;
+    if (venueId) return [{ kind, label, venueId, subtitle: asString(row.subtitle) }];
+    return [{ kind, label }];
   });
 }
 
@@ -615,6 +679,16 @@ function mapPlace(value: unknown): CatalogPlace[] {
       distanceMeters: asNumber(row.distance_meters),
     },
   ];
+}
+
+/**
+ * The server's zoomed-out branch (below 14) groups pins into cells with nested aggregates, which
+ * Postgres rejects ("aggregate function calls cannot be nested", 42803), so every zoomed-out map
+ * read failed. Ask for the venue branch instead: it returns the pins nearest the viewport centre.
+ */
+export const MAP_VIEWPORT_MIN_SERVER_ZOOM = 14;
+export function mapViewportZoom(zoom: number): number {
+  return Math.max(zoom, MAP_VIEWPORT_MIN_SERVER_ZOOM);
 }
 
 function normaliseRequest(request: CatalogPageRequest): Record<string, unknown> {
@@ -692,12 +766,56 @@ async function requireAuthenticatedClient() {
 
 async function callRawRpc<T>(name: string, args: Record<string, unknown>): Promise<T> {
   const client = await requireAuthenticatedClient();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const { data, error } = await client.rpc(name, args);
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(
+        () => reject(new CatalogNetworkError("The online catalog took too long to answer.")),
+        RPC_TIMEOUT_MS,
+      );
+    });
+    const { data, error } = await Promise.race([client.rpc(name, args), timeout]);
     if (error) throw classifyCatalogAccessError(error, "rpc");
     return data as T;
   } catch (error) {
     throw classifyCatalogAccessError(error, "rpc");
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * Reads a first-page list through the 60 s cache. Identical reads that overlap share one request,
+ * and when the live read fails (the server cancels slow reads, or the phone is offline) the last
+ * copy of the same list from this session is shown instead of an error. Later pages (a cursor)
+ * and rate-limit, sign-in and release errors are never covered this way.
+ */
+async function readPage<T>(
+  key: string,
+  ttl: number,
+  cursor: string | null | undefined,
+  load: () => Promise<T>,
+): Promise<T> {
+  const cached = readCache<T>(pageCache, key);
+  if (cached) return cached;
+  try {
+    const value = await shareInFlight(getSupabaseClient(), key, load);
+    if (!cursor) {
+      lastGoodPages.delete(key);
+      lastGoodPages.set(key, { savedAt: Date.now(), value });
+      while (lastGoodPages.size > MAX_CACHE_ENTRIES) {
+        lastGoodPages.delete(lastGoodPages.keys().next().value as string);
+      }
+    }
+    return writeCache(pageCache, key, value, ttl);
+  } catch (error) {
+    const stale = cursor ? undefined : lastGoodPages.get(key);
+    const covers =
+      error instanceof CatalogAccessError && (error.kind === "network" || error.kind === "rpc");
+    if (stale && covers && Date.now() - stale.savedAt <= STALE_MAX_AGE_MS) {
+      return writeCache(pageCache, key, stale.value as T, 10_000);
+    }
+    throw error;
   }
 }
 
@@ -720,28 +838,27 @@ export const catalogRawService = {
   clearCache() {
     pageCache.clear();
     detailCache.clear();
+    lastGoodPages.clear();
   },
 
   async listDishes(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawDishCard>> {
     const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("dishes", args);
-    const cached = readCache<CatalogPage<CatalogRawDishCard>>(pageCache, key);
-    if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_dishes_page", args), (item) =>
-      mapDishCard(item, "catalog_raw_dishes_page"),
+    return readPage(key, PAGE_TTL_MS, request.cursor, async () =>
+      mapPage(await callRawRpc("catalog_raw_dishes_page", args), (item) =>
+        mapDishCard(item, "catalog_raw_dishes_page"),
+      ),
     );
-    return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 
   async listVenues(request: CatalogPageRequest): Promise<CatalogPage<CatalogRawVenueCard>> {
     const args = withFoodKeywords(normaliseRequest(request), request);
     const key = catalogRequestKey("venues", args);
-    const cached = readCache<CatalogPage<CatalogRawVenueCard>>(pageCache, key);
-    if (cached) return cached;
-    const page = mapPage(await callRawRpc("catalog_raw_venues_page", args), (item) =>
-      mapVenueCard(item, "catalog_raw_venues_page"),
+    return readPage(key, PAGE_TTL_MS, request.cursor, async () =>
+      mapPage(await callRawRpc("catalog_raw_venues_page", args), (item) =>
+        mapVenueCard(item, "catalog_raw_venues_page"),
+      ),
     );
-    return writeCache(pageCache, key, page, PAGE_TTL_MS);
   },
 
   /** Typeahead for Search home; under two characters it returns popular food types. */
@@ -769,11 +886,10 @@ export const catalogRawService = {
       p_release_id: request.releaseId ?? null,
     };
     const key = catalogRequestKey("places", args);
-    const cached = readCache<CatalogPlace[]>(pageCache, key);
-    if (cached) return cached;
-    const rows = await callRawRpc<unknown>("catalog_raw_places", args);
-    const places = Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
-    return writeCache(pageCache, key, places, PAGE_TTL_MS);
+    return readPage(key, PLACES_TTL_MS, null, async () => {
+      const rows = await callRawRpc<unknown>("catalog_raw_places", args);
+      return Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
+    });
   },
 
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {
@@ -836,7 +952,7 @@ export const catalogRawService = {
       p_min_lng: request.minLongitude,
       p_max_lat: request.maxLatitude,
       p_max_lng: request.maxLongitude,
-      p_zoom: request.zoom,
+      p_zoom: mapViewportZoom(request.zoom),
       p_release_id: request.releaseId ?? null,
       p_near_lat: request.coordinate?.latitude ?? null,
       p_near_lng: request.coordinate?.longitude ?? null,

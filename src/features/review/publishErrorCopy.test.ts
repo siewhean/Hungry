@@ -63,6 +63,14 @@ test("a rate-limited publish says to slow down, not 'something went wrong' (REV-
   assert.match(describePublishError(limited, "review"), /draft is saved/i);
 });
 
+test("a photo that fails the explicit-content check is explained and is not a fault", () => {
+  const rejected = { code: "photo_rejected", message: "One of your photos can't be posted." };
+  assert.match(describePublishError(rejected, "review"), /may break our community rules/);
+  assert.match(describePublishError(rejected, "review"), /Choose a different photo/);
+  assert.match(describePublishError(rejected, "review"), /draft is saved/i);
+  assert.equal(isExpectedPublishError(rejected), true);
+});
+
 test("expected publish refusals are not faults; unknown ones are (REV-X1)", () => {
   assert.equal(
     isExpectedPublishError({ code: "rate_limited", message: "Too many requests" }),

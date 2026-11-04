@@ -1,5 +1,5 @@
 /**
- * The "N places to eat in this area" label. The list is the feed RPC, so the
+ * The "N stalls in this area" label. The list is the feed RPC, so the
  * feed size is the honest count while it is under the page limit. Past the
  * limit the separate count is used only when it agrees with the list; when
  * nothing reliable is available the label is hidden (null) instead of

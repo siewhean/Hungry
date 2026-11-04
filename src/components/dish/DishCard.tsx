@@ -7,6 +7,7 @@ import { formatDishPrice } from "@/features/detail/dishPrice";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AccessibleImage, AppText, Badge, Card } from "../ui";
 import { NoDishPhoto } from "./NoDishPhoto";
+import { RatingStarSymbol } from "./dishSymbols";
 
 /** "Venue · #01-23 · L1", skipping empty parts so no stray separators show. */
 export function formatDishLocation(
@@ -122,7 +123,14 @@ export function DishCard({
           </View>
           <View style={styles.rowWrap}>
             <AppText variant="price">{priceLabel}</AppText>
-            {hasRating ? <Badge label={`${dish.rating.toFixed(1)} ★`} tone="amber" /> : null}
+            {hasRating ? (
+              <Badge
+                label={dish.rating.toFixed(1)}
+                tone="amber"
+                accessibilityLabel={`Rated ${dish.rating.toFixed(1)} out of 5`}
+                icon={(color) => <RatingStarSymbol size={11} color={color} />}
+              />
+            ) : null}
             {distanceLabel ? (
               <AppText variant="bodySmall" tone="secondary">
                 {distanceLabel}

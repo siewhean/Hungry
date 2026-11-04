@@ -6,6 +6,7 @@ import { AppErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { HungryThemeProvider, useHungryTheme } from "@/theme";
 import { AppBody } from "@/app/AppBody";
 import { isAnalyticsEnabled } from "@/lib/analytics";
+import { installOfflineErrorGuard } from "@/lib/monitoring/offlineErrorGuard";
 import {
   isUsageBreadcrumb,
   sanitizeSentryBreadcrumb,
@@ -39,6 +40,9 @@ if (shouldEnableSentry && !sentryInitialized && !globalForSentry.__hungrySentryI
   sentryInitialized = true;
   globalForSentry.__hungrySentryInitialized = true;
 }
+
+// An uncaught "no connection" error must not close the app.
+installOfflineErrorGuard();
 
 function AppContent() {
   return (

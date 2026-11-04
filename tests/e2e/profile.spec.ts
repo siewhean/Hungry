@@ -40,31 +40,46 @@ test.describe("profile page walk", () => {
     });
   }
 
-  test("Followers opens a searchable list", async ({ page }) => {
+  for (const width of WIDTHS) {
+    test(`stat labels are whole words at ${width}pt (one line, or two by two when narrow)`, async ({
+      page,
+    }) => {
+      await openProfile(page, width);
+      const row = page.getByTestId("profile-follow-counts");
+      for (const label of ["Saved"]) {
+        const text = row.getByText(label, { exact: true });
+        const box = await text.boundingBox();
+        expect(box, `${label} is on screen`).not.toBeNull();
+        // One line of the 12pt label is 16-18pt tall; a word broken over two lines would be 32+.
+        expect(box!.height).toBeLessThanOrEqual(20);
+        // Not cut off: the label's text fits its own box.
+        const clipped = await text.evaluate((el) => el.scrollWidth > el.clientWidth);
+        expect(clipped, `${label} is not cut to an ellipsis`).toBe(false);
+      }
+    });
+  }
+
+  test("Followers and Following are archived: no tiles on the own profile", async ({ page }) => {
     await openProfile(page, 375);
-    await page.getByRole("button", { name: /^Followers/ }).click();
-    await expect(
-      page.getByLabel("Search followers").filter({ visible: true }).first(),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Followers/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Following/ })).toHaveCount(0);
   });
 
-  test("the quick access menu has one close control and a sign-out that asks first", async ({
-    page,
-  }) => {
+  test("the header settings icon opens Settings, where Sign out asks first", async ({ page }) => {
     await openProfile(page, 375);
 
-    await page.getByRole("button", { name: /^Open quick access/ }).click();
-    await expect(page.getByRole("button", { name: "Close quick access" })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: /quick access/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Sign out", exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: /^Open settings/ }).click();
+    await expect(page.getByRole("heading", { name: "Privacy & data" })).toBeVisible();
 
-    // Sign out asks (the browser confirm on web); dismissing keeps you signed in.
-    let asked = "";
-    page.once("dialog", async (dialog) => {
-      asked = dialog.message();
-      await dialog.dismiss();
-    });
-    await page.getByRole("button", { name: "Sign out" }).click();
-    await expect.poll(() => asked).toContain("Sign out");
-    await expect(page.getByText("Taste Fingerprint", { exact: true }).first()).toBeVisible();
+    // Sign out asks first; Cancel keeps you signed in.
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(
+      page.getByText("You will be signed out from Hungry on this device."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Privacy & data" })).toBeVisible();
   });
 
   test("Edit profile with a draft asks before leaving", async ({ page }) => {
@@ -79,7 +94,8 @@ test.describe("profile page walk", () => {
       asked = dialog.message();
       await dialog.dismiss();
     });
-    await page.getByRole("button", { name: /back/i }).first().click();
+    // The form has Cancel in the header where the back arrow was.
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
     await expect.poll(() => asked).toContain("Discard changes?");
     await expect(nameInput).toHaveValue("Wei Ming Edited");
   });

@@ -206,11 +206,29 @@ export function useAppBootstrap() {
     } else {
       unsubscribeHydration = useLocationStore.persist.onFinishHydration(refreshLocationOnLaunch);
     }
+    // While the app is open and the phone's own location is in use, follow it as the diner moves.
+    const syncLocationWatch = () => {
+      const locationState = useLocationStore.getState();
+      if (
+        AppState.currentState === "active" &&
+        locationState.permission === "granted" &&
+        !locationState.manualCoordinate
+      ) {
+        void locationState.startLocationWatch();
+      } else {
+        locationState.stopLocationWatch();
+      }
+    };
+    syncLocationWatch();
+    const unsubscribeLocationStore = useLocationStore.subscribe(syncLocationWatch);
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") refreshLocation();
+      syncLocationWatch();
     });
     return () => {
       unsubscribeHydration?.();
+      unsubscribeLocationStore();
+      useLocationStore.getState().stopLocationWatch();
       subscription.remove();
     };
   }, []);

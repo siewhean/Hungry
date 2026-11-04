@@ -101,6 +101,32 @@ function createStub(moduleName, overrides = {}) {
   return proxy;
 }
 
+// The non-modal BottomSheet draws its handle, then its content, in place; the scrollables are
+// plain scroll views so a test can scroll and press what is inside them.
+function gorhomOverrides() {
+  const rn = require("react-native-web");
+  const BottomSheet = React.forwardRef(function BottomSheetStub(
+    { children, handleComponent: Handle },
+    ref,
+  ) {
+    React.useImperativeHandle(ref, () => ({
+      snapToIndex: () => undefined,
+      snapToPosition: () => undefined,
+      expand: () => undefined,
+      collapse: () => undefined,
+      close: () => undefined,
+      forceClose: () => undefined,
+    }));
+    return React.createElement(
+      "div",
+      { "data-stub": "@gorhom/bottom-sheet" },
+      Handle ? React.createElement(Handle, {}) : null,
+      children,
+    );
+  });
+  return { default: BottomSheet, BottomSheetScrollView: rn.ScrollView };
+}
+
 function reanimatedOverrides() {
   const rn = require("react-native-web");
   const chain = () =>
@@ -118,7 +144,15 @@ function reanimatedOverrides() {
   };
   const known = {
     ...Animated,
-    useSharedValue: (value) => ({ value }),
+    useSharedValue: (value) => ({
+      value,
+      get() {
+        return this.value;
+      },
+      set(next) {
+        this.value = typeof next === "function" ? next(this.value) : next;
+      },
+    }),
     useAnimatedStyle: () => ({}),
     useAnimatedProps: () => ({}),
     useDerivedValue: (fn) => {
@@ -130,7 +164,13 @@ function reanimatedOverrides() {
     },
     useAnimatedScrollHandler: () => () => undefined,
     useAnimatedRef: () => ({ current: null }),
-    useAnimatedReaction: () => undefined,
+    // Runs once at mount with the first value (there is no UI thread to watch a value change).
+    useAnimatedReaction: (prepare, react) => {
+      React.useEffect(() => {
+        const value = prepare();
+        if (react) react(value, null);
+      }, []);
+    },
     useReducedMotion: () => false,
     useScrollViewOffset: () => ({ value: 0 }),
     useAnimatedKeyboard: () => ({ height: { value: 0 }, state: { value: 0 } }),
@@ -306,6 +346,8 @@ const STUBS = [
   [/^@expo-google-fonts\//, { useFonts: () => [true, null] }],
   [/^react-native-svg$/, {}],
   [/^lucide-react-native$/, {}],
+  [/^expo-symbols$/, {}],
+  [/^@react-native-menu\/menu$/, {}],
   [/^@expo\/vector-icons/, {}],
   [
     /^expo-image$/,
@@ -347,7 +389,7 @@ const STUBS = [
     },
   ],
   [/^react-native-reanimated$/, reanimatedOverrides()],
-  [/^@gorhom\//, {}],
+  [/^@gorhom\//, gorhomOverrides()],
   [/^@shopify\/react-native-skia$/, {}],
   [/^@shopify\/flash-list$/, { FlashList: flashListStub() }],
   [/^@rnmapbox\/maps$/, {}],

@@ -302,7 +302,6 @@ test("manual signOut clears account-scoped optimistic caches", () => {
 test("visible sign-out actions reset to login instead of onboarding", () => {
   const splashScreen = read("src/app/screens/SplashScreen.tsx");
   const settingsScreen = read("src/app/screens/profile/SettingsScreen.tsx");
-  const profileHomeScreen = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const merchantProfileScreen = read("src/app/screens/merchant/MerchantProfileScreen.tsx");
 
   // Mandatory sign-in: signed-out cold starts open Login, never MainTabs.
@@ -311,7 +310,7 @@ test("visible sign-out actions reset to login instead of onboarding", () => {
     /if \(!isAuthenticated\) \{[\s\S]*name: "AuthStack"[\s\S]*screen: "Login"/,
   );
 
-  [settingsScreen, profileHomeScreen, merchantProfileScreen].forEach((source) => {
+  [settingsScreen, merchantProfileScreen].forEach((source) => {
     assert.match(source, /signOut\(\)/);
     assert.match(
       source,

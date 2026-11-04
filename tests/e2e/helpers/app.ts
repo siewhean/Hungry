@@ -3,6 +3,7 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 const CAPTION_PLACEHOLDER = "Write your masterpiece... Use @ to tag or # for topics.";
 const E2E_DEVELOPER_LAUNCHER_PATH = "/";
 const E2E_DEVELOPER_LAUNCHER_STORAGE_KEY = "hungry.e2eDeveloperLauncher";
+const CONSENT_STORE_NAME = "hungry-consent-v1";
 
 function toDevTestId(value: string) {
   return value
@@ -59,6 +60,19 @@ async function enableE2eDeveloperLauncher(page: Page) {
   }, E2E_DEVELOPER_LAUNCHER_STORAGE_KEY);
 }
 
+/**
+ * The one-time "Help improve Hungry?" question covers the whole screen until it is answered, so
+ * walks that are not about it start with it already answered (kept again after storage is cleared).
+ */
+async function answerAnalyticsConsent(page: Page) {
+  await page.addInitScript((storageKey) => {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({ state: { analyticsAsked: true, aiSearchAllowed: false }, version: 0 }),
+    );
+  }, CONSENT_STORE_NAME);
+}
+
 async function disableE2eDeveloperLauncher(page: Page) {
   await page.addInitScript((storageKey) => {
     window.localStorage.removeItem(storageKey);
@@ -86,6 +100,7 @@ export async function openDevSection(page: Page, section: string) {
 
 export async function resetAppState(page: Page) {
   await enableE2eDeveloperLauncher(page);
+  await answerAnalyticsConsent(page);
   await page.goto(E2E_DEVELOPER_LAUNCHER_PATH, { waitUntil: "domcontentloaded" });
   await clearBrowserStorage(page);
   await page.reload({ waitUntil: "domcontentloaded" });
@@ -94,6 +109,7 @@ export async function resetAppState(page: Page) {
 
 export async function gotoLauncher(page: Page) {
   await enableE2eDeveloperLauncher(page);
+  await answerAnalyticsConsent(page);
   await page.goto(E2E_DEVELOPER_LAUNCHER_PATH, { waitUntil: "domcontentloaded" });
   await authenticateMockDeveloperSession(page);
 }

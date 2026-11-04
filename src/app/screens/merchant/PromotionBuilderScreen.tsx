@@ -28,6 +28,7 @@ import type {
   PromotionStatus,
 } from "@/types/domain";
 import type { MerchantTabParamList } from "@/app/navigation/navigationTypes";
+import { formatDateOnlyRange } from "@/features/merchant/dateRange";
 import { resolvePromotionRuntimeStatus } from "@/features/merchant/merchantReadiness";
 import { trackMerchantEvent } from "@/features/merchant/merchantTracking";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
@@ -125,7 +126,11 @@ export function PromotionBuilderScreen() {
       ]);
       setMenu(menuItems);
       const sourceId = promotionId ?? duplicateFromId;
-      if (!sourceId) return;
+      if (!sourceId) {
+        // A stall with dishes mostly promotes one of them: start on that choice.
+        if (menuItems.length > 0) setPromotionItemType("existing_menu_item");
+        return;
+      }
       const promo = promos.find((p) => p.id === sourceId);
       if (promo) {
         setTitle(promo.title);
@@ -377,7 +382,10 @@ export function PromotionBuilderScreen() {
       ]);
     } catch (e) {
       reportError(e, { screen: "PromotionBuilder", action: "save_promotion" });
-      showAlert("Error", e instanceof Error ? e.message : "Failed to save promotion.");
+      showAlert(
+        "Couldn't save promotion",
+        e instanceof Error ? e.message : "Something went wrong. Please try again.",
+      );
     } finally {
       savingRef.current = false;
       setIsSaving(false);
@@ -399,7 +407,7 @@ export function PromotionBuilderScreen() {
 
   if (error) {
     return (
-      <Screen title="Error">
+      <Screen title="Promotion">
         <EmptyState
           title="Failed to load promotion"
           body="The promotion could not be loaded right now."
@@ -455,7 +463,7 @@ export function PromotionBuilderScreen() {
             variant="micro"
             style={{ color: palette.orangeText, marginTop: spacing[2], fontWeight: "bold" }}
           >
-            Valid {startDate} to {endDate} (Singapore time)
+            Valid {formatDateOnlyRange(startDate, endDate)} (Singapore time)
           </AppText>
         </View>
 
@@ -542,7 +550,7 @@ export function PromotionBuilderScreen() {
                 keyboardType="decimal-pad"
                 value={originalPrice}
                 onChangeText={setOriginalPrice}
-                placeholder="6.50"
+                placeholder="0.00"
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -551,7 +559,7 @@ export function PromotionBuilderScreen() {
                 keyboardType="decimal-pad"
                 value={promotionalPrice}
                 onChangeText={setPromotionalPrice}
-                placeholder="5.50"
+                placeholder="0.00"
               />
             </View>
           </View>
@@ -584,7 +592,7 @@ export function PromotionBuilderScreen() {
                   keyboardType="decimal-pad"
                   value={discountPercentage}
                   onChangeText={setDiscountPercentage}
-                  placeholder="15"
+                  placeholder="0"
                 />
               )}
             </View>

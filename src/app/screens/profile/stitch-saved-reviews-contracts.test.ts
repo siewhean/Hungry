@@ -18,7 +18,7 @@ test("Stitch reviews use the viewer's real review data and preserve review actio
   );
   assert.match(source, /getUserReviews\(profile\.id/);
   assert.match(source, /ownReviewEditor\.openActions\(review\)/);
-  assert.match(source, /navigate\("DishDetail", \{ dishId \}\)/);
+  assert.match(source, /navigate\("DishDetail", \{\s*dishId,\s*source: "review_history",?\s*\}\)/);
   assert.doesNotMatch(source, /1\.4k|42 reviewed|4\.8 avg/i);
 });
 
@@ -30,6 +30,6 @@ test("Stitch saved dishes keep live saved state and use safe directions", () => 
   assert.match(source, /preloadRoute\(rootNavigation, "DishDetail", \{ dishId: dish\.id \}\)/);
   assert.match(source, /openTrustedMapsUrl\(url\)/);
   assert.match(source, /buildSavedDirectionsUrl\(dish\)/);
-  assert.match(source, /navigate\("DishDetail", \{ dishId: dish\.id, source: "saved" \}\)/);
+  assert.match(source, /navigate\("DishDetail", \{\s*dishId: dish\.id,\s*source: "saved"/);
   assert.doesNotMatch(source + card, /Open now|No queue|Saved 3d ago|350m away/);
 });

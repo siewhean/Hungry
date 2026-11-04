@@ -32,7 +32,7 @@ test("Stitch Search featured cards show catalog dishes and open the correspondin
   assert.match(home, /featuredDishes\.map\(\(dish, position\) => \(/);
   assert.match(
     home,
-    /navigation\.navigate\("DishDetail", \{\s*dishId: dish\.id,\s*source: "search_featured",\s*catalogFallback: \{ releaseId: featured\.releaseId \},\s*\}\)/,
+    /navigation\.navigate\("DishDetail", \{\s*dishId: dish\.id,\s*source: "search_featured",\s*prefill: dishPrefillFrom\(dish\),\s*catalogFallback: \{ releaseId: featured\.releaseId \},\s*\}\)/,
   );
   assert.match(home, /dish\.imageUrl \?\s*\(\s*<AccessibleImage/);
   assert.match(home, /dish\.price != null/);

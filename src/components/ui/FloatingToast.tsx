@@ -1,18 +1,21 @@
 import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
-import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
+import Animated, { FadeIn, FadeInUp, FadeOut, FadeOutDown } from "react-native-reanimated";
 import { CircleCheck, CircleAlert, TriangleAlert, Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useUIStore } from "@/store/useUIStore";
+import { tabBarBottomPadding } from "@/app/navigation/tabBarMetrics";
 import { AppText } from "./AppText";
 
 export function FloatingToast() {
   const toast = useUIStore((state) => state.toast);
   const clearToast = useUIStore((state) => state.clearToast);
-  const { componentCornerCurve, componentRadii, motion, palette, shadows, spacing, zIndex } =
+  const { componentSizes, motion, palette, radii, shadows, spacing, zIndex, reducedMotion } =
     useHungryTheme();
+  const insets = useSafeAreaInsets();
   const tone = toast?.tone ?? "info";
 
   useEffect(() => {
@@ -35,72 +38,59 @@ export function FloatingToast() {
 
   if (!toast) return null;
 
+  // Sits above the tab bar and its safe-area inset, so the tab labels stay readable.
+  const toastBottom =
+    componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]) + spacing[2];
+
+  // A compact inverted pill (dark on light, light on dark): the tone shows in the icon, not a border.
   const toneConfig = {
-    success: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: CircleCheck,
-      color: palette.success,
-    },
-    warning: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: TriangleAlert,
-      color: palette.warning,
-    },
-    error: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: CircleAlert,
-      color: palette.error,
-    },
-    info: {
-      bg: palette.surface,
-      border: palette.orange,
-      icon: Info,
-      color: palette.info,
-    },
-  }[tone] || {
-    bg: palette.surface,
-    border: palette.orange,
-    icon: Info,
-    color: palette.text,
-  };
-  const toastBackgroundColor = toast.backgroundColor ?? toneConfig.bg;
-  const toastBorderColor = toast.borderColor ?? toneConfig.border;
-  const toastTextColor = toast.textColor ?? toneConfig.color;
+    success: { icon: CircleCheck, color: palette.success },
+    warning: { icon: TriangleAlert, color: palette.warning },
+    error: { icon: CircleAlert, color: palette.error },
+    info: { icon: Info, color: palette.info },
+  }[tone] || { icon: Info, color: palette.info };
+  const toastBackgroundColor = toast.backgroundColor ?? palette.text;
+  const toastTextColor = toast.textColor ?? palette.bg;
   const toastIconColor = toast.iconColor ?? toneConfig.color;
-  const toastBorderWidth = toast.borderWidth ?? 1;
+  const toastBorderWidth = toast.borderWidth ?? (toast.borderColor ? 1 : 0);
 
   const Icon = toneConfig.icon;
 
   return (
-    <View pointerEvents="box-none" style={[styles.wrapper, { zIndex: zIndex.toast }]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.wrapper, { bottom: toastBottom, zIndex: zIndex.toast }]}
+    >
       <Animated.View
-        entering={FadeInDown.duration(motion.toast)}
-        exiting={FadeOutUp.duration(motion.toast)}
+        // It rises in from the tab bar and sinks back the way it came; with Reduce Motion it only fades.
+        entering={reducedMotion ? FadeIn.duration(motion.toast) : FadeInUp.duration(motion.toast)}
+        exiting={
+          reducedMotion ? FadeOut.duration(motion.toast) : FadeOutDown.duration(motion.toast)
+        }
       >
         {(() => {
           const toastStyle = [
             shadows.floating,
             {
               backgroundColor: toastBackgroundColor,
-              borderColor: toastBorderColor,
-              borderWidth: toastBorderWidth,
+              ...(toast.borderColor
+                ? { borderColor: toast.borderColor, borderWidth: toastBorderWidth }
+                : {}),
               opacity: 1,
-              borderRadius: componentRadii.card,
-              borderCurve: componentCornerCurve.borderCurve,
-              paddingHorizontal: spacing[3],
-              paddingVertical: spacing[3],
+              alignSelf: "center" as const,
+              maxWidth: "100%" as const,
+              borderRadius: radii.pill,
+              paddingHorizontal: spacing[4],
+              paddingVertical: spacing[2],
               flexDirection: "row" as const,
               alignItems: "center" as const,
-              gap: spacing[3],
+              gap: spacing[2],
             },
           ];
           const content = (
             <>
-              <Icon size={20} color={toastIconColor} />
-              <AppText style={{ color: toastTextColor, fontWeight: "700", flex: 1 }}>
+              <Icon size={18} color={toastIconColor} />
+              <AppText style={{ color: toastTextColor, fontWeight: "700", flexShrink: 1 }}>
                 {toast.message}
               </AppText>
             </>
@@ -147,7 +137,7 @@ export function FloatingToast() {
 
 const styles = StyleSheet.create({
   wrapper: {
-    bottom: 24,
+    alignItems: "center",
     left: 16,
     position: "absolute",
     right: 16,

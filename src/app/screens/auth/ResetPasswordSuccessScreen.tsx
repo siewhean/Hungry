@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { View } from "react-native";
-import { CheckCircle2 } from "lucide-react-native";
 
-import { AppText, Button, InlineBanner } from "@/components/ui";
+import { AppText, Button, InlineBanner, AppSymbol } from "@/components/ui";
 import { applySignedInProfile } from "@/features/auth/applySignedInProfile";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -110,7 +109,7 @@ export function ResetPasswordSuccessScreen({ navigation, route }: Props) {
             alignSelf: "center",
           }}
         >
-          <CheckCircle2 color={palette.orange} size={40} />
+          <AppSymbol name="done" color={palette.orange} size={40} />
         </View>
 
         {finishFailed ? (

@@ -14,15 +14,15 @@ const sections = [
   },
   {
     title: "3. Third-Party Processing",
-    body: "Hungry uses service providers such as Supabase for authentication, database, storage, realtime, and Edge Functions; Google services for maps, places, OCR, or AI-assisted extraction where enabled; PostHog for analytics where configured; Sentry for crash diagnostics where configured; and Expo/EAS for app build and update infrastructure. Precise latitude and longitude are not sent as PostHog identity properties by default. These providers process data only for service operation, security, analytics, diagnostics, or app functionality.",
+    body: "Hungry uses service providers such as Supabase for authentication, database, storage, realtime, and Edge Functions; Google services for maps, places, OCR, or AI-assisted extraction where enabled; PostHog for analytics where configured; Sentry for crash diagnostics where configured; and Expo/EAS for app build and update infrastructure. Precise latitude and longitude are not sent as PostHog identity properties by default. Resend delivers our sign-in and account emails to the address you give us; Mapbox draws the map and sees the map area you view and your device's IP address; and Google Sign-In is offered on Android and the web where enabled. PostHog stores analytics data in the United States. You can turn analytics off in the app under Settings. These providers process data only for service operation, security, analytics, diagnostics, or app functionality.",
   },
   {
     title: "4. Photos, Videos, OCR, And AI Features",
-    body: "If you upload photos, videos, menu images, reviews, or merchant verification media, Hungry stores and processes those files to provide the requested feature. Menu OCR and AI-assisted suggestions may send extracted text, image references, or menu metadata to configured third-party processors. AI suggestions are treated as drafts or assistance and may require review before publication.",
+    body: "If you upload photos, videos, menu images, reviews, or merchant verification media, Hungry stores and processes those files to provide the requested feature. Menu OCR and AI-assisted suggestions may send extracted text, image references, or menu metadata to configured third-party processors. AI suggestions are treated as drafts or assistance and may require review before publication.\n\nThird-party AI. Hungry sends some data to third-party AI providers, and tells you before it does. Today that covers: (a) Mood search, where the words you type are sent to Anthropic (the Claude API) so it can match them to dishes; and (b) menu photos you submit for a stall, where the photo is sent to Google Cloud Vision to read the text on it and that text is sent to Google Gemini to pick out dish names and prices. We ask for your permission before the first time for each, and you can withdraw it later in the app under Settings. We send only what the feature needs: we do not send your name, email address or account identifiers. These providers process the data to return a result and, under their business API terms, do not use it to train their models. If you do not give permission, Mood search is not used and normal search still works, and a menu photo is not sent for reading.\n\nSafety check. Photos you add to a review are also sent to Google Cloud Vision, before the review is posted, to check them for explicit or violent content. This check is part of keeping Hungry safe, so it is not optional, and it is not used for advertising or to identify anyone. A photo that fails the check is not posted.",
   },
   {
     title: "5. User-Generated Content And Safety",
-    body: "Reviews, posts, comments, profile content, and messages may be visible to other users depending on the feature and privacy settings. Hungry provides reporting, hiding, and blocking controls and may retain moderation and safety records in limited form to investigate abuse, enforce rules, prevent fraud, or comply with legal obligations.",
+    body: "Reviews, posts, comments, profile content, and messages may be visible to other users depending on the feature and privacy settings. Hungry provides reporting, hiding, and blocking controls and may retain moderation and safety records in limited form to investigate abuse, enforce rules, prevent fraud, or comply with legal obligations. We aim to review every report within 24 hours. Reviews and text you post are checked automatically for banned terms and spam before they are shown.",
   },
   {
     title: "6. Retention, Deletion, And Correction",
@@ -60,7 +60,7 @@ export default function PrivacyPolicy() {
           Privacy Policy
         </h1>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
-          <em>Last updated: May 18, 2026</em>
+          <em>Last updated: October 31, 2026</em>
         </p>
         <p style={{ color: "var(--color-text-secondary)", lineHeight: 1.8 }}>
           This policy covers the Hungry mobile app, merchant tools, and Hungry website surfaces that
@@ -89,7 +89,7 @@ export default function PrivacyPolicy() {
               >
                 {section.title}
               </h2>
-              <p>{section.body}</p>
+              <p style={{ whiteSpace: "pre-line" }}>{section.body}</p>
             </section>
           ))}
         </div>

@@ -7,10 +7,9 @@ import {
   useWindowDimensions,
   type TextInput,
 } from "react-native";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input, AppSymbol } from "@/components/ui";
 import {
   trackAuthFailed,
   trackAuthScreenViewed,
@@ -343,7 +342,14 @@ export function SignUpScreen({ navigation }: Props) {
                       returnKeyType="next"
                       submitBehavior="submit"
                       onSubmitEditing={() => passwordRef.current?.focus()}
-                      leftIcon={<Mail color={palette.textMuted} size={18} />}
+                      leftIcon={
+                        <AppSymbol
+                          name="email"
+                          color={palette.textMuted}
+                          size={18}
+                          weight="regular"
+                        />
+                      }
                       error={!!errors.email}
                       errorText={errors.email?.message}
                     />
@@ -374,7 +380,14 @@ export function SignUpScreen({ navigation }: Props) {
                         returnKeyType="go"
                         onSubmitEditing={() => void handleSignUp()}
                         accessibilityHint={AUTH_COPY.signUp.passwordRules}
-                        leftIcon={<Lock color={palette.textMuted} size={18} />}
+                        leftIcon={
+                          <AppSymbol
+                            name="password"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
+                        }
                         rightIcon={
                           <Pressable
                             accessible
@@ -390,9 +403,19 @@ export function SignUpScreen({ navigation }: Props) {
                             style={AUTH_EYE_BUTTON_STYLE}
                           >
                             {showPassword ? (
-                              <EyeOff color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="hidePassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             ) : (
-                              <Eye color={palette.textMuted} size={18} />
+                              <AppSymbol
+                                name="showPassword"
+                                color={palette.textMuted}
+                                size={18}
+                                weight="regular"
+                              />
                             )}
                           </Pressable>
                         }

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
 import { Alert, Share, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Info } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "./AppSymbol";
 import { AppText } from "./AppText";
 import { Button } from "./Button";
 
@@ -16,7 +16,8 @@ const showDebugErrorDetails =
 
 interface EmptyStateProps {
   title: string;
-  body: string;
+  /** Optional: a title and its buttons often say it all. */
+  body?: string;
   icon?: ReactNode;
   ctaLabel?: string;
   onPress?: () => void;
@@ -38,7 +39,9 @@ export function EmptyState({
   onSendError,
 }: EmptyStateProps) {
   const { spacing, palette } = useHungryTheme();
-  const renderIcon = icon ?? <Info size={34} color={palette.textSecondary} />;
+  const renderIcon = icon ?? (
+    <AppSymbol name="info" size={34} weight="regular" color={palette.textSecondary} />
+  );
   const reportContext = sendErrorContext ?? "Hungry screen";
   const resolvedOnSendError = !showDebugErrorDetails
     ? undefined
@@ -75,9 +78,11 @@ export function EmptyState({
       <AppText variant="h3" style={{ textAlign: "center" }}>
         {title}
       </AppText>
-      <AppText tone="secondary" style={{ textAlign: "center" }}>
-        {body}
-      </AppText>
+      {body ? (
+        <AppText tone="secondary" style={{ textAlign: "center" }}>
+          {body}
+        </AppText>
+      ) : null}
       {showDebugErrorDetails && errorMessage ? (
         <AppText tone="muted" variant="bodySmall" style={{ textAlign: "center" }}>
           {errorMessage}

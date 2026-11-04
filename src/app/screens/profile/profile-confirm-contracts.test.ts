@@ -10,7 +10,7 @@ import test from "node:test";
 const dir = path.join(process.cwd(), "src/app/screens/profile");
 
 /** Screens that still call Alert.alert; remove a file here when it is swept. */
-const NOT_YET_SWEPT = new Set(["ChangePasswordScreen.tsx"]);
+const NOT_YET_SWEPT = new Set<string>();
 
 const screens = readdirSync(dir).filter(
   (file) => file.endsWith(".tsx") && !file.includes(".test."),
@@ -38,7 +38,6 @@ test("the swept screens use confirmAction for their discard, remove, reset and s
     "EditProfileScreen.tsx": [/title: "Discard changes\?"/],
     "AddStallScreen.tsx": [/title: "Discard this stall\?"/],
     "ProfileConnectionsScreen.tsx": [/title: `Remove \$\{person\.name\}\?`/],
-    "ProfileHomeScreen.tsx": [/title: "Sign out"/],
     "SettingsScreen.tsx": [
       /title: "Reset food history"/,
       /title: "Clear local cache"/,

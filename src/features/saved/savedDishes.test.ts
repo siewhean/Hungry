@@ -15,6 +15,15 @@ import {
   sortSavedDishes,
 } from "./savedDishes";
 
+// ─── Saved page v2: sections, layout default, map pins ───────────────────────────────────────
+
+import {
+  fitSavedPins,
+  groupSavedMapPins,
+  savedListHasPhotos,
+  visibleSavedSections,
+} from "@/features/saved/savedDishes";
+
 const dish = (id: string, over: Partial<SavedDishCard> = {}): SavedDishCard => ({
   id,
   name: id,
@@ -174,4 +183,73 @@ test("the loader reports each failed read to error tracking", async () => {
   });
   assert.deepEqual(reported, ["read_saved_ids", "read_cards"]);
   assert.equal(result.status, "error");
+});
+
+test("Saved sections are Dishes, Stalls and Lists; Posts only while the feed is on", () => {
+  assert.deepEqual(visibleSavedSections(false), ["dishes", "stalls", "lists"]);
+  assert.deepEqual(visibleSavedSections(true), ["dishes", "stalls", "lists", "posts"]);
+});
+
+test("photo cards only when most saved dishes have a photo", () => {
+  const withPhoto = { id: "a", name: "A", imageUrl: "x" };
+  const without = { id: "b", name: "B" };
+  assert.equal(savedListHasPhotos([]), false);
+  assert.equal(savedListHasPhotos([without, without, withPhoto]), false);
+  assert.equal(savedListHasPhotos([withPhoto, without]), false, "half photographed stays rows");
+  assert.equal(savedListHasPhotos([withPhoto, withPhoto, withPhoto, without]), true);
+});
+
+test("dishes at one stall share a pin; dishes with no point are counted apart", () => {
+  const { pins, notOnMap } = groupSavedMapPins([
+    {
+      id: "d1",
+      name: "Laksa",
+      venueId: "v1",
+      venueName: "Nam Sing",
+      latitude: 1.3,
+      longitude: 103.8,
+    },
+    {
+      id: "d2",
+      name: "Mee",
+      venueId: "v1",
+      venueName: "Nam Sing",
+      latitude: 1.3,
+      longitude: 103.8,
+    },
+    {
+      id: "d3",
+      name: "Rice",
+      venueId: "v2",
+      venueName: "Tian Tian",
+      latitude: 1.31,
+      longitude: 103.9,
+    },
+    { id: "d4", name: "Nowhere" },
+  ]);
+  assert.equal(pins.length, 2);
+  assert.deepEqual(
+    pins.map((pin) => [pin.id, pin.dishes.length]),
+    [
+      ["v1", 2],
+      ["v2", 1],
+    ],
+  );
+  assert.deepEqual(
+    notOnMap.map((dish) => dish.id),
+    ["d4"],
+  );
+});
+
+test("fitSavedPins centres on the pins and zooms in for a single one", () => {
+  const one = fitSavedPins([{ coordinate: { latitude: 1.3, longitude: 103.8 } }]);
+  assert.deepEqual(one.center, { latitude: 1.3, longitude: 103.8 });
+  assert.equal(one.zoom, 16);
+  const two = fitSavedPins([
+    { coordinate: { latitude: 1.3, longitude: 103.8 } },
+    { coordinate: { latitude: 1.4, longitude: 103.9 } },
+  ]);
+  assert.ok(Math.abs(two.center.latitude - 1.35) < 1e-9);
+  assert.ok(two.zoom < 16 && two.zoom >= 10);
+  assert.equal(fitSavedPins([]).zoom, 11);
 });

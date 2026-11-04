@@ -182,6 +182,10 @@ function clearAccountScopedStores(): void {
   const { useReviewDraftStore } =
     require("./useReviewDraftStore") as typeof import("./useReviewDraftStore");
   useReviewDraftStore.getState().resetDraft();
+  // Reviews this account deleted are hidden from the grid for the session: not for the next one.
+  const { clearDeletedReviewsForSession } =
+    require("@/features/review/reviewExplore") as typeof import("@/features/review/reviewExplore");
+  clearDeletedReviewsForSession();
   // Gamification and submissions skip reloading once isLoaded is set: reset them per account.
   const { useFoodCredStore } = require("./useFoodCredStore") as typeof import("./useFoodCredStore");
   const { useMissionStore } = require("./useMissionStore") as typeof import("./useMissionStore");
@@ -192,6 +196,14 @@ function clearAccountScopedStores(): void {
   useMissionStore.getState()._reset();
   usePassportStore.getState()._reset();
   useStallSubmissionStore.getState()._reset();
+  // The next account opens Saved on Dishes, not where the last one left it.
+  const { useSavedViewStore } =
+    require("./useSavedViewStore") as typeof import("./useSavedViewStore");
+  useSavedViewStore.getState().reset();
+  // "Show less of this food" and this visit's taps are one diner's feedback, not the next one's.
+  const { useFeedFeedbackStore } =
+    require("./useFeedFeedbackStore") as typeof import("./useFeedFeedbackStore");
+  useFeedFeedbackStore.getState()._reset();
   const { clearCommunitySafetySessionState } =
     require("@/lib/security/communitySafety") as typeof import("@/lib/security/communitySafety");
   clearCommunitySafetySessionState();

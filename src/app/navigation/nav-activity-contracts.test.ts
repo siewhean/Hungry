@@ -19,7 +19,7 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   // the round middle button writes a review.
   assert.match(
     tabs,
-    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Write a review"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Post"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   assert.match(
     tabs,
@@ -29,15 +29,13 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   assert.doesNotMatch(tabs, /PostComposerV2/);
   assert.match(
     tabs,
-    /height: componentSizes\.bottomTabBar \+ Math\.max\(insets\.bottom, spacing\[2\]\)/,
+    /height: componentSizes\.bottomTabBar \+ tabBarBottomPadding\(insets\.bottom, spacing\[2\]\)/,
   );
   assert.match(tabs, /paddingTop: spacing\[2\]/);
-  // The write button is a plain outline glyph: no orange disc, orange only while pressed.
+  // The write button looks like every other tab: same glyph size, slot and colours, and a label.
   assert.doesNotMatch(tabItem, /backgroundColor: palette\.orange/);
-  assert.match(
-    tabItem,
-    /<Icon[\s\S]*color=\{createAction \? \(pressed \? palette\.orange : palette\.text\) : iconColor\}/,
-  );
+  assert.match(tabItem, /<Icon color=\{iconColor\} size=\{componentSizes\.bottomTabIcon\} \/>/);
+  assert.doesNotMatch(tabItem, /bottomTabCreateButton|bottomTabIcon \+/);
   // Selected tabs use an orange outline icon, never a filled one.
   assert.match(tabItem, /focused \? palette\.orange : palette\.textMuted/);
   assert.doesNotMatch(tabItem, /fill=/);
@@ -54,17 +52,19 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   );
   assert.match(
     tabItem,
-    /\{showLabel && !createAction \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,
+    /\{showLabel \? \(\s*<AppText[\s\S]*\{label\}[\s\S]*<\/AppText>\s*\) : null\}/,
   );
   assert.match(
     tabItem,
-    /height: createAction\s*\? componentSizes\.bottomTabCreateButton\s*: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
+    /height: componentSizes\.bottomTabIconSlotHeight[\s\S]*width: componentSizes\.bottomTabIconSlotWidth/,
   );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);
-  assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
+  // The Post page sits in the swipe order (reached by the edge swipe); the bar button still opens
+  // the review card, so the bar never navigates to it.
+  assert.match(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /Rate: undefined/);
-  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
+  assert.match(types, /^\s+Create: undefined;/m);
 });
 
 test("activity routes remain feature-gated with direct messages separately gated", () => {

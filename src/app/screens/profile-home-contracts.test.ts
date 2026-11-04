@@ -9,14 +9,17 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("profile home contract: quick access lives behind the header menu", () => {
+test("profile home contract: the header holds a settings icon, not a menu", () => {
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
 
   assert.match(source, /headerRight=\{/);
-  assert.match(source, /<Menu color=\{palette\.text\} size=\{22\}/);
-  assert.match(source, /menuOpen\s*\? "Close quick access"/);
-  assert.match(source, /`Open quick access, \$\{followRequestLabel\}`/);
-  assert.match(source, /: "Open quick access"/);
+  // One settings icon that opens Settings; Sign out is at the bottom of Settings only.
+  assert.doesNotMatch(source, /<OverflowMenu/);
+  assert.doesNotMatch(source, /name="moreActions"/);
+  assert.doesNotMatch(source, /Sign out/);
+  assert.match(source, /<AppSymbol name="settings"/);
+  assert.match(source, /`Open settings, \$\{followRequestLabel\}`/);
+  assert.match(source, /: "Open settings"/);
   assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
   assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
   assert.match(source, /toChatShareRecipient/);
@@ -51,12 +54,11 @@ test("profile home contract: profile stats use dynamic profile and social store 
   );
   assert.match(
     read("src/components/profile/ProfileStatRow.tsx"),
-    /value === null \? \(\s*<Skeleton[\s\S]*?<AppText variant="h2" style=\{\{ color: palette\.text \}\}>\s*\{value\}\s*<\/AppText>/,
+    /value === null \? \(\s*<Skeleton[\s\S]*?<SlideText value=\{String\(value\)\} variant="h2" style=\{\{ color: palette\.text \}\} \/>/,
   );
   assert.match(source, /const headerActionSize = spacing\[8\] \+ spacing\[2\.5\]/);
   assert.match(source, /height: headerActionSize/);
   assert.match(source, /width: headerActionSize/);
-  assert.match(source, /top: spacing\[8\] \+ spacing\[0\.5\]/);
   assert.match(source, /height: spacing\[20\]/);
   assert.match(source, /width: spacing\[20\]/);
   assert.doesNotMatch(source, /fontSize: 24/);
@@ -100,7 +102,9 @@ test("Stitch profile surfaces use account data and preserve their destinations",
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.doesNotMatch(source, /SINGAPORE FOODIE PASSPORT/);
   assert.doesNotMatch(source, /FollowRequestsRow/);
-  assert.match(source, /`Follow requests \(\$\{followRequestCount\}\)`/);
+  // The Follow requests row moved to Settings; the Profile header's settings icon carries the count.
+  assert.match(read("src/app/screens/profile/SettingsScreen.tsx"), /id: "follow-requests"/);
+  assert.match(source, /testID="profile-menu-badge"/);
   // Saved is the one entry point to dishes, stalls and lists; the old Collections and Badges
   // tiles are gone, and the Passport card shows the stamps.
   assert.doesNotMatch(source, /label="Collections"|label="Badges"/);
@@ -131,15 +135,16 @@ test("profile home contract: merchant entry loads on sign-in and switching mode 
   const source = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   assert.match(source, /\.merchant\.getMerchantAccount\(\)/);
   assert.match(source, /setMerchantAccount\(account\)/);
-  assert.match(source, /label="Merchant dashboard"/);
-  assert.match(source, /label="Hungry for Business"/);
+  const settings = read("src/app/screens/profile/SettingsScreen.tsx");
+  assert.match(settings, /label: "Merchant dashboard"/);
+  assert.match(settings, /label: "Hungry for Business"/);
 
   for (const file of [
     "src/app/screens/merchant/MerchantProfileScreen.tsx",
     "src/app/screens/merchant/MerchantSettingsScreen.tsx",
   ]) {
     const merchantSource = read(file);
-    assert.match(merchantSource, /Switch to Customer Mode/);
+    assert.match(merchantSource, /Switch to customer mode/);
     assert.doesNotMatch(merchantSource, /clearMerchant/);
   }
 });

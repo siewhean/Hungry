@@ -6,6 +6,9 @@ export type PickerVenue = {
   name: string;
   unitNumber: string;
   buildingId?: string;
+  buildingName?: string;
+  /** Logo or photo shown as the row thumbnail. */
+  imageUrl?: string;
 };
 
 export type PickerDish = {
@@ -13,6 +16,8 @@ export type PickerDish = {
   name: string;
   venueId: string;
   venueName: string;
+  buildingName?: string;
+  imageUrl?: string;
 };
 
 export type PickerRow =
@@ -20,6 +25,40 @@ export type PickerRow =
   | { kind: "dish"; key: string; dish: PickerDish; venue?: PickerVenue; distanceMeters?: number };
 
 const MAX_PICKER_ROWS = 40;
+/** Stalls shown under "Near you" before the search is used. */
+const NEAR_YOU_ROWS = 8;
+
+/**
+ * The line under a picker row's name: stall rows say "Maxwell Food Centre · #02-77 · 350 m",
+ * dish rows "Tian Tian Chicken Rice · Maxwell Food Centre · 350 m". Parts that are not known are
+ * left out, never guessed.
+ */
+export function pickerRowSubtitle(row: PickerRow): string {
+  const parts =
+    row.kind === "venue"
+      ? [row.venue.buildingName, row.venue.unitNumber]
+      : [row.dish.venueName, row.dish.buildingName ?? row.venue?.buildingName];
+  if (row.distanceMeters !== undefined) parts.push(formatPickerDistance(row.distanceMeters));
+  return parts.filter((part): part is string => Boolean(part && part.trim())).join(" · ");
+}
+
+export type PickerSection = { title?: string; rows: PickerRow[] };
+
+/**
+ * With no search the list opens on the stalls nearest the viewer ("Near you", only when the
+ * position is precise) followed by the rest; with a search it is one list.
+ */
+export function groupPickerRows(rows: PickerRow[], query: string): PickerSection[] {
+  if (query.trim()) return [{ rows }];
+  const near = rows.filter((row) => row.distanceMeters !== undefined).slice(0, NEAR_YOU_ROWS);
+  if (near.length === 0) return [{ rows }];
+  const nearKeys = new Set(near.map((row) => row.key));
+  const rest = rows.filter((row) => !nearKeys.has(row.key));
+  return [
+    { title: "Near you", rows: near },
+    ...(rest.length > 0 ? [{ title: "All stalls", rows: rest }] : []),
+  ];
+}
 
 export function formatPickerDistance(meters: number): string {
   if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)} m`;

@@ -463,6 +463,11 @@ test("listRecentReviewsPage withPhotos inner-joins review_photos; dish and stall
     { id: "r2", dish_id: "d1", created_at: "2026-10-02T00:00:00Z", rating: 5, text: "a" },
     { id: "r1", dish_id: "d1", created_at: "2026-10-01T00:00:00Z", rating: 4, text: "b" },
   ];
+  // A backend without get_review_feed_page is read table by table (the fallback path).
+  fake.rpc.get_review_feed_page = () => ({
+    data: null,
+    error: { code: "PGRST202", message: "Could not find the function" },
+  });
   fake.tables.reviews = () => ({ data: rows, error: null });
   const select = (table: string) =>
     fake.queriesOn(table)[0].ops.find(([method]) => method === "select")?.[1][0] as string;

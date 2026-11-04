@@ -6,21 +6,23 @@ import type { ReviewFeedItem } from "./reviewFeed";
 export type ReviewExploreChip =
   | { id: "all"; kind: "all"; label: string }
   | { id: "taste"; kind: "taste"; label: string }
+  | { id: "near"; kind: "near"; label: string }
   | { id: string; kind: "food" | "area"; label: string; value: string };
 
 /** A dish this close to the diner's palette counts as "for your taste". */
 export const TASTE_MATCH_MIN_PERCENT = 70;
+/** A review counts as "near you" when its dish is this far or closer (a short walk or ride). */
+export const NEAR_YOU_MAX_METERS = 2000;
 const MAX_FOOD_CHIPS = 6;
 const MAX_AREA_CHIPS = 6;
-
-/** Only reviews with a photo belong on the Reviews page. */
-export function reviewsWithPhotos(items: readonly ReviewFeedItem[]): ReviewFeedItem[] {
-  return items.filter((item) => item.review.photos.some((photo) => photo.trim().length > 0));
-}
 
 /** The kind of food a review is about: the dish's food type, else its name. */
 export function reviewFoodLabel(item: ReviewFeedItem): string {
   return (item.dish?.foodTypeTag ?? item.dishName).trim();
+}
+
+function isNearYou(meters: number | undefined): boolean {
+  return meters !== undefined && meters <= NEAR_YOU_MAX_METERS;
 }
 
 /** Most common values first, ties in A-Z order, at most `limit`. */
@@ -36,18 +38,26 @@ function topValues(values: string[], limit: number): string[] {
 }
 
 /**
- * Chips built from what is on the page: "For your taste" first when the diner has a palette,
- * then "All", the most reviewed foods, then the areas with the most reviews.
+ * Chips built from what is on the page: "All" first, then "For your taste" when the diner has a
+ * palette, the most reviewed foods, then the areas with the most reviews.
  */
 export function buildReviewExploreChips(
   items: readonly ReviewFeedItem[],
-  options: { userVector?: TasteVector; areaOf: (item: ReviewFeedItem) => string | undefined },
+  options: {
+    userVector?: TasteVector;
+    areaOf: (item: ReviewFeedItem) => string | undefined;
+    /** How far a review's dish is from the diner; leave out when their location is unknown. */
+    distanceMetersOf?: (item: ReviewFeedItem) => number | undefined;
+  },
 ): ReviewExploreChip[] {
-  const chips: ReviewExploreChip[] = [];
+  const chips: ReviewExploreChip[] = [{ id: "all", kind: "all", label: "All" }];
+  const { distanceMetersOf } = options;
+  if (distanceMetersOf && items.some((item) => isNearYou(distanceMetersOf(item)))) {
+    chips.push({ id: "near", kind: "near", label: "Near you" });
+  }
   if (options.userVector && hasPersonalTasteProfile(options.userVector)) {
     chips.push({ id: "taste", kind: "taste", label: "For your taste" });
   }
-  chips.push({ id: "all", kind: "all", label: "All" });
   for (const food of topValues(items.map(reviewFoodLabel), MAX_FOOD_CHIPS)) {
     chips.push({ id: `food:${food}`, kind: "food", label: food, value: food });
   }
@@ -141,9 +151,18 @@ export function visibleGridReviews(
 export function filterReviewExplore(
   items: readonly ReviewFeedItem[],
   chip: ReviewExploreChip | undefined,
-  options: { userVector?: TasteVector; areaOf: (item: ReviewFeedItem) => string | undefined },
+  options: {
+    userVector?: TasteVector;
+    areaOf: (item: ReviewFeedItem) => string | undefined;
+    distanceMetersOf?: (item: ReviewFeedItem) => number | undefined;
+  },
 ): ReviewFeedItem[] {
   if (!chip || chip.kind === "all") return [...items];
+  if (chip.kind === "near") {
+    const { distanceMetersOf } = options;
+    if (!distanceMetersOf) return [...items];
+    return items.filter((item) => isNearYou(distanceMetersOf(item)));
+  }
   if (chip.kind === "taste") {
     const user = options.userVector;
     if (!user) return [...items];

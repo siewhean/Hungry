@@ -1,7 +1,6 @@
 import { View } from "react-native";
-import { CheckCircle2, Circle } from "lucide-react-native";
 
-import { AppText } from "@/components/ui";
+import { AppText, AppSymbol } from "@/components/ui";
 import { getPasswordRuleStatuses } from "@/features/auth/validation";
 import { useHungryTheme } from "@/theme";
 
@@ -36,9 +35,9 @@ export function PasswordRequirements({ password, testID = "password-requirements
           style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
         >
           {status.met ? (
-            <CheckCircle2 color={palette.successText} size={14} />
+            <AppSymbol name="done" color={palette.successText} size={14} />
           ) : (
-            <Circle color={palette.textMuted} size={14} />
+            <AppSymbol name="notDone" color={palette.textMuted} size={14} />
           )}
           <AppText variant="bodySmall" tone={status.met ? "default" : "muted"}>
             {status.label}

@@ -1,8 +1,8 @@
 import { useCallback } from "react";
 import { Pressable } from "react-native";
 import { useNavigation, type NavigationProp } from "@react-navigation/native";
-import { Flag } from "lucide-react-native";
 
+import { ReportFlagSymbol } from "@/components/dish/dishSymbols";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText } from "@/components/ui";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
@@ -62,7 +62,7 @@ export function ReportProblemLink({ venueId, dishId, subjectName }: ReportProble
         paddingHorizontal: spacing[3],
       })}
     >
-      <Flag color={palette.textSecondary} size={16} />
+      <ReportFlagSymbol color={palette.textSecondary} size={16} />
       <AppText variant="bodySmall" tone="secondary">
         Something wrong? Tell us
       </AppText>

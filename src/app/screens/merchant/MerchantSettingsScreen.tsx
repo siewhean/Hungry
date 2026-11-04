@@ -11,16 +11,20 @@ import { useMerchantStore, getActiveOutlet } from "@/store/useMerchantStore";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { registerForStallAlerts } from "@/lib/notifications/push";
-import type { MerchantNotification, MerchantWeeklySummary } from "@/types/domain";
+import type { MerchantNotification } from "@/types/domain";
 import { WEB_LINKS } from "@/constants/links";
 import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
-import {
-  formatAverageRating,
-  formatReviewCountLabel,
-  getVerificationStatusInfo,
-} from "@/features/merchant/merchantReadiness";
+import { getVerificationStatusInfo } from "@/features/merchant/merchantReadiness";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useMerchantDialog } from "@/features/merchant/useMerchantDialog";
+
+/** A failed optional read still reaches Sentry, then the screen carries on with `fallback`. */
+function reportAndUse<T>(action: string, fallback: T) {
+  return (error: unknown): T => {
+    reportError(error, { screen: "MerchantSettings", action });
+    return fallback;
+  };
+}
 
 export function MerchantSettingsScreen() {
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -31,7 +35,6 @@ export function MerchantSettingsScreen() {
   const account = useMerchantStore((state) => state.account);
 
   const [merchantNotifications, setMerchantNotifications] = useState<MerchantNotification[]>([]);
-  const [weeklySummary, setWeeklySummary] = useState<MerchantWeeklySummary | null>(null);
   const [lowRatingAlerts, setLowRatingAlerts] = useState(true);
   const [isDeviceRegistered, setIsDeviceRegistered] = useState(false);
   const [isSavingAlerts, setIsSavingAlerts] = useState(false);
@@ -48,32 +51,32 @@ export function MerchantSettingsScreen() {
     }
 
     try {
-      const service = getHungryService();
+      const { merchant } = getHungryService();
       // Low-rating push alerts are the only merchant alert Hungry delivers. Team invites,
-      // email alerts and the weekly email are not offered.
+      // email alerts and the weekly email are not offered. The weekly numbers live on
+      // Performance.
       // Every read is optional: a failure of any of them must not replace Settings, which holds
-      // the "Switch to Customer Mode" and sign-out exits.
-      const [notes, summary, prefs] = await Promise.all([
-        service.merchant.getMerchantNotifications(account.id).catch(() => []),
-        activeOutlet
-          ? service.merchant.getWeeklySummaryStats(activeOutlet.id).catch(() => null)
-          : Promise.resolve(null),
-        service.merchant.getNotificationPreferences(account.id).catch(() => null),
+      // the "Switch to customer mode" and sign-out exits.
+      const [notes, prefs] = await Promise.all([
+        merchant.getMerchantNotifications(account.id).catch(reportAndUse("load_notifications", [])),
+        merchant.getNotificationPreferences(account.id).catch(reportAndUse("load_prefs", null)),
       ]);
       setMerchantNotifications(notes);
-      setWeeklySummary(summary);
       if (prefs) setLowRatingAlerts(prefs.lowRatingAlerts);
       // Keeps this phone's push token current without prompting for permission.
       void registerForStallAlerts({ askPermission: false })
         .then(setIsDeviceRegistered)
-        .catch(() => setIsDeviceRegistered(false));
+        .catch((e) => {
+          reportError(e, { screen: "MerchantSettings", action: "register_device" });
+          setIsDeviceRegistered(false);
+        });
     } catch (e) {
       reportError(e, { screen: "MerchantSettings", action: "load_settings" });
       setError(e instanceof Error ? e.message : "Failed to load merchant settings.");
     } finally {
       setIsLoading(false);
     }
-  }, [account, activeOutlet]);
+  }, [account]);
 
   useEffect(() => {
     void loadSettingsData();
@@ -109,7 +112,7 @@ export function MerchantSettingsScreen() {
 
   const handleSwitchToCustomerMode = () => {
     showAlert(
-      "Switch to Customer Mode",
+      "Switch to customer mode",
       "You will leave Merchant Centre and return to the customer app.",
       [
         { text: "Cancel", style: "cancel" },
@@ -134,21 +137,25 @@ export function MerchantSettingsScreen() {
     if (!account || isSavingAlerts) return;
     setIsSavingAlerts(true);
     try {
-      if (enabled) setIsDeviceRegistered(await registerForStallAlerts().catch(() => false));
+      if (enabled) {
+        setIsDeviceRegistered(
+          await registerForStallAlerts().catch(reportAndUse("register_device", false)),
+        );
+      }
       await getHungryService().merchant.updateNotificationPreferences(account.id, {
         lowRatingAlerts: enabled,
       });
       setLowRatingAlerts(enabled);
     } catch (e) {
       reportError(e, { screen: "MerchantSettings", action: "update_alerts" });
-      showAlert("Error", "Couldn't update low-rating alerts. Please try again.");
+      showAlert("Couldn't update alerts", "Please try again in a moment.");
     } finally {
       setIsSavingAlerts(false);
     }
   };
 
   const handleAllowNotifications = async () => {
-    const registered = await registerForStallAlerts().catch(() => false);
+    const registered = await registerForStallAlerts().catch(reportAndUse("register_device", false));
     setIsDeviceRegistered(registered);
     if (!registered) {
       showAlert(
@@ -217,24 +224,6 @@ export function MerchantSettingsScreen() {
               are also listed here. Team access is not available yet, so only the account owner can
               manage this business.
             </AppText>
-            {weeklySummary ? (
-              <View style={{ gap: spacing[1] }}>
-                <AppText variant="bodyBold">
-                  {weeklySummary.totalViews.toLocaleString()} views in the last 7 days
-                </AppText>
-                <AppText variant="bodySmall" tone="muted">
-                  {formatReviewCountLabel(weeklySummary.newReviews, "in the last 7 days", {
-                    zeroLabel: "No reviews in the last 7 days",
-                  })}{" "}
-                  · {weeklySummary.unrepliedReviews} unreplied · Avg rating{" "}
-                  {formatAverageRating(weeklySummary.averageRating, weeklySummary.newReviews)}
-                </AppText>
-              </View>
-            ) : (
-              <AppText variant="bodySmall" tone="muted">
-                Weekly numbers will appear after your stall has analytics data.
-              </AppText>
-            )}
             {merchantNotifications.slice(0, 3).map((notification) => (
               <View key={notification.id} style={{ gap: spacing[0.5] }}>
                 <AppText variant="bodySmallBold">{notification.title}</AppText>
@@ -265,7 +254,7 @@ export function MerchantSettingsScreen() {
 
         {/* A mode switch, not a destructive action: neutral icon and border. */}
         <Button
-          label="Switch to Customer Mode"
+          label="Switch to customer mode"
           variant="secondary"
           leftIcon={<ArrowLeftRight size={18} color={palette.textSecondary} />}
           onPress={handleSwitchToCustomerMode}

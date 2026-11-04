@@ -1,9 +1,8 @@
 import type { PropsWithChildren, ReactNode } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ArrowLeft } from "lucide-react-native";
 
-import { Screen, AppText, HungryLogo } from "@/components/ui";
+import { Screen, AppText, HungryLogo, AppSymbol } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
 import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
@@ -95,7 +94,7 @@ export function AuthScreenShell({
                   minWidth: componentSizes.touchTarget,
                 }}
               >
-                <ArrowLeft color={palette.text} size={22} />
+                <AppSymbol name="back" color={palette.text} size={22} />
               </Pressable>
             ) : null}
             <View style={{ alignItems: "center", gap: titleGap, marginBottom: innerGap }}>

@@ -1,10 +1,9 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input, AppSymbol } from "@/components/ui";
 import {
   trackAuthFailed,
   trackAuthScreenViewed,
@@ -215,7 +214,7 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
               minHeight: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={12} />
+            <AppSymbol name="back" color={palette.text} size={12} />
             <AppText tone="secondary" style={{ fontWeight: "600" }}>
               {hasRecoverySession ? "Cancel" : "Back to sign in"}
             </AppText>
@@ -289,9 +288,19 @@ export function ResetPasswordScreen({ navigation, route }: Props) {
                         style={AUTH_EYE_BUTTON_STYLE}
                       >
                         {showPassword ? (
-                          <EyeOff color={palette.textMuted} size={18} />
+                          <AppSymbol
+                            name="hidePassword"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
                         ) : (
-                          <Eye color={palette.textMuted} size={18} />
+                          <AppSymbol
+                            name="showPassword"
+                            color={palette.textMuted}
+                            size={18}
+                            weight="regular"
+                          />
                         )}
                       </Pressable>
                     }

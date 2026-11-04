@@ -1,4 +1,7 @@
+// @ts-nocheck
 // Shared by gemini.ts and anthropic.ts.
+import { TIMEOUT_MS } from "./timeouts.ts";
+
 // Busy models answer 429, 503 or 529 for a moment; a short wait and retry usually gets through.
 const RETRY_STATUSES = new Set([429, 500, 502, 503, 504, 529]);
 const MAX_ATTEMPTS = 4;
@@ -6,11 +9,14 @@ const RETRY_DELAYS_MS = [1000, 2500, 5000];
 
 /** Returns the last response, whether or not it was ok. */
 export async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
-  let response = await fetch(url, init);
+  // Each attempt gets its own time limit, so a stuck provider fails the attempt instead of hanging.
+  const send = () =>
+    fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(TIMEOUT_MS.ai) });
+  let response = await send();
   for (let attempt = 1; attempt < MAX_ATTEMPTS; attempt += 1) {
     if (response.ok || !RETRY_STATUSES.has(response.status)) break;
     await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt - 1]));
-    response = await fetch(url, init);
+    response = await send();
   }
   return response;
 }

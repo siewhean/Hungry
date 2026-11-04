@@ -1,16 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
-import { AccessibleImage, AppText } from "@/components/ui";
+import { AppText } from "@/components/ui";
 import {
-  PRICE_BANDS,
   cuisineOptions,
   filterHereStalls,
-  stallPriceLabel,
   type HereFilters,
   type HereStall,
-  type PriceBandId,
 } from "@/features/discover/mallMode";
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
@@ -18,24 +15,18 @@ import { useHungryTheme } from "@/theme";
 interface WhatsHerePanelProps {
   placeName: string;
   stalls: HereStall[];
-  /** One short line for the stall row, for example "Open now · 01-12". */
-  getStallMeta: (stall: HereStall) => string;
-  onOpenStall: (venueId: string) => void;
-  onPrefetchStall?: (stall: HereStall) => void;
+  /** The stall cards for the stalls that pass the filter: the same cards as the other stall rows. */
+  renderStalls: (stalls: HereStall[]) => ReactNode;
+  /** Opens the full list of the place's stalls; the title gets a chevron when given. */
+  onSeeAll?: () => void;
 }
 
 function titleCase(value: string): string {
   return value.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-/** Every stall in the mall, with cuisine and price filters. */
-export function WhatsHerePanel({
-  placeName,
-  stalls,
-  getStallMeta,
-  onOpenStall,
-  onPrefetchStall,
-}: WhatsHerePanelProps) {
+/** Every stall in the mall, with a food type filter. */
+export function WhatsHerePanel({ placeName, stalls, renderStalls, onSeeAll }: WhatsHerePanelProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const [filters, setFilters] = useState<HereFilters>({});
   const cuisines = useMemo(() => cuisineOptions(stalls), [stalls]);
@@ -46,13 +37,6 @@ export function WhatsHerePanel({
     setFilters((current) => ({
       ...current,
       cuisine: current.cuisine === cuisine ? undefined : cuisine,
-    }));
-  };
-  const togglePrice = (band: PriceBandId) => {
-    selectHaptic();
-    setFilters((current) => ({
-      ...current,
-      priceBand: current.priceBand === band ? undefined : band,
     }));
   };
 
@@ -84,7 +68,26 @@ export function WhatsHerePanel({
 
   return (
     <View style={{ gap: spacing[3] }} testID="whats-here-panel">
-      <AppText variant="h2">{`All stalls at ${placeName}`}</AppText>
+      {onSeeAll ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`See all stalls at ${placeName}`}
+          hitSlop={8}
+          onPress={onSeeAll}
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            gap: spacing[2],
+            justifyContent: "space-between",
+            minHeight: 44,
+          }}
+        >
+          <AppText variant="h2" style={{ flexShrink: 1 }}>{`Stalls at ${placeName}`}</AppText>
+          <ChevronRight color={palette.textMuted} size={20} />
+        </Pressable>
+      ) : (
+        <AppText variant="h2">{`Stalls at ${placeName}`}</AppText>
+      )}
       {cuisines.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
@@ -94,13 +97,6 @@ export function WhatsHerePanel({
           </View>
         </ScrollView>
       ) : null}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{ flexDirection: "row", gap: spacing[2] }}>
-          {PRICE_BANDS.map((band) =>
-            chip(band.label, filters.priceBand === band.id, () => togglePrice(band.id)),
-          )}
-        </View>
-      </ScrollView>
       <AppText tone="muted" variant="bodySmall">
         {visible.length === 1 ? "1 stall" : `${visible.length} stalls`}
       </AppText>
@@ -127,62 +123,7 @@ export function WhatsHerePanel({
           </Pressable>
         </View>
       ) : (
-        visible.map((stall) => {
-          const imageUrl = stall.venue.imageUrl ?? stall.topDish?.imageUrl;
-          const price = stallPriceLabel(stall);
-          return (
-            <Pressable
-              key={stall.venue.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Open ${stall.venue.name}`}
-              onPress={() => onOpenStall(stall.venue.id)}
-              onPressIn={() => onPrefetchStall?.(stall)}
-              style={{
-                alignItems: "center",
-                backgroundColor: palette.surface,
-                borderColor: palette.border,
-                borderRadius: componentRadii.card,
-                borderWidth: 1,
-                flexDirection: "row",
-                gap: spacing[3],
-                padding: spacing[3],
-              }}
-            >
-              <View
-                style={{
-                  backgroundColor: palette.bgSoft,
-                  borderRadius: componentRadii.card,
-                  height: 64,
-                  overflow: "hidden",
-                  width: 64,
-                }}
-              >
-                {imageUrl ? (
-                  <AccessibleImage
-                    source={{ uri: imageUrl }}
-                    decorative
-                    contentFit="cover"
-                    style={{ height: "100%", width: "100%" }}
-                  />
-                ) : null}
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <AppText variant="bodyBold" numberOfLines={1}>
-                  {stall.venue.name}
-                </AppText>
-                <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                  {getStallMeta(stall)}
-                </AppText>
-                {price ? (
-                  <AppText variant="bodySmallBold" style={{ color: palette.accentText }}>
-                    {price}
-                  </AppText>
-                ) : null}
-              </View>
-              <ChevronRight size={20} color={palette.textMuted} />
-            </Pressable>
-          );
-        })
+        renderStalls(visible)
       )}
     </View>
   );

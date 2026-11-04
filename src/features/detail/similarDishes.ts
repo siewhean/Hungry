@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import type { CatalogRawDishCard } from "@/lib/services/catalog";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getCatalogRawService } from "@/lib/services/serviceProvider";
 import type { Coordinate } from "@/types/domain";
 
@@ -155,7 +156,10 @@ export function useSimilarDishesNearby(
       .then((picks) => {
         if (active) setItems(picks);
       })
-      .catch(() => undefined); // The section just stays hidden.
+      .catch((error) => {
+        // The section just stays hidden.
+        reportError(error, { screen: "DishDetail", action: "load_similar", dishId });
+      });
     return () => {
       active = false;
     };

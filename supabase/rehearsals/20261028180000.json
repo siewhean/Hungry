@@ -1,0 +1,14 @@
+{
+  "version": "20261028180000",
+  "name": "20261028180000_stall_visit_points_need_review",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T09:17:13Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "fd2e82908488fee970203b1131dcc7b4e9b8b361",
+  "up_sha256": "4581aadcd460696379e33fa00b2d30652713058f7933cccdba2a48cad1b99a61",
+  "down_sha256": "c9405408cfd85e4dea1c030ab9da0caab9b042e4b73d67d00b33317a875745b0",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/stall_visit_points_need_review.sql"]
+}

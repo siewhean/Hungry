@@ -1,0 +1,14 @@
+{
+  "version": "20261029130000",
+  "name": "20261029130000_catalog_search_home_precompute",
+  "result": "pass",
+  "rehearsed_at": "2026-10-29T19:25:27Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "79645e7471b2221d7782a8e49ba1be8ab4e91006",
+  "up_sha256": "b521de605e864469dfb94977f045e37fbef8d944005facbda8fd5a2266f2468a",
+  "down_sha256": "d28fb346606150d539e8a6e47b5932c2c01829cbc52465755ed02ba12063bdec",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/catalog_search_home_precompute.sql"]
+}

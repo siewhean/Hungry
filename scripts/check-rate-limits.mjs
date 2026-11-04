@@ -30,6 +30,7 @@ const TOKEN_MARKERS = [
   /TASTE_TAGGING_WORKER_TOKEN/,
   /NOTIFICATION_WORKER_TOKEN/,
   /ORPHAN_MEDIA_WORKER_TOKEN/,
+  /REPORT_DIGEST_TOKEN/,
   /GUEST_SESSION_API_KEY/,
 ];
 
@@ -243,6 +244,19 @@ export function findProblems({ migrations, edgeFunctions, allowlist }) {
         `RPC ${name} has a rate rule but is STABLE or IMMUTABLE. PostgREST runs POST on those read-only, so the counter cannot be written and the limit never applies. ` +
           `Add \`alter function public.${name}(<args>) volatile;\` in a migration.`,
       );
+    }
+  }
+
+  // Signed-in-only reads (execute revoked from anon) are not required to have a cap, but when
+  // the allowlist explains why one is fine, the entry needs a reason and a real function.
+  for (const [name, reason] of Object.entries(allowlist.userRpcs ?? {})) {
+    if (!String(reason).trim())
+      problems.push(`Allowlist entry for user RPC ${name} needs a reason.`);
+    if (!migrations.allFunctions.has(name)) {
+      problems.push(`Allowlist entry for user RPC ${name} is stale: no migration creates it.`);
+    }
+    if (migrations.anonRpcs.includes(name)) {
+      problems.push(`User RPC ${name} is callable by anon: list it under anonRpcs or limit it.`);
     }
   }
 

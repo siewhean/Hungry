@@ -2,9 +2,8 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, View } from "react-native";
-import { ArrowLeft, LockKeyhole, Mail, MailCheck } from "lucide-react-native";
 
-import { AppText, Button, FeedErrorBoundary, Input } from "@/components/ui";
+import { AppText, Button, FeedErrorBoundary, Input, AppSymbol } from "@/components/ui";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import {
@@ -138,7 +137,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
               minHeight: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={14} />
+            <AppSymbol name="back" color={palette.text} size={14} />
             <AppText tone="accent" style={{ fontWeight: "700" }}>
               {backLabel}
             </AppText>
@@ -158,7 +157,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                   width: 80,
                 }}
               >
-                <MailCheck color={palette.orange} size={30} />
+                <AppSymbol name="emailSent" color={palette.orange} size={30} />
               </View>
             </View>
             <View accessible accessibilityLiveRegion="polite" style={{ gap: spacing[2] }}>
@@ -222,7 +221,7 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                   width: 80,
                 }}
               >
-                <LockKeyhole color={palette.orange} size={30} />
+                <AppSymbol name="resetPassword" color={palette.orange} size={30} />
               </View>
             </View>
 
@@ -249,7 +248,9 @@ export function ForgotPasswordScreen({ navigation, route }: Props) {
                     onBlur();
                     emailSuggestion.check(value);
                   }}
-                  leftIcon={<Mail color={palette.textMuted} size={16} />}
+                  leftIcon={
+                    <AppSymbol name="email" color={palette.textMuted} size={16} weight="regular" />
+                  }
                   error={!!errors.email}
                   errorText={errors.email?.message}
                 />

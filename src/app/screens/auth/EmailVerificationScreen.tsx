@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable, View } from "react-native";
-import { MailCheck } from "lucide-react-native";
 
-import { AppText, FeedErrorBoundary } from "@/components/ui";
+import { AppText, FeedErrorBoundary, AppSymbol } from "@/components/ui";
 import {
   trackAuthFailed,
   trackAuthScreenViewed,
@@ -217,7 +216,7 @@ export function EmailVerificationScreen({ navigation, route }: Props) {
               alignSelf: "center",
             }}
           >
-            <MailCheck color={palette.orange} size={30} />
+            <AppSymbol name="emailSent" color={palette.orange} size={30} />
           </View>
           <AppText tone="secondary" style={{ lineHeight: 24, textAlign: "center" }}>
             {isConfirming ? (

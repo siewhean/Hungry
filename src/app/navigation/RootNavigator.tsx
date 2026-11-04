@@ -12,13 +12,14 @@ import {
   type NativeStackScreenProps,
 } from "@react-navigation/native-stack";
 import NetInfo from "@react-native-community/netinfo";
-import { ArrowLeft, WifiOff } from "lucide-react-native";
+import { WifiOff } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
 import { AppText, FloatingToast } from "@/components/ui";
+import { trackScreen } from "@/features/feedback/screenTracking";
 import { isNetworkOffline } from "@/lib/network/connectivity";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
 
@@ -50,13 +51,18 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "MainTabs",
   "MerchantTabs",
   "StallDetail",
+  "StallVisited",
   "ReportProblem",
+  "SuggestOpeningHours",
+  "SuggestDish",
   "MerchantClaimExplainer",
   "DishDetail",
+  "DishReviews",
   "CatalogRawDetail",
   "SearchHome",
   "SearchResults",
   "BrowseDishes",
+  "FoodStyles",
   "BrowseStalls",
   "DiscoverMap",
   "DecideForMeResult",
@@ -116,6 +122,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "AddStory",
   "MusicSelection",
   "MerchantClaimExplainer",
+  "StallVisited",
   "PassportScreen",
   "MissionsScreen",
   "AdminPortfolioFlags",
@@ -212,6 +219,10 @@ const loadBrowseDishesScreen = () =>
   (
     require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
   ).BrowseDishesScreen;
+const loadFoodStylesScreen = () =>
+  (
+    require("@/app/screens/discover/FoodStylesScreen") as typeof import("@/app/screens/discover/FoodStylesScreen")
+  ).FoodStylesScreen;
 const loadBrowseStallsScreen = () =>
   (
     require("@/app/screens/search/SearchResultsScreen") as typeof import("@/app/screens/search/SearchResultsScreen")
@@ -252,6 +263,10 @@ const loadDishDetailScreenV2 = () =>
   (
     require("@/app/screens/detail/DishDetailScreenV2") as typeof import("@/app/screens/detail/DishDetailScreenV2")
   ).DishDetailScreenV2;
+const loadDishReviewsScreen = () =>
+  (
+    require("@/app/screens/detail/DishReviewsScreen") as typeof import("@/app/screens/detail/DishReviewsScreen")
+  ).DishReviewsScreen;
 const loadCatalogRawDetailScreen = () =>
   (
     require("@/app/screens/catalog/CatalogRawDetailScreen") as typeof import("@/app/screens/catalog/CatalogRawDetailScreen")
@@ -264,6 +279,18 @@ const loadReportProblemScreen = () =>
   (
     require("@/app/screens/detail/ReportProblemScreen") as typeof import("@/app/screens/detail/ReportProblemScreen")
   ).ReportProblemScreen;
+const loadSuggestOpeningHoursScreen = () =>
+  (
+    require("@/app/screens/detail/SuggestOpeningHoursScreen") as typeof import("@/app/screens/detail/SuggestOpeningHoursScreen")
+  ).SuggestOpeningHoursScreen;
+const loadSuggestDishScreen = () =>
+  (
+    require("@/app/screens/detail/SuggestDishScreen") as typeof import("@/app/screens/detail/SuggestDishScreen")
+  ).SuggestDishScreen;
+const loadStallVisitedScreen = () =>
+  (
+    require("@/app/screens/detail/StallVisitedScreen") as typeof import("@/app/screens/detail/StallVisitedScreen")
+  ).StallVisitedScreen;
 const loadMerchantClaimExplainerScreen = () =>
   (
     require("@/app/screens/detail/MerchantClaimExplainerScreen") as typeof import("@/app/screens/detail/MerchantClaimExplainerScreen")
@@ -379,55 +406,6 @@ const loadAdminPortfolioFlagsScreen = () =>
     require("@/app/screens/portfolio/AdminPortfolioFlagsScreen") as typeof import("@/app/screens/portfolio/AdminPortfolioFlagsScreen")
   ).AdminPortfolioFlagsScreen;
 
-function GlobalScrollBackButton() {
-  const insets = useSafeAreaInsets();
-  const { componentSizes, palette, radii, shadows, spacing, zIndex } = useHungryTheme();
-  const scrollBackVisible = useUIStore((state) => state.scrollBackVisible);
-  const resetScrollBack = useUIStore((state) => state.resetScrollBack);
-  const rootState = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
-  const rootRouteName = rootState ? rootState.routes[rootState.index]?.name : undefined;
-
-  if (
-    !scrollBackVisible ||
-    !navigationRef.isReady() ||
-    !navigationRef.canGoBack() ||
-    rootRouteName === "MainTabs" ||
-    rootRouteName === "OnboardingStack"
-  ) {
-    return null;
-  }
-
-  return (
-    <View pointerEvents="box-none" style={styles.globalBackWrap}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-        accessibilityHint="Returns to the previous screen"
-        onPress={() => {
-          navigationRef.goBack();
-          resetScrollBack();
-        }}
-        style={[
-          styles.globalBackButton,
-          {
-            ...shadows.floating,
-            backgroundColor: palette.surface,
-            borderColor: palette.border,
-            borderRadius: radii.pill,
-            height: componentSizes.bottomTabCreateButton,
-            left: spacing[4],
-            top: insets.top + spacing[1],
-            width: componentSizes.bottomTabCreateButton,
-            zIndex: zIndex.globalBack,
-          },
-        ]}
-      >
-        <ArrowLeft color={palette.text} size={18} />
-      </Pressable>
-    </View>
-  );
-}
-
 /**
  * Non-blocking offline notice. Going offline used to replace the whole app with
  * the Offline screen and reset to Home on reconnect, losing drafts and progress;
@@ -502,6 +480,39 @@ function ReviewSuccessModalHost({
   const { ReviewSuccessModal } =
     require("@/app/screens/review/ReviewSuccessModal") as typeof import("@/app/screens/review/ReviewSuccessModal");
   return <ReviewSuccessModal onOpenHistory={onOpenHistory} onOpenReview={onOpenReview} />;
+}
+
+/** Root routes the system presents as a modal: anything drawn at the root sits underneath them. */
+const MODAL_ROOT_ROUTES = new Set<RootRouteName>([
+  "StallVisited",
+  "ReviewStack",
+  "MerchantClaimExplainer",
+  "StoryViewer",
+  "AddStory",
+]);
+
+function topRootRouteIsModal(): boolean {
+  const state = navigationRef.isReady() ? navigationRef.getRootState() : undefined;
+  const name = state?.routes[state.index]?.name;
+  return name !== undefined && MODAL_ROOT_ROUTES.has(name as RootRouteName);
+}
+
+function StampMomentHostMount({ onOpenPassport }: { onOpenPassport: () => void }) {
+  const [modalRouteOpen, setModalRouteOpen] = useState(topRootRouteIsModal);
+  const reviewSuccessOpen = useUIStore((state) => state.reviewSuccess != null);
+  useEffect(() => {
+    setModalRouteOpen(topRootRouteIsModal());
+    return navigationRef.addListener("state", () => setModalRouteOpen(topRootRouteIsModal()));
+  }, []);
+  const { StampMomentHost } =
+    require("@/components/gamification/StampMomentHost") as typeof import("@/components/gamification/StampMomentHost");
+  // A celebration drawn while a sheet or modal is up would be hidden and time out unseen.
+  return (
+    <StampMomentHost
+      blocked={modalRouteOpen || reviewSuccessOpen}
+      onOpenPassport={onOpenPassport}
+    />
+  );
 }
 
 function CredEarnedToastHost() {
@@ -746,12 +757,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
         theme={theme}
         linking={linking}
         onReady={() => {
+          trackScreen(navigationRef.getRootState());
           const launchRoute = navigationRef.getRootState()?.routes[0]?.name;
           if (launchRoute !== "Splash" && launchRoute !== "DeveloperLauncher") {
             setLaunchSkippedSplash(true);
           }
         }}
-        onStateChange={() => {
+        onStateChange={(state) => {
+          trackScreen(state);
           resetScrollBack();
         }}
       >
@@ -775,13 +788,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           />
           <RootStack.Screen getComponent={loadSearchResultsScreen} name="SearchResults" />
           <RootStack.Screen getComponent={loadBrowseDishesScreen} name="BrowseDishes" />
+          <RootStack.Screen getComponent={loadFoodStylesScreen} name="FoodStyles" />
           <RootStack.Screen getComponent={loadBrowseStallsScreen} name="BrowseStalls" />
           {FEATURE_FLAGS.mapEnabled ? (
             <>
               <RootStack.Screen
                 getComponent={loadHomeMapScreen}
                 name="DiscoverMap"
-                options={{ gestureEnabled: true }}
+                options={{ gestureEnabled: false }}
               />
               <RootStack.Screen getComponent={loadMapZoomedInScreen} name="MapZoomedIn" />
             </>
@@ -801,9 +815,27 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {/* Reviewer profiles stay reachable from reviews and follower lists. */}
           <RootStack.Screen component={UserProfileScreen} name="UserProfile" />
           <RootStack.Screen getComponent={loadDishDetailScreenV2} name="DishDetail" />
+          <RootStack.Screen getComponent={loadDishReviewsScreen} name="DishReviews" />
           <RootStack.Screen getComponent={loadCatalogRawDetailScreen} name="CatalogRawDetail" />
           <RootStack.Screen getComponent={loadStallDetailScreen} name="StallDetail" />
+          <RootStack.Screen
+            getComponent={loadStallVisitedScreen}
+            name="StallVisited"
+            options={{
+              // The sheet is the app's own DismissibleSheet over this transparent route: the
+              // system formSheet it replaced came up empty on iOS.
+              presentation: "transparentModal",
+              animation: "fade",
+              headerShown: false,
+              contentStyle: { backgroundColor: "transparent" },
+            }}
+          />
           <RootStack.Screen getComponent={loadReportProblemScreen} name="ReportProblem" />
+          <RootStack.Screen
+            getComponent={loadSuggestOpeningHoursScreen}
+            name="SuggestOpeningHours"
+          />
+          <RootStack.Screen getComponent={loadSuggestDishScreen} name="SuggestDish" />
           {FEATURE_FLAGS.merchantClaimCtaEnabled ? (
             <RootStack.Screen
               getComponent={loadMerchantClaimExplainerScreen}
@@ -888,11 +920,11 @@ export function RootNavigator({ theme }: { theme: Theme }) {
               />
             </>
           ) : null}
+          {FEATURE_FLAGS.passportEnabled ? (
+            <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
+          ) : null}
           {FEATURE_FLAGS.gamificationEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadPassportScreen} name="PassportScreen" />
-              <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
-            </>
+            <RootStack.Screen getComponent={loadMissionsScreen} name="MissionsScreen" />
           ) : null}
           {FEATURE_FLAGS.portfoliosEnabled ? (
             <RootStack.Screen
@@ -910,7 +942,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
         </RootStack.Navigator>
       </NavigationContainer>
-      <GlobalScrollBackButton />
       <OfflineBanner />
       {FEATURE_FLAGS.reviewCreationEnabled ? (
         <ReviewSuccessModalHost
@@ -920,18 +951,12 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
+      <StampMomentHostMount onOpenPassport={() => navigationRef.navigate("PassportScreen")} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  globalBackWrap: {
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-    right: 0,
-    top: 0,
-  },
   offlineBannerWrap: {
     left: 0,
     position: "absolute",
@@ -941,11 +966,5 @@ const styles = StyleSheet.create({
   offlineBanner: {
     alignItems: "center",
     flexDirection: "row",
-  },
-  globalBackButton: {
-    alignItems: "center",
-    borderWidth: 1,
-    justifyContent: "center",
-    position: "absolute",
   },
 });

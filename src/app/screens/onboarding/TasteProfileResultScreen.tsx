@@ -32,11 +32,13 @@ import {
   trackOnboardingStepViewed,
 } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import { OnboardingHeader } from "./OnboardingHeader";
 import { DishPreviewSheet } from "./DishPreviewSheet";
 import { ResultDishCard } from "./ResultDishCard";
 import { resultDistanceLabel } from "./resultDistance";
 import { buildResultPicks, fewDietaryPicksMessage, type ResultPick } from "./fillResultPicks";
 import { describeTaste, noDietaryPicksMessage } from "./resultPicks";
+import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
@@ -198,7 +200,16 @@ export function TasteProfileResultScreen({ navigation }: Props) {
         });
         if (matches.length >= resultCount) return matches;
         // Too few taste matches (or none): fill the rest with popular dishes nearby.
-        const popular = await getHungryService().discovery.listPopularNearby();
+        let popular: DishDetail[];
+        try {
+          popular = await getHungryService().discovery.listPopularNearby(undefined, undefined, {
+            noCatalogFallback: true,
+          });
+        } catch (error) {
+          // Taste matches already in hand are better than an error screen.
+          if (matches.length > 0) return matches;
+          throw error;
+        }
         return buildResultPicks({
           ranked,
           popular,
@@ -268,6 +279,8 @@ export function TasteProfileResultScreen({ navigation }: Props) {
   const openDish = (dish: DishDetail) => {
     navigation.getParent<NavigationProp<RootStackParamList>>()?.navigate("DishDetail", {
       dishId: dish.id,
+      source: "taste_result",
+      prefill: dishPrefillFrom(dish),
     });
     // Opening a dish is leaving the flow: if the app is closed while the user
     // browses, the next launch must not start onboarding again. Done after
@@ -303,11 +316,10 @@ export function TasteProfileResultScreen({ navigation }: Props) {
           <ArrowLeft color={palette.text} size={22} />
         </Pressable>
         <OnboardingProgress step="done" />
-        <View style={{ gap: spacing[1] }}>
-          <AppText variant="h1" accessibilityRole="header">
-            {/* Setup is not done until the account exists, so a guest sees "first picks". */}
-            {isAuthenticated ? "You're all set" : "Your first picks"}
-          </AppText>
+        <OnboardingHeader
+          // Setup is not done until the account exists, so a guest sees "first picks".
+          title={isAuthenticated ? "You're all set" : "Your first picks"}
+        >
           {tasteSummary ? <AppText variant="bodyBold">{tasteSummary}</AppText> : null}
           <AppText variant="bodySmall" tone="secondary">
             {hasSkippedTasteQuiz
@@ -316,11 +328,13 @@ export function TasteProfileResultScreen({ navigation }: Props) {
                 ? "Picked to match your taste."
                 : dishes.length > 0
                   ? "Popular dishes to start with."
-                  : noDietaryMatch
-                    ? noDietaryPicksMessage(dietaryPreferences)
-                    : "Dishes that match your taste will show up here."}
+                  : loadState === "error"
+                    ? "We couldn't load your picks."
+                    : noDietaryMatch
+                      ? noDietaryPicksMessage(dietaryPreferences)
+                      : "Dishes that match your taste will show up here."}
           </AppText>
-        </View>
+        </OnboardingHeader>
 
         {loadState === "loading" && dishes.length === 0 ? (
           <View
@@ -363,7 +377,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
             justifyContent: "space-between",
           }}
         >
-          {picks.map(({ dish, popular }) => {
+          {picks.map(({ dish, popular }, index) => {
             const isSaved = isAuthenticated
               ? favouriteDishIds.includes(dish.id)
               : pendingSaveIds.includes(dish.id);
@@ -377,6 +391,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
             return (
               <ResultDishCard
                 key={dish.id}
+                enterIndex={index}
                 dish={dish}
                 details={detailed}
                 distanceLabel={detailed ? distanceLabelFor(dish) : undefined}

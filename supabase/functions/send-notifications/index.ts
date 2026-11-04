@@ -3,6 +3,7 @@
 import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
+import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 // Drains public.notification_jobs (filled by the dishes trigger, the weekly
 // picks, meal-time and like-digest crons, the follow-request trigger and the merchant
@@ -20,10 +21,11 @@ import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 type JsonObject = Record<string, unknown>;
 
 // Matches the column defaults in notification_preferences; used when a user
-// has a push token but never saved preferences (weekly picks is on by default).
+// has a push token but never saved preferences (everything is off until turned on, except
+// follow requests).
 const DEFAULT_PREFERENCES = {
   stall_updates: false,
-  weekly_picks: true,
+  weekly_picks: false,
   mealtime_suggestions: false,
   // Likes, follows and follow requests: on by default, one switch.
   social_activity: true,
@@ -284,6 +286,7 @@ serveWithSentry("send-notifications", async (request) => {
     let delivered = false;
     try {
       const response = await fetch(EXPO_PUSH_URL, {
+        signal: AbortSignal.timeout(TIMEOUT_MS.push),
         method: "POST",
         headers: {
           Accept: "application/json",

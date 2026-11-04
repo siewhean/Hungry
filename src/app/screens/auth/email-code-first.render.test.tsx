@@ -13,6 +13,7 @@ import { ResetPasswordScreen } from "@/app/screens/auth/ResetPasswordScreen";
 import { ResetPasswordSuccessScreen } from "@/app/screens/auth/ResetPasswordSuccessScreen";
 import { SignUpScreen } from "@/app/screens/auth/SignUpScreen";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
+import { resetHapticThrottle } from "@/lib/haptics";
 import {
   EXPERIMENTS,
   clearExperimentOverrides,
@@ -67,7 +68,7 @@ function stubAuth<K extends keyof ReturnType<typeof getHungryService>["auth"]>(
 
 async function signInByCode(view: RenderResult, address = "mei@example.sg") {
   await view.type(inputs(view)[0], address);
-  await view.press(view.findByText("Continue"));
+  await view.press(view.findByText("Email me a code"));
   await view.settle();
 }
 
@@ -157,10 +158,10 @@ test("an empty address is refused before any email is sent", async () => {
   });
   try {
     const view = await renderScreen(LoginScreen as never, { name: "Login" });
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     assert.match(view.text(), /Email is required/);
     await view.type(inputs(view)[0], "not-an-email");
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     assert.match(view.text(), /valid email/i);
     assert.equal(sends, 0);
   } finally {
@@ -301,17 +302,17 @@ test("Create account asks for a name, refuses a reserved one, and sends the name
   try {
     const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
     assert.equal(inputs(view).length, 2);
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     assert.match(view.text(), /Name is required/);
 
     await view.type(inputs(view)[0], "Admin");
     await view.type(inputs(view)[1], "mei@example.sg");
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     assert.match(view.text(), /That name is reserved/);
     assert.deepEqual(sent, []);
 
     await view.type(inputs(view)[0], "Mei");
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     await view.settle();
     assert.deepEqual(sent, [["mei@example.sg", { displayName: "Mei" }]]);
     assert.match(view.text(), /Check your email/);
@@ -501,7 +502,7 @@ test("the onboarding account step leads with the code on both tabs and asks for 
     assert.ok(view.findByText("Use a password instead"));
     await view.type(inputs(view)[0], "Mei");
     await view.type(inputs(view)[1], "mei@example.sg");
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     await view.settle();
     assert.deepEqual(sent, [["mei@example.sg", { displayName: "Mei" }]]);
     assert.match(view.text(), /Check your email/);
@@ -557,6 +558,106 @@ test("a wrong code shows the reason, empties the field, and another try signs in
     await view.settle();
     assert.equal(useSessionStore.getState().isAuthenticated, true);
   } finally {
+    restore();
+  }
+});
+
+async function createAccountWithCode(createdAt: string | undefined, typedName = "Mei") {
+  const accountProfile = {
+    ...(await getHungryService().profile.getProfile()),
+    displayName: "Sam",
+    createdAt,
+  };
+  const session = {
+    userId: "user-1",
+    accessToken: "t",
+    refreshToken: "r",
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    profile: accountProfile,
+  } as unknown as Session;
+  const restore = stubAuth({
+    signInWithEmailCode: async () => undefined,
+    verifyEmailCode: async () => session,
+  });
+  try {
+    const view = await renderScreen(SignUpScreen as never, { name: "SignUp" });
+    await view.type(inputs(view)[0], typedName);
+    await view.type(inputs(view)[1], "sam@example.sg");
+    await view.press(view.findByText("Email me a code"));
+    await view.settle();
+    assert.ok(view.findByText("Sign in"), "the code step offers Sign in");
+    await view.type(inputs(view)[0], "12345678");
+    await view.settle();
+    assert.equal(useSessionStore.getState().isAuthenticated, true);
+  } finally {
+    restore();
+  }
+}
+
+test("Create account with an address that already has an account welcomes that account back", async () => {
+  await createAccountWithCode(new Date(Date.now() - 24 * 3600_000).toISOString());
+  const toast = (useUIStore.getState() as { toast?: { message: string } | null }).toast;
+  assert.equal(toast?.message, "Welcome back, Sam");
+});
+
+test("Create account for a new address shows no welcome back", async () => {
+  await createAccountWithCode(new Date().toISOString());
+  assert.equal((useUIStore.getState() as { toast?: unknown }).toast ?? null, null);
+});
+
+test("Sign in never shows a welcome back toast", async () => {
+  const restore = stubAuth({ signInWithEmailCode: async () => undefined });
+  try {
+    const view = await renderScreen(LoginScreen as never, { name: "Login" });
+    await signInByCode(view);
+    await view.type(inputs(view)[0], "12345678");
+    await view.settle();
+    assert.equal(useSessionStore.getState().isAuthenticated, true);
+    assert.equal((useUIStore.getState() as { toast?: unknown }).toast ?? null, null);
+  } finally {
+    restore();
+  }
+});
+
+test("the email step button names the method and the code step says Sign in", async () => {
+  const restore = stubAuth({ signInWithEmailCode: async () => undefined });
+  try {
+    const view = await renderScreen(LoginScreen as never, { name: "Login" });
+    assert.ok(view.findByLabel("Email me a code"));
+    assert.equal(view.findByText("Continue"), null);
+    await signInByCode(view);
+    assert.ok(view.findByLabel("Sign in"));
+    assert.equal(view.findByText("Continue"), null);
+  } finally {
+    restore();
+  }
+});
+
+test("a wrong code buzzes once for the error and an accepted code once for the success", async () => {
+  const buzzes: string[] = [];
+  const haptics = require("expo-haptics") as Record<string, unknown>;
+  const original = haptics.notificationAsync;
+  haptics.notificationAsync = async () => {
+    buzzes.push("notification");
+  };
+  resetHapticThrottle();
+  const restore = stubAuth({ signInWithEmailCode: async () => undefined });
+  try {
+    const view = await renderScreen(LoginScreen as never, { name: "Login" });
+    await signInByCode(view);
+    // 00000000 is the mock's rejected code.
+    await view.type(inputs(view)[0], "00000000");
+    await view.settle();
+    assert.deepEqual(buzzes, ["notification"]);
+    assert.equal(useSessionStore.getState().isAuthenticated, false);
+
+    resetHapticThrottle();
+    await view.type(inputs(view)[0], "12345678");
+    await view.settle();
+    assert.deepEqual(buzzes, ["notification", "notification"]);
+    assert.equal(useSessionStore.getState().isAuthenticated, true);
+  } finally {
+    haptics.notificationAsync = original;
     restore();
   }
 });

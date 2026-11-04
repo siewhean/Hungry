@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import { REVIEW_MAX_PHOTOS, useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { REVIEW_EDITOR_TAGS, REVIEW_MAX_TAGS } from "@/constants/taste";
+import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   createClientReviewId,
   createInitialReviewDraft,
@@ -204,10 +205,36 @@ test("'How did it taste?' answers are saved with the draft, per dish (REV-X2)", 
   assert.deepEqual(store.getState().feltTaste.values, {});
 });
 
-test("the first missing field follows the editor order: dish, photo, rating (REV-7)", () => {
-  const draft = { rating: 0, photos: [] as string[] };
+test("the first missing field follows the editor order: dish, then rating; a photo is optional", () => {
+  const draft = { rating: 0 };
   assert.equal(firstMissingReviewField(draft, false)?.field, "dish");
-  assert.equal(firstMissingReviewField(draft, true)?.field, "photo");
-  assert.equal(firstMissingReviewField({ rating: 0, photos: ["a"] }, true)?.field, "rating");
-  assert.equal(firstMissingReviewField({ rating: 4, photos: ["a"] }, true), null);
+  assert.equal(firstMissingReviewField(draft, true)?.field, "rating");
+  // No photo and a rating: the review can be published (sh, 2026-11-04).
+  assert.equal(firstMissingReviewField({ rating: 4 }, true), null);
+});
+
+test("a draft with only tags or a recommend answer still counts as content (REV-13)", () => {
+  const draft = createInitialReviewDraft();
+  assert.equal(reviewDraftHasContent(draft), false);
+  assert.equal(reviewDraftHasContent({ ...draft, selectedTags: ["Spicy"] }), true);
+  assert.equal(reviewDraftHasContent({ ...draft, recommend: false }), true);
+  assert.equal(reviewDraftHasContent({ ...draft, recommend: true }), true);
+});
+
+test("review_started is sent once per draft, not on every dish switch (REV-13)", () => {
+  const store = useReviewDraftStore;
+  clearTrackedAnalyticsEvents();
+  store.getState().resetDraft();
+  const started = () =>
+    getTrackedAnalyticsEvents().filter((event) => event.event === "review_started").length;
+  store.getState().selectDish("venue-a", "dish-a");
+  assert.equal(started(), 1);
+  store.getState().selectDish("venue-a", "dish-a");
+  store.getState().selectDish("venue-b", "dish-b");
+  store.getState().selectDish("venue-a", "dish-c");
+  assert.equal(started(), 1, "switching dish continues the same draft");
+  store.getState().resetDraft();
+  store.getState().selectDish("venue-a", "dish-a");
+  assert.equal(started(), 2, "a new draft starts again");
+  store.getState().resetDraft();
 });

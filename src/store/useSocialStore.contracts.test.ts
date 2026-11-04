@@ -88,7 +88,7 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(profileContentSource, /service\.getFollowCounts\(resolvedAuthorId\)/);
   assert.match(
     profileContentSource,
-    /key: "followers",\s*label: "Followers",\s*value: followersCount/,
+    /key: "followers",\s*label: pluralLabel\(followersCount, "Follower"\),\s*value: followersCount/,
   );
   assert.match(
     profileContentSource,

@@ -146,20 +146,22 @@ test("Home sits below the status bar in every state", async () => {
   assert.match(root!.getAttribute("style") ?? "", /padding-top: 47px/);
 });
 
-test("without a GPS fix or a pick it names an area, asks to choose one and hides made-up distances", async () => {
-  stubCatalog();
+test("without a GPS fix or a pick it shows Singapore picks, offers to turn location on and hides made-up distances", async () => {
+  const catalog = stubCatalog();
   const view = await render(createElement(CatalogDiscoverHome));
-  assert.match(view.text(), /You are at/);
-  assert.match(view.text(), /Location is off\. Tap to choose your area\./);
+  assert.match(view.text(), /You are atSingapore/);
+  assert.match(view.text(), /Location is off, so these are picks across Singapore\./);
   assert.doesNotMatch(view.text(), /\d+(\.\d)? ?(m|km) away|1\.2 km/);
   assert.match(view.text(), /Jalan Berseh Food Centre/);
+  // Island-wide picks: the read covers the whole island, not the 3 km around the default point.
+  assert.ok(catalog.requests.length > 0);
+  assert.ok(catalog.requests.every((request) => request.radiusMeters === 30_000));
 
+  // There is no area picker: the header is not a button and nothing opens the area search.
+  assert.equal(view.findByTestId("catalog-discover-area")?.getAttribute("role"), null);
   const navigation = view.navigation;
-  await view.press(view.findByTestId("catalog-discover-area"));
-  assert.deepEqual(navigation.calls.at(-1), {
-    method: "navigate",
-    args: ["OnboardingStack", { screen: "ManualLocationPicker" }],
-  });
+  await view.press(view.findByLabel("Turn on location"));
+  assert.ok(!navigation.calls.some((call) => call.args[0] === "OnboardingStack"));
 });
 
 test("with a manual pick it names the area, formats km and offers current location", async () => {
@@ -172,7 +174,8 @@ test("with a manual pick it names the area, formats km and offers current locati
   assert.match(view.text(), /You are atTanjong Pagar/);
   assert.match(view.text(), /1\.2 km/);
   assert.match(view.text(), /420 m away/);
-  assert.match(view.text(), /★ 4\.6 \(12\)/);
+  assert.match(view.text(), /4\.6 \(12\)/);
+  assert.doesNotMatch(view.text(), /★/);
   assert.ok(view.findByLabel("Use current location"));
 });
 
@@ -291,16 +294,31 @@ test("cards open the real dish and stall pages and are tracked", async () => {
   await view.press(laksa);
   assert.deepEqual(navigation.calls.at(-1)?.args, [
     "DishDetail",
-    { dishId: "dish-1", source: "home", catalogFallback: { releaseId: "release-1" } },
+    {
+      dishId: "dish-1",
+      source: "home",
+      prefill: {
+        name: "Laksa",
+        price: 4.5,
+        venueId: "venue-1",
+        venueName: "Sungei Road Laksa",
+      },
+      catalogFallback: { releaseId: "release-1" },
+    },
   ]);
 
   // Unverified catalog dishes open the dish page too; it shows the catalog record if the dish
   // page can't load (see DishDetailScreenV2.render.test.tsx).
   await view.press(view.findByLabel(/^Otah,/));
-  assert.deepEqual(navigation.calls.at(-1)?.args, [
-    "DishDetail",
-    { dishId: "dish-2", source: "home", catalogFallback: { releaseId: "release-1" } },
-  ]);
+  const [otahScreen, otahParams] = navigation.calls.at(-1)?.args as [
+    string,
+    { dishId: string; source: string; prefill?: { name: string }; catalogFallback?: unknown },
+  ];
+  assert.equal(otahScreen, "DishDetail");
+  assert.equal(otahParams.dishId, "dish-2");
+  assert.equal(otahParams.source, "home");
+  assert.equal(otahParams.prefill?.name, "Otah");
+  assert.deepEqual(otahParams.catalogFallback, { releaseId: "release-1" });
 
   await view.press(view.findByLabel(/^Sungei Road Laksa, Laksa/));
   assert.deepEqual(navigation.calls.at(-1)?.args, ["StallDetail", { venueId: "venue-1" }]);

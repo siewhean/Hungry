@@ -1,0 +1,258 @@
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { isLateNightDish, isLateNightHour } from "@/features/discover/bites";
+import {
+  getHomeCategory,
+  matchesHomeCategory,
+  type HomeCategoryId,
+} from "@/features/discover/homeCategories";
+import {
+  cannotTakeSpice,
+  fitChipsToDiner,
+  type HomeChipContext,
+} from "@/features/discover/homeChips";
+import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useUIStore } from "@/store/useUIStore";
+import type { DishDetail } from "@/types/domain";
+import { getSingaporeHour } from "@/utils/operatingHours";
+
+/** The chips under the search bar. */
+export type DiscoverChipId =
+  | "dietary"
+  | "spicy"
+  | "halal"
+  | "late"
+  | "cheap"
+  | "vegetarian"
+  | CategoryChipId;
+
+/** Chips that keep one kind of food: the dish or stall names it. */
+const CATEGORY_CHIP_IDS = [
+  "noodles",
+  "rice",
+  "soup",
+  "dessert",
+  "drinks",
+  "breakfast",
+  "western",
+] as const satisfies readonly HomeCategoryId[];
+type CategoryChipId = (typeof CATEGORY_CHIP_IDS)[number];
+const isCategoryChip = (id: DiscoverChipId): id is CategoryChipId =>
+  (CATEGORY_CHIP_IDS as readonly string[]).includes(id);
+
+const INTENT_CHIPS: readonly {
+  id: Exclude<DiscoverChipId, "dietary">;
+  label: string;
+}[] = [
+  { id: "spicy", label: "Spicy" },
+  { id: "halal", label: "Halal" },
+  { id: "late", label: "Late night" },
+  { id: "cheap", label: "Under S$5" },
+  { id: "vegetarian", label: "Vegetarian" },
+  ...CATEGORY_CHIP_IDS.map((id) => ({ id, label: getHomeCategory(id).chipLabel })),
+] as const;
+
+type UseDiscoverFiltersOptions = {
+  /** Opening hours of a stall, for the late-night chip. */
+  getVenueHours: (venueId?: string) => string | undefined;
+};
+
+/** The Home chips: which are on, the deferred copy the page filters by, and what each chip keeps. */
+export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions) {
+  const showToast = useUIStore((state) => state.showToast);
+  const profile = useProfileStore((state) => state.profile);
+  const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
+
+  // Dietary Needs starts on for a diner who has set dietary needs, so nothing unsuitable shows.
+  const [activeDiscoverChipIds, setActiveDiscoverChipIds] = useState<DiscoverChipId[]>(() =>
+    profile.dietaryPreferences.length ? ["dietary"] : [],
+  );
+  const dietaryAutoOnRef = useRef(profile.dietaryPreferences.length > 0);
+  useEffect(() => {
+    if (profile.dietaryPreferences.length === 0) {
+      // No needs left (cleared in Settings): the chip filters nothing, and the next save
+      // switches it on again.
+      dietaryAutoOnRef.current = false;
+      setActiveDiscoverChipIds((ids) =>
+        ids.includes("dietary") ? ids.filter((id) => id !== "dietary") : ids,
+      );
+      return;
+    }
+    // The profile can finish loading after the first render; switch it on once, never again.
+    if (dietaryAutoOnRef.current) return;
+    dietaryAutoOnRef.current = true;
+    setActiveDiscoverChipIds((ids) => (ids.includes("dietary") ? ids : [...ids, "dietary"]));
+  }, [profile.dietaryPreferences.length]);
+
+  const deferredDiscoverChipIds = useDeferredValue(activeDiscoverChipIds);
+  const deferredDiscoverChipSet = useMemo(
+    () => new Set<DiscoverChipId>(deferredDiscoverChipIds),
+    [deferredDiscoverChipIds],
+  );
+  const activeDiscoverChipSignature = activeDiscoverChipIds.join("|");
+  const deferredDiscoverChipSignature = deferredDiscoverChipIds.join("|");
+  // Filtering is local and instant: the skeleton only covers the deferred re-render.
+  const isPopularFoodFilterPending = activeDiscoverChipSignature !== deferredDiscoverChipSignature;
+  const isDiscoverFiltering = deferredDiscoverChipIds.length > 0;
+
+  // One Singapore-time hour for the chip order and the late-night rail, refreshed on focus.
+  const [currentHour, setCurrentHour] = useState(() => getSingaporeHour());
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentHour(getSingaporeHour());
+    }, []),
+  );
+  // What decides which chips this diner sees right now; the screen adds the foods they know.
+  const avoidSpicy = cannotTakeSpice(profile);
+  const chipContext = useMemo<Omit<HomeChipContext, "knownKinds">>(
+    () => ({
+      hour: currentHour,
+      avoidSpicy,
+      dietaryPreferences: profile.dietaryPreferences,
+      activeIds: new Set(activeDiscoverChipIds),
+    }),
+    [activeDiscoverChipIds, avoidSpicy, currentHour, profile.dietaryPreferences],
+  );
+  const sortedChips = useMemo(() => {
+    // The first chip names the diner's saved needs; a saved halal need already is the Halal chip.
+    const intentChips = profile.dietaryPreferences.includes("halal")
+      ? INTENT_CHIPS.filter((chip) => chip.id !== "halal")
+      : INTENT_CHIPS;
+    const baseChips = [
+      { id: "dietary" as const, label: getDietaryChipLabel(profile.dietaryPreferences) },
+      // No breakfast at dinner, no spicy for someone who cannot take it (see homeChips).
+      ...fitChipsToDiner(intentChips, { ...chipContext, knownKinds: new Set() }),
+    ];
+    // "Late night" only shows from 21:00 to 03:59, and then leads the row.
+    if (isLateNightHour(currentHour)) {
+      return baseChips.sort((a, b) => (a.id === "late" ? -1 : b.id === "late" ? 1 : 0));
+    }
+    return baseChips.filter((chip) => chip.id !== "late");
+  }, [chipContext, currentHour, profile.dietaryPreferences]);
+
+  const toggleDiscoverChip = useCallback(
+    (chipId: DiscoverChipId) => {
+      if (chipId === "dietary" && profile.dietaryPreferences.length === 0) {
+        // Nothing to filter by yet: say where to add dietary needs (no questions here).
+        trackAnalyticsEvent("discover_chip_tapped", {
+          surface: "home",
+          chip: chipId,
+          selected: false,
+          no_saved_needs: true,
+        });
+        showToast({ message: "Add your dietary needs in Profile settings to filter by them." });
+        return;
+      }
+      const wasActive = activeDiscoverChipIds.includes(chipId);
+      const nextChipIds = wasActive
+        ? activeDiscoverChipIds.filter((value) => value !== chipId)
+        : [...activeDiscoverChipIds, chipId];
+
+      trackAnalyticsEvent("discover_chip_tapped", {
+        surface: "home",
+        chip: chipId,
+        selected: !wasActive,
+      });
+
+      if (!wasActive && chipId !== "dietary") {
+        scheduleIdleWork(
+          () => {
+            recordTasteInteraction({
+              type: "search_query",
+              surface: "discover",
+              query: chipId,
+              chipId,
+            });
+          },
+          { timeout: 500, fallbackDelayMs: 80 },
+        );
+      }
+
+      setActiveDiscoverChipIds(nextChipIds);
+    },
+    [activeDiscoverChipIds, profile.dietaryPreferences.length, recordTasteInteraction, showToast],
+  );
+  const matchesDiscoverChipSelection = useCallback(
+    (dish?: DishDetail, textParts: string[] = []) => {
+      if (!deferredDiscoverChipSet.size) {
+        return true;
+      }
+      let cachedHaystack: string | null = null;
+      const getLateNightHaystack = () => {
+        if (cachedHaystack !== null) {
+          return cachedHaystack;
+        }
+
+        cachedHaystack = [
+          dish?.name,
+          dish?.venueName,
+          dish?.tasteTags.join(" "),
+          dish?.priceRange,
+          ...textParts,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return cachedHaystack;
+      };
+
+      return Array.from(deferredDiscoverChipSet).every((chipId) => {
+        if (chipId === "dietary") {
+          if (!dish) return false;
+          // Saved needs must all hold.
+          return profile.dietaryPreferences.every((flag) => dish.dietaryFlags.includes(flag));
+        }
+        if (chipId === "halal") {
+          // Structured flag only: text matching let "non-halal" through.
+          return Boolean(dish?.dietaryFlags.includes("halal"));
+        }
+        if (chipId === "spicy") {
+          return (
+            Boolean(dish && dish.tasteVector.spicy >= 6) || getLateNightHaystack().includes("spicy")
+          );
+        }
+        if (chipId === "late") {
+          // Same rule as the late-night rail: the stall's hours run past 22:00.
+          return isLateNightDish(dish, getVenueHours(dish?.venueId));
+        }
+        if (chipId === "cheap") {
+          return Boolean(dish && dish.price > 0 && dish.price < HOME_CHEAP_PRICE_LIMIT);
+        }
+        if (chipId === "vegetarian") {
+          // Structured flag only, like Halal: "vegetarian" in a name is not a promise.
+          return Boolean(dish?.dietaryFlags.includes("vegetarian"));
+        }
+        if (isCategoryChip(chipId)) {
+          return matchesHomeCategory(chipId, getLateNightHaystack());
+        }
+        return true;
+      });
+    },
+    [deferredDiscoverChipSet, getVenueHours, profile.dietaryPreferences],
+  );
+
+  const clearDiscoverFilters = useCallback(() => {
+    trackAnalyticsEvent("home_filters_cleared", {
+      surface: "home",
+      chips: activeDiscoverChipIds.join(","),
+    });
+    setActiveDiscoverChipIds([]);
+  }, [activeDiscoverChipIds]);
+
+  return {
+    deferredDiscoverChipIds,
+    activeDiscoverChipSignature,
+    isPopularFoodFilterPending,
+    isDiscoverFiltering,
+    sortedChips,
+    chipContext,
+    toggleDiscoverChip,
+    matchesDiscoverChipSelection,
+    clearDiscoverFilters,
+    activeDiscoverChipIds,
+    currentHour,
+  };
+}

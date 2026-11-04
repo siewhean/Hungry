@@ -32,6 +32,8 @@ test("getVenueLogoCandidates rejects malformed comma-joined URLs", () => {
 test("getVenueLogoInitials builds a non-food stall identity fallback", () => {
   assert.equal(getVenueLogoInitials("STARBUCKS COFFEE SINGAPORE PTE. LTD."), "SC");
   assert.equal(getVenueLogoInitials("KFC"), "KF");
+  assert.equal(getVenueLogoInitials(undefined), "?");
+  assert.equal(getVenueLogoInitials(""), "?");
 });
 
 test("getVenueLogoCandidates skips favicon fallbacks for stored brand logos", () => {

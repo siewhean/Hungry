@@ -1,4 +1,5 @@
 import { formatDishPrice } from "@/features/detail/dishPrice";
+import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import type { CatalogRawVenueCard } from "@/lib/services/catalog";
 import type { OpenState } from "@/utils/operatingHours";
 
@@ -12,6 +13,19 @@ export interface MapCardMatchedDish {
 export function shortOpenLabel(state: OpenState | undefined): string | undefined {
   if (!state || state.status === "unknown") return undefined;
   return state.status === "open" ? "Open" : "Closed";
+}
+
+/** "Open · Closes 9pm" or "Closed · Opens 5pm" for a card; nothing when the hours cannot be read. */
+export function formatMapCardHours(state: OpenState | undefined): string | undefined {
+  const word = shortOpenLabel(state);
+  if (!word) return undefined;
+  return [word, state?.detail].filter(Boolean).join(" · ");
+}
+
+/** "JW50 Hawker Centre · #01-23": where the stall is, building first. */
+export function formatMapCardLocation(venue: CatalogRawVenueCard): string {
+  const unit = [venue.floor, venue.unitNumber].filter(Boolean).join(" ");
+  return [venue.buildingName, unit].filter(Boolean).join(" · ");
 }
 
 /**
@@ -29,19 +43,26 @@ export function formatMapCardDish(
     : dish.name;
 }
 
-/** "★ 4.6 (23) · Open · 450m · Maxwell Food Centre": what a diner decides on, most useful first. */
+/** The stall's rating for a card: "4.6 (23)" beside a star symbol, and what a screen reader says. */
+export function formatMapCardRating(
+  venue: CatalogRawVenueCard,
+): { text: string; spoken: string } | undefined {
+  if (!venue.qualityRating || venue.qualityRating <= 0 || !(venue.qualityReviewCount ?? 0)) {
+    return undefined;
+  }
+  const rating = venue.qualityRating.toFixed(1);
+  const reviews = venue.qualityReviewCount ?? 0;
+  return {
+    text: `${rating} (${reviews})`,
+    spoken: `Rated ${rating} from ${reviews} ${reviews === 1 ? "review" : "reviews"}`,
+  };
+}
+
+/** "Open · 450 m · Maxwell Food Centre": the rest of the detail line, after the rating. */
 export function formatMapCardDetail(venue: CatalogRawVenueCard, openLabel?: string): string {
-  const rating =
-    venue.qualityRating && venue.qualityRating > 0 && (venue.qualityReviewCount ?? 0) > 0
-      ? `★ ${venue.qualityRating.toFixed(1)} (${venue.qualityReviewCount})`
-      : undefined;
-  const distance =
-    typeof venue.distanceMeters === "number"
-      ? venue.distanceMeters >= 1000
-        ? `${(venue.distanceMeters / 1000).toFixed(1)}km`
-        : `${Math.round(venue.distanceMeters)}m`
-      : undefined;
-  return [rating, openLabel, distance, venue.buildingName].filter(Boolean).join(" · ");
+  return [openLabel, formatDistanceLabel(venue.distanceMeters), venue.buildingName]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 /** What a screen reader says for a card or row: the stall, its dish and the detail line. */
@@ -49,6 +70,7 @@ export function mapCardAccessibilityLabel(
   venue: CatalogRawVenueCard,
   dishLine: string | undefined,
   detail: string,
+  ratingSpoken?: string,
 ): string {
-  return [`Open ${venue.name}`, dishLine, detail].filter(Boolean).join(". ");
+  return [`Open ${venue.name}`, dishLine, ratingSpoken, detail].filter(Boolean).join(". ");
 }

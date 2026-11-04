@@ -7,6 +7,7 @@ import test, { afterEach, beforeEach } from "node:test";
 import { Linking } from "react-native";
 
 import { FavouritesScreen } from "@/app/screens/profile/FavouritesScreen";
+import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
   clearExperimentOverrides,
@@ -78,8 +79,12 @@ function stubCards(cards: SavedDishCard[] = FIXTURES) {
   return calls;
 }
 
+const SEARCH_WAIT_MS = 320;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 beforeEach(async () => {
   await enterScenario("user");
+  useSavedViewStore.getState().reset();
   clearTrackedAnalyticsEvents();
   useLocationStore.setState({ permission: "denied", manualCoordinate: undefined });
 });
@@ -103,7 +108,7 @@ test("60 saved dishes load with one batched read, not 60 (SAVED4-3)", async () =
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
   assert.equal(calls.length, 1);
   assert.equal(new Set(calls[0]).size, 60);
-  assert.match(view.text(), /60 cravings saved for later/);
+  assert.doesNotMatch(view.text(), /saved for later/);
 });
 
 test("the live card has Directions, Tried and Review, and opens the dish page (SAVED4-1/2)", async () => {
@@ -119,7 +124,20 @@ test("the live card has Directions, Tried and Review, and opens the dish page (S
 
   await view.press(view.findByLabel("Open Laksa at Nam Sing"));
   const open = view.navigation.calls.find((call) => call.method === "navigate");
-  assert.deepEqual(open?.args, ["DishDetail", { dishId: LAKSA.id, source: "saved" }]);
+  assert.deepEqual(open?.args, [
+    "DishDetail",
+    {
+      dishId: LAKSA.id,
+      source: "saved",
+      prefill: {
+        name: LAKSA.name,
+        imageUrl: LAKSA.imageUrl,
+        price: LAKSA.price,
+        venueId: LAKSA.venueId,
+        venueName: "Nam Sing",
+      },
+    },
+  ]);
   const opened = eventsNamed("saved_item_opened");
   assert.equal(opened.length, 1);
   assert.equal(opened[0].properties.position, 0);
@@ -237,11 +255,14 @@ test("Nearest sorts by distance; with location off it says why and keeps the ord
   // Recent order is newest save first: Laksa was saved last.
   assert.equal(order(), "laksa-first");
 
-  await view.press(view.findByLabel("Sort by top rated"));
+  await view.press(view.findByLabel("Sort: Recent"));
+  await view.press(view.findByLabel("Top rated"));
   assert.equal(order(), "rice-first");
-  await view.press(view.findByLabel("Sort by recent"));
+  await view.press(view.findByLabel("Sort: Top rated"));
+  await view.press(view.findByLabel("Recent"));
 
-  await view.press(view.findByLabel("Sort by nearest. Turn on location to use this."));
+  await view.press(view.findByLabel("Sort: Recent"));
+  await view.press(view.findByLabel("Nearest. Turn on location to use this."));
   assert.equal(useUIStore.getState().toast?.message, "Turn on location to sort by nearest.");
   assert.equal(order(), "laksa-first");
 
@@ -250,7 +271,8 @@ test("Nearest sorts by distance; with location off it says why and keeps the ord
     currentLocation: { latitude: 1.401, longitude: 103.901 },
   });
   await view.settle();
-  await view.press(view.findByLabel("Sort by nearest"));
+  await view.press(view.findByLabel("Sort: Recent"));
+  await view.press(view.findByLabel("Nearest"));
   assert.equal(order(), "rice-first");
   assert.match(view.text(), /m away|km away/);
   assert.equal(eventsNamed("saved_sort_changed").length, 3);
@@ -274,13 +296,12 @@ test("compact rows lay out the same dishes in the density variant (SAVED4-9)", a
   assert.equal(view.findByText("Get directions"), null);
 });
 
-test("the count follows the cards and reads '1 craving' (SAVED4-15/16)", async () => {
+test("the dishes tab shows no count line, and says how many saved dishes left the catalog (SAVED4-15/16)", async () => {
   // Three ids are saved, but only one dish is still in the catalog.
   saveDishes([LAKSA.id, "gone-1", "gone-2"]);
   stubCards();
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
-  assert.match(view.text(), /1 craving saved for later/);
-  assert.doesNotMatch(view.text(), /1 cravings/);
+  assert.doesNotMatch(view.text(), /saved for later/);
   assert.match(view.text(), /2 saved dishes are not in the current catalog/);
 });
 
@@ -288,7 +309,9 @@ test("a search with no match offers Clear search (SAVED4-17)", async () => {
   saveDishes([LAKSA.id]);
   stubCards();
   const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
-  await view.type(view.findByLabel("Search your saved dishes"), "pizza");
+  await view.type(view.findByLabel("Search everything you saved"), "pizza");
+  await sleep(SEARCH_WAIT_MS);
+  await view.settle();
   assert.ok(view.findByText("No matches"));
   await view.press(view.findByText("Clear search"));
   assert.ok(view.findByLabel("Open Laksa at Nam Sing"));
@@ -317,4 +340,17 @@ test("viewing Saved records saved_viewed once with the count", async () => {
   assert.equal(viewed.length, 1);
   assert.equal(viewed[0].properties.count, 2);
   assert.equal(viewed[0].properties.tab, "want");
+});
+
+test("Saved switches sections with underline tabs, not chips (SAVED-TABS)", async () => {
+  saveDishes([LAKSA.id]);
+  stubCards();
+  const view = await renderScreen(FavouritesScreen as never, { name: "Favourites" });
+  const tabs = view.findByLabel("Saved sections");
+  assert.ok(tabs, "the tab row");
+  assert.ok(view.findByLabel("Saved dishes"));
+  assert.ok(view.findByLabel("Saved stalls"));
+  assert.ok(view.findByLabel("Saved lists"));
+  await view.press(view.findByLabel("Saved lists"));
+  assert.equal(useSavedViewStore.getState().section, "lists");
 });

@@ -9,6 +9,12 @@ export interface TasteVector {
   aromatic: number;
 }
 
+/**
+ * What diners who rated a dish's taste say, per axis (0-10 standard levels). An axis appears
+ * only once at least three diners rated it, so a single opinion is never shown as the dish.
+ */
+export type DishTasteRatingSummary = Partial<Record<TasteKey, { average: number; raters: number }>>;
+
 // ─── Extended AI Taste Model ─────────────────────────────────────────────────
 
 /** Oral processing style — which mechanical texture satisfies the user most */
@@ -156,6 +162,8 @@ export interface VenueSummary {
   /** Weekly + special hours a verified merchant set; wins over operatingHours for "Open now". */
   openingSchedule?: OpeningSchedule;
   closureNotice?: string;
+  /** The merchant paused the stall until this instant (ISO); ignored once it has passed. */
+  closedUntil?: string;
   /** How many diners saved this stall. Undefined when the count is not available. */
   savedCount?: number;
   deliveryLinks: DeliveryLink[];
@@ -169,6 +177,24 @@ export interface VenueSummary {
   /** The stall's own map pin (a merchant-set pin, or the stored venue coordinate). */
   latitude?: number;
   longitude?: number;
+  /** Metres from the search point; set only on stalls read from the discovery feed. */
+  distanceMeters?: number;
+  /** The catalogue's cuisine tags ("thai", "coffee_shop"); set on stalls read from the discovery feed. */
+  cuisineTags?: string[];
+}
+
+/** What the Passport needs to know about a stall to decide which stamps it counts toward. */
+export interface StallStampFacts {
+  stallId: string;
+  /** The stall's name, to show which visit earned a stamp. */
+  name?: string;
+  /** The stall's cuisine tags, lower case (for example "chinese", "ramen"). */
+  cuisineTags: string[];
+  /** The kind of building it is in (for example "hawker_centre", "mall"). */
+  buildingType?: string;
+  planningArea?: string;
+  /** Building name and address together, for neighbourhoods that are not a planning area. */
+  placeText?: string;
 }
 
 export type UserStallSubmissionStatus =
@@ -282,6 +308,11 @@ export interface Review {
   tags: string[];
   wouldRecommend: boolean;
   photos: string[];
+  /**
+   * Small copies of `photos`, the same order (grid tiles). An entry is empty when that photo has
+   * none (reviews posted before thumbnails), so use `photos[i]` then.
+   */
+  photoThumbnails?: string[];
   /** Public reply from the stall owner, if they answered this review. */
   merchantReply?: {
     text: string;
@@ -478,6 +509,8 @@ export interface SearchFilters {
   openOnly?: boolean;
   /** Rows to ask the server for (default 20, server cap 50). */
   limit?: number;
+  /** The last row of the previous page (its rank score and dish id): asks for the next page. */
+  cursor?: { score: number; dishId: string };
 }
 
 /** What Claude understood from a plain-language search such as "something soupy, under $8". */
@@ -699,6 +732,8 @@ export interface MerchantOutlet {
   operatingHours: string;
   openingSchedule?: OpeningSchedule;
   temporaryClosure?: string;
+  /** The stall is closed until this instant (ISO); ignored once it has passed. null clears it. */
+  closedUntil?: string | null;
   profilePhotoUrl?: string;
   coverPhotoUrl?: string;
   galleryUrls: string[];
@@ -794,6 +829,32 @@ export interface MerchantAnalytics {
     reviewCount: number;
     averageRating: number;
   };
+}
+
+/** One Singapore day of the Performance chart (get_merchant_daily_series). */
+export interface MerchantDailyPoint {
+  /** "YYYY-MM-DD", Singapore date. */
+  date: string;
+  profileVisits: number;
+  menuViews: number;
+  dishViews: number;
+  directionTaps: number;
+  saves: number;
+}
+
+/** What get_merchant_insight_facts returns: the counts the Insights rules read, from one call. */
+export interface MerchantInsightFacts {
+  dishCount: number;
+  dishesWithoutPhoto: number;
+  /** Dishes marked sold out right now (no history is stored). */
+  soldOutCount: number;
+  soldOutNames: string[];
+  unrepliedReviews: number;
+  oldestUnrepliedAt?: string;
+  reviewsLast7Days: number;
+  ratingLast7Days?: number;
+  reviewsPrevious7Days: number;
+  ratingPrevious7Days?: number;
 }
 
 /** Counts behind the merchant dashboard's action cards, from one call. */
@@ -1118,6 +1179,7 @@ export interface AIBusinessInsight {
     | "demand_insight"
     | "promotion_tip"
     | "photo_enhancement"
+    | "review_attention"
     | "weekly_summary";
   title: string;
   body: string;
@@ -1189,20 +1251,38 @@ export type ReviewTasteTag =
   | "hot_fresh"
   | "quick_service";
 
-/** Map of review taste tag keys to display label + emoji */
-export const REVIEW_TASTE_TAG_META: Record<ReviewTasteTag, { emoji: string; label: string }> = {
-  spicy: { emoji: "🌶️", label: "Spicy" },
-  savoury: { emoji: "🧂", label: "Savoury" },
-  sweet: { emoji: "🍯", label: "Sweet" },
-  sour: { emoji: "🍋", label: "Sour" },
-  generous: { emoji: "💪", label: "Generous" },
-  fresh: { emoji: "🌿", label: "Fresh" },
-  worth_it: { emoji: "💰", label: "Worth it" },
-  cold_refreshing: { emoji: "🧊", label: "Cold & refreshing" },
-  rich_broth: { emoji: "🫙", label: "Rich broth" },
-  chewy_noodles: { emoji: "🥢", label: "Chewy noodles" },
-  hot_fresh: { emoji: "🔥", label: "Hot & fresh" },
-  quick_service: { emoji: "⚡", label: "Quick service" },
+/** Names an AppSymbol row for each review taste tag, so the UI draws a symbol and never an emoji. */
+export type ReviewTasteTagSymbol =
+  | "tasteSpicy"
+  | "tasteSavoury"
+  | "tasteSweet"
+  | "tasteSour"
+  | "tasteGenerous"
+  | "tasteFresh"
+  | "tasteWorthIt"
+  | "tasteCold"
+  | "tasteRichBroth"
+  | "tasteChewyNoodles"
+  | "tasteHotFresh"
+  | "tasteQuick";
+
+/** Map of review taste tag keys to display label + symbol (an AppSymbol name) */
+export const REVIEW_TASTE_TAG_META: Record<
+  ReviewTasteTag,
+  { symbol: ReviewTasteTagSymbol; label: string }
+> = {
+  spicy: { symbol: "tasteSpicy", label: "Spicy" },
+  savoury: { symbol: "tasteSavoury", label: "Savoury" },
+  sweet: { symbol: "tasteSweet", label: "Sweet" },
+  sour: { symbol: "tasteSour", label: "Sour" },
+  generous: { symbol: "tasteGenerous", label: "Generous" },
+  fresh: { symbol: "tasteFresh", label: "Fresh" },
+  worth_it: { symbol: "tasteWorthIt", label: "Worth it" },
+  cold_refreshing: { symbol: "tasteCold", label: "Cold & refreshing" },
+  rich_broth: { symbol: "tasteRichBroth", label: "Rich broth" },
+  chewy_noodles: { symbol: "tasteChewyNoodles", label: "Chewy noodles" },
+  hot_fresh: { symbol: "tasteHotFresh", label: "Hot & fresh" },
+  quick_service: { symbol: "tasteQuick", label: "Quick service" },
 };
 
 /** Realtime broadcast event shapes ───────────────────────────────── */
@@ -1323,10 +1403,21 @@ export interface WelcomeBackDish {
 
 // ─── Notifications ────────────────────────────────────────────────────────────
 
+/**
+ * What the signed-in person has agreed to, saved on their account (privacy_settings).
+ * `analytics` is null until they have been asked.
+ */
+export interface PrivacyConsents {
+  /** Shares usage analytics (PostHog). Null = never asked. */
+  analytics: boolean | null;
+  /** Their typed AI-search text may be sent to the AI provider (Anthropic). Off until allowed. */
+  aiSearch: boolean;
+}
+
 /** Per-user push settings. Hours are Singapore time (0-23); quiet hours wrap past midnight. */
 export interface PushPreferences {
   stallUpdates: boolean;
-  /** Weekly "Your new picks are ready" push. On unless the user opts out. */
+  /** Weekly "Your new picks are ready" push. Off until the user turns it on (App Review 4.5.4). */
   weeklyPicks: boolean;
   /** Lunch (11:30) and dinner (17:30) suggestion pushes. Off unless the user turns them on. */
   mealtimeSuggestions: boolean;
@@ -1339,7 +1430,7 @@ export interface PushPreferences {
 
 export const DEFAULT_PUSH_PREFERENCES: PushPreferences = {
   stallUpdates: false,
-  weeklyPicks: true,
+  weeklyPicks: false,
   mealtimeSuggestions: false,
   socialActivity: true,
   quietStartHour: 22,

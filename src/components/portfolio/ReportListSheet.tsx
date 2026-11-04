@@ -63,6 +63,7 @@ export function ReportListSheet({
         >
           <ScrollView
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
             contentContainerStyle={{ gap: spacing[3], padding: spacing[5] }}
           >
             <AppText variant="h2">Report this list</AppText>

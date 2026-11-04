@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Platform,
-  Pressable,
   View,
   findNodeHandle,
   useWindowDimensions,
@@ -14,11 +13,18 @@ import {
   type RouteProp,
 } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Check, Dices, Utensils } from "lucide-react-native";
+import { Dices } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { LocationGate } from "@/components/discover/LocationGate";
-import { AccessibleImage, AppText, Button, Screen } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppSymbol,
+  AppText,
+  Button,
+  PressableScale,
+  Screen,
+} from "@/components/ui";
 import {
   DECIDE_FOR_ME_OPTION_ID,
   DECIDE_QUESTIONS,
@@ -36,6 +42,8 @@ type Navigation = NativeStackNavigationProp<RootStackParamList>;
 
 /** Taps this soon after a step change are ignored, so a double tap cannot answer the next question. */
 const STEP_TAP_GUARD_MS = 250;
+/** Two lines of label plus padding, so a one-line "Rice" tile is as tall as "Japanese or Korean". */
+const TILE_LABEL_HEIGHT = 56;
 
 /**
  * A few quick questions before Decide for Me picks a dish: cuisine, rice or noodles, price and
@@ -71,6 +79,8 @@ export function DecideForMeQuizScreen() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<DecideAnswers>(() => route.params?.answers ?? {});
   const question = questions[step];
+  const gridOptions = question.options.filter((option) => option.id !== DECIDE_FOR_ME_OPTION_ID);
+  const openOption = question.options.find((option) => option.id === DECIDE_FOR_ME_OPTION_ID);
   const isLast = step === questions.length - 1;
   const finishedRef = useRef(false);
   const lastStepChangeRef = useRef(0);
@@ -219,32 +229,30 @@ export function DecideForMeQuizScreen() {
         </View>
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-          {question.options.map((option) => {
-            const isDecide = option.id === DECIDE_FOR_ME_OPTION_ID;
+          {gridOptions.map((option) => {
             const selected = answers[question.id] === option.id;
             const image = DECIDE_OPTION_IMAGES[option.id];
             const priceTier = DECIDE_PRICE_TIERS[option.id];
             return (
-              <Pressable
+              <PressableScale
                 key={option.id}
                 accessibilityRole="button"
                 accessibilityLabel={option.label}
                 accessibilityState={{ selected }}
                 onPress={() => choose(option.id)}
-                style={({ pressed }) => ({
-                  backgroundColor: isDecide ? palette.orangeLight : palette.surface,
-                  borderColor: selected || isDecide ? palette.orange : palette.border,
+                style={{
+                  backgroundColor: palette.surface,
+                  borderColor: selected ? palette.orange : palette.border,
                   borderRadius: componentRadii.card,
                   borderWidth: selected ? 2 : 1,
                   overflow: "hidden",
-                  transform: [{ scale: pressed ? 0.95 : 1 }],
                   width: tileWidth,
-                })}
+                }}
               >
                 <View
                   style={{
                     alignItems: "center",
-                    backgroundColor: isDecide ? palette.orangeLight : palette.bgSoft,
+                    backgroundColor: palette.bgSoft,
                     height: Math.min(tileWidth - 2, 140),
                     justifyContent: "center",
                   }}
@@ -264,10 +272,8 @@ export function DecideForMeQuizScreen() {
                     >
                       {priceTier}
                     </AppText>
-                  ) : isDecide ? (
-                    <Dices color={palette.orange} size={32} />
                   ) : (
-                    <Utensils color={palette.textMuted} size={28} />
+                    <AppSymbol name="noPhoto" color={palette.textMuted} size={28} />
                   )}
                   {selected ? (
                     <View
@@ -283,28 +289,57 @@ export function DecideForMeQuizScreen() {
                         width: 24,
                       }}
                     >
-                      <Check color={palette.textOnOrange} size={14} />
+                      <AppSymbol name="selected" color={palette.textOnOrange} size={14} />
                     </View>
                   ) : null}
                 </View>
-                <AppText
-                  variant="bodySmallBold"
-                  // At large text sizes the label wraps as far as it needs instead of being cut.
-                  numberOfLines={columns === 3 ? 2 : undefined}
+                <View
+                  // One fixed height, so a two-line label never makes its row taller than the next.
                   style={{
-                    color: isDecide ? palette.orangeDark : palette.text,
-                    minHeight: 40,
+                    justifyContent: "center",
+                    height: TILE_LABEL_HEIGHT,
                     paddingHorizontal: spacing[2],
                     paddingVertical: spacing[2],
-                    textAlign: "center",
                   }}
                 >
-                  {option.label}
-                </AppText>
-              </Pressable>
+                  <AppText
+                    variant="bodySmallBold"
+                    // The tile's accessibility label carries the full text if a large type size cuts it.
+                    numberOfLines={2}
+                    style={{ color: palette.text, textAlign: "center" }}
+                  >
+                    {option.label}
+                  </AppText>
+                </View>
+              </PressableScale>
             );
           })}
         </View>
+
+        {openOption ? (
+          // The open answer is a plain row under the grid, not a tile that competes with the foods.
+          <PressableScale
+            accessibilityRole="button"
+            accessibilityLabel="Any is fine"
+            accessibilityState={{ selected: answers[question.id] === openOption.id }}
+            onPress={() => choose(openOption.id)}
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: answers[question.id] === openOption.id ? palette.orange : palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: answers[question.id] === openOption.id ? 2 : 1,
+              flexDirection: "row",
+              gap: spacing[2],
+              justifyContent: "center",
+              minHeight: 52,
+              paddingHorizontal: spacing[4],
+            }}
+          >
+            <AppSymbol name="dice" fallback={Dices} color={palette.textSecondary} size={20} />
+            <AppText variant="bodyBold">Any is fine</AppText>
+          </PressableScale>
+        ) : null}
 
         <Button label="Skip the questions" variant="ghost" onPress={skipAll} />
       </View>

@@ -1,6 +1,7 @@
 import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { filterSafeDishes } from "@/lib/ai/dietaryGate";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
+import { getClosureLabel, isClosureActive } from "@/features/merchant/closure";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 import { getSingaporeMinutes, getVenueOpenState, type OpenState } from "@/utils/operatingHours";
 import type { DietaryFlag, DishDetail, TasteVector, VenueSummary } from "@/types/domain";
@@ -34,15 +35,21 @@ export function rankDecideCandidates(
     maxDishBudget?: number;
     /** Defaults to "the vector differs from the all-5s guest default". */
     hasTasteProfile?: boolean;
+    /** Home only: changes the score used for the order (history and rating), never the filters. */
+    adjustScore?: (dish: DishDetail, score: number) => number;
   },
 ): DishDetail[] {
   const hasTasteProfile = options.hasTasteProfile ?? hasPersonalTasteProfile(options.tasteVector);
-  const scoreOf = (dish: DishDetail) =>
+  const baseScoreOf = (dish: DishDetail) =>
     hasTasteProfile
       ? tasteMatchPercent(options.tasteVector, dish.tasteVector)
       : dish.reviewCount > 0
         ? dish.rating
         : 0;
+  const scoreOf = (dish: DishDetail) =>
+    options.adjustScore && hasTasteProfile
+      ? options.adjustScore(dish, baseScoreOf(dish))
+      : baseScoreOf(dish);
   const ranked = filterSafeDishes(dishes, options.dietaryFlags)
     .filter((dish) => dish.distanceMeters <= options.radiusMeters)
     .map((dish) => ({ dish, score: scoreOf(dish) }))
@@ -57,6 +64,35 @@ export function rankDecideCandidates(
   const budget = options.maxDishBudget;
   const withinBudget = ranked.filter((dish) => dish.price <= budget);
   return withinBudget.length ? withinBudget : ranked;
+}
+
+/** No single building takes more than this share of the ranked picks before the rest get a turn. */
+export const DECIDE_BUILDING_SHARE = 0.4;
+
+/**
+ * Picks keep their order, but a building (a mall the diner stands in, say) holds at most
+ * `share` of the list ahead of everything else; its extra picks go after the other buildings'
+ * picks, not away. With one building there is nothing to spread.
+ */
+export function spreadAcrossBuildings(
+  dishes: DishDetail[],
+  share: number = DECIDE_BUILDING_SHARE,
+): DishDetail[] {
+  if (new Set(dishes.map((dish) => dish.buildingId)).size < 2) return dishes;
+  const cap = Math.max(5, Math.ceil(dishes.length * share));
+  const counts = new Map<string, number>();
+  const kept: DishDetail[] = [];
+  const deferred: DishDetail[] = [];
+  for (const dish of dishes) {
+    const taken = counts.get(dish.buildingId) ?? 0;
+    if (taken < cap) {
+      counts.set(dish.buildingId, taken + 1);
+      kept.push(dish);
+    } else {
+      deferred.push(dish);
+    }
+  }
+  return [...kept, ...deferred];
 }
 
 /**
@@ -79,6 +115,10 @@ export function keepScoreOrder(
  * listed hours. Used by Decide for Me and the zoomed-in map so they agree.
  */
 export function getVenueOpenStateNow(venue: VenueSummary, now: Date = new Date()): OpenState {
+  // A merchant's "Closed today" / "Reopens 3 Nov" beats the schedule and the stored flag.
+  if (isClosureActive(venue.closedUntil, now)) {
+    return { status: "closed", detail: getClosureLabel(venue.closedUntil, now) };
+  }
   return hasWeeklyHours(venue.openingSchedule)
     ? getScheduleOpenState(venue.openingSchedule, venue.isOpen, now)
     : getVenueOpenState(venue.operatingHours, venue.isOpen, now);
@@ -98,8 +138,9 @@ export interface OpenAwareCandidates {
 }
 
 /**
- * Prefer stalls that are open now (Singapore time). Stalls with no hours stay
- * eligible after the open ones; closed stalls are used only when nothing else is left.
+ * Stalls that are open now (Singapore time) first, then stalls with no hours, then the closed
+ * ones soonest-opening first. Closed stalls stay in the list so a diner at 1 am can still see
+ * what is around; the screen labels them Closed and "Open now" hides them.
  */
 export function preferOpenStalls(
   dishes: DishDetail[],
@@ -129,9 +170,11 @@ export function preferOpenStalls(
     .sort((a, b) => a.wait - b.wait || a.index - b.index)
     .map(({ dish }) => dish);
   const eligible = [...open, ...unknown];
-  return eligible.length
-    ? { candidates: eligible, onlyClosed: false, openStateByVenueId }
-    : { candidates: closed, onlyClosed: closed.length > 0, openStateByVenueId };
+  return {
+    candidates: [...eligible, ...closed],
+    onlyClosed: eligible.length === 0 && closed.length > 0,
+    openStateByVenueId,
+  };
 }
 
 /** "Opens 7am" / "Opens 5:30pm" as minutes from `now`; Infinity when there is no time to read. */

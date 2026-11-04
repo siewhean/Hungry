@@ -177,7 +177,7 @@ test("EmailCodeEntry signs a returning person in with only an email, and offers 
     assert.equal(inputs(view)[0].value, "mei@example.sg");
     await view.press(view.findByText("Use a password instead"));
     assert.equal(usedPassword, 1);
-    await view.press(view.findByText("Continue"));
+    await view.press(view.findByText("Email me a code"));
     await view.settle();
     await view.type(inputs(view)[0], "12345678");
     await view.settle();

@@ -1,0 +1,14 @@
+{
+  "version": "20261030130000",
+  "name": "20261030130000_consents_and_weekly_picks_off",
+  "result": "pass",
+  "rehearsed_at": "2026-10-31T04:25:30Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "5964689f10064ae584279d917e7623399452dbce",
+  "up_sha256": "331bf37768f7a7a56955e923109f43b0e1209f70e8a200e6f86232f6e4cb1d39",
+  "down_sha256": "48a50f2a51a5f6e8707fdba4a21f9a5f7a9ea89faa7eab20f067101cd1e15d81",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/consents_and_weekly_picks_off.sql"]
+}

@@ -48,6 +48,29 @@ test("searchDishes sends the price ceiling and the requested pool size, capped a
   assert.equal(calls[2].p_max_price, null);
 });
 
+test("searchDishes sends the cursor of the last row to ask for the next page", async () => {
+  fake.rpc.search_dishes = () => ({ data: [] });
+  const filters = {
+    query: "",
+    categories: [],
+    dietaryFlags: [],
+    tasteValues: NEUTRAL,
+    radius: 1000,
+    latitude: 1.28,
+    longitude: 103.84,
+  };
+  await service.discovery.searchDishes(filters, NEUTRAL);
+  await service.discovery.searchDishes(
+    { ...filters, cursor: { score: 0.42, dishId: "dish-9" } },
+    NEUTRAL,
+  );
+  const calls = fake.callsTo("search_dishes").map((call) => call.args);
+  assert.equal(calls[0].p_cursor_score, null);
+  assert.equal(calls[0].p_cursor_id, null);
+  assert.equal(calls[1].p_cursor_score, 0.42);
+  assert.equal(calls[1].p_cursor_id, "dish-9");
+});
+
 test("searchDishes sends the quiz keywords only when asked, and maps course and cuisine tags", async () => {
   fake.rpc.search_dishes = () => ({
     data: [
@@ -113,6 +136,34 @@ test("getVenuesByIds reads 120 uncached stalls in three batches of 50 and return
   assert.deepEqual(
     fake.callsTo("get_venue_summaries").map((call) => (call.args.p_venue_ids as string[]).length),
     [50, 50, 20],
+  );
+});
+
+test("MERCH-R4 getVenuesByIds marks a paused stall in one batched closure read", async () => {
+  fake.rpc.get_venue_summaries = (args) => ({
+    data: (args.p_venue_ids as string[]).map((id) => ({ venue_id: id, name: id })),
+  });
+  fake.rpc.get_venue_closures = () => ({
+    data: [{ venue_id: "v-paused", closed_until: "2026-11-03T16:00:00+00:00" }],
+  });
+  const venues = await service.discovery.getVenuesByIds(["v-paused", "v-open"]);
+  assert.equal(
+    venues.find((venue) => venue.id === "v-paused")?.closedUntil,
+    "2026-11-03T16:00:00+00:00",
+  );
+  assert.equal(venues.find((venue) => venue.id === "v-open")?.closedUntil, undefined);
+  assert.equal(fake.callsTo("get_venue_closures").length, 1, "one call for the whole set");
+});
+
+test("MERCH-R4 getVenuesByIds still returns the stalls when the closure read fails", async () => {
+  fake.rpc.get_venue_summaries = (args) => ({
+    data: (args.p_venue_ids as string[]).map((id) => ({ venue_id: id, name: id })),
+  });
+  fake.rpc.get_venue_closures = () => ({ error: { message: "network down" } });
+  const venues = await service.discovery.getVenuesByIds(["v-keep-1", "v-keep-2"]);
+  assert.deepEqual(
+    venues.map((venue) => venue.id),
+    ["v-keep-1", "v-keep-2"],
   );
 });
 

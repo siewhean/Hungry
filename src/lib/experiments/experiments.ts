@@ -82,11 +82,13 @@ export const EXPERIMENTS = {
    * the bar's call to action reading "Rate it" (toast_cta). Read in TriedFollowUp, which mounts
    * only after a Tried mark succeeds for a signed-in diner who has not reviewed the dish.
    * Analyse as a funnel from dish_marked_tried to review_submitted on the same dish_id in 24 h.
+   * Draft until the PostHog flag exists (round-four DISH4-2: none did, so it only ever served
+   * control). Sample: 10% of Tried marks become reviews; 14% is the lift worth acting on.
    */
   dish_tried_prompt_v1: {
     variants: ["control", "toast_cta"],
     fallback: "control",
-    status: "running",
+    status: "draft",
     surface: "dish",
     hypothesis:
       "A popup straight after Tried interrupts diners and teaches them to dismiss it; a quieter Rate it button converts more Tried marks into published reviews.",
@@ -94,9 +96,69 @@ export const EXPERIMENTS = {
     guardrailMetrics: [
       "review_abandoned",
       "review_started",
+      "tried_prompt_dismissed",
       "dish_unfavourited",
       "review_cta_tapped",
     ],
+    minSamplePerArm: 1040,
+  },
+  /**
+   * How many taste questions the Tried popup asks: all six (control) or the dish's three strongest
+   * with a "More tastes" button (top3). A quick check-in should not feel like a form. Read in
+   * TriedFollowUp, only for a diner who sees the popup (not toast_cta) on a dish with a catalog
+   * taste estimate. Analyse as a funnel from tried_prompt_shown to review_submitted on the same
+   * dish_id in 24 h. 10% of popups end in a review; 14% is the lift worth acting on.
+   * Draft until the PostHog flag exists; the fallback is all six.
+   */
+  dish_tried_taste_axes_v1: {
+    variants: ["control", "top3"],
+    fallback: "control",
+    status: "draft",
+    surface: "dish",
+    hypothesis:
+      "Asking about the three tastes a dish is known for, with the rest one tap away, takes less effort than six questions, so more Tried marks become published reviews.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: [
+      "review_abandoned",
+      "review_started",
+      "tried_prompt_dismissed",
+      "review_cta_tapped",
+    ],
+    minSamplePerArm: 1040,
+  },
+  /**
+   * The histogram and "People mention" words above a dish's reviews (summary) or only the
+   * "118 ratings · 1 written review" line (control). The count line is a bug fix and ships to
+   * everyone; only the breakdown is tested. Exposure fires when a dish with 3+ written reviews
+   * shows the block. 2% of dish views end in a save; 2.5% is the lift worth acting on.
+   * Draft until the PostHog flag exists; the fallback is the breakdown.
+   */
+  dish_review_summary_v1: {
+    variants: ["control", "summary"],
+    fallback: "summary",
+    status: "draft",
+    surface: "dish",
+    hypothesis:
+      "A star histogram and the words diners use most help a visitor decide, so more of them save the dish than with the count line alone.",
+    primaryMetric: "dish_favourited",
+    guardrailMetrics: ["review_helpful_toggled", "delivery_link_tapped", "review_cta_tapped"],
+    minSamplePerArm: 12500,
+  },
+  /**
+   * The taste chart with what diners rated drawn over the catalog estimate (diners) or the
+   * estimate alone (control). Exposure fires only on a dish where 3+ diners rated an axis.
+   * Draft until the PostHog flag exists; the fallback shows diner ratings.
+   */
+  dish_taste_diners_v1: {
+    variants: ["control", "diners"],
+    fallback: "diners",
+    status: "draft",
+    surface: "dish",
+    hypothesis:
+      "Seeing what real diners rated, not a catalog guess, makes the taste chart trusted, so more diners mark the dish Tried and write a review.",
+    primaryMetric: "dish_marked_tried",
+    guardrailMetrics: ["review_submitted", "dish_favourited"],
+    minSamplePerArm: 12500,
   },
   /**
    * The last onboarding step for a signed-out user. Exposure fires on the result screen
@@ -180,7 +242,7 @@ export const EXPERIMENTS = {
     guardrailMetrics: ["onboarding_area_picker_viewed", "onboarding_step_skipped"],
   },
   /**
-   * Search home "Dishes to Discover": island-wide top 3 by rating (control) vs the top 6 within
+   * Search home "Dishes to discover": island-wide top 3 by rating (control) vs the top 6 within
    * 1.5 km (near, falls back to the island-wide list under 3 nearby dishes). Draft until the
    * catalog stores a Bayesian score to rank on (SEARCH-7 follow-up migration).
    */
@@ -193,6 +255,24 @@ export const EXPERIMENTS = {
       "Showing the best dishes within 1.5 km of the user, with distance, on Search home leads more users to open a dish from Search home than the island-wide top 3 by rating.",
     primaryMetric: "search_home_featured_opened",
     guardrailMetrics: ["dish_viewed", "review_started", "search_query", "search_zero_results"],
+  },
+  /**
+   * Search results: "halal laksa under $5" is read as the Halal and Under S$5 filters plus the
+   * text "laksa" (test) or sent as plain text (control). Read in the results grid only for a
+   * query of 2+ words that the parser changes. Draft until the PostHog flag exists; the
+   * fallback is the parsed reading, which ships to everyone first. A chip the user removes
+   * (search_parse_removed) means the reading was wrong.
+   */
+  search_query_parsing_v1: {
+    variants: ["control", "parsed"],
+    fallback: "parsed",
+    status: "draft",
+    surface: "search",
+    hypothesis:
+      "Reading diet and price words in a typed search as filters gives fewer zero-result searches and more result opens for multi-word queries than sending every word as text.",
+    primaryMetric: "search_result_opened",
+    guardrailMetrics: ["search_zero_results", "search_parse_removed", "search_query"],
+    minSamplePerArm: 1300,
   },
   /**
    * Stall page sticky bar: the orange button is Directions and Review becomes an icon.
@@ -227,12 +307,14 @@ export const EXPERIMENTS = {
   },
   /**
    * Saved > Dishes list: large photo cards (control) or compact rows, about five to a screen.
-   * Read in SavedDishes once the dish list has loaded. Draft until the PostHog flag exists.
+   * Read in SavedDishes once the dish list has loaded, and only for a list where most dishes have
+   * a photo (a list without photos is always rows). The PostHog flag exists and is off until
+   * launch, so everyone gets the fallback until it is switched on.
    */
   saved_card_density_v1: {
     variants: ["control", "compact_rows"],
     fallback: "control",
-    status: "draft",
+    status: "running",
     surface: "saved-lists",
     hypothesis:
       "Compact rows, about five to a screen, get more saved dishes opened per Saved visit than large photo cards.",
@@ -242,12 +324,12 @@ export const EXPERIMENTS = {
   },
   /**
    * The sort Saved opens on: Recent (control) or Nearest. Eligible only when the device
-   * position is known. Draft until the PostHog flag exists.
+   * position is known. The PostHog flag exists and is off until launch.
    */
   saved_default_sort_v1: {
     variants: ["control", "nearest"],
     fallback: "control",
-    status: "draft",
+    status: "running",
     surface: "saved-lists",
     hypothesis:
       "Opening Saved on the nearest dishes turns more saves into visits than opening on the newest saves.",
@@ -256,14 +338,14 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1500,
   },
   /**
-   * Removing a saved dish: a plain toast (control) or a toast with Undo for five seconds. Draft
-   * until the PostHog flag exists; the fallback is the Undo design so it ships to everyone first.
-   * Measure re-saves of the same dish_id within 10 minutes of dish_unfavourited.
+   * Removing a saved dish: a plain toast (control) or a toast with Undo for five seconds. The
+   * PostHog flag exists and is off until launch; the fallback is the Undo design, so it ships to
+   * everyone first. Measure re-saves of the same dish_id within 10 minutes of dish_unfavourited.
    */
   saved_remove_undo_v1: {
     variants: ["control", "undo_toast"],
     fallback: "undo_toast",
-    status: "draft",
+    status: "running",
     surface: "saved-lists",
     hypothesis:
       "A five-second Undo on the remove toast cuts accidental removals, measured as re-saves of the same dish soon after a remove.",
@@ -328,6 +410,24 @@ export const EXPERIMENTS = {
     rollout: true,
   },
   /**
+   * The achievements loop (Passport): the next-stamp card on Home, the progress ring on the
+   * Profile tab, and the stamp or achievement moment that shows right after the action. A
+   * staged release with a kill switch: everyone gets "loop" until a PostHog flag of this key
+   * says "control". Read in StampMomentHost (exposure), NextStampCard and the Profile tab.
+   * Compare weeks with a tried mark per active diner once there is traffic.
+   */
+  achievements_loop_v1: {
+    variants: ["control", "loop"],
+    fallback: "loop",
+    status: "running",
+    surface: "home",
+    hypothesis:
+      "A visible next stamp and an instant stamp celebration give diners a reason to mark one more place tried, so more of them come back in the following week.",
+    primaryMetric: "stamp_moment_opened",
+    guardrailMetrics: ["stamp_moment_dismissed", "next_stamp_card_tapped"],
+    rollout: true,
+  },
+  /**
    * Ask for the name before the first review instead of at sign-up. Defined, not wired: the
    * prompt before a first review does not exist yet, so nothing reads this key. Run it after
    * auth_email_code_first_v1 settles, never together (same form).
@@ -376,6 +476,23 @@ export const EXPERIMENTS = {
       "review_feed_searched",
       "review_started",
     ],
+  },
+  /**
+   * Review editor with Cancel and Publish in the header and the optional parts (taste tags, how it
+   * tasted, recommend) under one fold. Concluded without a test: pre-launch traffic cannot reach
+   * the 1,100 per arm it needs, so everyone gets "compact" (the Reviews round-five audit, RA-1).
+   * The editor still sends its events, so a later test can compare against this baseline.
+   */
+  review_editor_compact_v1: {
+    variants: ["control", "compact"],
+    fallback: "compact",
+    status: "concluded",
+    surface: "reviews",
+    hypothesis:
+      "Keeping dish, photo, stars and text above the fold with Publish always in reach lets more people who start a review finish it.",
+    primaryMetric: "review_submitted",
+    guardrailMetrics: ["review_abandoned", "review_started", "review_submit_failed"],
+    minSamplePerArm: 1100,
   },
   /** "Write your first review" card under the stats on your own profile, when you have none. */
   profile_first_review_nudge_v1: {
@@ -437,13 +554,13 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1500,
   },
   /**
-   * Map cards with rating, open state and the matched dish against the plain card. Read in
-   * HomeMapScreen. Draft until the map has enough weekly users; the shipped fallback is rich.
+   * Map cards with rating, hours and distance against the plain card. Concluded without a test:
+   * every diner now gets the rich card (owner request, 2026-11-01), so the map no longer reads it.
    */
   map_card_rich_v1: {
     variants: ["control", "rich"],
     fallback: "rich",
-    status: "draft",
+    status: "concluded",
     surface: "map",
     hypothesis:
       "A card that shows its rating, whether the stall is open and the dish that matched the search lifts card opens, because diners can judge a stall without leaving the map.",
@@ -493,6 +610,110 @@ export const EXPERIMENTS = {
       "merchant_customer_reply_removed",
       "merchant_customer_inbox_viewed",
     ],
+  },
+  /**
+   * "Dishes near you" in the diner's palate order with a reason line (taste), or in photo and
+   * feed order (control). Read in DiscoverHomeScreen only while Home is focused, the rail has
+   * six or more dishes and the diner has a palate, so an empty rail or a diner with nothing to
+   * rank by never dilutes the result. Read it only in areas with menus. Draft until launch:
+   * the fallback is the new taste order.
+   */
+  home_taste_rank_v1: {
+    variants: ["control", "taste"],
+    fallback: "taste",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "A palate-ranked Dishes near you rail with a reason, leading the page, gets more dish opens per Home view than the rail in distance order, below Most reviewed.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["dish_viewed", "decide_for_me_triggered"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Stalls whose menus are not in yet: folded into one "More stalls nearby" row (grouped) or
+   * listed flat with "Menu coming soon" on each (control). Read in DiscoverHomeScreen while
+   * Home is focused and the nearby list holds at least one stall without a menu. Draft until
+   * launch: the fallback is the grouped list.
+   */
+  home_cold_start_v1: {
+    variants: ["control", "grouped"],
+    fallback: "grouped",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Folding menu-less stalls under the stalls that have menus raises the share of stall opens that reach a menu.",
+    primaryMetric: "stall_viewed",
+    guardrailMetrics: ["discover_card_opened", "home_cold_start_group_opened"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Where the Hawker classics tiles sit on Home: below the first dish section ("compact", so a
+   * dish is on the first screen) or above it ("control"). Read in DiscoverHomeScreen only while
+   * Home is focused with content and a dish section to put them under, so a cold-start Home
+   * (no dishes) never counts. Draft until launch: the fallback is the compact layout.
+   */
+  home_above_fold_v1: {
+    variants: ["control", "compact"],
+    fallback: "compact",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "Putting dishes above the classics tiles raises the share of Home visits that open a dish or stall within 60 seconds.",
+    primaryMetric: "discover_card_opened",
+    guardrailMetrics: ["discover_search_opened", "decide_for_me_triggered"],
+    minSamplePerArm: 1600,
+  },
+  /**
+   * Reply composer: three tone chips (Thank, Apologise, Invite back) that fill an editable
+   * starting reply, against the empty composer. Read in ReplyComposer when it opens on a review
+   * that has no reply yet. Draft until the Merchant Centre ships to production.
+   */
+  merchant_reply_suggestions_v1: {
+    variants: ["control", "chips"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Suggested starting replies raise how many reviews get a reply and shorten the time to reply, as Google Business Profile's suggested replies do.",
+    primaryMetric: "merchant_customer_reply_sent",
+    guardrailMetrics: [
+      "merchant_customer_reply_removed",
+      "merchant_reply_suggestion_used",
+      "merchant_customer_interaction_reported",
+    ],
+    minSamplePerArm: 400,
+  },
+  /**
+   * A "Get your stall ready" checklist on the Verification Centre for an unverified outlet
+   * (verify, five dishes, hours, a photo), against the plain verification landing. Read in
+   * VerificationCentreScreen only while the outlet is not verified. Draft until the Merchant
+   * Centre ships to production.
+   */
+  merchant_setup_checklist_v1: {
+    variants: ["control", "checklist"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "A progress checklist gets more new merchants to submit their licence for verification than the verification landing alone, as Shopify's setup guide does for new sellers.",
+    primaryMetric: "merchant_verification_submitted",
+    guardrailMetrics: ["merchant_dish_created", "merchant_mode_opened"],
+    minSamplePerArm: 400,
+  },
+  /**
+   * The numbers range Home opens on: Today (control) against 7 days, which Performance already
+   * uses. Today is often zero early in the day. Read in MerchantDashboardScreen only until the
+   * merchant picks a range. Draft until the Merchant Centre ships to production.
+   */
+  merchant_home_default_range_v1: {
+    variants: ["control", "seven_days"],
+    fallback: "control",
+    status: "draft",
+    surface: "merchant",
+    hypothesis:
+      "Opening Home on the last 7 days instead of Today shows merchants real numbers early in the day, so more of them come back to Home on a later day, as Google Business Profile's 28-day default does.",
+    primaryMetric: "merchant_dashboard_viewed",
+    guardrailMetrics: ["merchant_analytics_range_changed", "merchant_customer_inbox_viewed"],
   },
 } as const satisfies Record<string, ExperimentDefinition>;
 
@@ -544,8 +765,22 @@ function experimentsKilled() {
   return process.env.EXPO_PUBLIC_DISABLE_EXPERIMENTS === "1";
 }
 
+// The hidden Developer tools turn this on so release builds can preview a variant too.
+let releaseOverridesUnlocked = false;
+
 function overridesAllowed() {
-  return process.env.NODE_ENV !== "production";
+  return process.env.NODE_ENV !== "production" || releaseOverridesUnlocked;
+}
+
+/** Lets a release build use `setExperimentOverride`; turning it off also drops every override. */
+export function setReleaseExperimentOverrides(allowed: boolean): void {
+  releaseOverridesUnlocked = allowed;
+  if (!allowed) overrides.clear();
+}
+
+/** The variant a QA override is forcing for this key on this device, if any. */
+export function getExperimentOverride(key: ExperimentKey): string | undefined {
+  return overridesAllowed() ? overrides.get(key) : undefined;
 }
 
 /** Test seam: replaces the flag source and clears frozen session variants. */
@@ -575,12 +810,19 @@ export function setExperimentOverride<K extends ExperimentKey>(
   else if (overridesAllowed()) overrides.set(key, variant);
 }
 
-/** Maps a raw flag value to a known variant: true is "test", false is "control". */
+/**
+ * Maps a raw flag value to a known variant: true is "test", false is "control" (a rollout keeps
+ * its fallback on false, see below).
+ */
 export function resolveExperimentVariant<K extends ExperimentKey>(
   key: K,
   flagValue: boolean | string | undefined,
 ): ExperimentVariant<K> {
-  const { variants, fallback } = EXPERIMENTS[key] as ExperimentDefinition;
+  const { variants, fallback, rollout } = EXPERIMENTS[key] as ExperimentDefinition;
+  // PostHog reports a flag that does not exist (or is off) as false. A rollout has no flag until
+  // someone creates one, so false must leave everyone on the fallback arm; its kill switch is a
+  // multivariate flag that says "control".
+  if (rollout && flagValue === false) return fallback as ExperimentVariant<K>;
   const value = flagValue === true ? "test" : flagValue === false ? "control" : flagValue;
   return (
     typeof value === "string" && (variants as readonly string[]).includes(value) ? value : fallback

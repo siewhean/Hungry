@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { createRequire } from "node:module";
-import { Alert, Keyboard, Platform, Share, TextInput } from "react-native";
+import { Keyboard, Platform, Share, TextInput } from "react-native";
 import test, { afterEach } from "node:test";
 
 import {
@@ -20,6 +20,7 @@ import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedI
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 import { getHungryService, setMockServiceProvider } from "@/lib/services/serviceProvider";
+import { notifyChoiceSheetClosed, useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, render } from "@/test/render";
@@ -233,29 +234,25 @@ test("askMediaSource goes straight to the library on web", async () => {
   assert.equal(await askMediaSource(), "library");
 });
 
-test("askMediaSource asks natively and resolves with the chosen source or null on cancel", async () => {
+test("askMediaSource asks in the app's own sheet and resolves with the chosen source or null on cancel", async () => {
   const originalOS = Platform.OS;
-  const originalAlert = Alert.alert;
-  const choose = (label: string) => {
-    Alert.alert = ((
-      _title: string,
-      _message: unknown,
-      buttons: { text: string; onPress?: () => void }[],
-    ) => {
-      buttons.find((button) => button.text === label)?.onPress?.();
-    }) as typeof Alert.alert;
-  };
   Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
   try {
-    choose("Take photo");
-    assert.equal(await askMediaSource("Add a photo"), "camera");
-    choose("Choose from library");
-    assert.equal(await askMediaSource(), "library");
-    choose("Cancel");
-    assert.equal(await askMediaSource(), null);
+    const camera = askMediaSource("Add a photo");
+    assert.equal(useChoiceSheetStore.getState().request?.title, "Add a photo");
+    useChoiceSheetStore.getState().settle("camera");
+    notifyChoiceSheetClosed();
+    assert.equal(await camera, "camera");
+    const library = askMediaSource();
+    useChoiceSheetStore.getState().settle("library");
+    notifyChoiceSheetClosed();
+    assert.equal(await library, "library");
+    const cancelled = askMediaSource();
+    useChoiceSheetStore.getState().settle(null);
+    notifyChoiceSheetClosed();
+    assert.equal(await cancelled, null);
   } finally {
     Object.defineProperty(Platform, "OS", { value: originalOS, configurable: true });
-    Alert.alert = originalAlert;
   }
 });
 

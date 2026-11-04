@@ -83,7 +83,7 @@ test("onboarding is welcome, then four counted steps: location, optional taste q
   assert.match(location, /<OnboardingProgress step="location" \/>/);
   assert.match(picker, /\{isOnboarding \? <OnboardingProgress step="location" \/> : null\}/);
   assert.match(quiz, /<OnboardingProgress\s+step="taste"/);
-  assert.match(quiz, /Question \$\{step \+ 1\} of \$\{totalSteps\}/);
+  assert.match(quiz, /Question \$\{step \+ 1\} of \$\{questionCount\}/);
   // The shared bar counts the account step (5 of 5); the account screen draws it once the
   // shared sign-up form lands with the auth build.
   assert.match(progress, /"account"/);
@@ -204,10 +204,8 @@ test("root and nested route targets avoid stale or unregistered screens", () => 
   assert.doesNotMatch(types, /DishDetailStandard/);
   assert.doesNotMatch(rootNavigator, /"SettingsV2"/);
   assert.match(favourites, /rootNavigation\.navigate\("MainTabs", \{ screen: "Discover" \}\)/);
-  assert.match(
-    settings,
-    /rootNavigation\.navigate\("OnboardingStack", \{\s*screen: "ManualLocationPicker",\s*params: \{ mode: "settings" \},\s*\}\)/,
-  );
+  // The area follows the phone's location: Settings no longer opens the area search.
+  assert.doesNotMatch(settings, /screen: "ManualLocationPicker"/);
   assert.match(merchantSettings, /CommonActions\.reset/);
   assert.match(
     merchantSettings,
@@ -220,8 +218,10 @@ test("synthetic post action stays behind the Release 0.1 post flag", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
-  assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
-  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
+  // The Post page sits in the swipe order (reached by the edge swipe); the bar button still opens
+  // the review card, so the bar never navigates to it.
+  assert.match(tabs, /<Tab\.Screen name="Create"/);
+  assert.match(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
   // The tab bar's create action writes a review now; posts open from elsewhere.
   assert.match(tabs, /FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create"/);

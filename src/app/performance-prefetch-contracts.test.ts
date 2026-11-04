@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import test from "node:test";
+import { readHomeSource } from "@/test/sourceContracts";
 
 function read(pathFromRepoRoot: string): string {
   return readFileSync(resolve(process.cwd(), pathFromRepoRoot), "utf8");
@@ -31,8 +32,7 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /import \{ DiscoverHomeScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ReviewFeedScreen \}/);
   assert.doesNotMatch(tabs, /import \{ ProfileStack \}/);
-  assert.match(tabs, /lazy:\s*!tabPreloadEnabled/);
-  assert.match(tabs, /lazyPlaceholder:\s*\(\)\s*=>\s*<TabScreenLoadingPlaceholder \/>/);
+  assert.match(tabs, /mountAllPages=\{tabPreloadEnabled\}/);
   assert.match(
     tabs,
     /scheduleIdleWork|InteractionManager\.runAfterInteractions|requestIdleCallback|setTimeout\(/,
@@ -48,10 +48,8 @@ test("root navigation keeps heavy routes lazy-loaded", () => {
   assert.doesNotMatch(tabs, /ActivityIndicator/);
   assert.doesNotMatch(tabs, /preloadRoute\(navigation, route\.name\)/);
   assert.match(tabs, /tabPreloadEnabled/);
-  assert.match(tabs, /const MAIN_TAB_PRELOAD_DISTANCE = 2/);
   assert.match(tabs, /const MAIN_TAB_WARMUP_TIMEOUT_MS = 350/);
   assert.match(tabs, /fallbackDelayMs: MAIN_TAB_WARMUP_FALLBACK_DELAY_MS/);
-  assert.match(tabs, /lazyPreloadDistance:\s*tabPreloadEnabled \? MAIN_TAB_PRELOAD_DISTANCE : 0/);
 });
 
 test("startup does not block indefinitely on fonts or analytics", () => {
@@ -93,7 +91,7 @@ test("startup defers profile, mock data, and native analytics module loading", (
 test("home, discover, and quick bites avoid duplicate render-time data work", () => {
   const homeFeed = read("src/features/home/feed.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
 
   assert.match(homeFeed, /export interface HomeFeedBundle/);
@@ -143,7 +141,7 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 test("prefetch layer warms images, data, and route modules without blocking navigation", () => {
   const prefetch = read("src/features/navigation/prefetch.ts");
   const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const discover = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
+  const discover = readHomeSource();
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
   const merchantTabs = read("src/app/navigation/MerchantTabs.tsx");
@@ -191,7 +189,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(discover, /useDeferredValue\(activeDiscoverChipIds\)/);
   assert.match(discover, /renderLeftIcon=\{\(chip, isActive\) =>/);
   assert.match(discover, /prefetchBrowseResults\(item\.query, navigation/);
-  assert.match(discover, /scheduleIdleWork\([\s\S]*preloadRoute\(navigation, "BrowseDishes"\)/);
+  assert.match(discover, /scheduleIdleWork\([\s\S]*preloadRoute\(navigation, "FoodStyles"\)/);
   assert.match(discover, /<PopularFoodStyleItem/);
   assert.doesNotMatch(discover, /preloadRoute\(navigation, "SearchResults"/);
   assert.match(discover, /scheduleIdleWork\([\s\S]*recordTasteInteraction[\s\S]*popular_right_now/);
@@ -201,7 +199,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   );
   assert.match(
     homeScreen,
-    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id, source: "feed" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     quickBites,
@@ -261,13 +259,12 @@ test("remaining high-traffic profile, developer, and merchant links prefetch on 
     /onPressIn=\{\(\) => \{[\s\S]*preloadRoute\(rootNavigation, "DishDetail"/,
   );
 
-  assert.match(profileHome, /const prefetchMerchantDashboard = useCallback/);
-  assert.match(profileHome, /function MenuRow[\s\S]*onPressIn\?: \(\) => void/);
+  assert.match(
+    read("src/components/ui/OverflowMenu.tsx"),
+    /export type OverflowMenuItem = \{[\s\S]*onPressIn\?: \(\) => void/,
+  );
   // The stat row (shared with other profiles) passes press-in through to its tiles.
   assert.match(read("src/components/profile/ProfileStatRow.tsx"), /onPressIn\?: \(\) => void/);
-  assert.match(profileHome, /onPressIn=\{prefetchMerchantDashboard\}/);
-  assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "SocialGrid"/);
-  assert.match(profileHome, /onPressIn: \(\) => preloadRoute\(navigation, "ReviewHistory"\)/);
   assert.match(profileHome, /onPressIn=\{\(\) => preloadRoute\(navigation, "Settings"\)\}/);
 
   assert.match(developerLauncher, /onV1PressIn\?: \(\) => void/);

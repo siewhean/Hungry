@@ -1,11 +1,15 @@
 import { useRef } from "react";
 import { Pressable, View } from "react-native";
 import { BottomSheetModal, BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { Check, ChevronDown, SlidersHorizontal } from "lucide-react-native";
 
 import { AppText } from "@/components/ui/AppText";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { Button } from "@/components/ui/Button";
+import {
+  ChevronDownSymbol,
+  MenuFilterSymbol,
+  SelectedSymbol,
+} from "@/components/stall/stallSymbols";
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 
@@ -88,9 +92,9 @@ export function MenuFilterDropdown({
           transform: [{ scale: pressed ? 0.97 : 1 }],
         })}
       >
-        <SlidersHorizontal color={filtered ? palette.orange : palette.text} size={16} />
+        <MenuFilterSymbol color={filtered ? palette.orange : palette.text} size={16} />
         <AppText variant="bodySmallBold">{summary}</AppText>
-        <ChevronDown color={palette.textMuted} size={16} />
+        <ChevronDownSymbol color={palette.textMuted} size={16} />
       </Pressable>
 
       <BottomSheet ref={sheetRef} accessibilityLabel="Filter menu" snapPoints={["70%"]}>
@@ -153,7 +157,7 @@ export function MenuFilterDropdown({
                   <AppText variant={selected ? "bodyBold" : "body"} style={{ flex: 1 }}>
                     {category === allCategory ? "All dishes" : category}
                   </AppText>
-                  {selected ? <Check color={palette.orange} size={18} /> : null}
+                  {selected ? <SelectedSymbol color={palette.orange} size={18} /> : null}
                 </Pressable>
               );
             })}
@@ -195,7 +199,7 @@ export function MenuFilterDropdown({
                         width: 22,
                       }}
                     >
-                      {checked ? <Check color={palette.textOnOrange} size={14} /> : null}
+                      {checked ? <SelectedSymbol color={palette.textOnOrange} size={14} /> : null}
                     </View>
                     <AppText variant="body" style={{ flex: 1 }}>
                       {option.label}

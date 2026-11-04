@@ -2,8 +2,9 @@
  * StallInteractionBar — Save / Visited / Add to List actions for a stall.
  *
  * Mounted inside StallDetailScreen. Uses useStallInteractionStore (which awards Food Cred).
- * Save and Visited both toggle. Marking Visited needs a tried or reviewed dish from
- * this stall first (the same rule the dish page's "Tried" feeds); clearing it never does.
+ * Save and Visited both toggle. Marking Visited is one tap and never leaves the page; Food
+ * Cred for it is paid by the server only once a review exists, so a diner who has not
+ * reviewed here gets "Marked as visited" and the screen's optional "What did you have?".
  * The buttons wait for the user's saved stalls to load, so a stall they already saved
  * or visited never shows "Save" again.
  */
@@ -11,14 +12,13 @@
 import { View, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Bookmark,
-  CheckCircle,
-  Circle,
-  ListPlus,
-  MapPin,
-  PenLine,
-  Send,
-} from "lucide-react-native";
+  AddToListSymbol,
+  BookmarkSymbol,
+  ShareSymbol,
+  TriedOffSymbol,
+  TriedOnSymbol,
+} from "@/components/dish/dishSymbols";
+import { DirectionsSymbol, WriteReviewSymbol } from "@/components/stall/stallSymbols";
 import { confirmHaptic, tapHaptic } from "@/lib/haptics";
 
 import { useHungryTheme } from "@/theme";
@@ -37,9 +37,13 @@ interface StallInteractionBarProps {
   isAuthenticated?: boolean;
   /** `action` says what the guest tapped, so the screen can finish it after sign-in. */
   onRequireAuth?: (message: string, action: "save" | "tried") => void;
-  reviewPromptText?: string;
+  /**
+   * True when the diner has tried or reviewed a dish here. When false the Food Cred request
+   * for the visit is left out (it would pay nothing); when true the server decides.
+   */
   hasReviewedDishAtVenue?: boolean;
-  onReviewRequired?: () => void;
+  /** Called after a stall is newly marked visited (not when it is cleared). */
+  onVisited?: () => void;
   /** Called after the stall is saved (not when it is unsaved). */
   onSaved?: () => void;
   /** Called when user taps "Add to list" — saves the stall to the user's Lists (portfolios). */
@@ -65,9 +69,8 @@ export function StallInteractionBar({
   stallId,
   isAuthenticated = true,
   onRequireAuth,
-  reviewPromptText,
   hasReviewedDishAtVenue,
-  onReviewRequired,
+  onVisited,
   onSaved,
   onAddToList,
   isAddingToList = false,
@@ -153,7 +156,9 @@ export function StallInteractionBar({
         showToast({
           message: "Saved. Find it in Profile, Saved, Stalls.",
           tone: "success",
-          duration: 3000,
+          // Longer when there is something to press.
+          duration: onAddToList ? 5000 : 3000,
+          action: onAddToList ? { label: "Add to a list", onPress: onAddToList } : undefined,
         });
         // Missions are extra: a failure there must not say the save failed.
         void incrementProgress(userId, "save_stalls").catch((error) =>
@@ -180,26 +185,19 @@ export function StallInteractionBar({
     if (tryingInProgress) return;
     setTryingInProgress(true);
     try {
-      const hasReviewed = hasReviewedDishAtVenue ?? false;
-      // The tried-a-dish rule only gates marking; a stall already marked can always be cleared.
-      if (!isTried && !hasReviewed) {
-        // One toast only: the screen's handler shows its own when it is given.
-        if (onReviewRequired) {
-          onReviewRequired();
-        } else {
-          const message =
-            reviewPromptText ?? "Try or review a dish here before marking this stall visited.";
-          showToast({ message, tone: "warning", duration: 3000 });
-        }
-        return;
-      }
-
-      const triedResult = await markTried(userId, stallId);
+      const triedResult = await markTried(userId, stallId, "StallDetail", {
+        skipPoints: !(hasReviewedDishAtVenue ?? false),
+      });
       if (triedResult.isTried) {
-        void incrementProgress(userId, "mark_tried").catch((error) =>
-          reportError(error, { component: "StallInteractionBar", action: "mission_mark_tried" }),
-        );
+        // Missions pay Food Cred, so they keep the old bar: a visit counts once a dish here
+        // has been tried or reviewed.
+        if (hasReviewedDishAtVenue) {
+          void incrementProgress(userId, "mark_tried").catch((error) =>
+            reportError(error, { component: "StallInteractionBar", action: "mission_mark_tried" }),
+          );
+        }
         showToast({ message: "Marked as visited", tone: "success", duration: 3000 });
+        onVisited?.();
       } else {
         showToast({ message: "Removed from visited", tone: "info", duration: 3000 });
       }
@@ -228,7 +226,7 @@ export function StallInteractionBar({
             {
               id: "review",
               label: "Review",
-              icon: PenLine,
+              icon: WriteReviewSymbol,
               onPress: swapped.review,
               accessibilityLabel: "Write a review",
             },
@@ -238,7 +236,7 @@ export function StallInteractionBar({
               {
                 id: "directions",
                 label: "Directions",
-                icon: MapPin,
+                icon: DirectionsSymbol,
                 onPress: onDirections,
                 accessibilityLabel: "Directions to this stall",
               },
@@ -249,7 +247,7 @@ export function StallInteractionBar({
             {
               id: "share",
               label: "Share",
-              icon: Send,
+              icon: ShareSymbol,
               onPress: onShare,
               accessibilityLabel: "Share stall",
             },
@@ -261,11 +259,11 @@ export function StallInteractionBar({
               id: "tried",
               label: isTried ? "Visited" : "Mark visited",
               caption: "Visited",
-              icon: isTried ? CheckCircle : Circle,
+              icon: isTried ? TriedOnSymbol : TriedOffSymbol,
               active: isTried,
-              mutedWhenInactive: true,
               role: "checkbox" as const,
-              loading: tryingInProgress || interactionLoading,
+              // No spinner on a tap: the button flips at once and the store writes in the background.
+              loading: interactionLoading,
               onPress: () => void handleTried(),
               accessibilityLabel: isTried ? "Visited" : "Mark this stall visited",
             },
@@ -274,10 +272,11 @@ export function StallInteractionBar({
       {
         id: "save",
         label: isSaved ? "Saved" : "Save",
-        icon: Bookmark,
+        icon: BookmarkSymbol,
         active: isSaved,
         fillWhenActive: true,
-        loading: savingInProgress || interactionLoading,
+        // No spinner on a tap: the button flips at once and the store writes in the background.
+        loading: interactionLoading,
         onPress: () => void handleSave(),
         accessibilityLabel: isSaved ? "Saved" : "Save this stall",
         ...(onAddToList
@@ -286,15 +285,15 @@ export function StallInteractionBar({
               holdOptions: [
                 {
                   id: "saved-stalls",
-                  label: "Saved stalls",
-                  icon: Bookmark,
-                  selected: isSaved,
+                  // The row toggles, so when it is saved it says what a press does.
+                  label: isSaved ? "Remove from saved" : "Saved stalls",
+                  icon: BookmarkSymbol,
                   onPress: () => void handleSave(),
                 },
                 {
                   id: "collection",
                   label: isAddingToList ? "Adding..." : "Save to a collection",
-                  icon: ListPlus,
+                  icon: AddToListSymbol,
                   onPress: onAddToList,
                 },
               ],
@@ -309,7 +308,7 @@ export function StallInteractionBar({
           swapped
             ? {
                 label: "Directions",
-                icon: MapPin,
+                icon: DirectionsSymbol,
                 onPress: swapped.directions,
                 accessibilityLabel: "Directions to this stall",
               }
@@ -337,26 +336,26 @@ export function StallInteractionBar({
           {
             id: "save",
             label: isSaved ? "Saved" : "Save",
-            icon: Bookmark,
+            icon: BookmarkSymbol,
             active: isSaved,
             onPress: handleSave,
-            loading: savingInProgress || (!isLoaded && isLoadingInteractions),
+            loading: !isLoaded && isLoadingInteractions,
           },
         ]),
     {
       id: "tried",
       label: isTried ? "Visited" : "Mark visited",
-      icon: CheckCircle,
+      icon: TriedOnSymbol,
       active: isTried,
       onPress: handleTried,
-      loading: tryingInProgress || (!isLoaded && isLoadingInteractions),
+      loading: !isLoaded && isLoadingInteractions,
     },
     ...(onAddToList
       ? [
           {
             id: "list",
             label: "Add to list",
-            icon: ListPlus,
+            icon: AddToListSymbol,
             active: false,
             onPress: onAddToList,
             loading: isAddingToList,

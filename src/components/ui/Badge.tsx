@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -7,16 +8,23 @@ import { getBadgeToneStyles, type BadgeTone } from "./badgeTones";
 interface BadgeProps {
   label: string;
   tone?: BadgeTone;
+  /** A symbol before the label, drawn in the badge's text colour (e.g. a rating star). */
+  icon?: (color: string) => ReactNode;
+  /** Read instead of the label, for a badge whose label is only part of the meaning. */
+  accessibilityLabel?: string;
 }
 
-export function Badge({ label, tone = "neutral" }: BadgeProps) {
+export function Badge({ label, tone = "neutral", icon, accessibilityLabel }: BadgeProps) {
   const { componentCornerCurve, componentRadii, palette, spacing } = useHungryTheme();
   const toneStyles = getBadgeToneStyles(palette, tone);
 
   return (
     <View
+      accessible={accessibilityLabel ? true : undefined}
+      accessibilityLabel={accessibilityLabel}
       style={[
         styles.badge,
+        icon ? styles.badgeWithIcon : null,
         {
           backgroundColor: toneStyles.bg,
           borderColor: toneStyles.border,
@@ -28,6 +36,7 @@ export function Badge({ label, tone = "neutral" }: BadgeProps) {
         },
       ]}
     >
+      {icon ? icon(toneStyles.text) : null}
       <AppText variant="micro" style={{ color: toneStyles.text }}>
         {label}
       </AppText>
@@ -38,5 +47,10 @@ export function Badge({ label, tone = "neutral" }: BadgeProps) {
 const styles = StyleSheet.create({
   badge: {
     alignSelf: "flex-start",
+  },
+  badgeWithIcon: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 4,
   },
 });
