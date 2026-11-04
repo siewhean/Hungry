@@ -581,22 +581,16 @@ test("the detail panel names a finished achievement and has no next step", async
 
 test("InfoPopup draws nothing while closed and shows its card when open", async () => {
   const closed = await render(
-    createElement(InfoPopup, {
-      visible: false,
-      onClose: () => undefined,
-      label: "Details",
-      children: "Hello",
-    }),
+    <InfoPopup visible={false} onClose={() => undefined} label="Details">
+      Hello
+    </InfoPopup>,
   );
   assert.ok(!closed.text().includes("Hello"));
   await closed.unmount();
   const open = await render(
-    createElement(InfoPopup, {
-      visible: true,
-      onClose: () => undefined,
-      label: "Details",
-      children: "Hello",
-    }),
+    <InfoPopup visible={true} onClose={() => undefined} label="Details">
+      Hello
+    </InfoPopup>,
   );
   assert.ok(open.text().includes("Hello"));
 });
