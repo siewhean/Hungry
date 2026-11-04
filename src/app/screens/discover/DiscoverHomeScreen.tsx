@@ -85,6 +85,7 @@ import {
   getStallRowOpenLabel,
   isStallClosed,
   isUnprovenStall,
+  openStateOf,
 } from "@/features/discover/homeStalls";
 import { freshSlotsFor, reserveFreshSlots } from "@/features/discover/rankingBalance";
 import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
@@ -1054,9 +1055,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         : [],
     [currentPlaceId, inMallMode, unfilteredAreaStallCards],
   );
-  // More to browse than the stalls in one building: sections of different foods (noodles, rice,
-  // desserts and so on, led by the diner's pinned dishes and the hour), and the malls and hawker
-  // centres around. A stall sits in one section only and never repeats the main rail.
+  // More to browse than the stalls in one building: sections about the diner and the moment (Just
+  // for you, this hour or Late night, Popular in the area, pinned dishes, New and worth a try),
+  // never a kind of food, and the malls and hawker centres around. A stall sits in one section
+  // only and never repeats the main rail.
   const categorySections = useMemo(() => {
     const byId = new Map(unfilteredPopularFoodStyleItems.map((item) => [item.id, item]));
     return buildHomeSections(allAreaStallCards, {
@@ -1068,6 +1070,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       familiarNames: familiarDishNames,
       excludeVenueIds: new Set(areaStallCards.map((card) => card.venue.id)),
       compare: compareHomeStalls,
+      isOpenNow: (card) => openStateOf(card.venue).status === "open",
       palate: rankingTasteVector,
       palateTrusted: hasTasteProfile,
       avoidSpicy: chipContext.avoidSpicy,
