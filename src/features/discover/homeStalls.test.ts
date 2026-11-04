@@ -88,6 +88,15 @@ test("a stall without a distance sorts after one with a distance", () => {
   );
 });
 
+test("stalls too far apart to score differently still sort nearest first", () => {
+  const farther = { venue: venue({ id: "farther", distanceMeters: 9_000_000 }) };
+  const far = { venue: venue({ id: "far", distanceMeters: 8_000_000 }) };
+  assert.deepEqual(
+    [farther, far].sort(compareHomeStalls).map((card) => card.venue.id),
+    ["far", "farther"],
+  );
+});
+
 // ─── Merchant round four: a paused stall is closed on Home too ──────────────
 
 test("a paused stall reads Closed on Home even when its hours say open", () => {

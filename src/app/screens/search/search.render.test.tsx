@@ -1165,7 +1165,7 @@ test("Search home control: the island-wide top 3, no star for an unreviewed dish
   const flags = fakeFlags({ search_home_featured_v1: "control" });
   setExperimentFlagSource(flags.source);
   const view = await renderHome();
-  assert.match(view.text(), /Dishes to Discover/);
+  assert.match(view.text(), /Dishes to discover/);
   assert.deepEqual(requests[0], { limit: 3, sort: "quality" });
   assert.doesNotMatch(view.text(), /★/, "the star is a symbol, not a text glyph");
   assert.equal(
@@ -1230,7 +1230,7 @@ test("Search home: nobody is exposed when the featured section never shows", asy
   const flags = fakeFlags({ search_home_featured_v1: "near" });
   setExperimentFlagSource(flags.source);
   const view = await renderHome();
-  assert.doesNotMatch(view.text(), /Dishes to Discover/);
+  assert.doesNotMatch(view.text(), /Dishes to discover/);
   assert.equal(flags.state.exposures, 0);
 });
 
@@ -1261,7 +1261,7 @@ test("Search home reports a failed load once (SEARCH-21)", async () => {
       },
     });
     const view = await renderHome();
-    assert.doesNotMatch(view.text(), /Dishes to Discover/);
+    assert.doesNotMatch(view.text(), /Dishes to discover/);
     assert.deepEqual(errors.map((error) => (error as Error).message).sort(), [
       "featured down",
       "suggest down",
@@ -1336,10 +1336,10 @@ test("SEARCH-V2: when flags never load, the island-wide list shows after a short
     onChange: () => () => undefined,
   });
   const view = await renderHome();
-  assert.doesNotMatch(view.text(), /Dishes to Discover/);
+  assert.doesNotMatch(view.text(), /Dishes to discover/);
   await wait(1_600);
   await view.settle();
-  assert.match(view.text(), /Dishes to Discover/);
+  assert.match(view.text(), /Dishes to discover/);
   assert.equal(exposures, 0);
 });
 
@@ -1361,7 +1361,7 @@ test("SEARCH-V3: without a GPS fix or a picked area the near arm is not served o
   const flags = fakeFlags({ search_home_featured_v1: "near" });
   setExperimentFlagSource(flags.source);
   const view = await renderHome();
-  assert.match(view.text(), /Dishes to Discover/);
+  assert.match(view.text(), /Dishes to discover/);
   assert.ok(
     requests.every((request) => !request.radiusMeters),
     "no radius request",

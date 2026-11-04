@@ -1369,7 +1369,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         accessibilityLabel={`Directions to ${displayName}, ${subtitle}`}
                         accessibilityHint="Opens the stall in Google Maps"
                         onPress={openStallMaps}
-                        hitSlop={{ bottom: 8, top: 8 }}
+                        // The line is 26pt tall; the slop brings the target to 44pt+ (round six).
+                        hitSlop={{ bottom: 10, top: 10 }}
                       >
                         <AppText variant="body" tone="secondary">
                           {subtitle}
@@ -1388,6 +1389,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       }
                       disabled={!showDeferredDetailControls}
                       onPress={scrollToReviews}
+                      hitSlop={{ bottom: 6, top: 6 }}
                       style={{
                         alignItems: "center",
                         backgroundColor: palette.bgSoft,
@@ -1441,6 +1443,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       onPress={() =>
                         openMerchantContact("phone", merchantProfile.contactPhone ?? "")
                       }
+                      // A 32pt chip; 6pt above and below makes the target 44pt (round six).
+                      hitSlop={{ bottom: 6, top: 6 }}
                       style={{
                         alignItems: "center",
                         backgroundColor: palette.bgSoft,
@@ -1510,6 +1514,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       }
                       accessibilityState={{ expanded: hoursExpanded }}
                       onPress={() => setHoursExpanded((open) => !open)}
+                      hitSlop={{ bottom: 10, top: 10 }}
                       style={({ pressed }) => ({ opacity: pressed ? 0.75 : 1 })}
                     >
                       {hoursHeader}

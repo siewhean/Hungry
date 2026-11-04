@@ -14,7 +14,6 @@
     "src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/profile/SocialGridScreen.tsx",
-    "src/app/screens/profile/SocialPostDetailScreen.tsx",
-    "src/app/screens/review/ReviewShareSheet.tsx"
+    "src/app/screens/profile/SocialPostDetailScreen.tsx"
   ]
 }

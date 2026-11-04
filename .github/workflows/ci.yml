@@ -18,7 +18,9 @@ permissions:
 # in release-candidate.yml.
 jobs:
   quality-gates:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, where Playwright 1.59 cannot install Chromium.
+    # Move back to ubuntu-latest once Playwright supports it.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout implementation commit
