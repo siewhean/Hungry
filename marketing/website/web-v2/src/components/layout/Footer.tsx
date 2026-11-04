@@ -18,7 +18,7 @@ export default function Footer() {
 
         <div className={styles.links}>
           <div className={styles.linkGroup}>
-            <h4 className={styles.linkGroupTitle}>Legal</h4>
+            <h2 className={styles.linkGroupTitle}>Legal</h2>
             {footerLinks.legal.map((link) => (
               <Link href={link.href} className={styles.link} key={link.label} prefetch>
                 {link.label}
@@ -26,7 +26,7 @@ export default function Footer() {
             ))}
           </div>
           <div className={styles.linkGroup}>
-            <h4 className={styles.linkGroupTitle}>Discover</h4>
+            <h2 className={styles.linkGroupTitle}>Discover</h2>
             {footerLinks.discover.map((link) => (
               <Link href={link.href} className={styles.link} key={link.label} prefetch>
                 {link.label}
@@ -34,7 +34,7 @@ export default function Footer() {
             ))}
           </div>
           <div className={styles.linkGroup}>
-            <h4 className={styles.linkGroupTitle}>Connect</h4>
+            <h2 className={styles.linkGroupTitle}>Connect</h2>
             {footerLinks.connect.map((link) => (
               <Link href={link.href} className={styles.link} key={link.label} prefetch>
                 {link.label}
