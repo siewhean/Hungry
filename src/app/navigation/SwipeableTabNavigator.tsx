@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import type {
   MaterialTopTabBarProps,
   MaterialTopTabNavigationProp,
@@ -14,20 +13,21 @@ import {
 import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppBottomTabItem, EdgeSwipeZones, Skeleton } from "@/components/ui";
+import { PostTabPage } from "@/components/review/PostTabPage";
+import { AppBottomTabItem, Skeleton } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { useAchievementsLoopEnabled, useNextStamp } from "@/features/passport/useNextStamp";
-import { adjacentTabKey, mainTabOrder, type MainTabKey } from "@/features/navigation/swipeIntent";
+import { mainTabOrder } from "@/features/navigation/swipeIntent";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
+import { createEdgeSwipeTabNavigator } from "./EdgeSwipeTabs";
 import type { MainTabParamList, RootStackParamList } from "./navigationTypes";
 import { tabBarBottomPadding } from "./tabBarMetrics";
 
-const Tab = createMaterialTopTabNavigator<MainTabParamList>();
-const MAIN_TAB_PRELOAD_DISTANCE = 2;
+const Tab = createEdgeSwipeTabNavigator<MainTabParamList>();
 const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
 const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
 const MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0;
@@ -163,33 +163,10 @@ function useOpenCreateReview() {
   }, [isAuthenticated, rootNavigation, setReturnRoute]);
 }
 
-/**
- * A swipe in from a screen edge goes to the next or previous page of the tab bar. The Post
- * button sits between the pages, so the swipe there opens the review card from the bottom.
- */
-function useTabEdgeSwipes(current: MainTabKey) {
-  // Plain tab names: the swipe never carries params, so Profile reopens where it was.
-  const navigation = useNavigation<MaterialTopTabNavigationProp<Record<string, undefined>>>();
-  const openCreateReview = useOpenCreateReview();
-  const go = useCallback(
-    (direction: "previous" | "next") => {
-      const target = adjacentTabKey(MAIN_TAB_ORDER, current, direction);
-      if (!target) return undefined;
-      return () => {
-        if (target === "Create") openCreateReview();
-        else navigation.navigate(target);
-      };
-    },
-    [current, navigation, openCreateReview],
-  );
-  return { onSwipeFromLeft: go("previous"), onSwipeFromRight: go("next") };
-}
-
 function createDeferredTabScreen(loader: TabScreenLoader) {
   function DeferredTabScreen(props: object) {
     const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
     const route = useRoute();
-    const edgeSwipes = useTabEdgeSwipes(route.name as MainTabKey);
 
     useEffect(() => {
       if (Component) return undefined;
@@ -203,9 +180,7 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
 
     return (
       <View style={styles.tabPage}>
-        <EdgeSwipeZones {...edgeSwipes}>
-          {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
-        </EdgeSwipeZones>
+        {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
       </View>
     );
   }
@@ -252,6 +227,16 @@ const HomeWrapper = createDeferredTabScreen(homeScreenLoader);
 const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
 const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
 const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
+
+/** The Post page in the swipe order; its button opens the review card, like the Post button. */
+function CreateWrapper() {
+  const openCreateReview = useOpenCreateReview();
+  return (
+    <View style={styles.tabPage}>
+      <PostTabPage onStart={openCreateReview} />
+    </View>
+  );
+}
 
 /**
  * Release builds keep the Home/Review routes registered (many flows reset to
@@ -319,7 +304,10 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
         const routeName = route?.name;
         const routeKey = route?.key ?? "create-post-action";
         const routeIndex = route ? state.routes.indexOf(route) : -1;
-        const isFocused = !isCreateAction && state.index === routeIndex;
+        // The Post button reads as selected while the Post page is on show (reached by a swipe).
+        const isFocused = isCreateAction
+          ? state.routes[state.index]?.name === "Create"
+          : state.index === routeIndex;
 
         const onPress = () => {
           if (isCreateAction) {
@@ -391,30 +379,29 @@ export function SwipeableTabNavigator() {
     <Tab.Navigator
       id="Tabs"
       initialRouteName="Discover"
-      tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
-      screenOptions={{
-        // No drag-along pager (its swipe fought the photo carousels). The tabs open from the bar or
-        // from a swipe in from a screen edge (EdgeSwipeZones), and the pages slide across: the old
-        // page leaves and the next arrives from the side the swipe came from. Reduce Motion cuts.
-        swipeEnabled: false,
-        animationEnabled: !reduceMotion,
-        lazy: !tabPreloadEnabled,
-        lazyPlaceholder: () => <TabScreenLoadingPlaceholder />,
-        lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
-      }}
+      // The pages in the swipe order come first; a route that only redirects sits after them, so a
+      // drag never uncovers it. Edge swipes drag the pages along; the tab bar switches at once.
+      pageCount={MAIN_TAB_ORDER.length}
+      mountAllPages={tabPreloadEnabled}
+      reduceMotion={reduceMotion}
     >
       <Tab.Screen name="Discover" component={DiscoverWrapper} />
-      {/* The social posts feed. No pager swipe: its photo carousels own horizontal swipes. */}
-      <Tab.Screen
-        name="Home"
-        component={FEATURE_FLAGS.socialFeedEnabled ? HomeWrapper : ReleaseLandingRedirect}
-      />
-      <Tab.Screen
-        name="Review"
-        component={FEATURE_FLAGS.reviewCreationEnabled ? ReviewWrapper : ReleaseLandingRedirect}
-      />
+      {/* The social posts feed. Its photo carousels own horizontal swipes, so only the edges page. */}
+      {FEATURE_FLAGS.socialFeedEnabled ? <Tab.Screen name="Home" component={HomeWrapper} /> : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <Tab.Screen name="Create" component={CreateWrapper} />
+      ) : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <Tab.Screen name="Review" component={ReviewWrapper} />
+      ) : null}
       <Tab.Screen name="Profile" component={ProfileWrapper} />
+      {FEATURE_FLAGS.socialFeedEnabled ? null : (
+        <Tab.Screen name="Home" component={ReleaseLandingRedirect} />
+      )}
+      {FEATURE_FLAGS.reviewCreationEnabled ? null : (
+        <Tab.Screen name="Review" component={ReleaseLandingRedirect} />
+      )}
     </Tab.Navigator>
   );
 }

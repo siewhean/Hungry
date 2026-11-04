@@ -218,8 +218,10 @@ test("synthetic post action stays behind the Release 0.1 post flag", () => {
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
-  assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
-  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
+  // The Post page sits in the swipe order (reached by the edge swipe); the bar button still opens
+  // the review card, so the bar never navigates to it.
+  assert.match(tabs, /<Tab\.Screen name="Create"/);
+  assert.match(types, /^\s+Create: undefined;/m);
   assert.match(tabs, /navigation\.getParent<NavigationProp<RootStackParamList>>\(\)/);
   // The tab bar's create action writes a review now; posts open from elsewhere.
   assert.match(tabs, /FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create"/);

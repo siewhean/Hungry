@@ -60,9 +60,11 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   );
   assert.doesNotMatch(tabs, /createTabItem/);
   assert.doesNotMatch(tabs, /borderWidth: 4/);
-  assert.doesNotMatch(tabs, /<Tab\.Screen name="Create"/);
+  // The Post page sits in the swipe order (reached by the edge swipe); the bar button still opens
+  // the review card, so the bar never navigates to it.
+  assert.match(tabs, /<Tab\.Screen name="Create"/);
   assert.doesNotMatch(types, /Rate: undefined/);
-  assert.doesNotMatch(types, /^\s+Create: undefined;/m);
+  assert.match(types, /^\s+Create: undefined;/m);
 });
 
 test("activity routes remain feature-gated with direct messages separately gated", () => {
