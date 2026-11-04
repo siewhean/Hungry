@@ -644,7 +644,9 @@ export function ReviewScreen({ navigation, route }: Props) {
   const goToTab = (direction: "previous" | "next") => {
     const target = adjacentTabKey(POST_TAB_ORDER, "Create", direction);
     if (!target || target === "Create") return undefined;
-    return () => rootNavigation.navigate("MainTabs", { screen: target } as never);
+    // popTo returns to the tab bar that sits under the card and picks the page; navigate would
+    // push a second tab bar on top of it.
+    return () => rootNavigation.popTo("MainTabs", { screen: target } as never);
   };
   const cardEdgeSwipes = {
     onSwipeFromLeft: goToTab("previous"),
