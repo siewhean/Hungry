@@ -44,7 +44,7 @@ import * as Haptics from "@/lib/haptics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useHungryTheme } from "@/theme";
 
-export type ReviewShareStudioSource = "review_page" | "review_posted";
+export type ReviewShareStudioSource = "review_page" | "review_posted" | "dish_page" | "stall_page";
 
 /** A picture is taken once the photo has loaded; after this long it is taken anyway. */
 const PHOTO_WAIT_MS = 4000;
@@ -67,6 +67,12 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const model = useMemo(() => buildReviewCardModel(card), [card]);
+  const heading =
+    source === "dish_page"
+      ? "Share this dish"
+      : source === "stall_page"
+        ? "Share this stall"
+        : "Share your review";
   const templates = useMemo(() => availableReviewCardTemplates(model), [model]);
   const [templateIndex, setTemplateIndex] = useState(0);
   const [size, setSize] = useState<ReviewCardSize>("story");
@@ -138,7 +144,7 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
         {
           kind: "review",
           id: model.reviewId,
-          message: `I reviewed ${model.dishName}${model.venueName ? ` at ${model.venueName}` : ""} on Hungry`,
+          message: `${model.rating > 0 ? "I reviewed" : "Found"} ${model.dishName}${model.venueName ? ` at ${model.venueName}` : ""} on Hungry`,
           url: link,
         },
         "system_share",
@@ -155,7 +161,7 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
         width,
         height,
         format: reviewCardImageFormat(template),
-        dialogTitle: "Share your review",
+        dialogTitle: heading,
       });
       if (result === "unavailable") {
         await shareAsLink();
@@ -173,7 +179,17 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
     } finally {
       setSharing(false);
     }
-  }, [model.reviewId, quoteToggleShown, shareAsLink, sharing, showQuote, size, source, template]);
+  }, [
+    heading,
+    model.reviewId,
+    quoteToggleShown,
+    shareAsLink,
+    sharing,
+    showQuote,
+    size,
+    source,
+    template,
+  ]);
 
   const copyLink = useCallback(async () => {
     try {
@@ -213,7 +229,7 @@ export function ReviewShareStudio({ card, link, source, onClose }: ReviewShareSt
           icon={<AppSymbol name="close" color={palette.text} size={20} />}
         />
         <AppText variant="h3" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>
-          Share your review
+          {heading}
         </AppText>
         <View style={{ width: 44 }} />
       </View>

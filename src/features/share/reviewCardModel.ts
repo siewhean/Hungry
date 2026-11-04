@@ -91,6 +91,7 @@ export interface ReviewCardInput {
   reviewId: string;
   dishName: string;
   venueName: string;
+  /** Whole stars; 0 for a dish or stall shared without a review (the card prints no stars). */
   rating: number;
   text?: string;
   tags?: readonly string[];
@@ -129,6 +130,7 @@ export function trimQuote(text: string, max = REVIEW_CARD_QUOTE_MAX): string {
 }
 
 export function verdictFor(rating: number): string {
+  if (rating <= 0) return "On my list";
   if (rating >= 5) return "Must try";
   if (rating >= 4) return "Go again";
   if (rating >= 3) return "Not bad";

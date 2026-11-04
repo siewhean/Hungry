@@ -2032,6 +2032,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
             }
             onOpenSaved={() => navigation.navigate("Favourites")}
+            onPickArea={(area) => setManualSelection(area.name, area.coordinate)}
           />
         ) : null}
 

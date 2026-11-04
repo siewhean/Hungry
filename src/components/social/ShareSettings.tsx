@@ -32,7 +32,9 @@ export function ShareQuickActionGroup({ actions }: ShareQuickActionGroupProps) {
           onPress={action.onPress}
           style={{
             alignItems: "center",
-            width: 84,
+            // Five actions (with Picture) fit a small phone: each shares the row, up to 84 wide.
+            flex: 1,
+            maxWidth: 84,
             alignSelf: "center",
           }}
         >

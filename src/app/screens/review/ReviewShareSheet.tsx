@@ -8,8 +8,9 @@ import {
   BottomSheetScrollView,
   BottomSheetView,
 } from "@gorhom/bottom-sheet";
-import { Copy, MessageCircle, Send, Share2 } from "lucide-react-native";
+import { Copy, Image as ImageIcon, MessageCircle, Send, Share2 } from "lucide-react-native";
 
+import { ReviewShareStudioModal } from "@/components/share/ReviewShareStudio";
 import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
@@ -38,7 +39,21 @@ export type ReviewShareTarget = {
   authorName: string;
   message: string;
   link: string;
+  /** Dish shares: the stall name printed on the picture card. */
+  venueName?: string;
 };
+
+/** The picture card for a dish or stall shared without a review: no stars, no words. */
+export function pictureCardFor(target: ReviewShareTarget) {
+  return {
+    reviewId: target.reviewId,
+    dishName: target.title,
+    venueName: target.kind === "dish" ? (target.venueName ?? "") : "",
+    rating: 0,
+    photoUrl: target.imageUrl || undefined,
+    authorName: target.authorName,
+  };
+}
 
 type ReviewShareSheetProps = {
   activeReview: ReviewShareTarget | null;
@@ -50,6 +65,17 @@ type ReviewShareSheetProps = {
   onShareCompleted?: (channel: ShareChannel) => void;
   /** False for signed-out viewers: only link/system shares, no in-app sends. */
   inAppSharingEnabled?: boolean;
+};
+
+const EMPTY_TARGET: ReviewShareTarget = {
+  reviewId: "",
+  postId: "",
+  title: "",
+  subtitle: "",
+  imageUrl: "",
+  authorName: "",
+  message: "",
+  link: "",
 };
 
 export function ReviewShareSheet({
@@ -66,6 +92,8 @@ export function ReviewShareSheet({
   const showToast = useUIStore((state) => state.showToast);
   const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
   const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
+  // Kept apart from activeReview: the sheet closes (and clears it) before the studio opens.
+  const [pictureTarget, setPictureTarget] = useState<ReviewShareTarget | null>(null);
   const kind = activeReview?.kind ?? "review";
   const kindNoun = kind === "stall" ? "stall" : kind === "dish" ? "dish" : "review";
   // A chat share sends a post card, so it needs a real post id.
@@ -223,6 +251,28 @@ export function ReviewShareSheet({
     [activeReview, trackShare],
   );
 
+  const openPictureCard = useCallback(() => {
+    if (!activeReview) return;
+    trackAnalyticsEvent("share_picture_opened", { kind });
+    setPictureTarget(activeReview);
+    innerRef.current?.dismiss();
+  }, [activeReview, innerRef, kind]);
+
+  const pictureActions =
+    kind === "review"
+      ? []
+      : [
+          {
+            key: "picture",
+            label: "Picture",
+            accessibilityLabel: `Share ${kindNoun} as a picture`,
+            icon: ({ color, size }: { color: string; size: number }) => (
+              <ImageIcon color={color} size={size} />
+            ),
+            onPress: openPictureCard,
+          },
+        ];
+
   return (
     <>
       <BottomSheetModal
@@ -303,6 +353,7 @@ export function ReviewShareSheet({
                   icon: ({ color, size }) => <Share2 color={color} size={size} />,
                   onPress: () => void shareOutsideHungry(),
                 },
+                ...pictureActions,
               ]}
               recipients={directMessagesEnabled ? shareRecipients : []}
               selectedRecipientIds={selectedChatIds}
@@ -313,6 +364,13 @@ export function ReviewShareSheet({
           </BottomSheetScrollView>
         </BottomSheetView>
       </BottomSheetModal>
+      <ReviewShareStudioModal
+        visible={pictureTarget !== null}
+        card={pictureTarget ? pictureCardFor(pictureTarget) : pictureCardFor(EMPTY_TARGET)}
+        link={pictureTarget?.link ?? ""}
+        source={pictureTarget?.kind === "stall" ? "stall_page" : "dish_page"}
+        onClose={() => setPictureTarget(null)}
+      />
     </>
   );
 }

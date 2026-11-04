@@ -98,3 +98,24 @@ test("tapping a Heritage stamp opens when it was earned and the stalls that coun
     usePassportStore.setState({ stallFacts: {} });
   }
 });
+
+test("before any stamp, the first stamp to aim for sits at the top instead of an empty page", async () => {
+  usePassportStore.setState({
+    progressMap: {
+      "cuisine-hawker": {
+        categoryId: "cuisine-hawker",
+        triedCount: 0,
+        nextStampIndex: 0,
+        earnedStampThresholds: [],
+      },
+    },
+  });
+  const view = await renderScreen(PassportScreen as never, { name: "PassportScreen" });
+  assert.ok(view.findByText("Your first stamp"));
+  assert.equal(view.findByText("Nothing yet"), null);
+  const text = view.text();
+  assert.ok(
+    text.indexOf("Your first stamp") < text.indexOf("Heritage stamps"),
+    "the first stamp comes before the stamp grid",
+  );
+});
