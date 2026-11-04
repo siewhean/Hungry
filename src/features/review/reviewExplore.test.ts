@@ -9,7 +9,6 @@ import {
   resolveActiveReviewChip,
   reviewFoodLabel,
   reviewTileHoldAction,
-  reviewsWithPhotos,
   clearDeletedReviewsForSession,
   isReviewDeletedForSession,
   markReviewDeletedForSession,
@@ -55,16 +54,8 @@ const items = [
 ];
 const areaOf = (entry: ReviewFeedItem) => (entry as ReviewFeedItem & { area: string }).area;
 
-test("only reviews with a photo are shown", () => {
-  assert.deepEqual(
-    reviewsWithPhotos(items).map((entry) => entry.review.id),
-    ["1", "2", "3"],
-  );
-  assert.equal(reviewsWithPhotos([item("5", "X", "Y", NEUTRAL_TASTE_VECTOR, [" "])]).length, 0);
-});
-
 test("chips: all first, then your taste, most reviewed foods, then areas (REV-15)", () => {
-  const shown = reviewsWithPhotos(items);
+  const shown = items.slice(0, 3);
   const chips = buildReviewExploreChips(shown, { userVector: spicyLover, areaOf });
   assert.deepEqual(
     chips.map((chip) => chip.label),
@@ -76,7 +67,7 @@ test("chips: all first, then your taste, most reviewed foods, then areas (REV-15
 });
 
 test("filters by taste, food and area", () => {
-  const shown = reviewsWithPhotos(items);
+  const shown = items.slice(0, 3);
   const chips = buildReviewExploreChips(shown, { userVector: spicyLover, areaOf });
   const pick = (label: string) =>
     filterReviewExplore(

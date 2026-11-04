@@ -2,7 +2,14 @@ import React from "react";
 import { View, StyleSheet, ScrollView, Pressable, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { X, Heart, MapPin } from "lucide-react-native";
-import { AccessibleImage, AppText, IconButton, HungryLogo, Badge } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppSymbol,
+  AppText,
+  IconButton,
+  HungryLogo,
+  Badge,
+} from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { useComposerStore } from "../useComposerStore";
@@ -236,7 +243,14 @@ export function LivePreviewSheet() {
                     <HungryLogo size={18} showWordmark={false} />
                     <AppText variant="bodySmallBold">Recommend this dish</AppText>
                   </View>
-                  {rating > 0 && <Badge label={`★ ${rating}`} tone="orange" />}
+                  {rating > 0 && (
+                    <Badge
+                      label={String(rating)}
+                      tone="orange"
+                      accessibilityLabel={`Rated ${rating} out of 5`}
+                      icon={(color) => <AppSymbol name="rating" color={color} size={12} />}
+                    />
+                  )}
                 </View>
 
                 <AppText variant="bodySmall" style={{ color: palette.text }}>

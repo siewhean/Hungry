@@ -1413,8 +1413,9 @@ function RawCatalogBrowseGrid({
         {filters.map((filter) => (
           <Chip
             key={filter}
-            label={`${filter} ×`}
+            label={filter}
             accessibilityLabel={`Remove ${filter} filter`}
+            rightIcon={<AppSymbol name="close" color={palette.orangeText} size={14} />}
             selected
             onPress={() => handleSelectFilter(filter)}
           />
@@ -1422,8 +1423,9 @@ function RawCatalogBrowseGrid({
         {foodTypes.map((label) => (
           <Chip
             key={`food:${label}`}
-            label={`${label} ×`}
+            label={label}
             accessibilityLabel={`Remove ${label} filter`}
+            rightIcon={<AppSymbol name="close" color={palette.orangeText} size={14} />}
             selected
             onPress={() => handleSelectFoodType(label)}
           />

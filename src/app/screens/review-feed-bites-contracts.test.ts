@@ -20,20 +20,23 @@ test("Review feed cards do not render bottom bites sections", () => {
   assert.doesNotMatch(reviewFeed, /useDelayedLoadingSkeleton\(isBitesLoading\)/);
   assert.doesNotMatch(reviewFeed, /bitesByDishId/);
   assert.doesNotMatch(reviewFeed, /activeCommentBite/);
-  // Round 6: the Reviews tab is a photo grid. Tiles carry no like, save, share or comment actions.
+  // Round 6: the Reviews tab is a grid. Tiles carry no like, save, share or comment actions.
+  // Round six audit (sh, 2026-11-04): photos are optional, so a review without one is a text tile.
   assert.match(reviewFeed, /const GRID_COLUMNS = 3;/);
   assert.match(reviewFeed, /numColumns=\{GRID_COLUMNS\}/);
-  assert.match(reviewFeed, /reviewsWithPhotos\(/);
+  assert.doesNotMatch(reviewFeed, /reviewsWithPhotos\(|withPhotos: true/);
+  assert.match(reviewFeed, /testID="review-text-tile"/);
   assert.doesNotMatch(reviewFeed, /ReviewCommentsSheet|commentsEnabled|openCommentsSheet/);
   assert.doesNotMatch(reviewFeed, /linkedPost/);
   assert.doesNotMatch(reviewFeed, /toggleLike|likeCount/);
   assert.doesNotMatch(reviewFeed, /seededComments=\{/);
-  // Control tiles are photo and date (sh, 9ae387b): relative within a week, then a date. The dish
-  // name shows only in the review_tile_labels_v1 "labels" arm.
+  // Control photo tiles are photo and date (sh, 9ae387b): relative within a week, then a date.
+  // Over a photo the dish name shows only in the review_tile_labels_v1 "labels" arm; a text tile
+  // (no photo) names the dish itself.
   assert.match(reviewFeed, /const dateLabel = formatReviewDate\(item\.review\.createdAt\);/);
   assert.match(
     reviewFeed,
-    /\{showLabels \? \([\s\S]*\{item\.dishName\}[\s\S]*\) : \([\s\S]*\{dateLabel\}/,
+    /\{showLabels && hasPhoto \? \([\s\S]*\{item\.dishName\}[\s\S]*\) : \([\s\S]*\{dateLabel\}/,
   );
   assert.match(reviewFeed, /sameYear \? \{\} : \{ year: "numeric" \}/);
 

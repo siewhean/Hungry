@@ -186,21 +186,24 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("mealtimeSuggestions", value)}
-        isLast={false}
+        isLast={!FEATURE_FLAGS.followConnectionsEnabled && !FEATURE_FLAGS.stallFollowEnabled}
       />
-      <SettingsRow
-        editorial
-        iconTone="neutral"
-        label="Follow requests"
-        description="When someone asks to follow your private profile."
-        icon={<AppSymbol name="followRequests" size={20} color={palette.textSecondary} />}
-        type="toggle"
-        isEnabled={preferences.socialActivity}
-        dimmed={permissionDenied}
-        busy={isBusy}
-        onToggle={(value) => void handleToggle("socialActivity", value)}
-        isLast={!FEATURE_FLAGS.stallFollowEnabled}
-      />
+      {/* Followers are archived (owner decision 2026-10-31): no requests to be told about. */}
+      {FEATURE_FLAGS.followConnectionsEnabled ? (
+        <SettingsRow
+          editorial
+          iconTone="neutral"
+          label="Follow requests"
+          description="When someone asks to follow your private profile."
+          icon={<AppSymbol name="followRequests" size={20} color={palette.textSecondary} />}
+          type="toggle"
+          isEnabled={preferences.socialActivity}
+          dimmed={permissionDenied}
+          busy={isBusy}
+          onToggle={(value) => void handleToggle("socialActivity", value)}
+          isLast={!FEATURE_FLAGS.stallFollowEnabled}
+        />
+      ) : null}
       {FEATURE_FLAGS.stallFollowEnabled ? (
         <SettingsRow
           editorial
