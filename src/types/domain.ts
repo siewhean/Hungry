@@ -181,6 +181,18 @@ export interface VenueSummary {
   distanceMeters?: number;
 }
 
+/** What the Passport needs to know about a stall to decide which stamps it counts toward. */
+export interface StallStampFacts {
+  stallId: string;
+  /** The stall's cuisine tags, lower case (for example "chinese", "ramen"). */
+  cuisineTags: string[];
+  /** The kind of building it is in (for example "hawker_centre", "mall"). */
+  buildingType?: string;
+  planningArea?: string;
+  /** Building name and address together, for neighbourhoods that are not a planning area. */
+  placeText?: string;
+}
+
 export type UserStallSubmissionStatus =
   | "pending"
   | "under_review"

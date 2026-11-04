@@ -81,6 +81,11 @@ function StampMomentRuntime({ onOpenPassport, blocked = false }: StampMomentHost
       .sort()
       .join(","),
   );
+  // Stamps depend on facts fetched for each visited stall; until they are all in, the count
+  // is short and must not be taken as the diner's starting point.
+  const factsComplete = usePassportStore((state) =>
+    triedKey ? triedKey.split(",").every((id) => id in state.stallFacts) : true,
+  );
   const interactionsLoaded = useStallInteractionStore((state) => state.isLoaded);
   const loadInteractions = useStallInteractionStore((state) => state.loadInteractions);
   const computeProgress = usePassportStore((state) => state.computeProgress);
@@ -116,8 +121,8 @@ function StampMomentRuntime({ onOpenPassport, blocked = false }: StampMomentHost
   useEffect(() => {
     if (!interactionsLoaded || !hydrated) return;
     computeProgress(triedKey ? triedKey.split(",") : []);
-    setProgressReady(true);
-  }, [computeProgress, hydrated, interactionsLoaded, triedKey]);
+    if (factsComplete) setProgressReady(true);
+  }, [computeProgress, factsComplete, hydrated, interactionsLoaded, triedKey]);
 
   useEffect(() => {
     if (!interactionsLoaded) return;

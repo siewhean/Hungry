@@ -17,6 +17,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { hungryPersistStorage } from "@/store/persistStorage";
+import { stallMatchesCategory } from "@/features/passport/stampMatching";
+import { reportError } from "@/lib/monitoring/reportError";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import {
   ALL_PASSPORT_CATEGORIES,
@@ -33,6 +35,7 @@ import type {
   PassportNextStamp,
   PassportProgressEvent,
   PassportStamp,
+  StallStampFacts,
   UserPassportProgress,
 } from "@/types/domain";
 
@@ -49,6 +52,10 @@ interface PassportState {
   /** User the persisted celebrated/reported ids belong to. */
   ownerUserId: string | null;
   isComputed: boolean;
+  /** What the catalog says about each tried stall (cuisine, building, area); not saved on the device. */
+  stallFacts: Record<string, StallStampFacts>;
+  /** True while facts for tried stalls are still being fetched, so progress may be short. */
+  stallFactsPending: boolean;
 
   /** Database-backed stamps (new gamification features) */
   stamps: PassportStamp[];
@@ -71,6 +78,8 @@ interface PassportState {
    * Call after markTried() or on screen focus.
    */
   computeProgress: (triedStallIds: string[]) => void;
+  /** Fetches the facts for stalls not yet known, then recomputes from the last tried set. */
+  loadStallFacts: (stallIds: string[]) => Promise<void>;
   markStampCelebrated: (stampId: string) => void;
   markGoalWeekCelebrated: (weekKey: string) => void;
 
@@ -93,11 +102,21 @@ interface PassportState {
  * Checks the `tasteTags` of dishes at each tried stall.
  * A stall counts if any of its dishes contain the matchTag.
  */
-function countMatchingTriedStalls(triedStallIds: Set<string>, matchTag: string): number {
+function countMatchingTriedStalls(
+  triedStallIds: Set<string>,
+  matchTag: string,
+  facts: Record<string, StallStampFacts>,
+): number {
   const repo = getDataRepository();
   const tag = matchTag.toLowerCase();
   let count = 0;
   for (const stallId of triedStallIds) {
+    // The stall's own cuisine, building and area decide it; dish tags are the older fallback.
+    const stallFacts = facts[stallId];
+    if (stallFacts && stallMatchesCategory(stallFacts, { matchTag })) {
+      count++;
+      continue;
+    }
     const dishes = repo.listDishesByVenue(stallId);
     const matches = dishes.some((dish) =>
       (dish.tasteTags ?? []).some((t: string) => t.toLowerCase().includes(tag)),
@@ -192,8 +211,15 @@ export const usePassportStore = create<PassportState>()(
       };
       /** Latest input queued before the persisted ids finished loading. */
       let pendingTriedStallIds: string[] | null = null;
+      /** The tried set last computed, so fetched facts can recompute it. */
+      let lastTriedStallIds: string[] = [];
+      /** Stall ids with a facts read in flight, so one is not asked for twice. */
+      const factsRequested = new Set<string>();
+      let factsInFlight = 0;
 
       return {
+        stallFacts: {},
+        stallFactsPending: false,
         progressMap: {},
         celebratedStampIds: {},
         celebratedGoalWeeks: {},
@@ -243,10 +269,15 @@ export const usePassportStore = create<PassportState>()(
             ...Object.keys(get().reportedEarnedStampIds),
           ]);
           const stallSet = new Set(triedStallIds);
+          lastTriedStallIds = triedStallIds;
           const newMap: Record<string, UserPassportProgress> = {};
 
           for (const category of ALL_PASSPORT_CATEGORIES) {
-            const matchCount = countMatchingTriedStalls(stallSet, category.matchTag);
+            const matchCount = countMatchingTriedStalls(
+              stallSet,
+              category.matchTag,
+              get().stallFacts,
+            );
             newMap[category.id] = computePassportProgress(category, matchCount);
           }
 
@@ -269,6 +300,42 @@ export const usePassportStore = create<PassportState>()(
               category_id: stamp.categoryId,
               threshold: stamp.threshold,
             });
+          }
+          const missing = triedStallIds.filter(
+            (id) => !(id in get().stallFacts) && !factsRequested.has(id),
+          );
+          if (missing.length > 0) {
+            set({ stallFactsPending: true });
+            void get().loadStallFacts(missing);
+          }
+        },
+
+        loadStallFacts: async (stallIds) => {
+          const ids = stallIds.filter((id) => !factsRequested.has(id));
+          if (ids.length === 0) return;
+          ids.forEach((id) => factsRequested.add(id));
+          factsInFlight += 1;
+          set({ stallFactsPending: true });
+          try {
+            const rows = await getHungryService().discovery.getStallStampFacts(ids);
+            const known = new Map(rows.map((row) => [row.stallId, row]));
+            set((state) => ({
+              stallFacts: {
+                ...state.stallFacts,
+                // A stall the catalog no longer has still gets an entry, so it is not asked for again.
+                ...Object.fromEntries(
+                  ids.map((id) => [id, known.get(id) ?? { stallId: id, cuisineTags: [] }]),
+                ),
+              },
+            }));
+            get().computeProgress(lastTriedStallIds);
+          } catch (error) {
+            // Let the next compute ask again; progress stays at what the dish tags give.
+            ids.forEach((id) => factsRequested.delete(id));
+            reportError(error, { screen: "Passport", action: "load_stall_facts" });
+          } finally {
+            factsInFlight -= 1;
+            if (factsInFlight === 0) set({ stallFactsPending: false });
           }
         },
 
@@ -311,7 +378,9 @@ export const usePassportStore = create<PassportState>()(
           set({ stamps, events, isLoaded: true });
         },
 
-        _reset: () =>
+        _reset: () => {
+          factsRequested.clear();
+          factsInFlight = 0;
           set({
             progressMap: {},
             celebratedStampIds: {},
@@ -319,10 +388,13 @@ export const usePassportStore = create<PassportState>()(
             reportedEarnedStampIds: {},
             ownerUserId: null,
             isComputed: false,
+            stallFacts: {},
+            stallFactsPending: false,
             stamps: [],
             events: [],
             isLoaded: false,
-          }),
+          });
+        },
       };
     },
     {
