@@ -1,0 +1,14 @@
+{
+  "version": "20261104120000",
+  "name": "20261104120000_security_review_hardening",
+  "result": "pass",
+  "rehearsed_at": "2026-11-04T11:43:37Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "99a140676c0c1a7b34380167fc8ed239de95fc14",
+  "up_sha256": "48b519f5caa8a661cf299e47b7053b88988db56575b22a2f5f3cd4631d640c5f",
+  "down_sha256": "62d7074d87b0166916ca73cdc303a139d19102ce68d05eaf2b8aa1577c889323",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/security_review_hardening.sql"]
+}
