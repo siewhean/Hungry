@@ -13,7 +13,7 @@ import Animated, {
 
 import { Target } from "lucide-react-native";
 
-import { ACHIEVEMENT_ICONS } from "@/components/gamification/AchievementsSection";
+import { AchievementBadgeArt } from "@/components/gamification/AchievementBadgeArt";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
 import { getStampLook, StampStar } from "@/components/gamification/PassportStampArt";
 import { AppText } from "@/components/ui/AppText";
@@ -62,10 +62,16 @@ export function StampMoment({
   const isStamp = content.kind === "stamp";
   const level = isStamp ? content.stamp.index : 0;
   const starCount = isStamp ? Math.min(4, level + 1) : 0;
-  const completed = isStamp && level >= 3;
+  const completed =
+    (isStamp && level >= 3) ||
+    (content.kind === "achievement" && content.unlock.level >= content.unlock.totalLevels);
   // A slight, fixed tilt per stamp, so two stamps never land the same way.
   const tilt = isStamp ? (content.stamp.id.length % 2 === 0 ? -7 : 6) : -4;
-  const inkColor = isStamp ? getStampLook(content.stamp.categoryId).ink(palette) : palette.orange;
+  const inkColor = isStamp
+    ? getStampLook(content.stamp.categoryId).ink(palette)
+    : content.kind === "achievement"
+      ? palette.medalGold
+      : palette.orange;
 
   const drop = useSharedValue(reduceMotion ? 1 : 0);
   const squash = useSharedValue(1);
@@ -183,7 +189,6 @@ export function StampMoment({
   }));
 
   const { body, heading, title } = momentText(content);
-  const Icon = content.kind === "achievement" ? ACHIEVEMENT_ICONS[content.unlock.icon] : Target;
 
   return (
     <View
@@ -250,16 +255,23 @@ export function StampMoment({
           <Animated.View style={reduceMotion ? undefined : stampStyle}>
             {isStamp ? (
               <PassportStampBadge stamp={content.stamp} earned hideStars />
-            ) : Icon ? (
+            ) : content.kind === "achievement" ? (
+              <AchievementBadgeArt
+                icon={content.unlock.icon}
+                level={content.unlock.level}
+                totalLevels={content.unlock.totalLevels}
+                size={112}
+              />
+            ) : (
               <View
                 style={[
                   styles.achievementDisc,
                   { backgroundColor: palette.orange, borderRadius: radii.pill },
                 ]}
               >
-                <Icon size={44} color={palette.textOnOrange} />
+                <Target size={44} color={palette.textOnOrange} />
               </View>
-            ) : null}
+            )}
           </Animated.View>
         </View>
         {starCount > 0 ? (

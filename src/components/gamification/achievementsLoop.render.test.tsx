@@ -7,6 +7,7 @@ import { act, createElement } from "react";
 import { User } from "lucide-react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
+import { AchievementBadgeArt, medalMetal } from "@/components/gamification/AchievementBadgeArt";
 import { NextStampCard } from "@/components/gamification/NextStampCard";
 import { PassportStampArt, STAMP_LOOKS } from "@/components/gamification/PassportStampArt";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
@@ -328,6 +329,37 @@ test("a stamp badge names the stamp for screen readers and says when it is locke
   );
   assert.equal(art.findByLabel("Bugis Food Trail: Return visit passport stamp"), null);
   await art.unmount();
+});
+
+test("achievement medals go bronze, silver, gold, and the last level is always gold", () => {
+  assert.equal(medalMetal(0, 4), "none");
+  assert.equal(medalMetal(1, 4), "bronze");
+  assert.equal(medalMetal(2, 4), "silver");
+  assert.equal(medalMetal(3, 4), "gold");
+  assert.equal(medalMetal(4, 4), "gold");
+  assert.equal(medalMetal(3, 3), "gold", "a three-level achievement ends on gold too");
+});
+
+test("every achievement icon draws a medal at every level", async () => {
+  const icons = [
+    "utensils",
+    "map-pin",
+    "store",
+    "flame",
+    "candy",
+    "coins",
+    "pen",
+    "bookmark",
+  ] as const;
+  for (const icon of icons) {
+    for (const level of [0, 1, 4]) {
+      const view = await render(
+        createElement(AchievementBadgeArt, { icon, level, totalLevels: 4, size: 60 }),
+      );
+      assert.ok(view.container.innerHTML.length > 0, `${icon} level ${level} renders`);
+      await view.unmount();
+    }
+  }
 });
 
 test("the host renders nothing and counts nothing under the kill switch", async () => {
