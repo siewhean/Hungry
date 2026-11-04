@@ -7,7 +7,7 @@ export const zh: Record<MessageKey, string> = {
   "tab.reviews": "评价",
   "tab.profile": "我的",
   "tab.menu": "菜单",
-  "tab.performance": "数据表现",
+  "tab.performance": "表现",
 
   "settings.title": "设置",
   "settings.section.taste": "你的口味",

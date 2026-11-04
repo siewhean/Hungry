@@ -7,7 +7,7 @@ export const hi: Record<MessageKey, string> = {
   "tab.reviews": "समीक्षाएँ",
   "tab.profile": "प्रोफ़ाइल",
   "tab.menu": "मेन्यू",
-  "tab.performance": "प्रदर्शन",
+  "tab.performance": "परफ़ॉर्मेंस",
 
   "settings.title": "सेटिंग्स",
   "settings.section.taste": "आपकी पसंद",
@@ -28,7 +28,7 @@ export const hi: Record<MessageKey, string> = {
   "settings.row.deleteAccount": "खाता हटाएँ",
   "settings.row.haptics": "हैप्टिक फ़ीडबैक",
   "settings.row.leftHanded": "बाएँ हाथ का मोड",
-  "settings.row.leftHandedHint": "आपके मर्चेंट मेन्यू का जोड़ें बटन बाईं ओर ले जाता है।",
+  "settings.row.leftHandedHint": "आपके मर्चेंट मेन्यू का \"जोड़ें\" बटन बाईं ओर कर देता है।",
   "settings.row.feedback": "फ़ीडबैक भेजें",
   "settings.row.contact": "हमसे संपर्क करें",
   "settings.row.privacyPolicy": "गोपनीयता नीति",

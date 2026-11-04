@@ -3,7 +3,7 @@ import type { MessageKey } from "./en";
 export const ms: Record<MessageKey, string> = {
   "tab.home": "Utama",
   "tab.feed": "Suapan",
-  "tab.post": "Siaran",
+  "tab.post": "Pos",
   "tab.reviews": "Ulasan",
   "tab.profile": "Profil",
   "tab.menu": "Menu",
