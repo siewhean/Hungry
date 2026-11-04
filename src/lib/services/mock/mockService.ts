@@ -1866,6 +1866,7 @@ export const hungryService: HungryService = {
             const building = buildings.find((item) => item.id === venue.buildingId);
             return {
               stallId: venue.id,
+              name: venue.name,
               cuisineTags: [],
               buildingType: building?.type,
               planningArea: venue.planningArea ?? building?.planningArea,

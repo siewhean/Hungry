@@ -98,30 +98,30 @@ interface PassportState {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
- * Matches tried stall IDs against a passport category's `matchTag`.
- * Checks the `tasteTags` of dishes at each tried stall.
- * A stall counts if any of its dishes contain the matchTag.
+ * Whether one visited stall counts towards a Passport category. The stall's own cuisine,
+ * building and area decide it; the tags of its dishes are the older fallback.
  */
+export function triedStallMatchesCategory(
+  stallId: string,
+  matchTag: string,
+  facts: Record<string, StallStampFacts>,
+): boolean {
+  const stallFacts = facts[stallId];
+  if (stallFacts && stallMatchesCategory(stallFacts, { matchTag })) return true;
+  const tag = matchTag.toLowerCase();
+  return getDataRepository()
+    .listDishesByVenue(stallId)
+    .some((dish) => (dish.tasteTags ?? []).some((t: string) => t.toLowerCase().includes(tag)));
+}
+
 function countMatchingTriedStalls(
   triedStallIds: Set<string>,
   matchTag: string,
   facts: Record<string, StallStampFacts>,
 ): number {
-  const repo = getDataRepository();
-  const tag = matchTag.toLowerCase();
   let count = 0;
   for (const stallId of triedStallIds) {
-    // The stall's own cuisine, building and area decide it; dish tags are the older fallback.
-    const stallFacts = facts[stallId];
-    if (stallFacts && stallMatchesCategory(stallFacts, { matchTag })) {
-      count++;
-      continue;
-    }
-    const dishes = repo.listDishesByVenue(stallId);
-    const matches = dishes.some((dish) =>
-      (dish.tasteTags ?? []).some((t: string) => t.toLowerCase().includes(tag)),
-    );
-    if (matches) count++;
+    if (triedStallMatchesCategory(stallId, matchTag, facts)) count++;
   }
   return count;
 }

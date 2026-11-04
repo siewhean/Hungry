@@ -4362,7 +4362,7 @@ export const supabaseService: HungryService = {
       // public, so these need no sign-in. A failure throws so the Passport retries later.
       const { data: venueRows, error: venueError } = await client
         .from("venues")
-        .select("id,building_id,cuisine_tags,planning_area,address")
+        .select("id,name,building_id,cuisine_tags,planning_area,address")
         .in("id", unique);
       if (venueError) throw venueError;
       const venueList = (Array.isArray(venueRows) ? venueRows : []) as Row[];
@@ -4385,6 +4385,7 @@ export const supabaseService: HungryService = {
         const text = (value: unknown) => (typeof value === "string" ? value : "");
         return {
           stallId: String(row.id),
+          name: text(row.name) || undefined,
           cuisineTags: asStringArray(row.cuisine_tags).map((tag) => tag.toLowerCase()),
           buildingType: text(building?.building_type) || undefined,
           planningArea: text(row.planning_area) || text(building?.planning_area) || undefined,

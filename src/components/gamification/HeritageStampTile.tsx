@@ -1,4 +1,4 @@
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { PassportStampArt } from "@/components/gamification/PassportStampArt";
 import { AppText } from "@/components/ui/AppText";
@@ -14,6 +14,10 @@ type Props = {
   categoryId: string;
   /** The stamp's level, from 0 (first stamp) to 3 (completed). */
   level: number;
+  /** Opens or closes the stamp's details. Without it the tile is not a button. */
+  onPress?: () => void;
+  /** The tile whose details are open. */
+  selected?: boolean;
 };
 
 /** One circular stamp in the Passport's three-column "Heritage Stamps" grid. */
@@ -25,25 +29,33 @@ export function HeritageStampTile({
   width,
   categoryId,
   level,
+  onPress,
+  selected = false,
 }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const ring = Math.min(84, width - spacing[3]);
   return (
-    <View
+    <Pressable
       accessible
+      accessibilityRole={onPress ? "button" : undefined}
+      accessibilityState={onPress ? { expanded: selected } : undefined}
+      accessibilityHint={onPress ? "Shows when you earned it and the stalls that count" : undefined}
       accessibilityLabel={`${title}, ${subtitle}. ${earned ? detail : "Locked"}`}
-      style={{
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => ({
         alignItems: "center",
         backgroundColor: earned ? palette.surface : palette.bgSoft,
-        borderColor: palette.border,
+        borderColor: selected ? palette.orange : palette.border,
         borderRadius: componentRadii.card,
-        borderWidth: 1,
+        borderWidth: selected ? 1.5 : 1,
         gap: spacing[1],
-        opacity: earned ? 1 : 0.72,
+        opacity: (earned ? 1 : 0.72) * (pressed ? 0.85 : 1),
         paddingHorizontal: spacing[1.5],
         paddingVertical: spacing[3],
+        transform: [{ scale: pressed ? 0.97 : 1 }],
         width,
-      }}
+      })}
     >
       <View style={{ marginBottom: spacing[1] }}>
         <PassportStampArt categoryId={categoryId} level={level} earned={earned} size={ring} />
@@ -65,6 +77,6 @@ export function HeritageStampTile({
       >
         {earned ? detail : "Locked"}
       </AppText>
-    </View>
+    </Pressable>
   );
 }

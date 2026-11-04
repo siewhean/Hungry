@@ -17,6 +17,8 @@ import {
   StampMoment,
   momentWordsDelay,
 } from "@/components/gamification/StampMoment";
+import { StampDetailPanel } from "@/components/gamification/StampDetailPanel";
+import { buildStampHistory } from "@/features/passport/stampHistory";
 import {
   MOMENT_DELAY_MS,
   MOMENT_SETTLE_MS,
@@ -235,6 +237,61 @@ test("a stamp moment lands the stamp, and its words wait for the stars", () => {
     wordsAt > momentWordsDelay({ kind: "stamp", stamp: first, category, triedCount: 1 }),
     "more stars to pop means a later reveal",
   );
+});
+
+test("an open stamp lists each level earned with its stall, and opens a stall when tapped", async () => {
+  const category = ALL_PASSPORT_CATEGORIES.find((item) => item.id === "hood-chinatown");
+  assert.ok(category);
+  const history = buildStampHistory({
+    category,
+    stamps: PASSPORT_STAMP_DEFINITIONS,
+    triedStalls: [
+      { stallId: "s1", triedAt: "2026-10-30T04:00:00Z" },
+      { stallId: "s2", triedAt: "2026-11-01T04:00:00Z" },
+      { stallId: "s3" },
+    ],
+    matches: () => true,
+    nameOf: (id) => ({ s1: "Chinatown Complex Laksa", s2: "Smith Street Satay" })[id],
+  });
+  const opened: string[] = [];
+  const view = await render(
+    createElement(StampDetailPanel, {
+      category,
+      history,
+      onOpenStall: (id) => opened.push(id),
+      onClose: () => opened.push("close"),
+    }),
+  );
+  assert.ok(view.text().includes("Level 2 of 4"));
+  assert.ok(view.text().includes("Earned 30 Oct 2026 at Chinatown Complex Laksa"));
+  assert.ok(view.text().includes("Next: Trail regular. Visit 2 more stalls that count."));
+  assert.ok(view.findByText("A stall you visited"), "a stall without a name still shows");
+  await view.press(view.findByLabel("Smith Street Satay, visited 1 Nov 2026"));
+  await view.press(view.findByLabel(`Close ${category.name}`));
+  assert.deepEqual(opened, ["s2", "close"]);
+});
+
+test("a stamp not started yet says what earns it", async () => {
+  const category = ALL_PASSPORT_CATEGORIES.find((item) => item.id === "cuisine-indian");
+  assert.ok(category);
+  const history = buildStampHistory({
+    category,
+    stamps: PASSPORT_STAMP_DEFINITIONS,
+    triedStalls: [],
+    matches: () => false,
+    nameOf: () => undefined,
+  });
+  const view = await render(
+    createElement(StampDetailPanel, {
+      category,
+      history,
+      onOpenStall: () => undefined,
+      onClose: () => undefined,
+    }),
+  );
+  assert.ok(view.findByText("Not stamped yet"));
+  assert.ok(view.text().includes(category.description));
+  assert.ok(view.text().includes("Visit 1 more stall that counts."));
 });
 
 function seedPassport(counts: () => Record<string, number>) {
