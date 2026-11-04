@@ -8,12 +8,10 @@ import type {
 import {
   useFocusEffect,
   useNavigation,
-  useNavigationState,
   useRoute,
   type NavigationProp,
 } from "@react-navigation/native";
 import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
-import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppBottomTabItem, EdgeSwipeZones, Skeleton } from "@/components/ui";
@@ -22,7 +20,6 @@ import { preloadRoute } from "@/features/navigation/prefetch";
 import { useAchievementsLoopEnabled, useNextStamp } from "@/features/passport/useNextStamp";
 import { adjacentTabKey, mainTabOrder, type MainTabKey } from "@/features/navigation/swipeIntent";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
-import { useFadeRiseIn } from "@/lib/motion/uiMotion";
 import { useSessionStore } from "@/store/useSessionStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useHungryTheme } from "@/theme";
@@ -31,8 +28,6 @@ import { tabBarBottomPadding } from "./tabBarMetrics";
 
 const Tab = createMaterialTopTabNavigator<MainTabParamList>();
 const MAIN_TAB_PRELOAD_DISTANCE = 2;
-const TAB_RISE_DISTANCE = 28;
-const TAB_RISE_MS = 280;
 const MAIN_TAB_WARMUP_TIMEOUT_MS = 350;
 const MAIN_TAB_WARMUP_FALLBACK_DELAY_MS = 120;
 const MAIN_TAB_INTENT_WARMUP_FALLBACK_DELAY_MS = 0;
@@ -195,16 +190,6 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
     const [Component, setComponent] = useState<TabScreenComponent | null>(() => loader.getCached());
     const route = useRoute();
     const edgeSwipes = useTabEdgeSwipes(route.name as MainTabKey);
-    const reduceMotion = useReduceMotion();
-    // Whether this is the tab on show in the tab bar (not whether a screen is pushed over it, so
-    // coming back from a stall page does not replay the entrance).
-    const isActiveTab = useNavigationState((state) => state.routes[state.index]?.key === route.key);
-    // The page rises in from the bottom each time its tab is opened.
-    const riseStyle = useFadeRiseIn(reduceMotion, {
-      distance: TAB_RISE_DISTANCE,
-      duration: TAB_RISE_MS,
-      resetKey: isActiveTab,
-    });
 
     useEffect(() => {
       if (Component) return undefined;
@@ -217,11 +202,11 @@ function createDeferredTabScreen(loader: TabScreenLoader) {
     }, [Component, loader]);
 
     return (
-      <Animated.View style={[styles.tabPage, riseStyle]}>
+      <View style={styles.tabPage}>
         <EdgeSwipeZones {...edgeSwipes}>
           {Component ? <Component {...props} /> : <TabScreenLoadingPlaceholder />}
         </EdgeSwipeZones>
-      </Animated.View>
+      </View>
     );
   }
 
@@ -394,6 +379,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
 }
 
 export function SwipeableTabNavigator() {
+  const reduceMotion = useReduceMotion();
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
   useEffect(() => {
@@ -408,10 +394,11 @@ export function SwipeableTabNavigator() {
       tabBarPosition="bottom"
       tabBar={(props: MaterialTopTabBarProps) => <CustomTabBar {...props} />}
       screenOptions={{
-        // No drag-along pager: it half-drew the neighbouring pages. The tabs open from the bar or
-        // from a swipe in from a screen edge (EdgeSwipeZones), each rising in from the bottom.
+        // No drag-along pager (its swipe fought the photo carousels). The tabs open from the bar or
+        // from a swipe in from a screen edge (EdgeSwipeZones), and the pages slide across: the old
+        // page leaves and the next arrives from the side the swipe came from. Reduce Motion cuts.
         swipeEnabled: false,
-        animationEnabled: false,
+        animationEnabled: !reduceMotion,
         lazy: !tabPreloadEnabled,
         lazyPlaceholder: () => <TabScreenLoadingPlaceholder />,
         lazyPreloadDistance: tabPreloadEnabled ? MAIN_TAB_PRELOAD_DISTANCE : 0,
