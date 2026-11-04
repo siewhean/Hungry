@@ -508,9 +508,12 @@ test("L13: stories and direct messages stay behind their flags in production", (
   assert.match(flags, /directMessagesEnabled/);
 });
 
-test("L14: no tab takes pager swipes, so the photo carousel keeps them", () => {
+test("L14: only a drag from a screen edge pages the tabs, so the photo carousel keeps its swipes", () => {
+  const pager = read("src/features/navigation/edgePager.ts");
+  assert.match(pager, /startX <= EDGE_SWIPE_ZONE && dx > 0/);
+  assert.match(pager, /startX >= width - EDGE_SWIPE_ZONE && dx < 0/);
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  assert.match(tabs, /screenOptions=\{\{[\s\S]*?swipeEnabled: false/);
+  assert.doesNotMatch(tabs, /swipeEnabled: true/);
 });
 
 test("L15: the empty comments copy says comment, not review", () => {
