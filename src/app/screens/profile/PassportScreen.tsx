@@ -430,6 +430,8 @@ export function PassportScreen({ navigation }: Props) {
                   detail={`${progressMap[category.id]?.triedCount ?? 0} tried`}
                   earned={earned}
                   width={stampTileWidth}
+                  categoryId={category.id}
+                  level={stamp.index}
                 />
               ) : null,
             )}

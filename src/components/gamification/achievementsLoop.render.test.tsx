@@ -8,6 +8,8 @@ import { User } from "lucide-react-native";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { NextStampCard } from "@/components/gamification/NextStampCard";
+import { PassportStampArt, STAMP_LOOKS } from "@/components/gamification/PassportStampArt";
+import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
 import { StampMoment } from "@/components/gamification/StampMoment";
 import {
   MOMENT_DELAY_MS,
@@ -155,6 +157,10 @@ test("a stamp moment shows the new stamp and both buttons work", async () => {
   assert.ok(view.findByText("New stamp"));
   assert.ok(view.findByText("Malay Food Explorer"));
   assert.ok(view.text().includes("3 stalls tried"));
+  assert.ok(
+    view.findByLabel("Level 2 of 4"),
+    "the second stamp of a trail shows two of four stars",
+  );
   await view.press(view.findByText("See my Passport"));
   await view.press(view.findByText("Keep exploring"));
   assert.deepEqual(calls, ["open", "dismiss"]);
@@ -292,6 +298,36 @@ test("meeting the weekly goal shows a moment on any screen, once", async () => {
   });
   await wait(MOMENT_DELAY_MS + 200);
   assert.equal(view.findByText("Weekly goal complete"), null, "not again the same week");
+});
+
+test("every Passport category has its own stamp design, with a distinct emblem and label", () => {
+  const looks = ALL_PASSPORT_CATEGORIES.map((category) => STAMP_LOOKS[category.id]);
+  assert.ok(looks.every(Boolean), "no category falls back to another's stamp");
+  assert.equal(new Set(looks.map((look) => look!.emblem)).size, ALL_PASSPORT_CATEGORIES.length);
+  assert.equal(new Set(looks.map((look) => look!.label)).size, ALL_PASSPORT_CATEGORIES.length);
+});
+
+test("a stamp badge names the stamp for screen readers and says when it is locked", async () => {
+  const stamp = PASSPORT_STAMP_DEFINITIONS.find((item) => item.id === "hood-bugis-3")!;
+  const earned = await render(createElement(PassportStampBadge, { stamp, earned: true }));
+  assert.ok(earned.findByLabel("Bugis Food Trail: Return visit passport stamp"));
+  await earned.unmount();
+  const locked = await render(
+    createElement(PassportStampBadge, { stamp, earned: false, size: "sm" }),
+  );
+  assert.ok(locked.findByLabel("Bugis Food Trail: Return visit passport stamp, locked"));
+  await locked.unmount();
+  // The art alone is hidden from screen readers: the badge or tile around it does the talking.
+  const art = await render(
+    createElement(PassportStampArt, {
+      categoryId: "cuisine-malay",
+      level: 3,
+      earned: true,
+      size: 80,
+    }),
+  );
+  assert.equal(art.findByLabel("Bugis Food Trail: Return visit passport stamp"), null);
+  await art.unmount();
 });
 
 test("the host renders nothing and counts nothing under the kill switch", async () => {

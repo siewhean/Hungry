@@ -1,6 +1,6 @@
 import { View } from "react-native";
-import { Lock, Stamp } from "lucide-react-native";
 
+import { PassportStampArt } from "@/components/gamification/PassportStampArt";
 import { AppText } from "@/components/ui/AppText";
 import { useHungryTheme } from "@/theme";
 
@@ -11,12 +11,23 @@ type Props = {
   detail: string;
   earned: boolean;
   width: number;
+  categoryId: string;
+  /** The stamp's level, from 0 (first stamp) to 3 (completed). */
+  level: number;
 };
 
 /** One circular stamp in the Passport's three-column "Heritage Stamps" grid. */
-export function HeritageStampTile({ title, subtitle, detail, earned, width }: Props) {
+export function HeritageStampTile({
+  title,
+  subtitle,
+  detail,
+  earned,
+  width,
+  categoryId,
+  level,
+}: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const ring = Math.min(76, width - spacing[4]);
+  const ring = Math.min(84, width - spacing[3]);
   return (
     <View
       accessible
@@ -34,35 +45,8 @@ export function HeritageStampTile({ title, subtitle, detail, earned, width }: Pr
         width,
       }}
     >
-      <View
-        style={{
-          alignItems: "center",
-          backgroundColor: earned ? palette.orangeLight : palette.border,
-          borderRadius: ring / 2,
-          height: ring,
-          justifyContent: "center",
-          marginBottom: spacing[1],
-          width: ring,
-        }}
-      >
-        <View
-          style={{
-            alignItems: "center",
-            borderColor: earned ? palette.orange : palette.textMuted,
-            borderRadius: (ring - 12) / 2,
-            borderStyle: "dashed",
-            borderWidth: 1.5,
-            height: ring - 12,
-            justifyContent: "center",
-            width: ring - 12,
-          }}
-        >
-          {earned ? (
-            <Stamp color={palette.orange} size={26} />
-          ) : (
-            <Lock color={palette.textMuted} size={22} />
-          )}
-        </View>
+      <View style={{ marginBottom: spacing[1] }}>
+        <PassportStampArt categoryId={categoryId} level={level} earned={earned} size={ring} />
       </View>
       <AppText variant="bodySmallBold" numberOfLines={2} style={{ textAlign: "center" }}>
         {title}
