@@ -127,6 +127,8 @@ export type WheelStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Discover: undefined;
+  /** The Post page between Home and Reviews; reached by the edge swipe, never from the bar. */
+  Create: undefined;
   Review: undefined;
   Profile: NavigatorScreenParams<ProfileStackParamList>;
 };
