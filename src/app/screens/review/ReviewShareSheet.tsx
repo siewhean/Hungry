@@ -16,6 +16,7 @@ import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/c
 import { buildTelegramShareUrl, buildWhatsAppShareUrl } from "@/features/share/messagingShare";
 import { withShareSource } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import { openTrustedMessagingShareUrl } from "@/lib/security/safeLinking";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
@@ -91,7 +92,8 @@ export function ReviewShareSheet({
     try {
       const conversations = await getHungryService().chat.listConversations();
       setShareRecipients(conversations.map(toChatShareRecipient));
-    } catch {
+    } catch (error) {
+      reportError(error, { screen: "ReviewShareSheet", action: "list_conversations" });
       setShareRecipients([]);
     }
   }, [inAppSharingEnabled]);
@@ -162,7 +164,8 @@ export function ReviewShareSheet({
           }),
         ),
       );
-    } catch {
+    } catch (error) {
+      reportError(error, { screen: "ReviewShareSheet", action: "share_to_chat" });
       showToast({ message: "Could not share review. Please try again.", tone: "error" });
       return;
     }

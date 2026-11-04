@@ -7,6 +7,7 @@ import {
   ReviewMoreButton,
   ReviewPhotoStrip,
   ReviewReaderActions,
+  ReviewStars,
 } from "@/components/review";
 import type { StallCommunityReview } from "@/features/detail/detailTransforms";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
@@ -24,7 +25,10 @@ type Props = {
   onRemoved: () => void;
 };
 
-/** One community review on the stall page: who, which dish, the text, photos, owner reply. */
+/**
+ * One community review on the stall page, laid out like a dish page's review: who, how many stars
+ * and which dish, then the text, photos and owner reply, then one footer with the date and Helpful.
+ */
 export function StallReviewCard({
   review,
   venueId,
@@ -68,8 +72,11 @@ export function StallReviewCard({
             hitSlop={{ top: 8, bottom: 4, left: 8, right: 8 }}
             onPress={onOpenAuthor}
           >
-            <AppText style={{ fontWeight: "700" }}>{review.authorName}</AppText>
+            <AppText style={{ fontWeight: "900" }} numberOfLines={1}>
+              {review.authorName}
+            </AppText>
           </Pressable>
+          <ReviewStars rating={review.rating} />
           <Pressable
             accessibilityRole="link"
             accessibilityLabel={`Open ${review.dishName}`}
@@ -81,9 +88,6 @@ export function StallReviewCard({
             </AppText>
           </Pressable>
         </View>
-        <AppText variant="micro" tone="muted">
-          {formatTimeAgo(review.createdAt)}
-        </AppText>
         {isOwn ? null : (
           <ReviewMoreButton
             review={{
@@ -142,10 +146,20 @@ export function StallReviewCard({
         </View>
       ) : null}
 
-      <View style={{ marginTop: spacing[2] }}>
+      {/* One footer line: when it was written, and "Helpful" on someone else's review. */}
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: spacing[2],
+        }}
+      >
+        <AppText variant="micro" tone="muted">
+          {formatTimeAgo(review.createdAt)}
+        </AppText>
         <ReviewReaderActions
           key={review.reviewId}
-          rating={review.rating}
           review={{
             id: review.reviewId,
             authorId: review.authorId,

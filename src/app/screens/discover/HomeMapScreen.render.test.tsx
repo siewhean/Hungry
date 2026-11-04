@@ -32,7 +32,10 @@ const card = {
   buildingId: "b",
   name: "Tian Tian Chicken Rice",
   buildingName: "Maxwell Food Centre",
-  distanceMeters: 120,
+  // 120 m north of the diner below; distances come from these coordinates, never the read.
+  latitude: 1.353179,
+  longitude: 103.8198,
+  distanceMeters: 999,
   menuCount: 4,
   representativeDish: { id: "d", name: "Chicken Rice", price: 5.5, verificationStatus: "verified" },
   verificationStatus: "verified",
@@ -194,6 +197,14 @@ test("MD-M9 and M11 a card shows rating and open state, and a screen reader hear
     ),
     "the card's label carries the rating, hours, distance and place",
   );
+});
+
+test("round six: without the diner's location a card shows no distance, even one the read sent", async () => {
+  useLocationStore.setState({ permission: "unknown", manualCoordinate: undefined });
+  const view = await renderMap();
+  await settleCatalogRead(view);
+  assert.match(view.text(), /Tian Tian Chicken Rice/);
+  assert.doesNotMatch(view.text(), /999 m|120 m/);
 });
 
 test("MD-M9 a failed hours read leaves the word out and the card in place", async () => {

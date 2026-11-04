@@ -1,3 +1,6 @@
+import { calculateDistanceMeters } from "@/lib/geo/distance";
+import type { Coordinate } from "@/types/domain";
+
 /**
  * The one way Map, Decide for me and the Wheel write a distance: "210 m", "1.2 km", with a space
  * before the unit. `away: true` adds the word for a line that stands on its own ("210 m away").
@@ -15,4 +18,19 @@ export function formatDistanceLabel(
       ? `${(distanceMeters / 1000).toFixed(1)} km`
       : `${Math.round(distanceMeters)} m`;
   return options.away ? `${label} away` : label;
+}
+
+/**
+ * How far a place is from the diner, in metres, or undefined when that is not known. Reads can
+ * measure from wherever the map is looking (its centre, a tapped cluster), which is not where the
+ * diner is, so a place's own `distanceMeters` is never trusted here: the distance is worked out
+ * from its coordinates, and only when the diner's location is real (a GPS fix or a picked area).
+ */
+export function distanceFromDiner(
+  place: { latitude?: number; longitude?: number },
+  diner: Coordinate | undefined,
+): number | undefined {
+  if (!diner || place.latitude === undefined || place.longitude === undefined) return undefined;
+  if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) return undefined;
+  return calculateDistanceMeters(diner, { latitude: place.latitude, longitude: place.longitude });
 }

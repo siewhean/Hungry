@@ -28,20 +28,18 @@ export function reviewDraftHasContent(draft: ReviewDraft): boolean {
   );
 }
 
-export type ReviewRequiredField = "dish" | "photo" | "rating";
+export type ReviewRequiredField = "dish" | "rating";
 
 /**
- * The first required field still missing, in the order the editor shows them (dish, photo,
- * rating), with the sentence shown under Publish; null when the review can be published.
+ * The first required field still missing, in the order the editor shows them (dish, rating),
+ * with the sentence shown under Publish; null when the review can be published. A photo is
+ * optional (sh, 2026-11-04): it was required, and prod had no reviews at all.
  */
 export function firstMissingReviewField(
-  draft: Pick<ReviewDraft, "rating" | "photos">,
+  draft: Pick<ReviewDraft, "rating">,
   hasDish: boolean,
 ): { field: ReviewRequiredField; message: string } | null {
   if (!hasDish) return { field: "dish", message: "Choose a dish to review." };
-  if (draft.photos.length === 0) {
-    return { field: "photo", message: "Add a photo of the dish to publish." };
-  }
   if (!draft.rating) return { field: "rating", message: "Add a star rating to publish." };
   return null;
 }

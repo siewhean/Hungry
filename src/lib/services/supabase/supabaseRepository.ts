@@ -480,6 +480,10 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
     logoUrl: toString(row.venue_logo_url, toString(row.logo_url)) || undefined,
     buildingName: toString(row.building_name) || undefined,
     distanceMeters: row.distance_meters == null ? undefined : toNumber(row.distance_meters),
+    // Home reads a stall without a menu by its cuisine (homeSections, stallTaste).
+    ...(toStringArray(row.cuisine_tags).length
+      ? { cuisineTags: toStringArray(row.cuisine_tags) }
+      : {}),
   };
 }
 
