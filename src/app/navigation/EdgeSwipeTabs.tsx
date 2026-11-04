@@ -200,6 +200,9 @@ export function EdgeSwipePages({
             return (
               <View
                 key={route.key}
+                // aria-hidden is the one react-native-web reads: without it an off-screen
+                // page's buttons stay in the web accessibility tree.
+                aria-hidden={!focused}
                 accessibilityElementsHidden={!focused}
                 importantForAccessibility={focused ? "auto" : "no-hide-descendants"}
                 style={laidOut ? { width } : focused ? StyleSheet.absoluteFill : styles.hidden}
