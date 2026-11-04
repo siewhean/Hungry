@@ -288,7 +288,7 @@ export function classifyHomeText(text: string): HomeCategoryId | undefined {
 }
 
 /** Kinds worth showing first at this Singapore hour; the rest follow in the usual order. */
-function timeOfDayPriority(hour: number): readonly HomeCategoryId[] {
+export function timeOfDayPriority(hour: number): readonly HomeCategoryId[] {
   if (hour >= 5 && hour < 10) return ["breakfast", "drinks", "noodles"];
   if (hour >= 10 && hour < 14) return ["rice", "noodles", "malay"];
   if (hour >= 14 && hour < 17) return ["dessert", "drinks", "breakfast"];

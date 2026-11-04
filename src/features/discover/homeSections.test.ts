@@ -3,7 +3,13 @@ import test from "node:test";
 
 import type { TasteVector } from "@/types/domain";
 
-import { buildHomeSections, palateFit, type HomeSectionCard } from "./homeSections";
+import { HOME_CATEGORIES } from "./homeCategories";
+import {
+  buildHomeSections,
+  hourSectionTitle,
+  palateFit,
+  type HomeSectionCard,
+} from "./homeSections";
 
 const NEUTRAL: TasteVector = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
 const vec = (overrides: Partial<TasteVector>): TasteVector => ({ ...NEUTRAL, ...overrides });
@@ -34,6 +40,10 @@ const MIXED: HomeSectionCard[] = [
 const BIG: HomeSectionCard[] = [0, 1, 2].flatMap((copy) =>
   MIXED.map((c) => ({ ...c, venue: { id: `${c.venue.id}-${copy}`, name: c.venue.name } })),
 );
+// Enough stalls that every section finds its own.
+const HUGE: HomeSectionCard[] = [0, 1, 2, 3].flatMap((copy) =>
+  BIG.map((c) => ({ ...c, venue: { id: `${c.venue.id}-h${copy}`, name: c.venue.name } })),
+);
 const SPICY_LOVER = vec({ spicy: 9, rich: 7, sweet: 3 });
 
 test("the recommended section is made of different foods and claims its stalls", () => {
@@ -44,7 +54,7 @@ test("the recommended section is made of different foods and claims its stalls",
   });
   const recommended = sections[0];
   assert.equal(recommended.id, "recommended");
-  assert.equal(recommended.title, "Recommended for you");
+  assert.equal(recommended.title, "Just for you");
   assert.ok(recommended.cards.length >= 3);
   // No food kind shows twice before every kind has shown once.
   const kinds = recommended.cards.slice(0, 3).map((c) => c.topDish?.name.split(" ")[0]);
@@ -54,13 +64,13 @@ test("the recommended section is made of different foods and claims its stalls",
   assert.equal(new Set(ids).size, ids.length);
 });
 
-test("without a trusted palate the section is called Popular near you", () => {
+test("without a trusted palate the lead section is Popular in the area", () => {
   const sections = buildHomeSections(MIXED, { hour: 19 });
-  assert.equal(sections[0]?.title, "Popular near you");
+  assert.equal(sections[0]?.title, "Popular in the area");
 });
 
 test("taste sections follow the palate and mix food types", () => {
-  const sections = buildHomeSections(BIG, {
+  const sections = buildHomeSections(HUGE, {
     hour: 19,
     palate: SPICY_LOVER,
     palateTrusted: true,
@@ -109,16 +119,89 @@ test("stalls already shown above are left out, and thin sections are skipped", (
   assert.deepEqual(buildHomeSections(MIXED.slice(0, 2), { hour: 19 }), []);
 });
 
-test("pinned dishes and the foods the diner has had lead the food sections", () => {
-  const noodleStalls = ["a", "b", "c", "d"].map((id) => card(`n${id}`, "Prawn Noodles"));
-  const riceStalls = ["a", "b", "c", "d"].map((id) => card(`r${id}`, "Chicken Rice"));
-  const sections = buildHomeSections([...noodleStalls, ...riceStalls], {
+test("pinned dishes become a reason, not a food heading", () => {
+  const laksa = ["a", "b", "c", "d"].map((id) => card(`l${id}`, "Laksa"));
+  const other = ["a", "b", "c", "d"].map((id) => card(`r${id}`, "Chicken Rice"));
+  const filler = Array.from({ length: 24 }, (_, i) => card(`x${i}`, "Kaya Toast"));
+  const sections = buildHomeSections([...filler, ...laksa, ...other], {
     hour: 12,
-    familiarNames: ["chicken rice"],
     favourites: [{ id: "laksa", label: "Laksa", query: "Laksa" }],
   });
-  const food = sections.filter((section) => section.kind === "food");
-  assert.equal(food[0]?.id, "rice", "what the diner has had comes first");
+  const pinned = sections.find((section) => section.kind === "favourite");
+  assert.equal(pinned?.title, "Because you like Laksa");
+  assert.equal(pinned?.query, "Laksa");
+});
+
+test("no section is named after a kind of food", () => {
+  const sections = buildHomeSections(HUGE, {
+    hour: 12,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    maxSections: 10,
+    favourites: [{ id: "laksa", label: "Laksa", query: "Laksa" }],
+  });
+  assert.ok(sections.length >= 3);
+  const foodTitles = new Set(HOME_CATEGORIES.map((category) => category.title));
+  for (const section of sections.filter((s) => s.kind !== "favourite")) {
+    assert.equal(foodTitles.has(section.title), false, section.title);
+  }
+  // A stall is in one section only.
+  const ids = sections.flatMap((section) => section.cards.map((c) => c.venue.id));
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test("the hour's section names the moment and Late night only shows at night", () => {
+  assert.equal(hourSectionTitle(8), "Breakfast nearby");
+  assert.equal(hourSectionTitle(12), "Lunch nearby");
+  assert.equal(hourSectionTitle(15), "Afternoon treats");
+  assert.equal(hourSectionTitle(19), "Dinner tonight");
+  assert.equal(hourSectionTitle(23), "Late night");
+  assert.equal(hourSectionTitle(2), "Late night");
+  const titles = (hour: number) =>
+    buildHomeSections(BIG, { hour, maxSections: 10 }).map((section) => section.title);
+  assert.ok(titles(23).includes("Late night"));
+  assert.equal(titles(13).includes("Late night"), false);
+});
+
+test("the hour's section holds only stalls that are open now", () => {
+  const open = new Set(HUGE.slice(-40).map((c) => c.venue.id));
+  const sections = buildHomeSections(HUGE, {
+    hour: 23,
+    maxSections: 10,
+    isOpenNow: (c) => open.has(c.venue.id),
+  });
+  const night = sections.find((section) => section.id === "hour");
+  assert.equal(night?.title, "Late night");
+  assert.ok(night && night.cards.length >= 3);
+  assert.ok(night.cards.every((c) => open.has(c.venue.id)));
+  // Nothing open: no Late night section at all.
+  const none = buildHomeSections(HUGE, { hour: 23, maxSections: 10, isOpenNow: () => false });
+  assert.equal(
+    none.some((section) => section.id === "hour"),
+    false,
+  );
+});
+
+test("Popular in the area ranks well-reviewed stalls and New and worth a try holds unproven ones", () => {
+  const proven = Array.from({ length: 24 }, (_, i) => ({
+    venue: { id: `p${i}`, name: `Proven ${i}` },
+    topDish: { name: `Dish ${i}`, rating: 4.6, reviewCount: 40 },
+  }));
+  const fresh = Array.from({ length: 24 }, (_, i) => ({
+    venue: { id: `f${i}`, name: `Fresh ${i}` },
+    topDish: { name: `Plate ${i}`, rating: 0, reviewCount: 0 },
+  }));
+  const sections = buildHomeSections([...fresh, ...proven], {
+    hour: 12,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    maxSections: 10,
+  });
+  const popular = sections.find((section) => section.id === "popular");
+  assert.ok(popular?.cards.every((c) => c.venue.id.startsWith("p")));
+  const fresher = sections.find((section) => section.id === "new");
+  assert.equal(fresher?.title, "New and worth a try");
+  assert.ok(fresher?.cards.every((c) => c.venue.id.startsWith("f")));
 });
 
 test("a section chevron has something to search for, and sections are capped", () => {
