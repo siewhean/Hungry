@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { View } from "react-native";
+import { Platform } from "react-native";
 import Animated, {
   Easing,
   cancelAnimation,
@@ -15,6 +15,7 @@ import Svg, { Path } from "react-native-svg";
 
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useHungryTheme } from "@/theme";
+import { HomeWaterShader } from "./HomeWaterShader";
 
 /** How far the page scrolls before the waves have faded into the normal background. */
 export const WAVE_FADE_DISTANCE = 180;
@@ -22,6 +23,14 @@ export const WAVE_FADE_DISTANCE = 180;
 export const WAVE_BAND_HEIGHT = 240;
 /** One full drift of the waves. */
 export const WAVE_LOOP_MS = 9000;
+
+/** Seconds the water clock is wound forward each time it starts (an hour of motion). */
+const WATER_CLOCK_SECONDS = 3600;
+/**
+ * The water shader runs on the phone through Skia (Metal on iPhone). The web build, where Skia
+ * needs its own wasm, keeps the plain drifting waves below.
+ */
+const USE_WATER_SHADER = Platform.OS !== "web";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const STEPS = 28;
@@ -64,22 +73,33 @@ type Props = {
  * are hidden from screen readers, and hold still under Reduce Motion.
  */
 export function HomeWaveBackground({ width, topInset, scrollY, active = true }: Props) {
-  const { palette } = useHungryTheme();
+  const { palette, colorScheme } = useHungryTheme();
+  const isDark = colorScheme === "dark";
   const reduceMotion = useReduceMotion();
   const phase = useSharedValue(0);
+  // Seconds on the water shader's clock; a still frame under Reduce Motion.
+  const time = useSharedValue(2);
 
   useEffect(() => {
     if (!active || reduceMotion) {
       cancelAnimation(phase);
+      cancelAnimation(time);
       return;
     }
+    time.value = withTiming(time.value + WATER_CLOCK_SECONDS, {
+      duration: WATER_CLOCK_SECONDS * 1000,
+      easing: Easing.linear,
+    });
     phase.value = withRepeat(
       withTiming(2 * Math.PI, { duration: WAVE_LOOP_MS, easing: Easing.linear }),
       -1,
       false,
     );
-    return () => cancelAnimation(phase);
-  }, [active, phase, reduceMotion]);
+    return () => {
+      cancelAnimation(phase);
+      cancelAnimation(time);
+    };
+  }, [active, phase, reduceMotion, time]);
 
   const height = topInset + WAVE_BAND_HEIGHT;
   const backProps = useAnimatedProps(() => ({
@@ -100,12 +120,20 @@ export function HomeWaveBackground({ width, topInset, scrollY, active = true }: 
       importantForAccessibility="no-hide-descendants"
       style={[{ height, left: 0, position: "absolute", right: 0, top: -topInset }, fadeStyle]}
     >
-      <View style={{ flex: 1 }}>
+      {USE_WATER_SHADER ? (
+        <HomeWaterShader
+          width={width}
+          height={height}
+          time={time}
+          color={palette.orange}
+          strength={isDark ? 0.26 : 0.32}
+        />
+      ) : (
         <Svg width={width} height={height}>
           <AnimatedPath animatedProps={backProps} fill={palette.orange} fillOpacity={0.1} />
           <AnimatedPath animatedProps={frontProps} fill={palette.orange} fillOpacity={0.14} />
         </Svg>
-      </View>
+      )}
     </Animated.View>
   );
 }

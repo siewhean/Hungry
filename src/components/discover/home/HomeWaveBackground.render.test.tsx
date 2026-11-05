@@ -36,3 +36,16 @@ test("the background never takes touches and is hidden from screen readers", asy
   assert.ok(WAVE_BAND_HEIGHT > 0);
   assert.equal(band.getAttribute("aria-hidden") ?? "true", "true");
 });
+
+test("the phone draws the water shader through Skia; the web keeps the plain waves", async () => {
+  const { readFileSync } = await import("node:fs");
+  const wave = readFileSync("src/components/discover/home/HomeWaveBackground.tsx", "utf8");
+  assert.match(wave, /USE_WATER_SHADER = Platform\.OS !== "web"/);
+  assert.match(wave, /<HomeWaterShader/);
+  const { WATER_SHADER_SOURCE } = await import("@/components/discover/home/HomeWaterShader");
+  for (const uniform of ["float2 size", "float time", "float3 tint", "float strength"]) {
+    assert.ok(WATER_SHADER_SOURCE.includes(`uniform ${uniform}`), `shader declares ${uniform}`);
+  }
+  assert.match(WATER_SHADER_SOURCE, /half4 main\(float2 xy\)/);
+  assert.match(WATER_SHADER_SOURCE, /caustic/);
+});
