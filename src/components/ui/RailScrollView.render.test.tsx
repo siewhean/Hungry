@@ -34,3 +34,10 @@ test("on a phone it is gesture-handler's ScrollView, so two rows can be swiped a
   const rail = readFileSync("src/components/discover/home/DiscoverBiteRail.tsx", "utf8");
   assert.doesNotMatch(rail, /<ScrollView\s+horizontal/);
 });
+
+test("RailScrollView lets a tap reach a card while the row is still sliding", () => {
+  const source = readFileSync("src/components/ui/RailScrollView.tsx", "utf8");
+  assert.match(source, /allowTapsWhileScrolling: true/);
+  const patch = readFileSync("patches/react-native+0.86.3.patch", "utf8");
+  assert.match(patch, /this\._isAnimating\(\) && this\.props\.allowTapsWhileScrolling !== true/);
+});
