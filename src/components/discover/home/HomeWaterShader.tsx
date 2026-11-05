@@ -6,11 +6,11 @@ import { useDerivedValue, type SharedValue } from "react-native-reanimated";
  * Water for the top of Home, drawn by a GPU shader. Skia runs it through Metal on iPhone (the
  * SkSL below is compiled to Metal Shading Language) and through GL or Vulkan on Android.
  *
- * Three layers, all driven by one clock:
- *  - a band hanging from the top whose lower edge is a rolling wave, with a pale foam line on it;
- *  - caustics, the bright net of light that moves over a pool floor;
- *  - a soft depth gradient so the water is deeper (more tinted) toward the edge.
- * The tint is the brand orange and the strength is low, so the header text stays readable.
+ * Three layers, all driven by one slow clock:
+ *  - two long swells hanging from the top, a pale one behind a deeper one, each with a rolling edge;
+ *  - a pale foam line along the front swell;
+ *  - wide, soft caustics (the net of light that moves over a pool floor) and a depth gradient.
+ * The tint is a clear aqua and the strength is low, so the header text stays readable.
  */
 export const WATER_SHADER_SOURCE = `
 uniform float2 size;
@@ -18,6 +18,7 @@ uniform float time;
 uniform float3 tint;
 uniform float strength;
 
+// The bright net of light that moves over a pool floor.
 float caustic(float2 uv, float t) {
   float2 p = mod(uv * 6.28318, 6.28318) - 250.0;
   float2 i = p;
@@ -34,25 +35,39 @@ float caustic(float2 uv, float t) {
 }
 
 half4 main(float2 xy) {
+  // Slow and calm: the whole surface runs at a third of the clock.
+  float t = time * 0.3;
   float2 uv = xy / size;
   float aspect = size.x / size.y;
 
-  // The rolling lower edge of the band.
-  float edge = 0.84 + 0.04 * sin(uv.x * 7.0 + time * 0.9) + 0.025 * sin(uv.x * 13.0 - time * 1.3);
-  float inside = 1.0 - smoothstep(edge - 0.012, edge + 0.012, uv.y);
-  float foam = smoothstep(0.03, 0.0, abs(uv.y - edge)) * inside;
+  // Two long swells, one behind the other: the back one is paler and sits lower.
+  float front = 0.78 + 0.05 * sin(uv.x * 3.0 + t * 0.8) + 0.025 * sin(uv.x * 5.5 - t * 0.6 + 1.3);
+  float back = 0.90 + 0.04 * sin(uv.x * 2.4 - t * 0.5 + 2.0) + 0.02 * sin(uv.x * 4.6 + t * 0.7);
+  float inFront = 1.0 - smoothstep(front - 0.01, front + 0.01, uv.y);
+  float inBack = 1.0 - smoothstep(back - 0.01, back + 0.01, uv.y);
+  float foam = smoothstep(0.022, 0.0, abs(uv.y - front)) * inFront;
 
-  // Light on the water: two caustic layers drifting in different directions.
-  float2 q = float2(uv.x * aspect, uv.y) * 0.9;
-  float light = caustic(q + float2(time * 0.012, 0.0), time * 0.5)
-              + 0.6 * caustic(q * 1.7 - float2(0.0, time * 0.015), time * 0.35 + 3.0);
+  // Wide, soft caustics (a quarter of the old detail), drifting slowly.
+  float2 q = float2(uv.x * aspect, uv.y) * 0.55;
+  float light = caustic(q + float2(t * 0.02, 0.0), t * 0.45)
+              + 0.5 * caustic(q * 1.4 - float2(0.0, t * 0.02), t * 0.3 + 3.0);
   light = clamp(light, 0.0, 1.0);
 
-  // Deeper (more tinted) toward the edge, clearer at the top.
-  float depth = smoothstep(0.0, edge, uv.y);
-  float alpha = inside * strength * (0.45 + 0.55 * depth);
-  float3 rgb = mix(tint, float3(1.0), clamp(light * 0.75 + foam * 0.6, 0.0, 1.0));
-  float a = clamp(alpha * (1.0 + light * 0.9 + foam * 0.8), 0.0, 1.0);
+  // Deep water is the tint, shallow water is almost clear: darker toward each swell's edge.
+  float3 deep = tint * 0.78;
+  float3 shallow = mix(tint, float3(1.0), 0.45);
+  float depth = smoothstep(0.1, front, uv.y);
+  float3 frontRgb = mix(shallow, deep, depth);
+  frontRgb = mix(frontRgb, float3(1.0), clamp(light * 0.55 + foam * 0.7, 0.0, 1.0));
+  float frontA = inFront * strength * (0.5 + 0.5 * depth);
+
+  float3 backRgb = mix(shallow, tint, 0.35);
+  float backA = inBack * strength * 0.55;
+
+  // The front swell over the back one.
+  float a = frontA + backA * (1.0 - frontA);
+  float3 rgb = (frontRgb * frontA + backRgb * backA * (1.0 - frontA)) / max(a, 0.0001);
+  a = clamp(a * (1.0 + light * 0.35 + foam * 0.5), 0.0, 1.0);
   return half4(half3(rgb * a), half(a));
 }
 `;
