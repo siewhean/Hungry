@@ -30,9 +30,6 @@ const WATER_CLOCK_SECONDS = 3600;
  * The water shader runs on the phone through Skia (Metal on iPhone). The web build, where Skia
  * needs its own wasm, keeps the plain drifting waves below.
  */
-/** The water's colour: a clear aqua, a little deeper in dark mode. */
-const WATER_TINT_LIGHT = "#1AA6C7";
-const WATER_TINT_DARK = "#2B8DB0";
 const USE_WATER_SHADER = Platform.OS !== "web";
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -71,12 +68,12 @@ type Props = {
 };
 
 /**
- * Two soft aqua waves drifting across the top of Home. They stay pinned to the top of the screen
+ * Two soft waves of the theme orange drifting across the top of Home. They stay pinned to the top of the screen
  * while the page scrolls and fade into the normal background as it does. They never take touches,
  * are hidden from screen readers, and hold still under Reduce Motion.
  */
 export function HomeWaveBackground({ width, topInset, scrollY, active = true }: Props) {
-  const { colorScheme } = useHungryTheme();
+  const { palette, colorScheme } = useHungryTheme();
   const isDark = colorScheme === "dark";
   const reduceMotion = useReduceMotion();
   const phase = useSharedValue(0);
@@ -128,21 +125,13 @@ export function HomeWaveBackground({ width, topInset, scrollY, active = true }: 
           width={width}
           height={height}
           time={time}
-          color={isDark ? WATER_TINT_DARK : WATER_TINT_LIGHT}
-          strength={isDark ? 0.42 : 0.5}
+          color={palette.orange}
+          strength={isDark ? 0.4 : 0.46}
         />
       ) : (
         <Svg width={width} height={height}>
-          <AnimatedPath
-            animatedProps={backProps}
-            fill={isDark ? WATER_TINT_DARK : WATER_TINT_LIGHT}
-            fillOpacity={0.14}
-          />
-          <AnimatedPath
-            animatedProps={frontProps}
-            fill={isDark ? WATER_TINT_DARK : WATER_TINT_LIGHT}
-            fillOpacity={0.2}
-          />
+          <AnimatedPath animatedProps={backProps} fill={palette.orange} fillOpacity={0.14} />
+          <AnimatedPath animatedProps={frontProps} fill={palette.orange} fillOpacity={0.2} />
         </Svg>
       )}
     </Animated.View>

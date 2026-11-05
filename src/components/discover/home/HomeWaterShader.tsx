@@ -10,7 +10,7 @@ import { useDerivedValue, type SharedValue } from "react-native-reanimated";
  *  - two long swells hanging from the top, a pale one behind a deeper one, each with a rolling edge;
  *  - a pale foam line along the front swell;
  *  - wide, soft caustics (the net of light that moves over a pool floor) and a depth gradient.
- * The tint is a clear aqua and the strength is low, so the header text stays readable.
+ * The tint is the theme orange and the strength is low, so the header text stays readable.
  */
 export const WATER_SHADER_SOURCE = `
 uniform float2 size;
@@ -54,14 +54,14 @@ half4 main(float2 xy) {
   light = clamp(light, 0.0, 1.0);
 
   // Deep water is the tint, shallow water is almost clear: darker toward each swell's edge.
-  float3 deep = tint * 0.78;
-  float3 shallow = mix(tint, float3(1.0), 0.45);
+  float3 deep = tint;
+  float3 shallow = mix(tint, float3(1.0, 0.8, 0.5), 0.3);
   float depth = smoothstep(0.1, front, uv.y);
   float3 frontRgb = mix(shallow, deep, depth);
   frontRgb = mix(frontRgb, float3(1.0), clamp(light * 0.55 + foam * 0.7, 0.0, 1.0));
   float frontA = inFront * strength * (0.5 + 0.5 * depth);
 
-  float3 backRgb = mix(shallow, tint, 0.35);
+  float3 backRgb = mix(shallow, tint, 0.5);
   float backA = inBack * strength * 0.55;
 
   // The front swell over the back one.
@@ -77,7 +77,7 @@ type Props = {
   height: number;
   /** Seconds, ever increasing; the surface moves as it grows. */
   time: SharedValue<number>;
-  /** The brand colour the water is tinted with, as a CSS colour. */
+  /** The theme orange the water is tinted with, as a CSS colour. */
   color: string;
   /** How visible the water is, 0 to 1. */
   strength: number;

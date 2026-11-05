@@ -1006,3 +1006,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-11-05 POLISH-17Z-1: Spin the wheel opens once (navigateOnce); rail cards tappable while sliding (RN ScrollView patch allowTapsWhileScrolling); Popular dishes bowl flush with margin; Home chip icons match labels (DiscoverChipIcon); wavy pinned Home background (HomeWaveBackground)
 - 2026-11-05 POLISH-17Z-2: Home background is now a GPU water shader (Skia SkSL, Metal on iPhone): rolling wave edge, caustics, foam; plain SVG waves stay on web; pinned and fades on scroll
 - 2026-11-05 POLISH-17Z-3: Home water shader restyled: aqua two-swell design, about 4x slower (branch only, no PR, for sh to check on the phone)
+- 2026-11-05 POLISH-17Z-4: Home water tinted with the theme orange (palette.orange) instead of aqua (branch only, no PR)
