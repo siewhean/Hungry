@@ -5,6 +5,14 @@
 
 export const STALL_UPDATES_CHANNEL_ID = "stall-updates";
 
+export type StallAlertsRegistration = "registered" | "denied" | "unsupported";
+
+export async function registerForStallAlertsDetailed(_options?: {
+  askPermission?: boolean;
+}): Promise<StallAlertsRegistration> {
+  return "unsupported";
+}
+
 export async function registerForStallAlerts(_options?: {
   askPermission?: boolean;
 }): Promise<boolean> {

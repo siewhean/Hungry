@@ -27,12 +27,22 @@ Notifications.setNotificationHandler({
   }),
 });
 
+export type StallAlertsRegistration =
+  /** Permission granted and this device's push token is saved. */
+  | "registered"
+  /** The user declined, or turned notifications off in system settings. */
+  | "denied"
+  /** Permission is fine but this build or device can't get a push token (no push entitlement, simulator). */
+  | "unsupported";
+
 /**
- * Asks for permission and registers this device's Expo push token. Returns false if declined.
+ * Asks for permission and registers this device's Expo push token, and says why when it can't.
  * With `askPermission: false` it registers only when permission is already granted.
  */
-export async function registerForStallAlerts({ askPermission = true } = {}): Promise<boolean> {
-  if (!Device.isDevice) return false;
+export async function registerForStallAlertsDetailed({
+  askPermission = true,
+} = {}): Promise<StallAlertsRegistration> {
+  if (!Device.isDevice) return "unsupported";
 
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(STALL_UPDATES_CHANNEL_ID, {
@@ -46,7 +56,7 @@ export async function registerForStallAlerts({ askPermission = true } = {}): Pro
     getPermissions: () => Notifications.getPermissionsAsync(),
     requestPermissions: () => Notifications.requestPermissionsAsync(),
   });
-  if (status !== "granted") return false;
+  if (status !== "granted") return "denied";
 
   const projectId =
     Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? undefined;
@@ -55,11 +65,18 @@ export async function registerForStallAlerts({ askPermission = true } = {}): Pro
     ({ data: token } = await Notifications.getExpoPushTokenAsync({ projectId }));
   } catch (error) {
     // A build without the push entitlement can never get a token; nothing to report or retry.
-    if (isPushUnsupportedByBuild(error)) return false;
+    if (isPushUnsupportedByBuild(error)) return "unsupported";
     throw error;
   }
   await getHungryService().push.registerPushToken(token, Platform.OS === "ios" ? "ios" : "android");
-  return true;
+  return "registered";
+}
+
+/** True when this device is registered for pushes; false if declined or the build can't get a token. */
+export async function registerForStallAlerts(
+  options: { askPermission?: boolean } = {},
+): Promise<boolean> {
+  return (await registerForStallAlertsDetailed(options)) === "registered";
 }
 
 /**

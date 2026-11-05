@@ -512,7 +512,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               onClear={() => setDietaryPreferencesState([])}
               budget={maxDishBudget}
               onBudgetChange={setMaxDishBudgetState}
-              showBudget={!FEATURE_FLAGS.sliderOnboardingEnabled}
+              showBudget={flowMode === "profile" || !FEATURE_FLAGS.sliderOnboardingEnabled}
               onBudgetLayout={(budgetY) => {
                 if (!startAtBudget || scrolledToBudget.current) return;
                 scrolledToBudget.current = true;

@@ -1069,6 +1069,10 @@ export const useProfileStore = create<ProfileState>()(
             console.error("Failed to sync dietary preferences", error);
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
+            useUIStore.getState().showToast({
+              message: "Couldn't save your dietary preferences. Please try again.",
+              tone: "error",
+            });
           });
       },
       setMaxDishBudget: (maxDishBudget, options) => {
@@ -1088,6 +1092,10 @@ export const useProfileStore = create<ProfileState>()(
             console.error("Failed to sync dish budget", error);
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
+            useUIStore.getState().showToast({
+              message: "Couldn't save your meal budget. Please try again.",
+              tone: "error",
+            });
           });
       },
       addReview: (dish) =>

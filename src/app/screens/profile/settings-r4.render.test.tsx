@@ -581,6 +581,7 @@ test("R5: turning an alert on while the phone blocks notifications explains it i
   };
   const alertTitles: string[] = [];
   Alert.alert = ((title: string) => alertTitles.push(title)) as typeof Alert.alert;
+  stub(require("expo-device") as { isDevice: boolean }, "isDevice", true);
   stub(notifications, "getPermissionsAsync", async () => ({
     granted: false,
     status: "undetermined",
@@ -599,4 +600,25 @@ test("R5: turning an alert on while the phone blocks notifications explains it i
   assert.match(view.text(), /Notifications are off for Hungry/);
   assert.match(useUIStore.getState().toast?.message ?? "", /Allow notifications for Hungry/);
   assert.deepEqual(alertTitles, []);
+});
+
+test("R5: a build that cannot get a push token keeps the choice and says so, instead of blaming the phone's settings", async () => {
+  const notifications = require("expo-notifications") as {
+    getPermissionsAsync: () => Promise<{ granted: boolean; status: string }>;
+    getExpoPushTokenAsync: () => Promise<{ data: string }>;
+  };
+  stub(require("expo-device") as { isDevice: boolean }, "isDevice", true);
+  stub(notifications, "getPermissionsAsync", async () => ({ granted: true, status: "granted" }));
+  stub(notifications, "getExpoPushTokenAsync", async () => {
+    throw new Error('No "aps-environment" entitlement found for this app');
+  });
+  const { StallAlertsSettings } =
+    require("@/components/settings/StallAlertsSettings") as typeof import("@/components/settings/StallAlertsSettings");
+  const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+
+  await view.press(view.findByLabel("Weekly picks"));
+  await view.settle();
+  assert.doesNotMatch(view.text(), /Notifications are off for Hungry/);
+  assert.match(useUIStore.getState().toast?.message ?? "", /can't receive notifications yet/);
+  assert.equal(useUIStore.getState().toast?.tone, "info");
 });

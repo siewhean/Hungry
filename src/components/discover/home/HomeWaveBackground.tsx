@@ -21,6 +21,8 @@ import { HomeWaterShader } from "./HomeWaterShader";
 export const WAVE_FADE_DISTANCE = 180;
 /** Height of the wavy band below the status bar. */
 export const WAVE_BAND_HEIGHT = 240;
+/** Text over the water: near-black reads on the orange in light and dark (4.5:1 or better). */
+export const ON_WATER_TEXT = "#1A0F08";
 /** One full drift of the waves. */
 export const WAVE_LOOP_MS = 9000;
 
@@ -125,7 +127,7 @@ export function HomeWaveBackground({ width, topInset, scrollY, active = true }: 
           height={height}
           time={time}
           color={palette.orange}
-          strength={0.94}
+          strength={0.88}
         />
       ) : (
         <Svg width={width} height={height}>

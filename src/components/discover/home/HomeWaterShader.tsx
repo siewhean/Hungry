@@ -53,9 +53,12 @@ half4 main(float2 xy) {
   light = clamp(light, 0.0, 1.0);
 
   // Bright orange at the top, the full theme orange toward the edge, with pale light on it.
-  float3 shallow = mix(tint, float3(1.0, 0.72, 0.38), 0.3);
+  // A little less saturated than the raw theme orange, so the water is softer.
+  float luma = dot(tint, float3(0.3, 0.59, 0.11));
+  float3 base = mix(float3(luma), tint, 0.82);
+  float3 shallow = mix(base, float3(1.0, 0.72, 0.38), 0.3);
   float depth = smoothstep(0.1, front, uv.y);
-  float3 rgb = mix(shallow, tint, depth);
+  float3 rgb = mix(shallow, base, depth);
   rgb = mix(rgb, float3(1.0, 0.9, 0.7), clamp(light * 0.5 + foam * 0.6, 0.0, 1.0));
   float a = clamp(inFront * strength, 0.0, 1.0);
   return half4(half3(rgb * a), half(a));

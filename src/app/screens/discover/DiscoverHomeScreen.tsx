@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -145,7 +146,12 @@ import {
 } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
 import { DiscoverChipIcon } from "@/components/discover/home/DiscoverChipIcon";
-import { HomeWaveBackground } from "@/components/discover/home/HomeWaveBackground";
+import {
+  HomeWaveBackground,
+  ON_WATER_TEXT,
+  WAVE_FADE_DISTANCE,
+} from "@/components/discover/home/HomeWaveBackground";
+import { StatusBar } from "expo-status-bar";
 import {
   DiscoverSearchPlaceholder,
   NARROW_SEARCH_WIDTH,
@@ -280,6 +286,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const insets = useSafeAreaInsets();
   // How far the page has scrolled: the wavy background at the top fades out as it grows.
   const scrollY = useSharedValue(0);
+  // True while the orange water is still behind the header: its text turns near-black to stay readable.
+  const [overWater, setOverWater] = useState(true);
   const [discoverViewportHeight, setDiscoverViewportHeight] = useState(0);
   const discoverSectionGap = spacing[4];
   const discoverContentGap = spacing[2];
@@ -349,6 +357,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight,
     );
   }, []);
+
+  // The web build keeps faint SVG waves instead of the orange shader, so its text keeps the theme colours.
+  const headerInk = overWater && Platform.OS !== "web" ? ON_WATER_TEXT : undefined;
 
   const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "With friends" : "Spin the wheel";
 
@@ -1807,6 +1818,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
+      {isFocused ? (
+        <StatusBar style={headerInk ? "dark" : themeTints.isDark ? "light" : "dark"} />
+      ) : null}
       <HomeWaveBackground
         width={screenWidth}
         topInset={insets.top}
@@ -1817,7 +1831,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
-          scrollY.value = event.nativeEvent.contentOffset.y;
+          const y = event.nativeEvent.contentOffset.y;
+          scrollY.value = y;
+          const nextOverWater = y < WAVE_FADE_DISTANCE / 2;
+          if (nextOverWater !== overWater) setOverWater(nextOverWater);
         }}
         scrollEventThrottle={16}
         onLayout={handleDiscoverViewportLayout}
@@ -1868,7 +1885,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             >
               {/* A small line over the place name, so the name itself fits beside List / Map:
                   "Across Singapore" as one title was cut to "Across Singap..." at 390 pt. */}
-              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
+              <AppText variant="bodySmall" style={{ color: headerInk ?? themeTints.secondaryText }}>
                 {needsDiscoverAreaChoice
                   ? "Picks across"
                   : hasManualAreaPick
@@ -1880,12 +1897,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <SlideText
                   value={discoverHeaderLabel}
                   variant="h2"
-                  style={{ color: themeTints.text }}
+                  style={{ color: headerInk ?? themeTints.text }}
                   numberOfLines={1}
                   containerStyle={{ flexShrink: 1 }}
                 />
                 <ChevronDown
-                  color={themeTints.isDark ? palette.white : palette.textMuted}
+                  color={headerInk ?? (themeTints.isDark ? palette.white : palette.textMuted)}
                   size={20}
                 />
               </View>
@@ -1913,7 +1930,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 opacity: pressed ? 0.7 : 1,
               })}
             >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+              <AppText
+                variant="micro"
+                tone="accent"
+                style={{
+                  fontWeight: "700",
+                  ...(headerInk ? { color: headerInk, textDecorationLine: "underline" } : null),
+                }}
+              >
                 Turn on location for stalls near you
               </AppText>
             </Pressable>
@@ -1936,9 +1960,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <NumericText
                   value={shownCountLabel}
                   variant="micro"
-                  style={{ color: themeTints.secondaryText }}
+                  style={{ color: headerInk ?? themeTints.secondaryText }}
                 />
-                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
+                <AppText variant="micro" style={{ color: headerInk ?? themeTints.secondaryText }}>
                   {` stalls ${discoverAreaName ? "in this area" : "near you"}`}
                 </AppText>
               </View>
@@ -1951,7 +1975,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={() => void handleUseCurrentLocation()}
             >
-              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+              <AppText
+                variant="micro"
+                tone="accent"
+                style={{
+                  fontWeight: "700",
+                  ...(headerInk ? { color: headerInk, textDecorationLine: "underline" } : null),
+                }}
+              >
                 Use current location
               </AppText>
             </Pressable>

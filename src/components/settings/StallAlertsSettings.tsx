@@ -4,7 +4,10 @@ import { AppState, Linking } from "react-native";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
-import { getNotificationPermissionState, registerForStallAlerts } from "@/lib/notifications/push";
+import {
+  getNotificationPermissionState,
+  registerForStallAlertsDetailed,
+} from "@/lib/notifications/push";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -97,14 +100,24 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
     if (isSaving) return;
     setIsSaving(true);
     try {
-      if (enabled && !(await registerForStallAlerts())) {
-        // The "Notifications are off for Hungry" row below opens the phone's settings.
-        setPermissionDenied(true);
-        showToast({
-          message: "Allow notifications for Hungry in your phone settings to get these alerts.",
-          tone: "warning",
-        });
-        return;
+      if (enabled) {
+        const registration = await registerForStallAlertsDetailed();
+        if (registration === "denied") {
+          // The "Notifications are off for Hungry" row below opens the phone's settings.
+          setPermissionDenied(true);
+          showToast({
+            message: "Allow notifications for Hungry in your phone settings to get these alerts.",
+            tone: "warning",
+          });
+          return;
+        }
+        if (registration === "unsupported") {
+          // Permission is fine; this build can't receive pushes. Keep the choice so it works once it can.
+          showToast({
+            message: "Saved. This build can't receive notifications yet, so none will arrive here.",
+            tone: "info",
+          });
+        }
       }
       const next = await getHungryService().push.updatePreferences({ [key]: enabled });
       setPreferences(next);
