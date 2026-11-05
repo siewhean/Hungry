@@ -544,10 +544,8 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /visibleIntentChipWidths/);
   // A neutral icon until the MUIS display decision: no Arabic mark that reads as a certificate.
   assert.doesNotMatch(discover, /HalalLogoIcon|حلال/);
-  assert.match(
-    discover,
-    /chip\.id === "halal" \? \(\s*\/\/[^\n]*\n\s*<Drumstick size=\{14\} color=\{isActive \? palette\.orange : themeTints\.secondaryText\} \/>/,
-  );
+  const chipIcon = readFileSync("src/components/discover/home/DiscoverChipIcon.tsx", "utf8");
+  assert.match(chipIcon, /chipId === "halal"\) return <Drumstick size=\{14\} color=\{color\} \/>/);
   assert.doesNotMatch(discover, /Home,\s*Utensils/);
   assert.match(
     discover,
@@ -577,7 +575,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /import \{ DecideForMeCard \}/);
   assert.match(
     discover,
-    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*<\/View>[\s\S]*navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*\{wheelCtaLabel\}/,
+    /\/\* Decision action chips \*\/[\s\S]*<View style=\{\{ flexDirection: "row", gap: decisionCardGap \}\}>[\s\S]*onPress=\{handleDecideForMe\}[\s\S]*Decide for me[\s\S]*<\/View>[\s\S]*navigateOnce\(navigation, "WheelStack", \{ screen: "WheelHome" \}\)[\s\S]*\{wheelCtaLabel\}/,
   );
   // HOME-X8 / HOME-26: the wheel button needs its route, and says "with friends" only when
   // party mode ships. Decide for me and the wheel sit side by side (sh, 2026-11-04 16:07Z).

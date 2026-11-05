@@ -21,6 +21,11 @@ export const HOME_PRICE_STYLE: Pick<TextStyle, "fontVariant"> = { fontVariant: [
  */
 export const FOOD_STYLE_BOWL_SIZE = 72;
 export const FOOD_STYLE_ITEM_WIDTH = 88;
+/**
+ * The bowl sits in the middle of its wider tile, so the first bowl would start this far in from
+ * the page margin. The row pulls back by this much to put the first bowl flush with the title.
+ */
+export const FOOD_STYLE_RAIL_INSET = (FOOD_STYLE_ITEM_WIDTH - FOOD_STYLE_BOWL_SIZE) / 2;
 /** The round stall logo at the start of a stall row. */
 export const STALL_ROW_THUMBNAIL_SIZE = 56;
 /** The chevron at the end of a stall row. */

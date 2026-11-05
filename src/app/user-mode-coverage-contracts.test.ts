@@ -211,7 +211,7 @@ test("discover routes diners to details, opens the map from a toggle, and search
       /navigation\.navigate\("BrowseStalls"\)/,
       /navigation\.navigate\("FoodStyles"\)/,
       /navigation\.navigate\("DecideForMeQuiz"\)/,
-      /navigation\.navigate\("WheelStack", \{ screen: "WheelHome" \}\)/,
+      /navigateOnce\(navigation, "WheelStack", \{ screen: "WheelHome" \}\)/,
       /recordTasteInteraction\(\{[\s\S]*type: "search_query"/,
       /recordTasteInteraction\(\{[\s\S]*type: "dish_result_click"/,
     ],

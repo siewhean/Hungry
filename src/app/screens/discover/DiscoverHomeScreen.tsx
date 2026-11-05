@@ -7,25 +7,18 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
+import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
-  CakeSlice,
   ChevronDown,
   ChevronRight,
-  Coffee,
-  Drumstick,
-  Leaf,
-  Moon,
-  Salad,
   Search,
   SearchX,
   Shuffle,
-  Soup,
   Flame,
   Dices,
   Users,
-  Tag,
 } from "lucide-react-native";
 import {
   useIsFocused,
@@ -110,6 +103,7 @@ import {
   toTitleCase,
 } from "@/features/discover/personalRails";
 import { dedupeNearestVenueCandidates } from "@/features/search/venueDedupe";
+import { navigateOnce } from "@/features/navigation/navigateOnce";
 import {
   prefetchDishDetail,
   prefetchBrowseResults,
@@ -150,12 +144,15 @@ import {
   VerticalStallShowcaseLoadingSkeleton,
 } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
+import { DiscoverChipIcon } from "@/components/discover/home/DiscoverChipIcon";
+import { HomeWaveBackground } from "@/components/discover/home/HomeWaveBackground";
 import {
   DiscoverSearchPlaceholder,
   NARROW_SEARCH_WIDTH,
 } from "@/components/discover/home/DiscoverSearchPlaceholder";
 import {
   DISCOVER_TEXT_LINK_HIT_SLOP,
+  FOOD_STYLE_RAIL_INSET,
   type DiscoverRailLayout,
 } from "@/components/discover/home/homeLayout";
 import {
@@ -281,6 +278,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   } = useHungryTheme();
   const discoverCardChrome = useDiscoverCardChrome();
   const insets = useSafeAreaInsets();
+  // How far the page has scrolled: the wavy background at the top fades out as it grows.
+  const scrollY = useSharedValue(0);
   const [discoverViewportHeight, setDiscoverViewportHeight] = useState(0);
   const discoverSectionGap = spacing[4];
   const discoverContentGap = spacing[2];
@@ -309,6 +308,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const stallShowcaseCardWidth = screenWidth - semanticSpacing.screenEdge * 2;
   const edgeToEdgeHorizontalScrollStyle = {
     width: screenWidth,
+  };
+  // A row inside the scroller, pulled back so the first bowl is flush with the page margin.
+  const foodStyleRowStyle = {
+    flexDirection: "row" as const,
+    gap: spacing[2],
+    marginLeft: -FOOD_STYLE_RAIL_INSET,
   };
   const profile = useProfileStore((state) => state.profile);
   const recordTasteInteraction = useProfileStore((state) => state.recordTasteInteraction);
@@ -1624,27 +1629,31 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           horizontal
           showsHorizontalScrollIndicator={false}
           style={edgeToEdgeHorizontalScrollStyle}
-          contentContainerStyle={{ gap: spacing[2] }}
+          contentContainerStyle={{ flexGrow: 0 }}
         >
-          <PopularFoodStyleSkeleton />
+          <View style={foodStyleRowStyle}>
+            <PopularFoodStyleSkeleton />
+          </View>
         </RailScrollView>
       ) : popularFoodStyleItems.length ? (
         <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={edgeToEdgeHorizontalScrollStyle}
-          contentContainerStyle={{ gap: spacing[2] }}
+          contentContainerStyle={{ flexGrow: 0 }}
         >
-          {popularFoodStyleItems.map((item) => (
-            <PopularFoodStyleItem
-              key={item.id}
-              item={item}
-              isFavourite={favouriteFoodStyleIds.includes(item.id)}
-              onPrefetch={prefetchFoodStyle}
-              onPress={handleFoodStylePress}
-              onToggleFavourite={toggleFoodStyleFavourite}
-            />
-          ))}
+          <View style={foodStyleRowStyle}>
+            {popularFoodStyleItems.map((item) => (
+              <PopularFoodStyleItem
+                key={item.id}
+                item={item}
+                isFavourite={favouriteFoodStyleIds.includes(item.id)}
+                onPrefetch={prefetchFoodStyle}
+                onPress={handleFoodStylePress}
+                onToggleFavourite={toggleFoodStyleFavourite}
+              />
+            ))}
+          </View>
         </RailScrollView>
       ) : null}
     </View>
@@ -1798,9 +1807,19 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
+      <HomeWaveBackground
+        width={screenWidth}
+        topInset={insets.top}
+        scrollY={scrollY}
+        active={isFocused}
+      />
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
+        onScroll={(event) => {
+          scrollY.value = event.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
           gap: discoverSectionGap,
@@ -2016,28 +2035,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           options={sortedChips}
           selectedIds={activeDiscoverChipIds}
           onSelect={toggleDiscoverChip}
-          renderLeftIcon={(chip, isActive) =>
-            chip.id === "dietary" ? (
-              <Salad size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "spicy" ? (
-              <Flame size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "halal" ? (
-              // A neutral icon until the MUIS display decision: the Arabic mark read as a certificate.
-              <Drumstick size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "late" ? (
-              <Moon size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "vegetarian" ? (
-              <Leaf size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "soup" ? (
-              <Soup size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "drinks" ? (
-              <Coffee size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : chip.id === "dessert" ? (
-              <CakeSlice size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            ) : (
-              <Tag size={14} color={isActive ? palette.orange : themeTints.secondaryText} />
-            )
-          }
+          renderLeftIcon={(chip, isActive) => (
+            <DiscoverChipIcon
+              chipId={chip.id}
+              color={isActive ? palette.orange : themeTints.secondaryText}
+            />
+          )}
         />
 
         {/* welcome_back_v2: mounted only once Home shows content, and exposed only while the
@@ -2150,7 +2153,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   : "Opens the Hungry Wheel to pick between a few options"
               }
               onPressIn={() => preloadRoute(navigation, "WheelStack", { screen: "WheelHome" })}
-              onPress={() => navigation.navigate("WheelStack", { screen: "WheelHome" })}
+              onPress={() => navigateOnce(navigation, "WheelStack", { screen: "WheelHome" })}
               style={({ pressed }) => [
                 {
                   alignItems: "center",

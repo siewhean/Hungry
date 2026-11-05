@@ -44,7 +44,7 @@ type CategoryChipId = (typeof CATEGORY_CHIP_IDS)[number];
 const isCategoryChip = (id: DiscoverChipId): id is CategoryChipId =>
   (CATEGORY_CHIP_IDS as readonly string[]).includes(id);
 
-const INTENT_CHIPS: readonly {
+export const INTENT_CHIPS: readonly {
   id: Exclude<DiscoverChipId, "dietary">;
   label: string;
 }[] = [

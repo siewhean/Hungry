@@ -19,3 +19,27 @@ index 3873632..dcec0c7 100644
              infoPlistFiles = infoPlistFiles.split("\n").map { |f| f.strip }
  
              infoPlistFiles.each do |infoPlistFile|
+diff --git a/node_modules/react-native/Libraries/Components/ScrollView/ScrollView.js b/node_modules/react-native/Libraries/Components/ScrollView/ScrollView.js
+--- a/node_modules/react-native/Libraries/Components/ScrollView/ScrollView.js
++++ b/node_modules/react-native/Libraries/Components/ScrollView/ScrollView.js
+@@ -216,6 +216,11 @@
+    */
+   disableScrollViewPanResponder?: ?boolean,
+   /**
++   * By default a tap on a ScrollView that is still sliding only stops the slide and never reaches
++   * the buttons inside it. When true, the tap goes to the button under the finger as well.
++   */
++  allowTapsWhileScrolling?: ?boolean,
++  /**
+    * When true, gestures can drive zoom past min/max and the zoom will animate
+    * to the min/max value at gesture end, otherwise the zoom will not exceed
+    * the limits.
+@@ -1475,7 +1480,7 @@
+     (e: GestureResponderEvent) => {
+       // The scroll view should receive taps instead of its descendants if:
+       // * it is already animating/decelerating
+-      if (this._isAnimating()) {
++      if (this._isAnimating() && this.props.allowTapsWhileScrolling !== true) {
+         return true;
+       }
+ 
