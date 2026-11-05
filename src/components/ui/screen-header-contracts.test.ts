@@ -642,12 +642,15 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*rpcCount: supabaseDiscoverAreaCount,[\s\S]*: String\(areaVenues\.length\)/,
   );
-  // The count line shows a dash that the number rolls in from while the feed loads (no skeleton),
-  // and hides on failure.
+  // The count line keeps the last number on screen while the feed reloads (no dash, no skeleton)
+  // and the digits roll to the new one; it hides only when there has never been a count.
   assert.match(
     discover,
-    /discoverAreaCountLabel === null \? \(\s*isSupabaseDiscoveryFeedLoading \? \([\s\S]*<NumericText\s+value="–"[\s\S]*?\) : null/,
+    /const \[heldCountLabel, setHeldCountLabel\] = useState<string \| null>\(null\)[\s\S]*const shownCountLabel = discoverAreaCountLabel \?\? heldCountLabel/,
   );
+  assert.match(discover, /shownCountLabel === null \? null : shownCountLabel !== "0" \? \(/);
+  assert.match(discover, /<NumericText\s+value=\{shownCountLabel\}/);
+  assert.doesNotMatch(discover, /<NumericText\s+value="–"/);
   assert.match(
     discover,
     /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*renderStallRail\(areaStallCards\)/,

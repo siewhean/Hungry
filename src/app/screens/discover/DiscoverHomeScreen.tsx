@@ -990,6 +990,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         rpcCount: supabaseDiscoverAreaCount,
       })
     : String(areaVenues.length);
+  // The count never disappears while the feed reloads (a new area, a pull to refresh): the last
+  // number stays on screen and rolls to the new one when it lands.
+  const [heldCountLabel, setHeldCountLabel] = useState<string | null>(null);
+  if (discoverAreaCountLabel !== null && discoverAreaCountLabel !== heldCountLabel) {
+    setHeldCountLabel(discoverAreaCountLabel);
+  }
+  const shownCountLabel = discoverAreaCountLabel ?? heldCountLabel;
   // Cards of the current place sort first, so they are the leading run of the list.
   const placeStallCardCount = currentPlaceId
     ? areaStallCards.filter(({ venue }) => venue.buildingId === currentPlaceId).length
@@ -1902,26 +1909,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             />
           ) : null}
           {
-            needsDiscoverAreaChoice ? null : isFeedFallbackEmpty ||
-              discoverAreaCountLabel === null ? (
-              isSupabaseDiscoveryFeedLoading ? (
-                <View style={{ alignItems: "baseline", flexDirection: "row" }}>
-                  {/* A dash while the count loads; the number then rolls in. No grey placeholder. */}
-                  <NumericText
-                    value="–"
-                    variant="micro"
-                    style={{ color: themeTints.secondaryText }}
-                  />
-                  <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
-                    {` stalls ${discoverAreaName ? "in this area" : "near you"}`}
-                  </AppText>
-                </View>
-              ) : null
-            ) : discoverAreaCountLabel !== "0" ? (
+            needsDiscoverAreaChoice ||
+            isFeedFallbackEmpty ||
+            shownCountLabel === null ? null : shownCountLabel !== "0" ? (
               <View style={{ alignItems: "baseline", flexDirection: "row" }}>
-                {/* Only the number rolls when the count changes. */}
+                {/* Only the number rolls when the count changes; it stays put while it reloads. */}
                 <NumericText
-                  value={discoverAreaCountLabel}
+                  value={shownCountLabel}
                   variant="micro"
                   style={{ color: themeTints.secondaryText }}
                 />
