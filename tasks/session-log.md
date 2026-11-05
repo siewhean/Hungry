@@ -1007,3 +1007,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-11-05 POLISH-17Z-2: Home background is now a GPU water shader (Skia SkSL, Metal on iPhone): rolling wave edge, caustics, foam; plain SVG waves stay on web; pinned and fades on scroll
 - 2026-11-05 POLISH-17Z-3: Home water shader restyled: aqua two-swell design, about 4x slower (branch only, no PR, for sh to check on the phone)
 - 2026-11-05 POLISH-17Z-4: Home water tinted with the theme orange (palette.orange) instead of aqua (branch only, no PR)
+- 2026-11-05 POLISH-17Z-5: Home water: removed the back swell (brown layer on dark), vivid near-opaque theme orange (branch only, no PR)

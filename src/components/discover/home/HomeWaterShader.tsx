@@ -6,11 +6,12 @@ import { useDerivedValue, type SharedValue } from "react-native-reanimated";
  * Water for the top of Home, drawn by a GPU shader. Skia runs it through Metal on iPhone (the
  * SkSL below is compiled to Metal Shading Language) and through GL or Vulkan on Android.
  *
- * Three layers, all driven by one slow clock:
- *  - two long swells hanging from the top, a pale one behind a deeper one, each with a rolling edge;
- *  - a pale foam line along the front swell;
- *  - wide, soft caustics (the net of light that moves over a pool floor) and a depth gradient.
- * The tint is the theme orange and the strength is low, so the header text stays readable.
+ * Three parts, all driven by one slow clock:
+ *  - one long swell hanging from the top, with a rolling edge and a pale foam line along it;
+ *  - wide, soft caustics (the net of light that moves over a pool floor);
+ *  - a gradient from a brighter orange at the top to the full theme orange at the edge.
+ * The orange is the theme orange, almost opaque so it stays vivid on the dark page too; the band
+ * sits above the header text, not behind it.
  */
 export const WATER_SHADER_SOURCE = `
 uniform float2 size;
@@ -40,11 +41,9 @@ half4 main(float2 xy) {
   float2 uv = xy / size;
   float aspect = size.x / size.y;
 
-  // Two long swells, one behind the other: the back one is paler and sits lower.
+  // One long swell with a rolling edge.
   float front = 0.78 + 0.05 * sin(uv.x * 3.0 + t * 0.8) + 0.025 * sin(uv.x * 5.5 - t * 0.6 + 1.3);
-  float back = 0.90 + 0.04 * sin(uv.x * 2.4 - t * 0.5 + 2.0) + 0.02 * sin(uv.x * 4.6 + t * 0.7);
   float inFront = 1.0 - smoothstep(front - 0.01, front + 0.01, uv.y);
-  float inBack = 1.0 - smoothstep(back - 0.01, back + 0.01, uv.y);
   float foam = smoothstep(0.022, 0.0, abs(uv.y - front)) * inFront;
 
   // Wide, soft caustics (a quarter of the old detail), drifting slowly.
@@ -53,21 +52,12 @@ half4 main(float2 xy) {
               + 0.5 * caustic(q * 1.4 - float2(0.0, t * 0.02), t * 0.3 + 3.0);
   light = clamp(light, 0.0, 1.0);
 
-  // Deep water is the tint, shallow water is almost clear: darker toward each swell's edge.
-  float3 deep = tint;
-  float3 shallow = mix(tint, float3(1.0, 0.8, 0.5), 0.3);
+  // Bright orange at the top, the full theme orange toward the edge, with pale light on it.
+  float3 shallow = mix(tint, float3(1.0, 0.72, 0.38), 0.3);
   float depth = smoothstep(0.1, front, uv.y);
-  float3 frontRgb = mix(shallow, deep, depth);
-  frontRgb = mix(frontRgb, float3(1.0), clamp(light * 0.55 + foam * 0.7, 0.0, 1.0));
-  float frontA = inFront * strength * (0.5 + 0.5 * depth);
-
-  float3 backRgb = mix(shallow, tint, 0.5);
-  float backA = inBack * strength * 0.55;
-
-  // The front swell over the back one.
-  float a = frontA + backA * (1.0 - frontA);
-  float3 rgb = (frontRgb * frontA + backRgb * backA * (1.0 - frontA)) / max(a, 0.0001);
-  a = clamp(a * (1.0 + light * 0.35 + foam * 0.5), 0.0, 1.0);
+  float3 rgb = mix(shallow, tint, depth);
+  rgb = mix(rgb, float3(1.0, 0.9, 0.7), clamp(light * 0.5 + foam * 0.6, 0.0, 1.0));
+  float a = clamp(inFront * strength, 0.0, 1.0);
   return half4(half3(rgb * a), half(a));
 }
 `;

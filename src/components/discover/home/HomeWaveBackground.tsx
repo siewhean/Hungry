@@ -73,8 +73,7 @@ type Props = {
  * are hidden from screen readers, and hold still under Reduce Motion.
  */
 export function HomeWaveBackground({ width, topInset, scrollY, active = true }: Props) {
-  const { palette, colorScheme } = useHungryTheme();
-  const isDark = colorScheme === "dark";
+  const { palette } = useHungryTheme();
   const reduceMotion = useReduceMotion();
   const phase = useSharedValue(0);
   // Seconds on the water shader's clock; a still frame under Reduce Motion.
@@ -126,7 +125,7 @@ export function HomeWaveBackground({ width, topInset, scrollY, active = true }: 
           height={height}
           time={time}
           color={palette.orange}
-          strength={isDark ? 0.4 : 0.46}
+          strength={0.94}
         />
       ) : (
         <Svg width={width} height={height}>
