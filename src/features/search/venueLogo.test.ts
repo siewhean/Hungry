@@ -58,7 +58,7 @@ test("getVenueLogoCandidates skips favicon fallbacks for stored brand logos", ()
 test("getChainLogoDomain matches verified chains by exact name or word-boundary prefix", () => {
   assert.equal(getChainLogoDomain("Nandos"), "nandos.com");
   assert.equal(getChainLogoDomain("Nando's - Bugis Junction"), "nandos.com");
-  assert.equal(getChainLogoDomain("Soon Lee Fish Soup"), "soonlee.sg");
+  assert.equal(getChainLogoDomain("Starbucks Coffee"), "starbucks.com");
   assert.equal(getChainLogoDomain("Nandosa Kitchen"), undefined);
   assert.equal(getChainLogoDomain("Some Unknown Stall"), undefined);
   assert.equal(getChainLogoDomain(undefined), undefined);
