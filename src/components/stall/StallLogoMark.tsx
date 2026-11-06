@@ -21,7 +21,7 @@ export function StallLogoMark({
   style,
 }: StallLogoMarkProps) {
   const { palette, radii } = useHungryTheme();
-  const candidates = useMemo(() => getVenueLogoCandidates(logoUrl), [logoUrl]);
+  const candidates = useMemo(() => getVenueLogoCandidates(logoUrl, name), [logoUrl, name]);
   const [failedUrls, setFailedUrls] = useState<readonly string[]>([]);
   const signature = candidates.join("\u001f");
   const activeLogoUrl = candidates.find((candidate) => !failedUrls.includes(candidate));

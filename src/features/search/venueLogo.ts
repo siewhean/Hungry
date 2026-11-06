@@ -1,5 +1,46 @@
+import chainLogoDomains from "@/constants/chainLogoDomains.json";
+
 const CLEARBIT_LOGO_HOST = "logo.clearbit.com";
 const STORAGE_OBJECT_PATH = "/storage/v1/object/public/";
+const CHAIN_DOMAINS = chainLogoDomains as Record<string, string>;
+
+function normalizeChainName(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/['\u2019]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Matches a venue name to a verified chain ("Nandos - Bugis" -> nandos). Exact or prefix on a word boundary. */
+export function getChainLogoDomain(name?: string | null) {
+  if (!name) return undefined;
+  const normalized = normalizeChainName(name);
+  if (!normalized) return undefined;
+  if (CHAIN_DOMAINS[normalized]) return CHAIN_DOMAINS[normalized];
+  const chain = Object.keys(CHAIN_DOMAINS)
+    .filter((key) => normalized.startsWith(`${key} `))
+    .sort((a, b) => b.length - a.length)[0];
+  return chain ? CHAIN_DOMAINS[chain] : undefined;
+}
+
+/** Brandfetch needs a public client id; without it the chain logo is simply skipped. */
+export function getBrandfetchLogoUrl(name?: string | null) {
+  const clientId = process.env.EXPO_PUBLIC_BRANDFETCH_CLIENT_ID?.trim();
+  const domain = getChainLogoDomain(name);
+  if (!domain || !clientId) return undefined;
+  return `https://cdn.brandfetch.io/${domain}?c=${clientId}`;
+}
+
+function isStoredLogo(value?: string) {
+  if (!value) return false;
+  try {
+    return new URL(value).pathname.startsWith(STORAGE_OBJECT_PATH);
+  } catch {
+    return false;
+  }
+}
 
 function normalizeUrl(value?: string) {
   const trimmed = value?.trim();
@@ -24,11 +65,13 @@ export function getVenueLogoDomain(logoUrl?: string) {
   }
 }
 
-export function getVenueLogoCandidates(logoUrl?: string) {
+export function getVenueLogoCandidates(logoUrl?: string, name?: string | null) {
   const normalized = normalizeUrl(logoUrl);
   const domain = getVenueLogoDomain(normalized);
+  const chainLogo = getBrandfetchLogoUrl(name);
+  // Our own stored copy always wins; the chain logo only fills in for venues without one.
   const candidates = [
-    normalized,
+    ...(isStoredLogo(normalized) ? [normalized, chainLogo] : [chainLogo, normalized]),
     domain ? `https://icons.duckduckgo.com/ip3/${domain}.ico` : undefined,
     domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : undefined,
   ].filter((candidate): candidate is string => Boolean(candidate));
