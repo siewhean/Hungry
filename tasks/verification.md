@@ -1703,3 +1703,6 @@ Use the smallest check that matches the change risk.
 - `npm run typecheck` clean; `npm run test:render` 1303/0; `npm run test:coverage` OK and baseline updated; eslint on touched files 0 errors (3 pre-existing warnings in experiments.ts).
 - PostHog project 373517: 37 draft experiments exist, the 15 flags made today are inactive, active flags still the same 9 (none updated today).
 - 2026-11-07 APPLE-DESIGN-01 r2: tsc clean; npm test 3060 pass; test:render 1303 pass (new activity-inbox.render + Must order chip test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
+
+## 2026-11-07 CLEANUP-2026-11-07
+- No code, test, script or CI reference to any removed path (git grep); typecheck clean; `npm test` 3061/0; `npm run test:render` 1307/0; `npm run test:coverage` OK (baseline unchanged).
