@@ -1693,3 +1693,8 @@ Use the smallest check that matches the change risk.
 ## 2026-11-07 FOOD-PORTFOLIO-C
 - Migration 20261107150000: up, up again, smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables (bodies "Mei and 1 other posted 3 dishes today." and "Mei posted 2 dishes at <stall> today.", pending/deleted/private/old posts and opted-out/no-device people left out, second run queues 0). Staging rehearsal still to run.
 - `npm run typecheck` clean; `npm test` 3053 pass; `npm run test:render` 1299 pass; test:coverage OK (baseline updated); check:rate-limits, audit:races, check:n-plus-one pass; migration-safety fails only on the missing rehearsal evidence.
+
+## 2026-11-07 AB-AUDIT-2026-11-07
+- Experiment registry: `experiments.test.ts` 23 pass, including a new case that every key resolves a false flag to its fallback; `newSurfaces.render.test.tsx` 4 pass (Leaderboard opening board and pick, Home plain arm, Activity bell count vs dot and its tap event).
+- `npm run typecheck` clean; `npm run test:render` 1303/0; `npm run test:coverage` OK and baseline updated; eslint on touched files 0 errors (3 pre-existing warnings in experiments.ts).
+- PostHog project 373517: 37 draft experiments exist, the 15 flags made today are inactive, active flags still the same 9 (none updated today).

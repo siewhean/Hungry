@@ -7,6 +7,8 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppSymbol, AppText } from "@/components/ui";
 import { getActivityUnreadCount, selectActivitySourceUpdates } from "@/features/home/activity";
 import { preloadRoute } from "@/features/navigation/prefetch";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { getServiceProvider } from "@/lib/services/serviceProvider";
 import { useActivityStore } from "@/store/useActivityStore";
 import { useHungryTheme } from "@/theme";
@@ -33,6 +35,9 @@ export function ActivityBellButton({ viewerId, size }: { viewerId: string; size:
       ),
     [readActivityIds, activityUpdates, dbActivityEvents, viewerId, mode],
   );
+  // A/B test activity_bell_badge_v1: a count (control) or a plain dot. Only diners with something
+  // unread see a badge, so only they are exposed.
+  const showDot = useExperimentVariant("activity_bell_badge_v1", { enabled: unread > 0 }) === "dot";
 
   useFocusEffect(
     useCallback(() => {
@@ -52,12 +57,32 @@ export function ActivityBellButton({ viewerId, size }: { viewerId: string; size:
       accessibilityLabel={unread > 0 ? `Activity, ${unread} unread` : "Activity"}
       accessibilityHint="Opens who followed, liked or commented on your posts"
       onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
-      onPress={() => navigation.navigate("ActivityInbox", { initialTab: "updates" })}
+      onPress={() => {
+        trackAnalyticsEvent("profile_item_opened", {
+          kind: "activity_bell",
+          source: "profile_header",
+          unread_count: unread,
+        });
+        navigation.navigate("ActivityInbox", { initialTab: "updates" });
+      }}
       hitSlop={2}
       style={{ alignItems: "center", height: size, justifyContent: "center", width: size }}
     >
       <AppSymbol name="notifications" size={22} weight="regular" color={palette.text} />
-      {unread > 0 ? (
+      {unread > 0 && showDot ? (
+        <View
+          testID="profile-activity-dot"
+          style={{
+            backgroundColor: colorScheme === "dark" ? palette.orange : palette.accentText,
+            borderRadius: radii.pill,
+            height: 10,
+            position: "absolute",
+            right: 4,
+            top: 4,
+            width: 10,
+          }}
+        />
+      ) : unread > 0 ? (
         <View
           testID="profile-activity-badge"
           style={{
