@@ -1,0 +1,14 @@
+{
+  "version": "20261107180000",
+  "name": "20261107180000_social_profiles_network_picks",
+  "result": "pass",
+  "rehearsed_at": "2026-11-07T16:09:55Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "24b4a3c4080024e0fe304503f2239ff5f40e82d6",
+  "up_sha256": "f8c8e79d51a4346e99f7b0d8ea2f91f57b00968adedfb9bfdc7504ed88272498",
+  "down_sha256": "b27c9b4433c9301db643118967d1d042bf7f5f04fa80ffc3403941e61a01fdee",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/social_profiles_network_picks.sql"]
+}
