@@ -1,0 +1,14 @@
+{
+  "version": "20261107150000",
+  "name": "20261107150000_following_new_dishes_digest",
+  "result": "pass",
+  "rehearsed_at": "2026-11-07T11:51:48Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "1add8d8786f52369c865cdd603f8fa8333521f97",
+  "up_sha256": "5d14896e092150cf67b635596971e40ac5cc400b58490729976c7bcb57b68fb4",
+  "down_sha256": "aca653becf26b37f2d83edd060ecb7210d68f6ac8548da7c0592062b10b40960",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/following_new_dishes_digest.sql"]
+}
