@@ -3,7 +3,9 @@ import { Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppSymbol, AppText, Avatar, EmptyState, SegmentedControl } from "@/components/ui";
+import { FoodPortfolioShareSheet } from "@/components/foodPortfolio/FoodPortfolioShareSheet";
+import { AppSymbol, AppText, Avatar, Button, EmptyState, SegmentedControl } from "@/components/ui";
+import { rankCardModel } from "@/features/foodPortfolio/shareCards";
 import {
   LEADERBOARD_FULL_BOARD,
   LEADERBOARD_PAGE_SIZE,
@@ -29,6 +31,7 @@ import type {
   LeaderboardSummary,
   PortfolioPointsEntry,
 } from "@/lib/services/types";
+import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
@@ -102,6 +105,8 @@ export function LeaderboardScreen({ navigation }: Props) {
   const [summary, setSummary] = useState<LeaderboardSummary | null>(null);
   const [points, setPoints] = useState<PortfolioPointsEntry[]>([]);
   const trackedRef = useRef(false);
+  const [isSharingRank, setIsSharingRank] = useState(false);
+  const profile = useProfileStore((state) => state.profile);
 
   useEffect(() => {
     let isActive = true;
@@ -154,6 +159,7 @@ export function LeaderboardScreen({ navigation }: Props) {
     });
 
   const ownRank = summaryRankFor(summary, board, period);
+  const rankCard = rankCardModel(summary);
   const ownScore = board === "trending" ? null : period === "week" ? summary?.weekPoints : null;
   const cardStyle = {
     backgroundColor: palette.surface,
@@ -177,7 +183,31 @@ export function LeaderboardScreen({ navigation }: Props) {
             <AppText variant="bodySmall" tone="secondary">
               {dailyCreditLabel(summary)}
             </AppText>
+            {rankCard ? (
+              <Button
+                testID="leaderboard-share-rank"
+                label="Share my rank"
+                size="sm"
+                variant="secondary"
+                fullWidth={false}
+                leftIcon={<AppSymbol name="share" size={16} color={palette.text} />}
+                onPress={() => setIsSharingRank(true)}
+                style={{ alignSelf: "flex-start", minHeight: 44 }}
+              />
+            ) : null}
           </View>
+        ) : null}
+        {isSharingRank && rankCard ? (
+          <FoodPortfolioShareSheet
+            visible
+            onClose={() => setIsSharingRank(false)}
+            card={{
+              kind: "rank",
+              ownerId: profile.id,
+              ownerName: profile.displayName,
+              rank: rankCard,
+            }}
+          />
         ) : null}
 
         <SegmentedControl
