@@ -73,6 +73,7 @@ import type {
   BiteDraft,
   BitesFeedPage,
   BlockUserRequest,
+  FoodPortfolioStall,
   BlockedUserEntry,
   HiddenPostEntry,
   BuildingDetail,
@@ -6139,6 +6140,81 @@ export const supabaseService: HungryService = {
           authorAvatarUrl: asString(publicProfile?.avatar_url),
         };
       });
+    },
+  },
+
+  foodPortfolio: {
+    async getTopPosts(userId) {
+      if (!UUID_PATTERN.test(userId)) return { posts: [], pinnedPostIds: [] };
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_food_portfolio_top_posts", {
+        p_user_id: userId,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      // One signing call for every photo on the three cards, then map.
+      await presignPostMediaRows(
+        client,
+        rows.flatMap((row) => asRowArray(row.media)),
+      );
+      const posts = await Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+      return {
+        posts,
+        pinnedPostIds: rows
+          .filter((row) => row.is_pinned === true)
+          .map((row) => asString(row.id))
+          .filter((id): id is string => Boolean(id)),
+      };
+    },
+
+    async setPinnedPosts(postIds) {
+      const client = requireSupabaseClient();
+      const ids = [...new Set(postIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 3);
+      const { data, error } = await client.rpc("set_pinned_posts", { p_post_ids: ids });
+      if (error) throw error;
+      return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async listStalls(userId, limit = 60) {
+      if (!UUID_PATTERN.test(userId)) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_food_portfolio_stalls", {
+        p_user_id: userId,
+        p_limit: limit,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): FoodPortfolioStall[] => {
+        const venueId = asString(row.venue_id);
+        if (!venueId) return [];
+        return [
+          {
+            venueId,
+            venueName: asString(row.venue_name) ?? "Stall",
+            buildingId: asString(row.building_id),
+            buildingName: asString(row.building_name),
+            dishCount: asNumber(row.dish_count) ?? 0,
+            lastPostedAt: asString(row.last_posted_at),
+          },
+        ];
+      });
+    },
+
+    async getFollowingFeed(page?: BitesFeedPage) {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return [];
+      const { data, error } = await client.rpc("get_following_dish_feed", {
+        p_limit: page?.limit ?? 20,
+        p_cursor_published_at: page?.cursor?.createdAt ?? null,
+        p_cursor_post_id: page?.cursor?.postId ?? null,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      await presignPostMediaRows(
+        client,
+        rows.flatMap((row) => asRowArray(row.media)),
+      );
+      return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
     },
   },
 

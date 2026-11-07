@@ -221,7 +221,7 @@ test("post composer remains isolated behind the Release 0.1 post flag", () => {
   assert.doesNotMatch(publishing, /:\s*\[fallbackImageUrl\]/);
   assert.match(
     postScreen,
-    /await publishComposerPost\([\s\S]*message: "Post published successfully\."/,
+    /await publishComposerPost\([\s\S]*message: FEATURE_FLAGS\.foodPortfolioEnabled[\s\S]{0,80}"Post published successfully\."/,
   );
 });
 

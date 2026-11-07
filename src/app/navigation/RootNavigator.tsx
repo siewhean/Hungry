@@ -317,6 +317,10 @@ const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadFollowingFeedScreen = () =>
+  (
+    require("@/app/screens/profile/FollowingFeedScreen") as typeof import("@/app/screens/profile/FollowingFeedScreen")
+  ).FollowingFeedScreen;
 const loadBlockedAndHiddenScreen = () =>
   (
     require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
@@ -878,6 +882,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
           ) : null}
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          {FEATURE_FLAGS.foodPortfolioEnabled ? (
+            <RootStack.Screen getComponent={loadFollowingFeedScreen} name="FollowingFeed" />
+          ) : null}
           <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />

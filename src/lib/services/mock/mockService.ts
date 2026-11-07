@@ -51,6 +51,8 @@ import { assertFixtureBundleValid } from "./validation";
 import type {
   Bite,
   BiteDraft,
+  BitesFeedPage,
+  FoodPortfolioStall,
   BuildingDetail,
   ChatConversation,
   ChatMessage,
@@ -334,6 +336,8 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+/** Food Portfolio top-three pins by user id (mock only; Supabase keeps them on user_profiles). */
+const _mockPinnedPostIds: Record<string, string[]> = {};
 let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Reviews the mock viewer marked helpful. */
@@ -2858,6 +2862,77 @@ export const hungryService: HungryService = {
 
     async listCommentsForPost(postId: string) {
       return resolve(_mockComments[postId] ?? []);
+    },
+  },
+
+  foodPortfolio: {
+    async getTopPosts(userId: string) {
+      await hydrateSocial();
+      const authored = MOCK_BITES_FEED.filter(
+        (bite) => bite.authorId === userId && !_blockedUsers.has(bite.authorId),
+      );
+      const pins = (_mockPinnedPostIds[userId] ?? []).filter((id) =>
+        authored.some((bite) => bite.id === id),
+      );
+      const pinned = pins.map((id) => authored.find((bite) => bite.id === id) as Bite);
+      const rest = authored
+        .filter((bite) => !pins.includes(bite.id))
+        .sort(
+          (a, b) =>
+            b.cravingCount - a.cravingCount || Date.parse(b.createdAt) - Date.parse(a.createdAt),
+        );
+      return resolve({
+        posts: [...pinned, ...rest].slice(0, 3).map(withMockViewerReactions),
+        pinnedPostIds: pins,
+      });
+    },
+
+    async setPinnedPosts(postIds: string[]) {
+      await hydrateSocial();
+      const own = new Set(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id).map((bite) => bite.id),
+      );
+      if (postIds.length > 3) throw new Error("Pin up to three dishes.");
+      const kept = [...new Set(postIds)].filter((id) => own.has(id));
+      _mockPinnedPostIds[_profile.id] = kept;
+      return resolve(kept);
+    },
+
+    async listStalls(userId: string, limit = 60) {
+      await hydrateSocial();
+      const byVenue = new Map<string, FoodPortfolioStall>();
+      for (const bite of MOCK_BITES_FEED) {
+        if (bite.authorId !== userId || !bite.venueId) continue;
+        const current = byVenue.get(bite.venueId);
+        byVenue.set(bite.venueId, {
+          venueId: bite.venueId,
+          venueName: bite.venueName,
+          buildingId: bite.buildingId || undefined,
+          buildingName: bite.buildingName || undefined,
+          dishCount: (current?.dishCount ?? 0) + 1,
+          lastPostedAt:
+            current?.lastPostedAt && current.lastPostedAt > bite.createdAt
+              ? current.lastPostedAt
+              : bite.createdAt,
+        });
+      }
+      return resolve(
+        [...byVenue.values()]
+          .sort((a, b) => b.dishCount - a.dishCount || a.venueName.localeCompare(b.venueName))
+          .slice(0, limit),
+      );
+    },
+
+    async getFollowingFeed(page?: BitesFeedPage) {
+      await hydrateSocial();
+      const sorted = MOCK_BITES_FEED.filter(
+        (bite) => _userFollows.has(bite.authorId) && !_blockedUsers.has(bite.authorId),
+      ).sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || b.id.localeCompare(a.id),
+      );
+      const cursor = page?.cursor;
+      const start = cursor ? sorted.findIndex((bite) => bite.id === cursor.postId) + 1 : 0;
+      return resolve(sorted.slice(start, start + (page?.limit ?? 20)).map(withMockViewerReactions));
     },
   },
 

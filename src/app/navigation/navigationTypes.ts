@@ -238,6 +238,8 @@ export type RootStackParamList = {
   /** One review on its own page; opened by review/:reviewId share links. */
   ReviewDetail: { reviewId: string };
   FollowRequests: undefined;
+  /** Food Portfolio: newest dishes posted by the people you follow. */
+  FollowingFeed: undefined;
   /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
   BlockedAndHidden: undefined;
   /** Another user's follower/following lists, opened from their profile. */

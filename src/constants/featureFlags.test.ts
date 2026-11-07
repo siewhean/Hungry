@@ -52,7 +52,10 @@ test("production ships main's core surfaces and keeps advanced surfaces closed",
 
 test("the archived social feed, Activity, Messages and Follow stall are off until a build opts in", () => {
   for (const appEnv of ["development", "staging", "production"] as const) {
-    const flags = resolveFeatureFlags(appEnv, "production", {});
+    // The Food Portfolio (on outside production) brings follows and Activity back, so it is off here.
+    const flags = resolveFeatureFlags(appEnv, "production", {
+      EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "0",
+    });
     for (const flag of ARCHIVED_FLAGS) {
       assert.equal(flags[flag], false, `${flag} is archived in ${appEnv}`);
     }
@@ -149,4 +152,38 @@ test("AI search (typed text sent to Anthropic) is off in every environment until
     EXPO_PUBLIC_ENABLE_AI_SEARCH: "1",
   });
   assert.equal(optedIn.aiSearchEnabled, true);
+});
+
+test("the Food Portfolio is on outside production, off in production, and brings back follows and Activity", () => {
+  const production = resolveFeatureFlags("production", "production", {});
+  assert.equal(production.foodPortfolioEnabled, false);
+  assert.equal(production.followConnectionsEnabled, false);
+  assert.equal(production.activityEnabled, false);
+  // Home stays Discover: the social feed tab never comes back with it.
+  for (const appEnv of ["development", "staging"] as const) {
+    const flags = resolveFeatureFlags(appEnv, "production", {});
+    assert.equal(flags.foodPortfolioEnabled, true, `on in ${appEnv}`);
+    assert.equal(flags.followConnectionsEnabled, true, `follows on in ${appEnv}`);
+    assert.equal(flags.activityEnabled, true, `post detail on in ${appEnv}`);
+    assert.equal(flags.socialFeedEnabled, false, `Home stays Discover in ${appEnv}`);
+  }
+
+  const optedIn = resolveFeatureFlags("production", "production", {
+    EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "1",
+  });
+  assert.equal(optedIn.foodPortfolioEnabled, true);
+  assert.equal(optedIn.followConnectionsEnabled, true);
+  assert.equal(optedIn.activityEnabled, true);
+  assert.equal(optedIn.socialFeedEnabled, false);
+
+  const narrowed = resolveFeatureFlags("production", "production", {
+    EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "1",
+    EXPO_PUBLIC_ENABLE_ACTIVITY: "0",
+  });
+  assert.equal(narrowed.activityEnabled, false, "an explicit 0 still wins");
+
+  const noPosts = resolveFeatureFlags("development", "development", {
+    EXPO_PUBLIC_ENABLE_POSTS: "0",
+  });
+  assert.equal(noPosts.foodPortfolioEnabled, false, "no portfolio without posting");
 });

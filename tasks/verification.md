@@ -1680,3 +1680,7 @@ Use the smallest check that matches the change risk.
 - `npm run typecheck` pass; `npm test` 2974 pass; `npm run test:render` 1259 pass; `npm run test:coverage` OK and baseline updated; `npm run lint` 0 errors; `npm run check:n-plus-one` ok.
 - New tests: usualAreas, UsualAreaChips, MealPicksCard, mealPicksNudge, useHomeNudgeStore, ReviewFirstList, menuPalate, meal-times section title, dish picture card, Passport first stamp, Likely a match row, distance decay ranking.
 - No database change, so no migration, race or rate-limit check applies. Not run: a device build.
+
+## 2026-11-07 FOOD-PORTFOLIO-A
+- Migration 20261107090000: up, up again (idempotent), smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables; smoke covers pin order, private account hidden, moderated post excluded, stall counts, approved-only follow feed, keyset paging, anon grants and rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
+- `npm run typecheck` clean; `npm test` pass; new tests: foodPortfolio.behaviour (Supabase), mock foodPortfolio, food-portfolio-migration-contracts, FoodPortfolioSection.render (section, Profile entry, Following feed), featureFlags; screenMatrix row FollowingFeedScreen. `check:rate-limits`, `audit:races`, `check:n-plus-one` pass; eslint 0 errors; prettier clean.

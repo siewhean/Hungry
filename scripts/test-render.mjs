@@ -38,6 +38,9 @@ const run = spawnSync(
     env: {
       ...process.env,
       EXPO_PUBLIC_APP_ENV: "development",
+      // The Food Portfolio (on in development) also turns follows and Activity on. Screens render
+      // with it off by default, as in production; its own tests switch it on.
+      EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "0",
       HUNGRY_DATA_SOURCE: "mock",
       HUNGRY_DISABLE_ASYNC_STORAGE: "1",
       HUNGRY_DISABLE_SECURE_STORE: "1",

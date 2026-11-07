@@ -28,6 +28,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Post">;
 
@@ -235,7 +236,9 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         });
         pendingPostIdRef.current = null;
         showToast({
-          message: "Post published successfully.",
+          message: FEATURE_FLAGS.foodPortfolioEnabled
+            ? "Posted to your Food Portfolio."
+            : "Post published successfully.",
           tone: "success",
         });
         useComposerStore.getState().reset();
@@ -246,7 +249,12 @@ function PostComposerScreenInner({ navigation, route }: Props) {
           media_count: selectedMedia.length,
           has_video: selectedMedia.some((item) => item.type === "video"),
         });
-        navigation.navigate("MainTabs", { screen: "Home" });
+        // Home is Discover now: a dish posted from a dish, stall or portfolio page returns there.
+        if (FEATURE_FLAGS.foodPortfolioEnabled && navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.navigate("MainTabs", { screen: "Home" });
+        }
       } catch (error) {
         // The composer store is shared with the V2 composer: never leave this draft in it.
         useComposerStore.getState().reset();

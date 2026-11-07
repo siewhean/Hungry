@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 
+import { FoodPortfolioSection } from "@/components/foodPortfolio/FoodPortfolioSection";
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, type ProfileStat } from "@/components/profile/ProfileStatRow";
@@ -628,9 +629,11 @@ export function UserProfileContent({
               <EmptyState
                 title="This account is private"
                 body={
-                  showPosts()
-                    ? `Follow ${authorName} to see their posts and reviews.`
-                    : `Follow ${authorName} to see their reviews.`
+                  FEATURE_FLAGS.foodPortfolioEnabled
+                    ? `Follow ${authorName} to see their Food Portfolio and reviews.`
+                    : showPosts()
+                      ? `Follow ${authorName} to see their posts and reviews.`
+                      : `Follow ${authorName} to see their reviews.`
                 }
                 icon={
                   <AppSymbol
@@ -643,6 +646,13 @@ export function UserProfileContent({
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
+                {/* Their posted dishes, top three and stalls (Food Portfolio flag). */}
+                <FoodPortfolioSection
+                  userId={resolvedAuthorId}
+                  ownerName={authorName}
+                  isSelf={false}
+                  navigation={rootNavigation}
+                />
                 <FavouriteDishesRow
                   dishIds={pinnedDishIds}
                   onOpenDish={(dishId) =>
