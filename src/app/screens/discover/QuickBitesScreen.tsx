@@ -7,7 +7,7 @@ import {
   Animated,
   type ViewToken,
 } from "react-native";
-import { ArrowLeft, MapPinned, Star, Utensils } from "lucide-react-native";
+import { MapPinned, Star, Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -80,7 +80,7 @@ function QuickBiteImagePlaceholder({ height }: { height: number }) {
         width: "100%",
       }}
     >
-      <Utensils color={palette.orange} size={28} />
+      <AppSymbol name="fork.knife" fallback={Utensils} size={28} color={palette.orange} />
     </View>
   );
 }
@@ -142,7 +142,7 @@ function QuickBiteGridCard({
       <View pointerEvents="none" style={styles.cardContent}>
         {/* The stall, not a person: these are the stall's dishes, not a user's post. */}
         <View style={[styles.authorBadge, { backgroundColor: palette.mediaScrimStrong }]}>
-          <Utensils size={12} color={palette.white} />
+          <AppSymbol name="fork.knife" fallback={Utensils} size={12} color={palette.white} />
           <AppText
             variant="micro"
             numberOfLines={1}
@@ -162,7 +162,12 @@ function QuickBiteGridCard({
         <View style={styles.metaRow}>
           {item.distance !== undefined ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-              <MapPinned size={10} color={palette.white} />
+              <AppSymbol
+                name="mappin.and.ellipse"
+                fallback={MapPinned}
+                size={10}
+                color={palette.white}
+              />
               <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
                 {item.distance >= 1000
                   ? `${(item.distance / 1000).toFixed(1)}km`
@@ -175,7 +180,7 @@ function QuickBiteGridCard({
           {/* The count is reviews, so it is shown as the rating with its review count. */}
           {item.cravingCount > 0 && item.rating > 0 ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-              <Star size={10} color={palette.white} fill={palette.white} />
+              <AppSymbol name="star.fill" fallback={Star} filled size={10} color={palette.white} />
               <AppText variant="micro" style={{ color: palette.white, fontWeight: "700" }}>
                 {`${item.rating.toFixed(1)} (${item.cravingCount})`}
               </AppText>
@@ -493,7 +498,7 @@ export function QuickBitesScreen() {
             style={styles.backBtn}
             hitSlop={12}
           >
-            <ArrowLeft color={palette.text} size={24} />
+            <AppSymbol name="back" size={24} weight="medium" color={palette.text} />
           </Pressable>
           <AppText variant="h2" style={{ flex: 1 }}>
             {collectionCopy.title}

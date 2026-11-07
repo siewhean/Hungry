@@ -12,6 +12,7 @@ import {
   SORTED_DIETARY_OPTIONS,
   filterDietaryOptions,
 } from "./dietaryOptions";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface DietaryStepProps {
   selected: DietaryFlag[];
@@ -74,7 +75,14 @@ export function DietaryStep({
           placeholder="Search dietary restrictions"
           value={query}
           onChangeText={setQuery}
-          leftIcon={<Search color={palette.textMuted} size={16} />}
+          leftIcon={
+            <AppSymbol
+              name="magnifyingglass"
+              fallback={Search}
+              size={16}
+              color={palette.textMuted}
+            />
+          }
         />
       ) : null}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
@@ -182,7 +190,9 @@ function DietChip({
         paddingVertical: spacing[2],
       }}
     >
-      {selected ? <Check color={palette.orange} size={14} /> : null}
+      {selected ? (
+        <AppSymbol name="checkmark" fallback={Check} size={14} color={palette.orange} />
+      ) : null}
       <AppText
         style={{
           color: selected ? palette.orange : palette.textSecondary,

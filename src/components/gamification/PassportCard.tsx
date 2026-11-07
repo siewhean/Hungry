@@ -16,6 +16,7 @@ import { AppText } from "@/components/ui/AppText";
 import { usePassportStore, ALL_PASSPORT_CATEGORIES } from "@/store/usePassportStore";
 import { PassportStampBadge } from "@/components/gamification/PassportStampBadge";
 import { getEarnedPassportStamps, getNextPassportStamp } from "@/constants/passportConfig";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface PassportCardProps {
   onPress?: () => void;
@@ -76,7 +77,7 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
             width: 52,
           }}
         >
-          <Compass size={28} color={palette.passportGold} strokeWidth={1.75} />
+          <AppSymbol name="safari" fallback={Compass} size={28} color={palette.passportGold} />
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <AppText
@@ -95,7 +96,12 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
               {totalStamps} {totalStamps === 1 ? "stamp" : "stamps"}
             </AppText>
           ) : null}
-          <ChevronRight size={16} color={palette.passportGold} />
+          <AppSymbol
+            name="chevron.right"
+            fallback={ChevronRight}
+            size={16}
+            color={palette.passportGold}
+          />
         </View>
       </View>
 
@@ -134,7 +140,7 @@ export function PassportCard({ onPress, onPressIn }: PassportCardProps) {
                   width: 60,
                 }}
               >
-                <Stamp size={20} color={palette.passportInk} />
+                <AppSymbol name="seal" fallback={Stamp} size={20} color={palette.passportInk} />
               </View>
             ),
           )}

@@ -24,6 +24,7 @@ import { useActivityStore } from "@/store/useActivityStore";
 import type { ShareChannel } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 export type ShareTargetKind = "review" | "dish" | "stall";
 
@@ -329,28 +330,46 @@ export function ReviewShareSheet({
                   key: "copy",
                   label: "Copy link",
                   accessibilityLabel: `Copy ${kindNoun} link`,
-                  icon: ({ color, size }) => <Copy color={color} size={size} />,
+                  icon: ({ color, size }) => (
+                    <AppSymbol name="doc.on.doc" fallback={Copy} size={size} color={color} />
+                  ),
                   onPress: copyLink,
                 },
                 {
                   key: "whatsapp",
                   label: "WhatsApp",
                   accessibilityLabel: "Share on WhatsApp",
-                  icon: ({ color, size }) => <MessageCircle color={color} size={size} />,
+                  icon: ({ color, size }) => (
+                    <AppSymbol
+                      name="bubble.left"
+                      fallback={MessageCircle}
+                      size={size}
+                      color={color}
+                    />
+                  ),
                   onPress: () => void shareToMessagingApp("whatsapp"),
                 },
                 {
                   key: "telegram",
                   label: "Telegram",
                   accessibilityLabel: "Share on Telegram",
-                  icon: ({ color, size }) => <Send color={color} size={size} />,
+                  icon: ({ color, size }) => (
+                    <AppSymbol name="paperplane" fallback={Send} size={size} color={color} />
+                  ),
                   onPress: () => void shareToMessagingApp("telegram"),
                 },
                 {
                   key: "share",
                   label: "Share",
                   accessibilityLabel: `Share ${kindNoun} to another app`,
-                  icon: ({ color, size }) => <Share2 color={color} size={size} />,
+                  icon: ({ color, size }) => (
+                    <AppSymbol
+                      name="square.and.arrow.up"
+                      fallback={Share2}
+                      size={size}
+                      color={color}
+                    />
+                  ),
                   onPress: () => void shareOutsideHungry(),
                 },
                 ...pictureActions,

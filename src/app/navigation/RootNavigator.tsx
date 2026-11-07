@@ -35,6 +35,7 @@ import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking, withoutEmailParam } from "./linking";
 import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/notifications/push";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -460,7 +461,7 @@ function OfflineBanner() {
             },
           ]}
         >
-          <WifiOff color={palette.textOnDark} size={16} />
+          <AppSymbol name="wifi.slash" fallback={WifiOff} size={16} color={palette.textOnDark} />
           <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
             {"You're offline. Saved content stays visible."}
           </AppText>

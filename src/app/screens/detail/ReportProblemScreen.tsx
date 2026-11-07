@@ -11,6 +11,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import type { CatalogCorrectionKind } from "@/lib/services/types";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ReportProblem">;
 
@@ -112,7 +113,7 @@ export function ReportProblemScreen({ navigation, route }: Props) {
             padding: spacing[4],
           }}
         >
-          <Flag color={palette.orange} size={22} />
+          <AppSymbol name="flag" fallback={Flag} size={22} color={palette.orange} />
           <AppText variant="bodySmall" style={{ flex: 1 }}>
             Stall details come from public listings and can go out of date. Your report helps us fix
             them for everyone.

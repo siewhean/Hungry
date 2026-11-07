@@ -39,6 +39,7 @@ import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
 import type { PassportContributionStats, PassportProgressEvent } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PassportScreen">;
 
@@ -323,7 +324,7 @@ export function PassportScreen({ navigation }: Props) {
           >
             {/* Watermark star, like a passport seal */}
             <View pointerEvents="none" style={{ bottom: -36, position: "absolute", right: -28 }}>
-              <Star color={palette.inverseIndicator} size={170} strokeWidth={1} />
+              <AppSymbol name="star" fallback={Star} size={170} color={palette.inverseIndicator} />
             </View>
             <View
               style={{
@@ -333,7 +334,7 @@ export function PassportScreen({ navigation }: Props) {
               }}
             >
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1.5] }}>
-                <Award color={palette.amber} size={16} />
+                <AppSymbol name="rosette" fallback={Award} size={16} color={palette.amber} />
                 <AppText variant="micro" style={{ color: palette.amber, fontWeight: "700" }}>
                   HUNGRY PASSPORT
                 </AppText>
@@ -415,7 +416,7 @@ export function PassportScreen({ navigation }: Props) {
         </PassportPageFlip>
 
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-          <Flag color={palette.orange} size={18} />
+          <AppSymbol name="flag" fallback={Flag} size={18} color={palette.orange} />
           <AppText variant="h2" style={{ flex: 1 }}>
             Active missions
           </AppText>
@@ -455,7 +456,12 @@ export function PassportScreen({ navigation }: Props) {
             <AppText tone="secondary" variant="bodySmall">
               {achievementInput.stallsVisited}
             </AppText>
-            <ChevronRight size={18} color={palette.textMuted} />
+            <AppSymbol
+              name="chevron.right"
+              fallback={ChevronRight}
+              size={18}
+              color={palette.textMuted}
+            />
           </View>
         </Pressable>
 
@@ -470,7 +476,7 @@ export function PassportScreen({ navigation }: Props) {
 
         <View style={{ gap: spacing[3] }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-            <Award color={palette.orange} size={18} />
+            <AppSymbol name="rosette" fallback={Award} size={18} color={palette.orange} />
             <AppText variant="h2">Heritage stamps ({totalStamps})</AppText>
           </View>
           <View style={{ gap: spacing[2] }}>

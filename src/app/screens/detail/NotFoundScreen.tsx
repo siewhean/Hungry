@@ -9,6 +9,7 @@ import { AppText, Button, ExpandableSearchLauncher } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "NotFound">;
 
@@ -60,7 +61,12 @@ export function NotFoundScreen({ navigation, route }: Props) {
               width: 60,
             }}
           >
-            <UtensilsCrossed color={palette.orange} size={26} />
+            <AppSymbol
+              name="fork.knife"
+              fallback={UtensilsCrossed}
+              size={26}
+              color={palette.orange}
+            />
           </View>
           <AppText variant="display" style={{ textAlign: "center" }}>
             {title}

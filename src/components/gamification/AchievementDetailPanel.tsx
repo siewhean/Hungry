@@ -5,6 +5,7 @@ import { AchievementBadgeArt } from "@/components/gamification/AchievementBadgeA
 import { AppText } from "@/components/ui/AppText";
 import { ACHIEVEMENT_DEFINITIONS, type AchievementRow } from "@/features/achievements/achievements";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface AchievementDetailPanelProps {
   row: AchievementRow;
@@ -64,7 +65,7 @@ export function AchievementDetailPanel({ row, onClose }: AchievementDetailPanelP
             width: 32,
           }}
         >
-          <X size={16} color={palette.textSecondary} />
+          <AppSymbol name="xmark" fallback={X} size={16} color={palette.textSecondary} />
         </Pressable>
       </View>
 
@@ -91,7 +92,12 @@ export function AchievementDetailPanel({ row, onClose }: AchievementDetailPanelP
                   }}
                 >
                   {reached ? (
-                    <Check size={14} color={palette.textOnOrange} />
+                    <AppSymbol
+                      name="checkmark"
+                      fallback={Check}
+                      size={14}
+                      color={palette.textOnOrange}
+                    />
                   ) : (
                     <AppText variant="micro" tone="muted">
                       {index + 1}
