@@ -1,5 +1,0 @@
-appId: com.hungry
----
-- launchApp
-- tapOn: "Discover"
-- takeScreenshot: DiscoverHomeScreen
