@@ -23,6 +23,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import {
   AccessibleImage,
+  AppSymbol,
   AppText,
   Avatar,
   EmptyState,
@@ -1827,6 +1828,20 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+              ) : null}
+              {/* Food Portfolio: post a dish from this stall (the composer asks which dish). */}
+              {showDeferredDetailControls && FEATURE_FLAGS.foodPortfolioEnabled ? (
+                <Button
+                  label="Post a dish here"
+                  variant="secondary"
+                  leftIcon={<AppSymbol name="camera" size={18} color={palette.text} />}
+                  accessibilityHint="Adds your photo of a dish from this stall to your Food Portfolio"
+                  onPress={() => {
+                    trackAnalyticsEvent("food_portfolio_post_tapped", { source: "stall" });
+                    navigation.navigate("Post", { venueId: venue.id });
+                  }}
+                  testID="stall-post-dish"
+                />
               ) : null}
               {/* Reviews */}
               {/* Reading reviews does not depend on whether writing them is switched on. */}

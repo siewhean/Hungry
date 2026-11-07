@@ -165,6 +165,8 @@ export type AnalyticsEventName =
   | "profile_review_nudge_tapped"
   | "profile_shared"
   | "profile_item_opened"
+  | "food_portfolio_post_tapped"
+  | "following_feed_viewed"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

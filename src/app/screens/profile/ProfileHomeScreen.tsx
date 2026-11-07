@@ -11,6 +11,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 
+import { FoodPortfolioSection } from "@/components/foodPortfolio/FoodPortfolioSection";
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
@@ -996,6 +997,33 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
             </Pressable>
           ) : null}
+          {hasAccountProfile && FEATURE_FLAGS.foodPortfolioEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Following feed"
+              accessibilityHint="Opens the newest dishes from people you follow"
+              onPress={() => rootNavigation.navigate("FollowingFeed")}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                borderRadius: componentRadii.card,
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: 48,
+                paddingHorizontal: spacing[3],
+              })}
+              testID="profile-following-feed-row"
+            >
+              <AppSymbol name="following" size={20} color={palette.accentText} />
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyBold">Following</AppText>
+                <AppText variant="micro" tone="secondary">
+                  New dishes from people you follow
+                </AppText>
+              </View>
+              <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
+            </Pressable>
+          ) : null}
           {firstReviewNudgeEligible && firstReviewNudge === "test" ? (
             <View
               testID="profile-first-review-nudge"
@@ -1022,6 +1050,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
           ) : null}
         </View>
+
+        {/* Your posted dishes, top three and stalls (Food Portfolio flag). */}
+        {hasAccountProfile && FEATURE_FLAGS.foodPortfolioEnabled ? (
+          <FoodPortfolioSection
+            userId={profile.id}
+            ownerName={profile.displayName}
+            isSelf
+            navigation={rootNavigation}
+            reloadKey={publishedPostsVersion}
+          />
+        ) : null}
 
         {showcaseEligible && showcaseVariant === "test" ? (
           <FavouriteDishesRow

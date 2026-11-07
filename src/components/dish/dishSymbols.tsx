@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Bookmark,
+  Camera,
   Check,
   CheckCircle,
   ChevronRight,
@@ -61,6 +62,11 @@ export function BookmarkSymbol({ size = 22, color = "#000", fill }: DishSymbolPr
       color={color}
     />
   );
+}
+
+/** `camera`: Post a dish to your Food Portfolio. */
+export function PostDishSymbol({ size = 22, color = "#000" }: DishSymbolProps) {
+  return <AppSymbol name="camera" fallback={Camera} size={size} color={color} />;
 }
 
 export function AddToListSymbol({ size = 22, color = "#000" }: DishSymbolProps) {

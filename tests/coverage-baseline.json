@@ -1,6 +1,6 @@
 {
   "global": {
-    "lines": 87.4,
+    "lines": 87.5,
     "branches": 86.8,
     "functions": 84.4
   },
@@ -110,6 +110,7 @@
     "src/features/discovery/venueDescriptor.ts": 100,
     "src/features/feedback/feedback.ts": 100,
     "src/features/feedback/screenTracking.ts": 100,
+    "src/features/foodPortfolio/foodPortfolioLoaders.ts": 97.1,
     "src/features/home/activity.ts": 95.5,
     "src/features/home/bites.ts": 100,
     "src/features/home/chatShare.ts": 100,
@@ -280,7 +281,7 @@
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/shareInFlight.ts": 91.7,
     "src/lib/services/supabase/supabaseRepository.ts": 74.7,
-    "src/lib/services/supabase/supabaseService.ts": 58.8,
+    "src/lib/services/supabase/supabaseService.ts": 59.4,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
     "src/store/persistStorage.ts": 66.5,

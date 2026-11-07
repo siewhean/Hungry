@@ -745,6 +745,22 @@ export interface ContentReportRequest {
   reason: string;
 }
 
+/** A stall on someone's Food Portfolio: how many dishes they posted there. */
+export interface FoodPortfolioStall {
+  venueId: string;
+  venueName: string;
+  buildingId?: string;
+  buildingName?: string;
+  dishCount: number;
+  lastPostedAt?: string;
+}
+
+/** The top three dishes on a Food Portfolio and which of them the owner pinned. */
+export interface FoodPortfolioTopPosts {
+  posts: Bite[];
+  pinnedPostIds: string[];
+}
+
 export interface BitesFeedPage {
   /** Rows per page (default 40). */
   limit?: number;
@@ -1284,6 +1300,18 @@ export interface HungryService {
         authorAvatarUrl?: string;
       }[]
     >;
+  };
+
+  // Food Portfolio (a person's posted dishes, top three, stalls, and the Following feed)
+  foodPortfolio: {
+    /** Up to three readable posts: the owner's pins in order, then their most liked. */
+    getTopPosts(userId: string): Promise<FoodPortfolioTopPosts>;
+    /** Pins up to three of your own published posts, in order. Returns the ids the server kept. */
+    setPinnedPosts(postIds: string[]): Promise<string[]>;
+    /** Stalls the person posted from, most dishes first (default 60). */
+    listStalls(userId: string, limit?: number): Promise<FoodPortfolioStall[]>;
+    /** Newest posts by people you follow (approved follows only). `cursor` is the last post shown. */
+    getFollowingFeed(page?: BitesFeedPage): Promise<Bite[]>;
   };
 
   chat: {

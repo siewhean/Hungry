@@ -608,6 +608,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Follow requests/,
   },
   {
+    name: "FollowingFeedScreen",
+    file: "src/app/screens/profile/FollowingFeedScreen.tsx",
+    scenario: "user",
+    expect: /New dishes from people you follow/,
+  },
+  {
     name: "FollowedStallsScreen",
     file: "src/app/screens/profile/FollowedStallsScreen.tsx",
     scenario: "user",

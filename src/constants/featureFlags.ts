@@ -43,10 +43,22 @@ export function resolveFeatureFlags(
   const socialFeedEnabled = surface("EXPO_PUBLIC_ENABLE_SOCIAL_FEED", false);
   const postCreationEnabled = surface("EXPO_PUBLIC_ENABLE_POSTS", true);
   const reviewCreationEnabled = surface("EXPO_PUBLIC_ENABLE_REVIEWS", true);
-  const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", false);
+  // Food Portfolio (owner plan approved 2026-11-07): a profile shows the dishes a person posted,
+  // their top three and the stalls they posted from; Profile gets a Following feed and dish and
+  // stall pages get "Post a dish". On outside production; production opts in with
+  // EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO=1. It brings back follows and the post detail (Activity),
+  // which an explicit `=0` on either still turns off. Home stays Discover (socialFeedEnabled).
+  const foodPortfolioEnabled =
+    postCreationEnabled &&
+    surface("EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO", nonProductionSurfaceEnabled);
+  const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", foodPortfolioEnabled);
   // Archived (owner decision 2026-10-31): the Followers and Following counts and lists on
-  // profiles. The code stays so a build can opt back in with `=1`.
-  const followConnectionsEnabled = surface("EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS", false);
+  // profiles. The code stays so a build can opt back in with `=1`; the Food Portfolio turns
+  // them back on.
+  const followConnectionsEnabled = surface(
+    "EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS",
+    foodPortfolioEnabled,
+  );
   const mapEnabled = surface("EXPO_PUBLIC_ENABLE_MAP", true);
   // Wheel solo spin ships everywhere. Group parties are an in-memory mock (a /join
   // link can't reach another phone), so hosting/joining stays out of production.
@@ -68,6 +80,7 @@ export function resolveFeatureFlags(
     release01CoreOnly: enabled(env, "EXPO_PUBLIC_RELEASE_01_CORE_ONLY"),
     socialFeedEnabled,
     postCreationEnabled,
+    foodPortfolioEnabled,
     reviewCreationEnabled,
     activityEnabled,
     followConnectionsEnabled,
