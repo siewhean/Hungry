@@ -1704,6 +1704,9 @@ Use the smallest check that matches the change risk.
 - PostHog project 373517: 37 draft experiments exist, the 15 flags made today are inactive, active flags still the same 9 (none updated today).
 - 2026-11-07 APPLE-DESIGN-01 r2: tsc clean; npm test 3060 pass; test:render 1303 pass (new activity-inbox.render + Must order chip test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
 
+## 2026-11-07 CLEANUP-2026-11-07
+- No code, test, script or CI reference to any removed path (git grep); typecheck clean; `npm test` 3061/0; `npm run test:render` 1307/0; `npm run test:coverage` OK (baseline unchanged).
+
 
 ## 2026-11-07 SOCIAL-TASTE-01 (followers, taste palette, network picks)
 - Migration 20261107180000: up, smoke, down, up, smoke on a local Postgres 16 with stand-in tables; smoke covers follows-you and mutuals, private and blocked people hidden, taste matches capped and null palates left out, suggestions (never yourself, follows, private or blocked), network picks from follows and the taste-twin fallback, moderated reviews excluded, anon grants and the five rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
