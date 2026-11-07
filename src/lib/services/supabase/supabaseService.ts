@@ -74,6 +74,9 @@ import type {
   BitesFeedPage,
   BlockUserRequest,
   FoodPortfolioStall,
+  LeaderboardRow,
+  PortfolioPointsEntry,
+  PortfolioPointsKind,
   BlockedUserEntry,
   HiddenPostEntry,
   BuildingDetail,
@@ -6215,6 +6218,80 @@ export const supabaseService: HungryService = {
         rows.flatMap((row) => asRowArray(row.media)),
       );
       return Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+    },
+  },
+
+  leaderboard: {
+    async getLeaderboard(query) {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return [];
+      const { data, error } = await client.rpc("get_leaderboard", {
+        p_board: query.board,
+        p_period: query.period ?? "week",
+        p_scope: query.scope ?? "everyone",
+        p_limit: query.limit ?? 50,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): LeaderboardRow[] => {
+        const userId = asString(row.user_id);
+        if (!userId) return [];
+        return [
+          {
+            rank: asNumber(row.rank) ?? 0,
+            userId,
+            displayName: asString(row.display_name) ?? "Hungry diner",
+            avatarUrl: asString(row.avatar_url),
+            score: asNumber(row.score) ?? 0,
+            isMe: row.is_me === true,
+          },
+        ];
+      });
+    },
+
+    async getMySummary() {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return null;
+      const { data, error } = await client.rpc("get_my_leaderboard_summary");
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Row | undefined;
+      if (!row) return null;
+      return {
+        totalPoints: asNumber(row.total_points) ?? 0,
+        weekPoints: asNumber(row.week_points) ?? 0,
+        activeWeekRank: asNumber(row.active_week_rank) ?? null,
+        activeAllRank: asNumber(row.active_all_rank) ?? null,
+        trendingRank: asNumber(row.trending_rank) ?? null,
+        creditedPostsToday: asNumber(row.credited_posts_today) ?? 0,
+        dailyCap: asNumber(row.daily_cap) ?? 6,
+        computedAt: asString(row.computed_at),
+      };
+    },
+
+    async listMyPoints(limit = 30) {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return [];
+      const { data, error } = await client.rpc("get_my_portfolio_points", { p_limit: limit });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): PortfolioPointsEntry[] => {
+        const id = asString(row.id);
+        const kind = asString(row.kind) as PortfolioPointsKind | undefined;
+        const createdAt = asString(row.created_at);
+        if (!id || !kind || !createdAt) return [];
+        return [
+          {
+            id,
+            kind,
+            points: asNumber(row.points) ?? 0,
+            postId: asString(row.post_id),
+            achievementId: asString(row.achievement_id),
+            tier: asNumber(row.tier),
+            createdAt,
+            voided: row.voided === true,
+          },
+        ];
+      });
     },
   },
 

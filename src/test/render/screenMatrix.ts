@@ -614,6 +614,12 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /New dishes from people you follow/,
   },
   {
+    name: "LeaderboardScreen",
+    file: "src/app/screens/profile/LeaderboardScreen.tsx",
+    scenario: "user",
+    expect: /Post dishes to climb/,
+  },
+  {
     name: "FollowedStallsScreen",
     file: "src/app/screens/profile/FollowedStallsScreen.tsx",
     scenario: "user",

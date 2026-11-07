@@ -1,6 +1,6 @@
 {
   "global": {
-    "lines": 87.5,
+    "lines": 87.6,
     "branches": 86.8,
     "functions": 84.4
   },
@@ -117,6 +117,7 @@
     "src/features/home/feed.ts": 88.6,
     "src/features/home/mealPicksNudge.ts": 95.5,
     "src/features/home/weeklyPicks.ts": 93.9,
+    "src/features/leaderboard/leaderboardDisplay.ts": 100,
     "src/features/lifecycle/lifecycle.ts": 100,
     "src/features/location/areaSearch.ts": 98.8,
     "src/features/location/singaporeAreaMap.generated.ts": 99.8,
@@ -265,7 +266,7 @@
     "src/lib/services/excel/repositories.ts": 92.8,
     "src/lib/services/mock/catalogMockService.ts": 96.4,
     "src/lib/services/mock/data.ts": 99.3,
-    "src/lib/services/mock/mockService.ts": 82.7,
+    "src/lib/services/mock/mockService.ts": 83,
     "src/lib/services/mock/persistence.ts": 71.6,
     "src/lib/services/mock/repositories.ts": 83,
     "src/lib/services/mock/stallPostState.ts": 100,
@@ -281,7 +282,7 @@
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/shareInFlight.ts": 91.7,
     "src/lib/services/supabase/supabaseRepository.ts": 74.7,
-    "src/lib/services/supabase/supabaseService.ts": 59.4,
+    "src/lib/services/supabase/supabaseService.ts": 59.9,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,
     "src/lib/services/types.ts": 99.9,
     "src/store/persistStorage.ts": 66.5,

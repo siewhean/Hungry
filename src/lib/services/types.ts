@@ -761,6 +761,61 @@ export interface FoodPortfolioTopPosts {
   pinnedPostIds: string[];
 }
 
+/** Most active ranks Portfolio points; Trending ranks the last 7 days of engagement. */
+export type LeaderboardBoard = "active" | "trending";
+/** Trending is always the last 7 days, so it ignores the period. */
+export type LeaderboardPeriod = "week" | "all";
+export type LeaderboardScope = "everyone" | "following";
+
+export interface LeaderboardQuery {
+  board: LeaderboardBoard;
+  period?: LeaderboardPeriod;
+  scope?: LeaderboardScope;
+  /** Rows to return (default 50, at most 100). */
+  limit?: number;
+}
+
+export interface LeaderboardRow {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  score: number;
+  isMe: boolean;
+}
+
+/** Your own points and ranks (null rank: not on that board yet). */
+export interface LeaderboardSummary {
+  totalPoints: number;
+  weekPoints: number;
+  activeWeekRank: number | null;
+  activeAllRank: number | null;
+  trendingRank: number | null;
+  creditedPostsToday: number;
+  dailyCap: number;
+  computedAt?: string;
+}
+
+export type PortfolioPointsKind =
+  | "post"
+  | "off_board_post"
+  | "new_stall"
+  | "first_dish_photo"
+  | "rich_post"
+  | "achievement";
+
+/** One row of your Portfolio points history. */
+export interface PortfolioPointsEntry {
+  id: string;
+  kind: PortfolioPointsKind;
+  points: number;
+  postId?: string;
+  achievementId?: string;
+  tier?: number;
+  createdAt: string;
+  voided: boolean;
+}
+
 export interface BitesFeedPage {
   /** Rows per page (default 40). */
   limit?: number;
@@ -1312,6 +1367,15 @@ export interface HungryService {
     listStalls(userId: string, limit?: number): Promise<FoodPortfolioStall[]>;
     /** Newest posts by people you follow (approved follows only). `cursor` is the last post shown. */
     getFollowingFeed(page?: BitesFeedPage): Promise<Bite[]>;
+  };
+
+  leaderboard: {
+    /** A board's top rows (signed in only; empty for guests). */
+    getLeaderboard(query: LeaderboardQuery): Promise<LeaderboardRow[]>;
+    /** Your points, ranks and how many of today's credited posts are used. Null for guests. */
+    getMySummary(): Promise<LeaderboardSummary | null>;
+    /** Your recent Portfolio points, newest first (default 30). */
+    listMyPoints(limit?: number): Promise<PortfolioPointsEntry[]>;
   };
 
   chat: {
