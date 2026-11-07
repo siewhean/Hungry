@@ -4,6 +4,7 @@ import { MapPin } from "lucide-react-native";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "../ui";
 import type { BuildingType } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface BuildingPinProps {
   name: string;
@@ -49,7 +50,7 @@ export function BuildingPin({ name, type, selected = false, onPress }: BuildingP
           },
         ]}
       >
-        <MapPin size={18} color={tone} fill={tone} />
+        <AppSymbol name="mappin" fallback={MapPin} filled size={18} color={tone} />
       </View>
       <AppText variant="bodySmall" numberOfLines={1} style={{ maxWidth: 96 }}>
         {name}

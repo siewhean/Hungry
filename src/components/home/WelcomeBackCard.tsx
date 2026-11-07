@@ -16,6 +16,7 @@ import { useHungryTheme } from "@/theme";
 import type { LifecycleSnapshot, WelcomeBackDish } from "@/types/domain";
 import type { SingaporeArea } from "@/app/screens/onboarding/singaporeAreas";
 import { AppText, Button, Card, IconButton } from "../ui";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface WelcomeBackCardProps {
   horizontalPadding: number;
@@ -117,7 +118,7 @@ function WelcomeBackExperiment({
           </View>
           <IconButton
             accessibilityLabel="Close welcome back"
-            icon={<X size={18} color={palette.text} />}
+            icon={<AppSymbol name="xmark" fallback={X} size={18} color={palette.text} />}
             variant="ghost"
             onPress={() => {
               trackAnalyticsEvent("welcome_back_dismissed", { lifecycle_state: snapshot.state });

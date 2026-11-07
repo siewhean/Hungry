@@ -9,6 +9,7 @@ import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "VisitedStalls">;
 
@@ -46,7 +47,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
             >
               <Card style={{ padding: spacing[4], gap: spacing[3] }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
-                  <MapPin color={palette.orange} size={18} />
+                  <AppSymbol name="mappin" fallback={MapPin} size={18} color={palette.orange} />
                   <View style={{ flex: 1, gap: spacing[1] }}>
                     <AppText variant="bodyBold">{venue.name}</AppText>
                     {venue.unitNumber ? (

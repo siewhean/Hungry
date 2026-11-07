@@ -9,6 +9,7 @@ import { StallLogoMark } from "@/components/stall/StallLogoMark";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 import type { VenueSummary } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 function DiscoverDishImagePlaceholder({
   accessibilityLabel,
@@ -35,7 +36,12 @@ function DiscoverDishImagePlaceholder({
         style,
       ]}
     >
-      <Utensils color={palette.textMuted} size={Math.min(iconSize, 24)} />
+      <AppSymbol
+        name="fork.knife"
+        fallback={Utensils}
+        size={Math.min(iconSize, 24)}
+        color={palette.textMuted}
+      />
     </View>
   );
 }

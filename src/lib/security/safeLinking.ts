@@ -43,7 +43,7 @@ export async function openTrustedExternalUrl(url: string): Promise<void> {
     }
     await Linking.openURL(url);
   } catch {
-    Alert.alert("Unable to open link", "Please try again later.");
+    Alert.alert("Couldn't open the link", "Check your connection, then try again.");
   }
 }
 
@@ -55,7 +55,7 @@ export async function openTrustedBlogUrl(url: string): Promise<void> {
     }
     await WebBrowser.openBrowserAsync(url);
   } catch {
-    Alert.alert("Unable to open article", "Please try again later.");
+    Alert.alert("Couldn't open the article", "Check your connection, then try again.");
   }
 }
 
@@ -70,7 +70,7 @@ export async function openTrustedMapsUrl(url: string): Promise<void> {
     }
     await Linking.openURL(url);
   } catch {
-    Alert.alert("Unable to open maps", "Please try again later.");
+    Alert.alert("Couldn't open Maps", "Check that a maps app is installed, then try again.");
   }
 }
 
@@ -86,7 +86,7 @@ export async function openTrustedMessagingShareUrl(url: string): Promise<void> {
     }
     await Linking.openURL(url);
   } catch {
-    Alert.alert("Unable to open app", "Please try again later.");
+    Alert.alert("Couldn't open the app", "Check that the app is installed, then try again.");
   }
 }
 
@@ -116,7 +116,10 @@ export async function openTrustedDeliveryUrl(
     }
     await Linking.openURL(webUrl);
   } catch {
-    Alert.alert("Unable to open delivery link", "Please try again later.");
+    Alert.alert(
+      "Couldn't open the delivery app",
+      "Check that it is installed, or try again in a moment.",
+    );
   }
 }
 
@@ -139,6 +142,6 @@ export async function openMerchantProfileLink(
       await Linking.openURL(url);
     }
   } catch {
-    Alert.alert("Unable to open link", "Please try again later.");
+    Alert.alert("Couldn't open the link", "Check your connection, then try again.");
   }
 }

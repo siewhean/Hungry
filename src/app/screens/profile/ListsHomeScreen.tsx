@@ -10,6 +10,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ListsHome">;
 
@@ -27,7 +28,7 @@ export function ListsHomeScreen({ navigation }: Props) {
         <ListsHubRow
           title="Saved"
           body={`${savedCount} saved ${savedCount === 1 ? "dish" : "dishes"}, plus stalls and lists`}
-          icon={<Bookmark color={palette.orange} size={20} />}
+          icon={<AppSymbol name="bookmark" fallback={Bookmark} size={20} color={palette.orange} />}
           onPressIn={() => preloadRoute(navigation, "Favourites")}
           onPress={() => navigation.navigate("Favourites", undefined, { pop: true })}
         />
@@ -35,7 +36,9 @@ export function ListsHomeScreen({ navigation }: Props) {
           <ListsHubRow
             title="Your lists"
             body="Rankings, food trails and recommendations to share"
-            icon={<BarChart3 color={palette.orange} size={20} />}
+            icon={
+              <AppSymbol name="chart.bar" fallback={BarChart3} size={20} color={palette.orange} />
+            }
             onPressIn={() => preloadRoute(navigation, "PortfoliosHome")}
             onPress={() => navigation.navigate("PortfoliosHome")}
           />
@@ -44,7 +47,9 @@ export function ListsHomeScreen({ navigation }: Props) {
           <ListsHubRow
             title="Checklists"
             body="Places to try, ticked off as you go"
-            icon={<ListChecks color={palette.orange} size={20} />}
+            icon={
+              <AppSymbol name="checklist" fallback={ListChecks} size={20} color={palette.orange} />
+            }
             onPressIn={() => preloadRoute(navigation, "ChecklistsHome")}
             onPress={() => navigation.navigate("ChecklistsHome")}
           />
@@ -91,7 +96,12 @@ function ListsHubRow({
             {body}
           </AppText>
         </View>
-        <ChevronRight color={palette.textMuted} size={18} />
+        <AppSymbol
+          name="chevron.right"
+          fallback={ChevronRight}
+          size={18}
+          color={palette.textMuted}
+        />
       </Card>
     </Pressable>
   );

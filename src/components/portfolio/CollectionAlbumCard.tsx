@@ -5,6 +5,7 @@ import { AccessibleImage } from "@/components/ui/AccessibleImage";
 import { AppText } from "@/components/ui/AppText";
 import { tapHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type AlbumProps = {
   name: string;
@@ -51,7 +52,7 @@ export function CollectionAlbumCard({ name, itemCount, coverPhotos, width, onPre
       >
         {photos.length === 0 ? (
           <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-            <FolderHeart color={palette.orange} size={36} />
+            <AppSymbol name="folder" fallback={FolderHeart} size={36} color={palette.orange} />
           </View>
         ) : (
           (photos.length >= 4 ? photos : photos.slice(0, 1)).map((uri) => (
@@ -115,7 +116,7 @@ export function NewCollectionTile({ width, onPress }: { width: number; onPress: 
             width: 44,
           }}
         >
-          <Plus color={palette.textOnOrange} size={22} />
+          <AppSymbol name="plus" fallback={Plus} size={22} color={palette.textOnOrange} />
         </View>
       </View>
       <AppText variant="bodyBold">New collection</AppText>

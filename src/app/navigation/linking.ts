@@ -423,6 +423,10 @@ export function createRootLinking(
         // Social push notifications open the inbox or the follow requests (sign-in required).
         ...(FEATURE_FLAGS.activityEnabled ? { ActivityInbox: "activity" } : {}),
         FollowRequests: "follow-requests",
+        // The new-dishes digest push opens the Following feed.
+        ...(FEATURE_FLAGS.foodPortfolioEnabled
+          ? { FollowingFeed: "following", Leaderboard: "leaderboard" }
+          : {}),
         UserProfile: "user/:authorId",
         SearchResults: "search",
         ...(FEATURE_FLAGS.portfoliosEnabled

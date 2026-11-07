@@ -11,6 +11,7 @@ import {
   type NavigationProp,
 } from "@react-navigation/native";
 import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
+import type { SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PostTabPage } from "@/components/review/PostTabPage";
@@ -258,6 +259,20 @@ function ReleaseLandingRedirect() {
   return <TabScreenLoadingPlaceholder />;
 }
 
+/**
+ * One tab in the bar. iOS draws the SF Symbol (outline, then the filled one while selected, as
+ * the system tab bar does); Android and web draw the Lucide icon.
+ */
+type TabItem = {
+  key: string;
+  route?: MaterialTopTabBarProps["state"]["routes"][number];
+  isCreateAction?: boolean;
+  icon: typeof House;
+  symbol: SFSymbol;
+  focusedSymbol: SFSymbol;
+  label: string;
+};
+
 function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const { componentSizes, palette, spacing } = useHungryTheme();
   const styles = createStyles();
@@ -274,12 +289,37 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
   // The middle button writes a review; it looks like any other tab.
   const tabItems = [
-    { key: "Discover", route: routeByName.get("Discover"), icon: House, label: t("tab.home") },
+    {
+      key: "Discover",
+      route: routeByName.get("Discover"),
+      icon: House,
+      symbol: "house",
+      focusedSymbol: "house.fill",
+      label: t("tab.home"),
+    },
     ...(FEATURE_FLAGS.socialFeedEnabled
-      ? [{ key: "Home", route: routeByName.get("Home"), icon: Newspaper, label: t("tab.feed") }]
+      ? [
+          {
+            key: "Home",
+            route: routeByName.get("Home"),
+            icon: Newspaper,
+            symbol: "newspaper",
+            focusedSymbol: "newspaper.fill",
+            label: t("tab.feed"),
+          },
+        ]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
-      ? [{ key: "Create", isCreateAction: true, icon: PenLine, label: t("tab.post") }]
+      ? [
+          {
+            key: "Create",
+            isCreateAction: true,
+            icon: PenLine,
+            symbol: "square.and.pencil",
+            focusedSymbol: "square.and.pencil",
+            label: t("tab.post"),
+          },
+        ]
       : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
       ? [
@@ -287,12 +327,21 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             key: "Review",
             route: routeByName.get("Review"),
             icon: BookOpenText,
+            symbol: "book",
+            focusedSymbol: "book.fill",
             label: t("tab.reviews"),
           },
         ]
       : []),
-    { key: "Profile", route: routeByName.get("Profile"), icon: User, label: t("tab.profile") },
-  ].filter((item) => item.isCreateAction || item.route);
+    {
+      key: "Profile",
+      route: routeByName.get("Profile"),
+      icon: User,
+      symbol: "person",
+      focusedSymbol: "person.fill",
+      label: t("tab.profile"),
+    },
+  ].filter((item) => item.isCreateAction || item.route) as TabItem[];
 
   return (
     <View
@@ -364,6 +413,8 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
             createAction={isCreateAction}
             focused={isFocused}
             icon={Icon}
+            symbol={item.symbol}
+            focusedSymbol={item.focusedSymbol}
             label={item.label}
             onPress={onPress}
             onPressIn={onPressIn}

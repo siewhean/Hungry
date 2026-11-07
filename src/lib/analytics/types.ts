@@ -173,6 +173,7 @@ export type AnalyticsEventName =
   | "network_pick_opened"
   | "taste_palette_viewed"
   | "taste_compare_viewed"
+  | "food_portfolio_card_shared"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

@@ -7,6 +7,8 @@ import {
   FOOD_PORTFOLIO_MAX_PINS,
   portfolioPostImage,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
+import { FoodPortfolioShareSheet } from "@/components/foodPortfolio/FoodPortfolioShareSheet";
+import { portfolioCardPhotos, portfolioCardStatLine } from "@/features/foodPortfolio/shareCards";
 import { useFoodPortfolio } from "@/features/foodPortfolio/useFoodPortfolio";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { Bite } from "@/lib/services/types";
@@ -127,6 +129,7 @@ export function FoodPortfolioSection({
   useEffect(() => {
     onPostCountChange?.(postCount);
   }, [onPostCountChange, postCount]);
+  const [isSharing, setIsSharing] = useState(false);
 
   if (!FEATURE_FLAGS.foodPortfolioEnabled) return null;
 
@@ -338,14 +341,29 @@ export function FoodPortfolioSection({
           ) : null}
         </View>
         {isSelf ? (
-          <Button
-            label="Post a dish"
-            size="sm"
-            fullWidth={false}
-            leftIcon={<AppSymbol name="camera" size={16} color={palette.textOnOrange} />}
-            onPress={openComposer}
-            style={{ minHeight: 44 }}
-          />
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
+            {portfolio.posts.length > 0 ? (
+              <Pressable
+                testID="food-portfolio-share"
+                accessibilityRole="button"
+                accessibilityLabel="Share your Food Portfolio"
+                accessibilityHint="Makes a picture of your dishes to share"
+                hitSlop={4}
+                onPress={() => setIsSharing(true)}
+                style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+              >
+                <AppSymbol name="share" size={20} color={palette.accentText} />
+              </Pressable>
+            ) : null}
+            <Button
+              label="Post a dish"
+              size="sm"
+              fullWidth={false}
+              leftIcon={<AppSymbol name="camera" size={16} color={palette.textOnOrange} />}
+              onPress={openComposer}
+              style={{ minHeight: 44 }}
+            />
+          </View>
         ) : null}
       </View>
 
@@ -448,6 +466,22 @@ export function FoodPortfolioSection({
       )}
 
       {tab === "dishes" || isChoosingPins ? dishesBody : stallsBody}
+      {isSelf && isSharing ? (
+        <FoodPortfolioShareSheet
+          visible
+          onClose={() => setIsSharing(false)}
+          card={{
+            kind: "portfolio",
+            ownerId: userId,
+            ownerName,
+            photos: portfolioCardPhotos(portfolio.topPosts, portfolio.posts),
+            statLine: portfolioCardStatLine(
+              portfolio.posts.length,
+              portfolio.stallsState === "loaded" ? portfolio.stalls.length : null,
+            ),
+          }}
+        />
+      ) : null}
     </View>
   );
 }

@@ -11,7 +11,7 @@ import {
   type TextStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Building2, Check, LocateFixed, MapPin, Search, X } from "lucide-react-native";
+import { Building2, Check, LocateFixed, MapPin, Search, X } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
@@ -36,6 +36,7 @@ import { useHungryTheme } from "@/theme";
 import { OnboardingProgress, trackOnboardingAreaPickerViewed } from "./OnboardingProgress";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { SORTED_SINGAPORE_AREAS } from "./singaporeAreas";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "ManualLocationPicker">;
 
@@ -251,7 +252,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               width: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={22} />
+            <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
           </Pressable>
           <View
             style={{
@@ -267,7 +268,12 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               paddingHorizontal: spacing[3],
             }}
           >
-            <Search color={palette.textMuted} size={18} />
+            <AppSymbol
+              name="magnifyingglass"
+              fallback={Search}
+              size={18}
+              color={palette.textMuted}
+            />
             <TextInput
               accessibilityLabel="Search for an area, mall, hawker centre or address"
               autoCapitalize="words"
@@ -297,7 +303,7 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
                   width: 44,
                 }}
               >
-                <X color={palette.textMuted} size={18} />
+                <AppSymbol name="xmark" fallback={X} size={18} color={palette.textMuted} />
               </Pressable>
             ) : null}
           </View>
@@ -325,7 +331,9 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
           style={{ flex: 1, marginTop: spacing[2] }}
         >
           <ResultRow
-            icon={<LocateFixed color={palette.orange} size={18} />}
+            icon={
+              <AppSymbol name="location" fallback={LocateFixed} size={18} color={palette.orange} />
+            }
             title="Use my current location"
             subtitle={
               permission === "granted" ? "Follows you as you move" : "Asks for location access"
@@ -339,9 +347,14 @@ export function ManualLocationPickerScreen({ navigation, route }: Props) {
               key={result.key}
               icon={
                 result.kind === "place" ? (
-                  <Building2 color={palette.orange} size={18} />
+                  <AppSymbol
+                    name="building.2"
+                    fallback={Building2}
+                    size={18}
+                    color={palette.orange}
+                  />
                 ) : (
-                  <MapPin color={palette.orange} size={18} />
+                  <AppSymbol name="mappin" fallback={MapPin} size={18} color={palette.orange} />
                 )
               }
               title={result.title}
@@ -427,7 +440,9 @@ function ResultRow({
           {subtitle}
         </AppText>
       </View>
-      {selected ? <Check color={palette.orange} size={18} /> : null}
+      {selected ? (
+        <AppSymbol name="checkmark" fallback={Check} size={18} color={palette.orange} />
+      ) : null}
     </Pressable>
   );
 }

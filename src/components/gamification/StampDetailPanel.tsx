@@ -10,6 +10,7 @@ import { AppText } from "@/components/ui/AppText";
 import { formatStampDate, type StampHistory } from "@/features/passport/stampHistory";
 import { useHungryTheme } from "@/theme";
 import type { PassportCategory } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 /** Stalls listed before "and N more". */
 const STALL_LIMIT = 8;
@@ -80,7 +81,7 @@ export function StampDetailPanel({
             width: 32,
           }}
         >
-          <X size={16} color={palette.textSecondary} />
+          <AppSymbol name="xmark" fallback={X} size={16} color={palette.textSecondary} />
         </Pressable>
       </View>
 
@@ -165,7 +166,12 @@ export function StampDetailPanel({
                     {date}
                   </AppText>
                 ) : null}
-                <ChevronRight size={16} color={palette.textMuted} />
+                <AppSymbol
+                  name="chevron.right"
+                  fallback={ChevronRight}
+                  size={16}
+                  color={palette.textMuted}
+                />
               </Pressable>
             );
           })}

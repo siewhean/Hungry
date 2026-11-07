@@ -2,7 +2,6 @@ import type { NavigationProp } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
-import { ArrowLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Button } from "@/components/ui";
@@ -40,6 +39,7 @@ import { buildResultPicks, fewDietaryPicksMessage, type ResultPick } from "./fil
 import { loadTastePicks } from "./tastePicks";
 import { describeTaste, noDietaryPicksMessage } from "./resultPicks";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteProfileResult">;
 
@@ -278,7 +278,7 @@ export function TasteProfileResultScreen({ navigation }: Props) {
             width: 44,
           }}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <OnboardingProgress step="done" />
         <OnboardingHeader

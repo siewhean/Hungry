@@ -466,7 +466,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /backgroundColor: palette\.bgSoft/);
   assert.match(
     discover,
-    /<Utensils color=\{palette\.textMuted\} size=\{Math\.min\(iconSize, 24\)\} \/>/,
+    /<AppSymbol\s+name="fork\.knife"\s+fallback=\{Utensils\}\s+size=\{Math\.min\(iconSize, 24\)\}\s+color=\{palette\.textMuted\}/,
   );
   assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
   assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);

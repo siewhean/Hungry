@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Bookmark, Clock, ExternalLink, ListPlus, MapPin } from "lucide-react-native";
+import { Bookmark, Clock, ExternalLink, ListPlus, MapPin } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AccessibleImage, AppText, Button, EmptyState, Screen, Skeleton } from "@/components/ui";
@@ -29,6 +29,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "CatalogRawDetail">;
 type Detail = CatalogRawDishDetail | CatalogRawVenueDetail;
@@ -60,7 +61,7 @@ function DetailHeader({ title, onBack }: { title?: string; onBack: () => void })
         hitSlop={12}
         onPress={onBack}
       >
-        <ArrowLeft color={palette.text} size={24} />
+        <AppSymbol name="back" size={24} weight="medium" color={palette.text} />
       </Pressable>
       {title ? (
         <AppText numberOfLines={1} style={{ flex: 1 }} variant="h2">
@@ -486,10 +487,12 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               accessibilityState={{ selected: isFavourite }}
               variant={isFavourite ? "secondary" : "primary"}
               leftIcon={
-                <Bookmark
-                  color={isFavourite ? palette.orange : palette.white}
-                  fill={isFavourite ? palette.orange : "transparent"}
+                <AppSymbol
+                  name={isFavourite ? "bookmark.fill" : "bookmark"}
+                  fallback={Bookmark}
+                  filled={isFavourite}
                   size={18}
+                  color={isFavourite ? palette.orange : palette.white}
                 />
               }
               onPress={() => void handleToggleFavourite(detail as CatalogRawDishDetail)}
@@ -501,7 +504,14 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               variant="secondary"
               loading={isAddingToPortfolio}
               accessibilityHint="Opens your lists to add this dish to one"
-              leftIcon={<ListPlus color={palette.text} size={18} />}
+              leftIcon={
+                <AppSymbol
+                  name="text.badge.plus"
+                  fallback={ListPlus}
+                  size={18}
+                  color={palette.text}
+                />
+              }
               onPress={() => void addToPortfolio()}
             />
           ) : null}
@@ -547,7 +557,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           ) : null}
           {/* The building appears once, with the address under it when the catalog has one. */}
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            <MapPin color={palette.textMuted} size={18} />
+            <AppSymbol name="mappin" fallback={MapPin} size={18} color={palette.textMuted} />
             <View style={{ flex: 1, gap: spacing[0.5] }}>
               <AppText tone="muted" variant="bodySmall">
                 {detail.buildingName ?? "Singapore"}
@@ -561,7 +571,7 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
           </View>
           {venueHours ? (
             <View style={{ flexDirection: "row", gap: spacing[2] }}>
-              <Clock color={palette.textMuted} size={18} />
+              <AppSymbol name="clock" fallback={Clock} size={18} color={palette.textMuted} />
               <AppText tone="muted" variant="bodySmall" style={{ flex: 1 }}>
                 {venueHours}
               </AppText>
@@ -574,7 +584,12 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
               onPress={() => void openMerchantProfileLink("web", sourceUrl)}
               style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
             >
-              <ExternalLink color={palette.textMuted} size={18} />
+              <AppSymbol
+                name="arrow.up.right.square"
+                fallback={ExternalLink}
+                size={18}
+                color={palette.textMuted}
+              />
               <AppText tone="accent" variant="bodySmall" numberOfLines={1} style={{ flex: 1 }}>
                 Source: {sourceHost(sourceUrl)}
               </AppText>
