@@ -1,0 +1,14 @@
+{
+  "version": "20261107090000",
+  "name": "20261107090000_food_portfolio_pages",
+  "result": "pass",
+  "rehearsed_at": "2026-11-07T05:17:15Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "a2e5833f9de0c45a91a0efcc5298d59175c067bf",
+  "up_sha256": "1d94d340ec1831317665c126c35fc516632c7149eaefa15b5d0e7822947f339a",
+  "down_sha256": "3a6df9879daa08f9e3b19122c50807d3659d9a750438c2488296f16ec3989020",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/food_portfolio_pages.sql"]
+}
