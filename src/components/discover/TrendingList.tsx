@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, View, useWindowDimensions } from "react-native";
 import { ChevronRight, Utensils } from "lucide-react-native";
 
 import { HOME_PRICE_STYLE } from "@/components/discover/home/homeLayout";
-import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppSymbol,
+  AppText,
+  PressableScale,
+  RailScrollView,
+} from "@/components/ui";
 import { buildBiteLabel, formatBiteDistance } from "@/features/discover/biteLabel";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -83,7 +89,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
       ) : (
         <AppText variant="h2">{title}</AppText>
       )}
-      <ScrollView
+      <RailScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ width: screenWidth }}
@@ -145,7 +151,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
             </PressableScale>
           );
         })}
-      </ScrollView>
+      </RailScrollView>
     </View>
   );
 }

@@ -40,6 +40,7 @@ import {
   PressableScale,
   RailScrollView,
   Screen,
+  TAPS_WHILE_SCROLLING,
   Skeleton,
   NumericText,
   SlideText,
@@ -321,6 +322,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const foodStyleRowStyle = {
     flexDirection: "row" as const,
     gap: spacing[2],
+  };
+  // The bowl sits 8pt inside its tile, so the scroller itself starts 8pt left of the page margin
+  // (borrowing from the screen padding) and the first bowl lands flush with the title above it.
+  const foodStyleScrollStyle = {
+    width: screenWidth + FOOD_STYLE_RAIL_INSET,
     marginLeft: -FOOD_STYLE_RAIL_INSET,
   };
   const profile = useProfileStore((state) => state.profile);
@@ -1639,7 +1645,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={edgeToEdgeHorizontalScrollStyle}
+          style={foodStyleScrollStyle}
           contentContainerStyle={{ flexGrow: 0 }}
         >
           <View style={foodStyleRowStyle}>
@@ -1650,7 +1656,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         <RailScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={edgeToEdgeHorizontalScrollStyle}
+          style={foodStyleScrollStyle}
           contentContainerStyle={{ flexGrow: 0 }}
         >
           <View style={foodStyleRowStyle}>
@@ -1829,6 +1835,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       />
       <ScrollView
         ref={scrollRef}
+        {...TAPS_WHILE_SCROLLING}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
           const y = event.nativeEvent.contentOffset.y;

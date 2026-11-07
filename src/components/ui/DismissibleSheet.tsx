@@ -74,7 +74,7 @@ export function DismissibleSheet({
     progress.set(
       withTiming(
         0,
-        { duration: reduceMotion ? 0 : 200, easing: Easing.out(Easing.quad) },
+        { duration: reduceMotion ? 0 : 140, easing: Easing.out(Easing.quad) },
         (finished) => {
           if (finished) runOnJS(setMounted)(false);
         },

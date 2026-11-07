@@ -43,3 +43,30 @@ diff --git a/node_modules/react-native/Libraries/Components/ScrollView/ScrollVie
          return true;
        }
  
+diff --git a/node_modules/react-native/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm b/node_modules/react-native/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
+--- a/node_modules/react-native/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
++++ b/node_modules/react-native/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
+@@ -495,6 +495,23 @@
+   }];
+ }
+ 
++/*
++ * A finger landing on a row that is still sliding sideways normally only catches the slide:
++ * UIKit keeps that touch for itself, so a button under the finger never gets the tap. For rows
++ * that scroll sideways only, stop the slide here, before the touch is handed out, and report the
++ * end of the slide, so the touch reaches the button like any other tap.
++ */
++- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
++{
++  if (event != nil && event.type == UIEventTypeTouches && _scrollView.isDecelerating && !_scrollView.isTracking &&
++      _scrollView.contentSize.width > _scrollView.bounds.size.width &&
++      _scrollView.contentSize.height <= _scrollView.bounds.size.height + 1.0) {
++    [_scrollView setContentOffset:_scrollView.contentOffset animated:NO];
++    [self scrollViewDidEndDecelerating:_scrollView];
++  }
++  return [super hitTest:point withEvent:event];
++}
++
+ - (UIView *)betterHitTest:(CGPoint)point withEvent:(UIEvent *)event
+ {
+   // This is the same algorithm as in the RCTViewComponentView with the exception of

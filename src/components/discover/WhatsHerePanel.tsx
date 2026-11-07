@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
-import { AppText } from "@/components/ui";
+import { AppText, RailScrollView } from "@/components/ui";
 import {
   cuisineOptions,
   filterHereStalls,
@@ -89,13 +89,13 @@ export function WhatsHerePanel({ placeName, stalls, renderStalls, onSeeAll }: Wh
         <AppText variant="h2">{`Stalls at ${placeName}`}</AppText>
       )}
       {cuisines.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <RailScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
             {cuisines.map((cuisine) =>
               chip(titleCase(cuisine), filters.cuisine === cuisine, () => toggleCuisine(cuisine)),
             )}
           </View>
-        </ScrollView>
+        </RailScrollView>
       ) : null}
       <AppText tone="muted" variant="bodySmall">
         {visible.length === 1 ? "1 stall" : `${visible.length} stalls`}

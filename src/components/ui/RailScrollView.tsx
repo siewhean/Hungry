@@ -9,7 +9,7 @@ const BaseScrollView = (
 // React Native's ScrollView keeps taps for itself while it is still sliding (see
 // patches/react-native+0.86.3.patch, which adds this prop). On a row of cards that meant the first
 // tap only stopped the slide. This lets the tap reach the card under the finger as well.
-const TAPS_WHILE_SCROLLING = Platform.OS === "web" ? {} : { allowTapsWhileScrolling: true };
+export const TAPS_WHILE_SCROLLING = Platform.OS === "web" ? {} : { allowTapsWhileScrolling: true };
 
 /**
  * The sideways scroller for Home's rows and chips. On a phone it is gesture-handler's
