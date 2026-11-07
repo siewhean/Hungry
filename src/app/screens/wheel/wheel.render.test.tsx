@@ -442,6 +442,38 @@ test("R5-12 Surprise with nothing left says so in the sheet, not in an alert", a
   assert.equal(button.getAttribute("aria-disabled"), "true");
 });
 
+test("a full wheel says so in the sheet's live header line, not in an alert", async () => {
+  await startWheel();
+  const repository = getDataRepository();
+  const view = await render(
+    createElement(WheelEntryAddSheet as never, { visible: true, onClose: () => undefined }),
+  );
+  // Twelve options that are not demo stalls, so Surprise still has a stall to offer.
+  const buildingId = repository.listBuildings()[0].id;
+  useWheelStore.setState({
+    entries: Array.from({ length: 12 }, (_, position) => ({
+      id: `e-${position}`,
+      partyId: "p1",
+      addedByMemberId: "m1",
+      venueId: `venue-not-in-demo-${position}`,
+      buildingId,
+      label: `Option ${position + 1}`,
+      imageUrl: "",
+      isEliminated: false,
+      position,
+      addedAt: new Date().toISOString(),
+    })),
+  });
+  await view.press(view.findByText("Surprise"));
+  await view.press(view.findByLabel(/Pick a random stall/));
+  assert.equal(useWheelStore.getState().entries.length, 12);
+  const header = view.findByTestId("wheel-add-sheet-count");
+  assert.match(
+    header?.textContent ?? "",
+    /The wheel is full\. Remove an option first \(up to 12\)\./,
+  );
+});
+
 async function renderWinnerPopup() {
   const repository = getDataRepository();
   const venue = repository.getVenueById(repository.listPopularNearby()[0].venueId)!;

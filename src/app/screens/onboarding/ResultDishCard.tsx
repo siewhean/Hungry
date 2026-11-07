@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { Heart, Utensils } from "lucide-react-native";
+import { Utensils } from "lucide-react-native";
 
 import { AccessibleImage, AppText, Card } from "@/components/ui";
 import { formatDishPrice } from "@/features/detail/dishPrice";
@@ -11,6 +11,7 @@ import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
 import { cuisineImageKeyFor } from "./cuisineFallback";
 import { ONBOARDING_FOOD_IMAGES } from "./onboardingFoodImages";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 /**
  * A dish with no photo gets a tinted tile with its food type (laksa, rojak...), so a grid of
@@ -69,7 +70,7 @@ function CuisineTile({ dish, height }: { dish: DishDetail; height: number }) {
         width: "100%",
       }}
     >
-      <Utensils color={palette.textMuted} size={24} />
+      <AppSymbol name="fork.knife" fallback={Utensils} size={24} color={palette.textMuted} />
       {caption ? (
         <AppText variant="micro" tone="secondary" numberOfLines={1}>
           {caption}
@@ -215,10 +216,10 @@ export function ResultDishCard({
               width: 44,
             }}
           >
-            <Heart
-              color={palette.orange}
-              fill={isSaved ? palette.orange : "transparent"}
+            <AppSymbol
+              name={isSaved ? "saved" : "save"}
               size={18}
+              color={isSaved ? palette.saved : palette.orange}
             />
           </Pressable>
         </Card>

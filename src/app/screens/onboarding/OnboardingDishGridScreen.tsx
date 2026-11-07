@@ -1,11 +1,10 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, View } from "react-native";
-import { Heart } from "lucide-react-native";
 
 import { MascotLine } from "@/components/onboarding/MascotLine";
 import { OnboardingFrame } from "@/components/onboarding/OnboardingFrame";
-import { AppText, Button, Card } from "@/components/ui";
+import { AppSymbol, AppText, Button, Card } from "@/components/ui";
 import { nextOnboardingRoute } from "@/features/onboarding/flowRoutes";
 import { MIN_GRID_LIKES, gridDishes } from "@/features/onboarding/onboardingDeck";
 import { useOnboardingScreenViewed } from "@/features/onboarding/useOnboardingScreenViewed";
@@ -173,11 +172,7 @@ export function OnboardingDishGridScreen({ navigation }: Props) {
                     width: 36,
                   }}
                 >
-                  <Heart
-                    color={palette.orange}
-                    fill={liked ? palette.orange : "transparent"}
-                    size={18}
-                  />
+                  <AppSymbol name={liked ? "saved" : "save"} size={18} color={palette.orange} />
                 </View>
               </Pressable>
             </Card>

@@ -76,3 +76,24 @@ test("H37: own posts and reviews get Edit/Delete entry points", () => {
     assert.match(screen, /\{ownReviewEditor\.dialog\}/, path);
   }
 });
+
+test("The own post or review menu is an action sheet; only the delete confirmation is an alert", async () => {
+  const { promptOwnContentActions } = await import("@/features/profile/ownContentActions");
+  const { useChoiceSheetStore, notifyChoiceSheetClosed } =
+    await import("@/store/useChoiceSheetStore");
+  let edited = 0;
+  promptOwnContentActions({ label: "review", onEdit: () => (edited += 1), onDelete: () => {} });
+  const request = useChoiceSheetStore.getState().request;
+  assert.equal(request?.title, "Your review");
+  assert.deepEqual(
+    request?.options.map((option) => [option.label, option.destructive === true]),
+    [
+      ["Edit review", false],
+      ["Delete review", true],
+    ],
+  );
+  useChoiceSheetStore.getState().settle("edit");
+  notifyChoiceSheetClosed();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(edited, 1);
+});

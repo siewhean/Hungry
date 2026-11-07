@@ -3,6 +3,7 @@ import { Check } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 export interface SettingsChoiceOption<T extends string> {
   value: T;
@@ -104,7 +105,14 @@ export function SettingsChoiceSheet<T extends string>({
                     ) : null}
                   </View>
                   <View style={{ width: 24 }} importantForAccessibility="no-hide-descendants">
-                    {isSelected ? <Check size={20} color={palette.orange} /> : null}
+                    {isSelected ? (
+                      <AppSymbol
+                        name="checkmark"
+                        fallback={Check}
+                        size={20}
+                        color={palette.orange}
+                      />
+                    ) : null}
                   </View>
                 </Pressable>
               );

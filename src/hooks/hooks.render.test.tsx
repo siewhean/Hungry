@@ -2,9 +2,9 @@
 // Run with `npm run test:render`.
 
 import assert from "node:assert/strict";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { createRequire } from "node:module";
-import { Keyboard, Platform, Share, TextInput } from "react-native";
+import { AccessibilityInfo, Keyboard, Platform, Share, TextInput } from "react-native";
 import test, { afterEach } from "node:test";
 
 import {
@@ -16,6 +16,7 @@ import {
 import { useRetryableLoad } from "@/features/profile/useRetryableLoad";
 import { profileShareUrl, shareProfileLink } from "@/features/share/profileShare";
 import { useFoodHistory } from "@/hooks/useFoodHistory";
+import { useIncreaseContrast } from "@/hooks/useIncreaseContrast";
 import { useKeyboardRevealFocusedInput } from "@/hooks/useKeyboardRevealFocusedInput";
 import { useScrollToRevealBack } from "@/hooks/useScrollToRevealBack";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
@@ -23,7 +24,7 @@ import { getHungryService, setMockServiceProvider } from "@/lib/services/service
 import { notifyChoiceSheetClosed, useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
-import { cleanup, render } from "@/test/render";
+import { cleanup, render, settle } from "@/test/render";
 
 afterEach(cleanup);
 
@@ -391,5 +392,40 @@ test("useKeyboardRevealFocusedInput leaves the scroll alone when there is nothin
     assert.deepEqual(scrolls, [], "no focused input to reveal");
   } finally {
     none.restore();
+  }
+});
+
+test("useIncreaseContrast follows the iOS Increase Contrast setting and stays off on web", async () => {
+  const web = await renderHook(() => useIncreaseContrast());
+  assert.equal(web.box.current, false);
+  await cleanup();
+
+  const info = AccessibilityInfo as unknown as Record<string, unknown>;
+  const originalOS = Platform.OS;
+  const originalRead = info.isDarkerSystemColorsEnabled;
+  const originalListen = info.addEventListener;
+  const listeners = new Set<(enabled: boolean) => void>();
+  Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
+  info.isDarkerSystemColorsEnabled = async () => true;
+  // The test wrapper's theme provider subscribes too; only the contrast event is captured.
+  info.addEventListener = (event: string, handler: (enabled: boolean) => void) => {
+    if (event !== "darkerSystemColorsChanged") return { remove: () => undefined };
+    listeners.add(handler);
+    return { remove: () => listeners.delete(handler) };
+  };
+  try {
+    const { box, again } = await renderHook(() => useIncreaseContrast());
+    await settle();
+    assert.equal(box.current, true);
+    await act(async () => {
+      for (const listener of listeners) listener(false);
+    });
+    assert.equal(box.current, false);
+    await cleanup();
+    assert.equal(listeners.size, 0);
+  } finally {
+    Object.defineProperty(Platform, "OS", { value: originalOS, configurable: true });
+    info.isDarkerSystemColorsEnabled = originalRead;
+    info.addEventListener = originalListen;
   }
 });

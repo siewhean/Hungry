@@ -1,11 +1,10 @@
 import { Pressable, StyleSheet, View } from "react-native";
-import { Heart } from "lucide-react-native";
 
 import type { DishDetail } from "@/types/domain";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { useHungryTheme, type HungryTheme } from "@/theme";
-import { AccessibleImage, AppText, Badge, Card } from "../ui";
+import { AccessibleImage, AppSymbol, AppText, Badge, Card } from "../ui";
 import { NoDishPhoto } from "./NoDishPhoto";
 import { RatingStarSymbol } from "./dishSymbols";
 
@@ -113,10 +112,10 @@ export function DishCard({
                 onPress={onFavouritePress}
                 hitSlop={13}
               >
-                <Heart
+                <AppSymbol
+                  name={favourited ? "saved" : "save"}
                   size={18}
-                  color={favourited ? palette.error : palette.textMuted}
-                  fill={favourited ? palette.error : "transparent"}
+                  color={favourited ? palette.saved : palette.textMuted}
                 />
               </Pressable>
             ) : null}

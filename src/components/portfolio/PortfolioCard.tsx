@@ -76,7 +76,7 @@ export function PortfolioCard({
             style={{ height: COVER_SIZE, width: COVER_SIZE }}
           />
         ) : (
-          <FolderHeart color={palette.orange} size={28} />
+          <AppSymbol name="folder" fallback={FolderHeart} size={28} color={palette.orange} />
         )}
       </View>
       <View style={{ flex: 1, gap: 2 }}>

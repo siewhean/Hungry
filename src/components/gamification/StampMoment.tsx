@@ -24,6 +24,7 @@ import { useHungryTheme } from "@/theme";
 import type { AchievementUnlock } from "@/features/achievements/unlocks";
 import { milestoneReachedThisWeek, type WeeklyGoalProgress } from "@/features/passport/weeklyGoal";
 import type { PassportCategory, PassportStampDefinition } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 export type StampMomentContent =
   | {
@@ -345,7 +346,7 @@ function StampLanding({
                 { backgroundColor: palette.orange, borderRadius: radii.pill },
               ]}
             >
-              <Target size={44} color={palette.textOnOrange} />
+              <AppSymbol name="target" fallback={Target} size={44} color={palette.textOnOrange} />
             </View>
           )}
         </Animated.View>

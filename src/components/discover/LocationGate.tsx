@@ -10,6 +10,7 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 /**
  * Asked before anything that needs "near you": the device location first, a place search when
@@ -105,7 +106,7 @@ export function LocationGate({
           width: 56,
         }}
       >
-        <LocateFixed color={palette.orange} size={28} />
+        <AppSymbol name="location" fallback={LocateFixed} size={28} color={palette.orange} />
       </View>
       <View style={{ gap: spacing[2] }} accessible accessibilityRole="header">
         <AppText variant="h1">{title}</AppText>
