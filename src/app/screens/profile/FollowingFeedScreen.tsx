@@ -8,6 +8,7 @@ import {
   mergePortfolioPosts,
   portfolioPostImage,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
+import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
 import { formatRelativeDate } from "@/features/profile/relativeDate";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -150,6 +151,16 @@ export function FollowingFeedScreen({ navigation }: Props) {
       .finally(() => setIsLoadingMore(false));
   }, [hasMore, isLoadingMore, posts]);
 
+  const openSuggestedPerson = (person: {
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+  }) =>
+    navigation.navigate("UserProfile", {
+      authorId: person.userId,
+      authorName: person.displayName,
+      authorAvatarUrl: person.avatarUrl,
+    });
   const findPeople = () =>
     navigation.navigate("MainTabs", {
       screen: "Profile",
@@ -172,15 +183,19 @@ export function FollowingFeedScreen({ navigation }: Props) {
             onPress={() => setReloadKey((key) => key + 1)}
           />
         ) : posts.length === 0 ? (
-          <EmptyState
-            title="No dishes yet"
-            body="Follow people whose taste you like. The dishes they post show up here."
-            icon={
-              <AppSymbol name="people" size={36} weight="regular" color={palette.textSecondary} />
-            }
-            ctaLabel="Find people"
-            onPress={findPeople}
-          />
+          <>
+            <EmptyState
+              title="No dishes yet"
+              body="Follow people whose taste you like. The dishes they post show up here."
+              icon={
+                <AppSymbol name="people" size={36} weight="regular" color={palette.textSecondary} />
+              }
+              ctaLabel="Find people"
+              onPress={findPeople}
+            />
+            {/* Somewhere to start: people with a palate like yours, and people your follows follow. */}
+            <PeopleSuggestionsSection onOpen={openSuggestedPerson} />
+          </>
         ) : (
           <>
             {posts.map((post) => (

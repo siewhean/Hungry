@@ -24,12 +24,15 @@ test("linking exposes authenticated dish, venue, post and order entry points", (
   // Path params must match the params callers navigate with (dishId/venueId).
   assert.equal(screens.DishDetail, "dish/:dishId");
   assert.equal(screens.StallDetail, "venue/:venueId");
-  // Activity (and its post pages) is archived, so its links are off.
-  assert.equal(screens.ActivityPostDetail, undefined);
+  // Post pages open from links only while Activity is on (it follows the Food Portfolio flag).
+  assert.equal(
+    screens.ActivityPostDetail,
+    FEATURE_FLAGS.activityEnabled ? "post/:postId" : undefined,
+  );
   // The composer is named for what it does; /order still works as an alias.
   assert.equal(screens.Post, "post");
   assert.equal(screens.ReviewDetail, "review/:reviewId");
-  assert.equal(screens.ActivityInbox, undefined);
+  assert.equal(screens.ActivityInbox, FEATURE_FLAGS.activityEnabled ? "activity" : undefined);
   assert.equal(screens.FollowRequests, "follow-requests");
   assert.equal(screens.MerchantTabs, undefined);
   assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
@@ -278,7 +281,7 @@ test("cold-start shared links open on top of Home so Back leads somewhere", () =
   assert.equal((linking.config as { initialRouteName?: string }).initialRouteName, "MainTabs");
 });
 
-test("/post opens the composer like /order; /post/:id is off while Activity is archived", () => {
+test("/post opens the composer like /order; /post/:id opens a post only while Activity is on", () => {
   const linking = createRootLinking("exp://127.0.0.1:8081/--/");
   const getStateFromPath = linking.getStateFromPath;
   assert.deepEqual(getStateFromPath("post?venueId=venue-tian-tian")?.routes?.[0], {
@@ -289,7 +292,9 @@ test("/post opens the composer like /order; /post/:id is off while Activity is a
     name: "Post",
     params: { venueId: "venue-tian-tian" },
   });
-  assert.notEqual(getStateFromPath("post/abc-123")?.routes?.[1]?.name, "ActivityPostDetail");
+  const postLink = getStateFromPath("post/abc-123")?.routes?.[1]?.name;
+  if (FEATURE_FLAGS.activityEnabled) assert.equal(postLink, "ActivityPostDetail");
+  else assert.notEqual(postLink, "ActivityPostDetail");
 });
 
 test("review/:id links open the review page once signed in (sign-in only)", () => {

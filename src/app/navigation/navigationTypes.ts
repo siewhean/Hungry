@@ -241,6 +241,10 @@ export type RootStackParamList = {
   /** Food Portfolio: newest dishes posted by the people you follow. */
   FollowingFeed: undefined;
   Leaderboard: undefined;
+  /** What Hungry has learned about your taste, how sure it is, and what to try next. */
+  TastePalette: undefined;
+  /** Your palate against another diner's, taste by taste. */
+  TasteCompare: { userId: string; userDisplayName?: string };
   /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
   BlockedAndHidden: undefined;
   /** Another user's follower/following lists, opened from their profile. */

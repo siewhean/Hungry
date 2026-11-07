@@ -6,11 +6,15 @@ import { RouteProp, useRoute } from "@react-navigation/native";
 import { AppSymbol, AppText, Avatar, Button, EmptyState, Input, ListRow } from "@/components/ui";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { FollowPillButton } from "@/components/social/FollowPillButton";
+import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { useFollowPress } from "@/features/profile/useFollowPress";
+import { tasteMatchLabel } from "@/features/social/relationship";
+import { useTasteMatches } from "@/features/social/useTasteMatches";
 import { reportError } from "@/lib/monitoring/reportError";
 import { confirmAction } from "@/lib/runtime/confirmAction";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -73,11 +77,14 @@ const PersonRow = memo(function PersonRow({
   viewerId,
   canRemove,
   first,
+  tasteMatch,
   onOpen,
   onRemove,
 }: {
   person: UserProfileItem;
   viewerId: string;
+  /** 0-100 taste match with the viewer, when both have a palate. */
+  tasteMatch?: number;
   /** Your own Followers list: offer "Remove", and "Follow back" for people you do not follow. */
   canRemove: boolean;
   first: boolean;
@@ -155,6 +162,7 @@ const PersonRow = memo(function PersonRow({
     <ListRow
       first={first}
       title={person.name}
+      subtitle={tasteMatch !== undefined ? tasteMatchLabel(tasteMatch) : undefined}
       titleLines={2}
       accessibilityHint="Opens their profile"
       onPress={() => onOpen(person)}
@@ -171,6 +179,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const markFollowedUserIds = useSocialStore((state) => state.markFollowedUserIds);
   const [searchQuery, setSearchQuery] = useState("");
   const profile = useProfileStore((state) => state.profile);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   const targetUserId = route.params?.userId ?? profile.id;
   const targetDisplayName = route.params?.userDisplayName?.trim() || profile.displayName;
   const isOwnProfile = targetUserId === profile.id;
@@ -316,6 +325,18 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     };
   }, [canFindPeople, normalizedQuery]);
   const knownIds = useMemo(() => new Set(people.map((person) => person.userId)), [people]);
+  // One batched read per page of people (and search results), never one per row.
+  const scoredIds = useMemo(
+    () =>
+      [...people, ...foundPeople]
+        .map((person) => person.userId)
+        .filter((userId) => userId !== profile.id),
+    [foundPeople, people, profile.id],
+  );
+  const tasteMatches = useTasteMatches(
+    scoredIds,
+    isAuthenticated && profile.id !== "guest-user" && !listsHidden,
+  );
   const newPeople = useMemo(
     () =>
       foundPeople.filter((person) => !knownIds.has(person.userId) && person.userId !== profile.id),
@@ -453,6 +474,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                 first={index === 0}
                 person={person}
                 viewerId={profile.id}
+                tasteMatch={tasteMatches[person.userId]}
                 canRemove={false}
                 onOpen={openPerson}
                 onRemove={removeFollower}
@@ -460,6 +482,19 @@ function ProfileConnectionsScreen({ navigation }: Props) {
             ))
           )}
         </View>
+      ) : null}
+      {canFindPeople && !normalizedQuery && !isLoadingConnections && !loadFailed ? (
+        // Beli-style: people with a palate like yours and people your follows follow.
+        <PeopleSuggestionsSection
+          excludeUserIds={knownIds}
+          onOpen={(person) =>
+            openPerson({
+              userId: person.userId,
+              name: person.displayName,
+              avatarUrl: person.avatarUrl ?? "",
+            })
+          }
+        />
       ) : null}
     </View>
   );
@@ -486,6 +521,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
             first={index === 0}
             person={item}
             viewerId={profile.id}
+            tasteMatch={tasteMatches[item.userId]}
             canRemove={isOwnProfile && !isFollowingTab}
             onOpen={openPerson}
             onRemove={removeFollower}

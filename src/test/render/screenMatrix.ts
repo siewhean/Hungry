@@ -38,7 +38,8 @@ export type ParamKey =
   | "stall"
   | "stallVisited"
   | "story"
-  | "otherUser";
+  | "otherUser"
+  | "tasteCompare";
 
 export interface ScreenRow {
   name: string;
@@ -618,6 +619,19 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     file: "src/app/screens/profile/LeaderboardScreen.tsx",
     scenario: "user",
     expect: /Post dishes to climb/,
+  },
+  {
+    name: "TastePaletteScreen",
+    file: "src/app/screens/profile/TastePaletteScreen.tsx",
+    scenario: "user",
+    expect: /Taste Palette/,
+  },
+  {
+    name: "TasteCompareScreen",
+    file: "src/app/screens/profile/TasteCompareScreen.tsx",
+    scenario: "user",
+    params: "tasteCompare",
+    expect: /Compare palates/,
   },
   {
     name: "FollowedStallsScreen",

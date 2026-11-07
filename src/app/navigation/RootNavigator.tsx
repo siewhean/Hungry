@@ -326,6 +326,14 @@ const loadLeaderboardScreen = () =>
   (
     require("@/app/screens/profile/LeaderboardScreen") as typeof import("@/app/screens/profile/LeaderboardScreen")
   ).LeaderboardScreen;
+const loadTastePaletteScreen = () =>
+  (
+    require("@/app/screens/profile/TastePaletteScreen") as typeof import("@/app/screens/profile/TastePaletteScreen")
+  ).TastePaletteScreen;
+const loadTasteCompareScreen = () =>
+  (
+    require("@/app/screens/profile/TasteCompareScreen") as typeof import("@/app/screens/profile/TasteCompareScreen")
+  ).TasteCompareScreen;
 const loadBlockedAndHiddenScreen = () =>
   (
     require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
@@ -893,6 +901,8 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           {FEATURE_FLAGS.foodPortfolioEnabled ? (
             <RootStack.Screen getComponent={loadLeaderboardScreen} name="Leaderboard" />
           ) : null}
+          <RootStack.Screen getComponent={loadTastePaletteScreen} name="TastePalette" />
+          <RootStack.Screen getComponent={loadTasteCompareScreen} name="TasteCompare" />
           <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />

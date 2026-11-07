@@ -406,9 +406,11 @@ test("other profile: taste match, member since and pinned dishes; one stat row c
   stub(getHungryService().reviews, "getUserReviews", async () => []);
   useServerMode();
   const view = await renderOtherProfile();
-  assert.equal(
-    view.findByTestId("user-profile-meta")?.textContent,
-    "87% taste match · Member since Mar 2026",
+  assert.equal(view.findByTestId("user-profile-meta")?.textContent, "Member since Mar 2026");
+  // The match reads as a Vivino-style band and opens the palate comparison.
+  assert.match(
+    view.findByTestId("user-profile-taste-match")?.textContent ?? "",
+    /87% · Great match/,
   );
   assert.ok(view.findByText("Pinned Laksa"));
   assert.ok(view.findByTestId("user-profile-stats"));
@@ -424,6 +426,7 @@ test("other profile: no taste match line when the server has none", async () => 
   stub(getHungryService().reviews, "getUserReviews", async () => []);
   const view = await renderOtherProfile();
   assert.equal(view.findByTestId("user-profile-meta"), null);
+  assert.equal(view.findByTestId("user-profile-taste-match"), null);
 });
 
 test("other profile: a failed counts read still applies the follow status", async () => {

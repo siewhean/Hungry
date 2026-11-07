@@ -796,6 +796,12 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         <View style={{ alignItems: "center", gap: spacing[3] }}>
           <TasteRadar vector={profile.tasteVector} />
           <Button
+            label="See your Taste Palette"
+            testID="profile-open-taste-palette"
+            accessibilityHint="Shows what Hungry has learned about your taste"
+            onPress={() => rootNavigation.navigate("TastePalette")}
+          />
+          <Button
             label="Retake the taste quiz"
             variant="secondary"
             onPress={() =>

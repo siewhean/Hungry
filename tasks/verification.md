@@ -1706,3 +1706,10 @@ Use the smallest check that matches the change risk.
 
 ## 2026-11-07 CLEANUP-2026-11-07
 - No code, test, script or CI reference to any removed path (git grep); typecheck clean; `npm test` 3061/0; `npm run test:render` 1307/0; `npm run test:coverage` OK (baseline unchanged).
+
+
+## 2026-11-07 SOCIAL-TASTE-01 (followers, taste palette, network picks)
+- Migration 20261107180000: up, smoke, down, up, smoke on a local Postgres 16 with stand-in tables; smoke covers follows-you and mutuals, private and blocked people hidden, taste matches capped and null palates left out, suggestions (never yourself, follows, private or blocked), network picks from follows and the taste-twin fallback, moderated reviews excluded, anon grants and the five rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
+- `npm run typecheck` clean; `npm test` 3077/0; `npm run test:render` 1309/0; `npm run test:coverage` OK and baseline updated; eslint 0 errors; prettier clean; check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety waits on the rehearsal evidence.
+- New tests: relationship, tastePalette, networkPicks, socialGraphRows, socialGraph.behaviour (Supabase), mock socialGraph, social-graph-migration-contracts, social-graph.render (hooks, People with your taste, profile header, Following list, Taste Palette, Compare palates, Home rail); screenMatrix rows TastePaletteScreen and TasteCompareScreen. Linking tests now follow activityEnabled.
+- Not run: a device build.

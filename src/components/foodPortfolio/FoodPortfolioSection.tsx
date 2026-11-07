@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { AccessibleImage, AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
@@ -23,6 +23,8 @@ type FoodPortfolioSectionProps = {
   navigation: { navigate: (...args: any[]) => void };
   /** Bump to refetch (your own grid after posting or deleting). */
   reloadKey?: number;
+  /** The dishes-posted count for a profile's stat row: null while loading, "20+" with more pages. */
+  onPostCountChange?: (count: number | string | null) => void;
 };
 
 type PortfolioTab = "dishes" | "stalls";
@@ -108,6 +110,7 @@ export function FoodPortfolioSection({
   isSelf,
   navigation,
   reloadKey = 0,
+  onPostCountChange,
 }: FoodPortfolioSectionProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
@@ -115,6 +118,17 @@ export function FoodPortfolioSection({
   const [tab, setTab] = useState<PortfolioTab>("dishes");
   const [pinDraft, setPinDraft] = useState<string[] | null>(null);
   const [isSavingPins, setIsSavingPins] = useState(false);
+  const postCount =
+    portfolio.postsState === "loaded"
+      ? portfolio.hasMorePosts
+        ? `${portfolio.posts.length}+`
+        : portfolio.posts.length
+      : portfolio.postsState === "failed"
+        ? "–"
+        : null;
+  useEffect(() => {
+    onPostCountChange?.(postCount);
+  }, [onPostCountChange, postCount]);
   const [isSharing, setIsSharing] = useState(false);
 
   if (!FEATURE_FLAGS.foodPortfolioEnabled) return null;

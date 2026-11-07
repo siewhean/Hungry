@@ -45,6 +45,13 @@ import {
 } from "@/lib/services/supabase/supabaseRepository";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
+import {
+  mapNetworkStallPicks,
+  mapPeopleSuggestions,
+  mapProfileRelationship,
+  mapTasteComparison,
+  mapTasteMatches,
+} from "@/lib/services/supabase/socialGraphRows";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import {
   assertValidMenuPhotoUpload,
@@ -5987,6 +5994,61 @@ export const supabaseService: HungryService = {
         followersCount: asNumber(row.followers_count) ?? 0,
         followingCount: asNumber(row.following_count) ?? 0,
       };
+    },
+
+    async getProfileRelationship(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_profile_relationship", { p_user_id: userId });
+      if (error) {
+        // An older backend has no relationship line; anything else is the caller's to report.
+        if (isMissingBackendObjectError(error)) return null;
+        throw error;
+      }
+      return mapProfileRelationship(data);
+    },
+
+    async getTasteMatches(userIds: string[]) {
+      const ids = Array.from(new Set(userIds.filter(Boolean))).slice(0, 200);
+      if (ids.length === 0) return {};
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_taste_matches", { p_user_ids: ids });
+      if (error) {
+        if (isMissingBackendObjectError(error)) return {};
+        throw error;
+      }
+      return mapTasteMatches(data);
+    },
+
+    async getTasteComparison(userId: string) {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_taste_comparison", { p_user_id: userId });
+      if (error) {
+        if (isMissingBackendObjectError(error)) return null;
+        throw error;
+      }
+      return mapTasteComparison(data);
+    },
+
+    async listPeopleSuggestions(limit = 20) {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return [];
+      const { data, error } = await client.rpc("get_people_suggestions", { p_limit: limit });
+      if (error) {
+        if (isMissingBackendObjectError(error)) return [];
+        throw error;
+      }
+      return mapPeopleSuggestions(data);
+    },
+
+    async listNetworkStallPicks(limit = 30) {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return [];
+      const { data, error } = await client.rpc("get_network_stall_picks", { p_limit: limit });
+      if (error) {
+        if (isMissingBackendObjectError(error)) return [];
+        throw error;
+      }
+      return mapNetworkStallPicks(data);
     },
 
     async isFollowing(userId: string) {

@@ -848,6 +848,19 @@ function findMockPerson(userId: string): { displayName: string; avatarUrl?: stri
     ? { displayName: known.displayName, avatarUrl: known.avatarUrl }
     : { displayName: "Hungry member" };
 }
+/** A steady 55-96 taste match per mock person, so lists and suggestions look the same each run. */
+function mockTasteMatch(userId: string): number {
+  let hash = 0;
+  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) % 997;
+  return 55 + (hash % 42);
+}
+/** Everyone the mock knows about (seeded followers and incoming requests), once each. */
+function listMockPeople() {
+  return dedupeMockFollowers([
+    ...Object.values(_mockFollowersByUser).flat(),
+    ..._incomingFollowRequests,
+  ]).filter((person) => person.userId !== _profile.id && !_blockedUsers.has(person.userId));
+}
 /** Same paging rules as the list_user_followers/list_user_following RPCs (default 100, max 500). */
 function pageMockFollowRows<T>(rows: T[], page?: { limit?: number; offset?: number }) {
   const limit = Math.min(Math.max(page?.limit ?? 100, 1), 500);
@@ -2818,6 +2831,85 @@ export const hungryService: HungryService = {
         followersCount: listMockFollowers(userId).length,
         followingCount: isOwnProfile ? _userFollows.size : 0,
       });
+    },
+
+    async getProfileRelationship(userId: string) {
+      if (!userId || userId === _profile.id || _blockedUsers.has(userId)) return resolve(null);
+      // Only the signed-in mock profile has seeded followers, and other people's follows are
+      // unknown here, so the mock never names mutual followers.
+      const followsYou = listMockFollowers(_profile.id).some((person) => person.userId === userId);
+      return resolve({ followsYou, mutualCount: 0, mutuals: [] });
+    },
+
+    async getTasteMatches(userIds: string[]) {
+      const scores: Record<string, number> = {};
+      for (const userId of userIds.slice(0, 200)) {
+        if (!userId || userId === _profile.id || _blockedUsers.has(userId)) continue;
+        if (_mockPrivateUserIds.has(userId) && !_userFollows.has(userId)) continue;
+        scores[userId] = mockTasteMatch(userId);
+      }
+      return resolve(scores);
+    },
+
+    async getTasteComparison(userId: string) {
+      if (!userId || userId === _profile.id || _blockedUsers.has(userId)) return resolve(null);
+      if (_mockPrivateUserIds.has(userId) && !_userFollows.has(userId)) return resolve(null);
+      const mine = _profile.tasteVector;
+      if (!Object.values(mine).some((value) => Math.abs(value - 5) >= 1)) return resolve(null);
+      // A steady made-up palate per person: their match, spread over the six tastes.
+      const score = mockTasteMatch(userId);
+      const offset = ((100 - score) * 36) / 100 / 6;
+      const theirs = {
+        sweet: Math.min(10, mine.sweet + offset),
+        spicy: Math.max(0, mine.spicy - offset),
+        sour: Math.min(10, mine.sour + offset),
+        salty: Math.max(0, mine.salty - offset),
+        rich: Math.min(10, mine.rich + offset),
+        aromatic: Math.max(0, mine.aromatic - offset),
+      };
+      return resolve({ score, mine: { ...mine }, theirs });
+    },
+
+    async listPeopleSuggestions(limit = 20) {
+      const suggestions = listMockPeople()
+        .filter(
+          (person) =>
+            !_userFollows.has(person.userId) &&
+            !_userFollowRequests.has(person.userId) &&
+            !_mockPrivateUserIds.has(person.userId),
+        )
+        .map((person) => {
+          const tasteMatch = mockTasteMatch(person.userId);
+          return {
+            userId: person.userId,
+            displayName: person.displayName,
+            avatarUrl: person.avatarUrl,
+            tasteMatch,
+            mutualCount: 0,
+            recentActivity: 1,
+            reason: (tasteMatch >= 75 ? "taste" : "active") as "taste" | "active",
+          };
+        })
+        .sort((left, right) => right.tasteMatch - left.tasteMatch);
+      return resolve(suggestions.slice(0, Math.min(Math.max(limit, 1), 50)));
+    },
+
+    async listNetworkStallPicks(limit = 30) {
+      // The people you follow "loved" a few seeded stalls; with no follows, nothing to show.
+      const followed = Array.from(_userFollows).filter((id) => !_blockedUsers.has(id));
+      if (followed.length === 0) return resolve([]);
+      const picks = venues.slice(0, Math.min(3, Math.max(limit, 1))).map((venue, index) => {
+        const people = followed
+          .slice(index % followed.length, (index % followed.length) + 2)
+          .map((userId) => ({ userId, displayName: findMockPerson(userId).displayName }));
+        return {
+          venueId: venue.id,
+          source: "following" as const,
+          peopleCount: people.length,
+          people,
+        };
+      });
+      return resolve(picks);
     },
 
     async isFollowing(userId: string) {
