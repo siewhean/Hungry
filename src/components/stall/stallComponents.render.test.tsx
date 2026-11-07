@@ -175,7 +175,9 @@ test("StallReviewCard names the author and dish, and opens each", async () => {
 
 test("Must order uses the dish page's sentence-case chip on menu cards and rows", async () => {
   const dish = dishOf({ mustOrder: true, imageUrl: "https://example.com/laksa.jpg" });
-  const card = await render(createElement(StallMenuDishCard, { dish, onPress: () => {} }));
+  const card = await render(
+    createElement(StallMenuDishCard, { dish, onPress: () => {}, width: 160, isLeftColumn: true }),
+  );
   assert.match(card.container.textContent ?? "", /Must order/);
   assert.doesNotMatch(card.container.textContent ?? "", /MUST ORDER/);
   await cleanup();
