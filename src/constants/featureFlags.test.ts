@@ -13,16 +13,20 @@ const SHIPPED_SURFACE_FLAGS = [
   "portfoliosEnabled",
   "stallAlertsEnabled",
   "sliderOnboardingEnabled",
+  // Back with followers (owner ask 2026-11-07): portfolio, follows and the post detail.
+  "foodPortfolioEnabled",
+  "followConnectionsEnabled",
+  "activityEnabled",
 ] as const;
 
 // Archived surfaces (owner decision 2026-10-24): off everywhere unless a build opts in.
 const ARCHIVED_FLAGS = [
   "socialFeedEnabled",
-  "activityEnabled",
   "directMessagesEnabled",
-  "followConnectionsEnabled",
   "stallFollowEnabled",
 ] as const;
+// Archived until the Food Portfolio brought them back (2026-11-07); `=0` on it still closes them.
+const PORTFOLIO_LED_FLAGS = ["activityEnabled", "followConnectionsEnabled"] as const;
 
 // Surfaces that stay out of production (mock-backed or not launch-ready).
 const NON_PRODUCTION_FLAGS = [
@@ -56,7 +60,7 @@ test("the archived social feed, Activity, Messages and Follow stall are off unti
     const flags = resolveFeatureFlags(appEnv, "production", {
       EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "0",
     });
-    for (const flag of ARCHIVED_FLAGS) {
+    for (const flag of [...ARCHIVED_FLAGS, ...PORTFOLIO_LED_FLAGS]) {
       assert.equal(flags[flag], false, `${flag} is archived in ${appEnv}`);
     }
   }
@@ -67,7 +71,7 @@ test("the archived social feed, Activity, Messages and Follow stall are off unti
     EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS: "1",
     EXPO_PUBLIC_ENABLE_STALL_FOLLOW: "1",
   });
-  for (const flag of ARCHIVED_FLAGS) {
+  for (const flag of [...ARCHIVED_FLAGS, ...PORTFOLIO_LED_FLAGS]) {
     assert.equal(optedIn[flag], true, `${flag} can be opted back in`);
   }
 });
@@ -154,19 +158,23 @@ test("AI search (typed text sent to Anthropic) is off in every environment until
   assert.equal(optedIn.aiSearchEnabled, true);
 });
 
-test("the Food Portfolio is on outside production, off in production, and brings back follows and Activity", () => {
-  const production = resolveFeatureFlags("production", "production", {});
-  assert.equal(production.foodPortfolioEnabled, false);
-  assert.equal(production.followConnectionsEnabled, false);
-  assert.equal(production.activityEnabled, false);
+test("the Food Portfolio is on everywhere and brings back follows and Activity", () => {
+  // The owner asked to bring followers and following back (2026-11-07), production included.
   // Home stays Discover: the social feed tab never comes back with it.
-  for (const appEnv of ["development", "staging"] as const) {
+  for (const appEnv of ["development", "staging", "production"] as const) {
     const flags = resolveFeatureFlags(appEnv, "production", {});
     assert.equal(flags.foodPortfolioEnabled, true, `on in ${appEnv}`);
     assert.equal(flags.followConnectionsEnabled, true, `follows on in ${appEnv}`);
     assert.equal(flags.activityEnabled, true, `post detail on in ${appEnv}`);
     assert.equal(flags.socialFeedEnabled, false, `Home stays Discover in ${appEnv}`);
   }
+
+  const closed = resolveFeatureFlags("production", "production", {
+    EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "0",
+  });
+  assert.equal(closed.foodPortfolioEnabled, false, "a build can still narrow it");
+  assert.equal(closed.followConnectionsEnabled, false);
+  assert.equal(closed.activityEnabled, false);
 
   const optedIn = resolveFeatureFlags("production", "production", {
     EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "1",

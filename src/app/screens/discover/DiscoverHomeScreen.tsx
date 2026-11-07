@@ -75,6 +75,9 @@ import {
   pickRailsWithoutRepeats,
   tasteOrderBites,
 } from "@/features/discover/homeRanking";
+import { boostNetworkBites } from "@/features/discover/networkPicks";
+import { useNetworkStallPicks } from "@/features/discover/useNetworkStallPicks";
+import { NetworkPicksSection } from "@/components/discover/home/NetworkPicksSection";
 import { groupNearbyPlaces, type PlaceBuilding } from "@/features/discover/homeRails";
 import { buildHomeSections } from "@/features/discover/homeSections";
 import { fitChipsToDiner, kindsOfNames } from "@/features/discover/homeChips";
@@ -518,7 +521,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, [discoverDishById, foodHistoryRows, profile.favouriteDishIds, profile.reviewedDishIds]);
   // "Favourites" follows liked dishes closely, "adventurous" mixes in new food (Settings > Food openness).
   const rankingOpenness = resolveFoodOpenness(profile.tasteProfile);
-  const tasteOrdered = useMemo(
+  const palateOrdered = useMemo(
     () =>
       rankByTaste
         ? tasteOrderBites(quickBitePool, discoverDishById, {
@@ -539,6 +542,18 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       rankingOpenness,
       rankingTasteVector,
     ],
+  );
+  // Stalls the diner's follows loved lately: their own Home rail, and a capped lift (two dishes)
+  // in the rail above with a reason naming who.
+  const isSignedIn = useSessionStore((state) => state.isAuthenticated);
+  const [networkReloadKey, setNetworkReloadKey] = useState(0);
+  const networkPicks = useNetworkStallPicks(
+    isUserMode && isSignedIn && FEATURE_FLAGS.followConnectionsEnabled,
+    networkReloadKey,
+  );
+  const tasteOrdered = useMemo(
+    () => boostNetworkBites(palateOrdered.bites, palateOrdered.reasons, networkPicks),
+    [networkPicks, palateOrdered],
   );
   // A dish shows in the first rail (top to bottom) it qualifies for, not in all of them.
   const [pickedTrendingCards, quickBiteCards, editorChoiceCards, budgetCards, lateNightCards] =
@@ -1831,6 +1846,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             colors={[palette.orange]}
             onRefresh={() => {
               Haptics.selectionAsync();
+              setNetworkReloadKey((key) => key + 1);
               void reloadDiscover();
             }}
             refreshing={isDiscoverRefreshing}
@@ -2434,6 +2450,19 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             {/* Rails: each is the same memoised rail over its own collection. */}
             {personalFirst ? null : nearYouRail}
             {!personalFirst && classicsSlot === "afterNearYou" ? classicsSection : null}
+
+            {networkPicks.length > 0 && !isDiscoverFiltering ? (
+              <NetworkPicksSection
+                picks={networkPicks}
+                cardWidth={stallRailCardWidth}
+                gap={discoverContentGap}
+                scrollStyle={edgeToEdgeHorizontalScrollStyle}
+                onOpen={(pick, position) => {
+                  trackAnalyticsEvent("network_pick_opened", { source: pick.source, position });
+                  navigation.navigate("StallDetail", { venueId: pick.venueId });
+                }}
+              />
+            ) : null}
 
             {shouldRenderDiscoverRail(editorChoiceCards.length, MIN_DISCOVER_RAIL_ITEMS) ? (
               <DiscoverBiteRail

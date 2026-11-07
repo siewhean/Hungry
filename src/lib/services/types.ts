@@ -755,6 +755,41 @@ export interface FoodPortfolioStall {
   lastPostedAt?: string;
 }
 
+/** How the viewer and one other person are connected (get_profile_relationship). */
+export interface ProfileRelationship {
+  /** They follow the viewer (approved): "Follows you" and "Follow back". */
+  followsYou: boolean;
+  /** People the viewer follows who follow them; 0 when their lists are hidden from the viewer. */
+  mutualCount: number;
+  /** Up to three of those people, newest follow first. */
+  mutuals: { userId: string; displayName: string }[];
+}
+
+/** Someone to follow (get_people_suggestions), with why they were suggested. */
+export interface PeopleSuggestion {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  /** 0-100 taste match with the viewer; undefined when either palate is still neutral. */
+  tasteMatch?: number;
+  /** How many of the viewer's follows follow them. */
+  mutualCount: number;
+  /** Reviews and posts in the last 60 days. */
+  recentActivity: number;
+  reason: "mutual" | "taste" | "active";
+}
+
+/** A stall loved by people the viewer follows, or by their taste twins when they follow nobody. */
+export interface NetworkStallPick {
+  venueId: string;
+  source: "following" | "taste_twin";
+  /** Distinct people who reviewed it 4+ or posted from it in the last 90 days. */
+  peopleCount: number;
+  /** Up to two of them, newest first. */
+  people: { userId: string; displayName: string }[];
+  lastAt?: string;
+}
+
 /** The top three dishes on a Food Portfolio and which of them the owner pinned. */
 export interface FoodPortfolioTopPosts {
   posts: Bite[];
@@ -1306,6 +1341,27 @@ export interface HungryService {
       query: string,
       page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /**
+     * Whether this person follows the viewer and which of the viewer's follows follow them; null
+     * for yourself, a blocked pair, a signed-out viewer or an older backend without the RPC.
+     */
+    getProfileRelationship(userId: string): Promise<ProfileRelationship | null>;
+    /**
+     * Taste match 0-100 for many people in one call (at most 200 ids), keyed by user id. People
+     * without a palate or hidden from the viewer are left out; an older backend returns {}.
+     */
+    getTasteMatches(userIds: string[]): Promise<Record<string, number>>;
+    /**
+     * Another diner's six taste levels beside yours, with the match; null when no match can be
+     * shown (no palate on either side, hidden from you, or an older backend).
+     */
+    getTasteComparison(
+      userId: string,
+    ): Promise<{ score: number; mine: TasteVector; theirs: TasteVector } | null>;
+    /** People to follow, best first (signed-in only); [] on an older backend. */
+    listPeopleSuggestions(limit?: number): Promise<PeopleSuggestion[]>;
+    /** Stalls loved by people the viewer follows (or taste twins); [] signed out or on an older backend. */
+    listNetworkStallPicks(limit?: number): Promise<NetworkStallPick[]>;
     /** False when the viewer may not see this user's follower/following lists (private or blocked). */
     canViewFollowLists(userId: string): Promise<boolean>;
     /** Approved follower/following counts; null when hidden from the viewer or unavailable. */

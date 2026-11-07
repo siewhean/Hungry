@@ -63,6 +63,7 @@ before(async () => {
     stallVisited: { venueId: dish.venueId },
     story: { initialStoryId: stories[0]?.id ?? "story-1" },
     otherUser: { authorId: "user-emma", authorName: "Emma" },
+    tasteCompare: { userId: "user-emma", userDisplayName: "Emma" },
   };
 });
 

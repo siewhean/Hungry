@@ -45,16 +45,15 @@ export function resolveFeatureFlags(
   const reviewCreationEnabled = surface("EXPO_PUBLIC_ENABLE_REVIEWS", true);
   // Food Portfolio (owner plan approved 2026-11-07): a profile shows the dishes a person posted,
   // their top three and the stalls they posted from; Profile gets a Following feed and dish and
-  // stall pages get "Post a dish". On outside production; production opts in with
-  // EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO=1. It brings back follows and the post detail (Activity),
-  // which an explicit `=0` on either still turns off. Home stays Discover (socialFeedEnabled).
+  // stall pages get "Post a dish". On in every environment since the owner asked to bring
+  // followers back (2026-11-07); a build can still narrow it with EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO=0.
+  // It brings back follows and the post detail (Activity), which an explicit `=0` on either still
+  // turns off. Home stays Discover (socialFeedEnabled).
   const foodPortfolioEnabled =
-    postCreationEnabled &&
-    surface("EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO", nonProductionSurfaceEnabled);
+    postCreationEnabled && surface("EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO", true);
   const activityEnabled = surface("EXPO_PUBLIC_ENABLE_ACTIVITY", foodPortfolioEnabled);
-  // Archived (owner decision 2026-10-31): the Followers and Following counts and lists on
-  // profiles. The code stays so a build can opt back in with `=1`; the Food Portfolio turns
-  // them back on.
+  // The Followers and Following counts and lists on profiles (archived 2026-10-31, back with the
+  // Food Portfolio 2026-11-07). `=0` turns them off again.
   const followConnectionsEnabled = surface(
     "EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS",
     foodPortfolioEnabled,

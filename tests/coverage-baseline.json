@@ -1,12 +1,12 @@
 {
   "global": {
-    "lines": 87.6,
+    "lines": 87.7,
     "branches": 86.8,
-    "functions": 84.4
+    "functions": 84.6
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
-    "src/app/navigation/linking.ts": 96.9,
+    "src/app/navigation/linking.ts": 97.6,
     "src/app/navigation/onboardingEntry.ts": 100,
     "src/app/navigation/tabBarMetrics.ts": 100,
     "src/app/screens/auth/authCopy.ts": 100,
@@ -96,6 +96,7 @@
     "src/features/discover/homeSections.ts": 99.6,
     "src/features/discover/homeStalls.ts": 100,
     "src/features/discover/mallMode.ts": 99.1,
+    "src/features/discover/networkPicks.ts": 97.4,
     "src/features/discover/personalFeedback.ts": 95.6,
     "src/features/discover/personalRails.ts": 99.3,
     "src/features/discover/rankingBalance.ts": 97,
@@ -183,6 +184,7 @@
     "src/features/profile/relativeDate.ts": 100,
     "src/features/profile/stallSubmissionStatus.ts": 97.1,
     "src/features/profile/tasteFingerprint.ts": 100,
+    "src/features/profile/tastePalette.ts": 97.9,
     "src/features/review/dishPicker.ts": 99.2,
     "src/features/review/dishPickerSearch.ts": 93,
     "src/features/review/musicData.ts": 100,
@@ -204,6 +206,7 @@
     "src/features/share/reviewCardModel.ts": 96.9,
     "src/features/share/shareAttribution.ts": 84.7,
     "src/features/share/shareCardImage.ts": 93.8,
+    "src/features/social/relationship.ts": 97.4,
     "src/features/social/sharedStallPosts.ts": 79.8,
     "src/features/wheel/leaveWheel.ts": 100,
     "src/features/wheel/loadPrefill.ts": 100,
@@ -281,6 +284,7 @@
     "src/lib/services/supabase/mediaUpload.ts": 75.3,
     "src/lib/services/supabase/pkceCryptoPolyfill.ts": 76.7,
     "src/lib/services/supabase/shareInFlight.ts": 91.7,
+    "src/lib/services/supabase/socialGraphRows.ts": 97.6,
     "src/lib/services/supabase/supabaseRepository.ts": 74.7,
     "src/lib/services/supabase/supabaseService.ts": 59.9,
     "src/lib/services/supabase/videoMetadata.ts": 95.5,

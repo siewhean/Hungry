@@ -4,6 +4,7 @@ import test from "node:test";
 import { getPathFromState } from "@react-navigation/core";
 
 import { createRootLinking, type LinkingRoute } from "@/app/navigation/linking";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 
 const signedIn = createRootLinking("exp://127.0.0.1:8081/--/");
 const target = (path: string) => {
@@ -51,8 +52,9 @@ test("links with a missing, undecodable or unsafe id, or an unknown path, open n
     "join/bad%20code",
     "auth/oauth",
     "nowhere",
+    "post/bad%20id",
     // Archived or switched-off areas.
-    "post/p1",
+    ...(FEATURE_FLAGS.activityEnabled ? [] : ["post/p1"]),
     "merchant/inbox",
   ]) {
     assert.equal(signedIn.getStateFromPath(path), undefined, path);
