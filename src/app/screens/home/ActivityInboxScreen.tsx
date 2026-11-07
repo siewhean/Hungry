@@ -176,11 +176,31 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     }, [fetchActivityEvents, loadConversations]),
   );
 
+  const markAllActivityRead = useActivityStore((state) => state.markAllActivityRead);
+  const updatesHaveUnread = useMemo(
+    () => groupActivityUpdates(visibleUpdates, readActivityIds).some((row) => row.isUnread),
+    [readActivityIds, visibleUpdates],
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top"]}>
       <View style={styles.container}>
         <AppHeader
           title="Activity"
+          // An action on the current view lives in the header (HIG, Toolbars), not in the list.
+          right={
+            activeTab === "updates" && updatesHaveUnread ? (
+              <Button
+                label="Mark all read"
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                accessibilityLabel="Mark all updates as read"
+                onPress={() => void markAllActivityRead()}
+                testID="activity-mark-all-read"
+              />
+            ) : undefined
+          }
           horizontalPadding={semanticSpacing.screenEdge}
           left={
             <IconButton
@@ -418,7 +438,6 @@ function UpdatesTab({
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const markActivityRead = useActivityStore((state) => state.markActivityRead);
-  const markAllActivityRead = useActivityStore((state) => state.markAllActivityRead);
   const fetchMoreActivityEvents = useActivityStore((state) => state.fetchMoreActivityEvents);
   const hasLoadedActivity = useActivityStore((state) => state.hasLoadedActivity);
   const activityLoadFailed = useActivityStore((state) => state.activityLoadFailed);
@@ -437,7 +456,6 @@ function UpdatesTab({
     () => groupActivityUpdates(updates, readActivityIds),
     [readActivityIds, updates],
   );
-  const hasUnread = rows.some((row) => row.isUnread);
   // Mock mode has no server read to wait for.
   const isFirstLoad = !hasLoadedActivity && getServiceProvider().mode !== "mock";
 
@@ -475,18 +493,6 @@ function UpdatesTab({
             Couldn&apos;t refresh. Showing the last updates we loaded. Tap to try again.
           </AppText>
         </Pressable>
-      ) : null}
-
-      {hasUnread ? (
-        <Button
-          label="Mark all as read"
-          variant="ghost"
-          size="sm"
-          fullWidth={false}
-          style={{ alignSelf: "flex-end" }}
-          accessibilityLabel="Mark all updates as read"
-          onPress={() => void markAllActivityRead()}
-        />
       ) : null}
 
       {rows.map((update) => {
