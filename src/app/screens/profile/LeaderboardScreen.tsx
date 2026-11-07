@@ -21,6 +21,7 @@ import {
   summaryRankFor,
 } from "@/features/leaderboard/leaderboardDisplay";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type {
@@ -96,7 +97,13 @@ function LeaderboardRowView({
 /** Most active (Portfolio points) and Trending (last 7 days of engagement), plus your points. */
 export function LeaderboardScreen({ navigation }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
-  const [board, setBoard] = useState<LeaderboardBoard>("active");
+  // The board it opens on is an A/B test (leaderboard_default_board_v1); a pick wins after that.
+  const openingBoard: LeaderboardBoard =
+    useExperimentVariant("leaderboard_default_board_v1") === "trending_first"
+      ? "trending"
+      : "active";
+  const [pickedBoard, setBoard] = useState<LeaderboardBoard | null>(null);
+  const board = pickedBoard ?? openingBoard;
   const [period, setPeriod] = useState<LeaderboardPeriod>("week");
   const [scope, setScope] = useState<LeaderboardScope>("everyone");
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
