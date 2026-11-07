@@ -214,13 +214,34 @@ test("opening the developer tools lets a release build force a variant until the
   }
 });
 
-test("a boolean flag maps to test/control and unknown variants fall back", () => {
+test("a boolean flag maps true to test, false to the fallback, and unknown variants fall back", () => {
   const fake = fakeSource({ welcome_back_v2: false });
   setExperimentFlagSource(fake.source);
   assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "control");
   resetExperimentSession();
+  fake.load({ welcome_back_v2: true });
+  assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "test");
+  resetExperimentSession();
   fake.load({ welcome_back_v2: "variant-from-a-typo" });
   assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "control");
+});
+
+test("a running test whose PostHog flag is off serves its fallback, not control", () => {
+  // PostHog answers false for a switched-off (or missing) flag once other flags have loaded.
+  // saved_remove_undo_v1 ships the Undo design first: it must not fall to "control" on expose.
+  assert.equal(EXPERIMENTS.saved_remove_undo_v1.status, "running");
+  assert.equal(resolveExperimentVariant("saved_remove_undo_v1", false), "undo_toast");
+  const fake = fakeSource({ saved_remove_undo_v1: false, welcome_back_v2: "test" });
+  setExperimentFlagSource(fake.source);
+  assert.equal(getExperimentVariant("saved_remove_undo_v1"), "undo_toast");
+  assert.equal(getExperimentVariant("saved_remove_undo_v1", { expose: true }), "undo_toast");
+  resetExperimentSession();
+  fake.load({ saved_remove_undo_v1: "control" });
+  assert.equal(getExperimentVariant("saved_remove_undo_v1", { expose: true }), "control");
+  // Every non-control fallback holds when its flag is off.
+  for (const key of KEYS) {
+    assert.equal(resolveExperimentVariant(key, false), EXPERIMENTS[key].fallback, key);
+  }
 });
 
 test("a concluded experiment always serves its fallback and records no exposure", () => {
@@ -271,10 +292,10 @@ test("a rollout stays on its fallback when PostHog reports no flag, and honours 
 
 test("a running experiment with no PostHog flag is a rollout, not a test", () => {
   // Round-four finding AUTH4-2: no flag existed in PostHog, so every "running" test served
-  // control. These predate the finding and run on their fallback until sh creates their flags;
-  // this list only shrinks. Anything new that is "running" must be a rollout whose fallback is
-  // the arm everyone should get.
-  const RUNNING_WITHOUT_FLAG: readonly string[] = [
+  // control. Their multivariate flags were created on 2026-10-28 and are switched on (a live
+  // 50/50 split). This list only shrinks. Anything new that is "running" needs a PostHog flag
+  // first, or must be a rollout whose fallback is the arm everyone should get.
+  const RUNNING_WITH_LIVE_FLAG: readonly string[] = [
     "welcome_back_v2",
     "onboarding_account_framing_v1",
     "stall_bar_cta_v1",
@@ -295,11 +316,11 @@ test("a running experiment with no PostHog flag is a rollout, not a test", () =>
   const unexpected = running.filter(
     (key) =>
       !(EXPERIMENTS[key] as ExperimentDefinition).rollout &&
-      !RUNNING_WITHOUT_FLAG.includes(key) &&
+      !RUNNING_WITH_LIVE_FLAG.includes(key) &&
       !FLAG_EXISTS_OFF_UNTIL_LAUNCH.includes(key),
   );
   assert.deepEqual(unexpected, [], "new running experiments need a PostHog flag: start as draft");
-  const stale = [...RUNNING_WITHOUT_FLAG, ...FLAG_EXISTS_OFF_UNTIL_LAUNCH].filter(
+  const stale = [...RUNNING_WITH_LIVE_FLAG, ...FLAG_EXISTS_OFF_UNTIL_LAUNCH].filter(
     (key) => !running.includes(key as ExperimentKey),
   );
   assert.deepEqual(stale, [], "these are no longer running: remove them from the list");

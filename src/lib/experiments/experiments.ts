@@ -717,6 +717,54 @@ export const EXPERIMENTS = {
     primaryMetric: "merchant_dashboard_viewed",
     guardrailMetrics: ["merchant_analytics_range_changed", "merchant_customer_inbox_viewed"],
   },
+  /**
+   * Which board the Leaderboard opens on: Most active (control) or Trending. Read in
+   * LeaderboardScreen until the diner picks a board. Draft until the Food Portfolio ships to
+   * production; the PostHog flag exists and is off.
+   */
+  leaderboard_default_board_v1: {
+    variants: ["control", "trending_first"],
+    fallback: "control",
+    status: "draft",
+    surface: "leaderboard",
+    hypothesis:
+      "Opening on Trending, where a single liked dish can put a new diner on the board, gets more Leaderboard visitors to post a dish that week than opening on Most active, which rewards people who already post a lot.",
+    primaryMetric: "post_published",
+    guardrailMetrics: ["leaderboard_viewed", "food_portfolio_post_tapped"],
+    minSamplePerArm: 1100,
+  },
+  /**
+   * The moving water behind the top of Home (control) against a plain background. Read in
+   * HomeWaveBackground, so only diners who reach Home are exposed. Draft until there is Home
+   * traffic; the PostHog flag exists and is off.
+   */
+  home_background_v1: {
+    variants: ["control", "plain"],
+    fallback: "control",
+    status: "draft",
+    surface: "home",
+    hypothesis:
+      "The animated water costs GPU time on every Home visit. A plain background gets at least as many stall opens per Home visitor (no more than 3 points fewer), so the cheaper design is safe to ship if it does.",
+    primaryMetric: "stall_viewed",
+    guardrailMetrics: ["discover_search_opened", "dish_viewed"],
+    minSamplePerArm: 4000,
+  },
+  /**
+   * The unread mark on the Profile Activity bell: a number (control) or a plain dot. Read in
+   * ActivityBellButton. Measure profile_item_opened with kind "activity_bell". Draft until the
+   * Food Portfolio ships to production; the PostHog flag exists and is off.
+   */
+  activity_bell_badge_v1: {
+    variants: ["control", "dot"],
+    fallback: "control",
+    status: "draft",
+    surface: "profile",
+    hypothesis:
+      "A number on the bell says how much is waiting, so more diners with unread activity open it than with a plain dot, as iOS badges do; the dot is calmer and may annoy fewer people into turning notifications off.",
+    primaryMetric: "profile_item_opened",
+    guardrailMetrics: ["settings_changed"],
+    minSamplePerArm: 700,
+  },
 } as const satisfies Record<string, ExperimentDefinition>;
 
 export type ExperimentKey = keyof typeof EXPERIMENTS;
@@ -813,19 +861,21 @@ export function setExperimentOverride<K extends ExperimentKey>(
 }
 
 /**
- * Maps a raw flag value to a known variant: true is "test", false is "control" (a rollout keeps
- * its fallback on false, see below).
+ * Maps a raw flag value to a known variant: a variant name is itself, true is "test", and false
+ * is the fallback.
  */
 export function resolveExperimentVariant<K extends ExperimentKey>(
   key: K,
   flagValue: boolean | string | undefined,
 ): ExperimentVariant<K> {
-  const { variants, fallback, rollout } = EXPERIMENTS[key] as ExperimentDefinition;
-  // PostHog reports a flag that does not exist (or is off) as false. A rollout has no flag until
-  // someone creates one, so false must leave everyone on the fallback arm; its kill switch is a
-  // multivariate flag that says "control".
-  if (rollout && flagValue === false) return fallback as ExperimentVariant<K>;
-  const value = flagValue === true ? "test" : flagValue === false ? "control" : flagValue;
+  const { variants, fallback } = EXPERIMENTS[key] as ExperimentDefinition;
+  // Every Hungry test flag is multivariate, so a live flag always answers with a variant name.
+  // PostHog answers false only when the flag is switched off or does not exist (once any other
+  // flag has loaded), and an experiment whose flag is off must serve its fallback: before this,
+  // false meant "control", so saved_remove_undo_v1 (fallback undo_toast, flag off until launch)
+  // hid Undo from everyone who reached it. A rollout's kill switch is a flag that says "control".
+  if (flagValue === false) return fallback as ExperimentVariant<K>;
+  const value = flagValue === true ? "test" : flagValue;
   return (
     typeof value === "string" && (variants as readonly string[]).includes(value) ? value : fallback
   ) as ExperimentVariant<K>;
