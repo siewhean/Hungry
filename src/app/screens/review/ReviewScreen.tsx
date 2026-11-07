@@ -927,7 +927,8 @@ export function ReviewScreen({ navigation, route }: Props) {
         variant="bodySmall"
         tone="secondary"
         accessibilityLiveRegion="polite"
-        style={{ textAlign: "center", textDecorationLine: "underline" }}
+        // Plain secondary text: an underline read as a web link (Apple design pass).
+        style={{ textAlign: "center" }}
       >
         {missingField.message}
       </AppText>
