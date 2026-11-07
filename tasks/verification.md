@@ -1698,6 +1698,10 @@ Use the smallest check that matches the change risk.
 - `npx tsc --noEmit` clean; `npm test` 3058 pass then 3060 with the extra own-content tests; `npm run test:render` 1301 pass; `npm run test:coverage` OK (baseline updated); `npm run check:n-plus-one` ok; eslint 0 errors on touched files.
 - All SF Symbol names checked by the strict `SFSymbol` type (sf-symbols-typescript). Browser walk (Expo web, mock data, iPhone 14 viewport) of Home, Reviews, Profile, stall, dish, Search, Decide, Wheel, Settings, Activity, Write a review in light and dark before the change. Web and Android draw the Lucide fallback, so the iOS symbols still need a device build to see.
 - Pre-commit gitleaks unavailable in the cloud sandbox; commit made with the hook off on sh's decision-card approval; CI security workflow runs gitleaks.
+## 2026-11-07 AB-AUDIT-2026-11-07
+- Experiment registry: `experiments.test.ts` 23 pass, including a new case that every key resolves a false flag to its fallback; `newSurfaces.render.test.tsx` 4 pass (Leaderboard opening board and pick, Home plain arm, Activity bell count vs dot and its tap event).
+- `npm run typecheck` clean; `npm run test:render` 1303/0; `npm run test:coverage` OK and baseline updated; eslint on touched files 0 errors (3 pre-existing warnings in experiments.ts).
+- PostHog project 373517: 37 draft experiments exist, the 15 flags made today are inactive, active flags still the same 9 (none updated today).
 
 ## 2026-11-07 SOCIAL-TASTE-01 (followers, taste palette, network picks)
 - Migration 20261107180000: up, smoke, down, up, smoke on a local Postgres 16 with stand-in tables; smoke covers follows-you and mutuals, private and blocked people hidden, taste matches capped and null palates left out, suggestions (never yourself, follows, private or blocked), network picks from follows and the taste-twin fallback, moderated reviews excluded, anon grants and the five rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
