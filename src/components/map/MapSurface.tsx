@@ -16,6 +16,7 @@ import { useHungryTheme } from "@/theme";
 import { componentRadii } from "@/theme/tokens";
 import { AccessibleImage, AppText } from "@/components/ui";
 import { BuildingPin } from "./BuildingPin";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 const MAPBOX_ACCESS_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN;
 
@@ -228,7 +229,12 @@ export function MarkerVisual({
           selected ? shadows.floating : undefined,
         ]}
       >
-        <Utensils size={selected ? 24 : 18} color={palette.surface} />
+        <AppSymbol
+          name="fork.knife"
+          fallback={Utensils}
+          size={selected ? 24 : 18}
+          color={palette.surface}
+        />
       </View>
       {showLabel ? (
         <View

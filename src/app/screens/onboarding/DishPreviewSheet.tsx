@@ -1,7 +1,6 @@
 import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Heart } from "lucide-react-native";
 
-import { AppText, Badge, Button } from "@/components/ui";
+import { AppSymbol, AppText, Badge, Button } from "@/components/ui";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail } from "@/types/domain";
@@ -103,10 +102,10 @@ export function DishPreviewSheet({
               label={isSaved ? "Saved for after sign-up" : "Save this dish"}
               variant={isSaved ? "secondary" : "primary"}
               leftIcon={
-                <Heart
-                  color={isSaved ? palette.orange : palette.surface}
-                  fill={isSaved ? palette.orange : "transparent"}
+                <AppSymbol
+                  name={isSaved ? "saved" : "save"}
                   size={16}
+                  color={isSaved ? palette.saved : palette.surface}
                 />
               }
               onPress={onToggleSave}

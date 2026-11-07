@@ -1,6 +1,7 @@
 import { Alert } from "react-native";
 
 import { getHungryService } from "@/lib/services/serviceProvider";
+import { askChoice } from "@/store/useChoiceSheetStore";
 import type { Review } from "@/types/domain";
 
 /** Fields an author may change on their own review. */
@@ -37,7 +38,7 @@ export async function deleteOwnReview(reviewId: string): Promise<void> {
   await methods.deleteReview(reviewId);
 }
 
-/** "..." menu for the viewer's own post or review: Edit, Delete (confirmed), Cancel. */
+/** "..." menu for the viewer's own post or review: an action sheet with Edit and Delete (confirmed). */
 export function promptOwnContentActions(target: {
   label: "post" | "review";
   onEdit: () => void;
@@ -55,9 +56,16 @@ export function promptOwnContentActions(target: {
       ],
     );
 
-  Alert.alert(`Your ${target.label}`, undefined, [
-    { text: `Edit ${target.label}`, onPress: target.onEdit },
-    { text: `Delete ${target.label}`, style: "destructive", onPress: confirmDelete },
-    { text: "Cancel", style: "cancel" },
-  ]);
+  // A choice of actions is an action sheet, not an alert (HIG, Action sheets); the delete
+  // confirmation that follows stays an alert, since it guards an action that can't be undone.
+  void askChoice({
+    title: `Your ${target.label}`,
+    options: [
+      { id: "edit", label: `Edit ${target.label}` },
+      { id: "delete", label: `Delete ${target.label}`, destructive: true },
+    ],
+  }).then((choice) => {
+    if (choice === "edit") target.onEdit();
+    else if (choice === "delete") confirmDelete();
+  });
 }

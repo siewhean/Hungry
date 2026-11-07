@@ -20,8 +20,13 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   // the round middle button writes a review.
   assert.match(
     tabs,
-    /key: "Discover", route: routeByName\.get\("Discover"\), icon: House, label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home", route: routeByName\.get\("Home"\), icon: Newspaper, label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create", isCreateAction: true, icon: PenLine, label: "Post"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover",\s*route: routeByName\.get\("Discover"\),\s*icon: House,[\s\S]*?label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home",\s*route: routeByName\.get\("Home"\),\s*icon: Newspaper,[\s\S]*?label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create",\s*isCreateAction: true,\s*icon: PenLine,[\s\S]*?label: "Post"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
+  // iOS draws SF Symbols in the tab bar, outline at rest and filled while selected.
+  assert.match(tabs, /symbol: "house",\s*focusedSymbol: "house\.fill"/);
+  assert.match(tabs, /symbol: "book",\s*focusedSymbol: "book\.fill"/);
+  assert.match(tabs, /symbol: "person",\s*focusedSymbol: "person\.fill"/);
+  assert.match(tabs, /symbol=\{item\.symbol\}\s*focusedSymbol=\{item\.focusedSymbol\}/);
   assert.match(
     tabs,
     /isCreateAction[\s\S]*rootNavigation\?\.navigate\("ReviewStack", \{ screen: "ReviewMain" \}\)/,

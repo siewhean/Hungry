@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft } from "lucide-react-native";
 import { useShallow } from "zustand/react/shallow";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -21,6 +20,7 @@ import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioType, PortfolioVisibility } from "@/types/domain";
 import { reportError } from "@/lib/monitoring/reportError";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioEdit">;
 
@@ -107,7 +107,7 @@ export function PortfolioEditScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">Edit list</AppText>

@@ -18,6 +18,7 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { loadOnboardingDishPool } from "./tastePicks";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingLoading">;
 
@@ -77,7 +78,7 @@ export function OnboardingLoadingScreen({ navigation }: Props) {
                 style={{ alignItems: "center", height: 24, justifyContent: "center", width: 24 }}
               >
                 {done ? (
-                  <Check color={palette.success} size={20} />
+                  <AppSymbol name="checkmark" fallback={Check} size={20} color={palette.success} />
                 ) : failed ? null : (
                   <ActivityIndicator color={palette.orange} size="small" />
                 )}

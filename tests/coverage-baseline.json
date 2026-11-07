@@ -1,8 +1,8 @@
 {
   "global": {
-    "lines": 87.6,
+    "lines": 87.7,
     "branches": 86.8,
-    "functions": 84.4
+    "functions": 84.5
   },
   "files": {
     "src/app/navigation/getRootNavigation.ts": 100,
@@ -177,6 +177,7 @@
     "src/features/profile/exportFile.ts": 84,
     "src/features/profile/exportMyData.ts": 93.3,
     "src/features/profile/loadVenuesByIds.ts": 100,
+    "src/features/profile/ownContentActions.ts": 97.2,
     "src/features/profile/pendingQuizResponse.ts": 100,
     "src/features/profile/plural.ts": 100,
     "src/features/profile/profileBio.ts": 100,
@@ -321,6 +322,7 @@
     "src/store/useStallSubmissionStore.ts": 81.6,
     "src/store/useUIStore.ts": 99.5,
     "src/store/useWheelStore.ts": 81.5,
+    "src/theme/increaseContrast.ts": 100,
     "src/theme/tokens.ts": 99.8,
     "src/types/domain.ts": 100,
     "src/utils/openingSchedule.ts": 96,

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Plus, Search } from "lucide-react-native";
+import { Plus, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -16,6 +16,7 @@ import { usePortfolioStore, type PortfolioListScope } from "@/store/usePortfolio
 import { useHungryTheme } from "@/theme";
 import type { Portfolio } from "@/types/domain";
 import { reportError } from "@/lib/monitoring/reportError";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfoliosHome">;
 type PortfolioTab = PortfolioListScope;
@@ -107,7 +108,7 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <AppText variant="h1" style={{ flex: 1 }}>
           Your lists
@@ -117,7 +118,9 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
             label="Create list"
             fullWidth={false}
             size="sm"
-            leftIcon={<Plus color={palette.textOnOrange} size={16} />}
+            leftIcon={
+              <AppSymbol name="plus" fallback={Plus} size={16} color={palette.textOnOrange} />
+            }
             onPress={() => navigation.navigate("PortfolioCreate")}
           />
         ) : null}
@@ -140,7 +143,9 @@ export function PortfoliosHomeScreen({ navigation }: Props) {
         placeholder="Search lists"
         value={query}
         onChangeText={setQuery}
-        leftIcon={<Search color={palette.textMuted} size={18} />}
+        leftIcon={
+          <AppSymbol name="magnifyingglass" fallback={Search} size={18} color={palette.textMuted} />
+        }
       />
 
       {activeTab === "mine" ? (

@@ -44,6 +44,7 @@ import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
 type ActivityTab = "messages" | "updates";
@@ -184,7 +185,14 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
           left={
             <IconButton
               accessibilityLabel="Go back"
-              icon={<ChevronLeft color={palette.text} size={24} />}
+              icon={
+                <AppSymbol
+                  name="chevron.backward"
+                  fallback={ChevronLeft}
+                  size={24}
+                  color={palette.text}
+                />
+              }
               onPress={() => navigation.goBack()}
               variant="ghost"
             />
@@ -523,15 +531,30 @@ function UpdatesTab({
             <Avatar uri={update.actorAvatarUrl} name={update.actorName} size={40} />
             <View style={[stylesInline.kindBadge, { backgroundColor: palette.bgSoft }]}>
               {update.kind === "like" ? (
-                <Heart color={kindColor} size={20} />
+                <AppSymbol name="heart" fallback={Heart} size={20} color={kindColor} />
               ) : update.kind === "share" ? (
-                <Share2 color={kindColor} size={20} />
+                <AppSymbol
+                  name="square.and.arrow.up"
+                  fallback={Share2}
+                  size={20}
+                  color={kindColor}
+                />
               ) : update.kind === "submission" ? (
-                <Store color={kindColor} size={20} />
+                <AppSymbol name="storefront" fallback={Store} size={20} color={kindColor} />
               ) : update.kind === "follow_request" || update.kind === "follow" ? (
-                <UserPlus color={kindColor} size={20} />
+                <AppSymbol
+                  name="person.badge.plus"
+                  fallback={UserPlus}
+                  size={20}
+                  color={kindColor}
+                />
               ) : (
-                <MessageCircleMore color={kindColor} size={20} />
+                <AppSymbol
+                  name="ellipsis.bubble"
+                  fallback={MessageCircleMore}
+                  size={20}
+                  color={kindColor}
+                />
               )}
             </View>
             <View style={{ flex: 1, gap: spacing[1] }}>

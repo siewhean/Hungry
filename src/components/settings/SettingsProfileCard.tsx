@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react-native";
 
 import { AppText, Avatar } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface SettingsProfileCardProps {
   name: string;
@@ -46,7 +47,7 @@ export function SettingsProfileCard({ name, email, avatarUrl, onPress }: Setting
           Edit profile
         </AppText>
       </View>
-      <ChevronRight size={20} color={palette.textMuted} />
+      <AppSymbol name="chevron.right" fallback={ChevronRight} size={20} color={palette.textMuted} />
     </Pressable>
   );
 }

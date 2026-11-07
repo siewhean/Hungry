@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft } from "lucide-react-native";
 
 import { FlowProgressBar } from "@/components/onboarding/FlowProgressBar";
 import type { OnboardingFlowScreen } from "@/features/onboarding/onboardingFlow";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 const ACTIONS_HORIZONTAL_PADDING = 24;
 const ACTIONS_GAP = 10;
@@ -45,7 +45,7 @@ export function OnboardingFrame({ screen, onBack, children, footer, scroll = tru
           onPress={onBack}
           style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <FlowProgressBar screen={screen} />

@@ -11,6 +11,7 @@ import {
 } from "@/features/discover/mallMode";
 import { selectHaptic } from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface WhatsHerePanelProps {
   placeName: string;
@@ -83,7 +84,12 @@ export function WhatsHerePanel({ placeName, stalls, renderStalls, onSeeAll }: Wh
           }}
         >
           <AppText variant="h2" style={{ flexShrink: 1 }}>{`Stalls at ${placeName}`}</AppText>
-          <ChevronRight color={palette.textMuted} size={20} />
+          <AppSymbol
+            name="chevron.right"
+            fallback={ChevronRight}
+            size={20}
+            color={palette.textMuted}
+          />
         </Pressable>
       ) : (
         <AppText variant="h2">{`Stalls at ${placeName}`}</AppText>

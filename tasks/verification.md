@@ -1693,3 +1693,8 @@ Use the smallest check that matches the change risk.
 ## 2026-11-07 FOOD-PORTFOLIO-C
 - Migration 20261107150000: up, up again, smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables (bodies "Mei and 1 other posted 3 dishes today." and "Mei posted 2 dishes at <stall> today.", pending/deleted/private/old posts and opted-out/no-device people left out, second run queues 0). Staging rehearsal still to run.
 - `npm run typecheck` clean; `npm test` 3053 pass; `npm run test:render` 1299 pass; test:coverage OK (baseline updated); check:rate-limits, audit:races, check:n-plus-one pass; migration-safety fails only on the missing rehearsal evidence.
+
+## 2026-11-07 APPLE-DESIGN-01 (whole-app Apple design pass)
+- `npx tsc --noEmit` clean; `npm test` 3058 pass then 3060 with the extra own-content tests; `npm run test:render` 1301 pass; `npm run test:coverage` OK (baseline updated); `npm run check:n-plus-one` ok; eslint 0 errors on touched files.
+- All SF Symbol names checked by the strict `SFSymbol` type (sf-symbols-typescript). Browser walk (Expo web, mock data, iPhone 14 viewport) of Home, Reviews, Profile, stall, dish, Search, Decide, Wheel, Settings, Activity, Write a review in light and dark before the change. Web and Android draw the Lucide fallback, so the iOS symbols still need a device build to see.
+- Pre-commit gitleaks unavailable in the cloud sandbox; commit made with the hook off on sh's decision-card approval; CI security workflow runs gitleaks.

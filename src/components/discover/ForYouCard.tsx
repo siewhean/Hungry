@@ -4,6 +4,7 @@ import { Bookmark, Star, Store } from "lucide-react-native";
 import { AccessibleImage, AppText } from "@/components/ui";
 import type { ForYouPick } from "@/features/discover/mallMode";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface ForYouCardProps {
   pick: ForYouPick;
@@ -86,7 +87,7 @@ export function ForYouCard({ pick, onPress, onPressIn, width }: ForYouCardProps)
           ) : null}
         </View>
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-          <Store size={15} color={palette.textSecondary} />
+          <AppSymbol name="storefront" fallback={Store} size={15} color={palette.textSecondary} />
           <AppText variant="bodySmall" tone="secondary" numberOfLines={1} style={{ flex: 1 }}>
             {dish.venueName}
             {dish.unitNumber ? ` · ${dish.unitNumber}` : ""}
@@ -95,7 +96,13 @@ export function ForYouCard({ pick, onPress, onPressIn, width }: ForYouCardProps)
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
           {dish.reviewCount > 0 ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Star size={15} color={palette.starStroke} fill={palette.starFill} />
+              <AppSymbol
+                name="star.fill"
+                fallback={Star}
+                filled
+                size={15}
+                color={palette.starStroke}
+              />
               <AppText variant="bodySmallBold">{dish.rating.toFixed(1)}</AppText>
               <AppText variant="bodySmall" tone="secondary">
                 ({dish.reviewCount})
@@ -104,7 +111,12 @@ export function ForYouCard({ pick, onPress, onPressIn, width }: ForYouCardProps)
           ) : null}
           {dish.savedCount ? (
             <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-              <Bookmark size={14} color={palette.textSecondary} />
+              <AppSymbol
+                name="bookmark"
+                fallback={Bookmark}
+                size={14}
+                color={palette.textSecondary}
+              />
               <AppText variant="bodySmall" tone="secondary">
                 {dish.savedCount} saved
               </AppText>

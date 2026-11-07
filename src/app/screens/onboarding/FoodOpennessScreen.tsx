@@ -2,7 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Compass, Heart, Shuffle } from "lucide-react-native";
+import { Compass, Heart, Shuffle } from "lucide-react-native";
 
 import { AppText, Button } from "@/components/ui";
 import { FOOD_OPENNESS_OPTIONS } from "@/constants/taste";
@@ -20,6 +20,7 @@ import {
   ONBOARDING_ACTIONS_GAP,
   ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
 } from "./layoutConstants";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "FoodOpenness">;
 
@@ -84,7 +85,7 @@ export function FoodOpennessScreen({ navigation, route }: Props) {
             width: 44,
           }}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
       </View>
 

@@ -23,6 +23,7 @@ import {
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { similarityScore } from "@/lib/ai/similarityScore";
+import { notifyChoiceSheetClosed, useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useStallSubmissionStore } from "@/store/useStallSubmissionStore";
@@ -517,10 +518,11 @@ test("PROF-18a: saving an edit to your own review marks it Edited straight away"
   assert.equal(view.text().includes("Edited"), false, "not edited yet");
 
   await view.press(view.findByLabel("Manage your review"));
-  prompts
-    .at(-1)
-    ?.find((button) => button.text === "Edit review")
-    ?.onPress?.();
+  // The menu is the app's action sheet; pick Edit and let it close.
+  assert.equal(prompts.length, 0, "no alert menu");
+  useChoiceSheetStore.getState().settle("edit");
+  notifyChoiceSheetClosed();
+  await new Promise((resolve) => setTimeout(resolve, 120));
   await view.settle();
   const textarea = document.body.querySelector("textarea") as HTMLTextAreaElement;
   assert.ok(textarea, "the editor opened");

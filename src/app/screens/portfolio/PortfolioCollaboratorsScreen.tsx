@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Platform, Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { Search } from "lucide-react-native";
 import { useShallow } from "zustand/react/shallow";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -15,6 +15,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioCollaborator, PortfolioCollaboratorRole } from "@/types/domain";
 import { reportError } from "@/lib/monitoring/reportError";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioCollaborators">;
 
@@ -122,7 +123,7 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">Collaborators</AppText>
@@ -198,7 +199,14 @@ export function PortfolioCollaboratorsScreen({ navigation, route }: Props) {
             value={query}
             onChangeText={setQuery}
             placeholder="Search people you follow"
-            leftIcon={<Search size={18} color={palette.textMuted} />}
+            leftIcon={
+              <AppSymbol
+                name="magnifyingglass"
+                fallback={Search}
+                size={18}
+                color={palette.textMuted}
+              />
+            }
             autoCapitalize="none"
             autoCorrect={false}
           />

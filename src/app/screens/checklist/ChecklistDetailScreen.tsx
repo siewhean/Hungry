@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Plus } from "lucide-react-native";
+import { Plus } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -13,6 +13,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { ChecklistItem } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistDetail">;
 
@@ -138,7 +139,7 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">Checklist</AppText>
@@ -161,7 +162,9 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
             label="Dish"
             size="sm"
             fullWidth={false}
-            leftIcon={<Plus color={palette.textOnOrange} size={16} />}
+            leftIcon={
+              <AppSymbol name="plus" fallback={Plus} size={16} color={palette.textOnOrange} />
+            }
             onPress={() =>
               navigation.navigate("ChecklistItemPicker", { checklistId, mode: "dish" })
             }

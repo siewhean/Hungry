@@ -10,6 +10,7 @@ import {
   trackNextStampCardViewed,
 } from "@/lib/analytics/gamificationEvents";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface NextStampCardProps {
   onOpenPassport: () => void;
@@ -55,7 +56,7 @@ export function NextStampCard({ onOpenPassport, visible = true }: NextStampCardP
       }}
     >
       <ProgressRing fraction={summary.fraction} size={48} strokeWidth={5}>
-        <Stamp size={20} color={palette.orange} />
+        <AppSymbol name="seal" fallback={Stamp} size={20} color={palette.orange} />
       </ProgressRing>
       <View style={{ flex: 1, gap: spacing[0.5] }}>
         <AppText variant="bodySmallBold" numberOfLines={2}>
@@ -65,7 +66,7 @@ export function NextStampCard({ onOpenPassport, visible = true }: NextStampCardP
           {summary.detail}
         </AppText>
       </View>
-      <ChevronRight size={18} color={palette.textMuted} />
+      <AppSymbol name="chevron.right" fallback={ChevronRight} size={18} color={palette.textMuted} />
     </Pressable>
   );
 }

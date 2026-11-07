@@ -18,6 +18,7 @@ import {
   Pressable,
   ScrollView,
   View,
+  AccessibilityInfo,
   Alert,
 } from "react-native";
 import { X, Search, Compass, Heart, Plus, ShieldAlert, Sparkles, Check } from "lucide-react-native";
@@ -251,6 +252,7 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   const [selectedCategory, setSelectedCategory] = useState<SearchCategory | null>(CATEGORIES[0]);
   // The last stall added, read out by the header so a quiet add is still confirmed.
   const [lastAdded, setLastAdded] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const addedVenueIds = new Set(entries.map((e) => e.venueId));
 
@@ -260,16 +262,24 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
   // MD-W2: the sheet stays open after an add, so several stalls take one visit. The row flips to
   // "already on the wheel" and the header counts them; Done (or the X) closes the sheet.
   function confirmAdded(name: string) {
+    setNotice(null);
     setLastAdded(name);
+  }
+
+  // Feedback stays in the sheet, not in an alert (HIG, Alerts: "Avoid using an alert merely to
+  // provide information"). The header line is a live region; VoiceOver hears it announced.
+  function showNotice(message: string) {
+    setNotice(message);
+    AccessibilityInfo.announceForAccessibility(message);
   }
 
   function addVenue(venue: VenueSummary) {
     if (addedVenueIds.has(venue.id)) {
-      Alert.alert("Already on the wheel", `${venue.name} is already one of the options.`);
+      showNotice(`${venue.name} is already on the wheel`);
       return;
     }
     if (atEntryCap) {
-      Alert.alert("The wheel is full", `Remove an option first (up to ${MAX_WHEEL_ENTRIES}).`);
+      showNotice(`The wheel is full. Remove an option first (up to ${MAX_WHEEL_ENTRIES}).`);
       return;
     }
     const dishes = repository.listDishesByVenue(venue.id);
@@ -283,14 +293,14 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
 
       if (conflicts.length > 0) {
         Alert.alert(
-          "Dietary Warning",
+          "May not suit your diet",
           `This stall may not accommodate: ${conflicts.join(", ")}. ${
             PARTY_ENABLED ? "Someone in your party has" : "You have"
           } these restrictions. Add anyway?`,
           [
-            { text: "Pick Something Else", style: "cancel" },
+            { text: "Pick something else", style: "cancel" },
             {
-              text: "Add Anyway",
+              text: "Add anyway",
               onPress: () => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 addEntry(venue.id, venue.buildingId, venue.name, venueDish?.imageUrl ?? "");
@@ -481,9 +491,10 @@ export function WheelEntryAddSheet({ visible, onClose }: Props) {
                 accessibilityLiveRegion="polite"
                 testID="wheel-add-sheet-count"
               >
-                {lastAdded
-                  ? `Added ${lastAdded} · ${activeCount} on the wheel`
-                  : `${activeCount} on the wheel`}
+                {notice ??
+                  (lastAdded
+                    ? `Added ${lastAdded} · ${activeCount} on the wheel`
+                    : `${activeCount} on the wheel`)}
               </AppText>
               {groupDietaryRestrictions.length > 0 && (
                 <View

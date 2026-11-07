@@ -1,7 +1,7 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AppState, Linking, Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Compass, Star, UtensilsCrossed } from "lucide-react-native";
+import { Compass, Star, UtensilsCrossed } from "lucide-react-native";
 import { useEffect, useState } from "react";
 
 import { AppText, Button, Card } from "@/components/ui";
@@ -19,6 +19,7 @@ import {
   ONBOARDING_ACTIONS_GAP,
   ONBOARDING_ACTIONS_HORIZONTAL_PADDING,
 } from "./layoutConstants";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "LocationPermission">;
 
@@ -185,7 +186,7 @@ export function LocationPermissionScreen({ navigation }: Props) {
               width: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={22} />
+            <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
           </Pressable>
         </View>
 
