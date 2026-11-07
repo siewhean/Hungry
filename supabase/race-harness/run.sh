@@ -274,7 +274,11 @@ T10 mark_conversation_read from two tabs
 T11 two OCR confidence bumps at once
 T12 two pinned-favourites saves at once (primary key / unique violation, final list)
 T13 two merchants feature the 3rd and 4th dish of one stall at once (one refused, 3 featured)
-T14 two submit_review calls with one review id (one review, photos attached once)"
+T14 two submit_review calls with one review id (one review, photos attached once)
+T15 two dish posts at once with one credited slot left of the daily cap of 6
+T16 two likes at once from one person on two posts by the same author (one Trending row a day)
+T17 a post deleted while someone likes it (no live points left on the deleted post)
+T18 two leaderboard refreshes at once (no error, each person ranked once, each tier paid once)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -306,6 +310,84 @@ else
 fi
 PGOPTIONS="-c check_function_bodies=off" "${PSQL[@]}" -d down -v ON_ERROR_STOP=1 \
   -f "$HERE/../migrations/$MIGRATION" >/dev/null 2>&1 && echo "  ok    up migration re-applies after down" || { echo "  FAIL  up migration does not re-apply after down"; fail=1; }
+# Leaderboards (20261107120000): the whole migration against its own stand-in tables.
+LB_MIGRATION=20261107120000_food_portfolio_leaderboards
+"${PSQL[@]}" -d postgres -c "create database lb" >/dev/null
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/leaderboard_stubs.sql" >/dev/null || exit 2
+for pass in 1 2; do
+  "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$LB_MIGRATION.sql" >/dev/null 2>&1 \
+    || { echo "  FAIL  $LB_MIGRATION does not apply (pass $pass)"; fail=1; }
+done
+lb_val() { "${PSQL[@]}" -d lb -c "$1"; }
+lb_race() { # key sqlA sqlB -> prints <key>_errors=<n>
+  local a b
+  a=$(mktemp) b=$(mktemp)
+  ( "${PSQL[@]}" -d lb -c "begin;" -c "$2" -c "select pg_sleep($HOLD);" -c "commit;" 2>&1 | grep -i error | head -1 >"$a" ) &
+  local pa=$!
+  ( sleep 0.5; "${PSQL[@]}" -d lb -c "begin;" -c "$3" -c "select pg_sleep($HOLD);" -c "commit;" 2>&1 | grep -i error | head -1 >"$b" ) &
+  local pb=$!
+  wait $pa $pb
+  local n=0
+  [ -s "$a" ] && n=$((n + 1))
+  [ -s "$b" ] && n=$((n + 1))
+  echo "$1_errors=$n"
+  rm -f "$a" "$b"
+}
+lb_reset() {
+  lb_val "truncate leaderboard_events, leaderboard_standings, achievement_unlocks, post_likes, post_media, follows, reviews, posts cascade; delete from user_profiles; delete from auth.users;
+    insert into auth.users(id) values ('$U1'),('$U2');
+    insert into user_profiles(id) values ('$U1'),('$U2');
+    insert into reviews(user_id) values ('$U2');" >/dev/null
+}
+LB_OUT="$WORK/leaderboards.txt"
+: >"$LB_OUT"
+
+lb_reset
+lb_val "insert into leaderboard_events(user_id, kind, points, venue_id, created_at) select '$U1', 'post', 10, 'v' || g, now() - interval '2 hours' from generate_series(1, 5) g;
+  insert into posts(id, author_id, venue_id) values ('$POST', '$U1', 'v8'), ('$ITEM', '$U1', 'v9');
+  insert into post_media(post_id) values ('$POST'), ('$ITEM');" >/dev/null
+lb_race T15 "update posts set status = 'published' where id = '$POST';" "update posts set status = 'published' where id = '$ITEM';" >>"$LB_OUT"
+echo "T15_credited=$(lb_val "select count(*) from leaderboard_events where user_id = '$U1' and kind = 'post'")" >>"$LB_OUT"
+
+lb_reset
+lb_val "insert into posts(id, author_id, status, venue_id) values ('$POST', '$U1', 'published', 'v1'), ('$ITEM', '$U1', 'published', 'v2');" >/dev/null
+lb_race T16 "insert into post_likes(post_id, user_id) values ('$POST', '$U2');" "insert into post_likes(post_id, user_id) values ('$ITEM', '$U2');" >>"$LB_OUT"
+echo "T16_like_rows=$(lb_val "select count(*) from leaderboard_events where kind = 'like' and voided_at is null")" >>"$LB_OUT"
+
+lb_reset
+lb_val "insert into posts(id, author_id, status, venue_id) values ('$POST', '$U1', 'published', 'v1');" >/dev/null
+lb_race T17 "update posts set status = 'deleted', deleted_at = now() where id = '$POST';" "insert into post_likes(post_id, user_id) values ('$POST', '$U2');" >>"$LB_OUT"
+echo "T17_live_rows=$(lb_val "select count(*) from leaderboard_events where post_id = '$POST' and voided_at is null")" >>"$LB_OUT"
+
+lb_reset
+lb_val "insert into leaderboard_events(user_id, kind, points) values ('$U1', 'post', 10), ('$U2', 'post', 20);" >/dev/null
+lb_race T18 "select app_private.refresh_leaderboards();" "select app_private.refresh_leaderboards();" >>"$LB_OUT"
+echo "T18_standings=$(lb_val "select count(*) from leaderboard_standings")" >>"$LB_OUT"
+echo "T18_achievement_rows=$(lb_val "select count(*) from leaderboard_events where kind = 'achievement'")" >>"$LB_OUT"
+
+LB_EXPECTED="T15_errors=0
+T15_credited=6
+T16_errors=0
+T16_like_rows=1
+T17_errors=0
+T17_live_rows=0
+T18_errors=0
+T18_standings=4
+T18_achievement_rows=2"
+echo "--- leaderboards:"
+while IFS= read -r line; do
+  key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
+  if [ "$line" = "$key=$want" ]; then echo "  ok    $line"; else echo "  FAIL  $line   (expected $want)"; fail=1; fi
+done <"$LB_OUT"
+[ "$(wc -l <"$LB_OUT")" = "$(printf '%s\n' "$LB_EXPECTED" | wc -l)" ] || { echo "  FAIL  leaderboard results missing"; fail=1; }
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$LB_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && [ "$(lb_val "select count(*) from pg_proc where proname like '%board%'")" = 0 ] \
+  && echo "  ok    leaderboard down migration removes every function" \
+  || { echo "  FAIL  leaderboard down migration"; fail=1; }
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$LB_MIGRATION.sql" >/dev/null 2>&1 \
+  && echo "  ok    leaderboard up migration re-applies after down" \
+  || { echo "  FAIL  leaderboard up migration does not re-apply after down"; fail=1; }
+
 echo
 printf '%s\n' "$DESC"
 [ "$fail" = 0 ] && echo "All race checks passed." || echo "Race checks FAILED."

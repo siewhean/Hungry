@@ -53,6 +53,11 @@ import type {
   BiteDraft,
   BitesFeedPage,
   FoodPortfolioStall,
+  LeaderboardBoard,
+  LeaderboardQuery,
+  LeaderboardRow,
+  LeaderboardSummary,
+  PortfolioPointsEntry,
   BuildingDetail,
   ChatConversation,
   ChatMessage,
@@ -1615,6 +1620,40 @@ function mockAuthError(failure: MockAuthFailure): Error {
 
 // ─── Full HungryService implementation ───────────────────────────────────────
 
+const MOCK_LEADERBOARD_DAILY_CAP = 6;
+
+/**
+ * Board scores over the mock feed, close to the server rules: Most active pays 10 for a post
+ * with a photo at a stall and 5 more for each stall's first post; Trending adds a point per
+ * like and two per save.
+ */
+function mockLeaderboardScores(
+  board: LeaderboardBoard,
+): Map<string, Omit<LeaderboardRow, "rank" | "isMe">> {
+  const scores = new Map<string, Omit<LeaderboardRow, "rank" | "isMe">>();
+  const stallsSeen = new Set<string>();
+  for (const bite of MOCK_BITES_FEED) {
+    if (_blockedUsers.has(bite.authorId)) continue;
+    let points = 0;
+    if (board === "trending") {
+      points = bite.cravingCount + 2 * bite.savedCount;
+    } else if (bite.photoUrl && bite.venueId) {
+      const stallKey = `${bite.authorId}:${bite.venueId}`;
+      points = stallsSeen.has(stallKey) ? 10 : 15;
+      stallsSeen.add(stallKey);
+    }
+    if (points <= 0) continue;
+    const current = scores.get(bite.authorId);
+    scores.set(bite.authorId, {
+      userId: bite.authorId,
+      displayName: bite.authorName,
+      avatarUrl: bite.authorAvatar,
+      score: (current?.score ?? 0) + points,
+    });
+  }
+  return scores;
+}
+
 export const hungryService: HungryService = {
   // ── Auth ────────────────────────────────────────────────────────────────────
 
@@ -2933,6 +2972,74 @@ export const hungryService: HungryService = {
       const cursor = page?.cursor;
       const start = cursor ? sorted.findIndex((bite) => bite.id === cursor.postId) + 1 : 0;
       return resolve(sorted.slice(start, start + (page?.limit ?? 20)).map(withMockViewerReactions));
+    },
+  },
+
+  leaderboard: {
+    async getLeaderboard(query: LeaderboardQuery) {
+      await hydrateSocial();
+      const scores = mockLeaderboardScores(query.board);
+      const rows = [...scores.values()]
+        .filter(
+          (entry) =>
+            query.scope !== "following" ||
+            entry.userId === _profile.id ||
+            _userFollows.has(entry.userId),
+        )
+        .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
+      let rank = 0;
+      let previous = Number.NaN;
+      const ranked = rows.map((entry, index): LeaderboardRow => {
+        if (entry.score !== previous) rank = index + 1;
+        previous = entry.score;
+        return { ...entry, rank, isMe: entry.userId === _profile.id };
+      });
+      return resolve(ranked.slice(0, Math.min(Math.max(query.limit ?? 50, 1), 100)));
+    },
+
+    async getMySummary() {
+      await hydrateSocial();
+      const rankOf = (board: LeaderboardBoard) => {
+        const scores = [...mockLeaderboardScores(board).values()].sort((a, b) => b.score - a.score);
+        const mine = scores.find((entry) => entry.userId === _profile.id);
+        return mine ? scores.filter((entry) => entry.score > mine.score).length + 1 : null;
+      };
+      const mine = mockLeaderboardScores("active").get(_profile.id)?.score ?? 0;
+      const today = new Date().toDateString();
+      return resolve({
+        totalPoints: mine,
+        weekPoints: mine,
+        activeWeekRank: rankOf("active"),
+        activeAllRank: rankOf("active"),
+        trendingRank: rankOf("trending"),
+        creditedPostsToday: Math.min(
+          MOCK_BITES_FEED.filter(
+            (bite) =>
+              bite.authorId === _profile.id && new Date(bite.createdAt).toDateString() === today,
+          ).length,
+          MOCK_LEADERBOARD_DAILY_CAP,
+        ),
+        dailyCap: MOCK_LEADERBOARD_DAILY_CAP,
+      } satisfies LeaderboardSummary);
+    },
+
+    async listMyPoints(limit = 30) {
+      await hydrateSocial();
+      return resolve(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id)
+          .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+          .slice(0, limit)
+          .map(
+            (bite): PortfolioPointsEntry => ({
+              id: `points-${bite.id}`,
+              kind: bite.photoUrl && bite.venueId ? "post" : "off_board_post",
+              points: bite.photoUrl && bite.venueId ? 10 : 2,
+              postId: bite.id,
+              createdAt: bite.createdAt,
+              voided: false,
+            }),
+          ),
+      );
     },
   },
 

@@ -240,6 +240,7 @@ export type RootStackParamList = {
   FollowRequests: undefined;
   /** Food Portfolio: newest dishes posted by the people you follow. */
   FollowingFeed: undefined;
+  Leaderboard: undefined;
   /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
   BlockedAndHidden: undefined;
   /** Another user's follower/following lists, opened from their profile. */

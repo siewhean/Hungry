@@ -17,6 +17,8 @@
     "portfolio_flags": "Lists the user reported are moderation records (see notIncluded in the export).",
     "website_console_admins": "Staff access list, not end-user data.",
     "dish_flavor_tags": "Shared flavour tags on dishes; the only user link is reviewed_by, the ops reviewer, not content the user created.",
-    "user_push_tokens": "Device identifiers used only to deliver alerts (see notIncluded in the export)."
+    "user_push_tokens": "Device identifiers used only to deliver alerts (see notIncluded in the export).",
+    "leaderboard_standings": "Derived ranking rebuilt every 10 minutes from leaderboard_events, which is exported as portfolioPoints.",
+    "leaderboard_exclusions": "Moderation record set by an admin (who is kept off the leaderboards and why); the export's notIncluded list tells users to email support for these."
   }
 }
