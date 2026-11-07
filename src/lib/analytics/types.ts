@@ -168,6 +168,7 @@ export type AnalyticsEventName =
   | "food_portfolio_post_tapped"
   | "following_feed_viewed"
   | "leaderboard_viewed"
+  | "food_portfolio_card_shared"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

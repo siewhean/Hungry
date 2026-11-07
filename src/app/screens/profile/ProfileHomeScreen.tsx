@@ -11,6 +11,7 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 
+import { ActivityBellButton } from "@/components/foodPortfolio/ActivityBellButton";
 import { FoodPortfolioSection } from "@/components/foodPortfolio/FoodPortfolioSection";
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
@@ -113,6 +114,12 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   // A restored session can be signed in before its profile loads; the placeholder id is not a uuid.
   const hasAccountProfile = isAuthenticated && profile.id !== "guest-user";
+  // Home is Discover, so the social feed's bell is hidden; the Food Portfolio puts it here.
+  const showActivityBell =
+    hasAccountProfile &&
+    FEATURE_FLAGS.foodPortfolioEnabled &&
+    FEATURE_FLAGS.activityEnabled &&
+    !FEATURE_FLAGS.socialFeedEnabled;
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
@@ -823,55 +830,60 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       showBack={false}
       testID="profile-home-screen"
       headerRight={
-        <Pressable
-          testID="profile-menu"
-          accessibilityRole="button"
-          accessibilityLabel={
-            followRequestLabel ? `Open settings, ${followRequestLabel}` : "Open settings"
-          }
-          onPressIn={() => preloadRoute(navigation, "Settings")}
-          onPress={() => navigation.navigate("Settings")}
-          // 42pt square; 2pt of slop makes the target at least 44pt (round six).
-          hitSlop={2}
-          style={{
-            alignItems: "center",
-            height: headerActionSize,
-            justifyContent: "center",
-            width: headerActionSize,
-          }}
-        >
-          <AppSymbol name="settings" size={24} weight="regular" color={palette.text} />
-          {followRequestCount ? (
-            <View
-              testID="profile-menu-badge"
-              style={{
-                alignItems: "center",
-                // accentText on white is 5.9:1 (the orange fill was 3.7:1 under 11pt text).
-                backgroundColor: colorScheme === "dark" ? palette.orange : palette.accentText,
-                borderRadius: radii.pill,
-                height: 18,
-                justifyContent: "center",
-                minWidth: 18,
-                paddingHorizontal: 4,
-                position: "absolute",
-                right: 0,
-                top: 0,
-              }}
-            >
-              <AppText
-                variant="micro"
+        <View style={{ alignItems: "center", flexDirection: "row" }}>
+          {showActivityBell ? (
+            <ActivityBellButton viewerId={profile.id} size={headerActionSize} />
+          ) : null}
+          <Pressable
+            testID="profile-menu"
+            accessibilityRole="button"
+            accessibilityLabel={
+              followRequestLabel ? `Open settings, ${followRequestLabel}` : "Open settings"
+            }
+            onPressIn={() => preloadRoute(navigation, "Settings")}
+            onPress={() => navigation.navigate("Settings")}
+            // 42pt square; 2pt of slop makes the target at least 44pt (round six).
+            hitSlop={2}
+            style={{
+              alignItems: "center",
+              height: headerActionSize,
+              justifyContent: "center",
+              width: headerActionSize,
+            }}
+          >
+            <AppSymbol name="settings" size={24} weight="regular" color={palette.text} />
+            {followRequestCount ? (
+              <View
+                testID="profile-menu-badge"
                 style={{
-                  color: palette.textOnOrange,
-                  fontSize: 11,
-                  fontWeight: "700",
-                  lineHeight: 14,
+                  alignItems: "center",
+                  // accentText on white is 5.9:1 (the orange fill was 3.7:1 under 11pt text).
+                  backgroundColor: colorScheme === "dark" ? palette.orange : palette.accentText,
+                  borderRadius: radii.pill,
+                  height: 18,
+                  justifyContent: "center",
+                  minWidth: 18,
+                  paddingHorizontal: 4,
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
                 }}
               >
-                {followRequestCount > 9 ? "9+" : followRequestCount}
-              </AppText>
-            </View>
-          ) : null}
-        </Pressable>
+                <AppText
+                  variant="micro"
+                  style={{
+                    color: palette.textOnOrange,
+                    fontSize: 11,
+                    fontWeight: "700",
+                    lineHeight: 14,
+                  }}
+                >
+                  {followRequestCount > 9 ? "9+" : followRequestCount}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
       }
     >
       <View style={{ gap: spacing[4], position: "relative" }}>

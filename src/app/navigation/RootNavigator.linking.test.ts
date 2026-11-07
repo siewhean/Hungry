@@ -5,6 +5,7 @@ import test from "node:test";
 
 import { getPathFromState } from "@react-navigation/core";
 
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   createRootLinking,
   parseAuthCallbackParams,
@@ -32,6 +33,26 @@ test("linking exposes authenticated dish, venue, post and order entry points", (
   assert.equal(screens.FollowRequests, "follow-requests");
   assert.equal(screens.MerchantTabs, undefined);
   assert.deepEqual(screens.MainTabs, { screens: { Home: "home" } });
+});
+
+test("with the Food Portfolio on, /following and /leaderboard open their screens", () => {
+  const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = flags.foodPortfolioEnabled;
+  flags.foodPortfolioEnabled = true;
+  try {
+    const linking = createRootLinking("exp://127.0.0.1:8081/--/");
+    const screens = linking.config.screens as Record<string, unknown>;
+    // The new-dishes digest push links to usehungry.com/following.
+    assert.equal(screens.FollowingFeed, "following");
+    assert.equal(screens.Leaderboard, "leaderboard");
+  } finally {
+    flags.foodPortfolioEnabled = saved;
+  }
+  const off = createRootLinking("exp://127.0.0.1:8081/--/").config.screens as Record<
+    string,
+    unknown
+  >;
+  if (!saved) assert.equal(off.FollowingFeed, undefined);
 });
 
 test("weekly picks /home link opens the Home tab", () => {

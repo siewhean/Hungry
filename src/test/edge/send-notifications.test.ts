@@ -203,6 +203,14 @@ const SKIPS: [string, Scenario, string][] = [
     "opted_out",
   ],
   [
+    "a new-dishes digest when social activity is off",
+    {
+      jobs: [job({ category: "social_new_dishes_digest", dish_id: null })],
+      prefs: [{ user_id: "u1", social_activity: false }],
+    },
+    "opted_out",
+  ],
+  [
     "a job older than 48 hours",
     { jobs: [job({ created_at: new Date(NOON_SGT.getTime() - 49 * 3600 * 1000).toISOString() })] },
     "stale",
