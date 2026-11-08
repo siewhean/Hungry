@@ -38,6 +38,10 @@ MASTER = {
     "L_S1": ("Sigma Kopi (One)", SIG), "L_S2": ("Sigma Kopi (Two)", SIG),
     "L_E1": ("Echo Eatery", U("eeee")), "L_F1": ("Foxtrot Foods", U("ffff")), "L_N1": ("November Nasi", U("nnnn")),
     "CE10G68E000": ("% Arabica", ""),
+    "L_A4": ("Alpha Cafe (Jurong)", U("a444")), "L_A5": ("Alpha Cafe (Woodlands)", U("a555")),
+    "L_T1": ("Two Men Bagel House - Plaza Singapura", ""), "L_T2": ("TWO MEN BAGEL HOUSE (Bedok Mall)", ""), "L_T3": ("Two Bao Shop", ""),
+    "L_G1": ("Song Fa Bak Kut Teh @ Jewel", ""), "L_G2": ("Song Fa Bak Kut Teh", ""), "L_G3": ("Song Kee Noodles", ""),
+    "L_U1": ("Uncorr Kopi (One)", U("u111")), "L_U2": ("Uncorr Kopi (Two)", U("u222")),
 }
 
 
@@ -69,9 +73,9 @@ class Env(unittest.TestCase):
     def write_master(self, extra=()):
         with open(self.master_path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow(["F&B Name", "Registered Business Name", "SFA Licence", "Menu URL"])
+            w.writerow(["F&B Name", "Registered Business Name", "SFA Licence", "Menu URL", "Full Address"])
             for lic, (name, url) in MASTER.items():
-                w.writerow([name, "", lic, url])
+                w.writerow([name, "", lic, url, ""])
             for r in extra:
                 w.writerow(r)
 
@@ -509,7 +513,7 @@ class BrandCatalogueTests(Env):
                  R("L_A2", "Teh", 2.0, **t18), R("L_A1", "Solo", 3.0, **t18)], "--same-brand-url-policy", "sidecar")
         rows = {(r["item_name"].strip().lower(), r["price_sgd"]): r for r in self.cat()}
         kopi = rows[("kopi", 1.5)]
-        self.assertEqual((kopi["brand"], kopi["outlet_licences"], kopi["outlet_count"]), ("alpha", ["L_A1", "L_A2"], 2))
+        self.assertEqual((kopi["brand"], kopi["outlet_licences"], kopi["outlet_count"]), ("alpha cafe", ["L_A1", "L_A2"], 2))
         self.assertEqual(kopi["catalogue_scope"], "brand")
         self.assertIs(kopi["verified"], False)
         self.assertEqual(kopi["price_basis"], "unknown")
@@ -520,7 +524,7 @@ class BrandCatalogueTests(Env):
         self.assertEqual(rows[("solo", 3.0)]["outlet_count"], 1)
         stats = json.loads((self.out / "report.json").read_text())["brand_catalogue"]
         self.assertEqual((stats["rows"], stats["brands"], stats["brands_with_price_conflicts"]), (4, 1, 1))
-        self.assertEqual(stats["top_brands_by_outlet_count"][0], {"brand": "alpha", "outlet_count": 2, "rows": 4})
+        self.assertEqual(stats["top_brands_by_outlet_count"][0], {"brand": "alpha cafe", "outlet_count": 2, "rows": 4})
         self.assertIn("by brand key only", (self.out / "report.md").read_text())
 
     def test_outlet_map_lookup_by_brand_key(self):
@@ -528,7 +532,7 @@ class BrandCatalogueTests(Env):
         with open(self.out / "brand_outlet_map.csv", newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
         self.assertEqual([(r["licence"], r["outlet_name"], r["brand_key"], r["catalogue_row_count"]) for r in rows],
-                         [("L_A1", "Alpha Cafe (Bedok)", "alpha", "2"), ("L_A2", "Alpha Cafe (Tampines)", "alpha", "2")])
+                         [("L_A1", "Alpha Cafe (Bedok)", "alpha cafe", "2"), ("L_A2", "Alpha Cafe (Tampines)", "alpha cafe", "2")])
 
     def test_wrong_host_quarantined_and_review_rows_never_reach_catalogue(self):
         t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z")
@@ -563,6 +567,255 @@ class BrandCatalogueTests(Env):
         self.assertEqual(self.run_main("--same-brand-url-policy", "sidecar")[0], 0)
         self.assertTrue((self.out / "brand_catalogue.jsonl").exists())
         self.assertEqual(before, {p.name: p.read_bytes() for p in (self.tmp / "strict").iterdir() if p.is_file()})
+
+
+class FullNameBrandIdentity(Env):
+    def keymap(self):
+        with open(self.out / "brand_key_map.csv", newline="", encoding="utf-8") as f:
+            return {r["licence"]: r for r in csv.DictReader(f)}
+
+    def test_core_name_strips_outlet_qualifiers_but_keeps_distinguishing_words(self):
+        places = frozenset({"jewel changi airport", "funan", "bedok mall"})
+        cases = {
+            "Two Men Bagel House - Plaza Singapura": "two men bagel house", "TWO MEN BAGEL HOUSE (Bedok Mall)": "two men bagel house",
+            "Fun Toast @ Jewel": "fun toast", "Song Fa Bak Kut Teh": "song fa bak kut teh", "Luckin Coffee Outlet": "luckin coffee",
+            "The Coffee Bean &amp; Tea Leaf (Singapore) Pte Ltd #01-23": "coffee bean and tea leaf", "Fun Toast Funan": "fun toast",
+            "Fun Toast Jewel Changi Airport": "fun toast", "Kopi at Tampines Mall": "kopi", "Crêpe Maison Kiosk": "crepe maison",
+            "% Arabica": "arabica", "Yong Yun Pte. Ltd.": "yong yun",
+        }
+        for raw, want in cases.items():
+            with self.subTest(raw=raw):
+                self.assertEqual(q.core_name(raw, places), want)
+        self.assertIn("newton food centre", q.build_places(["500 CLEMENCEAU AVENUE NORTH #01-32,NEWTON FOOD CENTRE,Singapore 229495"]))
+        self.assertIn("clemenceau avenue north", q.build_places(["500 CLEMENCEAU AVENUE NORTH #01-32,NEWTON FOOD CENTRE,Singapore 229495"]))
+
+    def test_names_that_share_one_word_are_different(self):
+        self.assertEqual(q.names_match("two men bagel house", "two men bagel house"), "NAME_EQUAL")
+        self.assertIsNone(q.names_match("two men bagel house", "two bao shop"))
+        self.assertIsNone(q.names_match("song fa bak kut teh", "song kee noodles"))
+        self.assertIsNone(q.names_match("ajisen ramen", "ajisen tanjiro"))
+        self.assertIsNone(q.names_match("luckin", "luckin coffee"))   # containing is not equal
+        self.assertEqual(q.names_match("breadtalk", "bread talk"), "NAME_FUZZY")
+        self.assertEqual(q.names_match("ps cafe", "pscafe"), "NAME_FUZZY")
+
+    def rows3(self, lic, tag, **kw):
+        return [R(lic, f"{tag} {i}", 3.0 + i, **kw) for i in range(3)]
+
+    def test_keys_follow_full_names_and_need_corroboration(self):
+        rows = (self.rows3("L_T1", "Bagel") + self.rows3("L_T2", "Bagel") + self.rows3("L_T3", "Bao")             # dish overlap corroborates T1+T2
+                + self.rows3("L_G1", "Soup", source="brand_official_site", url="https://songfa.example/a", ts="2026-11-08T18:01:00Z")
+                + self.rows3("L_G2", "Broth", source="brand_official_site", url="https://songfa.example/b", ts="2026-11-08T18:01:00Z")  # same host
+                + self.rows3("L_G3", "Noodle", source="brand_official_site", url="https://songkee.example/m", ts="2026-11-08T18:01:00Z")
+                + self.rows3("L_U1", "Kopi") + self.rows3("L_U2", "Teh"))                                        # equal names, nothing corroborates
+        self.go(rows)
+        km = self.keymap()
+        self.assertEqual({km[l]["brand_key"] for l in ("L_T1", "L_T2")}, {"two men bagel house"})
+        self.assertEqual(km["L_T3"]["brand_key"], "two bao shop")
+        self.assertEqual(km["L_G1"]["brand_key"], km["L_G2"]["brand_key"])
+        self.assertEqual(km["L_G1"]["brand_key"], "song fa bak kut teh")
+        self.assertIn("CORROB_URL", km["L_G1"]["evidence_codes"])
+        self.assertEqual(km["L_G3"]["brand_key"], "song kee noodles")
+        self.assertIn("SHARES_FIRST_WORD:song", km["L_G3"]["evidence_codes"])
+        self.assertEqual(km["L_G3"]["confidence"], "medium")
+        self.assertEqual(km["L_T1"]["normalised_core"], "two men bagel house")
+        self.assertNotEqual(km["L_U1"]["brand_key"], km["L_U2"]["brand_key"])        # equal names alone never merge
+        self.assertEqual((km["L_U1"]["confidence"], km["L_U2"]["confidence"]), ("low", "low"))
+        self.assertIn("NAME_EQUAL_UNCORROBORATED", km["L_U1"]["evidence_codes"])
+
+    def test_review_file_shows_old_key_split_and_competing_names(self):
+        self.go(self.rows3("L_T1", "Bagel") + self.rows3("L_T2", "Bagel") + self.rows3("L_T3", "Bao") + self.rows3("L_U1", "Kopi") + self.rows3("L_U2", "Teh"))
+        with open(self.out / "brand_review.csv", newline="", encoding="utf-8") as f:
+            review = list(csv.DictReader(f))
+        split = [r for r in review if r["case_type"] == "OLD_KEY_SPLIT" and r["old_key"] == "two"][0]
+        self.assertEqual(split["new_keys"], "two bao shop | two men bagel house")
+        self.assertIn("Two Bao Shop", split["master_name"])
+        low = {r["licence"]: r for r in review if r["case_type"] == "LICENCE_LOW"}
+        self.assertIn("Uncorr Kopi (Two)", low["L_U1"]["competing_names"])
+        report = json.loads((self.out / "report.json").read_text())["brand_identity"]
+        self.assertIn("two", [x["old_key"] for x in report["split_old_keys"]])
+        self.assertLess(report["old_keys_all"], report["new_keys_all"] + 1)
+        template = json.loads((self.out / "brand_overrides.template.json").read_text())
+        self.assertEqual((template["merge"], template["split"]), ([], []))
+        self.assertTrue(all(c["decision"] == "" for c in template["review_cases"]))
+        self.assertTrue(any(c["case_id"] == "split:two" for c in template["review_cases"]))
+
+    def test_overrides_honoured(self):
+        rows = self.rows3("L_U1", "Kopi") + self.rows3("L_U2", "Teh") + self.rows3("L_T1", "Bagel") + self.rows3("L_T2", "Bagel")
+        ov = self.tmp / "brand_overrides.json"
+        ov.write_text(json.dumps({"merge": [["L_U1", "uncorr kopi (two)"]], "split": [["L_T1", "TWO MEN BAGEL HOUSE (BEDOK*"]]}))
+        self.go(rows, "--brand-overrides", str(ov))
+        km = self.keymap()
+        self.assertEqual(km["L_U1"]["brand_key"], km["L_U2"]["brand_key"])
+        self.assertIn("OVERRIDE_MERGE", km["L_U1"]["evidence_codes"])
+        self.assertNotEqual(km["L_T1"]["brand_key"], km["L_T2"]["brand_key"])    # dish overlap would have merged them
+        self.assertIn("OVERRIDE_SPLIT", km["L_T1"]["evidence_codes"])
+        man = json.loads((self.out / "manifest.json").read_text())
+        self.assertEqual(man["inputs"]["brand_overrides"]["sha256"], hashlib.sha256(ov.read_bytes()).hexdigest())
+
+    def test_first_word_mode_keeps_legacy_keys(self):
+        self.go(self.rows3("L_T1", "Bagel") + self.rows3("L_T3", "Bao"), "--brand-identity", "first-word")
+        km = self.keymap()
+        self.assertEqual({km["L_T1"]["brand_key"], km["L_T3"]["brand_key"]}, {"two"})
+
+
+class SharedMenuExceptions(Env):
+    def setup_brand(self, extra=()):
+        brand_dishes = [(f"Dish {i}", 2.0 + i) for i in range(10)]
+        rows = [R(lic, n, p) for lic in ("L_A1", "L_A2") for n, p in brand_dishes]                 # same price at 2 outlets = brand baseline
+        a4 = [R("L_A4", n, 9.9 if n == "Dish 1" else p) for n, p in brand_dishes[:8]]              # own page: one price differs, 2 dishes absent
+        a4 += [R("L_A4", f"Special {i}", 4.0) for i in range(3)]                                   # items the brand menu lacks
+        a5 = [R("L_A5", f"Dish {i}", 2.0 + i) for i in range(5)]                                   # short page: not a full menu
+        self.go(rows + a4 + a5 + list(extra))
+        with open(self.out / "outlet_exceptions.jsonl", encoding="utf-8") as f:
+            return [json.loads(l) for l in f]
+
+    def test_exception_types_and_evidence(self):
+        exc = self.setup_brand()
+        by = lambda t: [e for e in exc if e["type"] == t]  # noqa: E731
+        diff = by("PRICE_DIFF")
+        self.assertEqual([(e["licence"], e["dish"], e["outlet_price"], e["baseline_price"]) for e in diff], [("L_A4", "Dish 1", 9.9, 3.0)])
+        self.assertEqual(sorted(e["dish"] for e in by("OUTLET_ONLY_ITEM")), [f"Special {i}" for i in range(3)])
+        nope = by("NOT_OFFERED_CANDIDATE")
+        self.assertEqual(sorted(e["dish"] for e in nope), [f"Dish {i}" for i in range(8, 10)])
+        self.assertTrue(all(e["confidence"] == "low" and e["auto_apply"] is False and e["outlet_price"] is None for e in nope))
+        self.assertEqual({e["licence"] for e in exc}, {"L_A4"})            # L_A5's short page never triggers NOT_OFFERED_CANDIDATE
+        for e in exc:
+            self.assertIs(e["verified"], False)
+            self.assertEqual(e["price_basis"], "unknown")
+            self.assertTrue(e["source_url"] and e["crawl_timestamp"])
+        stats = json.loads((self.out / "report.json").read_text())["outlet_exceptions"]
+        self.assertEqual(stats["by_type"], {"PRICE_DIFF": 1, "OUTLET_ONLY_ITEM": 3, "NOT_OFFERED_CANDIDATE": 2})
+
+    def test_no_exceptions_without_outlet_level_evidence(self):
+        t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z", url=A1URL)
+        self.go([R("L_A1", "Kopi", 1.5, **t18), R("L_A2", "Kopi", 2.5, **t18)], "--same-brand-url-policy", "sidecar")   # brand-level rows only
+        self.assertEqual((self.out / "outlet_exceptions.jsonl").read_text(), "")
+
+    def test_price_conflicts_file_lists_all_prices_and_picks_none(self):
+        t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z", url=A1URL)
+        self.go([R("L_A1", "Kopi", 1.5, **t18), R("L_A2", "Kopi", 1.5, **t18), R("L_A5", "Kopi", 2.5, **t18), R("L_A1", "Teh", 1.0, **t18)],
+                "--same-brand-url-policy", "sidecar")
+        with open(self.out / "brand_price_conflicts.csv", newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["brand"], rows[0]["dish"], rows[0]["prices_to_outlet_count"], rows[0]["spread"]), ("alpha cafe", "Kopi", "1.50->2 | 2.50->1", "1.00"))
+        self.assertEqual(rows[0]["status"], "needs outlet-level confirmation")
+        stats = json.loads((self.out / "report.json").read_text())["brand_price_conflicts"]
+        self.assertEqual((stats["rows"], stats["brands"]), (1, 1))
+
+    def test_resolution_labels_sources_and_warns(self):
+        self.setup_brand()
+        res = q.resolve_outlet(self.out, "L_A4")
+        self.assertIn("NOT verified", res["header"][0])
+        lines = {l["item_name"]: l for l in res["lines"]}
+        self.assertEqual((lines["Dish 1"]["source"], lines["Dish 1"]["price_sgd"], lines["Dish 1"]["price_status"]), ("outlet_exception", 9.9, "outlet_exception"))
+        self.assertEqual((lines["Dish 0"]["source"], lines["Dish 0"]["price_sgd"], lines["Dish 0"]["price_status"]), ("brand_shared", 2.0, "baseline"))
+        self.assertEqual(lines["Special 0"]["source"], "outlet_exception")
+        self.assertEqual(lines["Special 0"]["price_status"], "outlet_only")
+        self.assertIn("Dish 9", lines)                                            # NOT_OFFERED_CANDIDATE is never applied: dish still listed
+        self.assertTrue(lines["Dish 9"]["flags"] and lines["Dish 9"]["source"] == "brand_shared")
+        self.assertTrue(all(l["verified"] is False and l["price_basis"] == "unknown" for l in res["lines"]))
+        self.assertEqual(len(res["lines"]), 10 + 3)                               # 10 brand dishes + 3 outlet-only
+        other = {l["item_name"]: l for l in q.resolve_outlet(self.out, "L_A1")["lines"]}
+        self.assertEqual(other["Dish 1"]["source"], "brand_shared")               # another outlet does not inherit A4's exception
+        self.assertNotIn("Special 0", other)
+
+    def test_resolution_shows_conflicts_not_a_single_price(self):
+        t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z", url=A1URL)
+        self.go([R("L_A1", "Kopi", 1.5, **t18), R("L_A2", "Kopi", 2.5, **t18)], "--same-brand-url-policy", "sidecar")
+        line = q.resolve_outlet(self.out, "L_A1")["lines"][0]
+        self.assertEqual((line["source"], line["price_status"], line["price_sgd"], line["prices"]), ("brand_shared", "conflict", None, [1.5, 2.5]))
+        text = q.format_resolution(q.resolve_outlet(self.out, "L_A1"))
+        self.assertIn("WARNING", text)
+        self.assertIn("conflict 1.50/2.50", text)
+
+    def test_resolve_cli_is_read_only_and_rejects_unknown_licence(self):
+        self.setup_brand()
+        before = {p.name: p.read_bytes() for p in self.out.iterdir()}
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            self.assertEqual(q.main(["--resolve-outlet", "L_A4", "--out-dir", str(self.out)]), 0)
+        self.assertIn("brand_shared", buf.getvalue())
+        self.assertIn("outlet_exception", buf.getvalue())
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(q.main(["--resolve-outlet", "NOPE", "--out-dir", str(self.out)]), 2)
+        self.assertEqual(before, {p.name: p.read_bytes() for p in self.out.iterdir()})
+
+    def test_rerun_is_byte_identical_for_all_new_files(self):
+        self.setup_brand()
+        names = ("brand_key_map.csv", "brand_review.csv", "brand_overrides.template.json", "outlet_exceptions.jsonl", "brand_price_conflicts.csv",
+                 "brand_catalogue.jsonl", "brand_outlet_map.csv")
+        first = {n: (self.out / n).read_bytes() for n in names}
+        self.assertTrue(all(first[n] for n in ("brand_key_map.csv", "outlet_exceptions.jsonl", "brand_catalogue.jsonl")))
+        self.assertEqual(self.run_main()[0], 0)
+        self.assertEqual(first, {n: (self.out / n).read_bytes() for n in names})
+
+    def test_v2_writes_only_inside_its_subfolder(self):
+        self.out = self.tmp / "strict"
+        self.write_inputs([R("L_A1", "Kopi", 1.5), R("L_A2", "Kopi", 1.5)])
+        self.assertEqual(self.run_main()[0], 0)
+        before = {p.name: p.read_bytes() for p in self.out.iterdir() if p.is_file()}
+        self.out = self.tmp / "strict" / "sidecar_v2"
+        self.assertEqual(self.run_main("--same-brand-url-policy", "sidecar")[0], 0)
+        self.assertTrue((self.out / "outlet_exceptions.jsonl").exists())
+        self.assertEqual(before, {p.name: p.read_bytes() for p in (self.tmp / "strict").iterdir() if p.is_file()})
+        self.assertEqual(sorted(p.name for p in (self.tmp / "strict").iterdir() if p.is_dir()), ["sidecar_v2"])
+
+
+class OldKeyNameReview(Env):
+    def make_sidecar(self, rows, catalogue):
+        sd = self.tmp / "sidecar"
+        sd.mkdir()
+        with open(sd / "brand_outlet_map.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["licence", "outlet_name", "brand_key", "catalogue_row_count", "observed_rows"])
+            for lic, key in rows:
+                w.writerow([lic, "", key, 1, 1])
+        with open(sd / "brand_catalogue.jsonl", "w", encoding="utf-8") as f:
+            for rec in catalogue:
+                f.write(json.dumps(rec) + "\n")
+        return sd
+
+    def test_yes_needs_corroboration_never_names_alone(self):
+        MASTER_EXTRA = {"F1": ("Fun Toast (Raffles)", ""), "F2": ("FUN TOAST - Funan", ""), "F3": ("Fun Palace", ""), "F4": ("Fun Toast (Orchard)", ""),
+                        "F5": ("Fun Toast", "")}
+        with open(self.master_path, "a", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            for lic, (n, u) in MASTER_EXTRA.items():
+                w.writerow([n, "", lic, u, ""])
+        cat = lambda dish, lics, url: {"item_name": dish, "outlet_licences": lics, "source_url": url}  # noqa: E731
+        catalogue = ([cat(f"Toast {i}", ["F1", "F2"], "https://funtoast.example/menu") for i in range(4)]       # F1,F2 share host + dishes
+                     + [cat(f"Palace {i}", ["F3"], "https://funpalace.example/m") for i in range(3)]             # different name, no overlap
+                     + [cat("Lonely", ["F4"], "https://elsewhere.example/a"), cat("Other", ["F5"], "https://else.example/b")])  # equal names, no signal
+        sd = self.make_sidecar([(l, "fun") for l in ("F1", "F2", "F3", "F4", "F5")], catalogue)
+        out = self.tmp / "sidecar" / "brand_name_review_test.csv"
+        summary = q.run_old_key_review(sd, self.master_path, out)
+        with open(out, newline="", encoding="utf-8") as fh:
+            rows = {r["licence"]: r for r in csv.DictReader(fh)}
+        self.assertEqual(rows["F1"]["same_brand_as_key_anchor"], "yes")
+        self.assertIn("same source host", rows["F1"]["reason"])
+        self.assertIn("dish overlap 1.00", rows["F1"]["reason"])
+        self.assertEqual(rows["F2"]["same_brand_as_key_anchor"], "yes")
+        self.assertEqual(rows["F3"]["same_brand_as_key_anchor"], "no")
+        self.assertIn("shares only first word 'fun'", rows["F3"]["reason"])
+        for lic in ("F4", "F5"):                                              # equal core names, nothing corroborates: never "yes" on names alone
+            self.assertEqual(rows[lic]["same_brand_as_key_anchor"], "uncertain", lic)
+            self.assertIn("no corroborating signal", rows[lic]["reason"])
+            self.assertEqual(rows[lic]["needs_owner_review"], "TRUE")
+        self.assertEqual(rows["F1"]["first_word_key_flag"], "TRUE")            # 'fun' is generic and 2 core names sit under it
+        self.assertEqual(rows["F1"]["distinct_core_names_under_key"], "2")
+        self.assertEqual(rows["F3"]["suggested_new_brand_key"], "fun palace")
+        self.assertEqual(rows["F1"]["suggested_new_brand_key"], "fun toast")
+        self.assertEqual(summary["rows"], 5)
+
+    def test_new_file_only_never_overwrites(self):
+        sd = self.make_sidecar([("L_B1", "bravo")], [{"item_name": "x", "outlet_licences": ["L_B1"], "source_url": ""}])
+        existing = sd / "brand_name_review_2026-11-08.csv"
+        existing.write_text("keep me")
+        with self.assertRaises(q.QuarantineError):
+            q.run_old_key_review(sd, self.master_path, existing)
+        self.assertEqual(existing.read_text(), "keep me")
+        self.assertEqual(sorted(p.name for p in sd.iterdir() if p.name.startswith(".")), [])   # no temp files left behind
 
 
 class Helpers(unittest.TestCase):
