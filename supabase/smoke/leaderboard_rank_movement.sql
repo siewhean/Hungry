@@ -22,6 +22,16 @@ values
   ('00000000-0000-1108-a000-000000000002', 'Rank Steady', now() - interval '60 days')
 on conflict (id) do update set created_at = excluded.created_at;
 
+-- The steady diner already holds the first-tier achievements this smoke would otherwise pay them
+-- now (Posted, Weekly contender, Crowd favourite), so nothing puts them on this week's board.
+-- Without this, those points land this week and, on a quiet board, in the top ten.
+insert into achievement_unlocks (user_id, achievement_id, tier)
+values
+  ('00000000-0000-1108-a000-000000000002', 'posted', 1),
+  ('00000000-0000-1108-a000-000000000002', 'weekly-contender', 1),
+  ('00000000-0000-1108-a000-000000000002', 'crowd-favourite', 1)
+on conflict do nothing;
+
 select set_config(
   'smoke.last_week',
   (date_trunc('week', now() at time zone 'Asia/Singapore') - interval '7 days')::date::text,
@@ -77,6 +87,11 @@ begin
       where recipient_id = '00000000-0000-1108-a000-000000000001'
         and event_type = 'board_top_ten') <> 1 then
     raise exception 'the climber gets one top ten row, however often the board refreshes';
+  end if;
+  if exists (select 1 from leaderboard_standings
+      where board = 'active' and period = 'week'
+        and user_id = '00000000-0000-1108-a000-000000000002' and score > 0) then
+    raise exception 'the steady diner earned nothing this week, so is off this week''s board';
   end if;
   if exists (select 1 from activity_events
       where recipient_id = '00000000-0000-1108-a000-000000000002'
