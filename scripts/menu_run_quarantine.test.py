@@ -498,6 +498,73 @@ class Safety(Env):
         self.assertIn("!!! MISMATCH menus.rows", out)
 
 
+class BrandCatalogueTests(Env):
+    def cat(self):
+        p = self.out / "brand_catalogue.jsonl"
+        return [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines()]
+
+    def test_catalogue_dedupes_across_outlets_and_counts_outlets(self):
+        t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z", url=A1URL)
+        self.go([R("L_A1", "Kopi", 1.5, **t18), R("L_A2", "kopi ", 1.5, **t18), R("L_A1", "Kopi", 1.5, **t18), R("L_A1", "Teh", 1.5, **t18),
+                 R("L_A2", "Teh", 2.0, **t18), R("L_A1", "Solo", 3.0, **t18)], "--same-brand-url-policy", "sidecar")
+        rows = {(r["item_name"].strip().lower(), r["price_sgd"]): r for r in self.cat()}
+        kopi = rows[("kopi", 1.5)]
+        self.assertEqual((kopi["brand"], kopi["outlet_licences"], kopi["outlet_count"]), ("alpha", ["L_A1", "L_A2"], 2))
+        self.assertEqual(kopi["catalogue_scope"], "brand")
+        self.assertIs(kopi["verified"], False)
+        self.assertEqual(kopi["price_basis"], "unknown")
+        self.assertTrue(kopi["source_url"] and kopi["crawl_timestamp"])
+        self.assertEqual(len([r for r in self.cat() if r["item_name"] == "Kopi"]), 1)   # one row per brand+dish+price
+        self.assertEqual(rows[("teh", 1.5)]["outlet_licences"], ["L_A1"])
+        self.assertEqual(rows[("teh", 2.0)]["outlet_licences"], ["L_A2"])              # different price = different row
+        self.assertEqual(rows[("solo", 3.0)]["outlet_count"], 1)
+        stats = json.loads((self.out / "report.json").read_text())["brand_catalogue"]
+        self.assertEqual((stats["rows"], stats["brands"], stats["brands_with_price_conflicts"]), (4, 1, 1))
+        self.assertEqual(stats["top_brands_by_outlet_count"][0], {"brand": "alpha", "outlet_count": 2, "rows": 4})
+        self.assertIn("by brand key only", (self.out / "report.md").read_text())
+
+    def test_outlet_map_lookup_by_brand_key(self):
+        self.go([R("L_A1", "Kopi", 1.5), R("L_A2", "Kopi", 1.5), R("L_A1", "Teh", 1.5), R("L_A2", "Teh", 1.5)])  # rule-2 copies (same price)
+        with open(self.out / "brand_outlet_map.csv", newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual([(r["licence"], r["outlet_name"], r["brand_key"], r["catalogue_row_count"]) for r in rows],
+                         [("L_A1", "Alpha Cafe (Bedok)", "alpha", "2"), ("L_A2", "Alpha Cafe (Tampines)", "alpha", "2")])
+
+    def test_wrong_host_quarantined_and_review_rows_never_reach_catalogue(self):
+        t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z")
+        rows = self.go([R("L_B1", "Wrong", 2.0, url="https://linktr.ee/b", **t18), R("L_E1", "Wrong", 2.0, url="https://cdn.shopify.com/m.pdf", **t18),
+                        R("L_F1", "Good", 2.0, url="https://ffff.example/m", **t18), R("L_N1", "Xwalk", 2.0, url="https://nnnn.example/m", **t18)],
+                       crosswalk=["L_N1"])
+        self.assertEqual(self.find(rows, item_name="Wrong", stall_licence_no="L_B1")["bucket"], "RE-SOURCE")
+        self.assertEqual(self.find(rows, item_name="Wrong", stall_licence_no="L_E1")["bucket"], "RE-SOURCE")
+        self.assertEqual([r["item_name"] for r in self.cat()], ["Good"])
+        with open(self.out / "brand_outlet_map.csv", newline="", encoding="utf-8") as f:
+            self.assertEqual([r["licence"] for r in csv.DictReader(f)], ["L_F1"])
+
+    def test_catalogue_priceless_brand_counted(self):
+        t18 = dict(source="brand_official_site", ts="2026-11-08T18:01:00Z")
+        self.go([R("L_F1", f"f{i}", None, url="https://ffff.example/m", **t18) for i in range(2)] + [R("L_F1", "f9", 4.0, url="https://ffff.example/m", **t18)])
+        self.assertEqual(json.loads((self.out / "report.json").read_text())["brand_catalogue"]["brands_mostly_priceless"], 1)
+
+    def test_catalogue_files_are_idempotent(self):
+        self.write_inputs([R("L_A1", "Kopi", 1.5), R("L_A2", "Kopi", 1.5)])
+        self.assertEqual(self.run_main()[0], 0)
+        first = {n: (self.out / n).read_bytes() for n in ("brand_catalogue.jsonl", "brand_outlet_map.csv")}
+        self.assertTrue(all(first.values()))
+        self.assertEqual(self.run_main()[0], 0)
+        self.assertEqual(first, {n: (self.out / n).read_bytes() for n in first})
+
+    def test_output_in_subfolder_of_existing_output_dir(self):
+        self.out = self.tmp / "strict"
+        self.write_inputs([R("L_A1", "Kopi", 1.5), R("L_A2", "Kopi", 1.5)])
+        self.assertEqual(self.run_main()[0], 0)
+        before = {p.name: p.read_bytes() for p in self.out.iterdir() if p.is_file()}
+        self.out = self.tmp / "strict" / "sidecar"
+        self.assertEqual(self.run_main("--same-brand-url-policy", "sidecar")[0], 0)
+        self.assertTrue((self.out / "brand_catalogue.jsonl").exists())
+        self.assertEqual(before, {p.name: p.read_bytes() for p in (self.tmp / "strict").iterdir() if p.is_file()})
+
+
 class Helpers(unittest.TestCase):
     def test_brand_key(self):
         self.assertEqual(q.brand_key("% Arabica"), "arabica")

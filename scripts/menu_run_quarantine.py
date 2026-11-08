@@ -20,6 +20,7 @@ import argparse
 import csv
 import hashlib
 import html
+import io
 import json
 import math
 import os
@@ -669,6 +670,85 @@ def top_licences(counter: Counter) -> list:
     return [[k, v] for k, v in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))[:TOP_N]]
 
 
+class BrandCatalogue:
+    """One row per brand + normalised dish name + price, built from DOWNGRADE rows only (after hygiene).
+
+    Rows are never attached to outlets: outlet_licences only records where the dish was observed. Wrong-host,
+    quarantined and re-source rows never reach it because only the DOWNGRADE bucket feeds it."""
+
+    def __init__(self):
+        self.rows: dict = {}
+
+    def add(self, it: Item, out: dict) -> None:
+        nn = mm.norm_name(out.get("item_name"))
+        if not nn:
+            return
+        brand = it.brand or "(unknown)"
+        key = (brand, nn, price_key(it.price))
+        rec = self.rows.get(key)
+        if rec is None:
+            rec = self.rows[key] = {
+                "brand": brand, "brand_display_name": it.name, "item_name": out.get("item_name"), "category": out.get("category"),
+                "price_sgd": out.get("price_sgd"), "description": out.get("description"), "image_url": out.get("image_url"),
+                "source_url": out.get("source_url"), "source": out.get("source"), "source_type": out.get("source_type"),
+                "catalogue_scope": "brand", "verified": False, "price_basis": "unknown", "crawl_timestamp": out.get("crawl_timestamp"),
+                "outlet_licences": set(),
+            }
+            for flag in ("price_review", "image_thumbnail", "timestamp_tz_missing"):
+                if out.get(flag):
+                    rec[flag] = True
+        else:
+            ts, new = str(rec.get("crawl_timestamp") or ""), str(out.get("crawl_timestamp") or "")
+            if new > ts:
+                rec["crawl_timestamp"] = out.get("crawl_timestamp")
+        rec["outlet_licences"].update(it.parts)
+
+    def records(self) -> list:
+        out = []
+        for key in sorted(self.rows):
+            rec = dict(self.rows[key])
+            rec["outlet_licences"] = sorted(rec["outlet_licences"])
+            rec["outlet_count"] = len(rec["outlet_licences"])
+            out.append(rec)
+        return out
+
+    def outlet_map(self, ctx: Ctx, records: list) -> list:
+        brand_rows, observed = Counter(), Counter()
+        for r in records:
+            brand_rows[r["brand"]] += 1
+            for lic in r["outlet_licences"]:
+                observed[(lic, r["brand"])] += 1
+        return [{"licence": lic, "outlet_name": ctx.master_names.get(lic, ""), "brand_key": brand,
+                 "catalogue_row_count": brand_rows[brand], "observed_rows": n} for (lic, brand), n in sorted(observed.items(), key=lambda kv: (kv[0][1], kv[0][0]))]
+
+    def stats(self, records: list) -> dict:
+        per_brand: dict = defaultdict(lambda: {"rows": 0, "outlets": set(), "null": 0, "prices": defaultdict(set)})
+        for r in records:
+            b = per_brand[r["brand"]]
+            b["rows"] += 1
+            b["outlets"].update(r["outlet_licences"])
+            if r["price_sgd"] is None:
+                b["null"] += 1
+            else:
+                b["prices"][mm.norm_name(r["item_name"])].add(price_key(price_of(r)))
+        top = sorted(((len(b["outlets"]), b["rows"], k) for k, b in per_brand.items()), key=lambda t: (-t[0], t[2]))[:TOP_N]
+        return {
+            "rows": len(records), "brands": len(per_brand),
+            "outlet_licences": len({lic for b in per_brand.values() for lic in b["outlets"]}),
+            "top_brands_by_outlet_count": [{"brand": k, "outlet_count": n, "rows": rows} for n, rows, k in top],
+            "brands_with_price_conflicts": sum(1 for b in per_brand.values() if any(len(v) > 1 for v in b["prices"].values())),
+            "brands_mostly_priceless": sum(1 for b in per_brand.values() if b["null"] * 2 > b["rows"]),
+        }
+
+
+def outlet_map_csv(rows: list) -> str:
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=["licence", "outlet_name", "brand_key", "catalogue_row_count", "observed_rows"], lineterminator="\n")
+    w.writeheader()
+    w.writerows(rows)
+    return buf.getvalue()
+
+
 def run(args, free_fn: Callable) -> tuple:
     """Return (exit_code, report dict, files-to-write dict or None, errors list)."""
     d = Path(args.input_dir)
@@ -763,6 +843,7 @@ def run(args, free_fn: Callable) -> tuple:
     fix_counts, flag_counts = Counter(), Counter()
     notes_counts = Counter()
     seen: dict = defaultdict(set)
+    catalogue = BrandCatalogue()
     unrelated_note = Counter()
     run_id = uuid.uuid4().hex
     try:
@@ -799,6 +880,8 @@ def run(args, free_fn: Callable) -> tuple:
             base_fields(out, fixes)
             if bucket in ("KEEP_CONDITIONAL", "DOWNGRADE"):
                 hygiene(out, bucket, fixes)
+                if bucket == "DOWNGRADE":
+                    catalogue.add(it, out)
                 nn = mm.norm_name(out.get("item_name"))
                 if nn:
                     dk = (it.entity, nn, price_key(it.price))
@@ -830,12 +913,18 @@ def run(args, free_fn: Callable) -> tuple:
             "Q_NO_LICENCE.not_in_master_rows_unsplit": stats["raw_cell_not_in_master_rows"],
             "D_BRAND_COPY.brand_site_18h_rows": audit_extra["brand_site_18h_rows"],
         }
+        cat_records = catalogue.records()
+        cat_map = catalogue.outlet_map(ctx, cat_records)
+        cat_stats = {**catalogue.stats(cat_records), "outlet_map_rows": len(cat_map)}
         comparison = [{"key": k, "expected": exp, "actual": actual.get(k), "match": actual.get(k) == exp, "what": what}
                       for k, exp, what in EXPECTED if k in actual]
         notes = [
             "Legacy (DD-MM-YYYY) rows are not bucketed; only Q_NO_LICENCE is applied to them. They are counted below.",
             "Q_NO_LICENCE not-in-master is counted after splitting multi-licence cells on ';' as instructed. "
             f"Counting the raw cell without splitting gives {stats['raw_cell_not_in_master_rows']}.",
+            "Each outlet licence maps to its brand catalogue by brand key only (see brand_outlet_map.csv). Catalogue rows are brand-level, "
+            "are not copied onto outlets and must not be shown as outlet menus. Only DOWNGRADE rows feed the catalogue: wrong-host, "
+            "quarantined and re-source rows never do.",
             "Q_URL_NOT_OWN_MASTER_URL is an added code: KEEP_CONDITIONAL requires source_url to be the licence's own master Menu URL.",
             f"R_NO_PRICE_BRAND needs >= {MIN_NULL_PRICE_ROWS} rows on the licence; Q_SHARED_DISH_SET_UNRELATED needs >= {MIN_SHARED_SET} dishes in the set.",
         ]
@@ -865,6 +954,7 @@ def run(args, free_fn: Callable) -> tuple:
             "expected_vs_actual": comparison,
             "mismatches": [c for c in comparison if not c["match"]],
             "notes": notes,
+            "brand_catalogue": cat_stats,
         }
 
         files = None
@@ -882,6 +972,8 @@ def run(args, free_fn: Callable) -> tuple:
             staged.put_text("report.md", report_markdown(report))
             staged.put_text("manifest.json", json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
             staged.put_text("errors.jsonl", "".join(json.dumps(e, ensure_ascii=False, sort_keys=True) + "\n" for e in errors.entries))
+            staged.put_text("brand_catalogue.jsonl", "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in cat_records))
+            staged.put_text("brand_outlet_map.csv", outlet_map_csv(cat_map))
             staged.put_copy("quarantined_crosswalk_menu_urls.csv", paths["crosswalk"])
             files = {"run_id": run_id}
             staged.commit()
@@ -914,6 +1006,12 @@ def report_markdown(r: dict) -> str:
         L.append(f"| {c['key']} | {c['expected']} | {c['actual']} | {'ok' if c['match'] else '**MISMATCH**'} |")
     if r["mismatches"]:
         L += ["", "**MISMATCHES: " + ", ".join(m["key"] for m in r["mismatches"]) + "**"]
+    bc = r["brand_catalogue"]
+    L += ["", "## Brand catalogue (DOWNGRADE rows only; brand level, not outlet menus)", "",
+          f"- rows: {bc['rows']}; brands: {bc['brands']}; outlet licences observed: {bc['outlet_licences']}; brand_outlet_map.csv rows: {bc['outlet_map_rows']}",
+          f"- brands with the same dish at different prices: {bc['brands_with_price_conflicts']}; brands whose catalogue is mostly priceless: {bc['brands_mostly_priceless']}",
+          "- top brands by outlet_count: " + (", ".join(f"{b['brand']} ({b['outlet_count']} outlets, {b['rows']} rows)" for b in bc["top_brands_by_outlet_count"]) or "none"),
+          "- Each outlet licence maps to its brand catalogue by brand key only (brand_outlet_map.csv); catalogue rows are not copied onto outlets."]
     L += ["", "## Legacy slice (not bucketed)", ""] + [f"- {k}: {v}" for k, v in r["legacy_slice"].items()]
     L += ["", "## Interplay and fixes", ""] + [f"- {k}: {v}" for k, v in r["interplay"].items()]
     L += [f"- fixes: {json.dumps(r['fix_counts'], sort_keys=True)}", f"- flags: {json.dumps(r['flag_counts'], sort_keys=True)}"]
