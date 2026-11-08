@@ -23,6 +23,7 @@ import { useHungryTheme } from "@/theme";
 import type { Review, ReviewStats } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
@@ -364,6 +365,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             }
             ctaLabel={remoteLoadFailed ? "Retry" : "Write a review"}
             onPress={remoteLoadFailed ? () => setReloadKey((key) => key + 1) : openReviewFlow}
+            icon={
+              remoteLoadFailed ? undefined : (
+                <ReviewBubblesIllustration testID="review-history-empty-art" />
+              )
+            }
           />
         )}
       </ProfileScreenShell>

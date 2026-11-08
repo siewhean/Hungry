@@ -14,6 +14,7 @@ import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { MapPinBowlIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "FollowedStalls">;
 
@@ -126,6 +127,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
           <EmptyState
             title="No followed stalls yet"
             body="Tap Follow on a stall page to hear about its menu changes."
+            icon={<MapPinBowlIllustration testID="followed-stalls-empty-art" />}
           />
         )}
       </View>

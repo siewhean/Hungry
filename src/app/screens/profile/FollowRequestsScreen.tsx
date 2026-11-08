@@ -12,6 +12,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { FollowersEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FollowRequests">;
 
@@ -258,14 +259,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
         <EmptyState
           title="No follow requests"
           body="When someone asks to follow your private account, they'll show up here."
-          icon={
-            <AppSymbol
-              name="followRequests"
-              size={36}
-              weight="regular"
-              color={palette.textSecondary}
-            />
-          }
+          icon={<FollowersEmptyIllustration testID="follow-requests-empty-art" />}
         />
       )}
     </ProfileScreenShell>
