@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { FollowPillButton } from "@/components/social/FollowPillButton";
-import { AppText, Avatar, ListRow } from "@/components/ui";
+import { AppText, Avatar, Button, ListRow } from "@/components/ui";
 import { useFollowPress } from "@/features/profile/useFollowPress";
 import { followButtonLabel, suggestionReason } from "@/features/social/relationship";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -74,11 +74,17 @@ export function PeopleSuggestionsSection({
   excludeUserIds,
   onOpen,
   title = "People with your taste",
+  max = PEOPLE_SUGGESTIONS_LIMIT,
+  onSeeAll,
 }: {
   /** People already on the screen (your follows), left out of the suggestions. */
   excludeUserIds?: ReadonlySet<string>;
   onOpen: (suggestion: PeopleSuggestion) => void;
   title?: string;
+  /** Rows shown; the rest wait behind See all. */
+  max?: number;
+  /** Shown when more people are suggested than `max`: opens the People screen. */
+  onSeeAll?: () => void;
 }) {
   const { spacing } = useHungryTheme();
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
@@ -103,7 +109,8 @@ export function PeopleSuggestionsSection({
     };
   }, [isAuthenticated]);
 
-  const visible = suggestions.filter((suggestion) => !excludeUserIds?.has(suggestion.userId));
+  const matching = suggestions.filter((suggestion) => !excludeUserIds?.has(suggestion.userId));
+  const visible = matching.slice(0, max);
   if (visible.length === 0) return null;
 
   return (
@@ -122,6 +129,17 @@ export function PeopleSuggestionsSection({
           }}
         />
       ))}
+      {onSeeAll && matching.length > visible.length ? (
+        <Button
+          label="See all"
+          variant="ghost"
+          size="sm"
+          fullWidth={false}
+          accessibilityLabel={`See all ${title}`}
+          onPress={onSeeAll}
+          style={{ alignSelf: "flex-start" }}
+        />
+      ) : null}
     </View>
   );
 }

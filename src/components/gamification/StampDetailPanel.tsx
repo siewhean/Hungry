@@ -7,6 +7,7 @@ import {
   StampStar,
 } from "@/components/gamification/PassportStampArt";
 import { AppText } from "@/components/ui/AppText";
+import { Button } from "@/components/ui/Button";
 import { formatStampDate, type StampHistory } from "@/features/passport/stampHistory";
 import { useHungryTheme } from "@/theme";
 import type { PassportCategory } from "@/types/domain";
@@ -20,6 +21,10 @@ interface StampDetailPanelProps {
   history: StampHistory;
   onOpenStall: (stallId: string) => void;
   onClose: () => void;
+  /** Find more stalls of this kind (Search, filtered to the trail's food). */
+  onFindMore?: () => void;
+  /** Post a dish from this trail to the Food Portfolio. */
+  onPostDish?: () => void;
 }
 
 /** The short name of a level: "Hawker Food Explorer: Return visit" reads as "Return visit". */
@@ -36,6 +41,8 @@ export function StampDetailPanel({
   history,
   onOpenStall,
   onClose,
+  onFindMore,
+  onPostDish,
 }: StampDetailPanelProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const ink = getStampLook(category.id).ink(palette);
@@ -186,6 +193,33 @@ export function StampDetailPanel({
           {category.description}
         </AppText>
       )}
+
+      {onFindMore || onPostDish ? (
+        <View
+          testID="stamp-detail-actions"
+          style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+        >
+          {onFindMore ? (
+            <Button
+              label="Find more stalls"
+              size="sm"
+              variant="secondary"
+              fullWidth={false}
+              accessibilityLabel={`Find more ${category.name} stalls`}
+              onPress={onFindMore}
+            />
+          ) : null}
+          {onPostDish ? (
+            <Button
+              label="Post a dish"
+              size="sm"
+              variant="secondary"
+              fullWidth={false}
+              onPress={onPostDish}
+            />
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -625,6 +625,26 @@ function ProfileConnectionsScreen({ navigation }: Props) {
           }
         />
       ) : null}
+      {isOwnProfile && isAuthenticated && !isLoadingConnections ? (
+        <Pressable
+          testID="people-visibility-link"
+          accessibilityRole="link"
+          accessibilityLabel="Who can see your profile. Opens Settings"
+          onPress={() => rootNavigation.navigate("Settings")}
+          style={{
+            alignItems: "center",
+            alignSelf: "flex-start",
+            flexDirection: "row",
+            gap: spacing[1],
+            minHeight: 44,
+          }}
+        >
+          <AppSymbol name="profilePrivate" size={14} color={palette.textSecondary} />
+          <AppText variant="bodySmall" tone="secondary">
+            Who can see your profile
+          </AppText>
+        </Pressable>
+      ) : null}
     </View>
   );
 

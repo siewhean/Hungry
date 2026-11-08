@@ -568,6 +568,21 @@ export function PassportScreen({ navigation }: Props) {
                 setOpenStampCategoryId(null);
                 navigation.navigate("StallDetail", { venueId });
               }}
+              onFindMore={() => {
+                setOpenStampCategoryId(null);
+                navigation.navigate("SearchResults", {
+                  browseMode: "stalls",
+                  initialQuery: openCategory.matchTag,
+                });
+              }}
+              onPostDish={
+                FEATURE_FLAGS.foodPortfolioEnabled
+                  ? () => {
+                      setOpenStampCategoryId(null);
+                      navigation.navigate("Post");
+                    }
+                  : undefined
+              }
             />
           ) : null}
         </InfoPopup>

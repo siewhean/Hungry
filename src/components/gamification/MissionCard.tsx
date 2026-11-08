@@ -8,14 +8,17 @@ import { CircleCheck } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { AppText } from "@/components/ui/AppText";
+import { Button } from "@/components/ui/Button";
 import type { UserMissionProgress, WeeklyMission } from "@/types/domain";
 
 interface MissionCardProps {
   mission: WeeklyMission;
   progress: UserMissionProgress | null;
+  /** A button under an unfinished mission that opens where it can be done. */
+  start?: { label: string; onPress: () => void };
 }
 
-export function MissionCard({ mission, progress }: MissionCardProps) {
+export function MissionCard({ mission, progress, start }: MissionCardProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
 
   const current = progress?.currentCount ?? 0;
@@ -84,6 +87,19 @@ export function MissionCard({ mission, progress }: MissionCardProps) {
           </View>
         </View>
       )}
+
+      {!isComplete && start ? (
+        <Button
+          label={start.label}
+          size="sm"
+          variant="secondary"
+          fullWidth={false}
+          accessibilityLabel={`${start.label} for ${mission.title}`}
+          onPress={start.onPress}
+          style={{ alignSelf: "flex-start" }}
+          testID={`mission-start-${mission.id}`}
+        />
+      ) : null}
 
       {isComplete && (
         <AppText variant="micro" style={{ color: palette.success, fontWeight: "700" }}>
