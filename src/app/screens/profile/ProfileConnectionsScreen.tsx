@@ -7,6 +7,10 @@ import { AppSymbol, AppText, Avatar, Button, EmptyState, Input, ListRow } from "
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { FollowPillButton } from "@/components/social/FollowPillButton";
 import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
+import {
+  FollowersEmptyIllustration,
+  FollowingEmptyIllustration,
+} from "@/components/icons/food/SocialIllustrations";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { useFollowPress } from "@/features/profile/useFollowPress";
 import { tasteMatchLabel } from "@/features/social/relationship";
@@ -439,12 +443,18 @@ function ProfileConnectionsScreen({ navigation }: Props) {
       title={emptyTitle}
       body={emptyBody}
       icon={
-        <AppSymbol
-          name={listsHidden ? "profilePrivate" : "people"}
-          size={36}
-          weight="regular"
-          color={palette.textSecondary}
-        />
+        listsHidden || normalizedQuery ? (
+          <AppSymbol
+            name={listsHidden ? "profilePrivate" : "search"}
+            size={36}
+            weight="regular"
+            color={palette.textSecondary}
+          />
+        ) : isFollowingTab ? (
+          <FollowingEmptyIllustration testID="connections-empty-following-art" />
+        ) : (
+          <FollowersEmptyIllustration testID="connections-empty-followers-art" />
+        )
       }
     />
   );

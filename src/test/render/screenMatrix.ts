@@ -612,13 +612,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "FollowingFeedScreen",
     file: "src/app/screens/profile/FollowingFeedScreen.tsx",
     scenario: "user",
-    expect: /New dishes from people you follow/,
+    expect: /Following/,
   },
   {
     name: "LeaderboardScreen",
     file: "src/app/screens/profile/LeaderboardScreen.tsx",
     scenario: "user",
-    expect: /Post dishes to climb/,
+    expect: /How points work/,
   },
   {
     name: "TastePaletteScreen",

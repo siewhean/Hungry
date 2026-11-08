@@ -241,11 +241,9 @@ test("G8 edit profile: display name is capped and the photo can be removed", () 
   );
 });
 
-test("G8 missions: the data disclosure is a footnote, not part of the subtitle", () => {
+test("G8 missions: the data disclosure is a footnote, and the header has no description", () => {
   const missions = read("src/app/screens/profile/MissionsScreen.tsx");
-  assert.match(
-    missions,
-    /subtitle=\{`\$\{completedCount\}\/\$\{missions\.length\} completed · \$\{weekLabel\}`\}/,
-  );
+  assert.match(missions, /<ProfileScreenShell title="Weekly missions">/);
+  assert.match(missions, /label=\{`\$\{completedCount\}\/\$\{missions\.length\} completed`\}/);
   assert.match(missions, /testID="missions-disclosure"/);
 });

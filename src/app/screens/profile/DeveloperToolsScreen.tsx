@@ -137,7 +137,6 @@ export function DeveloperToolsScreen() {
   return (
     <ProfileScreenShell
       title="Developer tools"
-      subtitle="Hidden from everyone else. Changes stay on this phone."
       testID="developer-tools-screen"
     >
       <SettingsSection

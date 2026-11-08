@@ -9,7 +9,7 @@ import { View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState } from "@/components/ui";
+import { AppText, Badge, EmptyState } from "@/components/ui";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { MissionCard } from "@/components/gamification/MissionCard";
 import { useMissionStore } from "@/store/useMissionStore";
@@ -47,10 +47,16 @@ export function MissionsScreen({ navigation: _nav }: Props) {
   })();
 
   return (
-    <ProfileScreenShell
-      title="Weekly missions"
-      subtitle={`${completedCount}/${missions.length} completed · ${weekLabel}`}
-    >
+    <ProfileScreenShell title="Weekly missions">
+      {missions.length > 0 ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          <Badge
+            label={`${completedCount}/${missions.length} completed`}
+            tone={completedCount === missions.length ? "success" : "neutral"}
+          />
+          <Badge label={weekLabel} />
+        </View>
+      ) : null}
       {missions.length === 0 ? (
         <EmptyState title="No missions this week" body="Check back on Monday for new missions." />
       ) : (

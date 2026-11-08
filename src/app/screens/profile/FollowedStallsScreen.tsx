@@ -65,10 +65,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell
-      title="Followed stalls"
-      subtitle="We'll let you know when a stall updates its menu on Hungry."
-    >
+    <ProfileScreenShell title="Followed stalls">
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {venues.length ? (
           <>

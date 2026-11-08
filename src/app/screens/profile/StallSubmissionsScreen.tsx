@@ -27,7 +27,7 @@ export function StallSubmissionsScreen({ navigation }: Props) {
   const { failed: loadFailed, retry } = useRetryableLoad(loadSubmissions, "stall submissions");
 
   return (
-    <ProfileScreenShell title="My submissions" subtitle="Stalls you've added, and what happened.">
+    <ProfileScreenShell title="My submissions">
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {submissions.length ? (
           <>

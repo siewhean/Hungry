@@ -176,7 +176,7 @@ export function LeaderboardScreen({ navigation }: Props) {
   } as const;
 
   return (
-    <ProfileScreenShell title="Leaderboard" subtitle="Post dishes to climb. Weeks start on Monday.">
+    <ProfileScreenShell title="Leaderboard">
       <View style={{ gap: spacing[4], paddingBottom: spacing[8] }}>
         {summary ? (
           <View testID="leaderboard-summary" style={cardStyle}>
