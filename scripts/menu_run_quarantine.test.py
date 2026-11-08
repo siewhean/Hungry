@@ -1065,6 +1065,9 @@ class OverridesApplied(Env):
         self.assertIn("n/a (no dish rows)", text)
         self.assertIn("brand_catalogue_overrides_applied.jsonl", text)
         self.assertIn("kopitiam with a Subway counter", text)
+        self.assertIn("Where each outlet's dish rows went", text)
+        self.assertRegex(text, r"- L_M1: .*(DOWNGRADE|QUARANTINE|KEEP_CONDITIONAL)")
+        self.assertIn("2 of 4 licences have dish rows", text)
         # a second --overrides-only run (new folder content removed) must still refuse to replace the markdown
         for p in self.out.glob("*overrides_applied*"):
             p.unlink()
