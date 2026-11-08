@@ -1656,9 +1656,9 @@ def review_markdown(identity: BrandIdentity, display_rows: list, key_rows: list,
     for name, sec, members, with_rows, meta in sections:
         pts = [f"- **{name}**: merged by owner decision with `owner_checked=false` (\"most likely the same brand\")."]
         nog = [m for m in members if not disp[m]["google_name_available"] == "true"]
-        pts.append(f"- **{name}**: {len(members) - len(nog)} of {len(members)} outlets have a Google name offline; {len(nog)} fall back to the master address for the location.")
+        pts.append(f"- **{name}**: {len(members) - len(nog)} of {len(members)} outlets have a Google name offline; {len(nog)} use the master address for the location (not Google).")
         pts.append(f"- **{name}**: {len(members) - len(with_rows)} of {len(members)} licences have no dish rows; they inherit the brand catalogue only.")
-        bcore = identity.infos[members[0]].core
+        bcore = identity.keys[members[0]].split("~")[0]
         toks = [t for t in bcore.split() if len(t) >= 3 and t not in STOP_TOKENS]
         mentions = lambda u: (not toks) or any(t in str(u).lower().replace("-", " ") for t in toks)  # noqa: E731
         bad_url = [m for m in members if master_urls.get(m) and not mentions(master_urls[m])]
