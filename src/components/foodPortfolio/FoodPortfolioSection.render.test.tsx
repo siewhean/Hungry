@@ -19,6 +19,7 @@ import {
   renderScreen,
   type FakeNavigation,
 } from "@/test/render";
+import { resetWeeklyRanks } from "@/features/leaderboard/boardRanks";
 import { enterScenario } from "@/test/render/sessions";
 
 const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
@@ -91,11 +92,17 @@ function stubPortfolio({
     calls.pins.push(ids);
     return ids;
   });
+  // Mei is 7th on this week's board; your own summary has no rank yet.
+  stub(service.leaderboard, "getLeaderboard", async () => [
+    { rank: 7, userId: OWNER, displayName: "Mei", score: 40, isMe: false },
+  ]);
+  stub(service.leaderboard, "getMySummary", async () => null);
   return calls;
 }
 
 beforeEach(async () => {
   await enterScenario("user");
+  resetWeeklyRanks();
   flags.foodPortfolioEnabled = true;
   flags.activityEnabled = true;
   flags.followConnectionsEnabled = true;
@@ -120,7 +127,12 @@ test("another person's portfolio: top three, dish grid, stalls tab, taps open th
     }),
   );
   assert.ok(view.findByText("Food Portfolio"));
-  assert.equal(view.findByTestId("food-portfolio-count")?.textContent, "4 dishes");
+  // Dishes, Stalls and Rank sit under the header; Rank opens the Leaderboard.
+  assert.ok(view.findByLabel("Dishes 4"));
+  assert.ok(view.findByLabel("Stalls 2"));
+  await view.press(view.findByLabel("Rank #7"));
+  assert.deepEqual(lastNavigate(navigation), ["Leaderboard"]);
+  assert.equal(view.findByTestId("food-portfolio-top-empty-2"), null, "no slots to fill on theirs");
   assert.ok(view.findByTestId("food-portfolio-top-three"));
   assert.ok(view.findByTestId("food-portfolio-top-b"), "the pinned dish leads the top three");
   assert.equal(view.findByText("Post a dish"), null, "no posting on someone else's portfolio");
@@ -148,8 +160,15 @@ test("your own portfolio: Post a dish opens the composer and Edit top three save
       navigation,
     }),
   );
-  await view.press(view.findByText("Post a dish"));
+  await view.press(view.findByTestId("food-portfolio-post"));
   assert.deepEqual(lastNavigate(navigation), ["Post"]);
+  // Not on the board yet: the Rank stat shows a dash.
+  assert.ok(view.findByLabel("Rank, unavailable"));
+
+  // Two of three picked: the third slot is a dotted tile that starts picking.
+  await view.press(view.findByTestId("food-portfolio-top-empty-2"));
+  assert.ok(view.findByTestId("food-portfolio-pin-bar"));
+  await view.press(view.findByText("Cancel"));
 
   await view.press(view.findByLabel("Edit top three"));
   assert.ok(view.findByTestId("food-portfolio-pin-bar"));

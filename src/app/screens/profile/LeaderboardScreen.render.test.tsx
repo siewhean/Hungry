@@ -160,7 +160,7 @@ test("your own row is not tappable and not pinned twice", async () => {
   assert.equal(view.findByTestId("leaderboard-own-row"), null);
 });
 
-test("own Profile opens the Leaderboard only with the Food Portfolio on", async () => {
+test("own Profile opens the Leaderboard from the Portfolio's Rank, only with the Food Portfolio on", async () => {
   stubBoard();
   const service = getHungryService();
   stub(service.social, "getFollowCounts", async () => ({ followersCount: 0, followingCount: 0 }));
@@ -168,7 +168,8 @@ test("own Profile opens the Leaderboard only with the Food Portfolio on", async 
   stub(service.foodPortfolio, "getTopPosts", async () => ({ posts: [], pinnedPostIds: [] }));
   stub(service.foodPortfolio, "listStalls", async () => []);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  await view.press(view.findByTestId("profile-leaderboard-row"));
+  assert.equal(view.findByTestId("profile-leaderboard-row"), null, "no separate row any more");
+  await view.press(view.findByLabel(/^Rank/));
   assert.ok(
     view.navigation.calls.some(
       (call) => call.method === "navigate" && call.args[0] === "Leaderboard",
@@ -178,5 +179,5 @@ test("own Profile opens the Leaderboard only with the Food Portfolio on", async 
 
   flags.foodPortfolioEnabled = false;
   view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  assert.equal(view.findByTestId("profile-leaderboard-row"), null);
+  assert.equal(view.findByLabel(/^Rank/), null);
 });

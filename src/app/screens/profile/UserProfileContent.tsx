@@ -485,8 +485,6 @@ export function UserProfileContent({
         },
       ]
     : [];
-  // Dishes posted, as the Food Portfolio counted them ("20+" while more pages remain).
-  const [portfolioPostCount, setPortfolioPostCount] = useState<number | string | null>(null);
   const reviewsStat: ProfileStat = {
     key: "reviews",
     label: pluralLabel(reviewCount, "Review"),
@@ -495,20 +493,12 @@ export function UserProfileContent({
     onPress: () => setActiveTab("reviews"),
   };
   // A private account you do not follow shows only the follow counts. With the Food Portfolio the
-  // row reads Posts, Reviews, Followers, Following (its own Stalls tab lists the stalls); without
-  // it, the stalls count closes the row (the visited-stalls list is never shown for others).
+  // row reads Reviews, Followers, Following; the Portfolio's own row carries Dishes, Stalls and
+  // Rank. Without it, the stalls count closes the row (the visited-stalls list is never shown).
   const stats: ProfileStat[] = isPrivateLocked
     ? followStats
     : FEATURE_FLAGS.foodPortfolioEnabled
-      ? [
-          {
-            key: "posts",
-            label: pluralLabel(portfolioPostCount, "Post"),
-            value: portfolioPostCount,
-          },
-          reviewsStat,
-          ...followStats,
-        ]
+      ? [reviewsStat, ...followStats]
       : [reviewsStat, ...followStats, { key: "stalls", label: "Stalls", value: stallsCount }];
 
   // A wrong or deleted id (or an account hidden from this viewer) is not a profile: no fake
@@ -736,7 +726,6 @@ export function UserProfileContent({
                   ownerName={authorName}
                   isSelf={false}
                   navigation={rootNavigation}
-                  onPostCountChange={setPortfolioPostCount}
                 />
                 <FavouriteDishesRow
                   dishIds={pinnedDishIds}

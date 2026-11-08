@@ -12,6 +12,8 @@ export const FOOD_PORTFOLIO_CARD_BASE_WIDTH = 360;
 /** Shared as an Instagram Story picture (9:16). */
 export const FOOD_PORTFOLIO_CARD_SIZE = { width: 1080, height: 1920 } as const;
 export const FOOD_PORTFOLIO_CARD_PHOTOS = 9;
+/** The last line on both cards: an ask to follow, and where to find Hungry. */
+export const FOOD_PORTFOLIO_CARD_FOOTER = "Follow me on Hungry · usehungry.com";
 
 export function foodPortfolioCardHeight(width: number): number {
   return Math.round((width * FOOD_PORTFOLIO_CARD_SIZE.height) / FOOD_PORTFOLIO_CARD_SIZE.width);
