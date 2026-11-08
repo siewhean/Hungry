@@ -113,6 +113,8 @@ import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLocation";
 import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
+import { PeopleHereRow } from "@/components/social/PeopleHereRow";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 
 /** Reviews shown on the page; "See all" opens the full list. */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
@@ -1641,6 +1643,25 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </AppText>
                 )}
               </View>
+
+              {showDeferredDetailControls && isAuthenticated ? (
+                <PeopleHereRow
+                  place={{ dishId: dish.id }}
+                  enabled={peopleLinksEnabled()}
+                  screen="DishDetail"
+                  onOpenPerson={(person) => {
+                    trackAnalyticsEvent("people_here_opened", { source: "dish" });
+                    navigation.navigate("UserProfile", {
+                      authorId: person.userId,
+                      authorName: person.displayName,
+                    });
+                  }}
+                  onSeeAll={() =>
+                    navigation.navigate("PlacePeople", { dishId: dish.id, placeName: dish.name })
+                  }
+                  testID="dish-people-here"
+                />
+              ) : null}
 
               <ReportProblemLink
                 venueId={dish.venueId}

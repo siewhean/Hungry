@@ -77,6 +77,7 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "FollowRequests",
   "BlockedAndHidden",
   "UserFollowers",
+  "PlacePeople",
   "UserFollowing",
   "ChatDetail",
   "DirectMessages",
@@ -112,6 +113,7 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "FollowRequests",
   "BlockedAndHidden",
   "UserFollowers",
+  "PlacePeople",
   "UserFollowing",
   "ChatDetail",
   "DirectMessages",
@@ -338,6 +340,10 @@ const loadBlockedAndHiddenScreen = () =>
   (
     require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
   ).BlockedAndHiddenScreen;
+const loadPlacePeopleScreen = () =>
+  (
+    require("@/app/screens/profile/PlacePeopleScreen") as typeof import("@/app/screens/profile/PlacePeopleScreen")
+  ).PlacePeopleScreen;
 const loadUserFollowersScreen = () =>
   (
     require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
@@ -904,6 +910,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           <RootStack.Screen getComponent={loadTastePaletteScreen} name="TastePalette" />
           <RootStack.Screen getComponent={loadTasteCompareScreen} name="TasteCompare" />
           <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
+          {FEATURE_FLAGS.foodPortfolioEnabled && FEATURE_FLAGS.followConnectionsEnabled ? (
+            <RootStack.Screen getComponent={loadPlacePeopleScreen} name="PlacePeople" />
+          ) : null}
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
           {FEATURE_FLAGS.directMessagesEnabled ? (

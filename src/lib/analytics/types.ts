@@ -177,6 +177,7 @@ export type AnalyticsEventName =
   | "leaderboard_opened"
   | "people_opened"
   | "reviewer_opened"
+  | "people_here_opened"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

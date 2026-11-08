@@ -248,6 +248,8 @@ export type RootStackParamList = {
   TasteCompare: { userId: string; userDisplayName?: string };
   /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
   BlockedAndHidden: undefined;
+  /** Who reviewed or posted at one stall or one dish (give exactly one id). */
+  PlacePeople: { venueId?: string; dishId?: string; placeName?: string };
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };
   UserFollowing: { userId: string; userDisplayName?: string };

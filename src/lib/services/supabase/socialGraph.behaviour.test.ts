@@ -132,3 +132,66 @@ test("people suggestions and network picks are signed-in only and pass the limit
   await assert.rejects(service.social.listPeopleSuggestions());
   await assert.rejects(service.social.listNetworkStallPicks());
 });
+
+test("getPlacePeople sends one place, clamps the limit, maps rows, and is signed-in only", async () => {
+  auth.userId = null;
+  assert.deepEqual(await service.social.getPlacePeople({ venueId: "v1" }), {
+    people: [],
+    totalPeople: 0,
+  });
+  assert.equal(fake.rpcCalls.length, 0);
+
+  auth.userId = ME;
+  fake.rpc.get_place_people = () => ({
+    data: [
+      {
+        user_id: OTHER,
+        display_name: "Mei",
+        avatar_url: null,
+        is_followed: true,
+        contributions: 3,
+        total_people: 7,
+      },
+      { user_id: null, display_name: "No id", total_people: 7 },
+    ],
+  });
+  const stall = await service.social.getPlacePeople({ venueId: "v1" }, 50);
+  assert.deepEqual(stall, {
+    people: [
+      {
+        userId: OTHER,
+        displayName: "Mei",
+        avatarUrl: undefined,
+        isFollowed: true,
+        contributions: 3,
+      },
+    ],
+    totalPeople: 7,
+  });
+  assert.deepEqual(fake.callsTo("get_place_people")[0].args, {
+    p_venue_id: "v1",
+    p_dish_id: null,
+    p_limit: 10,
+  });
+  await service.social.getPlacePeople({ dishId: "d1" });
+  assert.deepEqual(fake.callsTo("get_place_people")[1].args, {
+    p_venue_id: null,
+    p_dish_id: "d1",
+    p_limit: 5,
+  });
+
+  const calls = fake.callsTo("get_place_people").length;
+  assert.deepEqual(await service.social.getPlacePeople({ venueId: " " } as never), {
+    people: [],
+    totalPeople: 0,
+  });
+  assert.equal(fake.callsTo("get_place_people").length, calls, "a blank id never reaches the RPC");
+
+  fake.rpc.get_place_people = () => ({ error: MISSING });
+  assert.deepEqual(await service.social.getPlacePeople({ venueId: "v1" }), {
+    people: [],
+    totalPeople: 0,
+  });
+  fake.rpc.get_place_people = () => ({ error: BROKEN });
+  await assert.rejects(service.social.getPlacePeople({ venueId: "v1" }));
+});
