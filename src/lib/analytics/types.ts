@@ -174,6 +174,8 @@ export type AnalyticsEventName =
   | "taste_palette_viewed"
   | "taste_compare_viewed"
   | "food_portfolio_card_shared"
+  | "leaderboard_opened"
+  | "people_opened"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AccessibleImage, AppSymbol, AppText, Button, IconButton } from "@/components/ui";
 import {
   FOOD_PORTFOLIO_CARD_BASE_WIDTH,
+  FOOD_PORTFOLIO_CARD_FOOTER,
   FOOD_PORTFOLIO_CARD_PHOTOS,
   FOOD_PORTFOLIO_CARD_SIZE,
   foodPortfolioCardHeight,
@@ -138,7 +139,7 @@ export function FoodPortfolioShareCard({
       )}
 
       <AppText style={{ color: CARD_TEXT, fontSize: 14 * u, fontWeight: "700", opacity: 0.85 }}>
-        usehungry.com
+        {FOOD_PORTFOLIO_CARD_FOOTER}
       </AppText>
     </LinearGradient>
   );
