@@ -1017,30 +1017,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
             </Pressable>
           ) : null}
-          {hasAccountProfile && FEATURE_FLAGS.foodPortfolioEnabled ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Following feed"
-              accessibilityHint="Opens the newest dishes from people you follow"
-              onPress={() => rootNavigation.navigate("FollowingFeed")}
-              style={({ pressed }) => ({
-                alignItems: "center",
-                backgroundColor: pressed ? palette.bgSoft : palette.surface,
-                borderRadius: componentRadii.card,
-                flexDirection: "row",
-                gap: spacing[3],
-                minHeight: 48,
-                paddingHorizontal: spacing[3],
-              })}
-              testID="profile-following-feed-row"
-            >
-              <AppSymbol name="following" size={20} color={palette.accentText} />
-              <AppText variant="bodyBold" style={{ flex: 1 }}>
-                Following
-              </AppText>
-              <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
-            </Pressable>
-          ) : null}
           {firstReviewNudgeEligible && firstReviewNudge === "test" ? (
             <View
               testID="profile-first-review-nudge"

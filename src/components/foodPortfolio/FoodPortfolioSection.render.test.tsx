@@ -246,7 +246,7 @@ test("with the Food Portfolio off the section renders nothing and reads nothing"
   assert.equal(calls.postReads, 0);
 });
 
-test("own Profile shows the Food Portfolio and the Following row only with the flag", async () => {
+test("own Profile shows the Food Portfolio only with the flag; Followers opens People", async () => {
   stubPortfolio();
   stub(getHungryService().social, "getFollowCounts", async () => ({
     followersCount: 1,
@@ -254,22 +254,21 @@ test("own Profile shows the Food Portfolio and the Following row only with the f
   }));
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.ok(view.findByTestId("food-portfolio-section"));
-  await view.press(view.findByTestId("profile-following-feed-row"));
+  assert.equal(view.findByTestId("profile-following-feed-row"), null, "the Feed lives in People");
+  await view.press(view.findByLabel("Follower 1"));
   assert.ok(
     view.navigation.calls.some(
-      (call) => call.method === "navigate" && call.args[0] === "FollowingFeed",
+      (call) => call.method === "navigate" && call.args[0] === "Followers",
     ),
-    "opens the Following feed",
   );
   await view.unmount();
 
   flags.foodPortfolioEnabled = false;
   view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.equal(view.findByTestId("food-portfolio-section"), null);
-  assert.equal(view.findByTestId("profile-following-feed-row"), null);
 });
 
-test("Following feed: rows open the post and the author, Load more pages from the last post", async () => {
+test("Following feed: tiles open the post and the author, grouped by day, Load more pages from the last post", async () => {
   const pages: unknown[] = [];
   const firstPage = Array.from({ length: 20 }, (_, index) =>
     bite(`p${index}`, { authorId: "author-1", authorName: "Ahmad" }),
@@ -282,10 +281,12 @@ test("Following feed: rows open the post and the author, Load more pages from th
   assert.ok(view.findByTestId("following-feed-post-p0"));
   await view.press(view.findByLabel("Open Dish p0 at Hill Street"));
   assert.deepEqual(lastNavigate(view.navigation), ["ActivityPostDetail", { postId: "p0" }]);
-  await view.press(
-    view.findByTestId("following-feed-post-p1")?.querySelector("[role=button]") as HTMLElement,
-  );
+  await view.press(view.findByLabel("Open Ahmad's Food Portfolio"));
   assert.equal(lastNavigate(view.navigation)?.[0], "UserProfile");
+  // The FollowingFeed route is your own People, on its Feed tab, with the posts under a day.
+  assert.ok(view.findByTestId("people-screen"));
+  assert.ok(view.findByText("Feed"));
+  assert.ok(view.findByTestId("following-feed-day-2026-11-6"));
 
   await view.press(view.findByText("Load more"));
   assert.deepEqual(pages[1], {
@@ -295,13 +296,27 @@ test("Following feed: rows open the post and the author, Load more pages from th
   assert.ok(view.findByTestId("following-feed-post-p20"));
 });
 
-test("Following feed with nobody followed offers Find people", async () => {
+test("Following feed with nobody followed offers Find people on the Following tab", async () => {
   stub(getHungryService().foodPortfolio, "getFollowingFeed", async () => []);
   const view = await renderScreen(FollowingFeedScreen as never, { name: "FollowingFeed" });
-  assert.ok(view.findByText("No dishes yet"));
+  assert.ok(view.findByText("Follow someone to see their dishes"));
+  assert.ok(view.findByTestId("following-feed-empty-art"));
   await view.press(view.findByText("Find people"));
-  assert.deepEqual(lastNavigate(view.navigation), [
-    "MainTabs",
-    { screen: "Profile", params: { screen: "Following" } },
+  assert.equal(view.findByTestId("following-feed"), null, "left the Feed tab");
+  assert.ok(view.findByLabel("Search following"));
+});
+
+test("Following feed from a stall page shows only that stall's dishes, and the chip clears it", async () => {
+  stub(getHungryService().foodPortfolio, "getFollowingFeed", async () => [
+    bite("x1", { venueId: "venue-1", venueName: "Hill Street" }),
+    bite("x2", { venueId: "venue-2", venueName: "Tian Tian" }),
   ]);
+  const view = await renderScreen(FollowingFeedScreen as never, {
+    name: "FollowingFeed",
+    params: { venueId: "venue-2", venueName: "Tian Tian" },
+  });
+  assert.ok(view.findByTestId("following-feed-post-x2"));
+  assert.equal(view.findByTestId("following-feed-post-x1"), null);
+  await view.press(view.findByLabel("Showing dishes at Tian Tian. Show all dishes"));
+  assert.ok(view.findByTestId("following-feed-post-x1"));
 });

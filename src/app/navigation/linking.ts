@@ -73,6 +73,10 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "UserFollowers" && !isSafeDeepLinkId(next.userId)) {
+    return undefined;
+  }
+
   if (name === "WheelStack") {
     // The join code rides on the nested WheelHome route, which is where WheelHome reads it.
     const nested =
@@ -245,9 +249,15 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
   }
   // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
+  // /user/:id/people opens their People screen; /user/:id/portfolio is their profile,
+  // where the Food Portfolio sits.
   if (parts[0] === "user") {
     const authorId = decodePathSegment(parts[1]);
-    return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
+    if (!authorId) return undefined;
+    if (parts[2] === "people" && FEATURE_FLAGS.foodPortfolioEnabled) {
+      return createStateOverHome("UserFollowers", { userId: authorId });
+    }
+    return createStateOverHome("UserProfile", { authorId });
   }
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
   if (path === "search") {

@@ -615,6 +615,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Following/,
   },
   {
+    // Your own People on the Feed tab (Following when the Food Portfolio is off).
+    name: "PeopleFeedScreen",
+    file: "src/app/screens/profile/ProfileConnectionsScreen.tsx",
+    scenario: "user",
+    expect: /Following/,
+  },
+  {
     name: "LeaderboardScreen",
     file: "src/app/screens/profile/LeaderboardScreen.tsx",
     scenario: "user",

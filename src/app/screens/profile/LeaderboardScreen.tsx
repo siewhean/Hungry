@@ -1,10 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Modal, Pressable, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { FoodPortfolioShareSheet } from "@/components/foodPortfolio/FoodPortfolioShareSheet";
-import { AppSymbol, AppText, Avatar, Button, EmptyState, SegmentedControl } from "@/components/ui";
+import {
+  EmptyBoardIllustration,
+  PodiumIllustration,
+} from "@/components/icons/food/SocialIllustrations";
+import { FollowPillButton } from "@/components/social/FollowPillButton";
+import {
+  AppSymbol,
+  AppText,
+  Avatar,
+  Button,
+  Chip,
+  EmptyState,
+  IconButton,
+  ListRow,
+  SegmentedControl,
+} from "@/components/ui";
+import { useFollowPress } from "@/features/profile/useFollowPress";
 import { rankCardModel } from "@/features/foodPortfolio/shareCards";
 import {
   LEADERBOARD_FULL_BOARD,
@@ -33,6 +50,7 @@ import type {
   PortfolioPointsEntry,
 } from "@/lib/services/types";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
@@ -46,19 +64,102 @@ const PERIOD_OPTIONS = [
   { value: "week", label: "This week" },
   { value: "all", label: "All time" },
 ] as const;
-const SCOPE_OPTIONS = [
-  { value: "everyone", label: "Everyone" },
-  { value: "following", label: "Following" },
-] as const;
+/** Podium columns, left to right: second, first, third. */
+const PODIUM_ORDER = [1, 0, 2] as const;
+const PODIUM_STEP_HEIGHT = [72, 52, 40] as const;
+
+/** The top three: avatars on steps (2, 1, 3), each opening that diner's Food Portfolio. */
+function Podium({
+  rows,
+  board,
+  onOpen,
+}: {
+  rows: LeaderboardRow[];
+  board: LeaderboardBoard;
+  onOpen: (row: LeaderboardRow) => void;
+}) {
+  const { componentRadii, palette, spacing } = useHungryTheme();
+  return (
+    <View
+      testID="leaderboard-podium"
+      style={{ alignItems: "flex-end", flexDirection: "row", gap: spacing[2] }}
+    >
+      {PODIUM_ORDER.map((index) => {
+        const row = rows[index];
+        if (!row) return <View key={`empty-${index}`} style={{ flex: 1 }} />;
+        const first = index === 0;
+        const score = boardScoreLabel(board, row.score);
+        return (
+          <Pressable
+            key={row.userId}
+            testID={`leaderboard-row-${row.userId}`}
+            accessibilityRole={row.isMe ? "text" : "button"}
+            accessibilityLabel={`${rankLabel(row.rank)}, ${row.isMe ? "you" : row.displayName}, ${score}`}
+            disabled={row.isMe}
+            onPress={() => onOpen(row)}
+            style={{ alignItems: "center", flex: 1, gap: spacing[1] }}
+          >
+            <Avatar name={row.displayName} uri={row.avatarUrl} size={first ? 64 : 52} />
+            <AppText variant="bodyBold" numberOfLines={1} style={{ textAlign: "center" }}>
+              {row.isMe ? "You" : row.displayName}
+            </AppText>
+            <AppText variant="micro" tone="secondary" numberOfLines={1}>
+              {score}
+            </AppText>
+            <View
+              style={{
+                alignItems: "center",
+                alignSelf: "stretch",
+                backgroundColor: first ? palette.orange : palette.amber,
+                borderTopLeftRadius: componentRadii.card,
+                borderTopRightRadius: componentRadii.card,
+                height: PODIUM_STEP_HEIGHT[index],
+                justifyContent: "center",
+              }}
+            >
+              <AppText variant="h2" style={{ color: palette.textOnOrange }}>
+                {row.rank}
+              </AppText>
+            </View>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Follow, on a board row of someone you do not follow yet. */
+function RowFollowButton({ row }: { row: LeaderboardRow }) {
+  const followPress = useFollowPress();
+  const isFollowing = useSocialStore((state) => Boolean(state.followedUserIds[row.userId]));
+  const isRequested = useSocialStore((state) => Boolean(state.requestedUserIds[row.userId]));
+  if (row.isMe || isFollowing) return null;
+  return (
+    <FollowPillButton
+      label={isRequested ? "Requested" : "Follow"}
+      accessibilityLabel={
+        isRequested ? `Follow request sent to ${row.displayName}` : `Follow ${row.displayName}`
+      }
+      muted={isRequested}
+      tinted
+      minWidth={0}
+      onPress={() =>
+        followPress({ userId: row.userId, name: row.displayName, avatarUrl: row.avatarUrl })
+      }
+    />
+  );
+}
 
 function LeaderboardRowView({
   row,
   board,
   onPress,
+  showFollow = false,
 }: {
   row: LeaderboardRow;
   board: LeaderboardBoard;
   onPress?: () => void;
+  showFollow?: boolean;
 }) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   const score = boardScoreLabel(board, row.score);
@@ -90,7 +191,107 @@ function LeaderboardRowView({
       <AppText variant="bodySmall" tone="secondary">
         {score}
       </AppText>
+      {showFollow ? <RowFollowButton row={row} /> : null}
     </Pressable>
+  );
+}
+
+/** How points work, and your own recent points, in a sheet over the board. */
+function PointsSheet({
+  visible,
+  board,
+  points,
+  onClose,
+}: {
+  visible: boolean;
+  board: LeaderboardBoard;
+  points: PortfolioPointsEntry[];
+  onClose: () => void;
+}) {
+  const { palette, spacing } = useHungryTheme();
+  const insets = useSafeAreaInsets();
+  const [view, setView] = useState<"rules" | "history">("rules");
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+      accessibilityViewIsModal
+    >
+      {visible ? (
+        <View
+          testID="leaderboard-points-sheet"
+          style={{
+            backgroundColor: palette.bg,
+            flex: 1,
+            gap: spacing[3],
+            paddingBottom: insets.bottom + spacing[3],
+            paddingHorizontal: spacing[4],
+            paddingTop: spacing[3],
+          }}
+        >
+          <View style={{ alignItems: "center", flexDirection: "row" }}>
+            <AppText variant="h3" accessibilityRole="header" style={{ flex: 1 }}>
+              How points work
+            </AppText>
+            <IconButton
+              variant="ghost"
+              accessibilityLabel="Close"
+              onPress={onClose}
+              icon={<AppSymbol name="close" color={palette.text} size={20} />}
+            />
+          </View>
+          {points.length > 0 ? (
+            <SegmentedControl
+              accessibilityLabel="Show the rules or your recent points"
+              options={[
+                { value: "rules", label: "Rules" },
+                { value: "history", label: "Your points" },
+              ]}
+              value={view}
+              onChange={setView}
+            />
+          ) : null}
+          <ScrollView contentContainerStyle={{ gap: spacing[2] }}>
+            {view === "history" && points.length > 0 ? (
+              <View testID="leaderboard-points-history" style={{ gap: spacing[2] }}>
+                {points.map((entry) => (
+                  <View key={entry.id} style={{ flexDirection: "row", gap: spacing[3] }}>
+                    <AppText variant="bodySmall" style={{ flex: 1 }} numberOfLines={1}>
+                      {portfolioPointsLabel(entry)}
+                    </AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {portfolioPointsValue(entry)}
+                    </AppText>
+                  </View>
+                ))}
+              </View>
+            ) : board === "trending" ? (
+              <AppText variant="bodySmall" tone="secondary">
+                {TRENDING_RULES}
+              </AppText>
+            ) : (
+              <>
+                {PORTFOLIO_POINT_RULES.map((rule) => (
+                  <View key={rule.label} style={{ flexDirection: "row", gap: spacing[3] }}>
+                    <AppText variant="bodySmall" style={{ flex: 1 }}>
+                      {rule.label}
+                    </AppText>
+                    <AppText variant="bodySmall" tone="secondary">
+                      {rule.points}
+                    </AppText>
+                  </View>
+                ))}
+                <AppText variant="micro" tone="secondary">
+                  {PORTFOLIO_POINT_LIMITS}
+                </AppText>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      ) : null}
+    </Modal>
   );
 }
 
@@ -113,6 +314,7 @@ export function LeaderboardScreen({ navigation }: Props) {
   const [points, setPoints] = useState<PortfolioPointsEntry[]>([]);
   const trackedRef = useRef(false);
   const [isSharingRank, setIsSharingRank] = useState(false);
+  const [isShowingPoints, setIsShowingPoints] = useState(false);
   const profile = useProfileStore((state) => state.profile);
 
   useEffect(() => {
@@ -175,33 +377,46 @@ export function LeaderboardScreen({ navigation }: Props) {
     padding: spacing[4],
   } as const;
 
+  const openComposer = () => {
+    trackAnalyticsEvent("food_portfolio_post_tapped", { source: "leaderboard" });
+    navigation.navigate("Post");
+  };
+  const podiumRows = rows.slice(0, 3);
+  const listRows = rows.slice(3);
+
   return (
     <ProfileScreenShell title="Leaderboard">
       <View style={{ gap: spacing[4], paddingBottom: spacing[8] }}>
         {summary ? (
-          <View testID="leaderboard-summary" style={cardStyle}>
-            <AppText variant="micro" tone="secondary">
-              Your Portfolio points
-            </AppText>
-            <AppText variant="h1">{Math.round(summary.totalPoints)}</AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              {`This week ${rankLabel(summary.activeWeekRank)} · ${Math.round(summary.weekPoints)} pts`}
-            </AppText>
-            <AppText variant="bodySmall" tone="secondary">
-              {dailyCreditLabel(summary)}
-            </AppText>
-            {rankCard ? (
-              <Button
-                testID="leaderboard-share-rank"
-                label="Share my rank"
-                size="sm"
-                variant="secondary"
-                fullWidth={false}
-                leftIcon={<AppSymbol name="share" size={16} color={palette.text} />}
-                onPress={() => setIsSharingRank(true)}
-                style={{ alignSelf: "flex-start", minHeight: 44 }}
-              />
-            ) : null}
+          <View
+            testID="leaderboard-summary"
+            style={[cardStyle, { alignItems: "center", flexDirection: "row", gap: spacing[3] }]}
+          >
+            <View style={{ flex: 1, gap: spacing[1] }}>
+              <AppText variant="micro" tone="secondary">
+                Your Portfolio points
+              </AppText>
+              <AppText variant="h1">{Math.round(summary.totalPoints)}</AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                {`This week ${rankLabel(summary.activeWeekRank)} · ${Math.round(summary.weekPoints)} pts`}
+              </AppText>
+              <AppText variant="bodySmall" tone="secondary">
+                {dailyCreditLabel(summary)}
+              </AppText>
+              {rankCard ? (
+                <Button
+                  testID="leaderboard-share-rank"
+                  label="Share my rank"
+                  size="sm"
+                  variant="secondary"
+                  fullWidth={false}
+                  leftIcon={<AppSymbol name="share" size={16} color={palette.text} />}
+                  onPress={() => setIsSharingRank(true)}
+                  style={{ alignSelf: "flex-start", marginTop: spacing[1], minHeight: 44 }}
+                />
+              ) : null}
+            </View>
+            <PodiumIllustration size={88} testID="leaderboard-summary-art" />
           </View>
         ) : null}
         {isSharingRank && rankCard ? (
@@ -217,36 +432,44 @@ export function LeaderboardScreen({ navigation }: Props) {
           />
         ) : null}
 
-        <SegmentedControl
-          testID="leaderboard-board"
-          accessibilityLabel="Choose a leaderboard"
-          options={BOARD_OPTIONS}
-          value={board}
-          onChange={setBoard}
-        />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-          {board === "active" ? (
+          {BOARD_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={board === option.value}
+              onPress={() => setBoard(option.value)}
+            />
+          ))}
+          <Chip
+            label="Following"
+            accessibilityLabel="Only people you follow"
+            selected={scope === "following"}
+            leftIcon={<AppSymbol name="following" size={14} color={palette.text} />}
+            onPress={() =>
+              setScope((current) => (current === "following" ? "everyone" : "following"))
+            }
+          />
+        </View>
+        {board === "active" ? (
+          <View style={{ gap: spacing[1] }}>
             <SegmentedControl
-              compact
               testID="leaderboard-period"
               accessibilityLabel="Show this week or all time"
               options={PERIOD_OPTIONS}
               value={period}
               onChange={setPeriod}
             />
-          ) : null}
-          <SegmentedControl
-            compact
-            testID="leaderboard-scope"
-            accessibilityLabel="Show everyone or only people you follow"
-            options={SCOPE_OPTIONS}
-            value={scope}
-            onChange={setScope}
-          />
-        </View>
+            {period === "week" ? (
+              <AppText variant="micro" tone="secondary" style={{ textAlign: "center" }}>
+                Weeks reset on Monday
+              </AppText>
+            ) : null}
+          </View>
+        ) : null}
 
         {state === "loading" && rows.length === 0 ? (
-          <View testID="leaderboard-loading" style={{ minHeight: 200 }} />
+          <View testID="leaderboard-loading" style={{ minHeight: 240 }} />
         ) : state === "failed" ? (
           <EmptyState
             title="Couldn't load the leaderboard"
@@ -257,13 +480,27 @@ export function LeaderboardScreen({ navigation }: Props) {
             ctaLabel="Retry"
             onPress={() => setReloadKey((key) => key + 1)}
           />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            title="Nobody on the board yet"
+            body={
+              scope === "following"
+                ? "Follow people whose taste you like to see how you compare."
+                : "Post a dish with a photo to get on the board. It refreshes every 10 minutes."
+            }
+            icon={<EmptyBoardIllustration testID="leaderboard-empty-art" />}
+            ctaLabel="Post a dish"
+            onPress={openComposer}
+          />
         ) : (
           <View testID="leaderboard-rows" style={{ gap: spacing[2] }}>
-            {rows.map((row) => (
+            <Podium rows={podiumRows} board={board} onOpen={openPerson} />
+            {listRows.map((row) => (
               <LeaderboardRowView
                 key={row.userId}
                 row={row}
                 board={board}
+                showFollow={scope === "everyone"}
                 onPress={row.isMe ? undefined : () => openPerson(row)}
               />
             ))}
@@ -283,59 +520,35 @@ export function LeaderboardScreen({ navigation }: Props) {
             ) : null}
             {rows.length < LEADERBOARD_FULL_BOARD ? (
               <View testID="leaderboard-be-first" style={cardStyle}>
-                <AppText variant="bodyBold">
-                  {rows.length === 0 ? "Nobody here yet" : "Plenty of room at the top"}
-                </AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  {scope === "following"
-                    ? "Follow people whose taste you like to see how you compare."
-                    : "Post a dish with a photo to get on the board. It refreshes every 10 minutes."}
-                </AppText>
+                <AppText variant="bodyBold">Plenty of room at the top</AppText>
+                <Button
+                  label="Post a dish"
+                  size="sm"
+                  variant="secondary"
+                  fullWidth={false}
+                  leftIcon={<AppSymbol name="camera" size={16} color={palette.text} />}
+                  onPress={openComposer}
+                  style={{ alignSelf: "flex-start", minHeight: 44 }}
+                />
               </View>
             ) : null}
           </View>
         )}
 
-        <View testID="leaderboard-how-points-work" style={cardStyle}>
-          <AppText variant="bodyBold">How points work</AppText>
-          {board === "trending" ? (
-            <AppText variant="bodySmall" tone="secondary">
-              {TRENDING_RULES}
-            </AppText>
-          ) : (
-            <>
-              {PORTFOLIO_POINT_RULES.map((rule) => (
-                <View key={rule.label} style={{ flexDirection: "row", gap: spacing[3] }}>
-                  <AppText variant="bodySmall" style={{ flex: 1 }}>
-                    {rule.label}
-                  </AppText>
-                  <AppText variant="bodySmall" tone="secondary">
-                    {rule.points}
-                  </AppText>
-                </View>
-              ))}
-              <AppText variant="micro" tone="secondary">
-                {PORTFOLIO_POINT_LIMITS}
-              </AppText>
-            </>
-          )}
-        </View>
-
-        {points.length > 0 ? (
-          <View testID="leaderboard-points-history" style={cardStyle}>
-            <AppText variant="bodyBold">Your recent points</AppText>
-            {points.map((entry) => (
-              <View key={entry.id} style={{ flexDirection: "row", gap: spacing[3] }}>
-                <AppText variant="bodySmall" style={{ flex: 1 }} numberOfLines={1}>
-                  {portfolioPointsLabel(entry)}
-                </AppText>
-                <AppText variant="bodySmall" tone="secondary">
-                  {portfolioPointsValue(entry)}
-                </AppText>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        <ListRow
+          testID="leaderboard-how-points-work"
+          first
+          title="How points work"
+          accessibilityHint="Shows the rules and your recent points"
+          leading={<AppSymbol name="info" size={20} color={palette.accentText} />}
+          onPress={() => setIsShowingPoints(true)}
+        />
+        <PointsSheet
+          visible={isShowingPoints}
+          board={board}
+          points={points}
+          onClose={() => setIsShowingPoints(false)}
+        />
       </View>
     </ProfileScreenShell>
   );
