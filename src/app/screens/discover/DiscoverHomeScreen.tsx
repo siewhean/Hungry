@@ -79,6 +79,8 @@ import { boostNetworkBites } from "@/features/discover/networkPicks";
 import { useNetworkStallPicks } from "@/features/discover/useNetworkStallPicks";
 import { NetworkPicksSection } from "@/components/discover/home/NetworkPicksSection";
 import { WeeklyBoardCard } from "@/components/discover/home/WeeklyBoardCard";
+import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { groupNearbyPlaces, type PlaceBuilding } from "@/features/discover/homeRails";
 import { buildHomeSections } from "@/features/discover/homeSections";
 import { fitChipsToDiner, kindsOfNames } from "@/features/discover/homeChips";
@@ -174,6 +176,8 @@ import {
   type DiscoverStallShowcaseCard,
 } from "@/features/discover/stallShowcase";
 
+/** Home suggests people until you follow this many. */
+const HOME_PEOPLE_FOLLOW_THRESHOLD = 5;
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
 
 /** A horizontal rail with fewer dishes than this is hidden. */
@@ -2541,6 +2545,30 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   trackAnalyticsEvent("leaderboard_opened", { source: "home_board_card" });
                   navigation.navigate("Leaderboard");
                 }}
+              />
+            ) : null}
+
+            {!isDiscoverFiltering &&
+            isUserMode &&
+            isSignedIn &&
+            peopleLinksEnabled() &&
+            followedCount < HOME_PEOPLE_FOLLOW_THRESHOLD ? (
+              <PeopleSuggestionsSection
+                title="People you may know"
+                max={3}
+                onOpen={(person) =>
+                  navigation.navigate("UserProfile", {
+                    authorId: person.userId,
+                    authorName: person.displayName,
+                    authorAvatarUrl: person.avatarUrl,
+                  })
+                }
+                onSeeAll={() =>
+                  navigation.navigate("MainTabs", {
+                    screen: "Profile",
+                    params: { screen: "Followers" },
+                  })
+                }
               />
             ) : null}
 

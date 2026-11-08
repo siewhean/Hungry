@@ -12,6 +12,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Badge, EmptyState } from "@/components/ui";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { MissionCard } from "@/components/gamification/MissionCard";
+import { missionStart } from "@/features/profile/missionStart";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
@@ -20,7 +21,7 @@ import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MissionsScreen">;
 
-export function MissionsScreen({ navigation: _nav }: Props) {
+export function MissionsScreen({ navigation }: Props) {
   const { spacing } = useHungryTheme();
   const profile = useProfileStore((s) => s.profile);
   const progressMap = useMissionStore((s) => s.progressMap);
@@ -67,6 +68,10 @@ export function MissionsScreen({ navigation: _nav }: Props) {
               key={mission.id}
               mission={mission}
               progress={progressMap[mission.id] ?? null}
+              start={(() => {
+                const next = missionStart(mission.missionType);
+                return { label: next.label, onPress: () => next.open(navigation) };
+              })()}
             />
           ))}
 

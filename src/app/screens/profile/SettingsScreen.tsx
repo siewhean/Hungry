@@ -1176,7 +1176,11 @@ export function SettingsScreen() {
       <SettingsChoiceSheet
         visible={isAuthenticated && visibilitySheetVisible}
         title="Profile visibility"
-        message="Private: only approved followers see your Lists and the reviews on your profile. Your reviews still show on dish pages."
+        message={
+          FEATURE_FLAGS.foodPortfolioEnabled
+            ? "Private: only approved followers see your Food Portfolio, posts, Lists and the reviews on your profile. Everyone still sees your name, photo and bio, and your reviews still show on dish and stall pages."
+            : "Private: only approved followers see your Lists and the reviews on your profile. Your reviews still show on dish pages."
+        }
         options={[
           {
             value: "public" as const,
