@@ -53,7 +53,7 @@ function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: st
         />
       ) : (
         <View accessibilityRole="image" accessibilityLabel={`${dishName} photo unavailable`}>
-          <Utensils color={palette.textMuted} size={24} />
+          <AppSymbol name="fork.knife" fallback={Utensils} size={24} color={palette.textMuted} />
         </View>
       )}
     </View>
@@ -84,7 +84,12 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
           <AppText variant="h2" style={{ flexShrink: 1 }}>
             {title}
           </AppText>
-          <ChevronRight color={palette.textMuted} size={20} />
+          <AppSymbol
+            name="chevron.right"
+            fallback={ChevronRight}
+            size={20}
+            color={palette.textMuted}
+          />
         </Pressable>
       ) : (
         <AppText variant="h2">{title}</AppText>
@@ -147,7 +152,12 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
                   ) : null}
                 </View>
               </View>
-              <ChevronRight size={20} color={palette.textMuted} />
+              <AppSymbol
+                name="chevron.right"
+                fallback={ChevronRight}
+                size={20}
+                color={palette.textMuted}
+              />
             </PressableScale>
           );
         })}

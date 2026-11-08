@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Check, Search } from "lucide-react-native";
+import { Check, Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -19,6 +19,7 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioItemPicker">;
 
@@ -38,7 +39,7 @@ function PickerTitle({ name, added }: { name: string; added: boolean }) {
       </AppText>
       {added ? (
         <>
-          <Check color={palette.orange} size={16} />
+          <AppSymbol name="checkmark" fallback={Check} size={16} color={palette.orange} />
           <AppText variant="bodySmall" tone="secondary">
             Added
           </AppText>
@@ -139,7 +140,7 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">{mode === "dish" ? "Add dish" : "Add stall"}</AppText>
@@ -173,7 +174,9 @@ export function PortfolioItemPickerScreen({ navigation, route }: Props) {
           setQuery(text);
           setResultLimit(PICKER_PAGE_SIZE);
         }}
-        leftIcon={<Search color={palette.textMuted} size={18} />}
+        leftIcon={
+          <AppSymbol name="magnifyingglass" fallback={Search} size={18} color={palette.textMuted} />
+        }
       />
 
       {searchStatus === "loading" && (mode === "dish" ? dishes : venues).length === 0 ? (

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
@@ -17,6 +16,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { PublicPortfolio } from "@/types/domain";
 import { reportError } from "@/lib/monitoring/reportError";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PortfolioPublicView">;
 
@@ -117,7 +117,7 @@ export function PortfolioPublicViewScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">Hungry list</AppText>

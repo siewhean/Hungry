@@ -286,6 +286,18 @@ test("follow requests are archived: no count read, badge or banner without the f
   assert.equal(view.findByLabel(/^Follow requests/), null, "no Follow requests entry");
 });
 
+test("with the Activity bell in the header, follow requests are badged only on the bell", async () => {
+  flags.followConnectionsEnabled = true;
+  flags.foodPortfolioEnabled = true;
+  flags.activityEnabled = true;
+  flags.socialFeedEnabled = false;
+  stub(getHungryService().social, "getFollowRequestCount", async () => 2);
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(view.findByTestId("profile-activity-bell"), "the bell is shown");
+  assert.equal(view.findByTestId("profile-menu-badge"), null, "no second badge on the gear");
+  assert.ok(view.findByLabel("Open settings"), "the gear label does not repeat the count");
+});
+
 test("settings button: badge and count in the label at 2 follow requests, none at 0", async () => {
   flags.followConnectionsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 2);
@@ -406,9 +418,11 @@ test("other profile: taste match, member since and pinned dishes; one stat row c
   stub(getHungryService().reviews, "getUserReviews", async () => []);
   useServerMode();
   const view = await renderOtherProfile();
-  assert.equal(
-    view.findByTestId("user-profile-meta")?.textContent,
-    "87% taste match · Member since Mar 2026",
+  assert.equal(view.findByTestId("user-profile-meta")?.textContent, "Member since Mar 2026");
+  // The match reads as a Vivino-style band and opens the palate comparison.
+  assert.match(
+    view.findByTestId("user-profile-taste-match")?.textContent ?? "",
+    /87% · Great match/,
   );
   assert.ok(view.findByText("Pinned Laksa"));
   assert.ok(view.findByTestId("user-profile-stats"));
@@ -424,6 +438,7 @@ test("other profile: no taste match line when the server has none", async () => 
   stub(getHungryService().reviews, "getUserReviews", async () => []);
   const view = await renderOtherProfile();
   assert.equal(view.findByTestId("user-profile-meta"), null);
+  assert.equal(view.findByTestId("user-profile-taste-match"), null);
 });
 
 test("other profile: a failed counts read still applies the follow status", async () => {

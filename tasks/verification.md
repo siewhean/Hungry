@@ -1680,3 +1680,38 @@ Use the smallest check that matches the change risk.
 - `npm run typecheck` pass; `npm test` 2974 pass; `npm run test:render` 1259 pass; `npm run test:coverage` OK and baseline updated; `npm run lint` 0 errors; `npm run check:n-plus-one` ok.
 - New tests: usualAreas, UsualAreaChips, MealPicksCard, mealPicksNudge, useHomeNudgeStore, ReviewFirstList, menuPalate, meal-times section title, dish picture card, Passport first stamp, Likely a match row, distance decay ranking.
 - No database change, so no migration, race or rate-limit check applies. Not run: a device build.
+
+## 2026-11-07 FOOD-PORTFOLIO-A
+- Migration 20261107090000: up, up again (idempotent), smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables; smoke covers pin order, private account hidden, moderated post excluded, stall counts, approved-only follow feed, keyset paging, anon grants and rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
+- `npm run typecheck` clean; `npm test` pass; new tests: foodPortfolio.behaviour (Supabase), mock foodPortfolio, food-portfolio-migration-contracts, FoodPortfolioSection.render (section, Profile entry, Following feed), featureFlags; screenMatrix row FollowingFeedScreen. `check:rate-limits`, `audit:races`, `check:n-plus-one` pass; eslint 0 errors; prettier clean.
+
+## 2026-11-07 FOOD-PORTFOLIO-B (leaderboards)
+- Migration 20261107120000: up, up again (idempotent), smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables (supabase/race-harness/leaderboard_stubs.sql; the export check in the smoke needs the real schema and runs at staging rehearsal). Smoke covers 10/+5/+5/+3 credit, stall cooldown, no-photo 2 off the board, daily cap of 6, one engagement row per actor per day, self and new-account actions ignored, unfollow and delete and moderation voids, standings (83 week, about 3 trending), Posted tier paid once over two refreshes, 7-day age gate, exclusion, RPCs, anon denied, rate rules, week close written once.
+- `npm run test:races`: all pass, including new T15 (two posts at the daily cap), T16 (two likes from one person), T17 (delete racing a like), T18 (two refreshes), plus down/up for the leaderboard migration.
+- `npm run typecheck` clean; `npm test` 3043/0; `npm run test:render` 1294/0; `npm run test:coverage` OK and baseline updated; eslint 0 errors; prettier; check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety waits on staging rehearsal evidence.
+
+## 2026-11-07 FOOD-PORTFOLIO-C
+- Migration 20261107150000: up, up again, smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables (bodies "Mei and 1 other posted 3 dishes today." and "Mei posted 2 dishes at <stall> today.", pending/deleted/private/old posts and opted-out/no-device people left out, second run queues 0). Staging rehearsal still to run.
+- `npm run typecheck` clean; `npm test` 3053 pass; `npm run test:render` 1299 pass; test:coverage OK (baseline updated); check:rate-limits, audit:races, check:n-plus-one pass; migration-safety fails only on the missing rehearsal evidence.
+
+## 2026-11-07 APPLE-DESIGN-01 (whole-app Apple design pass)
+- `npx tsc --noEmit` clean; `npm test` 3058 pass then 3060 with the extra own-content tests; `npm run test:render` 1301 pass; `npm run test:coverage` OK (baseline updated); `npm run check:n-plus-one` ok; eslint 0 errors on touched files.
+- All SF Symbol names checked by the strict `SFSymbol` type (sf-symbols-typescript). Browser walk (Expo web, mock data, iPhone 14 viewport) of Home, Reviews, Profile, stall, dish, Search, Decide, Wheel, Settings, Activity, Write a review in light and dark before the change. Web and Android draw the Lucide fallback, so the iOS symbols still need a device build to see.
+- Pre-commit gitleaks unavailable in the cloud sandbox; commit made with the hook off on sh's decision-card approval; CI security workflow runs gitleaks.
+## 2026-11-07 AB-AUDIT-2026-11-07
+- Experiment registry: `experiments.test.ts` 23 pass, including a new case that every key resolves a false flag to its fallback; `newSurfaces.render.test.tsx` 4 pass (Leaderboard opening board and pick, Home plain arm, Activity bell count vs dot and its tap event).
+- `npm run typecheck` clean; `npm run test:render` 1303/0; `npm run test:coverage` OK and baseline updated; eslint on touched files 0 errors (3 pre-existing warnings in experiments.ts).
+- PostHog project 373517: 37 draft experiments exist, the 15 flags made today are inactive, active flags still the same 9 (none updated today).
+- 2026-11-07 APPLE-DESIGN-01 r2: tsc clean; npm test 3060 pass; test:render 1303 pass (new activity-inbox.render + Must order chip test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
+
+## 2026-11-07 CLEANUP-2026-11-07
+- No code, test, script or CI reference to any removed path (git grep); typecheck clean; `npm test` 3061/0; `npm run test:render` 1307/0; `npm run test:coverage` OK (baseline unchanged).
+
+
+## 2026-11-07 SOCIAL-TASTE-01 (followers, taste palette, network picks)
+- Migration 20261107180000: up, smoke, down, up, smoke on a local Postgres 16 with stand-in tables; smoke covers follows-you and mutuals, private and blocked people hidden, taste matches capped and null palates left out, suggestions (never yourself, follows, private or blocked), network picks from follows and the taste-twin fallback, moderated reviews excluded, anon grants and the five rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
+- `npm run typecheck` clean; `npm test` 3077/0; `npm run test:render` 1309/0; `npm run test:coverage` OK and baseline updated; eslint 0 errors; prettier clean; check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety waits on the rehearsal evidence.
+- New tests: relationship, tastePalette, networkPicks, socialGraphRows, socialGraph.behaviour (Supabase), mock socialGraph, social-graph-migration-contracts, social-graph.render (hooks, People with your taste, profile header, Following list, Taste Palette, Compare palates, Home rail); screenMatrix rows TastePaletteScreen and TasteCompareScreen. Linking tests now follow activityEnabled.
+- Not run: a device build.
+- 2026-11-08 APPLE-DESIGN-01 r3: tsc clean; npm test 3095 pass; test:render 1323 pass (new bell-only badge test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
+- 2026-11-08 CLEANUP-2026-11-07 backup-table drop (20261108090000): on a throwaway PG16 with the 422 prod rows, up then smoke pass, down restores 422 rows with md5 a29468317dfd2f5a90fbdcb517caeef4 (same as prod), RLS on, anon cannot select; with no buildings the down restores 0 rows (staging case). check:rate-limits, audit:races, check:n-plus-one OK. migration-safety fails only on the missing rehearsal file (sh runs rehearse.sh). Not run: full stand-in (pgvector package unavailable in the cloud machine).

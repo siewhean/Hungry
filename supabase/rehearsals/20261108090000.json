@@ -1,0 +1,14 @@
+{
+  "version": "20261108090000",
+  "name": "20261108090000_drop_building_name_backup",
+  "result": "pass",
+  "rehearsed_at": "2026-11-08T05:26:03Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "47d3c6e8b344b768cfbfd86c30dfeda7ac1fb36a",
+  "up_sha256": "5f49a92a33b9bf07ed1a07e13f4ff5eec67355432f6bffac2fb1d7b242b43169",
+  "down_sha256": "a7894bfdf3f1d9d0089ef6d9c7e56885f72ef12ad7177803d0f7207e0b8a5b3e",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/drop_building_name_backup.sql"]
+}

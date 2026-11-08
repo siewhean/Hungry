@@ -166,7 +166,12 @@ test("follow button shows Requested and tapping it cancels the request", () => {
   assert.match(store, /requestedUserIds: \{ \.\.\.prev\.requestedUserIds, \[userId\]: true \}/);
   assert.match(profile, /service\.getFollowStatus\(resolvedAuthorId\)/);
   assert.match(profile, /setFollowRequested\(resolvedAuthorId, serverFollowStatus === "pending"\)/);
-  assert.match(profile, /\? "Requested"/);
+  // The words come from the shared relationship helper: Requested, Following, Follow back, Follow.
+  assert.match(profile, /followButtonWords\(\{[\s\S]*isRequested: isFollowRequested/);
+  assert.match(
+    read("src/features/social/relationship.ts"),
+    /if \(isRequested\) return "Requested";/,
+  );
   assert.match(profile, /Cancels your follow request/);
   assert.match(connections, /isRequested\s*\? "Requested"/);
   assert.match(home, /isFollowRequested \? "Requested"/);

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Flag, MoreHorizontal, Plus, Share2 } from "lucide-react-native";
+import { Flag, MoreHorizontal, Plus, Share2 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useShallow } from "zustand/react/shallow";
 
@@ -25,6 +25,7 @@ import { getPortfolioOwnerId, usePortfolioStore } from "@/store/usePortfolioStor
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioItem } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "PortfolioDetail">;
 
@@ -271,7 +272,7 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1" numberOfLines={2}>
@@ -311,7 +312,9 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
               label="Add"
               size="sm"
               fullWidth={false}
-              leftIcon={<Plus color={palette.textOnOrange} size={16} />}
+              leftIcon={
+                <AppSymbol name="plus" fallback={Plus} size={16} color={palette.textOnOrange} />
+              }
               onPress={() => setAddOpen(true)}
             />
           ) : null}
@@ -331,7 +334,14 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                 fullWidth={false}
                 variant="secondary"
                 accessibilityLabel="More list options"
-                leftIcon={<MoreHorizontal color={palette.text} size={16} />}
+                leftIcon={
+                  <AppSymbol
+                    name="ellipsis"
+                    fallback={MoreHorizontal}
+                    size={16}
+                    color={palette.text}
+                  />
+                }
                 onPress={() => setMenuOpen(true)}
               />
             </>
@@ -370,7 +380,9 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
                   size="sm"
                   fullWidth={false}
                   variant="secondary"
-                  leftIcon={<Flag color={palette.text} size={16} />}
+                  leftIcon={
+                    <AppSymbol name="flag" fallback={Flag} size={16} color={palette.text} />
+                  }
                   onPress={() => setReportOpen(true)}
                 />
               ) : null}
@@ -453,7 +465,12 @@ export function PortfolioDetailScreen({ navigation, route }: Props) {
 
       <Card>
         <View style={styles.itemHeader}>
-          <Share2 color={palette.orange} size={20} />
+          <AppSymbol
+            name="square.and.arrow.up"
+            fallback={Share2}
+            size={20}
+            color={palette.orange}
+          />
           <View style={{ flex: 1 }}>
             <AppText variant="bodyBold">Share this list</AppText>
             <AppText variant="bodySmall" tone="secondary">

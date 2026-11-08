@@ -3,6 +3,7 @@ import type { ComponentType } from "react";
 import {
   ArrowRight,
   ArrowUpDown,
+  Award,
   BadgeCheck,
   BarChart3,
   Bookmark,
@@ -70,6 +71,7 @@ import {
   Star,
   Store,
   Thermometer,
+  Trophy,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -125,6 +127,9 @@ const APP_SYMBOLS = {
   mealIdeas: { ios: "fork.knife", lucide: Utensils },
   followRequests: { ios: "person.badge.plus", lucide: UserPlus },
   followedStalls: { ios: "storefront", lucide: Store },
+  // Leaderboards
+  leaderboard: { ios: "trophy", lucide: Trophy },
+  topRank: { ios: "laurel.leading", lucide: Award },
   retry: { ios: "arrow.clockwise", lucide: RefreshCw },
   dietary: { ios: "leaf", lucide: Salad },
   flavourProfile: { ios: "safari", lucide: Compass },

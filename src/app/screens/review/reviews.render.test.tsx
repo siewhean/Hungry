@@ -38,6 +38,7 @@ import type { HungryService, RecentReviewFeedEntry } from "@/lib/services/types"
 import { useProfileStore } from "@/store/useProfileStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useUIStore } from "@/store/useUIStore";
+import { notifyChoiceSheetClosed, useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { cleanup, createFakeNavigation, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
@@ -58,6 +59,13 @@ afterEach(async () => {
 const originalAlert = Alert.alert;
 
 /** Answers every Alert by pressing the button named next in `answers`; records the titles. */
+/** Answers the action sheet the app shows in place of an alert menu, and waits for it to close. */
+async function answerChoice(id: string | null) {
+  useChoiceSheetStore.getState().settle(id);
+  notifyChoiceSheetClosed();
+  await new Promise((resolve) => setTimeout(resolve, 120));
+}
+
 function answerAlerts(answers: string[]) {
   const titles: string[] = [];
   Alert.alert = ((
@@ -428,8 +436,11 @@ test("a review deleted on ReviewDetail leaves the Reviews grid on its next focus
     name: "ReviewDetail",
     params: { reviewId: "mine" },
   });
-  answerAlerts(["Delete review", "Delete"]);
+  answerAlerts(["Delete"]);
   await detail.press(detail.findByLabel("Manage your review"));
+  assert.equal(useChoiceSheetStore.getState().request?.title, "Your review");
+  await answerChoice("delete");
+  await detail.settle();
   assert.deepEqual(deleted, ["mine"]);
 
   grid.emit("focus");
@@ -446,8 +457,14 @@ test("holding your own tile opens Edit / Delete, not Report (REV-4a)", async () 
   const titles = answerAlerts([]);
   const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
   await holdDown(view, view.findByTestId("review-tile-mine"));
-  assert.deepEqual(titles, ["Your review"]);
+  // An action sheet, not an alert (HIG, Action sheets).
+  assert.deepEqual(titles, []);
+  assert.deepEqual(
+    useChoiceSheetStore.getState().request?.options.map((option) => option.label),
+    ["Edit review", "Delete review"],
+  );
   assert.equal(useUIStore.getState().safetyMenu, null, "no report menu for your own review");
+  await answerChoice(null);
 });
 
 test("holding your own tile does nothing when editing is unavailable (REV-V2)", async () => {
@@ -464,6 +481,7 @@ test("holding your own tile does nothing when editing is unavailable (REV-V2)", 
   const view = await renderScreen(ReviewFeedScreen as never, { name: "Review" });
   await holdDown(view, view.findByTestId("review-tile-mine"));
   assert.deepEqual(titles, []);
+  assert.equal(useChoiceSheetStore.getState().request, null);
   assert.equal(useUIStore.getState().safetyMenu, null);
 });
 

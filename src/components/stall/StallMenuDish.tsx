@@ -83,6 +83,54 @@ function LikelyMatchLabel() {
   );
 }
 
+/** Same amber chip as the dish page, so "Must order" looks the same everywhere (one treatment per meaning). */
+function MustOrderChip() {
+  const { palette, radii, spacing } = useHungryTheme();
+  return (
+    <View
+      style={{
+        alignSelf: "flex-start",
+        backgroundColor: palette.amberLight,
+        borderRadius: radii.pill,
+        paddingHorizontal: spacing[2],
+        paddingVertical: 2,
+      }}
+    >
+      <AppText variant="micro" style={{ color: palette.warningText, fontWeight: "800" }}>
+        Must order
+      </AppText>
+    </View>
+  );
+}
+
+function StallPickLabel({ onPhoto = false }: { onPhoto?: boolean }) {
+  const { palette, radii, spacing } = useHungryTheme();
+  if (!onPhoto) {
+    return (
+      <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
+        {"STALL'S PICK"}
+      </AppText>
+    );
+  }
+  return (
+    <View
+      style={{
+        backgroundColor: palette.mediaScrim,
+        borderRadius: radii.pill,
+        paddingHorizontal: spacing[2],
+        paddingVertical: 2,
+      }}
+    >
+      <AppText
+        variant="micro"
+        style={{ color: palette.white, fontWeight: "800", letterSpacing: 0.5 }}
+      >
+        {"STALL'S PICK"}
+      </AppText>
+    </View>
+  );
+}
+
 export function StallMenuDishCard({
   dish,
   onPress,
@@ -135,21 +183,12 @@ export function StallMenuDishCard({
         {dish.mustOrder || featured ? (
           <View
             style={{
-              backgroundColor: palette.mediaScrim,
-              borderRadius: radii.pill,
               left: spacing[2],
-              paddingHorizontal: spacing[2],
-              paddingVertical: 2,
               position: "absolute",
               top: width * 0.7 - spacing[2] - 22,
             }}
           >
-            <AppText
-              variant="micro"
-              style={{ color: palette.white, fontWeight: "800", letterSpacing: 0.5 }}
-            >
-              {featured ? "STALL'S PICK" : "MUST ORDER"}
-            </AppText>
+            {featured ? <StallPickLabel onPhoto /> : <MustOrderChip />}
           </View>
         ) : null}
         <View style={{ gap: spacing[1], padding: spacing[3] }}>
@@ -227,16 +266,8 @@ export function StallMenuDishRow({ dish, onPress, likelyMatch = false }: MenuDis
         {dish.mustOrder || featured || likelyMatch || dish.reviewCount > 0 ? (
           <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
             {likelyMatch ? <LikelyMatchLabel /> : null}
-            {featured ? (
-              <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
-                {"STALL'S PICK"}
-              </AppText>
-            ) : null}
-            {dish.mustOrder ? (
-              <AppText variant="micro" style={{ color: palette.orangeText, fontWeight: "800" }}>
-                MUST ORDER
-              </AppText>
-            ) : null}
+            {featured ? <StallPickLabel /> : null}
+            {dish.mustOrder ? <MustOrderChip /> : null}
             {dish.reviewCount > 0 ? <MenuDishRating rating={dish.rating} /> : null}
           </View>
         ) : null}

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, ShieldCheck, Trash2 } from "lucide-react-native";
+import { ShieldCheck, Trash2 } from "lucide-react-native";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppText, Button, Card } from "@/components/ui";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioFlag } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AdminPortfolioFlags">;
 
@@ -65,7 +66,7 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">Portfolio flags</AppText>
@@ -102,7 +103,14 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
                 size="sm"
                 fullWidth={false}
                 variant="secondary"
-                leftIcon={<ShieldCheck color={palette.text} size={16} />}
+                leftIcon={
+                  <AppSymbol
+                    name="checkmark.shield"
+                    fallback={ShieldCheck}
+                    size={16}
+                    color={palette.text}
+                  />
+                }
                 onPress={() => resolve(flag.id, "dismissed")}
               />
               <Button
@@ -119,7 +127,9 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
                 size="sm"
                 fullWidth={false}
                 variant="destructive"
-                leftIcon={<Trash2 color={palette.textOnDark} size={16} />}
+                leftIcon={
+                  <AppSymbol name="trash" fallback={Trash2} size={16} color={palette.textOnDark} />
+                }
                 onPress={() => confirmRemove(flag.id)}
               />
             </View>

@@ -6,6 +6,7 @@ import { Check, ChevronDown } from "lucide-react-native";
 import { useHungryTheme } from "@/theme";
 import { AppText } from "./AppText";
 import { BottomSheet } from "./BottomSheet";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 export type SelectFieldOption<T extends string = string> = {
   label: string;
@@ -61,7 +62,7 @@ export function SelectField<T extends string = string>({
         <AppText variant="body" style={{ flex: 1 }}>
           {selectedOption?.label ?? "Select"}
         </AppText>
-        <ChevronDown size={18} color={palette.textMuted} />
+        <AppSymbol name="chevron.down" fallback={ChevronDown} size={18} color={palette.textMuted} />
       </Pressable>
       <BottomSheet ref={sheetRef} accessibilityLabel={label} snapPoints={["45%"]}>
         <View style={{ gap: spacing[2] }}>
@@ -95,7 +96,9 @@ export function SelectField<T extends string = string>({
                     </AppText>
                   ) : null}
                 </View>
-                {selected ? <Check size={18} color={palette.orange} /> : null}
+                {selected ? (
+                  <AppSymbol name="checkmark" fallback={Check} size={18} color={palette.orange} />
+                ) : null}
               </Pressable>
             );
           })}

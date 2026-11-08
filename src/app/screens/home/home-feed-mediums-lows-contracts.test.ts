@@ -73,7 +73,11 @@ test("M7: the inbox shows an error banner, skeleton, mark-all and paging; the st
   const inbox = read("src/app/screens/home/ActivityInboxScreen.tsx");
   const store = read("src/store/useActivityStore.ts");
   assert.match(inbox, /groupActivityUpdates\(/);
-  assert.match(inbox, /Mark all as read/);
+  // Mark all read is the header's trailing action (Apple design pass), not a button in the list.
+  assert.match(
+    inbox,
+    /right=\{\s*activeTab === "updates" && updatesHaveUnread \? \(\s*<Button\s*label="Mark all read"/,
+  );
   assert.match(inbox, /Show older updates/);
   assert.match(inbox, /<Skeleton/);
   assert.match(inbox, /`Unread\. /);

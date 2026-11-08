@@ -44,6 +44,7 @@ import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
 type ActivityTab = "messages" | "updates";
@@ -175,16 +176,43 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     }, [fetchActivityEvents, loadConversations]),
   );
 
+  const markAllActivityRead = useActivityStore((state) => state.markAllActivityRead);
+  const updatesHaveUnread = useMemo(
+    () => groupActivityUpdates(visibleUpdates, readActivityIds).some((row) => row.isUnread),
+    [readActivityIds, visibleUpdates],
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.bg }]} edges={["top"]}>
       <View style={styles.container}>
         <AppHeader
           title="Activity"
+          // An action on the current view lives in the header (HIG, Toolbars), not in the list.
+          right={
+            activeTab === "updates" && updatesHaveUnread ? (
+              <Button
+                label="Mark all read"
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+                accessibilityLabel="Mark all updates as read"
+                onPress={() => void markAllActivityRead()}
+                testID="activity-mark-all-read"
+              />
+            ) : undefined
+          }
           horizontalPadding={semanticSpacing.screenEdge}
           left={
             <IconButton
               accessibilityLabel="Go back"
-              icon={<ChevronLeft color={palette.text} size={24} />}
+              icon={
+                <AppSymbol
+                  name="chevron.backward"
+                  fallback={ChevronLeft}
+                  size={24}
+                  color={palette.text}
+                />
+              }
               onPress={() => navigation.goBack()}
               variant="ghost"
             />
@@ -410,7 +438,6 @@ function UpdatesTab({
   const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const markActivityRead = useActivityStore((state) => state.markActivityRead);
-  const markAllActivityRead = useActivityStore((state) => state.markAllActivityRead);
   const fetchMoreActivityEvents = useActivityStore((state) => state.fetchMoreActivityEvents);
   const hasLoadedActivity = useActivityStore((state) => state.hasLoadedActivity);
   const activityLoadFailed = useActivityStore((state) => state.activityLoadFailed);
@@ -429,7 +456,6 @@ function UpdatesTab({
     () => groupActivityUpdates(updates, readActivityIds),
     [readActivityIds, updates],
   );
-  const hasUnread = rows.some((row) => row.isUnread);
   // Mock mode has no server read to wait for.
   const isFirstLoad = !hasLoadedActivity && getServiceProvider().mode !== "mock";
 
@@ -467,18 +493,6 @@ function UpdatesTab({
             Couldn&apos;t refresh. Showing the last updates we loaded. Tap to try again.
           </AppText>
         </Pressable>
-      ) : null}
-
-      {hasUnread ? (
-        <Button
-          label="Mark all as read"
-          variant="ghost"
-          size="sm"
-          fullWidth={false}
-          style={{ alignSelf: "flex-end" }}
-          accessibilityLabel="Mark all updates as read"
-          onPress={() => void markAllActivityRead()}
-        />
       ) : null}
 
       {rows.map((update) => {
@@ -523,15 +537,30 @@ function UpdatesTab({
             <Avatar uri={update.actorAvatarUrl} name={update.actorName} size={40} />
             <View style={[stylesInline.kindBadge, { backgroundColor: palette.bgSoft }]}>
               {update.kind === "like" ? (
-                <Heart color={kindColor} size={20} />
+                <AppSymbol name="heart" fallback={Heart} size={20} color={kindColor} />
               ) : update.kind === "share" ? (
-                <Share2 color={kindColor} size={20} />
+                <AppSymbol
+                  name="square.and.arrow.up"
+                  fallback={Share2}
+                  size={20}
+                  color={kindColor}
+                />
               ) : update.kind === "submission" ? (
-                <Store color={kindColor} size={20} />
+                <AppSymbol name="storefront" fallback={Store} size={20} color={kindColor} />
               ) : update.kind === "follow_request" || update.kind === "follow" ? (
-                <UserPlus color={kindColor} size={20} />
+                <AppSymbol
+                  name="person.badge.plus"
+                  fallback={UserPlus}
+                  size={20}
+                  color={kindColor}
+                />
               ) : (
-                <MessageCircleMore color={kindColor} size={20} />
+                <AppSymbol
+                  name="ellipsis.bubble"
+                  fallback={MessageCircleMore}
+                  size={20}
+                  color={kindColor}
+                />
               )}
             </View>
             <View style={{ flex: 1, gap: spacing[1] }}>

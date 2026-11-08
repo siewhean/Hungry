@@ -21,6 +21,7 @@ import type { DishDetail } from "@/types/domain";
 import type { OnboardingStackParamList } from "./OnboardingStack";
 import { ResultDishPhoto } from "./ResultDishCard";
 import { loadOnboardingDishPool } from "./tastePicks";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingSwipe">;
 type LoadState =
@@ -220,7 +221,7 @@ export function OnboardingSwipeScreen({ navigation }: Props) {
                 width: 64,
               }}
             >
-              <X color={palette.textMuted} size={28} />
+              <AppSymbol name="xmark" fallback={X} size={28} color={palette.textMuted} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -235,7 +236,13 @@ export function OnboardingSwipeScreen({ navigation }: Props) {
                 width: 64,
               }}
             >
-              <Heart color={palette.surface} fill={palette.surface} size={28} />
+              <AppSymbol
+                name="heart.fill"
+                fallback={Heart}
+                filled
+                size={28}
+                color={palette.surface}
+              />
             </Pressable>
           </View>
         </>

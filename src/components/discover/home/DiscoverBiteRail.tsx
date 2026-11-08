@@ -302,7 +302,12 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
             }}
           >
             {titleRow}
-            <ChevronRight color={palette.textMuted} size={20} />
+            <AppSymbol
+              name="chevron.right"
+              fallback={ChevronRight}
+              size={20}
+              color={palette.textMuted}
+            />
           </Pressable>
         ) : (
           <View

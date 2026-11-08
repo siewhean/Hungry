@@ -17,6 +17,7 @@ import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useHungryTheme } from "@/theme";
 import { isVenueOpenNow } from "@/features/discovery/decideForMeCandidates";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MapZoomedIn">;
 
@@ -148,7 +149,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
           shadows.floating,
         ]}
       >
-        <ChevronLeft color={palette.text} size={24} />
+        <AppSymbol name="chevron.backward" fallback={ChevronLeft} size={24} color={palette.text} />
       </Pressable>
 
       <BottomSheet
@@ -206,7 +207,12 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
                 paddingHorizontal: spacing[3],
               }}
             >
-              <Navigation size={16} color={palette.orange} />
+              <AppSymbol
+                name="location.fill"
+                fallback={Navigation}
+                size={16}
+                color={palette.orange}
+              />
               <AppText variant="bodySmall" style={{ fontWeight: "800" }}>
                 Directions
               </AppText>
@@ -238,7 +244,7 @@ export function MapZoomedInScreen({ navigation, route }: Props) {
                         .join(" · ")}
                     </AppText>
                   </View>
-                  <Store size={16} color={palette.orange} />
+                  <AppSymbol name="storefront" fallback={Store} size={16} color={palette.orange} />
                 </Pressable>
               ))}
             </View>

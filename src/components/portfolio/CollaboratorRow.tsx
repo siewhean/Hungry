@@ -4,6 +4,7 @@ import { Trash2 } from "lucide-react-native";
 import { AppText, Avatar, Button, Card } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioCollaborator } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface CollaboratorRowProps {
   collaborator: PortfolioCollaborator;
@@ -48,7 +49,7 @@ export function CollaboratorRow({ collaborator, onRemove, onChangeRole }: Collab
             onPress={onRemove}
             style={styles.iconButton}
           >
-            <Trash2 color={palette.errorText} size={18} />
+            <AppSymbol name="trash" fallback={Trash2} size={18} color={palette.errorText} />
           </Pressable>
         ) : null}
       </View>

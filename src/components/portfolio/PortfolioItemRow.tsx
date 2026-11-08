@@ -16,6 +16,7 @@ import { AccessibleImage, AppText, Card } from "@/components/ui";
 import type { ItemDetail } from "@/features/checklistPortfolio/useItemLabels";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioItem } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 interface PortfolioItemRowProps {
   item: PortfolioItem;
@@ -117,14 +118,20 @@ export function PortfolioItemRow({
         </View>
         {typeof item.score === "number" ? (
           <View style={styles.scoreWrap}>
-            <Star color={palette.starStroke} fill={palette.starFill} size={16} />
+            <AppSymbol
+              name="star.fill"
+              fallback={Star}
+              filled
+              size={16}
+              color={palette.starStroke}
+            />
             <AppText variant="bodySmallBold">{item.score}/10</AppText>
           </View>
         ) : null}
       </Pressable>
       {item.publicNotes ? (
         <View style={styles.noteRow}>
-          <Eye color={palette.textMuted} size={15} />
+          <AppSymbol name="eye" fallback={Eye} size={15} color={palette.textMuted} />
           <AppText variant="bodySmall" tone="secondary" style={styles.copy}>
             {item.publicNotes}
           </AppText>
@@ -133,7 +140,7 @@ export function PortfolioItemRow({
       {/* The server returns private notes only to the owner and collaborators. */}
       {item.privateNotes ? (
         <View style={styles.noteRow}>
-          <Users color={palette.textMuted} size={15} />
+          <AppSymbol name="person.2" fallback={Users} size={15} color={palette.textMuted} />
           <AppText variant="bodySmall" tone="secondary" style={styles.copy}>
             {item.privateNotes}
           </AppText>
@@ -161,7 +168,12 @@ export function PortfolioItemRow({
             }}
             style={[styles.iconButton, styles.dragHandle]}
           >
-            <GripVertical color={palette.textMuted} size={18} />
+            <AppSymbol
+              name="line.3.horizontal"
+              fallback={GripVertical}
+              size={18}
+              color={palette.textMuted}
+            />
           </View>
           <Pressable
             accessibilityRole="button"
@@ -170,7 +182,7 @@ export function PortfolioItemRow({
             onPress={onMoveUp}
             style={[styles.iconButton, { opacity: isFirst ? 0.35 : 1 }]}
           >
-            <ChevronUp color={palette.text} size={18} />
+            <AppSymbol name="chevron.up" fallback={ChevronUp} size={18} color={palette.text} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -179,7 +191,7 @@ export function PortfolioItemRow({
             onPress={onMoveDown}
             style={[styles.iconButton, { opacity: isLast ? 0.35 : 1 }]}
           >
-            <ChevronDown color={palette.text} size={18} />
+            <AppSymbol name="chevron.down" fallback={ChevronDown} size={18} color={palette.text} />
           </Pressable>
           {onEdit ? (
             <Pressable
@@ -188,7 +200,7 @@ export function PortfolioItemRow({
               onPress={onEdit}
               style={styles.iconButton}
             >
-              <Pencil color={palette.text} size={18} />
+              <AppSymbol name="pencil" fallback={Pencil} size={18} color={palette.text} />
             </Pressable>
           ) : null}
           <Pressable
@@ -197,7 +209,7 @@ export function PortfolioItemRow({
             onPress={onDelete}
             style={styles.iconButton}
           >
-            <Trash2 color={palette.errorText} size={18} />
+            <AppSymbol name="trash" fallback={Trash2} size={18} color={palette.errorText} />
           </Pressable>
         </View>
       ) : null}

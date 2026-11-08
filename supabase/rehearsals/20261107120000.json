@@ -1,0 +1,14 @@
+{
+  "version": "20261107120000",
+  "name": "20261107120000_food_portfolio_leaderboards",
+  "result": "pass",
+  "rehearsed_at": "2026-11-07T09:25:51Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "09de9391b61e734409a7a3c71c379c4b427d02d3",
+  "up_sha256": "129f5fd526ac52e1862a142e1c1eca39fed4c680258b9cf2db55036ea1658f50",
+  "down_sha256": "87764b70413bccd79bc79d6724169bd1a19c4bd12a62a7640785b2ac9d2c8585",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/food_portfolio_leaderboards.sql"]
+}

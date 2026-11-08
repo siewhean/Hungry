@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, View } from "react-native";
 
+import { FoodPortfolioSection } from "@/components/foodPortfolio/FoodPortfolioSection";
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, type ProfileStat } from "@/components/profile/ProfileStatRow";
@@ -19,8 +20,15 @@ import { pluralLabel } from "@/features/profile/plural";
 import { useProfileFavouriteDishes } from "@/features/profile/useProfileFavouriteDishes";
 import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import { useFollowPress } from "@/features/profile/useFollowPress";
+import {
+  followButtonLabel as followButtonWords,
+  followedByLine,
+  tasteMatchLabel,
+} from "@/features/social/relationship";
+import { useProfileRelationship } from "@/features/social/useProfileRelationship";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
+import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -139,6 +147,7 @@ export function UserProfileContent({
   const authorBio = publicProfile?.id === normalizedAuthorId ? publicProfile?.bio : undefined;
   const resolvedAuthorId = normalizedAuthorId;
   const viewerId = useProfileStore((state) => state.profile.id);
+  const isViewerSignedIn = useSessionStore((state) => state.isAuthenticated);
   // Your own posts can link here: never offer Follow, Report or Block on yourself.
   const isSelf = Boolean(resolvedAuthorId && resolvedAuthorId === viewerId);
 
@@ -362,12 +371,20 @@ export function UserProfileContent({
     resolvedAuthorId && !isFollowingAuthor && requestedUserIds[resolvedAuthorId],
   );
   const isFollowMuted = isFollowingAuthor || isFollowRequested;
-  const followButtonLabel = isFollowRequested
-    ? "Requested"
-    : isFollowingAuthor
-      ? "Following"
-      : "Follow";
   const canShowFollowButton = Boolean(resolvedAuthorId) && !isSelf;
+  // "Follows you" and "Followed by Mei and 2 others you follow" (signed in, follows on).
+  const relationship = useProfileRelationship(
+    resolvedAuthorId,
+    canShowFollowButton && FEATURE_FLAGS.followConnectionsEnabled && isViewerSignedIn,
+    isFollowingAuthor,
+  );
+  const followsYou = relationship?.followsYou === true;
+  const followedBy = followedByLine(relationship);
+  const followButtonLabel = followButtonWords({
+    isFollowing: isFollowingAuthor,
+    isRequested: isFollowRequested,
+    followsYou,
+  });
   // Private account the viewer does not follow: header and follow counts only.
   const isPrivateLocked =
     !isSelf &&
@@ -468,21 +485,31 @@ export function UserProfileContent({
         },
       ]
     : [];
-  // A private account you do not follow shows only the follow counts.
+  // Dishes posted, as the Food Portfolio counted them ("20+" while more pages remain).
+  const [portfolioPostCount, setPortfolioPostCount] = useState<number | string | null>(null);
+  const reviewsStat: ProfileStat = {
+    key: "reviews",
+    label: pluralLabel(reviewCount, "Review"),
+    value: reviewCount,
+    accessibilityHint: `Shows ${authorName}'s reviews`,
+    onPress: () => setActiveTab("reviews"),
+  };
+  // A private account you do not follow shows only the follow counts. With the Food Portfolio the
+  // row reads Posts, Reviews, Followers, Following (its own Stalls tab lists the stalls); without
+  // it, the stalls count closes the row (the visited-stalls list is never shown for others).
   const stats: ProfileStat[] = isPrivateLocked
     ? followStats
-    : [
-        {
-          key: "reviews",
-          label: pluralLabel(reviewCount, "Review"),
-          value: reviewCount,
-          accessibilityHint: `Shows ${authorName}'s reviews`,
-          onPress: () => setActiveTab("reviews"),
-        },
-        ...followStats,
-        // Count only: the visited-stalls list is the viewer's own and is not shown for others.
-        { key: "stalls", label: "Stalls", value: stallsCount },
-      ];
+    : FEATURE_FLAGS.foodPortfolioEnabled
+      ? [
+          {
+            key: "posts",
+            label: pluralLabel(portfolioPostCount, "Post"),
+            value: portfolioPostCount,
+          },
+          reviewsStat,
+          ...followStats,
+        ]
+      : [reviewsStat, ...followStats, { key: "stalls", label: "Stalls", value: stallsCount }];
 
   // A wrong or deleted id (or an account hidden from this viewer) is not a profile: no fake
   // "Hungry member" with a Follow button. A failed read keeps the name from the link, if any.
@@ -583,14 +610,52 @@ export function UserProfileContent({
                 {authorBio}
               </AppText>
             ) : null}
-            {tasteMatch !== null || memberSince ? (
+            {followsYou ? (
+              <View
+                testID="user-profile-follows-you"
+                style={{
+                  alignSelf: "flex-start",
+                  backgroundColor: palette.bgSoft,
+                  borderRadius: radii.pill,
+                  paddingHorizontal: spacing[2],
+                  paddingVertical: 2,
+                }}
+              >
+                <AppText variant="micro" tone="secondary" style={{ fontWeight: "700" }}>
+                  Follows you
+                </AppText>
+              </View>
+            ) : null}
+            {tasteMatch !== null ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${tasteMatchLabel(tasteMatch)} with your taste`}
+                accessibilityHint={`Compares your palate with ${authorName}'s`}
+                hitSlop={{ top: 12, bottom: 12 }}
+                onPress={() =>
+                  rootNavigation.navigate("TasteCompare", {
+                    userId: resolvedAuthorId,
+                    userDisplayName: authorName,
+                  })
+                }
+                testID="user-profile-taste-match"
+                style={{
+                  alignSelf: "flex-start",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <AppSymbol name="tasteFingerprint" size={14} color={palette.accentText} />
+                <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
+                  {tasteMatchLabel(tasteMatch)}
+                </AppText>
+                <AppSymbol name="chevronRight" size={12} color={palette.accentText} />
+              </Pressable>
+            ) : null}
+            {memberSince ? (
               <AppText variant="micro" tone="secondary" testID="user-profile-meta">
-                {[
-                  tasteMatch !== null ? `${tasteMatch}% taste match` : "",
-                  memberSince ? `Member since ${memberSince}` : "",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+                {`Member since ${memberSince}`}
               </AppText>
             ) : null}
             {canShowFollowButton ? (
@@ -622,15 +687,37 @@ export function UserProfileContent({
           />
         ) : (
           <>
+            {followedBy ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={followedBy}
+                accessibilityHint={`Opens ${authorName}'s followers`}
+                onPress={() => openProfileConnections("UserFollowers")}
+                testID="user-profile-followed-by"
+                style={{
+                  alignItems: "center",
+                  flexDirection: "row",
+                  gap: spacing[2],
+                  minHeight: 32,
+                }}
+              >
+                <AppSymbol name="people" size={16} color={palette.textSecondary} />
+                <AppText variant="bodySmall" tone="secondary" style={{ flex: 1 }} numberOfLines={2}>
+                  {followedBy}
+                </AppText>
+              </Pressable>
+            ) : null}
             <ProfileStatRow stats={stats} testID="user-profile-stats" />
 
             {isPrivateLocked ? (
               <EmptyState
                 title="This account is private"
                 body={
-                  showPosts()
-                    ? `Follow ${authorName} to see their posts and reviews.`
-                    : `Follow ${authorName} to see their reviews.`
+                  FEATURE_FLAGS.foodPortfolioEnabled
+                    ? `Follow ${authorName} to see their Food Portfolio and reviews.`
+                    : showPosts()
+                      ? `Follow ${authorName} to see their posts and reviews.`
+                      : `Follow ${authorName} to see their reviews.`
                 }
                 icon={
                   <AppSymbol
@@ -643,6 +730,14 @@ export function UserProfileContent({
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
+                {/* Their posted dishes, top three and stalls (Food Portfolio flag). */}
+                <FoodPortfolioSection
+                  userId={resolvedAuthorId}
+                  ownerName={authorName}
+                  isSelf={false}
+                  navigation={rootNavigation}
+                  onPostCountChange={setPortfolioPostCount}
+                />
                 <FavouriteDishesRow
                   dishIds={pinnedDishIds}
                   onOpenDish={(dishId) =>

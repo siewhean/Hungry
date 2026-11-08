@@ -15,6 +15,7 @@ import { Search, X } from "lucide-react-native";
 
 import { useHungryTheme } from "@/theme";
 import { useMovingSearchPlaceholder } from "@/features/search/useMovingSearchPlaceholder";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 export type SearchLauncherAlign = "left" | "right";
 
@@ -218,7 +219,7 @@ export function ExpandableSearchLauncher({
             borderCurve: componentCornerCurve.borderCurve,
           }}
         >
-          <Search color={iconColor} size={20} />
+          <AppSymbol name="magnifyingglass" fallback={Search} size={20} color={iconColor} />
         </Pressable>
       </Animated.View>
 
@@ -304,7 +305,7 @@ export function ExpandableSearchLauncher({
               onPressIn={handleClearPressIn}
               onPress={handleClear}
             >
-              <X color={palette.textMuted} size={18} />
+              <AppSymbol name="xmark" fallback={X} size={18} color={palette.textMuted} />
             </Pressable>
           ) : null}
         </Animated.View>

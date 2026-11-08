@@ -745,6 +745,112 @@ export interface ContentReportRequest {
   reason: string;
 }
 
+/** A stall on someone's Food Portfolio: how many dishes they posted there. */
+export interface FoodPortfolioStall {
+  venueId: string;
+  venueName: string;
+  buildingId?: string;
+  buildingName?: string;
+  dishCount: number;
+  lastPostedAt?: string;
+}
+
+/** How the viewer and one other person are connected (get_profile_relationship). */
+export interface ProfileRelationship {
+  /** They follow the viewer (approved): "Follows you" and "Follow back". */
+  followsYou: boolean;
+  /** People the viewer follows who follow them; 0 when their lists are hidden from the viewer. */
+  mutualCount: number;
+  /** Up to three of those people, newest follow first. */
+  mutuals: { userId: string; displayName: string }[];
+}
+
+/** Someone to follow (get_people_suggestions), with why they were suggested. */
+export interface PeopleSuggestion {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  /** 0-100 taste match with the viewer; undefined when either palate is still neutral. */
+  tasteMatch?: number;
+  /** How many of the viewer's follows follow them. */
+  mutualCount: number;
+  /** Reviews and posts in the last 60 days. */
+  recentActivity: number;
+  reason: "mutual" | "taste" | "active";
+}
+
+/** A stall loved by people the viewer follows, or by their taste twins when they follow nobody. */
+export interface NetworkStallPick {
+  venueId: string;
+  source: "following" | "taste_twin";
+  /** Distinct people who reviewed it 4+ or posted from it in the last 90 days. */
+  peopleCount: number;
+  /** Up to two of them, newest first. */
+  people: { userId: string; displayName: string }[];
+  lastAt?: string;
+}
+
+/** The top three dishes on a Food Portfolio and which of them the owner pinned. */
+export interface FoodPortfolioTopPosts {
+  posts: Bite[];
+  pinnedPostIds: string[];
+}
+
+/** Most active ranks Portfolio points; Trending ranks the last 7 days of engagement. */
+export type LeaderboardBoard = "active" | "trending";
+/** Trending is always the last 7 days, so it ignores the period. */
+export type LeaderboardPeriod = "week" | "all";
+export type LeaderboardScope = "everyone" | "following";
+
+export interface LeaderboardQuery {
+  board: LeaderboardBoard;
+  period?: LeaderboardPeriod;
+  scope?: LeaderboardScope;
+  /** Rows to return (default 50, at most 100). */
+  limit?: number;
+}
+
+export interface LeaderboardRow {
+  rank: number;
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  score: number;
+  isMe: boolean;
+}
+
+/** Your own points and ranks (null rank: not on that board yet). */
+export interface LeaderboardSummary {
+  totalPoints: number;
+  weekPoints: number;
+  activeWeekRank: number | null;
+  activeAllRank: number | null;
+  trendingRank: number | null;
+  creditedPostsToday: number;
+  dailyCap: number;
+  computedAt?: string;
+}
+
+export type PortfolioPointsKind =
+  | "post"
+  | "off_board_post"
+  | "new_stall"
+  | "first_dish_photo"
+  | "rich_post"
+  | "achievement";
+
+/** One row of your Portfolio points history. */
+export interface PortfolioPointsEntry {
+  id: string;
+  kind: PortfolioPointsKind;
+  points: number;
+  postId?: string;
+  achievementId?: string;
+  tier?: number;
+  createdAt: string;
+  voided: boolean;
+}
+
 export interface BitesFeedPage {
   /** Rows per page (default 40). */
   limit?: number;
@@ -1235,6 +1341,27 @@ export interface HungryService {
       query: string,
       page?: { limit?: number; offset?: number },
     ): Promise<{ userId: string; displayName: string; avatarUrl?: string }[]>;
+    /**
+     * Whether this person follows the viewer and which of the viewer's follows follow them; null
+     * for yourself, a blocked pair, a signed-out viewer or an older backend without the RPC.
+     */
+    getProfileRelationship(userId: string): Promise<ProfileRelationship | null>;
+    /**
+     * Taste match 0-100 for many people in one call (at most 200 ids), keyed by user id. People
+     * without a palate or hidden from the viewer are left out; an older backend returns {}.
+     */
+    getTasteMatches(userIds: string[]): Promise<Record<string, number>>;
+    /**
+     * Another diner's six taste levels beside yours, with the match; null when no match can be
+     * shown (no palate on either side, hidden from you, or an older backend).
+     */
+    getTasteComparison(
+      userId: string,
+    ): Promise<{ score: number; mine: TasteVector; theirs: TasteVector } | null>;
+    /** People to follow, best first (signed-in only); [] on an older backend. */
+    listPeopleSuggestions(limit?: number): Promise<PeopleSuggestion[]>;
+    /** Stalls loved by people the viewer follows (or taste twins); [] signed out or on an older backend. */
+    listNetworkStallPicks(limit?: number): Promise<NetworkStallPick[]>;
     /** False when the viewer may not see this user's follower/following lists (private or blocked). */
     canViewFollowLists(userId: string): Promise<boolean>;
     /** Approved follower/following counts; null when hidden from the viewer or unavailable. */
@@ -1284,6 +1411,27 @@ export interface HungryService {
         authorAvatarUrl?: string;
       }[]
     >;
+  };
+
+  // Food Portfolio (a person's posted dishes, top three, stalls, and the Following feed)
+  foodPortfolio: {
+    /** Up to three readable posts: the owner's pins in order, then their most liked. */
+    getTopPosts(userId: string): Promise<FoodPortfolioTopPosts>;
+    /** Pins up to three of your own published posts, in order. Returns the ids the server kept. */
+    setPinnedPosts(postIds: string[]): Promise<string[]>;
+    /** Stalls the person posted from, most dishes first (default 60). */
+    listStalls(userId: string, limit?: number): Promise<FoodPortfolioStall[]>;
+    /** Newest posts by people you follow (approved follows only). `cursor` is the last post shown. */
+    getFollowingFeed(page?: BitesFeedPage): Promise<Bite[]>;
+  };
+
+  leaderboard: {
+    /** A board's top rows (signed in only; empty for guests). */
+    getLeaderboard(query: LeaderboardQuery): Promise<LeaderboardRow[]>;
+    /** Your points, ranks and how many of today's credited posts are used. Null for guests. */
+    getMySummary(): Promise<LeaderboardSummary | null>;
+    /** Your recent Portfolio points, newest first (default 30). */
+    listMyPoints(limit?: number): Promise<PortfolioPointsEntry[]>;
   };
 
   chat: {

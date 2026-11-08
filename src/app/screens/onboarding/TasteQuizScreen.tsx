@@ -16,7 +16,7 @@ import {
   type NativeSyntheticEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ArrowLeft, Check } from "lucide-react-native";
+import { Check } from "lucide-react-native";
 
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
 import { AccessibleImage, Button, AppText } from "@/components/ui";
@@ -54,6 +54,7 @@ import {
   hasAnsweredAnyQuestion,
   resolveQuestionCard,
 } from "./tasteQuizAnswers";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "TasteQuiz" | "DietaryPreferences">;
 
@@ -485,7 +486,7 @@ export function TasteQuizScreen({ navigation, route }: Props) {
               width: 44,
             }}
           >
-            <ArrowLeft color={palette.text} size={22} />
+            <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
           </Pressable>
         </View>
         {inDietaryStep ? (
@@ -667,7 +668,12 @@ export function TasteQuizScreen({ navigation, route }: Props) {
                                 width: 28,
                               }}
                             >
-                              <Check color={palette.surface} size={16} />
+                              <AppSymbol
+                                name="checkmark"
+                                fallback={Check}
+                                size={16}
+                                color={palette.surface}
+                              />
                             </View>
                           ) : null}
                         </View>

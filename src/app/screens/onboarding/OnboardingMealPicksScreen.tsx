@@ -21,6 +21,7 @@ import { useOnboardingAnswersStore } from "@/store/useOnboardingAnswersStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { OnboardingStackParamList } from "./OnboardingStack";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, "OnboardingMealPicks">;
 
@@ -103,7 +104,7 @@ export function OnboardingMealPicksScreen({ navigation }: Props) {
               width: 40,
             }}
           >
-            <Bell color={palette.surface} size={20} />
+            <AppSymbol name="bell" fallback={Bell} size={20} color={palette.surface} />
           </View>
           <View style={{ flex: 1 }}>
             <AppText variant="bodyBold">{`Hungry · ${formatMealTime(pushTime)}`}</AppText>

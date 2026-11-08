@@ -50,6 +50,7 @@ import {
   AddToListSymbol,
   BackSymbol,
   BookmarkSymbol,
+  PostDishSymbol,
   ChevronForwardSymbol,
   RatingStarSymbol,
   ShareSymbol,
@@ -994,6 +995,23 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       ],
                     }
                   : {}),
+              },
+            ]
+          : []),
+        // Food Portfolio: post your photo of this dish, with the dish and stall filled in.
+        ...(FEATURE_FLAGS.foodPortfolioEnabled
+          ? [
+              {
+                id: "post-dish",
+                label: "Post a dish",
+                caption: "Post",
+                icon: PostDishSymbol,
+                onPress: () => {
+                  trackAnalyticsEvent("food_portfolio_post_tapped", { source: "dish" });
+                  navigation.navigate("Post", { dishId: dish.id, venueId: dish.venueId });
+                },
+                accessibilityLabel: "Post a dish",
+                accessibilityHint: "Adds your photo of this dish to your Food Portfolio",
               },
             ]
           : []),

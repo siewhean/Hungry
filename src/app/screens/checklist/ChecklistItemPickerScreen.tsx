@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { ArrowLeft, Search } from "lucide-react-native";
+import { Search } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
@@ -13,6 +13,7 @@ import { runListMutation } from "@/features/checklistPortfolio/runListMutation";
 import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistItemPicker">;
 
@@ -180,7 +181,7 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
           onPress={() => navigation.goBack()}
           style={styles.iconButton}
         >
-          <ArrowLeft color={palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={palette.text} />
         </Pressable>
         <View style={{ flex: 1 }}>
           <AppText variant="h1">{title}</AppText>
@@ -219,7 +220,14 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
             placeholder={mode === "dish" ? "Find dishes..." : "Find stalls..."}
             value={query}
             onChangeText={setQuery}
-            leftIcon={<Search color={palette.textMuted} size={18} />}
+            leftIcon={
+              <AppSymbol
+                name="magnifyingglass"
+                fallback={Search}
+                size={18}
+                color={palette.textMuted}
+              />
+            }
           />
           <Card>
             <ScheduleFields

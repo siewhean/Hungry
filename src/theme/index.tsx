@@ -21,6 +21,7 @@ import {
 } from "@expo-google-fonts/fraunces";
 
 import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { useIncreaseContrast } from "@/hooks/useIncreaseContrast";
 import { useUIStore } from "@/store/useUIStore";
 import {
   colors,
@@ -38,6 +39,7 @@ import {
   typography,
   zIndex,
 } from "./tokens";
+import { applyIncreaseContrast } from "./increaseContrast";
 
 export type HungryTheme = {
   colorScheme: "light" | "dark";
@@ -68,6 +70,7 @@ const ThemeContext = createContext<HungryTheme | null>(null);
 export function HungryThemeProvider({ children }: PropsWithChildren) {
   const themePreference = useUIStore((state) => state.themePreference);
   const reducedMotion = useReduceMotion();
+  const increaseContrast = useIncreaseContrast();
   const hookScheme = useColorScheme();
 
   // Track system color scheme via Appearance API for maximum reliability
@@ -111,7 +114,13 @@ export function HungryThemeProvider({ children }: PropsWithChildren) {
     return resolvedSystemScheme === "dark" ? "dark" : "light";
   }, [themePreference, resolvedSystemScheme]);
 
-  const palette = colors[colorScheme];
+  const palette = useMemo(
+    () =>
+      increaseContrast
+        ? applyIncreaseContrast(colors[colorScheme], colorScheme)
+        : colors[colorScheme],
+    [colorScheme, increaseContrast],
+  );
 
   const themedShadows = useMemo(
     () => ({

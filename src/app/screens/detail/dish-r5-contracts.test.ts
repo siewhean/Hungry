@@ -80,9 +80,13 @@ test("DISH5-6: the hold menu springs with Reanimated and honours Reduce Motion; 
   assert.doesNotMatch(back, /0\.92/);
 });
 
-test("DISH5-10: the dish page asks for the darker call-to-action orange", () => {
+test("DISH5-10: the dish and stall pages ask for the same darker call-to-action orange", () => {
   assert.match(screen, /highContrastCta/);
   assert.match(bar, /palette\.orangeControl/);
+  assert.match(
+    read("src/components/stall/StallInteractionBar.tsx"),
+    /highContrastCta\n\s+testID="stall-action-bar"/,
+  );
 });
 
 test("DISH5-4: the three-taste Tried popup is a draft experiment that falls back to all six", () => {

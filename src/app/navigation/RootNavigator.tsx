@@ -35,6 +35,7 @@ import { SwipeableTabNavigator } from "./SwipeableTabNavigator";
 import { useAccountDeletionGracePrompt } from "@/features/auth/useAccountDeletionGracePrompt";
 import { createRootLinking, withoutEmailParam } from "./linking";
 import { getInitialNotificationUrl, subscribeToNotificationOpens } from "@/lib/notifications/push";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 export const navigationRef = createNavigationContainerRef<RootStackParamList>();
@@ -317,6 +318,22 @@ const loadFollowRequestsScreen = () =>
   (
     require("@/app/screens/profile/FollowRequestsScreen") as typeof import("@/app/screens/profile/FollowRequestsScreen")
   ).FollowRequestsScreen;
+const loadFollowingFeedScreen = () =>
+  (
+    require("@/app/screens/profile/FollowingFeedScreen") as typeof import("@/app/screens/profile/FollowingFeedScreen")
+  ).FollowingFeedScreen;
+const loadLeaderboardScreen = () =>
+  (
+    require("@/app/screens/profile/LeaderboardScreen") as typeof import("@/app/screens/profile/LeaderboardScreen")
+  ).LeaderboardScreen;
+const loadTastePaletteScreen = () =>
+  (
+    require("@/app/screens/profile/TastePaletteScreen") as typeof import("@/app/screens/profile/TastePaletteScreen")
+  ).TastePaletteScreen;
+const loadTasteCompareScreen = () =>
+  (
+    require("@/app/screens/profile/TasteCompareScreen") as typeof import("@/app/screens/profile/TasteCompareScreen")
+  ).TasteCompareScreen;
 const loadBlockedAndHiddenScreen = () =>
   (
     require("@/app/screens/profile/BlockedAndHiddenScreen") as typeof import("@/app/screens/profile/BlockedAndHiddenScreen")
@@ -452,7 +469,7 @@ function OfflineBanner() {
             },
           ]}
         >
-          <WifiOff color={palette.textOnDark} size={16} />
+          <AppSymbol name="wifi.slash" fallback={WifiOff} size={16} color={palette.textOnDark} />
           <AppText variant="bodySmall" style={{ color: palette.textOnDark, flex: 1 }}>
             {"You're offline. Saved content stays visible."}
           </AppText>
@@ -878,6 +895,14 @@ export function RootNavigator({ theme }: { theme: Theme }) {
             <RootStack.Screen getComponent={loadReviewDetailScreen} name="ReviewDetail" />
           ) : null}
           <RootStack.Screen getComponent={loadFollowRequestsScreen} name="FollowRequests" />
+          {FEATURE_FLAGS.foodPortfolioEnabled ? (
+            <RootStack.Screen getComponent={loadFollowingFeedScreen} name="FollowingFeed" />
+          ) : null}
+          {FEATURE_FLAGS.foodPortfolioEnabled ? (
+            <RootStack.Screen getComponent={loadLeaderboardScreen} name="Leaderboard" />
+          ) : null}
+          <RootStack.Screen getComponent={loadTastePaletteScreen} name="TastePalette" />
+          <RootStack.Screen getComponent={loadTasteCompareScreen} name="TasteCompare" />
           <RootStack.Screen getComponent={loadBlockedAndHiddenScreen} name="BlockedAndHidden" />
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />

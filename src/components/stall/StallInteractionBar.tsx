@@ -316,6 +316,8 @@ export function StallInteractionBar({
               ? { label: "Write a review", onPress: onReview }
               : undefined
         }
+        // Same call-to-action orange as the dish page's bar (5.9:1 with white text).
+        highContrastCta
         testID="stall-action-bar"
       />
     );

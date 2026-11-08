@@ -12,7 +12,7 @@ function readRepoFile(path: string) {
 test("StallLogoMark retries logo candidates and falls back to text identity", () => {
   const source = readRepoFile("src/components/stall/StallLogoMark.tsx");
 
-  assert.match(source, /getVenueLogoCandidates\(logoUrl\)/);
+  assert.match(source, /getVenueLogoCandidates\(logoUrl, name\)/);
   assert.match(
     source,
     /const \[failedUrls, setFailedUrls\] = useState<readonly string\[\]>\(\[\]\)/,

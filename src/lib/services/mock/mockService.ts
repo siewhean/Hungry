@@ -51,6 +51,13 @@ import { assertFixtureBundleValid } from "./validation";
 import type {
   Bite,
   BiteDraft,
+  BitesFeedPage,
+  FoodPortfolioStall,
+  LeaderboardBoard,
+  LeaderboardQuery,
+  LeaderboardRow,
+  LeaderboardSummary,
+  PortfolioPointsEntry,
   BuildingDetail,
   ChatConversation,
   ChatMessage,
@@ -334,6 +341,8 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
+/** Food Portfolio top-three pins by user id (mock only; Supabase keeps them on user_profiles). */
+const _mockPinnedPostIds: Record<string, string[]> = {};
 let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Reviews the mock viewer marked helpful. */
@@ -838,6 +847,19 @@ function findMockPerson(userId: string): { displayName: string; avatarUrl?: stri
   return known
     ? { displayName: known.displayName, avatarUrl: known.avatarUrl }
     : { displayName: "Hungry member" };
+}
+/** A steady 55-96 taste match per mock person, so lists and suggestions look the same each run. */
+function mockTasteMatch(userId: string): number {
+  let hash = 0;
+  for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) % 997;
+  return 55 + (hash % 42);
+}
+/** Everyone the mock knows about (seeded followers and incoming requests), once each. */
+function listMockPeople() {
+  return dedupeMockFollowers([
+    ...Object.values(_mockFollowersByUser).flat(),
+    ..._incomingFollowRequests,
+  ]).filter((person) => person.userId !== _profile.id && !_blockedUsers.has(person.userId));
 }
 /** Same paging rules as the list_user_followers/list_user_following RPCs (default 100, max 500). */
 function pageMockFollowRows<T>(rows: T[], page?: { limit?: number; offset?: number }) {
@@ -1610,6 +1632,40 @@ function mockAuthError(failure: MockAuthFailure): Error {
 }
 
 // ─── Full HungryService implementation ───────────────────────────────────────
+
+const MOCK_LEADERBOARD_DAILY_CAP = 6;
+
+/**
+ * Board scores over the mock feed, close to the server rules: Most active pays 10 for a post
+ * with a photo at a stall and 5 more for each stall's first post; Trending adds a point per
+ * like and two per save.
+ */
+function mockLeaderboardScores(
+  board: LeaderboardBoard,
+): Map<string, Omit<LeaderboardRow, "rank" | "isMe">> {
+  const scores = new Map<string, Omit<LeaderboardRow, "rank" | "isMe">>();
+  const stallsSeen = new Set<string>();
+  for (const bite of MOCK_BITES_FEED) {
+    if (_blockedUsers.has(bite.authorId)) continue;
+    let points = 0;
+    if (board === "trending") {
+      points = bite.cravingCount + 2 * bite.savedCount;
+    } else if (bite.photoUrl && bite.venueId) {
+      const stallKey = `${bite.authorId}:${bite.venueId}`;
+      points = stallsSeen.has(stallKey) ? 10 : 15;
+      stallsSeen.add(stallKey);
+    }
+    if (points <= 0) continue;
+    const current = scores.get(bite.authorId);
+    scores.set(bite.authorId, {
+      userId: bite.authorId,
+      displayName: bite.authorName,
+      avatarUrl: bite.authorAvatar,
+      score: (current?.score ?? 0) + points,
+    });
+  }
+  return scores;
+}
 
 export const hungryService: HungryService = {
   // ── Auth ────────────────────────────────────────────────────────────────────
@@ -2777,6 +2833,85 @@ export const hungryService: HungryService = {
       });
     },
 
+    async getProfileRelationship(userId: string) {
+      if (!userId || userId === _profile.id || _blockedUsers.has(userId)) return resolve(null);
+      // Only the signed-in mock profile has seeded followers, and other people's follows are
+      // unknown here, so the mock never names mutual followers.
+      const followsYou = listMockFollowers(_profile.id).some((person) => person.userId === userId);
+      return resolve({ followsYou, mutualCount: 0, mutuals: [] });
+    },
+
+    async getTasteMatches(userIds: string[]) {
+      const scores: Record<string, number> = {};
+      for (const userId of userIds.slice(0, 200)) {
+        if (!userId || userId === _profile.id || _blockedUsers.has(userId)) continue;
+        if (_mockPrivateUserIds.has(userId) && !_userFollows.has(userId)) continue;
+        scores[userId] = mockTasteMatch(userId);
+      }
+      return resolve(scores);
+    },
+
+    async getTasteComparison(userId: string) {
+      if (!userId || userId === _profile.id || _blockedUsers.has(userId)) return resolve(null);
+      if (_mockPrivateUserIds.has(userId) && !_userFollows.has(userId)) return resolve(null);
+      const mine = _profile.tasteVector;
+      if (!Object.values(mine).some((value) => Math.abs(value - 5) >= 1)) return resolve(null);
+      // A steady made-up palate per person: their match, spread over the six tastes.
+      const score = mockTasteMatch(userId);
+      const offset = ((100 - score) * 36) / 100 / 6;
+      const theirs = {
+        sweet: Math.min(10, mine.sweet + offset),
+        spicy: Math.max(0, mine.spicy - offset),
+        sour: Math.min(10, mine.sour + offset),
+        salty: Math.max(0, mine.salty - offset),
+        rich: Math.min(10, mine.rich + offset),
+        aromatic: Math.max(0, mine.aromatic - offset),
+      };
+      return resolve({ score, mine: { ...mine }, theirs });
+    },
+
+    async listPeopleSuggestions(limit = 20) {
+      const suggestions = listMockPeople()
+        .filter(
+          (person) =>
+            !_userFollows.has(person.userId) &&
+            !_userFollowRequests.has(person.userId) &&
+            !_mockPrivateUserIds.has(person.userId),
+        )
+        .map((person) => {
+          const tasteMatch = mockTasteMatch(person.userId);
+          return {
+            userId: person.userId,
+            displayName: person.displayName,
+            avatarUrl: person.avatarUrl,
+            tasteMatch,
+            mutualCount: 0,
+            recentActivity: 1,
+            reason: (tasteMatch >= 75 ? "taste" : "active") as "taste" | "active",
+          };
+        })
+        .sort((left, right) => right.tasteMatch - left.tasteMatch);
+      return resolve(suggestions.slice(0, Math.min(Math.max(limit, 1), 50)));
+    },
+
+    async listNetworkStallPicks(limit = 30) {
+      // The people you follow "loved" a few seeded stalls; with no follows, nothing to show.
+      const followed = Array.from(_userFollows).filter((id) => !_blockedUsers.has(id));
+      if (followed.length === 0) return resolve([]);
+      const picks = venues.slice(0, Math.min(3, Math.max(limit, 1))).map((venue, index) => {
+        const people = followed
+          .slice(index % followed.length, (index % followed.length) + 2)
+          .map((userId) => ({ userId, displayName: findMockPerson(userId).displayName }));
+        return {
+          venueId: venue.id,
+          source: "following" as const,
+          peopleCount: people.length,
+          people,
+        };
+      });
+      return resolve(picks);
+    },
+
     async isFollowing(userId: string) {
       return resolve(_userFollows.has(userId));
     },
@@ -2858,6 +2993,145 @@ export const hungryService: HungryService = {
 
     async listCommentsForPost(postId: string) {
       return resolve(_mockComments[postId] ?? []);
+    },
+  },
+
+  foodPortfolio: {
+    async getTopPosts(userId: string) {
+      await hydrateSocial();
+      const authored = MOCK_BITES_FEED.filter(
+        (bite) => bite.authorId === userId && !_blockedUsers.has(bite.authorId),
+      );
+      const pins = (_mockPinnedPostIds[userId] ?? []).filter((id) =>
+        authored.some((bite) => bite.id === id),
+      );
+      const pinned = pins.map((id) => authored.find((bite) => bite.id === id) as Bite);
+      const rest = authored
+        .filter((bite) => !pins.includes(bite.id))
+        .sort(
+          (a, b) =>
+            b.cravingCount - a.cravingCount || Date.parse(b.createdAt) - Date.parse(a.createdAt),
+        );
+      return resolve({
+        posts: [...pinned, ...rest].slice(0, 3).map(withMockViewerReactions),
+        pinnedPostIds: pins,
+      });
+    },
+
+    async setPinnedPosts(postIds: string[]) {
+      await hydrateSocial();
+      const own = new Set(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id).map((bite) => bite.id),
+      );
+      if (postIds.length > 3) throw new Error("Pin up to three dishes.");
+      const kept = [...new Set(postIds)].filter((id) => own.has(id));
+      _mockPinnedPostIds[_profile.id] = kept;
+      return resolve(kept);
+    },
+
+    async listStalls(userId: string, limit = 60) {
+      await hydrateSocial();
+      const byVenue = new Map<string, FoodPortfolioStall>();
+      for (const bite of MOCK_BITES_FEED) {
+        if (bite.authorId !== userId || !bite.venueId) continue;
+        const current = byVenue.get(bite.venueId);
+        byVenue.set(bite.venueId, {
+          venueId: bite.venueId,
+          venueName: bite.venueName,
+          buildingId: bite.buildingId || undefined,
+          buildingName: bite.buildingName || undefined,
+          dishCount: (current?.dishCount ?? 0) + 1,
+          lastPostedAt:
+            current?.lastPostedAt && current.lastPostedAt > bite.createdAt
+              ? current.lastPostedAt
+              : bite.createdAt,
+        });
+      }
+      return resolve(
+        [...byVenue.values()]
+          .sort((a, b) => b.dishCount - a.dishCount || a.venueName.localeCompare(b.venueName))
+          .slice(0, limit),
+      );
+    },
+
+    async getFollowingFeed(page?: BitesFeedPage) {
+      await hydrateSocial();
+      const sorted = MOCK_BITES_FEED.filter(
+        (bite) => _userFollows.has(bite.authorId) && !_blockedUsers.has(bite.authorId),
+      ).sort(
+        (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || b.id.localeCompare(a.id),
+      );
+      const cursor = page?.cursor;
+      const start = cursor ? sorted.findIndex((bite) => bite.id === cursor.postId) + 1 : 0;
+      return resolve(sorted.slice(start, start + (page?.limit ?? 20)).map(withMockViewerReactions));
+    },
+  },
+
+  leaderboard: {
+    async getLeaderboard(query: LeaderboardQuery) {
+      await hydrateSocial();
+      const scores = mockLeaderboardScores(query.board);
+      const rows = [...scores.values()]
+        .filter(
+          (entry) =>
+            query.scope !== "following" ||
+            entry.userId === _profile.id ||
+            _userFollows.has(entry.userId),
+        )
+        .sort((a, b) => b.score - a.score || a.userId.localeCompare(b.userId));
+      let rank = 0;
+      let previous = Number.NaN;
+      const ranked = rows.map((entry, index): LeaderboardRow => {
+        if (entry.score !== previous) rank = index + 1;
+        previous = entry.score;
+        return { ...entry, rank, isMe: entry.userId === _profile.id };
+      });
+      return resolve(ranked.slice(0, Math.min(Math.max(query.limit ?? 50, 1), 100)));
+    },
+
+    async getMySummary() {
+      await hydrateSocial();
+      const rankOf = (board: LeaderboardBoard) => {
+        const scores = [...mockLeaderboardScores(board).values()].sort((a, b) => b.score - a.score);
+        const mine = scores.find((entry) => entry.userId === _profile.id);
+        return mine ? scores.filter((entry) => entry.score > mine.score).length + 1 : null;
+      };
+      const mine = mockLeaderboardScores("active").get(_profile.id)?.score ?? 0;
+      const today = new Date().toDateString();
+      return resolve({
+        totalPoints: mine,
+        weekPoints: mine,
+        activeWeekRank: rankOf("active"),
+        activeAllRank: rankOf("active"),
+        trendingRank: rankOf("trending"),
+        creditedPostsToday: Math.min(
+          MOCK_BITES_FEED.filter(
+            (bite) =>
+              bite.authorId === _profile.id && new Date(bite.createdAt).toDateString() === today,
+          ).length,
+          MOCK_LEADERBOARD_DAILY_CAP,
+        ),
+        dailyCap: MOCK_LEADERBOARD_DAILY_CAP,
+      } satisfies LeaderboardSummary);
+    },
+
+    async listMyPoints(limit = 30) {
+      await hydrateSocial();
+      return resolve(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id)
+          .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+          .slice(0, limit)
+          .map(
+            (bite): PortfolioPointsEntry => ({
+              id: `points-${bite.id}`,
+              kind: bite.photoUrl && bite.venueId ? "post" : "off_board_post",
+              points: bite.photoUrl && bite.venueId ? 10 : 2,
+              postId: bite.id,
+              createdAt: bite.createdAt,
+              voided: false,
+            }),
+          ),
+      );
     },
   },
 

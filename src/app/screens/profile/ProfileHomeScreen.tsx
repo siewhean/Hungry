@@ -11,6 +11,8 @@ import {
 import * as Clipboard from "expo-clipboard";
 import { useIsFocused } from "@react-navigation/native";
 
+import { ActivityBellButton } from "@/components/foodPortfolio/ActivityBellButton";
+import { FoodPortfolioSection } from "@/components/foodPortfolio/FoodPortfolioSection";
 import { FavouriteDishesRow } from "@/components/profile/FavouriteDishesRow";
 import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
@@ -112,6 +114,12 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
   // A restored session can be signed in before its profile loads; the placeholder id is not a uuid.
   const hasAccountProfile = isAuthenticated && profile.id !== "guest-user";
+  // Home is Discover, so the social feed's bell is hidden; the Food Portfolio puts it here.
+  const showActivityBell =
+    hasAccountProfile &&
+    FEATURE_FLAGS.foodPortfolioEnabled &&
+    FEATURE_FLAGS.activityEnabled &&
+    !FEATURE_FLAGS.socialFeedEnabled;
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
   const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
@@ -640,8 +648,10 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     );
   }
 
+  // With the Activity bell in the header, follow requests are counted there; one badge is
+  // enough (HIG, Notifications), so the gear only carries it when the bell is off.
   const followRequestLabel =
-    (followRequestCount ?? 0) > 0
+    !showActivityBell && (followRequestCount ?? 0) > 0
       ? `${followRequestCount} follow ${followRequestCount === 1 ? "request" : "requests"}`
       : null;
   const followersValue =
@@ -788,6 +798,12 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         <View style={{ alignItems: "center", gap: spacing[3] }}>
           <TasteRadar vector={profile.tasteVector} />
           <Button
+            label="See your Taste Palette"
+            testID="profile-open-taste-palette"
+            accessibilityHint="Shows what Hungry has learned about your taste"
+            onPress={() => rootNavigation.navigate("TastePalette")}
+          />
+          <Button
             label="Retake the taste quiz"
             variant="secondary"
             onPress={() =>
@@ -822,55 +838,60 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
       showBack={false}
       testID="profile-home-screen"
       headerRight={
-        <Pressable
-          testID="profile-menu"
-          accessibilityRole="button"
-          accessibilityLabel={
-            followRequestLabel ? `Open settings, ${followRequestLabel}` : "Open settings"
-          }
-          onPressIn={() => preloadRoute(navigation, "Settings")}
-          onPress={() => navigation.navigate("Settings")}
-          // 42pt square; 2pt of slop makes the target at least 44pt (round six).
-          hitSlop={2}
-          style={{
-            alignItems: "center",
-            height: headerActionSize,
-            justifyContent: "center",
-            width: headerActionSize,
-          }}
-        >
-          <AppSymbol name="settings" size={24} weight="regular" color={palette.text} />
-          {followRequestCount ? (
-            <View
-              testID="profile-menu-badge"
-              style={{
-                alignItems: "center",
-                // accentText on white is 5.9:1 (the orange fill was 3.7:1 under 11pt text).
-                backgroundColor: colorScheme === "dark" ? palette.orange : palette.accentText,
-                borderRadius: radii.pill,
-                height: 18,
-                justifyContent: "center",
-                minWidth: 18,
-                paddingHorizontal: 4,
-                position: "absolute",
-                right: 0,
-                top: 0,
-              }}
-            >
-              <AppText
-                variant="micro"
+        <View style={{ alignItems: "center", flexDirection: "row" }}>
+          {showActivityBell ? (
+            <ActivityBellButton viewerId={profile.id} size={headerActionSize} />
+          ) : null}
+          <Pressable
+            testID="profile-menu"
+            accessibilityRole="button"
+            accessibilityLabel={
+              followRequestLabel ? `Open settings, ${followRequestLabel}` : "Open settings"
+            }
+            onPressIn={() => preloadRoute(navigation, "Settings")}
+            onPress={() => navigation.navigate("Settings")}
+            // 42pt square; 2pt of slop makes the target at least 44pt (round six).
+            hitSlop={2}
+            style={{
+              alignItems: "center",
+              height: headerActionSize,
+              justifyContent: "center",
+              width: headerActionSize,
+            }}
+          >
+            <AppSymbol name="settings" size={24} weight="regular" color={palette.text} />
+            {followRequestLabel ? (
+              <View
+                testID="profile-menu-badge"
                 style={{
-                  color: palette.textOnOrange,
-                  fontSize: 11,
-                  fontWeight: "700",
-                  lineHeight: 14,
+                  alignItems: "center",
+                  // accentText on white is 5.9:1 (the orange fill was 3.7:1 under 11pt text).
+                  backgroundColor: colorScheme === "dark" ? palette.orange : palette.accentText,
+                  borderRadius: radii.pill,
+                  height: 18,
+                  justifyContent: "center",
+                  minWidth: 18,
+                  paddingHorizontal: 4,
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
                 }}
               >
-                {followRequestCount > 9 ? "9+" : followRequestCount}
-              </AppText>
-            </View>
-          ) : null}
-        </Pressable>
+                <AppText
+                  variant="micro"
+                  style={{
+                    color: palette.textOnOrange,
+                    fontSize: 11,
+                    fontWeight: "700",
+                    lineHeight: 14,
+                  }}
+                >
+                  {(followRequestCount ?? 0) > 9 ? "9+" : followRequestCount}
+                </AppText>
+              </View>
+            ) : null}
+          </Pressable>
+        </View>
       }
     >
       <View style={{ gap: spacing[4], position: "relative" }}>
@@ -996,6 +1017,60 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
             </Pressable>
           ) : null}
+          {hasAccountProfile && FEATURE_FLAGS.foodPortfolioEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Following feed"
+              accessibilityHint="Opens the newest dishes from people you follow"
+              onPress={() => rootNavigation.navigate("FollowingFeed")}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                borderRadius: componentRadii.card,
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: 48,
+                paddingHorizontal: spacing[3],
+              })}
+              testID="profile-following-feed-row"
+            >
+              <AppSymbol name="following" size={20} color={palette.accentText} />
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyBold">Following</AppText>
+                <AppText variant="micro" tone="secondary">
+                  New dishes from people you follow
+                </AppText>
+              </View>
+              <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
+            </Pressable>
+          ) : null}
+          {hasAccountProfile && FEATURE_FLAGS.foodPortfolioEnabled ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Leaderboard"
+              accessibilityHint="Opens this week's most active and trending food posters"
+              onPress={() => rootNavigation.navigate("Leaderboard")}
+              style={({ pressed }) => ({
+                alignItems: "center",
+                backgroundColor: pressed ? palette.bgSoft : palette.surface,
+                borderRadius: componentRadii.card,
+                flexDirection: "row",
+                gap: spacing[3],
+                minHeight: 48,
+                paddingHorizontal: spacing[3],
+              })}
+              testID="profile-leaderboard-row"
+            >
+              <AppSymbol name="leaderboard" size={20} color={palette.accentText} />
+              <View style={{ flex: 1 }}>
+                <AppText variant="bodyBold">Leaderboard</AppText>
+                <AppText variant="micro" tone="secondary">
+                  Post dishes to earn Portfolio points
+                </AppText>
+              </View>
+              <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
+            </Pressable>
+          ) : null}
           {firstReviewNudgeEligible && firstReviewNudge === "test" ? (
             <View
               testID="profile-first-review-nudge"
@@ -1022,6 +1097,17 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             </View>
           ) : null}
         </View>
+
+        {/* Your posted dishes, top three and stalls (Food Portfolio flag). */}
+        {hasAccountProfile && FEATURE_FLAGS.foodPortfolioEnabled ? (
+          <FoodPortfolioSection
+            userId={profile.id}
+            ownerName={profile.displayName}
+            isSelf
+            navigation={rootNavigation}
+            reloadKey={publishedPostsVersion}
+          />
+        ) : null}
 
         {showcaseEligible && showcaseVariant === "test" ? (
           <FavouriteDishesRow

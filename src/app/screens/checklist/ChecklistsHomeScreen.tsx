@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, FlatList, Pressable, StyleSheet } from "react-native";
-import { ArrowLeft } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +14,7 @@ import { AppText, Button } from "@/components/ui";
 import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "@/app/navigation/navigationTypes";
 import type { Checklist } from "@/types/domain";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type NavigationProp = NativeStackNavigationProp<ProfileStackParamList, "ChecklistsHome">;
 
@@ -120,7 +120,7 @@ export function ChecklistsHomeScreen() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <ArrowLeft color={theme.palette.text} size={22} />
+          <AppSymbol name="back" size={22} weight="medium" color={theme.palette.text} />
         </Pressable>
         <AppText variant="h2" style={{ flex: 1 }}>
           My checklists

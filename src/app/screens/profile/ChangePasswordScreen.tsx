@@ -23,6 +23,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 
 type FormValues = { currentPassword: string; newPassword: string; confirmPassword: string };
 
@@ -59,9 +60,9 @@ export function ChangePasswordScreen() {
       style={AUTH_EYE_BUTTON_STYLE}
     >
       {showPasswords ? (
-        <EyeOff color={palette.textMuted} size={18} />
+        <AppSymbol name="eye.slash" fallback={EyeOff} size={18} color={palette.textMuted} />
       ) : (
-        <Eye color={palette.textMuted} size={18} />
+        <AppSymbol name="eye" fallback={Eye} size={18} color={palette.textMuted} />
       )}
     </Pressable>
   );
