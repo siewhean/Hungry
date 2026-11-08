@@ -112,6 +112,7 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLocation";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 /** Reviews shown on the page; "See all" opens the full list. */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
@@ -1622,7 +1623,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ? "Be the first to add one."
                         : "Reviews from diners will appear here when available."
                     }
-                    icon={<RatingStarSymbol size={36} color={palette.textMuted} />}
+                    icon={<ReviewBubblesIllustration testID="dish-reviews-empty-art" />}
                     ctaLabel={
                       showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
                         ? "Write a review"

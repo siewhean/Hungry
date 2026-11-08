@@ -42,7 +42,6 @@ import {
   EmailSymbol,
   HelpSymbol,
   HoursSymbol,
-  NoReviewsSymbol,
   PhoneSymbol,
   SavedCountSymbol,
   WebsiteSymbol,
@@ -145,6 +144,7 @@ import type {
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
   none: "Claim this stall",
@@ -1949,7 +1949,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           ? "Be the first to review this stall."
                           : "Reviews for this stall will show here."
                       }
-                      icon={<NoReviewsSymbol size={36} color={palette.textMuted} />}
+                      icon={<ReviewBubblesIllustration testID="stall-reviews-empty-art" />}
                     />
                   )}
                 </View>

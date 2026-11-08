@@ -62,6 +62,10 @@ import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkelet
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { SavedDishesSection } from "./SavedDishesSection";
+import {
+  CameraPlateIllustration,
+  MapPinBowlIllustration,
+} from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "Favourites">;
 
@@ -314,7 +318,11 @@ function SavedPostsSection({ onOpenPost }: { onOpenPost: (postId: string) => voi
   }
   if (bites.length === 0) {
     return (
-      <EmptyState title="No saved posts yet" body="Tap the bookmark on a post to keep it here." />
+      <EmptyState
+        title="No saved posts yet"
+        body="Tap the bookmark on a post to keep it here."
+        icon={<CameraPlateIllustration testID="saved-posts-empty-art" />}
+      />
     );
   }
   return (
@@ -438,6 +446,7 @@ function VisitedStallsList({
       <EmptyState
         title="No visited stalls yet"
         body="Tap Mark visited on a stall page, or review a dish, to see the stall here."
+        icon={<MapPinBowlIllustration testID="saved-visited-empty-art" />}
       />
     );
   }
@@ -610,7 +619,11 @@ function SavedStallsList({
         onPress={state.retry}
       />
     ) : (
-      <EmptyState title="No saved stalls yet" body="Tap Save on a stall page to keep it here." />
+      <EmptyState
+        title="No saved stalls yet"
+        body="Tap Save on a stall page to keep it here."
+        icon={<MapPinBowlIllustration testID="saved-stalls-empty-art" />}
+      />
     );
   }
 

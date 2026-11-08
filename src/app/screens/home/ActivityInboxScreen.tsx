@@ -45,6 +45,7 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { FeedEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
 type ActivityTab = "messages" | "updates";
@@ -643,7 +644,11 @@ function UpdatesTab({
       ) : null}
 
       {rows.length === 0 && !isFirstLoad && !activityLoadFailed ? (
-        <EmptyState title="No updates yet" body="Activity updates will appear here." />
+        <EmptyState
+          title="No updates yet"
+          body="Activity updates will appear here."
+          icon={<FeedEmptyIllustration testID="activity-empty-art" />}
+        />
       ) : null}
     </ScrollView>
   );

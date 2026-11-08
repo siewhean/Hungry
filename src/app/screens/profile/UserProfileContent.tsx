@@ -35,6 +35,7 @@ import { useHungryTheme } from "@/theme";
 import type { PublicUserProfile, Review, StallPost } from "@/types/domain";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { LockHeartIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type UserProfileContentProps = {
   navigation: any;
@@ -709,14 +710,7 @@ export function UserProfileContent({
                       ? `Follow ${authorName} to see their posts and reviews.`
                       : `Follow ${authorName} to see their reviews.`
                 }
-                icon={
-                  <AppSymbol
-                    name="profilePrivate"
-                    size={36}
-                    weight="regular"
-                    color={palette.textSecondary}
-                  />
-                }
+                icon={<LockHeartIllustration testID="private-profile-art" />}
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>

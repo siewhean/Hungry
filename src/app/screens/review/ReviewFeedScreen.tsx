@@ -75,6 +75,7 @@ import { ReviewersRail } from "@/components/review/ReviewersRail";
 import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { useVisitedStalls } from "@/features/saved/useSavedStalls";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1028,6 +1029,7 @@ export function ReviewFeedScreen() {
                     body="Rate your next meal, with a photo if you like. Reviews show here."
                     ctaLabel="Write a review"
                     onPress={handleWriteReview}
+                    icon={<ReviewBubblesIllustration testID="review-feed-empty-art" />}
                   />
                   {/* Places the diner has been: each one tap from its review. */}
                   <ReviewFirstList

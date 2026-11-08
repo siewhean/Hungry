@@ -18,6 +18,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { trackMissionViewed } from "@/lib/analytics/gamificationEvents";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
+import { PassportStampIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MissionsScreen">;
 
@@ -59,7 +60,11 @@ export function MissionsScreen({ navigation }: Props) {
         </View>
       ) : null}
       {missions.length === 0 ? (
-        <EmptyState title="No missions this week" body="Check back on Monday for new missions." />
+        <EmptyState
+          title="No missions this week"
+          body="Check back on Monday for new missions."
+          icon={<PassportStampIllustration testID="missions-empty-art" />}
+        />
       ) : (
         <View style={{ gap: spacing[3] }}>
           {/* Active first (what is left to do), then completed */}
