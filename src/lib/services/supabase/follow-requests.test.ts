@@ -76,7 +76,7 @@ test("supabase and mock services expose the same follow request contract", () =>
     types,
     /getFollowStatus\(userId: string\): Promise<"approved" \| "pending" \| "none">/,
   );
-  assert.match(types, /"new_follower" \| "follow_request"/);
+  assert.match(types, /"new_follower"\s*\|\s*"follow_request"/);
   assert.match(supabase, /client\.rpc\("cancel_follow_request", \{ p_target_user_id: userId \}\)/);
   assert.match(
     supabase,

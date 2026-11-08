@@ -831,6 +831,13 @@ export interface LeaderboardSummary {
   computedAt?: string;
 }
 
+/** Your Most active rank over time: last week's final rank, all-time when this week began, and now. */
+export interface LeaderboardMovement {
+  lastWeekRank: number | null;
+  weekStartAllRank: number | null;
+  allRank: number | null;
+}
+
 export type PortfolioPointsKind =
   | "post"
   | "off_board_post"
@@ -1432,6 +1439,8 @@ export interface HungryService {
     getMySummary(): Promise<LeaderboardSummary | null>;
     /** Your recent Portfolio points, newest first (default 30). */
     listMyPoints(limit?: number): Promise<PortfolioPointsEntry[]>;
+    /** How your rank moved since Monday and where you finished last week. Null for guests. */
+    getMyMovement(): Promise<LeaderboardMovement | null>;
   };
 
   chat: {
@@ -1810,7 +1819,13 @@ export interface HungryService {
         actorId: string;
         actorName: string;
         actorAvatarUrl?: string;
-        eventType: "new_like" | "new_comment" | "new_reply" | "new_follower" | "follow_request";
+        eventType:
+          | "new_like"
+          | "new_comment"
+          | "new_reply"
+          | "new_follower"
+          | "follow_request"
+          | "board_top_ten";
         targetType: "post" | "comment" | "profile";
         targetId: string;
         /** The post a comment target belongs to, so a reply update can open it. */

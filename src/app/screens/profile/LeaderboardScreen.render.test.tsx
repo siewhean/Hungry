@@ -209,3 +209,25 @@ test("own Profile opens the Leaderboard from the Portfolio's Rank, only with the
   view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.equal(view.findByLabel(/^Rank/), null);
 });
+
+test("the summary says how far you moved since Monday and where you finished last week", async () => {
+  stubBoard();
+  stub(getHungryService().leaderboard, "getMyMovement", async () => ({
+    lastWeekRank: 5,
+    weekStartAllRank: 9,
+    allRank: 6,
+  }));
+  const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
+  assert.ok(view.findByText("Up 3 places since Monday · Last week #5"));
+});
+
+test("no movement and no last week: no movement line", async () => {
+  stubBoard();
+  stub(getHungryService().leaderboard, "getMyMovement", async () => ({
+    lastWeekRank: null,
+    weekStartAllRank: 4,
+    allRank: 4,
+  }));
+  const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
+  assert.equal(view.findByTestId("leaderboard-movement"), null);
+});

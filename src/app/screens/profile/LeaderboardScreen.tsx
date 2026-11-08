@@ -33,6 +33,7 @@ import {
   dailyCreditLabel,
   portfolioPointsLabel,
   portfolioPointsValue,
+  movementLabel,
   rankLabel,
   shouldPinOwnRow,
   summaryRankFor,
@@ -43,6 +44,7 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type {
   LeaderboardBoard,
+  LeaderboardMovement,
   LeaderboardPeriod,
   LeaderboardRow,
   LeaderboardScope,
@@ -311,6 +313,7 @@ export function LeaderboardScreen({ navigation }: Props) {
   const [state, setState] = useState<"loading" | "loaded" | "failed">("loading");
   const [reloadKey, setReloadKey] = useState(0);
   const [summary, setSummary] = useState<LeaderboardSummary | null>(null);
+  const [movement, setMovement] = useState<LeaderboardMovement | null>(null);
   const [points, setPoints] = useState<PortfolioPointsEntry[]>([]);
   const trackedRef = useRef(false);
   const [isSharingRank, setIsSharingRank] = useState(false);
@@ -326,6 +329,12 @@ export function LeaderboardScreen({ navigation }: Props) {
         if (isActive) setSummary(result);
       })
       .catch((error) => reportError(error, { screen: "Leaderboard", action: "load_summary" }));
+    void service.leaderboard
+      .getMyMovement()
+      .then((result) => {
+        if (isActive) setMovement(result);
+      })
+      .catch((error) => reportError(error, { screen: "Leaderboard", action: "load_movement" }));
     void service.leaderboard
       .listMyPoints(20)
       .then((result) => {
@@ -369,6 +378,7 @@ export function LeaderboardScreen({ navigation }: Props) {
 
   const ownRank = summaryRankFor(summary, board, period);
   const rankCard = rankCardModel(summary);
+  const movementText = movementLabel(movement);
   const ownScore = board === "trending" ? null : period === "week" ? summary?.weekPoints : null;
   const cardStyle = {
     backgroundColor: palette.surface,
@@ -400,6 +410,11 @@ export function LeaderboardScreen({ navigation }: Props) {
               <AppText variant="bodySmall" tone="secondary">
                 {`This week ${rankLabel(summary.activeWeekRank)} · ${Math.round(summary.weekPoints)} pts`}
               </AppText>
+              {movementText ? (
+                <AppText testID="leaderboard-movement" variant="bodySmallBold">
+                  {movementText}
+                </AppText>
+              ) : null}
               <AppText variant="bodySmall" tone="secondary">
                 {dailyCreditLabel(summary)}
               </AppText>

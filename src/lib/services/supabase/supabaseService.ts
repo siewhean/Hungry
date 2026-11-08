@@ -6330,6 +6330,22 @@ export const supabaseService: HungryService = {
       };
     },
 
+    async getMyMovement() {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return null;
+      const { data, error } = await client.rpc("get_my_rank_movement");
+      // An app build can run before the migration that adds the RPC: no movement yet.
+      if (error && (error.code === "42883" || error.code === "PGRST202")) return null;
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Row | undefined;
+      if (!row) return null;
+      return {
+        lastWeekRank: asNumber(row.last_week_rank) ?? null,
+        weekStartAllRank: asNumber(row.week_start_all_rank) ?? null,
+        allRank: asNumber(row.all_rank) ?? null,
+      };
+    },
+
     async listMyPoints(limit = 30) {
       const client = requireSupabaseClient();
       if (!(await getCurrentSupabaseUserId())) return [];
@@ -9551,7 +9567,8 @@ export const supabaseService: HungryService = {
           | "new_comment"
           | "new_reply"
           | "new_follower"
-          | "follow_request",
+          | "follow_request"
+          | "board_top_ten",
         targetType: row.target_type as "post" | "comment" | "profile",
         targetId: row.target_id as string,
         readAt: row.read_at as string | undefined,

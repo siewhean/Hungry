@@ -56,6 +56,7 @@ import type {
   LeaderboardBoard,
   LeaderboardQuery,
   LeaderboardRow,
+  LeaderboardMovement,
   LeaderboardSummary,
   PortfolioPointsEntry,
   BuildingDetail,
@@ -3113,6 +3114,21 @@ export const hungryService: HungryService = {
         ),
         dailyCap: MOCK_LEADERBOARD_DAILY_CAP,
       } satisfies LeaderboardSummary);
+    },
+
+    async getMyMovement() {
+      await hydrateSocial();
+      // The demo board has no history: no last week, and no move since Monday.
+      const scores = [...mockLeaderboardScores("active").values()].sort(
+        (a, b) => b.score - a.score,
+      );
+      const mine = scores.find((entry) => entry.userId === _profile.id);
+      const allRank = mine ? scores.filter((entry) => entry.score > mine.score).length + 1 : null;
+      return resolve({
+        lastWeekRank: null,
+        weekStartAllRank: allRank,
+        allRank,
+      } satisfies LeaderboardMovement);
     },
 
     async listMyPoints(limit = 30) {

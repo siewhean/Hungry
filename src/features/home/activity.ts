@@ -41,7 +41,8 @@ export type ActivityUpdateKind =
   | "share"
   | "submission"
   | "follow"
-  | "follow_request";
+  | "follow_request"
+  | "board";
 export type ActivityItemType = "message" | "update";
 
 export type ActivityUpdate = {
@@ -172,7 +173,13 @@ export type ActivityEventRecord = {
   actorId: string;
   actorName: string;
   actorAvatarUrl?: string;
-  eventType: "new_like" | "new_comment" | "new_reply" | "new_follower" | "follow_request";
+  eventType:
+    | "new_like"
+    | "new_comment"
+    | "new_reply"
+    | "new_follower"
+    | "follow_request"
+    | "board_top_ten";
   targetType: "post" | "comment" | "profile";
   targetId: string;
   /** The post a comment/reply target belongs to, resolved by the service. */
@@ -187,6 +194,7 @@ const ACTIVITY_EVENT_TEXT: Record<ActivityEventRecord["eventType"], string> = {
   new_reply: "replied to your comment",
   new_follower: "started following you",
   follow_request: "requested to follow you",
+  board_top_ten: "You made this week's top ten",
 };
 
 /**
@@ -202,16 +210,24 @@ export function mapActivityEventToUpdate(event: ActivityEventRecord): ActivityUp
         ? "follow"
         : event.eventType === "follow_request"
           ? "follow_request"
-          : "comment";
+          : event.eventType === "board_top_ten"
+            ? "board"
+            : "comment";
   return {
     id: event.id,
     kind,
     postId: event.postId ?? (event.targetType === "post" ? event.targetId : ""),
     actorId: event.actorId,
-    actorName: event.actorName,
+    // The board row is about you: it is titled by the board, not by your own name.
+    actorName: event.eventType === "board_top_ten" ? "This week's board" : event.actorName,
     actorAvatarUrl: event.actorAvatarUrl,
     text: ACTIVITY_EVENT_TEXT[event.eventType] ?? "interacted with you",
-    target: event.eventType === "follow_request" ? "Review follow requests" : "",
+    target:
+      event.eventType === "follow_request"
+        ? "Review follow requests"
+        : event.eventType === "board_top_ten"
+          ? "See the Leaderboard"
+          : "",
     time: event.createdAt,
     unread: !event.readAt,
   };
