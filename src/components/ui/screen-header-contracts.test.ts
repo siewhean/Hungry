@@ -590,7 +590,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /<Dices color=\{palette\.textOnOrange\} size=\{decisionCardIconGraphicSize\} \/>/,
+    /name="dice"\s*fallback=\{Dices\}\s*color=\{palette\.textOnOrange\}\s*size=\{decisionCardIconGraphicSize\}/,
   );
   // Cards grow with large text instead of clipping at a fixed 72.
   assert.match(discover, /minHeight: 56,[\s\S]*flex: 1/);

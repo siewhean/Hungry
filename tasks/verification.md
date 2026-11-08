@@ -1713,3 +1713,4 @@ Use the smallest check that matches the change risk.
 - `npm run typecheck` clean; `npm test` 3077/0; `npm run test:render` 1309/0; `npm run test:coverage` OK and baseline updated; eslint 0 errors; prettier clean; check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety waits on the rehearsal evidence.
 - New tests: relationship, tastePalette, networkPicks, socialGraphRows, socialGraph.behaviour (Supabase), mock socialGraph, social-graph-migration-contracts, social-graph.render (hooks, People with your taste, profile header, Following list, Taste Palette, Compare palates, Home rail); screenMatrix rows TastePaletteScreen and TasteCompareScreen. Linking tests now follow activityEnabled.
 - Not run: a device build.
+- 2026-11-08 APPLE-DESIGN-01 r3: tsc clean; npm test 3095 pass; test:render 1323 pass (new bell-only badge test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
