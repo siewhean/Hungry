@@ -368,7 +368,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   }, []);
 
   // The web build keeps faint SVG waves instead of the orange shader, so its text keeps the theme colours.
-  const headerInk = overWater && Platform.OS !== "web" ? ON_WATER_TEXT : undefined;
+  const hasWater = useExperimentVariant("home_background_v1") !== "plain";
+  const headerInk = overWater && hasWater && Platform.OS !== "web" ? ON_WATER_TEXT : undefined;
 
   const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "With friends" : "Spin the wheel";
 

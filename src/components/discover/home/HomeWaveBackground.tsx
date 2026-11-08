@@ -14,6 +14,7 @@ import Animated, {
 import Svg, { Path } from "react-native-svg";
 
 import { useReduceMotion } from "@/hooks/useReduceMotion";
+import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { useHungryTheme } from "@/theme";
 import { HomeWaterShader } from "./HomeWaterShader";
 
@@ -77,12 +78,14 @@ type Props = {
 export function HomeWaveBackground({ width, topInset, scrollY, active = true }: Props) {
   const { palette } = useHungryTheme();
   const reduceMotion = useReduceMotion();
+  // A/B test home_background_v1: "plain" draws no water at all (and runs no animation).
+  const isPlain = useExperimentVariant("home_background_v1") === "plain";
   const phase = useSharedValue(0);
   // Seconds on the water shader's clock; a still frame under Reduce Motion.
   const time = useSharedValue(2);
 
   useEffect(() => {
-    if (!active || reduceMotion) {
+    if (!active || reduceMotion || isPlain) {
       cancelAnimation(phase);
       cancelAnimation(time);
       return;
@@ -100,7 +103,7 @@ export function HomeWaveBackground({ width, topInset, scrollY, active = true }: 
       cancelAnimation(phase);
       cancelAnimation(time);
     };
-  }, [active, phase, reduceMotion, time]);
+  }, [active, isPlain, phase, reduceMotion, time]);
 
   const height = topInset + WAVE_BAND_HEIGHT;
   const backProps = useAnimatedProps(() => ({
@@ -112,6 +115,8 @@ export function HomeWaveBackground({ width, topInset, scrollY, active = true }: 
   const fadeStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [0, WAVE_FADE_DISTANCE], [1, 0], "clamp"),
   }));
+
+  if (isPlain) return null;
 
   return (
     <Animated.View
