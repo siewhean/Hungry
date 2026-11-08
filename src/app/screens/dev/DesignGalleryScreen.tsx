@@ -20,6 +20,16 @@ import { MascotGraphicV2 } from "@/components/icons/food/MascotGraphicV2";
 import { WheelIllustrationV2 } from "@/components/icons/food/WheelIllustrationV2";
 import { BowlIllustrationV2 } from "@/components/icons/food/BowlIllustrationV2";
 import { FoodPlatterIllustrationV2 } from "@/components/icons/food/FoodPlatterIllustrationV2";
+import {
+  EmptyBoardIllustration,
+  FeedEmptyIllustration,
+  FirstPostIllustration,
+  FollowersEmptyIllustration,
+  FollowingEmptyIllustration,
+  PeopleFoundIllustration,
+  PodiumIllustration,
+  PortfolioEmptyIllustration,
+} from "@/components/icons/food/SocialIllustrations";
 
 // Line Icons
 import { RamenIconV2 } from "@/components/icons/food/RamenIconV2";
@@ -91,6 +101,30 @@ export function DesignGalleryScreen() {
           </Item>
           <Item label="PlatterIllustrationV2">
             <FoodPlatterIllustrationV2 size={64} />
+          </Item>
+          <Item label="Podium">
+            <PodiumIllustration size={64} />
+          </Item>
+          <Item label="EmptyBoard">
+            <EmptyBoardIllustration size={64} />
+          </Item>
+          <Item label="PortfolioEmpty">
+            <PortfolioEmptyIllustration size={64} />
+          </Item>
+          <Item label="FollowersEmpty">
+            <FollowersEmptyIllustration size={64} />
+          </Item>
+          <Item label="FollowingEmpty">
+            <FollowingEmptyIllustration size={64} />
+          </Item>
+          <Item label="FeedEmpty">
+            <FeedEmptyIllustration size={64} />
+          </Item>
+          <Item label="FirstPost">
+            <FirstPostIllustration size={64} />
+          </Item>
+          <Item label="PeopleFound">
+            <PeopleFoundIllustration size={64} />
           </Item>
         </Section>
 

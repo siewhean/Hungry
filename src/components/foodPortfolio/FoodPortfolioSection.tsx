@@ -8,6 +8,7 @@ import {
   portfolioPostImage,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
 import { FoodPortfolioShareSheet } from "@/components/foodPortfolio/FoodPortfolioShareSheet";
+import { PortfolioEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 import { portfolioCardPhotos, portfolioCardStatLine } from "@/features/foodPortfolio/shareCards";
 import { useFoodPortfolio } from "@/features/foodPortfolio/useFoodPortfolio";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -246,7 +247,7 @@ export function FoodPortfolioSection({
             ? "Snap what you eat. Every dish you post builds your Food Portfolio."
             : `${ownerName} hasn't posted a dish yet.`
         }
-        icon={<AppSymbol name="camera" size={36} weight="regular" color={palette.textSecondary} />}
+        icon={<PortfolioEmptyIllustration testID="food-portfolio-empty-art" />}
         ctaLabel={isSelf ? "Post a dish" : undefined}
         onPress={isSelf ? openComposer : undefined}
       />

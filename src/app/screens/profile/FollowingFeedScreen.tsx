@@ -9,6 +9,7 @@ import {
   portfolioPostImage,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
 import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
+import { FeedEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 import { formatRelativeDate } from "@/features/profile/relativeDate";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -168,7 +169,7 @@ export function FollowingFeedScreen({ navigation }: Props) {
     } as never);
 
   return (
-    <ProfileScreenShell title="Following" subtitle="New dishes from people you follow">
+    <ProfileScreenShell title="Following">
       <View style={{ gap: spacing[4], paddingBottom: spacing[8] }}>
         {state === "loading" && posts.length === 0 ? (
           <View testID="following-feed-loading" style={{ minHeight: 200 }} />
@@ -187,9 +188,7 @@ export function FollowingFeedScreen({ navigation }: Props) {
             <EmptyState
               title="No dishes yet"
               body="Follow people whose taste you like. The dishes they post show up here."
-              icon={
-                <AppSymbol name="people" size={36} weight="regular" color={palette.textSecondary} />
-              }
+              icon={<FeedEmptyIllustration testID="following-feed-empty-art" />}
               ctaLabel="Find people"
               onPress={findPeople}
             />

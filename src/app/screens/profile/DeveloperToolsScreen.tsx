@@ -135,11 +135,7 @@ export function DeveloperToolsScreen() {
   const recentReads = getCatalogDiagnosticsSnapshot().slice(0, 6);
 
   return (
-    <ProfileScreenShell
-      title="Developer tools"
-      subtitle="Hidden from everyone else. Changes stay on this phone."
-      testID="developer-tools-screen"
-    >
+    <ProfileScreenShell title="Developer tools" testID="developer-tools-screen">
       <SettingsSection
         title="This build"
         description="Press and hold a row to copy the whole list."

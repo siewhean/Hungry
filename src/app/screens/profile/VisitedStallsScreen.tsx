@@ -22,10 +22,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
   const visitedVenues = visited.stalls;
 
   return (
-    <ProfileScreenShell
-      title="Visited stalls"
-      subtitle="Stalls you marked as tried or ate a dish at."
-    >
+    <ProfileScreenShell title="Visited stalls">
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {visitedVenues.length ? (
           visitedVenues.map((venue) => (

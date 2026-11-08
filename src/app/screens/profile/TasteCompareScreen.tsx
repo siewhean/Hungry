@@ -87,11 +87,7 @@ export function TasteCompareScreen({ route }: Props) {
   } as const;
 
   return (
-    <ProfileScreenShell
-      title="Compare palates"
-      subtitle={userDisplayName ? `You and ${userDisplayName}` : undefined}
-      testID="taste-compare-screen"
-    >
+    <ProfileScreenShell title="Compare palates" testID="taste-compare-screen">
       {state === "loading" ? (
         <View testID="taste-compare-loading" style={{ minHeight: 200 }} />
       ) : state === "failed" ? (
