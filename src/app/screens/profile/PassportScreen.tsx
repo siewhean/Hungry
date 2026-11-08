@@ -40,6 +40,10 @@ import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useHungryTheme } from "@/theme";
 import type { PassportContributionStats, PassportProgressEvent } from "@/types/domain";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useBoardRank } from "@/features/leaderboard/boardRanks";
+import { useProfileStore } from "@/store/useProfileStore";
+import { useSessionStore } from "@/store/useSessionStore";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PassportScreen">;
 
@@ -102,6 +106,13 @@ export function PassportScreen({ navigation }: Props) {
   const markGoalWeekCelebrated = usePassportStore((s) => s.markGoalWeekCelebrated);
   const achievementInput = useAchievementInput();
   const achievements = useMemo(() => computeAchievements(achievementInput), [achievementInput]);
+  // Stamps and points meet here: the weekly board is one tap from the Passport.
+  const isSignedIn = useSessionStore((state) => state.isAuthenticated);
+  const profileId = useProfileStore((state) => state.profile.id);
+  const boardOn = FEATURE_FLAGS.foodPortfolioEnabled && isSignedIn;
+  const boardRank = useBoardRank(profileId, true, boardOn);
+  const boardRankText =
+    boardRank.state === "loaded" && boardRank.rank ? `#${boardRank.rank}` : "Join in";
   const [reduceMotion, setReduceMotion] = useState(false);
   const [celebratingStampId, setCelebratingStampId] = useState<string | null>(null);
   // The stamp just earned stays on screen as a card until the diner dismisses it.
@@ -464,6 +475,42 @@ export function PassportScreen({ navigation }: Props) {
             />
           </View>
         </Pressable>
+
+        {boardOn ? (
+          <Pressable
+            testID="passport-leaderboard"
+            accessibilityRole="button"
+            accessibilityLabel={`Leaderboard, ${boardRankText}`}
+            onPress={() => {
+              trackAnalyticsEvent("leaderboard_opened", { source: "passport" });
+              navigation.navigate("Leaderboard");
+            }}
+            style={{
+              alignItems: "center",
+              backgroundColor: palette.surface,
+              borderColor: palette.border,
+              borderRadius: componentRadii.card,
+              borderWidth: 1,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              minHeight: 56,
+              paddingHorizontal: spacing[4],
+            }}
+          >
+            <AppText variant="bodyBold">Leaderboard</AppText>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+              <AppText tone="secondary" variant="bodySmall">
+                {boardRankText}
+              </AppText>
+              <AppSymbol
+                name="chevron.right"
+                fallback={ChevronRight}
+                size={18}
+                color={palette.textMuted}
+              />
+            </View>
+          </Pressable>
+        ) : null}
 
         {/* Before the first stamp, the one to aim for comes first instead of an empty page. */}
         {nextStamp && earnedStamps.length === 0 ? nextStampSection : null}

@@ -239,7 +239,8 @@ export type RootStackParamList = {
   ReviewDetail: { reviewId: string };
   FollowRequests: undefined;
   /** Food Portfolio: newest dishes posted by the people you follow. */
-  FollowingFeed: undefined;
+  /** The Feed tab of People; from a stall page, only that stall's dishes. */
+  FollowingFeed: { venueId?: string; venueName?: string } | undefined;
   Leaderboard: undefined;
   /** What Hungry has learned about your taste, how sure it is, and what to try next. */
   TastePalette: undefined;

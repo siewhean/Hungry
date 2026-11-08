@@ -58,6 +58,31 @@ test("with the Food Portfolio on, /following and /leaderboard open their screens
   if (!saved) assert.equal(off.FollowingFeed, undefined);
 });
 
+test("/user/:id/people opens their People screen with the Food Portfolio on; /portfolio opens the profile", () => {
+  const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = flags.foodPortfolioEnabled;
+  flags.foodPortfolioEnabled = true;
+  const signedIn = () => ({ isAuthReady: true, isAuthenticated: true });
+  try {
+    const linking = createRootLinking("exp://127.0.0.1:8081/--/", signedIn);
+    assert.deepEqual(linking.getStateFromPath("user/user-1/people")?.routes?.[1], {
+      name: "UserFollowers",
+      params: { userId: "user-1" },
+    });
+    assert.deepEqual(linking.getStateFromPath("user/user-1/portfolio")?.routes?.[1], {
+      name: "UserProfile",
+      params: { authorId: "user-1" },
+    });
+    assert.equal(linking.getStateFromPath("user/%3Cscript%3E/people"), undefined);
+  } finally {
+    flags.foodPortfolioEnabled = saved;
+  }
+  if (!saved) {
+    const off = createRootLinking("exp://127.0.0.1:8081/--/", signedIn);
+    assert.equal(off.getStateFromPath("user/user-1/people")?.routes?.[1]?.name, "UserProfile");
+  }
+});
+
 test("weekly picks /home link opens the Home tab", () => {
   const linking = createRootLinking("exp://127.0.0.1:8081/--/");
   assert.deepEqual(linking.getStateFromPath("home")?.routes?.[0], {

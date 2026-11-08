@@ -123,6 +123,7 @@ import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tast
 import { useMissionStore } from "@/store/useMissionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
+import { FollowsPostedHere } from "@/components/stall/FollowsPostedHere";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -381,6 +382,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const followedCount = useSocialStore(
+    (state) => Object.values(state.followedUserIds).filter(Boolean).length,
+  );
   const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
   const openSignInPrompt = useUIStore((state) => state.openSignInPrompt);
@@ -1828,6 +1832,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
+              ) : null}
+              {/* People you follow who posted here: opens their dishes from this stall. */}
+              {showDeferredDetailControls && FEATURE_FLAGS.foodPortfolioEnabled ? (
+                <FollowsPostedHere
+                  venueId={venue.id}
+                  enabled={isAuthenticated && followedCount > 0}
+                  onOpen={() =>
+                    navigation.navigate("FollowingFeed", {
+                      venueId: venue.id,
+                      venueName: displayName,
+                    })
+                  }
+                />
               ) : null}
               {/* Food Portfolio: post a dish from this stall (the composer asks which dish). */}
               {showDeferredDetailControls && FEATURE_FLAGS.foodPortfolioEnabled ? (

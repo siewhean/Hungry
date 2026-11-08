@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { ScrollView, View, type StyleProp, type ViewStyle } from "react-native";
+import { Pressable, ScrollView, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { StallRailCard } from "@/components/discover/home/StallRailCard";
-import { AppText } from "@/components/ui";
+import { AppSymbol, AppText } from "@/components/ui";
 import { useItemDetailsState } from "@/features/checklistPortfolio/useItemLabels";
 import { networkPickReason, networkSectionTitle } from "@/features/discover/networkPicks";
 import { getDataRepository } from "@/lib/services/serviceProvider";
@@ -24,15 +24,18 @@ export function NetworkPicksSection({
   gap,
   scrollStyle,
   onOpen,
+  onOpenFeed,
 }: {
   picks: readonly NetworkStallPick[];
+  /** The header opens the dishes your follows posted (only on the "people you follow" rail). */
+  onOpenFeed?: () => void;
   cardWidth: number;
   gap: number;
   /** Home's rails run edge to edge. */
   scrollStyle?: StyleProp<ViewStyle>;
   onOpen: (pick: NetworkStallPick, position: number) => void;
 }) {
-  const { spacing } = useHungryTheme();
+  const { palette, spacing } = useHungryTheme();
   const shown = useMemo(() => picks.slice(0, NETWORK_PICKS_SHOWN), [picks]);
   const targets = useMemo(() => shown.map((pick) => ({ stallId: pick.venueId })), [shown]);
   const { details } = useItemDetailsState(targets);
@@ -55,9 +58,24 @@ export function NetworkPicksSection({
 
   return (
     <View style={{ gap }} testID="home-network-picks">
-      <AppText variant="h2" accessibilityRole="header">
-        {networkSectionTitle(shown)}
-      </AppText>
+      {onOpenFeed && shown.some((pick) => pick.source !== "taste_twin") ? (
+        <Pressable
+          testID="home-network-picks-feed"
+          accessibilityRole="button"
+          accessibilityLabel={`${networkSectionTitle(shown)}. See their dishes`}
+          onPress={onOpenFeed}
+          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2], minHeight: 44 }}
+        >
+          <AppText variant="h2" accessibilityRole="header" style={{ flexShrink: 1 }}>
+            {networkSectionTitle(shown)}
+          </AppText>
+          <AppSymbol name="chevronRight" size={16} color={palette.textMuted} />
+        </Pressable>
+      ) : (
+        <AppText variant="h2" accessibilityRole="header">
+          {networkSectionTitle(shown)}
+        </AppText>
+      )}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
