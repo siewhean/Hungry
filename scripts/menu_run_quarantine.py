@@ -40,7 +40,7 @@ from decimal import Decimal
 from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Callable, Optional
-from urllib.parse import urlsplit
+from urllib.parse import unquote_plus, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import menu_workbook_merge as mm  # noqa: E402
@@ -333,6 +333,8 @@ class LicInfo:
     roots: set = field(default_factory=set)
     dishes: set = field(default_factory=set)
     row_names: set = field(default_factory=set)
+    rows: int = 0
+    excluded: int = 0
 
 
 def corroboration(a: LicInfo, b: LicInfo) -> list:
@@ -358,13 +360,37 @@ def first_word_info(name) -> tuple:
     return toks[0], False
 
 
-def match_pattern(pattern: str, licence: str, name: str) -> bool:
+def core_pattern(p: str) -> str:
+    return " ".join(_phrase(fold(p)).split())
+
+
+def match_pattern(pattern: str, licence: str, name: str, core: str = "") -> bool:
+    """A pattern is a licence number, 'core:<normalised core name>' (exact core), or a case-insensitive wildcard on the master name."""
     p = str(pattern).strip()
-    return bool(p) and (p.upper() == licence.upper() or fnmatch.fnmatchcase(fold(name), fold(p)))
+    if not p:
+        return False
+    if p.lower().startswith("core:"):
+        return bool(core) and core == core_pattern(p[5:])
+    if p.lower().startswith("licence:"):
+        p = p[8:].strip()
+    return p.upper() == licence.upper() or fnmatch.fnmatchcase(fold(name), fold(p))
+
+
+def _groups(data: dict, kind: str) -> tuple:
+    groups = data.get(kind) or []
+    if not isinstance(groups, list) or not all(isinstance(g, list) and all(isinstance(x, str) for x in g) for g in groups):
+        raise QuarantineError(f"brand_overrides '{kind}' must be a list of lists of strings", 2)
+    meta = data.get(kind + "_meta") or []
+    if not isinstance(meta, list) or not all(isinstance(m, dict) for m in meta):
+        raise QuarantineError(f"brand_overrides '{kind}_meta' must be a list of objects aligned with '{kind}'", 2)
+    pairs = [(g, (meta[i] if i < len(meta) else {})) for i, g in enumerate(groups) if g]
+    return [g for g, _ in pairs], [m for _, m in pairs]
 
 
 def load_overrides(path: Optional[Path]) -> dict:
-    out = {"merge": [], "split": []}
+    """{'merge': [[pattern]], 'merge_meta': [{display_name, owner_decision, owner_checked, id}], 'split': [[pattern]], 'split_meta': [...],
+    'hold_out': {licence: {...}}, 'row_conflicts': {licence: {...}}, 'metadata': {...}}. Plain 'merge'/'split' lists still work."""
+    out: dict = {"merge": [], "merge_meta": [], "split": [], "split_meta": [], "hold_out": {}, "row_conflicts": {}, "metadata": {}}
     if not path:
         return out
     try:
@@ -374,11 +400,24 @@ def load_overrides(path: Optional[Path]) -> dict:
     if not isinstance(data, dict):
         raise QuarantineError("brand_overrides must be a JSON object with 'merge' and/or 'split'", 2)
     for kind in ("merge", "split"):
-        groups = data.get(kind) or []
-        if not isinstance(groups, list) or not all(isinstance(g, list) and all(isinstance(x, str) for x in g) for g in groups):
-            raise QuarantineError(f"brand_overrides '{kind}' must be a list of lists of strings", 2)
-        out[kind] = [g for g in groups if g]
+        out[kind], out[kind + "_meta"] = _groups(data, kind)
+    for kind in ("hold_out", "row_conflicts"):
+        entries = data.get(kind) or []
+        if not isinstance(entries, list) or not all(isinstance(e, dict) and isinstance(e.get("licence"), str) for e in entries):
+            raise QuarantineError(f"brand_overrides '{kind}' must be a list of objects with a 'licence'", 2)
+        out[kind] = {e["licence"].strip(): e for e in entries}
+    out["metadata"] = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
     return out
+
+
+def row_names_brand(row_core: str, brand_core: str) -> bool:
+    """Does a dish row's own stall name speak for this brand? Equal/fuzzy, or the brand words appear inside it (e.g. with a Chinese name)."""
+    if not row_core or not brand_core:
+        return True
+    if names_match(row_core, brand_core):
+        return True
+    rt, bt = row_core.split(), brand_core.split()
+    return any(rt[i:i + len(bt)] == bt for i in range(len(rt) - len(bt) + 1))
 
 
 class BrandIdentity:
@@ -393,6 +432,9 @@ class BrandIdentity:
         self.evidence: dict = {}
         self.confidence: dict = {}
         self.competing: dict = {}
+        self.owner: dict = {}  # licence -> {owner_decision, owner_checked, group_id}
+        self.group_meta: dict = {}  # brand key -> same, for keys created by an owner merge
+        self.group_members: list = []  # per merge group: member licences
         self._core_cache: dict = {}
 
     def core_of_name(self, name) -> str:
@@ -412,8 +454,8 @@ class BrandIdentity:
 
     def _blocked(self, a: LicInfo, b: LicInfo) -> bool:
         for group in self.overrides["split"]:
-            ia = {i for i, pat in enumerate(group) if match_pattern(pat, a.licence, a.master_name)}
-            ib = {i for i, pat in enumerate(group) if match_pattern(pat, b.licence, b.master_name)}
+            ia = {i for i, pat in enumerate(group) if match_pattern(pat, a.licence, a.master_name, a.core)}
+            ib = {i for i, pat in enumerate(group) if match_pattern(pat, b.licence, b.master_name, b.core)}
             if ia and ib and not (ia & ib):
                 return True
         return False
@@ -449,7 +491,10 @@ class BrandIdentity:
             for c2 in cores[i + 1:]:
                 if names_match(c1, c2) == "NAME_FUZZY":
                     cand += [(a, b, "NAME_FUZZY") for a in by_core[c1] for b in by_core[c2]]
+        hold = {l for l in self.overrides.get("hold_out", {}) if l in infos}
         for a, b, name_code in cand:
+            if a in hold or b in hold:
+                continue
             ia, ib = infos[a], infos[b]
             if self._blocked(ia, ib):
                 ev[a].add("OVERRIDE_SPLIT")
@@ -467,7 +512,8 @@ class BrandIdentity:
                 ev[a].add(name_code + "_UNCORROBORATED")
                 ev[b].add(name_code + "_UNCORROBORATED")
         for group in self.overrides["merge"]:
-            members = [l for l in lics if any(match_pattern(pat, l, infos[l].master_name) for pat in group)]
+            members = [l for l in lics if l not in hold and any(match_pattern(pat, l, infos[l].master_name, infos[l].core) for pat in group)]
+            self.group_members.append(members)
             for l in members:
                 ev[l].add("OVERRIDE_MERGE")
                 parent[find(l)] = find(members[0])
@@ -490,6 +536,31 @@ class BrandIdentity:
             self.display[key] = sorted(names, key=lambda n: (-names[n], len(n), n))[0] if names else key
             for m in members:
                 self.keys[m] = key
+        for gi, members in enumerate(self.group_members):
+            if not members:
+                continue
+            meta = self.overrides["merge_meta"][gi] if gi < len(self.overrides["merge_meta"]) else {}
+            key = self.keys[members[0]]
+            info = {"owner_decision": meta.get("owner_decision", "merge"), "owner_checked": bool(meta.get("owner_checked", False)), "group_id": meta.get("id", f"merge{gi + 1}")}
+            if meta.get("display_name"):
+                self.display[key] = meta["display_name"]
+            self.group_meta[key] = info
+            for m in members:
+                self.owner[m] = info
+        for gi, group in enumerate(self.overrides["split"]):
+            meta = self.overrides["split_meta"][gi] if gi < len(self.overrides["split_meta"]) else {}
+            for lic in lics:
+                if any(match_pattern(pat, lic, infos[lic].master_name, infos[lic].core) for pat in group):
+                    ev[lic].add("OVERRIDE_SPLIT")
+                    self.owner.setdefault(lic, {"owner_decision": "split", "owner_checked": bool(meta.get("owner_checked", False)), "group_id": meta.get("id", f"split{gi + 1}")})
+        for lic in hold:
+            ev[lic].add("OWNER_HOLD_OUT")
+            h = self.overrides["hold_out"][lic]
+            self.owner[lic] = {"owner_decision": h.get("owner_decision", "pending"), "owner_checked": bool(h.get("owner_checked", False)), "group_id": "hold_out"}
+        for lic in lics:  # an owner merge (or a later link) can resolve what looked uncorroborated
+            unc[lic] = {u for u in unc[lic] if find(u) != find(lic)}
+            if not unc[lic]:
+                ev[lic] = {c for c in ev[lic] if not c.endswith("_UNCORROBORATED")}
         # shares-a-word cases and confidence
         first_tok: dict = defaultdict(set)
         last_tok: dict = defaultdict(set)
@@ -510,13 +581,18 @@ class BrandIdentity:
                     comp += others
             for u in sorted(unc[lic]):
                 comp.append(f"{infos[u].master_name} [{u}]")
-            if info.row_names and not any(names_match(self.core_of_name(n), info.core) for n in info.row_names):
+            if info.row_names and not any(row_names_brand(self.core_of_name(n), info.core) for n in info.row_names):
                 codes.add("ROW_NAME_CONFLICT")
                 comp += sorted(info.row_names)
             if len(clusters[find(lic)]) == 1 and not unc[lic]:
                 codes.add("SINGLE_OUTLET")
-            if any(c.endswith("_UNCORROBORATED") for c in codes) or "OVERRIDE_SPLIT" in codes and linked[lic]:
+            owner = self.owner.get(lic, {})
+            if owner.get("owner_decision") == "merge" and not owner.get("owner_checked"):
+                codes.add("OWNER_MERGE_UNCHECKED")
+            if any(c.endswith("_UNCORROBORATED") for c in codes) or "OVERRIDE_SPLIT" in codes and linked[lic] or "OWNER_HOLD_OUT" in codes:
                 conf = "low"
+            elif "OWNER_MERGE_UNCHECKED" in codes:
+                conf = "medium"
             elif "NAME_FUZZY" in codes or "ROW_NAME_CONFLICT" in codes or any(c.startswith("SHARES_") for c in codes) \
                     or (linked[lic] and "CORROB_URL" not in codes and "OVERRIDE_MERGE" not in codes):
                 conf = "medium"
@@ -666,6 +742,8 @@ class Ctx:
     same_brand_url_policy: str = "strict"
     master_urls: dict = field(default_factory=dict)  # licence -> raw Menu URL
     master_addresses: list = field(default_factory=list)
+    master_rows_lite: list = field(default_factory=list)  # (first licence, Full Address)
+    hold_out: set = field(default_factory=set)  # licences the owner holds out of any brand merge
     identity: Optional[object] = None
 
     def same_brand_owner(self, it, owner: str) -> bool:
@@ -697,6 +775,7 @@ def load_master(path: Path, ctx: Ctx) -> int:
         name = (r.get("F&B Name") or r.get("Registered Business Name") or "").strip()
         url = norm_url(r.get("Menu URL"))
         ctx.master_addresses.append(r.get("Full Address") or "")
+        ctx.master_rows_lite.append((next(iter(split_licences(r.get("SFA Licence"))), ""), r.get("Full Address") or ""))
         for lic in split_licences(r.get("SFA Licence")):
             ctx.master_names.setdefault(lic, name)
             ctx.master_urls.setdefault(lic, (r.get("Menu URL") or "").strip())
@@ -924,10 +1003,15 @@ class Aggregates:
         for ents in groups.values():
             if len(ents) < 2:
                 continue
-            if len({self.entity_brand[e] for e in ents}) > 1:
+            held = [e for e in ents if e in ctx.hold_out]  # owner holds these out of the brand: they cannot make the others "unrelated"
+            rest = [e for e in ents if e not in ctx.hold_out]
+            if len({self.entity_brand[e] for e in rest}) > 1:
                 ctx.unrelated_entities.update(ents)
-            else:
-                ctx.samebrand_entities.update(ents)
+            elif held and rest:
+                ctx.unrelated_entities.update(held)
+                ctx.samebrand_entities.update(rest)
+            elif len(rest) >= 2:
+                ctx.samebrand_entities.update(rest)
 
 
 # ---------------------------------------------------------------- per-row hygiene (OUTPUT only)
@@ -1324,19 +1408,313 @@ def build_exceptions(baseline: dict, evidence: list, ctx: Ctx, identity: BrandId
     return sorted(exc, key=lambda r: (r["licence"], r["type"], mm.norm_name(r["dish"])))
 
 
-def load_resolution_inputs(out_dir: Path) -> dict:
+
+# ---------------------------------------------------------------- Google names (local data only), outlet locations, display names
+
+GOOGLE_COLUMNS = ["SFA Licence", "Google Name", "Google Place ID", "Source"]
+APPLIED_SUFFIX = "_overrides_applied"
+
+
+def google_name_from_url(url) -> str:
+    """The place name inside a saved Google Maps URL (.../maps/place/<Name>/@...). Nothing is fetched."""
+    m = re.search(r"/maps/place/([^/@?]+)", str(url or ""))
+    if not m or m.group(1).startswith(("data=", "@")):
+        return ""
+    return mm.clean_text(unquote_plus(m.group(1)))
+
+
+def extract_google_names(workbook: Path, out_csv: Path, sheet: str = "Food Directory") -> int:
+    """One-off helper: read licence + Google Place ID + Google Maps URL from a local directory workbook and write a small CSV."""
+    try:
+        import openpyxl  # optional dependency, only for this helper
+    except ImportError as e:  # pragma: no cover
+        raise QuarantineError(f"openpyxl is needed to read the workbook: {e}", 2)
+    wb = openpyxl.load_workbook(workbook, read_only=True, data_only=True)
+    rows = wb[sheet].iter_rows(values_only=True)
+    hdr = next(rows)
+    ix = {h: i for i, h in enumerate(hdr)}
+    for need in ("SFA Licence", "Google Maps URL"):
+        if need not in ix:
+            raise QuarantineError(f"column {need!r} not found on sheet {sheet!r}", 2)
+    out = []
+    for r in rows:
+        lic = str(r[ix["SFA Licence"]] or "").strip()
+        name = google_name_from_url(r[ix["Google Maps URL"]])
+        if lic and name:
+            out.append({"SFA Licence": lic, "Google Name": name, "Google Place ID": r[ix["Google Place ID"]] or "" if "Google Place ID" in ix else "",
+                        "Source": f"{Path(workbook).name} / {sheet} / Google Maps URL path"})
+    write_new_csv(out_csv, GOOGLE_COLUMNS, sorted(out, key=lambda x: x["SFA Licence"]))
+    return len(out)
+
+
+def read_google_names(path: Optional[Path]) -> dict:
+    if not path:
+        return {}
+    return {r["SFA Licence"].strip(): r["Google Name"].strip() for r in read_csv(Path(path)) if r.get("SFA Licence") and r.get("Google Name")}
+
+
+_LATIN = re.compile(r"[A-Za-z]")
+
+
+def location_from_google(google_name: str, brand_display: str) -> str:
+    """The part of a Google name that follows the brand: '(Place)', ' - Place', '@ Place', ' at Place' or trailing words. '' if none."""
+    g = mm.clean_text(google_name)
+    for pat in (r"\s*\(([^()]+)\)\s*$", r"\s[-–—]\s+(.+)$", r"\s*@\s*(.+)$", r"\bat\s+(.+)$"):
+        m = re.search(pat, g)
+        if m and g[: m.start()].strip() and _LATIN.search(m.group(1)):
+            return m.group(1).strip(" -–—,:")
+    gf, bf = fold(g), fold(brand_display)
+    if bf and gf.startswith(bf) and len(g) > len(brand_display):
+        rest = g[len(brand_display):].strip(" -–—,:@()")
+        if _LATIN.search(rest):
+            return rest
+    return ""
+
+
+def master_location(address: str) -> str:
+    """Building name, else street name, from the master's own Full Address. Not Google."""
+    segs = [x.strip() for x in str(address or "").split(",")]
+    for i, seg in enumerate(segs):
+        s = fold(seg)
+        if i == 0 or not s or s.startswith("#") or re.match(r"^(?:singapore\b|\(?level\b)", s):
+            continue
+        return mm.clean_text(seg).title()
+    street = re.sub(r"#\S+", " ", segs[0] if segs else "")
+    street = re.sub(r"^\s*(?:blk\s+|block\s+)?\d+[A-Za-z]?(?:/\d+[A-Za-z]?)?\s+", "", street)
+    street = re.sub(r"\bSingapore\s*\d{6}.*$", "", street, flags=re.I)
+    return mm.clean_text(street).title()
+
+
+DISPLAY_COLUMNS = ["licence", "master_name", "brand_key", "brand_display_name", "google_name", "outlet_location", "display_name", "location_source",
+                   "google_name_available", "menu_url_conflict", "note", "owner_decision", "owner_checked"]
+
+
+def display_name_rows(identity: BrandIdentity, ctx: Ctx, google: dict, overrides: dict) -> list:
+    """Display field only: brand display name + outlet location for chain outlets. The master name is never altered."""
+    counts = Counter(identity.keys.values())
+    addr = {}
+    for r in ctx.master_rows_lite:
+        addr.setdefault(r[0], r[1])
+    rows = []
+    for lic in sorted(identity.infos):
+        key = identity.keys[lic]
+        bdn = identity.display.get(key, key)
+        g = google.get(lic, "")
+        loc, src = (location_from_google(g, bdn) if g else ""), "google_name"
+        if not loc:
+            loc, src = master_location(addr.get(lic, "")), "master_address"
+        chain = counts[key] >= 2
+        owner = identity.owner.get(lic, {})
+        conflict = lic in overrides.get("row_conflicts", {})
+        note = []
+        if conflict:
+            note.append("master Menu URL points to a different restaurant")
+        if not g:
+            note.append("no Google name offline; location from master address, not Google")
+        elif src == "master_address":
+            note.append("Google name has no location part; location from master address, not Google")
+        rows.append({"licence": lic, "master_name": identity.infos[lic].master_name, "brand_key": key, "brand_display_name": bdn, "google_name": g,
+                     "outlet_location": loc, "display_name": f"{bdn} ({loc})" if chain and loc else bdn, "location_source": src if loc else "none",
+                     "google_name_available": "true" if g else "false", "menu_url_conflict": "true" if conflict else "false",
+                     "note": "; ".join(note), "owner_decision": owner.get("owner_decision", ""), "owner_checked": ("true" if owner.get("owner_checked") else "false") if owner else ""})
+    return rows
+
+
+KEY_MAP_APPLIED_COLUMNS = ["licence", "master_name", "normalised_core", "brand_key", "brand_display_name", "evidence_codes", "confidence",
+                           "owner_decision", "owner_checked", "menu_url_conflict", "dish_rows", "excluded_rows"]
+OUTLET_MAP_APPLIED_COLUMNS = ["licence", "outlet_name", "brand_key", "catalogue_row_count", "observed_rows", "menu_url_conflict", "owner_decision", "owner_checked"]
+
+
+def applied_key_rows(identity: BrandIdentity, overrides: dict) -> list:
+    out = []
+    for r in brand_key_map_rows(identity):
+        lic = r["licence"]
+        owner = identity.owner.get(lic, {})
+        out.append({**r, "owner_decision": owner.get("owner_decision", ""), "owner_checked": ("true" if owner.get("owner_checked") else "false") if owner else "",
+                    "menu_url_conflict": "true" if lic in overrides.get("row_conflicts", {}) else "false",
+                    "dish_rows": identity.infos[lic].rows, "excluded_rows": identity.infos[lic].excluded})
+    return out
+
+
+def applied_outlet_map(identity: BrandIdentity, ctx: Ctx, records: list, overrides: dict) -> list:
+    """Every licence of every brand that has catalogue rows, including merged licences that have no dish rows of their own."""
+    brand_rows, observed = Counter(), Counter()
+    for r in records:
+        brand_rows[r["brand"]] += 1
+        for lic in r["outlet_licences"]:
+            observed[(lic, r["brand"])] += 1
+    members = {(lic, k) for lic, k in identity.keys.items() if brand_rows[k]} | set(observed)
+    rows = []
+    for lic, k in sorted(members, key=lambda t: (t[1], t[0])):
+        owner = identity.owner.get(lic, {})
+        rows.append({"licence": lic, "outlet_name": ctx.master_names.get(lic, ""), "brand_key": k, "catalogue_row_count": brand_rows[k],
+                     "observed_rows": observed[(lic, k)], "menu_url_conflict": "true" if lic in overrides.get("row_conflicts", {}) else "false",
+                     "owner_decision": owner.get("owner_decision", ""), "owner_checked": ("true" if owner.get("owner_checked") else "false") if owner else ""})
+    return rows
+
+
+def review_markdown(identity: BrandIdentity, display_rows: list, key_rows: list, records: list, conflicts: list, excluded: Counter, overrides: dict,
+                    before: dict, paths: dict, dish_names: dict, google_total: tuple) -> str:
+    disp = {r["licence"]: r for r in display_rows}
+    kr = {r["licence"]: r for r in key_rows}
+    lic_dishes: dict = defaultdict(set)
+    brand_prices: dict = defaultdict(lambda: defaultdict(dict))  # brand -> dish -> licence -> price
+    for r in records:
+        dk = mm.norm_name(r["item_name"])
+        for lic in r["outlet_licences"]:
+            lic_dishes[lic].add(dk)
+            brand_prices[r["brand"]][dk][lic] = r["price_sgd"]
+    L = ["# Brand review 2026-11-08", "",
+         "Generated by `scripts/menu_run_quarantine.py --overrides-only`. Read-only evidence for the owner; nothing here is verified (`verified=false`). "
+         "Owner decisions are recorded in `brand_overrides_2026-11-08.json`: merges are `owner_decision=merge`, `owner_checked=false` (relayed, not yet checked by the owner).", ""]
+    summary = []
+    sections = []
+    for gi, members in enumerate(identity.group_members):
+        if not members:
+            continue
+        meta = overrides["merge_meta"][gi] if gi < len(overrides["merge_meta"]) else {}
+        key = identity.keys[members[0]]
+        name = identity.display.get(key, key)
+        with_rows = [m for m in members if lic_dishes.get(m)]
+        sets = [lic_dishes[m] for m in with_rows]
+        common_all = set.intersection(*sets) if sets else set()
+        need = (len(sets) + 1) // 2
+        cnt = Counter(d for st in sets for d in st)
+        common_most = sorted(d for d, c in cnt.items() if c >= max(need, 1)) if sets else []
+        conf_rows = [c for c in conflicts if c["brand"] == key]
+        b = before.get(gi, {})
+        summary.append(f"| {name} | {len(members)} | {len(with_rows)} | {sum(kr[m]['dish_rows'] for m in members)} | "
+                       f"{sum(1 for r in records if r['brand'] == key)} | {b.get('catalogue_rows', 0)} | {b.get('keys', '')} | {sum(excluded[m] for m in members)} | {len(conf_rows)} |")
+        sec = [f"## {name}", "",
+               f"Brand key `{key}`; owner decision `{meta.get('owner_decision', 'merge')}`, owner_checked `{str(bool(meta.get('owner_checked', False))).lower()}`. "
+               f"Patterns: {', '.join('`' + x + '`' for x in overrides['merge'][gi])}.", "",
+               "| licence | master name | Google name | location | display name | dish rows | dishes in common with all other outlets | price conflicts |",
+               "|---|---|---|---|---|---:|---:|---|"]
+        for m in sorted(members):
+            d = disp[m]
+            others = [lic_dishes[o] for o in with_rows if o != m]
+            if m not in with_rows:
+                shared = "n/a (no dish rows)"
+            elif not others:
+                shared = "n/a (only outlet with dishes)"
+            else:
+                shared = str(len(lic_dishes[m] & set.intersection(*others)))
+            pc = "; ".join(f"{dish_names.get(dk, dk)}: {brand_prices[key][dk][m]:.2f}" for dk in sorted(brand_prices[key])
+                           if m in brand_prices[key][dk] and brand_prices[key][dk][m] is not None
+                           and any(mm.norm_name(c["dish"]) == dk for c in conf_rows))
+            flag = " **(menu URL conflict)**" if d["menu_url_conflict"] == "true" else ""
+            sec.append(f"| {m} | {d['master_name']}{flag} | {d['google_name'] or '-'} | {d['outlet_location'] or '-'} ({d['location_source']}) | {d['display_name']} | "
+                       f"{kr[m]['dish_rows']}{' (+' + str(excluded[m]) + ' excluded)' if excluded[m] else ''} | {shared} | {pc or '-'} |")
+        sec += ["", f"Dishes common to ALL {len(with_rows)} outlet(s) with dishes: {len(common_all)}; common to most (>= half): {len(common_most)}. "
+                    f"First 10 common to all/most: " + (", ".join(dish_names.get(d, d) for d in (sorted(common_all) or common_most)[:10]) or "none") + ".", ""]
+        if conf_rows:
+            sec += ["Price conflicts (needs outlet-level confirmation; none is resolved silently):", ""] + [f"- {c['dish']}: {c['prices_to_outlet_count']}" for c in conf_rows] + [""]
+        else:
+            sec += ["Price conflicts: none in the existing data.", ""]
+        sections.append((name, sec, members, with_rows, meta))
+    L += ["## Summary", "",
+          "| brand | licences merged by identity | licences with dish rows | dish rows | catalogue rows after | catalogue rows before | keys before | rows excluded (name conflict) | price conflicts |",
+          "|---|---:|---:|---:|---:|---:|---:|---:|---:|", *summary, ""]
+    L += [f"Google names found offline for {google_total[0]} of {google_total[1]} outlets listed below; the rest use the master address as the location "
+          "(`location_source=master_address`, not Google).", ""]
+    ex_lics = overrides.get("row_conflicts", {})
+    if ex_lics:
+        L += ["## Owner question: four Ah Ma Chi Mian licences whose Menu URL belongs to another restaurant", "",
+              "These licences are named Ah Ma Chi Mian in the master, but the master Menu URL and the dish rows point to a different restaurant. "
+              "They stay in the Ah Ma Chi Mian brand by name (owner decision) but their dish rows are excluded from the catalogue, exceptions and conflicts.", "",
+              "| licence | master name | address | rows' own restaurant | rows excluded |", "|---|---|---|---|---:|"]
+        for lic, rec in sorted(ex_lics.items()):
+            L.append(f"| {lic} | {disp[lic]['master_name'] if lic in disp else ''} | {rec.get('address', '')} | {rec.get('row_stall_name', '')} | {excluded[lic]} |")
+        L += ["", "Question for the owner: should the master Menu URL of these four licences be cleared (or replaced with the real Ah Ma Chi Mian page)? "
+                  "Until then `--resolve-outlet` shows only brand_shared lines for them, with a warning.", ""]
+    for name, sec, members, with_rows, meta in sections:
+        L += sec
+    holds = overrides.get("hold_out", {})
+    if holds:
+        L += ["## Held out of the merge (owner_decision=pending)", ""]
+        for lic, h in sorted(holds.items()):
+            L.append(f"- {lic} {disp[lic]['master_name'] if lic in disp else ''} (Google: {disp[lic]['google_name'] if lic in disp and disp[lic]['google_name'] else '-'}): {h.get('reason', '')} "
+                     f"Question: {h.get('owner_question', 'Is this the same brand?')}")
+        L.append("")
+    splits = [g for g in overrides["split"] if g]
+    if splits:
+        L += ["## Kept separate: STALL 3 / STALL 7 / STALL 9", "",
+              "Owner decision: generic food-court stall names, not a brand. They are never merged.", "",
+              "| licence | master name | brand key | owner decision |", "|---|---|---|---|"]
+        for lic in sorted(l for g in splits for l in g):
+            if lic in kr:
+                L.append(f"| {lic} | {kr[lic]['master_name']} | {kr[lic]['brand_key']} | {kr[lic]['owner_decision']} |")
+        L.append("")
+    L += ["## Doubtful points per brand", ""]
+    for name, sec, members, with_rows, meta in sections:
+        pts = [f"- **{name}**: merged by owner decision with `owner_checked=false` (\"most likely the same brand\")."]
+        nog = [m for m in members if not disp[m]["google_name_available"] == "true"]
+        pts.append(f"- **{name}**: {len(members) - len(nog)} of {len(members)} outlets have a Google name offline; {len(nog)} fall back to the master address for the location.")
+        pts.append(f"- **{name}**: {len(members) - len(with_rows)} of {len(members)} licences have no dish rows; they inherit the brand catalogue only.")
+        odd = [m for m in members if disp[m]["google_name"] and not row_names_brand(core_name(disp[m]["google_name"]), identity.infos[m].core)]
+        if odd:
+            pts.append(f"- **{name}**: Google name does not carry the brand for " + ", ".join(f"{m} ({disp[m]['google_name']})" for m in odd) + ".")
+        L += pts
+    L += ["", "## Machine-readable outputs", ""] + [f"- `{v}`" for v in paths.values()] + [""]
+    return "\n".join(L)
+
+
+def write_new_text(path: Path, text: str, allow_in_repo: bool = False) -> None:
+    """Create a NEW file; never replaces an existing one."""
+    path = Path(path)
+    if path.exists():
+        raise QuarantineError(f"Refusing to overwrite existing file: {path}", 2)
+    if not path.parent.is_dir():
+        raise QuarantineError(f"Folder does not exist: {path.parent}", 2)
+    if not allow_in_repo:
+        for anc in [path.parent.resolve(), *path.parent.resolve().parents]:
+            if (anc / ".git").exists():
+                raise QuarantineError(f"Refusing to write inside a git repo: {path}", 2)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+            f.flush()
+            os.fsync(f.fileno())
+        os.chmod(tmp, 0o644)
+        os.link(tmp, path)
+    finally:
+        Path(tmp).unlink(missing_ok=True)
+
+
+def commit_new_files(out_dir: Path, files: dict) -> None:
+    """Write several NEW files; if one cannot be created, remove the ones this call created. Existing files are never touched."""
+    for name in files:
+        if (out_dir / name).exists():
+            raise QuarantineError(f"Refusing to overwrite existing file: {out_dir / name}", 2)
+    created: list = []
+    try:
+        for name, text in files.items():
+            write_new_text(out_dir / name, text)
+            created.append(out_dir / name)
+    except BaseException:
+        for p in created:
+            p.unlink(missing_ok=True)
+        raise
+
+
+def load_resolution_inputs(out_dir: Path, applied: bool = False) -> dict:
     d = Path(out_dir)
-    for name in ("brand_key_map.csv", "brand_catalogue.jsonl", "outlet_exceptions.jsonl"):
+    sfx = APPLIED_SUFFIX if applied else ""
+    names = (f"brand_key_map{sfx}.csv", f"brand_catalogue{sfx}.jsonl", f"outlet_exceptions{sfx}.jsonl")
+    for name in names:
         if not (d / name).is_file():
-            raise QuarantineError(f"{name} not found in {d}; run with --write first", 2)
-    return {"keys": {r["licence"]: r for r in read_csv(d / "brand_key_map.csv")},
-            "catalogue": read_jsonl_file(d / "brand_catalogue.jsonl"), "exceptions": read_jsonl_file(d / "outlet_exceptions.jsonl")}
+            raise QuarantineError(f"{name} not found in {d}; run with --write{' --overrides-only' if applied else ''} first", 2)
+    disp = d / f"outlet_display_names{APPLIED_SUFFIX}.csv"
+    return {"keys": {r["licence"]: r for r in read_csv(d / names[0])}, "catalogue": read_jsonl_file(d / names[1]),
+            "exceptions": read_jsonl_file(d / names[2]),
+            "display": {r["licence"]: r for r in read_csv(disp)} if applied and disp.is_file() else {}}
 
 
-def resolve_outlet(out_dir: Path, licence: str) -> dict:
+def resolve_outlet(out_dir: Path, licence: str, applied: bool = False) -> dict:
     """Effective outlet menu = brand baseline, overridden by this licence's exceptions, plus its outlet-only items.
     Read-only; nothing is attached to the outlet as a verified row."""
-    data = load_resolution_inputs(out_dir)
+    data = load_resolution_inputs(out_dir, applied)
     km = data["keys"].get(licence)
     if km is None:
         raise QuarantineError(f"{licence} is not in brand_key_map.csv", 2)
@@ -1367,10 +1745,23 @@ def resolve_outlet(out_dir: Path, licence: str) -> dict:
         lines.append({"item_name": e["dish"], "source": "outlet_exception", "price_sgd": e["outlet_price"], "price_status": "outlet_only",
                       "exception_type": "OUTLET_ONLY_ITEM", "verified": False, "price_basis": "unknown", "flags": [],
                       "evidence_source_url": e["source_url"], "evidence_crawl_timestamp": e["crawl_timestamp"]})
+    conflict = km.get("menu_url_conflict") == "true"
+    if conflict:  # never show the other restaurant's dishes: only brand_shared lines, and say why
+        lines = [l for l in lines if l["source"] == "brand_shared"]
+    disp = data["display"].get(licence)
     header = [BRAND_WARNING, "Lines labelled outlet_exception come from outlet-level evidence but are also unverified (verified=false).",
               f"Outlet {licence} ({km['master_name']}) -> brand key {brand!r} ({km['brand_display_name']}), confidence {km['confidence']}",
               f"{len(lines)} line(s): {sum(1 for l in lines if l['source'] == 'brand_shared')} brand_shared, "
               f"{sum(1 for l in lines if l['source'] == 'outlet_exception')} outlet_exception"]
+    if disp:
+        header.insert(2, f"Outlet display name: {disp['display_name']} (location source: {disp['location_source']}; Google name: {disp['google_name'] or 'not available offline'})")
+    if conflict:
+        header.insert(1, "WARNING: the master Menu URL of this licence points to a different restaurant; that restaurant's dishes are excluded "
+                         "and only brand_shared lines are shown. Owner question pending.")
+    if km.get("owner_decision") == "merge" and km.get("owner_checked") != "true":
+        header.append("Brand merge decided by the owner but not yet checked (owner_checked=false).")
+    if km.get("owner_decision") == "pending":
+        header.append("This licence is held out of the brand merge (owner_decision=pending).")
     return {"licence": licence, "outlet_name": km["master_name"], "brand_key": brand, "header": header, "lines": lines}
 
 
@@ -1445,6 +1836,90 @@ def ambiguity_score(r: dict) -> tuple:
     return (0 if r["confidence"] == "low" else 1, -len([x for x in r["competing_names"].split(" ; ") if x]), r["licence"])
 
 
+
+def sha_of_files(folder: Path) -> dict:
+    return {p.name: mm.sha256_of(p) for p in sorted(Path(folder).iterdir()) if p.is_file()}
+
+
+def emit_overrides_applied(args, out_dir: Path, ctx: Ctx, identity: BrandIdentity, overrides: dict, cat_records: list, conflicts: list, exceptions: list,
+                           excluded_rows: list, excluded_count: Counter, dish_names: dict, hashes_before: dict, extra_inputs: dict, report: dict,
+                           present: dict) -> None:
+    """Write only the *_overrides_applied files (all new) into an existing run folder. Nothing existing is touched."""
+    sfx = APPLIED_SUFFIX
+    google = read_google_names(Path(args.google_names) if args.google_names else None)
+    existing_before = sha_of_files(out_dir)
+    key_rows = applied_key_rows(identity, overrides)
+    disp_rows = display_name_rows(identity, ctx, google, overrides)
+    omap = applied_outlet_map(identity, ctx, cat_records, overrides)
+    records = []
+    for r in cat_records:
+        meta = identity.group_meta.get(r["brand"])
+        records.append({**r, **({"owner_decision": meta["owner_decision"], "owner_checked": meta["owner_checked"], "merge_group": meta["group_id"]} if meta else {})})
+    # before: what the existing run folder said about the same licences
+    old_keys = {r["licence"]: r["brand_key"] for r in read_csv(out_dir / "brand_key_map.csv")} if (out_dir / "brand_key_map.csv").is_file() else {}
+    old_cat = read_jsonl_file(out_dir / "brand_catalogue.jsonl") if (out_dir / "brand_catalogue.jsonl").is_file() else []
+    before, groups = {}, []
+    for gi, members in enumerate(identity.group_members):
+        if not members:
+            continue
+        meta = overrides["merge_meta"][gi] if gi < len(overrides["merge_meta"]) else {}
+        bkeys = {old_keys[m] for m in members if m in old_keys}
+        brows = [r for r in old_cat if r["brand"] in bkeys]
+        before[gi] = {"keys": len(bkeys), "catalogue_rows": len(brows), "licences_in_run": sum(1 for m in members if m in old_keys),
+                      "catalogue_outlets": len({l for r in brows for l in r["outlet_licences"]})}
+        key = identity.keys[members[0]]
+        after_rows = [r for r in cat_records if r["brand"] == key]
+        groups.append({"id": meta.get("id", f"merge{gi + 1}"), "display_name": identity.display.get(key), "brand_key": key, "master_licences_merged": len(members),
+                       "licences_with_dish_rows": sum(1 for m in members if identity.infos[m].rows), "dish_rows": sum(identity.infos[m].rows for m in members),
+                       "catalogue_rows_after": len(after_rows), "catalogue_outlets_after": len({l for r in after_rows for l in r["outlet_licences"]}),
+                       "excluded_rows": sum(excluded_count[m] for m in members), "owner_decision": meta.get("owner_decision", "merge"),
+                       "owner_checked": bool(meta.get("owner_checked", False)), "before": before[gi],
+                       "price_conflicts": sum(1 for c in conflicts if c["brand"] == key)})
+    member_lics = sorted({m for ms in identity.group_members for m in ms})
+    google_found = sum(1 for m in member_lics if google.get(m))
+    paths = {k: str(out_dir / v) for k, v in {
+        "key_map": f"brand_key_map{sfx}.csv", "outlet_map": f"brand_outlet_map{sfx}.csv", "catalogue": f"brand_catalogue{sfx}.jsonl",
+        "exceptions": f"outlet_exceptions{sfx}.jsonl", "conflicts": f"brand_price_conflicts{sfx}.csv", "display_names": f"outlet_display_names{sfx}.csv",
+        "excluded_rows": f"brand_excluded_rows{sfx}.jsonl", "manifest": f"manifest{sfx}.json"}.items()}
+    paths["overrides"] = str(args.brand_overrides)
+    if args.google_names:
+        paths["google_names"] = str(args.google_names)
+    md = review_markdown(identity, disp_rows, key_rows, records, conflicts, excluded_count, overrides, before, paths, dish_names, (google_found, len(member_lics))) \
+        if args.review_md else None
+    excl_text = "".join(json.dumps({**r, "bucket": "EXCLUDED_NAME_CONFLICT", "verified": False}, ensure_ascii=False, sort_keys=True) + "\n" for r in excluded_rows)
+    hashes_after = {k: mm.sha256_of(p) for k, p in {**present, **extra_inputs}.items()}
+    if hashes_after != hashes_before:
+        raise QuarantineError("A source file changed while the run was in progress; nothing was written", 6)
+    manifest = {"schema": 1, "mode": "overrides-only", "same_brand_url_policy": ctx.same_brand_url_policy,
+                "inputs": {k: {"path": str(p), "sha256": hashes_before[k], "bytes": p.stat().st_size} for k, p in sorted({**present, **extra_inputs}.items())},
+                "inputs_unchanged_after_run": True, "script": script_provenance(), "overrides_metadata": overrides.get("metadata", {}),
+                "merge_groups": groups, "hold_out": {l: {"owner_decision": h.get("owner_decision", "pending"), "master_name": identity.infos[l].master_name if l in identity.infos else ""}
+                                                     for l, h in sorted(overrides["hold_out"].items())},
+                "excluded_rows_by_licence": dict(sorted(excluded_count.items())),
+                "google_names": {"outlets_listed": len(member_lics), "with_google_name": google_found, "fallback_master_address": len(member_lics) - google_found,
+                                 "all_display_rows_with_google_name": sum(1 for r in disp_rows if r["google_name_available"] == "true"), "display_rows": len(disp_rows)},
+                "counts": {"key_map_rows": len(key_rows), "outlet_map_rows": len(omap), "catalogue_rows": len(records), "exceptions": len(exceptions),
+                           "price_conflicts": len(conflicts), "excluded_rows": len(excluded_rows)}}
+    files = {f"brand_key_map{sfx}.csv": csv_text(KEY_MAP_APPLIED_COLUMNS, key_rows), f"brand_outlet_map{sfx}.csv": csv_text(OUTLET_MAP_APPLIED_COLUMNS, omap),
+             f"brand_catalogue{sfx}.jsonl": "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in records),
+             f"outlet_exceptions{sfx}.jsonl": "".join(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n" for r in exceptions),
+             f"brand_price_conflicts{sfx}.csv": csv_text(CONFLICT_COLUMNS, conflicts), f"outlet_display_names{sfx}.csv": csv_text(DISPLAY_COLUMNS, disp_rows),
+             f"brand_excluded_rows{sfx}.jsonl": excl_text, f"manifest{sfx}.json": json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n"}
+    if args.review_md and Path(args.review_md).exists():
+        raise QuarantineError(f"Refusing to overwrite existing file: {args.review_md}", 2)
+    commit_new_files(out_dir, files)
+    if md is not None:
+        try:
+            write_new_text(Path(args.review_md), md, allow_in_repo=True)
+        except BaseException:
+            for name in files:
+                (out_dir / name).unlink(missing_ok=True)
+            raise
+    if sha_of_files(out_dir).items() < existing_before.items() or any(sha_of_files(out_dir).get(k) != v for k, v in existing_before.items()):
+        raise QuarantineError("An existing file in the run folder changed", 6)
+    report["overrides_applied"] = {"groups": groups, "files": sorted(files)}
+
+
 def run(args, free_fn: Callable) -> tuple:
     """Return (exit_code, report dict, files-to-write dict or None, errors list)."""
     d = Path(args.input_dir)
@@ -1462,7 +1937,13 @@ def run(args, free_fn: Callable) -> tuple:
             raise QuarantineError(f"Required input missing: {paths[key]}", 2)
     optional = [k for k in ("resolved", "discovered") if not paths[k].is_file()]
     present = {k: p for k, p in paths.items() if p.is_file()}
-    extra_inputs = {k: Path(v) for k, v in (("brand_domains", args.brand_domains), ("brand_overrides", args.brand_overrides)) if v}
+    extra_inputs = {k: Path(v) for k, v in (("brand_domains", args.brand_domains), ("brand_overrides", args.brand_overrides),
+                                            ("google_names", args.google_names)) if v}
+    if args.overrides_only:
+        if not args.brand_overrides:
+            raise QuarantineError("--overrides-only needs --brand-overrides", 2)
+        if not (Path(args.out_dir) / "report.json").is_file():
+            raise QuarantineError(f"--overrides-only writes into an existing run folder; {args.out_dir} has no report.json", 2)
     sources = list(present.values()) + list(extra_inputs.values())
     out_dir = check_output_dir(Path(args.out_dir), sources, (d,))
     mm.check_disk([(existing_ancestor(out_dir), sum(p.stat().st_size for p in sources))], free_fn)
@@ -1477,7 +1958,20 @@ def run(args, free_fn: Callable) -> tuple:
     overrides = load_overrides(Path(args.brand_overrides) if args.brand_overrides else None)
     identity = BrandIdentity(args.brand_identity, build_places(ctx.master_addresses) if args.brand_identity == "full-name" else frozenset(), overrides)
     ctx.identity = identity
+    ctx.hold_out = set(overrides["hold_out"])
     lic_infos: dict = {}
+    excluded_rows: list = []
+    excluded_count: Counter = Counter()
+    dish_names: dict = {}
+    excl = overrides["row_conflicts"]
+
+    def info_for(lic, row):
+        li = lic_infos.get(lic)
+        if li is None:
+            mname = ctx.master_names.get(lic, "")
+            shown = mname or str(row.get("stall_name") or "")  # licence missing from master: fall back to the row's own name
+            li = lic_infos[lic] = LicInfo(lic, shown, identity.core_of_name(shown), roots={url_root(ctx.master_urls.get(lic, ""))} - {""})
+        return li
     counts = {
         "resolved.rows": sum(1 for _ in read_csv(paths["resolved"])) if "resolved" in present else None,
         "discovered.rows": sum(1 for _ in read_csv(paths["discovered"])) if "discovered" in present else None,
@@ -1526,22 +2020,36 @@ def run(args, free_fn: Callable) -> tuple:
             stats["new_rows"] += 1
             if str(row.get("source") or "").strip().lower() == "brand_official_site" and str(row.get("crawl_timestamp") or "").startswith(BRAND_COPY_BATCH_PREFIX):
                 audit_extra["brand_site_18h_rows"] += 1
-            items.append(it)
             nn_dish = mm.norm_name(row.get("item_name"))
+            if it.parts and all(p in excl for p in it.parts):  # owner: this licence's rows belong to another restaurant
+                excluded_rows.append({**row, "exclusion_reason": "rows_excluded_name_conflict", "exclusion_note": excl[it.parts[0]].get("reason", ""),
+                                      "row_stall_name_core": identity.core_of_name(str(row.get("stall_name") or ""))})
+                for lic in it.parts:
+                    excluded_count[lic] += 1
+                    info_for(lic, row).excluded += 1
+                continue
+            items.append(it)
+            if nn_dish:
+                dish_names.setdefault(nn_dish, row.get("item_name"))
             root = url_root(row.get("source_url"))
             for lic in it.parts:
-                li = lic_infos.get(lic)
-                if li is None:
-                    mname = ctx.master_names.get(lic, "")
-                    shown = mname or str(row.get("stall_name") or "")  # licence missing from master: fall back to the row's own name
-                    li = lic_infos[lic] = LicInfo(lic, shown, identity.core_of_name(shown),
-                                                  roots={url_root(ctx.master_urls.get(lic, ""))} - {""})
+                li = info_for(lic, row)
+                li.rows += 1
                 if nn_dish:
                     li.dishes.add(nn_dish)
                 if root:
                     li.roots.add(root)
                 if row.get("stall_name"):
                     li.row_names.add(str(row.get("stall_name")))
+    if overrides["merge"] or overrides["split"] or overrides["hold_out"]:  # licences the owner named, even with no dish rows
+        patterns = [x for g in overrides["merge"] + overrides["split"] for x in g]
+        need_core = any(x.lower().startswith("core:") for x in patterns)
+        for lic, name in ctx.master_names.items():
+            if lic in lic_infos:
+                continue
+            core = identity.core_of_name(name) if (name and need_core) else ""
+            if lic in overrides["hold_out"] or any(match_pattern(x, lic, name, core) for x in patterns):
+                lic_infos[lic] = LicInfo(lic, name, core or identity.core_of_name(name), roots={url_root(ctx.master_urls.get(lic, ""))} - {""})
     identity.build(lic_infos)
     for it in items:
         if not it.legacy:
@@ -1550,7 +2058,7 @@ def run(args, free_fn: Callable) -> tuple:
     agg.finish(ctx)
 
     # ---- pass 2: classify and (optionally) stream into staged files
-    write = bool(args.write) and errors.rate <= args.max_error_rate
+    write = bool(args.write) and not args.overrides_only and errors.rate <= args.max_error_rate
     staged = None
     over_threshold = errors.rate > args.max_error_rate
     code_rows, code_parts, code_cells = Counter(), defaultdict(set), defaultdict(set)
@@ -1714,6 +2222,11 @@ def run(args, free_fn: Callable) -> tuple:
         }
 
         files = None
+        if args.overrides_only:
+            if args.write and not over_threshold:
+                emit_overrides_applied(args, out_dir, ctx, identity, overrides, cat_records, conflicts, exceptions, excluded_rows, excluded_count,
+                                       dish_names, hashes_before, extra_inputs, report, present)
+            return (5 if over_threshold else 0), report, None, errors.entries
         if write:
             hashes_after = {k: mm.sha256_of(p) for k, p in {**present, **extra_inputs}.items()}
             if hashes_after != hashes_before:
@@ -1743,7 +2256,7 @@ def run(args, free_fn: Callable) -> tuple:
         if staged:
             staged.abort()
         raise
-    if over_threshold and args.write:
+    if over_threshold and args.write and not args.overrides_only:
         out_dir.mkdir(parents=True, exist_ok=True)
         mm.atomic_write_text(out_dir / "errors.jsonl", "".join(json.dumps(e, ensure_ascii=False, sort_keys=True) + "\n" for e in errors.entries))
     return (5 if over_threshold else 0), report, files, errors.entries
@@ -1809,6 +2322,13 @@ def main(argv=None, *, free_fn: Callable = mm.disk_free) -> int:
     ap.add_argument("--max-error-rate", type=float, default=MAX_ERROR_RATE)
     ap.add_argument("--brand-identity", choices=("full-name", "first-word"), default="full-name")
     ap.add_argument("--brand-overrides", default=None, help="optional JSON {\"merge\": [[patterns]], \"split\": [[patterns]]}")
+    ap.add_argument("--overrides-only", action="store_true",
+                    help="re-run identity/catalogue/exceptions/conflicts with --brand-overrides and write ONLY new *_overrides_applied files into the existing --out-dir")
+    ap.add_argument("--google-names", default=None, help="csv (SFA Licence, Google Name, ...) made with --extract-google-names; local data only")
+    ap.add_argument("--review-md", default=None, help="with --overrides-only: also create this readable markdown review (refuses to overwrite)")
+    ap.add_argument("--extract-google-names", metavar="WORKBOOK", help="read Google names from a local directory workbook into --google-names-out (new file)")
+    ap.add_argument("--google-names-out")
+    ap.add_argument("--overrides-applied", action="store_true", help="with --resolve-outlet: use the *_overrides_applied files")
     ap.add_argument("--resolve-outlet", metavar="LICENCE", help="print the effective outlet menu from an existing run in --out-dir (read-only)")
     ap.add_argument("--json", action="store_true", help="with --resolve-outlet: print JSON")
     ap.add_argument("--same-brand-url-policy", choices=("strict", "sidecar"), default="strict",
@@ -1825,11 +2345,21 @@ def main(argv=None, *, free_fn: Callable = mm.disk_free) -> int:
             return getattr(e, "exit_code", 2)
         print(json.dumps(summary, indent=2, sort_keys=True, ensure_ascii=False))
         return 0
+    if args.extract_google_names:
+        if not args.google_names_out:
+            ap.error("--extract-google-names needs --google-names-out")
+        try:
+            n = extract_google_names(Path(args.extract_google_names), Path(args.google_names_out))
+        except mm.MergeError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return getattr(e, "exit_code", 2)
+        print(f"{n} Google names written to {args.google_names_out}")
+        return 0
     if args.resolve_outlet:
         if not args.out_dir:
             ap.error("--resolve-outlet needs --out-dir (a finished --write run)")
         try:
-            res = resolve_outlet(Path(args.out_dir), args.resolve_outlet)
+            res = resolve_outlet(Path(args.out_dir), args.resolve_outlet, args.overrides_applied)
         except mm.MergeError as e:
             print(f"ERROR: {e}", file=sys.stderr)
             return getattr(e, "exit_code", 2)

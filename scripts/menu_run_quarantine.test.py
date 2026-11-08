@@ -25,6 +25,16 @@ KEYS = ["stall_licence_no", "stall_name", "source_url", "source", "verified", "m
         "image_url", "sold_out", "crawl_timestamp"]
 
 
+def read_jsonl(path):
+    with open(path, encoding="utf-8") as f:
+        return [json.loads(x) for x in f if x.strip()]
+
+
+def read_csv_file(path):
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
 def U(tag):
     return f"https://foodpanda.sg/restaurant/{tag}/x"
 
@@ -42,6 +52,12 @@ MASTER = {
     "L_T1": ("Two Men Bagel House - Plaza Singapura", ""), "L_T2": ("TWO MEN BAGEL HOUSE (Bedok Mall)", ""), "L_T3": ("Two Bao Shop", ""),
     "L_G1": ("Song Fa Bak Kut Teh @ Jewel", ""), "L_G2": ("Song Fa Bak Kut Teh", ""), "L_G3": ("Song Kee Noodles", ""),
     "L_U1": ("Uncorr Kopi (One)", U("u111")), "L_U2": ("Uncorr Kopi (Two)", U("u222")),
+    "L_M1": ("Ah Ma Chi Mian", U("m111"), "10 PARK ROAD #01-01,PARK MALL,Singapore 111111"), "L_M2": ("Ah Ma Chi Mian", U("m222")), "L_M3": ("Ah Ma Chi Mian", U("m333")),
+    "L_M4": ("Ah Ma Chi Mian", "", "1 TEST ROAD #01-01,TEST MALL,Singapore 123456"),
+    "L_W1": ("A&W", "https://aw.example/menu"), "L_W2": ("A&W RESTAURANTS", "https://aw.example/menu"), "L_W3": ("A&W", "", "5 BEDOK ROAD #01-02,Singapore 469999"),
+    "L_X1": ("Subway", ""), "L_X2": ("Subway Niche", ""), "L_X3": ("Subway Choa Chu Kang Sports Centre", ""), "L_X4": ("Subway (Atra)", "", "12 ALEXANDRA VIEW #01-12,ARTRA,Singapore 158736"),
+    "L_X5": ("Woon's Kopi by Killiney, Subway", ""),
+    "S_3": ("", ""), "S_7": ("", ""), "S_9": ("", ""),
 }
 
 
@@ -74,8 +90,8 @@ class Env(unittest.TestCase):
         with open(self.master_path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["F&B Name", "Registered Business Name", "SFA Licence", "Menu URL", "Full Address"])
-            for lic, (name, url) in MASTER.items():
-                w.writerow([name, "", lic, url, ""])
+            for lic, val in MASTER.items():
+                w.writerow([val[0], "", lic, val[1], val[2] if len(val) > 2 else ""])
             for r in extra:
                 w.writerow(r)
 
@@ -816,6 +832,251 @@ class OldKeyNameReview(Env):
             q.run_old_key_review(sd, self.master_path, existing)
         self.assertEqual(existing.read_text(), "keep me")
         self.assertEqual(sorted(p.name for p in sd.iterdir() if p.name.startswith(".")), [])   # no temp files left behind
+
+
+class OverridesApplied(Env):
+    def overrides(self, **extra):
+        data = {
+            "metadata": {"decided_by": "sh", "decision_date": "2026-11-08", "source": "coordinator relay"},
+            "merge": [["core:ah ma chi mian"], ["core:a and w", "core:a and w restaurants"], ["core:subway", "L_X2", "L_X3"]],
+            "merge_meta": [{"id": "ah_ma", "display_name": "Ah Ma Chi Mian", "owner_decision": "merge", "owner_checked": False},
+                           {"id": "aw", "display_name": "A&W", "owner_decision": "merge", "owner_checked": False},
+                           {"id": "subway", "display_name": "Subway", "owner_decision": "merge", "owner_checked": False}],
+            "split": [["S_3", "S_7", "S_9"]], "split_meta": [{"id": "stall", "owner_decision": "split", "owner_checked": False}],
+            "hold_out": [{"licence": "L_X5", "owner_decision": "pending", "reason": "kopitiam with a Subway counter", "owner_question": "Is it Subway?"}],
+            "row_conflicts": [{"licence": "L_M3", "row_stall_name": "Fan Xiang Yuan (Jurong Gateway)", "reason": "master Menu URL points to a different restaurant"}],
+        }
+        data.update(extra)
+        path = self.tmp / "brand_overrides.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        return path
+
+    def rows(self):
+        def dishes(lic, tag, n=3, **kw):
+            return [R(lic, f"{tag} {i}", 4.0 + i, **kw) for i in range(n)]
+        rows = dishes("L_M1", "Mee") + dishes("L_M2", "Mee") + dishes("L_M2", "Extra", 1)
+        rows += [R("L_M3", f"Foreign {i}", 7.0, stall_name="Fan Xiang Yuan (Jurong Gateway)") for i in range(4)]       # another restaurant's rows
+        rows += dishes("L_W1", "Burger", url="https://aw.example/menu", source="brand_official_site", ts="2026-11-08T18:01:00Z")
+        rows += dishes("L_W2", "Burger", url="https://aw.example/menu", source="brand_official_site", ts="2026-11-08T18:01:00Z")
+        for lic in ("L_X1", "L_X2", "L_X3", "L_X5"):
+            rows += dishes(lic, "Sub", 5)                                                                              # one brand menu everywhere
+        rows += dishes("S_3", "Rice", 5) + dishes("S_7", "Noodle", 5) + dishes("S_9", "Soup", 5)
+        return rows
+
+    def google_csv(self):
+        path = self.tmp / "google_names.csv"
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(q.GOOGLE_COLUMNS)
+            w.writerow(["L_W1", "A&W Anchorvale Village", "", "test"])
+            w.writerow(["L_X2", "SubwayNiche", "", "test"])
+            w.writerow(["L_X3", "Subway Choa Chu Kang Sports Centre", "", "test"])
+            w.writerow(["L_M1", "Ah Ma Chi Mian 阿嬷吃面", "", "test"])
+            w.writerow(["L_M2", "Ah Ma Chi Mian (Parkway Parade)", "", "test"])
+        return path
+
+    def applied(self, review_md=None, **kw):
+        self.write_inputs(self.rows())
+        self.assertEqual(self.run_main()[0], 0)                       # a normal run first: --overrides-only needs an existing run folder
+        args = ["--overrides-only", "--same-brand-url-policy", "sidecar", "--brand-overrides", str(self.overrides(**kw)), "--google-names", str(self.google_csv())]
+        if review_md:
+            args += ["--review-md", str(review_md)]
+        code, out = self.run_main(*args)
+        self.assertEqual(code, 0, out)
+        return {r["licence"]: r for r in read_csv_file(self.out / "brand_key_map_overrides_applied.csv")}
+
+    def test_overrides_file_parsing(self):
+        ov = q.load_overrides(self.overrides())
+        self.assertEqual(ov["merge"][1], ["core:a and w", "core:a and w restaurants"])
+        self.assertEqual(ov["merge_meta"][0]["display_name"], "Ah Ma Chi Mian")
+        self.assertIs(ov["merge_meta"][2]["owner_checked"], False)
+        self.assertEqual(set(ov["hold_out"]), {"L_X5"})
+        self.assertEqual(ov["row_conflicts"]["L_M3"]["row_stall_name"], "Fan Xiang Yuan (Jurong Gateway)")
+        self.assertEqual(ov["metadata"]["decided_by"], "sh")
+        bad = self.tmp / "bad.json"
+        bad.write_text(json.dumps({"merge": "x"}))
+        with self.assertRaises(q.QuarantineError):
+            q.load_overrides(bad)
+        bad.write_text(json.dumps({"hold_out": [{"no_licence": 1}]}))
+        with self.assertRaises(q.QuarantineError):
+            q.load_overrides(bad)
+        self.assertEqual(q.load_overrides(None)["merge"], [])
+
+    def test_merge_groups_cover_master_licences_without_rows(self):
+        km = self.applied()
+        self.assertEqual({km[l]["brand_key"] for l in ("L_M1", "L_M2", "L_M3", "L_M4")}, {"ah ma chi mian"})     # L_M4 has no rows at all
+        self.assertEqual({km[l]["brand_key"] for l in ("L_W1", "L_W2", "L_W3")}, {"a and w"})                       # "A&W" + "A&W RESTAURANTS"
+        self.assertEqual({km[l]["brand_key"] for l in ("L_X1", "L_X2", "L_X3", "L_X4")}, {"subway"})               # Niche / Choa Chu Kang / Atra
+        self.assertEqual(km["L_M4"]["dish_rows"], "0")
+        self.assertIn("OVERRIDE_MERGE", km["L_M1"]["evidence_codes"])
+        # owner decision carried, not checked
+        for l in ("L_M1", "L_W2", "L_X3"):
+            self.assertEqual((km[l]["owner_decision"], km[l]["owner_checked"]), ("merge", "false"))
+        cat = read_jsonl(self.out / "brand_catalogue_overrides_applied.jsonl")
+        self.assertTrue(cat and all(r["owner_checked"] is False and r["owner_decision"] == "merge" for r in cat if r["brand"] in ("ah ma chi mian", "a and w", "subway")))
+        self.assertEqual({r["brand_display_name"] for r in cat if r["brand"] == "a and w"}, {"A&W"})
+
+    def test_hold_out_and_split_are_not_merged(self):
+        km = self.applied()
+        self.assertNotEqual(km["L_X5"]["brand_key"], "subway")
+        self.assertEqual((km["L_X5"]["owner_decision"], km["L_X5"]["confidence"]), ("pending", "low"))
+        self.assertIn("OWNER_HOLD_OUT", km["L_X5"]["evidence_codes"])
+        self.assertEqual(len({km[l]["brand_key"] for l in ("S_3", "S_7", "S_9")}), 3)
+        self.assertEqual({km[l]["owner_decision"] for l in ("S_3", "S_7", "S_9")}, {"split"})
+        cat = read_jsonl(self.out / "brand_catalogue_overrides_applied.jsonl")
+        subway = [r for r in cat if r["brand"] == "subway"]
+        self.assertTrue(subway)                                                                                   # the held-out licence cannot make Subway "unrelated"
+        self.assertNotIn("L_X5", {l for r in cat for l in r["outlet_licences"]})                                  # and its rows never enter the catalogue
+
+    def test_mislabelled_rows_are_excluded_everywhere_and_flagged(self):
+        km = self.applied()
+        excluded = read_jsonl(self.out / "brand_excluded_rows_overrides_applied.jsonl")
+        self.assertEqual(len(excluded), 4)
+        self.assertEqual({r["exclusion_reason"] for r in excluded}, {"rows_excluded_name_conflict"})
+        self.assertTrue(all(r["stall_licence_no"] == "L_M3" and r["verified"] is False for r in excluded))
+        for name in ("brand_catalogue_overrides_applied.jsonl", "outlet_exceptions_overrides_applied.jsonl"):
+            self.assertNotIn("Foreign", (self.out / name).read_text(encoding="utf-8"))
+        self.assertNotIn("Foreign", (self.out / "brand_price_conflicts_overrides_applied.csv").read_text(encoding="utf-8"))
+        self.assertEqual((km["L_M3"]["menu_url_conflict"], km["L_M3"]["dish_rows"], km["L_M3"]["excluded_rows"]), ("true", "0", "4"))
+        with open(self.out / "brand_outlet_map_overrides_applied.csv", newline="", encoding="utf-8") as f:
+            omap = {r["licence"]: r for r in csv.DictReader(f)}
+        self.assertEqual(omap["L_M3"]["menu_url_conflict"], "true")
+        self.assertEqual(omap["L_M3"]["observed_rows"], "0")
+        self.assertEqual(omap["L_M4"]["brand_key"], "ah ma chi mian")           # merged licence with no rows still maps to the brand catalogue
+        res = q.resolve_outlet(self.out, "L_M3", applied=True)
+        self.assertIn("different restaurant", res["header"][1])
+        self.assertTrue(res["lines"] and all(l["source"] == "brand_shared" for l in res["lines"]))
+        self.assertNotIn("Foreign", " ".join(l["item_name"] for l in res["lines"]))
+        self.assertIn("not yet checked", " ".join(res["header"]))
+        held = q.resolve_outlet(self.out, "L_X5", applied=True)
+        self.assertIn("held out", " ".join(held["header"]))
+
+    def test_display_names_with_and_without_google(self):
+        self.applied()
+        with open(self.out / "outlet_display_names_overrides_applied.csv", newline="", encoding="utf-8") as f:
+            d = {r["licence"]: r for r in csv.DictReader(f)}
+        self.assertEqual((d["L_W1"]["google_name"], d["L_W1"]["outlet_location"], d["L_W1"]["display_name"], d["L_W1"]["location_source"]),
+                         ("A&W Anchorvale Village", "Anchorvale Village", "A&W (Anchorvale Village)", "google_name"))
+        self.assertEqual(d["L_X2"]["display_name"], "Subway (Niche)")                                              # "SubwayNiche"
+        self.assertEqual(d["L_X3"]["display_name"], "Subway (Choa Chu Kang Sports Centre)")
+        self.assertEqual(d["L_M2"]["display_name"], "Ah Ma Chi Mian (Parkway Parade)")
+        self.assertEqual(d["L_X3"]["master_name"], "Subway Choa Chu Kang Sports Centre")                            # master name never altered
+        # Google name without a location part (Chinese alternative name) -> master address, flagged, not Google
+        self.assertEqual((d["L_M1"]["google_name_available"], d["L_M1"]["location_source"]), ("true", "master_address"))
+        self.assertIn("Google name has no location part", d["L_M1"]["note"])
+        # no Google name at all -> master address building, flagged
+        self.assertEqual((d["L_M4"]["google_name_available"], d["L_M4"]["google_name"], d["L_M4"]["outlet_location"], d["L_M4"]["location_source"]),
+                         ("false", "", "Test Mall", "master_address"))
+        self.assertEqual(d["L_M4"]["display_name"], "Ah Ma Chi Mian (Test Mall)")
+        self.assertIn("no Google name offline", d["L_M4"]["note"])
+        self.assertEqual(d["L_X4"]["outlet_location"], "Artra")
+        self.assertEqual(d["L_M3"]["menu_url_conflict"], "true")
+        self.assertIn("different restaurant", d["L_M3"]["note"])
+        # a single-outlet brand keeps its plain name
+        self.assertEqual(d["L_E1"]["display_name"] if "L_E1" in d else "Echo Eatery", "Echo Eatery")
+
+    def test_location_and_google_helpers(self):
+        self.assertEqual(q.location_from_google("A&W Anchorvale Village", "A&W"), "Anchorvale Village")
+        self.assertEqual(q.location_from_google("SubwayNiche", "Subway"), "Niche")
+        self.assertEqual(q.location_from_google("Ah Ma Chi Mian 阿嬷吃面", "Ah Ma Chi Mian"), "")
+        self.assertEqual(q.location_from_google("Kimly Coffeeshop (Blk 123 Bedok North Street 2)", "Kimly Coffeeshop"), "Blk 123 Bedok North Street 2")
+        self.assertEqual(q.location_from_google("Fun Toast @ Jewel", "Fun Toast"), "Jewel")
+        self.assertEqual(q.location_from_google("Two Men Bagel House - Plaza Singapura", "Two Men Bagel House"), "Plaza Singapura")
+        self.assertEqual(q.location_from_google("Subway", "Subway"), "")
+        self.assertEqual(q.google_name_from_url("https://www.google.com/maps/place/Kimly+Coffeeshop+(Blk+123)/@1.3,103.9,17z/data=!3m1"), "Kimly Coffeeshop (Blk 123)")
+        self.assertEqual(q.google_name_from_url("https://www.google.com/maps/place/?q=place_id:ChIJxyz"), "")
+        self.assertEqual(q.master_location("5 TAMPINES AVENUE 3 #01-08,TAMPINES WEST COMMUNITY CLUB,Singapore 529705"), "Tampines West Community Club")
+        self.assertEqual(q.master_location("134 LORONG AH SOO #01-454,Singapore 530134"), "Lorong Ah Soo")
+
+    def test_overrides_only_writes_only_new_files_and_refuses_to_overwrite(self):
+        self.write_inputs(self.rows())
+        self.assertEqual(self.run_main()[0], 0)
+        before = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in self.out.iterdir()}
+        args = ["--overrides-only", "--same-brand-url-policy", "sidecar", "--brand-overrides", str(self.overrides()), "--google-names", str(self.google_csv())]
+        self.assertEqual(self.run_main(*args, write=False)[0], 0)                           # dry run: nothing written
+        self.assertEqual({p.name for p in self.out.iterdir()}, set(before))
+        self.assertEqual(self.run_main(*args)[0], 0)
+        after = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in self.out.iterdir()}
+        new = set(after) - set(before)
+        self.assertEqual(new, {"brand_key_map_overrides_applied.csv", "brand_outlet_map_overrides_applied.csv", "brand_catalogue_overrides_applied.jsonl",
+                               "outlet_exceptions_overrides_applied.jsonl", "brand_price_conflicts_overrides_applied.csv", "outlet_display_names_overrides_applied.csv",
+                               "brand_excluded_rows_overrides_applied.jsonl", "manifest_overrides_applied.json"})
+        self.assertEqual({k: v for k, v in after.items() if k in before}, before)                                 # every existing file byte-identical
+        man = json.loads((self.out / "manifest_overrides_applied.json").read_text())
+        self.assertTrue(man["inputs_unchanged_after_run"])
+        self.assertIn("brand_overrides", man["inputs"])
+        groups = {g["id"]: g for g in man["merge_groups"]}
+        self.assertEqual((groups["ah_ma"]["master_licences_merged"], groups["ah_ma"]["licences_with_dish_rows"]), (4, 2))
+        self.assertEqual(groups["ah_ma"]["excluded_rows"], 4)
+        self.assertIs(groups["ah_ma"]["owner_checked"], False)
+        self.assertEqual(man["google_names"]["with_google_name"] + man["google_names"]["fallback_master_address"], man["google_names"]["outlets_listed"])
+        # a second run refuses: nothing is overwritten
+        mt = {n: (self.out / n).stat().st_mtime_ns for n in new}
+        code, _ = self.run_main(*args)
+        self.assertEqual(code, 2)
+        self.assertEqual(mt, {n: (self.out / n).stat().st_mtime_ns for n in new})
+
+    def test_overrides_only_needs_existing_run_and_overrides(self):
+        self.write_inputs(self.rows())
+        code, _ = self.run_main("--overrides-only", "--brand-overrides", str(self.overrides()))
+        self.assertEqual(code, 2)                                                           # no run folder yet
+        self.assertFalse(self.out.exists())
+        self.assertEqual(self.run_main()[0], 0)
+        code, _ = self.run_main("--overrides-only")
+        self.assertEqual(code, 2)
+
+    def test_overrides_only_is_idempotent(self):
+        self.write_inputs(self.rows())
+        self.assertEqual(self.run_main()[0], 0)
+        args = ["--overrides-only", "--same-brand-url-policy", "sidecar", "--brand-overrides", str(self.overrides()), "--google-names", str(self.google_csv())]
+        self.assertEqual(self.run_main(*args)[0], 0)
+        names = sorted(p.name for p in self.out.iterdir() if "overrides_applied" in p.name)
+        first = {n: (self.out / n).read_bytes() for n in names}
+        for n in names:
+            (self.out / n).unlink()
+        self.assertEqual(self.run_main(*args)[0], 0)
+        self.assertEqual(first, {n: (self.out / n).read_bytes() for n in names})
+
+    def test_review_markdown_content_and_no_overwrite(self):
+        md = self.tmp / "brand-review.md"
+        self.applied(review_md=md)
+        text = md.read_text(encoding="utf-8")
+        for heading in ("## Ah Ma Chi Mian", "## A&W", "## Subway", "## Summary", "## Kept separate: STALL", "## Machine-readable outputs", "## Held out"):
+            self.assertIn(heading, text)
+        self.assertIn("| L_M4 | Ah Ma Chi Mian |", text)                                  # every outlet printed, even without dish rows
+        self.assertIn("**(menu URL conflict)**", text)
+        self.assertIn("Owner question: four", text)
+        self.assertIn("n/a (no dish rows)", text)
+        self.assertIn("brand_catalogue_overrides_applied.jsonl", text)
+        self.assertIn("kopitiam with a Subway counter", text)
+        # a second --overrides-only run (new folder content removed) must still refuse to replace the markdown
+        for p in self.out.glob("*overrides_applied*"):
+            p.unlink()
+        args = ["--overrides-only", "--brand-overrides", str(self.overrides()), "--review-md", str(md)]
+        code, _ = self.run_main(*args)
+        self.assertEqual(code, 2)
+        self.assertFalse(list(self.out.glob("*overrides_applied*")))                      # nothing else was written either
+        self.assertEqual(md.read_text(encoding="utf-8"), text)
+
+    def test_extract_google_names_from_workbook(self):
+        try:
+            import openpyxl
+        except ImportError:
+            self.skipTest("openpyxl not installed")
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Food Directory"
+        ws.append(["F&B Name", "SFA Licence", "Google Place ID", "Google Maps URL"])
+        ws.append(["Subway", "L_X1", "ChIJ1", "https://www.google.com/maps/place/Subway+Choa+Chu+Kang/@1.3,103.7,17z/data=!3m1"])
+        ws.append(["No Google", "L_X2", "", ""])
+        ws.append(["Place id only", "L_X3", "ChIJ3", "https://www.google.com/maps/place/?q=place_id:ChIJ3"])
+        path = self.tmp / "dir.xlsx"
+        wb.save(path)
+        out = self.tmp / "google.csv"
+        self.assertEqual(q.extract_google_names(path, out), 1)
+        self.assertEqual(q.read_google_names(out), {"L_X1": "Subway Choa Chu Kang"})
+        with self.assertRaises(q.QuarantineError):
+            q.extract_google_names(path, out)                                              # never overwrites
 
 
 class Helpers(unittest.TestCase):
