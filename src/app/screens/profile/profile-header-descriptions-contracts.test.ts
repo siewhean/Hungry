@@ -13,7 +13,9 @@ test("ProfileScreenShell has no subtitle prop", () => {
 });
 
 test("no profile screen passes a header subtitle", () => {
-  const screens = readdirSync(DIR).filter((name) => name.endsWith(".tsx") && !name.includes(".test."));
+  const screens = readdirSync(DIR).filter(
+    (name) => name.endsWith(".tsx") && !name.includes(".test."),
+  );
   for (const name of screens) {
     const source = readFileSync(`${DIR}/${name}`, "utf8");
     assert.doesNotMatch(source, /<ProfileScreenShell[^>]*\bsubtitle=/s, name);
