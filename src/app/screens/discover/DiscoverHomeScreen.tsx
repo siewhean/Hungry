@@ -1297,7 +1297,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           </AppText>
         )}
       </View>
-      <ChevronRight color={palette.textMuted} size={20} />
+      <AppSymbol name="chevron.right" fallback={ChevronRight} color={palette.textMuted} size={20} />
     </PressableScale>
   );
   // Filters that leave nothing anywhere on the page get one explanation and one way out,
@@ -1637,7 +1637,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
           {popularFoodTitle}
         </AppText>
-        <ChevronRight color={themeTints.isDark ? palette.white : palette.textMuted} size={20} />
+        <AppSymbol
+          name="chevron.right"
+          fallback={ChevronRight}
+          color={themeTints.isDark ? palette.white : palette.textMuted}
+          size={20}
+        />
       </Pressable>
       {shouldShowPopularFoodSkeleton ? (
         <RailScrollView
@@ -1750,7 +1755,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               >
                 {section.title}
               </AppText>
-              <ChevronRight
+              <AppSymbol
+                name="chevron.right"
+                fallback={ChevronRight}
                 color={themeTints.isDark ? palette.white : palette.textMuted}
                 size={20}
               />
@@ -1780,7 +1787,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               >
                 Malls and hawker centres nearby
               </AppText>
-              <ChevronRight
+              <AppSymbol
+                name="chevron.right"
+                fallback={ChevronRight}
                 color={themeTints.isDark ? palette.white : palette.textMuted}
                 size={20}
               />
@@ -1900,7 +1909,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   numberOfLines={1}
                   containerStyle={{ flexShrink: 1 }}
                 />
-                <ChevronDown
+                <AppSymbol
+                  name="chevron.down"
+                  fallback={ChevronDown}
                   color={themeTints.isDark ? palette.white : palette.textMuted}
                   size={20}
                 />
@@ -2008,7 +2019,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 height: 48,
               }}
             >
-              <Search color={themeTints.isDark ? palette.white : palette.textMuted} size={19} />
+              <AppSymbol
+                name="magnifyingglass"
+                fallback={Search}
+                color={themeTints.isDark ? palette.white : palette.textMuted}
+                size={19}
+              />
             </View>
           </Pressable>
         </View>
@@ -2017,7 +2033,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           <EmptyState
             title="Couldn't load Discover"
             body="Check your connection and try again."
-            icon={<SearchX color={palette.textSecondary} size={28} />}
+            icon={
+              <AppSymbol
+                name="exclamationmark.magnifyingglass"
+                fallback={SearchX}
+                color={palette.textSecondary}
+                size={28}
+              />
+            }
             ctaLabel="Try again"
             onPress={() => {
               void reloadDiscover();
@@ -2089,7 +2112,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           <EmptyState
             title="No matching results"
             body={filteredEmptyBody}
-            icon={<SearchX color={palette.textSecondary} size={28} />}
+            icon={
+              <AppSymbol
+                name="exclamationmark.magnifyingglass"
+                fallback={SearchX}
+                color={palette.textSecondary}
+                size={28}
+              />
+            }
             ctaLabel={filteredEmptyCtaLabel}
             onPress={clearDiscoverFilters}
           />
@@ -2136,7 +2166,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   width: decisionCardIconSize,
                 }}
               >
-                <Dices color={palette.textOnOrange} size={decisionCardIconGraphicSize} />
+                <AppSymbol
+                  name="dice"
+                  fallback={Dices}
+                  color={palette.textOnOrange}
+                  size={decisionCardIconGraphicSize}
+                />
               </View>
               <AppText
                 variant="bodyBold"
@@ -2197,7 +2232,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   width: decisionCardIconSize,
                 }}
               >
-                <Users color={themeTints.text} size={decisionCardIconGraphicSize} />
+                <AppSymbol
+                  name="person.2"
+                  fallback={Users}
+                  color={themeTints.text}
+                  size={decisionCardIconGraphicSize}
+                />
               </View>
               <AppText
                 variant="bodyBold"
@@ -2246,7 +2286,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
                   {forYouTitle}
                 </AppText>
-                <ChevronRight
+                <AppSymbol
+                  name="chevron.right"
+                  fallback={ChevronRight}
                   color={themeTints.isDark ? palette.white : palette.textMuted}
                   size={20}
                 />
@@ -2288,7 +2330,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               <EmptyState
                 title="No matching results"
                 body="No stalls here match your filters."
-                icon={<SearchX color={palette.textSecondary} size={28} />}
+                icon={
+                  <AppSymbol
+                    name="exclamationmark.magnifyingglass"
+                    fallback={SearchX}
+                    color={palette.textSecondary}
+                    size={28}
+                  />
+                }
                 ctaLabel="Clear filters"
                 onPress={clearDiscoverFilters}
               />
@@ -2381,7 +2430,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
                     {`More near ${currentPlace.name}`}
                   </AppText>
-                  <ChevronRight
+                  <AppSymbol
+                    name="chevron.right"
+                    fallback={ChevronRight}
                     color={themeTints.isDark ? palette.white : palette.textMuted}
                     size={20}
                   />
@@ -2429,7 +2480,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                       justifyContent: "center",
                     }}
                   >
-                    <Flame color={palette.textOnOrange} size={22} />
+                    <AppSymbol
+                      name="flame.fill"
+                      fallback={Flame}
+                      color={palette.textOnOrange}
+                      size={22}
+                    />
                   </View>
                   <View style={{ flex: 1 }}>
                     <AppText variant="bodyBold" style={{ color: themeTints.text }}>
@@ -2439,7 +2495,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                       Swipe to build your taste profile
                     </AppText>
                   </View>
-                  <ChevronRight
+                  <AppSymbol
+                    name="chevron.right"
+                    fallback={ChevronRight}
                     color={themeTints.isDark ? palette.white : palette.textMuted}
                     size={20}
                   />
@@ -2580,7 +2638,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                         ? `Stalls at ${currentPlace.name}`
                         : `Stalls ${discoverAreaPhrase}`}
                     </AppText>
-                    <ChevronRight
+                    <AppSymbol
+                      name="chevron.right"
+                      fallback={ChevronRight}
                       color={themeTints.isDark ? palette.white : palette.textMuted}
                       size={20}
                     />

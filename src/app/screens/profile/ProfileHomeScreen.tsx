@@ -648,8 +648,10 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     );
   }
 
+  // With the Activity bell in the header, follow requests are counted there; one badge is
+  // enough (HIG, Notifications), so the gear only carries it when the bell is off.
   const followRequestLabel =
-    (followRequestCount ?? 0) > 0
+    !showActivityBell && (followRequestCount ?? 0) > 0
       ? `${followRequestCount} follow ${followRequestCount === 1 ? "request" : "requests"}`
       : null;
   const followersValue =
@@ -858,7 +860,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
             }}
           >
             <AppSymbol name="settings" size={24} weight="regular" color={palette.text} />
-            {followRequestCount ? (
+            {followRequestLabel ? (
               <View
                 testID="profile-menu-badge"
                 style={{
@@ -884,7 +886,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                     lineHeight: 14,
                   }}
                 >
-                  {followRequestCount > 9 ? "9+" : followRequestCount}
+                  {(followRequestCount ?? 0) > 9 ? "9+" : followRequestCount}
                 </AppText>
               </View>
             ) : null}

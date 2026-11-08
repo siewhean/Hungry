@@ -286,6 +286,18 @@ test("follow requests are archived: no count read, badge or banner without the f
   assert.equal(view.findByLabel(/^Follow requests/), null, "no Follow requests entry");
 });
 
+test("with the Activity bell in the header, follow requests are badged only on the bell", async () => {
+  flags.followConnectionsEnabled = true;
+  flags.foodPortfolioEnabled = true;
+  flags.activityEnabled = true;
+  flags.socialFeedEnabled = false;
+  stub(getHungryService().social, "getFollowRequestCount", async () => 2);
+  const view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
+  assert.ok(view.findByTestId("profile-activity-bell"), "the bell is shown");
+  assert.equal(view.findByTestId("profile-menu-badge"), null, "no second badge on the gear");
+  assert.ok(view.findByLabel("Open settings"), "the gear label does not repeat the count");
+});
+
 test("settings button: badge and count in the label at 2 follow requests, none at 0", async () => {
   flags.followConnectionsEnabled = true;
   stub(getHungryService().social, "getFollowRequestCount", async () => 2);
