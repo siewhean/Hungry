@@ -278,7 +278,9 @@ T14 two submit_review calls with one review id (one review, photos attached once
 T15 two dish posts at once with one credited slot left of the daily cap of 6
 T16 two likes at once from one person on two posts by the same author (one Trending row a day)
 T17 a post deleted while someone likes it (no live points left on the deleted post)
-T18 two leaderboard refreshes at once (no error, each person ranked once, each tier paid once)"
+T18 two leaderboard refreshes at once (no error, each person ranked once, each tier paid once)
+T19 two refreshes at once after rank movement (one top ten Activity row per person a week)
+T20 two week closes at once (one rank snapshot row per person)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -365,6 +367,20 @@ lb_race T18 "select app_private.refresh_leaderboards();" "select app_private.ref
 echo "T18_standings=$(lb_val "select count(*) from leaderboard_standings")" >>"$LB_OUT"
 echo "T18_achievement_rows=$(lb_val "select count(*) from leaderboard_events where kind = 'achievement'")" >>"$LB_OUT"
 
+# Rank movement (20261108120000) on top of the leaderboards: top ten Activity rows and the
+# weekly rank snapshot, each written once when two runs overlap.
+RM_MIGRATION=20261108120000_leaderboard_rank_movement
+lb_val "create table activity_events (id uuid primary key default gen_random_uuid(), recipient_id uuid not null references user_profiles(id) on delete cascade, actor_id uuid not null references user_profiles(id) on delete cascade, event_type text not null check (event_type in ('new_like', 'new_comment', 'new_reply', 'new_follower', 'follow_request')), target_type text not null, target_id uuid not null, read_at timestamptz, created_at timestamptz not null default now());" >/dev/null
+for pass in 1 2; do
+  "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$RM_MIGRATION.sql" >/dev/null 2>&1 \
+    || { echo "  FAIL  $RM_MIGRATION does not apply (pass $pass)"; fail=1; }
+done
+lb_race T19 "select app_private.refresh_leaderboards();" "select app_private.refresh_leaderboards();" >>"$LB_OUT"
+echo "T19_top_ten_rows=$(lb_val "select count(*) from activity_events where event_type = 'board_top_ten'")" >>"$LB_OUT"
+RM_WEEK="date_trunc('week', now() at time zone 'Asia/Singapore')::date"
+lb_race T20 "select app_private.close_leaderboard_week($RM_WEEK);" "select app_private.close_leaderboard_week($RM_WEEK);" >>"$LB_OUT"
+echo "T20_snapshots=$(lb_val "select count(*) from leaderboard_rank_snapshots")" >>"$LB_OUT"
+
 LB_EXPECTED="T15_errors=0
 T15_credited=6
 T16_errors=0
@@ -373,13 +389,27 @@ T17_errors=0
 T17_live_rows=0
 T18_errors=0
 T18_standings=4
-T18_achievement_rows=2"
+T18_achievement_rows=2
+T19_errors=0
+T19_top_ten_rows=2
+T20_errors=0
+T20_snapshots=2"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
   if [ "$line" = "$key=$want" ]; then echo "  ok    $line"; else echo "  FAIL  $line   (expected $want)"; fail=1; fi
 done <"$LB_OUT"
 [ "$(wc -l <"$LB_OUT")" = "$(printf '%s\n' "$LB_EXPECTED" | wc -l)" ] || { echo "  FAIL  leaderboard results missing"; fail=1; }
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$RM_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && [ "$(lb_val "select count(*) from pg_proc where proname = 'get_my_rank_movement'")" = 0 ] \
+  && [ "$(lb_val "select count(*) from activity_events where event_type = 'board_top_ten'")" = 0 ] \
+  && [ "$(lb_val "select to_regclass('public.leaderboard_rank_snapshots') is null")" = t ] \
+  && echo "  ok    rank movement down migration removes its table, rows and RPC" \
+  || { echo "  FAIL  rank movement down migration"; fail=1; }
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$RM_MIGRATION.sql" >/dev/null 2>&1 \
+  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$RM_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && echo "  ok    rank movement up migration re-applies after down" \
+  || { echo "  FAIL  rank movement up migration does not re-apply after down"; fail=1; }
 "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$LB_MIGRATION.down.sql" >/dev/null 2>&1 \
   && [ "$(lb_val "select count(*) from pg_proc where proname like '%board%'")" = 0 ] \
   && echo "  ok    leaderboard down migration removes every function" \

@@ -95,3 +95,26 @@ export function dailyCreditLabel(summary: LeaderboardSummary): string {
   }
   return `${summary.creditedPostsToday} of ${summary.dailyCap} credited posts today`;
 }
+
+/**
+ * The summary card's movement line: "Up 3 places since Monday · Last week #5". Null when there
+ * is nothing to say (no snapshot yet, no move, no rank last week).
+ */
+export function movementLabel(
+  movement: {
+    lastWeekRank: number | null;
+    weekStartAllRank: number | null;
+    allRank: number | null;
+  } | null,
+): string | null {
+  if (!movement) return null;
+  const parts: string[] = [];
+  const { weekStartAllRank: before, allRank: now, lastWeekRank } = movement;
+  if (before != null && now != null && before !== now) {
+    const places = Math.abs(before - now);
+    const noun = places === 1 ? "place" : "places";
+    parts.push(`${before > now ? "Up" : "Down"} ${places} ${noun} since Monday`);
+  }
+  if (lastWeekRank != null) parts.push(`Last week #${lastWeekRank}`);
+  return parts.length > 0 ? parts.join(" · ") : null;
+}

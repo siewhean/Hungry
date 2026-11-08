@@ -60,3 +60,20 @@ test("inbox formats times and routes follows to UserProfile", () => {
     /<Avatar uri=\{update\.actorAvatarUrl\} name=\{update\.actorName\} size=\{40\} \/>/,
   );
 });
+
+test("a top ten row is titled by the board and opens nothing but the Leaderboard", () => {
+  const board = mapActivityEventToUpdate({
+    ...base,
+    actorId: "me",
+    actorName: "Me",
+    eventType: "board_top_ten",
+    targetType: "profile",
+  });
+  assert.equal(board.kind, "board");
+  assert.equal(board.actorName, "This week's board");
+  assert.equal(board.text, "You made this week's top ten");
+  assert.equal(board.target, "See the Leaderboard");
+  assert.equal(board.postId, "", "no post to open");
+  const inbox = readFileSync(resolve("src/app/screens/home/ActivityInboxScreen.tsx"), "utf8");
+  assert.match(inbox, /update\.kind === "board"\) \{\s*navigation\.navigate\("Leaderboard"\)/);
+});
