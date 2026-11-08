@@ -49,11 +49,12 @@ begin
   end if;
 end $$;
 
--- The backup table exists, holds only what the migration renamed, and is closed to the app roles.
+-- The backup table holds only what the migration renamed and is closed to the app roles.
+-- 20261108090000 drops it (sh asked), so these two checks only run while it still exists.
 do $$
 begin
   if to_regclass('app_private.building_name_backup_20261103') is null then
-    raise exception 'the backup table is missing';
+    return;
   end if;
   if has_table_privilege('anon', 'app_private.building_name_backup_20261103', 'select')
      or has_table_privilege('authenticated', 'app_private.building_name_backup_20261103', 'select') then
@@ -73,6 +74,9 @@ do $$
 declare
   v_name text;
 begin
+  if to_regclass('app_private.building_name_backup_20261103') is null then
+    return;
+  end if;
   insert into app_private.building_name_backup_20261103 (building_id, old_name, new_name)
   values ('smoke-bld-street', '9 Smoke Test Road', 'Smoke Test Hawker Centre')
   on conflict (building_id) do nothing;
