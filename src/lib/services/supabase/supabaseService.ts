@@ -47,6 +47,7 @@ import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase
 import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import {
   mapNetworkStallPicks,
+  mapPlacePeople,
   mapPeopleSuggestions,
   mapProfileRelationship,
   mapTasteComparison,
@@ -6038,6 +6039,25 @@ export const supabaseService: HungryService = {
         throw error;
       }
       return mapPeopleSuggestions(data);
+    },
+
+    async getPlacePeople(place, limit = 5) {
+      const empty = { people: [], totalPeople: 0 };
+      const venueId = place.venueId?.trim();
+      const dishId = place.dishId?.trim();
+      if (!venueId === !dishId) return empty;
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return empty;
+      const { data, error } = await client.rpc("get_place_people", {
+        p_venue_id: venueId ?? null,
+        p_dish_id: dishId ?? null,
+        p_limit: Math.min(Math.max(Math.floor(limit), 1), 10),
+      });
+      if (error) {
+        if (isMissingBackendObjectError(error)) return empty;
+        throw error;
+      }
+      return mapPlacePeople(data);
     },
 
     async listNetworkStallPicks(limit = 30) {

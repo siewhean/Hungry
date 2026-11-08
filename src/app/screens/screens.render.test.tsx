@@ -64,6 +64,7 @@ before(async () => {
     story: { initialStoryId: stories[0]?.id ?? "story-1" },
     otherUser: { authorId: "user-emma", authorName: "Emma" },
     tasteCompare: { userId: "user-emma", userDisplayName: "Emma" },
+    placePeople: { venueId: dish.venueId, placeName: "Render test stall" },
   };
 });
 

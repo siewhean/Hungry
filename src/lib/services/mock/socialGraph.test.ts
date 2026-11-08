@@ -69,3 +69,27 @@ test("taste comparison: both palates for a public person, nothing for a private 
     assert.ok(Object.values(result.theirs).every((value) => value >= 0 && value <= 10));
   }
 });
+
+test("getPlacePeople lists reviewers and posters at a stall or dish, followed first", async () => {
+  const stall = await hungryService.social.getPlacePeople({ venueId: "venue-tian-tian" });
+  const ids = stall.people.map((person) => person.userId);
+  assert.ok(ids.includes("user-sarah") && ids.includes("user-1"), "both posters are listed");
+  assert.equal(stall.totalPeople, stall.people.length);
+  const dish = await hungryService.social.getPlacePeople({ dishId: "dish-chicken-rice" });
+  assert.ok(dish.people.some((person) => person.userId === "user-sarah"));
+
+  await hungryService.social.followUser("user-sarah");
+  try {
+    const followedFirst = await hungryService.social.getPlacePeople({ venueId: "venue-tian-tian" });
+    assert.equal(followedFirst.people[0]?.userId, "user-sarah");
+    assert.equal(followedFirst.people[0]?.isFollowed, true);
+    const one = await hungryService.social.getPlacePeople({ venueId: "venue-tian-tian" }, 1);
+    assert.equal(one.people.length, 1);
+    assert.ok(one.totalPeople >= 2, "the total still counts everyone");
+  } finally {
+    await hungryService.social.unfollowUser("user-sarah");
+  }
+
+  const neither = await hungryService.social.getPlacePeople({} as never);
+  assert.deepEqual(neither, { people: [], totalPeople: 0 });
+});

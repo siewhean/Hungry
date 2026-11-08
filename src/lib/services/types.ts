@@ -779,6 +779,28 @@ export interface PeopleSuggestion {
   reason: "mutual" | "taste" | "active";
 }
 
+/** Someone who reviewed or posted at a stall or a dish (get_place_people). */
+export interface PlacePerson {
+  userId: string;
+  displayName: string;
+  avatarUrl?: string;
+  /** The viewer follows them (approved); these come first. */
+  isFollowed: boolean;
+  /** Their reviews and posts at this place. */
+  contributions: number;
+}
+
+/** The people at a stall or a dish, followed first, and how many there are in all. */
+export interface PlacePeople {
+  people: PlacePerson[];
+  totalPeople: number;
+}
+
+/** Exactly one of the two: a stall, or one dish. */
+export type PlaceRef =
+  | { venueId: string; dishId?: undefined }
+  | { dishId: string; venueId?: undefined };
+
 /** A stall loved by people the viewer follows, or by their taste twins when they follow nobody. */
 export interface NetworkStallPick {
   venueId: string;
@@ -1367,6 +1389,12 @@ export interface HungryService {
     ): Promise<{ score: number; mine: TasteVector; theirs: TasteVector } | null>;
     /** People to follow, best first (signed-in only); [] on an older backend. */
     listPeopleSuggestions(limit?: number): Promise<PeopleSuggestion[]>;
+    /**
+     * People who reviewed or posted at a stall or a dish, followed first (at most 10, signed-in
+     * only). The viewer, blocked and deactivated accounts are left out. Empty signed out or on an
+     * older backend.
+     */
+    getPlacePeople(place: PlaceRef, limit?: number): Promise<PlacePeople>;
     /** Stalls loved by people the viewer follows (or taste twins); [] signed out or on an older backend. */
     listNetworkStallPicks(limit?: number): Promise<NetworkStallPick[]>;
     /** False when the viewer may not see this user's follower/following lists (private or blocked). */

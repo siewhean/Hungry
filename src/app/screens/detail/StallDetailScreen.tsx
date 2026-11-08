@@ -62,6 +62,7 @@ import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { ensureAiSearchConsent } from "@/features/privacy/consent";
 import { StallReviewCard } from "@/components/stall/StallReviewCard";
+import { PeopleHereRow } from "@/components/social/PeopleHereRow";
 import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
 import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
@@ -1953,6 +1954,27 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     />
                   )}
                 </View>
+              ) : null}
+              {showDeferredDetailControls && isAuthenticated && venue ? (
+                <PeopleHereRow
+                  place={{ venueId: venue.id }}
+                  enabled={peopleLinksEnabled()}
+                  screen="StallDetail"
+                  onOpenPerson={(person) => {
+                    trackAnalyticsEvent("people_here_opened", { source: "stall" });
+                    navigation.navigate("UserProfile", {
+                      authorId: person.userId,
+                      authorName: person.displayName,
+                    });
+                  }}
+                  onSeeAll={() =>
+                    navigation.navigate("PlacePeople", {
+                      venueId: venue.id,
+                      placeName: displayName,
+                    })
+                  }
+                  testID="stall-people-here"
+                />
               ) : null}
               {/* A quiet row, not a button: the bar's "Write a review" is the page's only filled button. */}
               {showDeferredDetailControls && FEATURE_FLAGS.merchantClaimCtaEnabled ? (
