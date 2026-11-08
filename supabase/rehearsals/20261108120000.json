@@ -1,0 +1,14 @@
+{
+  "version": "20261108120000",
+  "name": "20261108120000_leaderboard_rank_movement",
+  "result": "pass",
+  "rehearsed_at": "2026-11-08T13:49:38Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "188c86219ced08095dcff0c0452f7ac8464255de",
+  "up_sha256": "4f74a1eb68736babb0694319a8e61ceb627c66bce927d410d924dd15b1a63eeb",
+  "down_sha256": "faa9830999671034f4f5cf2a398faffa3566eadba967ce822cece5c422a2810c",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/leaderboard_rank_movement.sql"]
+}
