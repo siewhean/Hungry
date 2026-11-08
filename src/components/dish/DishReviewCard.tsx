@@ -1,6 +1,6 @@
 import { Pressable, View } from "react-native";
 
-import { FollowPillButton } from "@/components/social/FollowPillButton";
+import { PersonFollowPill } from "@/components/social/PersonFollowPill";
 import { AppText, Avatar, Badge } from "@/components/ui";
 import {
   CaptionPreview,
@@ -10,9 +10,7 @@ import {
   ReviewReaderActions,
   ReviewStars,
 } from "@/components/review";
-import { useFollowPress } from "@/features/profile/useFollowPress";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
-import { useSocialStore } from "@/store/useSocialStore";
 import type { PendingRoute } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
@@ -36,32 +34,6 @@ type Props = {
 
 /** Ranks at or under this show on a review author. */
 export const REVIEW_RANK_MAX = 10;
-
-function AuthorFollowButton({ review }: { review: Review }) {
-  const followPress = useFollowPress();
-  const authorId = review.authorId ?? "";
-  const isFollowing = useSocialStore((state) => Boolean(state.followedUserIds[authorId]));
-  const isRequested = useSocialStore((state) => Boolean(state.requestedUserIds[authorId]));
-  if (!authorId || isFollowing) return null;
-  return (
-    <FollowPillButton
-      label={isRequested ? "Requested" : "Follow"}
-      accessibilityLabel={
-        isRequested ? `Follow request sent to ${review.authorName}` : `Follow ${review.authorName}`
-      }
-      muted={isRequested}
-      tinted
-      minWidth={0}
-      onPress={() =>
-        followPress({
-          userId: authorId,
-          name: review.authorName,
-          avatarUrl: review.authorAvatarUrl,
-        })
-      }
-    />
-  );
-}
 
 /** One review on a dish page: who and how many stars, the text, photos, owner reply, date and Helpful. */
 export function DishReviewCard({
@@ -118,7 +90,13 @@ export function DishReviewCard({
             </View>
           </View>
         </Pressable>
-        {followable && !isOwn && review.authorId ? <AuthorFollowButton review={review} /> : null}
+        {followable && !isOwn && review.authorId ? (
+          <PersonFollowPill
+            userId={review.authorId}
+            name={review.authorName}
+            avatarUrl={review.authorAvatarUrl}
+          />
+        ) : null}
         {isOwn ? null : (
           <ReviewMoreButton review={review} returnRoute={returnRoute} onRemoved={onRemoved} />
         )}

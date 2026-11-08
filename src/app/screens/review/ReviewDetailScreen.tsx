@@ -32,6 +32,7 @@ import {
   Screen,
   Skeleton,
 } from "@/components/ui";
+import { PersonFollowPill, peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { ReviewShareStudioModal } from "@/components/share/ReviewShareStudio";
 import { webShareUrl } from "@/constants/links";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
@@ -329,34 +330,44 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
           />
         ) : null}
 
-        <Pressable
-          accessibilityRole={review.authorId && !isOwn ? "button" : undefined}
-          accessibilityLabel={`${review.authorName}${review.authorId && !isOwn ? ", open profile" : ""}`}
-          disabled={!review.authorId || isOwn}
-          onPress={() =>
-            review.authorId
-              ? navigation.navigate("UserProfile", {
-                  authorId: review.authorId,
-                  authorName: review.authorName,
-                  authorAvatarUrl: review.authorAvatarUrl,
-                })
-              : undefined
-          }
-          style={{
-            alignItems: "center",
-            flexDirection: "row",
-            gap: spacing[2],
-            minHeight: 44,
-          }}
-        >
-          <Avatar uri={review.authorAvatarUrl} name={review.authorName} size={40} />
-          <View style={{ flexShrink: 1 }}>
-            <AppText variant="bodySmallBold">{review.authorName}</AppText>
-            <AppText variant="micro" tone="muted">
-              {dateLabel}
-            </AppText>
-          </View>
-        </Pressable>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+          <Pressable
+            accessibilityRole={review.authorId && !isOwn ? "button" : undefined}
+            accessibilityLabel={`${review.authorName}${review.authorId && !isOwn ? ", open profile" : ""}`}
+            disabled={!review.authorId || isOwn}
+            onPress={() =>
+              review.authorId
+                ? navigation.navigate("UserProfile", {
+                    authorId: review.authorId,
+                    authorName: review.authorName,
+                    authorAvatarUrl: review.authorAvatarUrl,
+                  })
+                : undefined
+            }
+            style={{
+              alignItems: "center",
+              flexDirection: "row",
+              flex: 1,
+              gap: spacing[2],
+              minHeight: 44,
+            }}
+          >
+            <Avatar uri={review.authorAvatarUrl} name={review.authorName} size={40} />
+            <View style={{ flexShrink: 1 }}>
+              <AppText variant="bodySmallBold">{review.authorName}</AppText>
+              <AppText variant="micro" tone="muted">
+                {dateLabel}
+              </AppText>
+            </View>
+          </Pressable>
+          {!isOwn && peopleLinksEnabled() ? (
+            <PersonFollowPill
+              userId={review.authorId}
+              name={review.authorName}
+              avatarUrl={review.authorAvatarUrl}
+            />
+          ) : null}
+        </View>
 
         {review.photos.length > 0 ? (
           <ReviewPhotoHero photos={review.photos} onOpen={setViewerIndex} />

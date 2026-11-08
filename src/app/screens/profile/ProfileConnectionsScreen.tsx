@@ -206,7 +206,10 @@ const PersonRow = memo(function PersonRow({
       title={person.name}
       subtitle={personSubtitle(tasteMatch, rank)}
       titleLines={2}
-      accessibilityHint="Opens their profile"
+      accessibilityHint={
+        FEATURE_FLAGS.foodPortfolioEnabled ? "Opens their Food Portfolio" : "Opens their profile"
+      }
+      chevron
       onPress={() => onOpen(person)}
       leading={<Avatar name={person.name} uri={person.avatarUrl} size={44} />}
       trailing={trailing}

@@ -63,6 +63,7 @@ import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { ensureAiSearchConsent } from "@/features/privacy/consent";
 import { StallReviewCard } from "@/components/stall/StallReviewCard";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
 import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
@@ -1904,6 +1905,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                             review={review}
                             venueId={venue.id}
                             isOwn={isOwn}
+                            followable={peopleLinksEnabled()}
                             onOpenAuthor={() =>
                               navigation.navigate("UserProfile", {
                                 authorId: review.authorId,

@@ -14,6 +14,10 @@ type ProfileReviewCardProps = {
   dish: ReviewDishInfo;
   /** Opens the dish; omit when the review has no dish to open. */
   onOpenDish?: () => void;
+  /** Opens the review on its own page; when given, the card opens it instead of the dish. */
+  onOpenReview?: () => void;
+  /** Makes the stall name a link to the stall. */
+  onOpenStall?: () => void;
   /** The "..." button on your own cards; sits beside the pressable so a screen reader can reach it. */
   menu?: ReactNode;
   /** Show the tags the reviewer picked (Review history). */
@@ -33,6 +37,8 @@ export function ProfileReviewCard({
   review,
   dish,
   onOpenDish,
+  onOpenReview,
+  onOpenStall,
   menu,
   showTags = false,
   variant = "card",
@@ -84,7 +90,7 @@ export function ProfileReviewCard({
         <AppText variant="bodyBold" numberOfLines={2}>
           {dishName}
         </AppText>
-        {stallName ? (
+        {stallName && !onOpenStall ? (
           <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
             {stallName}
           </AppText>
@@ -122,16 +128,17 @@ export function ProfileReviewCard({
   };
 
   const Wrapper = variant === "row" ? RowWrapper : CardWrapper;
+  const onOpenCard = onOpenReview ?? onOpenDish;
 
   return (
     <Wrapper first={first} testID={testID}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
-        {onOpenDish ? (
+        {onOpenCard ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Review of ${dishName}${review.rating > 0 ? `, rated ${review.rating} out of 5` : ""}`}
-            accessibilityHint="Opens the dish"
-            onPress={onOpenDish}
+            accessibilityHint={onOpenReview ? "Opens the review" : "Opens the dish"}
+            onPress={onOpenCard}
             style={rowStyle}
           >
             {summary}
@@ -141,6 +148,21 @@ export function ProfileReviewCard({
         )}
         {menu}
       </View>
+      {stallName && onOpenStall ? (
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={`Open ${stallName}`}
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+          onPress={onOpenStall}
+          testID={testID ? `${testID}-stall` : undefined}
+          style={{ alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 4 }}
+        >
+          <AppSymbol name="stall" size={13} color={palette.accentText} />
+          <AppText variant="bodySmall" tone="accent" numberOfLines={1}>
+            {stallName}
+          </AppText>
+        </Pressable>
+      ) : null}
       {showTags && review.tags.length ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[1] }}>
           {review.tags.map((tag) => (
