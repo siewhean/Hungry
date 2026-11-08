@@ -1016,6 +1016,22 @@ class OverridesApplied(Env):
         self.assertEqual(code, 2)
         self.assertEqual(mt, {n: (self.out / n).stat().st_mtime_ns for n in new})
 
+    def test_overrides_and_google_inputs_may_live_inside_the_run_folder(self):
+        self.write_inputs(self.rows())
+        self.assertEqual(self.run_main()[0], 0)
+        ov, g = self.out / "brand_overrides_2026-11-08.json", self.out / "google_names_extract_2026-11-08.csv"
+        ov.write_text(self.overrides().read_text(encoding="utf-8"), encoding="utf-8")
+        g.write_text(self.google_csv().read_text(encoding="utf-8"), encoding="utf-8")
+        before = {p.name: p.read_bytes() for p in self.out.iterdir()}
+        self.assertEqual(self.run_main("--overrides-only", "--brand-overrides", str(ov), "--google-names", str(g))[0], 0)
+        after = {p.name: p.read_bytes() for p in self.out.iterdir()}
+        self.assertEqual({k: v for k, v in after.items() if k in before}, before)
+        self.assertIn("brand_key_map_overrides_applied.csv", after)
+        # ...but the main sources still may not sit in the output folder
+        self.out = self.inp
+        code, _ = self.run_main("--overrides-only", "--brand-overrides", str(ov))
+        self.assertEqual(code, 2)
+
     def test_overrides_only_needs_existing_run_and_overrides(self):
         self.write_inputs(self.rows())
         code, _ = self.run_main("--overrides-only", "--brand-overrides", str(self.overrides()))

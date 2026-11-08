@@ -1945,7 +1945,8 @@ def run(args, free_fn: Callable) -> tuple:
         if not (Path(args.out_dir) / "report.json").is_file():
             raise QuarantineError(f"--overrides-only writes into an existing run folder; {args.out_dir} has no report.json", 2)
     sources = list(present.values()) + list(extra_inputs.values())
-    out_dir = check_output_dir(Path(args.out_dir), sources, (d,))
+    guarded = list(present.values()) + ([] if args.overrides_only else list(extra_inputs.values()))  # --overrides-only inputs live in the run folder
+    out_dir = check_output_dir(Path(args.out_dir), guarded, (d,))
     mm.check_disk([(existing_ancestor(out_dir), sum(p.stat().st_size for p in sources))], free_fn)
 
     hashes_before = {k: mm.sha256_of(p) for k, p in {**present, **extra_inputs}.items()}
