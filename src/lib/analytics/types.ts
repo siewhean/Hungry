@@ -176,6 +176,7 @@ export type AnalyticsEventName =
   | "food_portfolio_card_shared"
   | "leaderboard_opened"
   | "people_opened"
+  | "reviewer_opened"
   | "taste_fingerprint_shared"
   | "follow_request_approved"
   | "follow_request_declined"

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { useHungryTheme } from "@/theme";
+import { AppSymbol } from "./AppSymbol";
 import { AppText } from "./AppText";
 
 type ListRowProps = {
@@ -23,6 +24,8 @@ type ListRowProps = {
   titleLines?: number;
   /** Subtitle lines before it is cut off; two where buttons leave little room. */
   subtitleLines?: number;
+  /** A chevron after the text, inside the press target: the row opens a page. */
+  chevron?: boolean;
   testID?: string;
 };
 
@@ -43,6 +46,7 @@ export function ListRow({
   first = false,
   titleLines = 1,
   subtitleLines = 1,
+  chevron = false,
   testID,
 }: ListRowProps) {
   const { palette, spacing } = useHungryTheme();
@@ -59,6 +63,9 @@ export function ListRow({
           </AppText>
         ) : null}
       </View>
+      {chevron && onPress ? (
+        <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
+      ) : null}
     </>
   );
   const bodyStyle = {

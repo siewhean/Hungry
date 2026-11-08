@@ -1,5 +1,6 @@
 import { Pressable, View } from "react-native";
 
+import { PersonFollowPill } from "@/components/social/PersonFollowPill";
 import { AppText, Avatar } from "@/components/ui";
 import {
   CaptionPreview,
@@ -23,6 +24,8 @@ type Props = {
   onUpdated: (patch: { rating: number; text: string }) => void;
   /** The review was deleted or hidden: drop it from the list. */
   onRemoved: () => void;
+  /** Follows are on: a Follow pill beside an author you do not follow yet. */
+  followable?: boolean;
 };
 
 /**
@@ -37,6 +40,7 @@ export function StallReviewCard({
   onOpenDish,
   onUpdated,
   onRemoved,
+  followable = false,
 }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
@@ -88,6 +92,13 @@ export function StallReviewCard({
             </AppText>
           </Pressable>
         </View>
+        {followable && !isOwn ? (
+          <PersonFollowPill
+            userId={review.authorId}
+            name={review.authorName}
+            avatarUrl={review.avatarUrl}
+          />
+        ) : null}
         {isOwn ? null : (
           <ReviewMoreButton
             review={{

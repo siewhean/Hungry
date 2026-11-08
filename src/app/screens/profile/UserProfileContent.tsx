@@ -842,6 +842,22 @@ export function UserProfileContent({
                           key={review.id}
                           review={review}
                           dish={reviewDishInfo(review.dishId)}
+                          onOpenReview={() => {
+                            trackAnalyticsEvent("profile_item_opened", {
+                              kind: "review",
+                              position: index,
+                              source: "user_profile",
+                            });
+                            rootNavigation.navigate("ReviewDetail", { reviewId: review.id });
+                          }}
+                          onOpenStall={
+                            review.venueId
+                              ? () =>
+                                  rootNavigation.navigate("StallDetail", {
+                                    venueId: review.venueId as string,
+                                  })
+                              : undefined
+                          }
                           onOpenDish={
                             review.dishId
                               ? () => {
