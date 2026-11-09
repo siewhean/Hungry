@@ -557,6 +557,12 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /\/\* Intent Chips with Icons \*\/[\s\S]*<FilterChipRail[\s\S]*options=\{sortedChips\}[\s\S]*selectedIds=\{activeDiscoverChipIds\}[\s\S]*onSelect=\{toggleDiscoverChip\}[\s\S]*renderLeftIcon=\{\(chip, isActive\) =>/,
   );
+  // The chosen Home chip is solid orange with white text and icon, never the see-through tint
+  // that blended into the content scrolling behind it.
+  assert.match(
+    discover,
+    /<FilterChipRail[\s\S]*onSelect=\{toggleDiscoverChip\}[\s\S]*solidSelected[\s\S]*color=\{isActive \? palette\.textOnOrange : themeTints\.secondaryText\}/,
+  );
   assert.doesNotMatch(discover, /swipeEnabled/);
   // Every rail card is the one memoised card, in the themed surface (no dark-only styling).
   const biteCard =
