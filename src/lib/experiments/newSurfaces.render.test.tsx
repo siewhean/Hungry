@@ -1,5 +1,5 @@
-// The A/B tests added on 2026-11-07 for surfaces that had none: the Leaderboard's opening board,
-// the Home water background and the Profile Activity bell's unread mark. Each serves today's
+// The A/B tests added on 2026-11-07 for surfaces that had none: the Leaderboard's opening board
+// and the Profile Activity bell's unread mark. Each serves today's
 // design as its fallback, and each variant is checked through a QA override.
 // Run with `node scripts/test-render.mjs src/lib/experiments/newSurfaces.render.test.tsx`.
 
@@ -8,7 +8,6 @@ import test, { afterEach, beforeEach } from "node:test";
 
 import { LeaderboardScreen } from "@/app/screens/profile/LeaderboardScreen";
 import { ProfileHomeScreen } from "@/app/screens/profile/ProfileHomeScreen";
-import { HomeWaveBackground } from "@/components/discover/home/HomeWaveBackground";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   clearTrackedAnalyticsEvents,
@@ -73,10 +72,9 @@ afterEach(async () => {
   Object.assign(flags, savedFlags);
 });
 
-test("the three new tests start as drafts on today's design", () => {
+test("the new tests start as drafts on today's design", () => {
   for (const key of [
     "leaderboard_default_board_v1",
-    "home_background_v1",
     "activity_bell_badge_v1",
   ] as const) {
     assert.equal(EXPERIMENTS[key].status, "draft", key);
@@ -97,20 +95,6 @@ test("the Leaderboard opens on Most active, or on Trending in the test arm, and 
   assert.equal(queries[0]?.board, "trending");
   await view.press(view.findByText("Most active"));
   assert.equal(queries.at(-1)?.board, "active", "the diner's pick replaces the opening board");
-});
-
-test("Home draws the water unless the plain arm is on", async () => {
-  let view = await render(
-    <HomeWaveBackground width={390} topInset={47} scrollY={{ value: 0 } as never} />,
-  );
-  assert.ok(view.findByTestId("home-wave-background"));
-  await view.unmount();
-
-  setExperimentOverride("home_background_v1", "plain");
-  view = await render(
-    <HomeWaveBackground width={390} topInset={47} scrollY={{ value: 0 } as never} />,
-  );
-  assert.equal(view.findByTestId("home-wave-background"), null);
 });
 
 test("the Activity bell shows a count, or a dot in the test arm, and logs the open", async () => {
