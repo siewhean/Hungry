@@ -2084,10 +2084,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           options={sortedChips}
           selectedIds={activeDiscoverChipIds}
           onSelect={toggleDiscoverChip}
+          solidSelected
           renderLeftIcon={(chip, isActive) => (
             <DiscoverChipIcon
               chipId={chip.id}
-              color={isActive ? palette.orange : themeTints.secondaryText}
+              color={isActive ? palette.textOnOrange : themeTints.secondaryText}
             />
           )}
         />
