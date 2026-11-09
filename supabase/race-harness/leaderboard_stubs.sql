@@ -29,6 +29,9 @@ create function app_private.can_read_author_content(p uuid) returns boolean lang
   select p = auth.uid() or (not public.app_user_block_exists(auth.uid(), p) and (
     coalesce((select ps.account_visibility = 'public' from privacy_settings ps where ps.user_id = p), true)
     or exists (select 1 from follows f where f.follower_id = auth.uid() and f.followee_id = p and f.status = 'approved'))) $$;
+-- can_read_post (private accounts and blocks) as the real one reads a post's author.
+create function app_private.can_read_post(p uuid) returns boolean language sql stable as $$
+  select app_private.can_read_author_content((select po.author_id from posts po where po.id = p)) $$;
 grant usage on schema public, app_private to authenticated, anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 insert into venues select 'v' || g, 'Stall ' || g from generate_series(1, 9) g;

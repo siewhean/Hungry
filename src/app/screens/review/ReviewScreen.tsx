@@ -37,9 +37,32 @@ import {
   FeedErrorBoundary,
   Skeleton,
 } from "@/components/ui";
-import { MediaPicker, StarRating, TasteRatingInput } from "@/components/review";
+import {
+  MediaPicker,
+  StarRating,
+  TasteRatingInput,
+  nearestTasteRatingLevel,
+} from "@/components/review";
+import {
+  ReviewPortfolioSection,
+  portfolioBlockedReason,
+} from "@/components/foodPortfolio/ReviewPortfolioSection";
+import {
+  addReviewToPortfolio,
+  hasRatedAllTastes,
+  loadRankedScores,
+  portfolioScore,
+  reviewPalateMatch,
+  suggestRankedPlace,
+  type PortfolioRank,
+} from "@/features/foodPortfolio/reviewPortfolioRank";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
-import { REVIEW_EDITOR_TAGS, REVIEW_MAX_TAGS, TASTE_DIMENSIONS } from "@/constants/taste";
+import {
+  NEUTRAL_TASTE_VECTOR,
+  REVIEW_EDITOR_TAGS,
+  REVIEW_MAX_TAGS,
+  TASTE_DIMENSIONS,
+} from "@/constants/taste";
 import { perceivedTasteLevel, standardTasteRating } from "@/features/detail/perceivedTaste";
 import { reportError } from "@/lib/monitoring/reportError";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
@@ -71,6 +94,7 @@ import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import {
+  createClientReviewId,
   REVIEW_PHOTOS_NOT_ATTACHED,
   firstMissingReviewField,
   resolveWouldRecommend,
@@ -220,6 +244,43 @@ export function ReviewScreen({ navigation, route }: Props) {
       ]),
     ) as Partial<Record<TasteKey, number>>;
   }, [selectedDish?.tasteVector, userTasteVector]);
+  // "Add to my Food Portfolio": the dish is posted too and, for a place, ranked in the portfolio.
+  const [addToPortfolio, setAddToPortfolio] = useState(false);
+  // undefined follows our suggestion; the reviewer's own pick (even "unranked") overrides it.
+  const [pickedRank, setPickedRank] = useState<PortfolioRank | undefined>(undefined);
+  // Scores of the dishes already ranked, best first (null: could not be scored).
+  const [rankedScores, setRankedScores] = useState<(number | null)[]>([]);
+  const portfolioPostIdRef = useRef<string | null>(null);
+  const portfolioOn = FEATURE_FLAGS.foodPortfolioEnabled && addToPortfolio;
+  const profileId = useProfileStore((state) => state.profile.id);
+  useEffect(() => {
+    if (!portfolioOn) return undefined;
+    let cancelled = false;
+    void loadRankedScores(profileId, userTasteVector ?? NEUTRAL_TASTE_VECTOR).then((scores) => {
+      if (!cancelled) setRankedScores(scores);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [portfolioOn, profileId, userTasteVector]);
+  const portfolioRated = hasRatedAllTastes(feltTaste);
+  const portfolioMatch =
+    portfolioOn && portfolioRated && selectedDish?.tasteVector
+      ? reviewPalateMatch(
+          selectedDish.tasteVector,
+          feltTaste,
+          userTasteVector ?? NEUTRAL_TASTE_VECTOR,
+        )
+      : undefined;
+  const suggestedRank: PortfolioRank | undefined =
+    portfolioMatch !== undefined && draft.rating > 0
+      ? suggestRankedPlace(portfolioScore(draft.rating, portfolioMatch), rankedScores)
+      : undefined;
+  const portfolioRank: PortfolioRank =
+    pickedRank !== undefined ? pickedRank : (suggestedRank ?? null);
+  const portfolioBlocked = portfolioOn
+    ? portfolioBlockedReason(feltTaste, draft.photos.length > 0)
+    : null;
   const selectedVenue = useMemo(
     () => repository.getVenueById(draft.selectedVenueId || selectedDish?.venueId || ""),
     [repository, draft.selectedVenueId, selectedDish?.venueId],
@@ -572,6 +633,42 @@ export function ReviewScreen({ navigation, route }: Props) {
         clearFeltTaste();
       }
 
+      if (portfolioOn && draft.photos[0]) {
+        const profile = useProfileStore.getState().profile;
+        portfolioPostIdRef.current ??= createClientReviewId();
+        try {
+          const added = await addReviewToPortfolio({
+            dishId: selectedDish.id,
+            venueId: selectedDish.venueId,
+            photoUrl: draft.photos[0],
+            caption: reviewText || selectedDish.name,
+            tags: reviewTags,
+            rating: draft.rating,
+            tasteStamp: selectedDish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
+            rank: portfolioRank,
+            clientPostId: portfolioPostIdRef.current,
+            author: {
+              id: profile.id,
+              displayName: profile.displayName,
+              avatarUrl: profile.avatarUrl,
+            },
+          });
+          portfolioPostIdRef.current = null;
+          trackAnalyticsEvent("review_added_to_portfolio", {
+            dish_id: selectedDish.id,
+            rank: portfolioRank ?? 0,
+            ranked: added.ranked,
+          });
+        } catch (error) {
+          // The review is saved; only the portfolio entry failed.
+          reportError(error, { screen: "ReviewScreen", action: "add_review_to_portfolio" });
+          useUIStore.getState().showToast({
+            message: "Your review is posted, but it did not reach your Food Portfolio.",
+            tone: "warning",
+          });
+        }
+      }
+
       useProfileStore.getState().addReviewedDish(selectedDish.id);
       // A stall marked visited before this review earns its visit points now.
       void useStallInteractionStore
@@ -673,7 +770,7 @@ export function ReviewScreen({ navigation, route }: Props) {
   }
 
   const missingField = firstMissingReviewField(draft, Boolean(selectedDish));
-  const publishBlockedReason = missingField?.message ?? null;
+  const publishBlockedReason = missingField?.message ?? portfolioBlocked;
   const optionalCount =
     draft.selectedTags.length +
     (typeof draft.recommend === "boolean" ? 1 : 0) +
@@ -916,24 +1013,34 @@ export function ReviewScreen({ navigation, route }: Props) {
   );
 
   // The header Publish is the only one; the footer says why it is off and scrolls to the gap.
-  const publishBlockedHint = missingField ? (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityHint="Scrolls to the missing field"
-      onPress={() => scrollToSection(missingField.field)}
-      style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
-    >
+  const publishBlockedHint =
+    portfolioBlocked && !missingField ? (
       <AppText
         variant="bodySmall"
         tone="secondary"
         accessibilityLiveRegion="polite"
-        // Plain secondary text: an underline read as a web link (Apple design pass).
         style={{ textAlign: "center" }}
       >
-        {missingField.message}
+        {portfolioBlocked}
       </AppText>
-    </Pressable>
-  ) : null;
+    ) : missingField ? (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityHint="Scrolls to the missing field"
+        onPress={() => scrollToSection(missingField.field)}
+        style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
+      >
+        <AppText
+          variant="bodySmall"
+          tone="secondary"
+          accessibilityLiveRegion="polite"
+          // Plain secondary text: an underline read as a web link (Apple design pass).
+          style={{ textAlign: "center" }}
+        >
+          {missingField.message}
+        </AppText>
+      </Pressable>
+    ) : null;
 
   return (
     <EdgeSwipeZones {...cardEdgeSwipes}>
@@ -976,6 +1083,35 @@ export function ReviewScreen({ navigation, route }: Props) {
             {photoSection}
             {textSection}
             {musicSection}
+            {FEATURE_FLAGS.foodPortfolioEnabled && selectedDish ? (
+              <ReviewPortfolioSection
+                enabled={addToPortfolio}
+                onToggle={setAddToPortfolio}
+                hasPhoto={draft.photos.length > 0}
+                felt={feltTaste}
+                suggestions={tasteSuggestions}
+                onFeltChange={(key, value) => {
+                  if (!selectedDishId) return;
+                  selectHaptic();
+                  setFeltTaste(selectedDishId, key, value);
+                }}
+                onUseGuess={() => {
+                  if (!selectedDishId || !tasteSuggestions) return;
+                  selectHaptic();
+                  for (const { key } of TASTE_DIMENSIONS) {
+                    const guess = tasteSuggestions[key];
+                    if (typeof feltTaste[key] !== "number" && typeof guess === "number") {
+                      setFeltTaste(selectedDishId, key, nearestTasteRatingLevel(guess));
+                    }
+                  }
+                }}
+                placeCount={rankedScores.length + 1}
+                suggestedRank={suggestedRank}
+                matchPercent={portfolioMatch}
+                rank={portfolioRank}
+                onRankChange={setPickedRank}
+              />
+            ) : null}
             <View style={{ gap: spacing[4] }}>
               <Pressable
                 accessibilityRole="button"
@@ -1000,7 +1136,7 @@ export function ReviewScreen({ navigation, route }: Props) {
                   style={{ gap: spacing[6] }}
                 >
                   {tagsSection}
-                  {tasteSection}
+                  {portfolioOn ? null : tasteSection}
                   {recommendSection}
                 </Animated.View>
               ) : null}

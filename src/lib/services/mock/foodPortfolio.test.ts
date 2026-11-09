@@ -58,6 +58,45 @@ test("pins keep only your own posts, in order, and lead the top three", async ()
   assert.ok(tianTian && tianTian.dishCount >= 2, "both posts count at the stall");
 });
 
+test("a ranking can be any length: places move dishes, the top three sets only the top, the tail stays", async () => {
+  const profile = await hungryService.profile.getProfile();
+  const posted: string[] = [];
+  for (const caption of ["r1", "r2", "r3", "r4", "r5"]) {
+    // Mock post ids come from the clock: let it tick so the posts differ.
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const bite = await hungryService.social.postBite({
+      dishId: "dish-chicken-rice",
+      venueId: "venue-tian-tian",
+      photoUrl: `https://example.com/${caption}.jpg`,
+      caption,
+      rating: 0,
+    } as never);
+    posted.push(bite.id);
+  }
+  const [a, b, c, d, e] = posted;
+  await hungryService.foodPortfolio.setPinnedPosts([]);
+  for (const id of [a, b, c, d]) await hungryService.foodPortfolio.rankPost(id, 99);
+  assert.deepEqual(await hungryService.foodPortfolio.getMyRanking(), [a, b, c, d]);
+
+  assert.deepEqual(await hungryService.foodPortfolio.rankPost(e, 2), [a, e, b, c, d]);
+  assert.deepEqual(
+    await hungryService.foodPortfolio.rankPost(d, 1),
+    [d, a, e, b, c],
+    "moves, never repeats",
+  );
+
+  // The portfolio shows the first three; the ranking behind them is untouched.
+  const top = await hungryService.foodPortfolio.getTopPosts(profile.id);
+  assert.deepEqual(top.pinnedPostIds, [d, a, e]);
+  assert.deepEqual(
+    await hungryService.foodPortfolio.setPinnedPosts([a, d]),
+    [a, d, b, c],
+    "e left the top three and is unranked; b and c keep their places below",
+  );
+  await assert.rejects(hungryService.foodPortfolio.rankPost("bite-feed-mock-wei", 1));
+  assert.deepEqual(await hungryService.foodPortfolio.getReviewPortfolioRanks([a]), []);
+});
+
 test("the Following feed shows only people you follow, newest first, and pages by cursor", async () => {
   assert.deepEqual(
     (await hungryService.foodPortfolio.getFollowingFeed()).filter(

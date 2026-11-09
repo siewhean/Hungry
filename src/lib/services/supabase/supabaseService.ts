@@ -82,6 +82,7 @@ import type {
   BitesFeedPage,
   BlockUserRequest,
   FoodPortfolioStall,
+  ReviewPortfolioRank,
   LeaderboardRow,
   PortfolioPointsEntry,
   PortfolioPointsKind,
@@ -6258,6 +6259,41 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.rpc("set_pinned_posts", { p_post_ids: ids });
       if (error) throw error;
       return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async getMyRanking() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_my_portfolio_ranking");
+      if (error) throw error;
+      return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async rankPost(postId, position) {
+      if (!UUID_PATTERN.test(postId)) throw new Error("Only your own dishes can be ranked.");
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("rank_portfolio_post", {
+        p_post_id: postId,
+        p_position: Math.max(1, Math.floor(position)),
+      });
+      if (error) throw error;
+      return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async getReviewPortfolioRanks(reviewIds) {
+      const ids = [...new Set(reviewIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 50);
+      if (ids.length === 0) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_review_portfolio_ranks", {
+        p_review_ids: ids,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): ReviewPortfolioRank[] => {
+        const reviewId = asString(row.review_id);
+        const rank = asNumber(row.portfolio_rank);
+        if (!reviewId || !rank) return [];
+        return [{ reviewId, rank, dishCount: asNumber(row.dish_count) ?? 0 }];
+      });
     },
 
     async listStalls(userId, limit = 60) {
