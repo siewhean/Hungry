@@ -21,9 +21,7 @@ afterEach(cleanup);
 
 type Filters = ReturnType<typeof useDiscoverFilters>;
 
-async function mountFilters(
-  options: { hours?: string; onSetUpDietaryNeeds?: () => void } = {},
-) {
+async function mountFilters(options: { hours?: string; onSetUpDietaryNeeds?: () => void } = {}) {
   let latest: Filters | undefined;
   function Probe() {
     latest = useDiscoverFilters({

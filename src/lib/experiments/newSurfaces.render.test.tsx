@@ -73,10 +73,7 @@ afterEach(async () => {
 });
 
 test("the new tests start as drafts on today's design", () => {
-  for (const key of [
-    "leaderboard_default_board_v1",
-    "activity_bell_badge_v1",
-  ] as const) {
+  for (const key of ["leaderboard_default_board_v1", "activity_bell_badge_v1"] as const) {
     assert.equal(EXPERIMENTS[key].status, "draft", key);
     assert.equal(EXPERIMENTS[key].fallback, "control", key);
   }
