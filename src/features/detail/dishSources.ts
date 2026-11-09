@@ -8,6 +8,7 @@ export const DISH_DETAIL_SOURCES = [
   "catalog_detail",
   "collection",
   "collection_view",
+  "decide_for_me",
   "deep_link",
   "developer",
   "feed",

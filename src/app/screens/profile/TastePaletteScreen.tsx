@@ -3,6 +3,8 @@ import { Pressable, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { AppText, Button } from "@/components/ui";
 import { useReviewDishDetails } from "@/features/profile/useReviewDishDetails";
 import {
@@ -228,6 +230,18 @@ export function TastePaletteScreen({ navigation }: Props) {
             );
           })}
         </View>
+      ) : null}
+
+      {peopleLinksEnabled() ? (
+        <PeopleSuggestionsSection
+          onOpen={(person) =>
+            navigation.navigate("UserProfile", {
+              authorId: person.userId,
+              authorName: person.displayName,
+              authorAvatarUrl: person.avatarUrl,
+            })
+          }
+        />
       ) : null}
 
       <Button label="Retake the taste quiz" variant="secondary" onPress={retakeQuiz} />

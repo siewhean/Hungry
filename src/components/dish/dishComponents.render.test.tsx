@@ -12,6 +12,7 @@ import { ReviewMoreButton } from "@/components/review/ReviewMoreButton";
 import { buildReviewSummary } from "@/features/detail/dishReviewSummary";
 import { useDishReviewActions } from "@/features/detail/useDishReviewActions";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useSocialStore } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, render } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -199,6 +200,30 @@ test("DishReviewCard gives someone else's review a visible '...' and your own ed
   assert.ok(view.findByLabel("Report or block, review by Diner a"));
   await view.rerender(createElement(DishReviewCard, cardProps({ isOwn: true })));
   assert.equal(view.findByLabel("Report or block, review by Diner a"), null);
+});
+
+test("DishReviewCard shows a Follow pill and a top-ten rank only when follows are on", async () => {
+  useSocialStore.setState({ followedUserIds: {}, requestedUserIds: {} });
+  const view = await render(createElement(DishReviewCard, cardProps()));
+  assert.equal(view.findByLabel("Follow Diner a"), null);
+  assert.equal(view.findByLabel("Number 3 on this week's board"), null);
+
+  await view.rerender(createElement(DishReviewCard, cardProps({ followable: true, boardRank: 3 })));
+  assert.ok(view.findByLabel("Follow Diner a"));
+  assert.ok(view.findByLabel("Number 3 on this week's board"));
+
+  // Outside the top ten, no rank; your own review, no Follow.
+  await view.rerender(
+    createElement(DishReviewCard, cardProps({ followable: true, boardRank: 11 })),
+  );
+  assert.equal(view.findByLabel("Number 11 on this week's board"), null);
+  await view.rerender(createElement(DishReviewCard, cardProps({ followable: true, isOwn: true })));
+  assert.equal(view.findByLabel("Follow Diner a"), null);
+
+  // Already following: the pill goes.
+  useSocialStore.setState({ followedUserIds: { "user-a": true } });
+  await view.rerender(createElement(DishReviewCard, cardProps({ followable: true })));
+  assert.equal(view.findByLabel("Follow Diner a"), null);
 });
 
 test("ReviewMoreButton opens the report and block sheet for a signed-in diner", async () => {

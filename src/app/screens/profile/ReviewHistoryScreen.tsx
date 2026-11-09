@@ -23,6 +23,7 @@ import { useHungryTheme } from "@/theme";
 import type { Review, ReviewStats } from "@/types/domain";
 import { isDishDetail } from "./profileGuards";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
 
@@ -218,6 +219,12 @@ export function ReviewHistoryScreen({ navigation }: Props) {
       source: "review_history",
     });
   };
+  const openReview = (reviewId: string) => {
+    getRootNavigation(navigation as any).navigate("ReviewDetail", { reviewId });
+  };
+  const openStall = (venueId: string) => {
+    getRootNavigation(navigation as any).navigate("StallDetail", { venueId });
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -326,6 +333,10 @@ export function ReviewHistoryScreen({ navigation }: Props) {
                 dish={infoFor(review.dishId)}
                 showTags
                 onOpenDish={review.dishId ? () => openDish(review.dishId as string) : undefined}
+                onOpenReview={
+                  serviceProviderMode === "supabase" ? () => openReview(review.id) : undefined
+                }
+                onOpenStall={review.venueId ? () => openStall(review.venueId as string) : undefined}
                 menu={
                   serviceProviderMode === "supabase" && ownReviewEditor.enabled ? (
                     <OwnReviewMenuButton onPress={() => ownReviewEditor.openActions(review)} />
@@ -354,6 +365,11 @@ export function ReviewHistoryScreen({ navigation }: Props) {
             }
             ctaLabel={remoteLoadFailed ? "Retry" : "Write a review"}
             onPress={remoteLoadFailed ? () => setReloadKey((key) => key + 1) : openReviewFlow}
+            icon={
+              remoteLoadFailed ? undefined : (
+                <ReviewBubblesIllustration testID="review-history-empty-art" />
+              )
+            }
           />
         )}
       </ProfileScreenShell>

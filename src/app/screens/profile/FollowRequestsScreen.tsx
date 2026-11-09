@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppSymbol, Avatar, Button, EmptyState, ListRow } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { confirmHaptic } from "@/lib/haptics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -11,6 +12,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { FollowersEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FollowRequests">;
 
@@ -125,6 +127,18 @@ export function FollowRequestsScreen({ navigation }: Props) {
               ? `${request.name} now follows you.`
               : `Declined ${request.name}'s request.`,
           tone: action === "approve" ? "success" : "info",
+          action:
+            action === "approve"
+              ? {
+                  label: "View",
+                  onPress: () =>
+                    navigation.navigate("UserProfile", {
+                      authorName: request.name,
+                      authorAvatarUrl: request.avatarUrl,
+                      authorId: request.userId,
+                    }),
+                }
+              : undefined,
         });
       })
       .catch((error) => {
@@ -168,7 +182,13 @@ export function FollowRequestsScreen({ navigation }: Props) {
                 key={request.userId}
                 first={index === 0}
                 title={request.name}
+                subtitle={
+                  FEATURE_FLAGS.foodPortfolioEnabled
+                    ? "See their Food Portfolio"
+                    : "See their profile"
+                }
                 accessibilityLabel={`Open ${request.name}'s profile`}
+                chevron
                 leading={<Avatar name={request.name} uri={request.avatarUrl} size={44} />}
                 onPress={() =>
                   navigation.navigate("UserProfile", {
@@ -239,14 +259,7 @@ export function FollowRequestsScreen({ navigation }: Props) {
         <EmptyState
           title="No follow requests"
           body="When someone asks to follow your private account, they'll show up here."
-          icon={
-            <AppSymbol
-              name="followRequests"
-              size={36}
-              weight="regular"
-              color={palette.textSecondary}
-            />
-          }
+          icon={<FollowersEmptyIllustration testID="follow-requests-empty-art" />}
         />
       )}
     </ProfileScreenShell>

@@ -130,7 +130,7 @@ test("the cards print the owner, the grid or the rank, and the Hungry address", 
   assert.match(view.text(), /My Food Portfolio/);
   assert.match(view.text(), /Mei/);
   assert.match(view.text(), /3 dishes · 1 stall/);
-  assert.match(view.text(), /usehungry\.com/);
+  assert.match(view.text(), /Follow me on Hungry · usehungry\.com/);
   await view.unmount();
 
   view = await render(

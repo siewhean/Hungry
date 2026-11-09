@@ -80,6 +80,9 @@ import {
 import { boostNetworkBites } from "@/features/discover/networkPicks";
 import { useNetworkStallPicks } from "@/features/discover/useNetworkStallPicks";
 import { NetworkPicksSection } from "@/components/discover/home/NetworkPicksSection";
+import { WeeklyBoardCard } from "@/components/discover/home/WeeklyBoardCard";
+import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { groupNearbyPlaces, type PlaceBuilding } from "@/features/discover/homeRails";
 import { buildHomeSections } from "@/features/discover/homeSections";
 import { fitChipsToDiner, kindsOfNames } from "@/features/discover/homeChips";
@@ -135,6 +138,7 @@ import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useDiscoveryStore } from "@/store/useDiscoveryStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useSocialStore } from "@/store/useSocialStore";
 import { decideInitialRadiusMeters } from "@/features/discovery/decideForMeCandidates";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useHungryTheme } from "@/theme";
@@ -179,6 +183,8 @@ import {
   type DiscoverStallShowcaseCard,
 } from "@/features/discover/stallShowcase";
 
+/** Home suggests people until you follow this many. */
+const HOME_PEOPLE_FOLLOW_THRESHOLD = 5;
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
 
 /** A horizontal rail with fewer dishes than this is hidden. */
@@ -564,6 +570,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // Stalls the diner's follows loved lately: their own Home rail, and a capped lift (two dishes)
   // in the rail above with a reason naming who.
   const isSignedIn = useSessionStore((state) => state.isAuthenticated);
+  // People you follow: Home's weekly board card waits for at least one.
+  const followedCount = useSocialStore(
+    (state) => Object.values(state.followedUserIds).filter(Boolean).length,
+  );
   const [networkReloadKey, setNetworkReloadKey] = useState(0);
   const networkPicks = useNetworkStallPicks(
     isUserMode && isSignedIn && FEATURE_FLAGS.followConnectionsEnabled,
@@ -2558,6 +2568,46 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   trackAnalyticsEvent("network_pick_opened", { source: pick.source, position });
                   navigation.navigate("StallDetail", { venueId: pick.venueId });
                 }}
+                onOpenFeed={
+                  FEATURE_FLAGS.foodPortfolioEnabled
+                    ? () => navigation.navigate("FollowingFeed")
+                    : undefined
+                }
+              />
+            ) : null}
+
+            {!isDiscoverFiltering ? (
+              <WeeklyBoardCard
+                enabled={isUserMode && isSignedIn && FEATURE_FLAGS.foodPortfolioEnabled}
+                followCount={followedCount}
+                onOpen={() => {
+                  trackAnalyticsEvent("leaderboard_opened", { source: "home_board_card" });
+                  navigation.navigate("Leaderboard");
+                }}
+              />
+            ) : null}
+
+            {!isDiscoverFiltering &&
+            isUserMode &&
+            isSignedIn &&
+            peopleLinksEnabled() &&
+            followedCount < HOME_PEOPLE_FOLLOW_THRESHOLD ? (
+              <PeopleSuggestionsSection
+                title="People you may know"
+                max={3}
+                onOpen={(person) =>
+                  navigation.navigate("UserProfile", {
+                    authorId: person.userId,
+                    authorName: person.displayName,
+                    authorAvatarUrl: person.avatarUrl,
+                  })
+                }
+                onSeeAll={() =>
+                  navigation.navigate("MainTabs", {
+                    screen: "Profile",
+                    params: { screen: "Followers" },
+                  })
+                }
               />
             ) : null}
 

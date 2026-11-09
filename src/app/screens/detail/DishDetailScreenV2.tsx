@@ -62,6 +62,7 @@ import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { ReviewPhotoStrip } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useWeeklyRanks } from "@/features/leaderboard/boardRanks";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import {
   getDataRepository,
@@ -111,6 +112,9 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { getBuildingById } from "@/lib/geo/singaporeBuildings";
 import { formatFullStallAddress, getStallPin } from "@/features/detail/stallLocation";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
+import { PeopleHereRow } from "@/components/social/PeopleHereRow";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 
 /** Reviews shown on the page; "See all" opens the full list. */
 const DISH_REVIEW_PREVIEW_COUNT = 3;
@@ -210,6 +214,10 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     setReviews: setDishReviews,
     onOwnReviewChanged: refreshDish,
   });
+  // Review authors get a Follow pill and, in this week's top ten, their rank.
+  const reviewFollowsOn =
+    FEATURE_FLAGS.followConnectionsEnabled && FEATURE_FLAGS.foodPortfolioEnabled;
+  const weeklyRanks = useWeeklyRanks(reviewFollowsOn && dishReviews.length > 0);
   const {
     addToPortfolio,
     collectionOptions,
@@ -1587,6 +1595,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         onUpdated={(patch) => reviewActions.updateReview(review.id, patch)}
                         onDeleted={() => reviewActions.deleteReview(review.id)}
                         onRemoved={() => reviewActions.removeReview(review.id)}
+                        followable={reviewFollowsOn}
+                        boardRank={review.authorId ? weeklyRanks.get(review.authorId) : null}
                       />
                     ))}
                     {dishReviews.length > DISH_REVIEW_PREVIEW_COUNT || hasMoreReviews ? (
@@ -1615,7 +1625,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         ? "Be the first to add one."
                         : "Reviews from diners will appear here when available."
                     }
-                    icon={<RatingStarSymbol size={36} color={palette.textMuted} />}
+                    icon={<ReviewBubblesIllustration testID="dish-reviews-empty-art" />}
                     ctaLabel={
                       showDeferredDetailControls && FEATURE_FLAGS.reviewCreationEnabled
                         ? "Write a review"
@@ -1633,6 +1643,25 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   </AppText>
                 )}
               </View>
+
+              {showDeferredDetailControls && isAuthenticated ? (
+                <PeopleHereRow
+                  place={{ dishId: dish.id }}
+                  enabled={peopleLinksEnabled()}
+                  screen="DishDetail"
+                  onOpenPerson={(person) => {
+                    trackAnalyticsEvent("people_here_opened", { source: "dish" });
+                    navigation.navigate("UserProfile", {
+                      authorId: person.userId,
+                      authorName: person.displayName,
+                    });
+                  }}
+                  onSeeAll={() =>
+                    navigation.navigate("PlacePeople", { dishId: dish.id, placeName: dish.name })
+                  }
+                  testID="dish-people-here"
+                />
+              ) : null}
 
               <ReportProblemLink
                 venueId={dish.venueId}

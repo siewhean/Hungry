@@ -173,7 +173,7 @@ export function CollectionsScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell title="Saved" subtitle="Search the food in your lists.">
+    <ProfileScreenShell title="Saved">
       <Input
         accessibilityLabel="Search your lists"
         value={query}

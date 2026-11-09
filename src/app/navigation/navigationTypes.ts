@@ -239,7 +239,8 @@ export type RootStackParamList = {
   ReviewDetail: { reviewId: string };
   FollowRequests: undefined;
   /** Food Portfolio: newest dishes posted by the people you follow. */
-  FollowingFeed: undefined;
+  /** The Feed tab of People; from a stall page, only that stall's dishes. */
+  FollowingFeed: { venueId?: string; venueName?: string } | undefined;
   Leaderboard: undefined;
   /** What Hungry has learned about your taste, how sure it is, and what to try next. */
   TastePalette: undefined;
@@ -247,6 +248,8 @@ export type RootStackParamList = {
   TasteCompare: { userId: string; userDisplayName?: string };
   /** People the viewer blocked and posts they hid, with Unblock and Unhide. */
   BlockedAndHidden: undefined;
+  /** Who reviewed or posted at one stall or one dish (give exactly one id). */
+  PlacePeople: { venueId?: string; dishId?: string; placeName?: string };
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };
   UserFollowing: { userId: string; userDisplayName?: string };

@@ -1,15 +1,25 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { AccessibleImage, AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
+import {
+  AccessibleImage,
+  AppSymbol,
+  AppText,
+  Button,
+  EmptyState,
+  SegmentedControl,
+} from "@/components/ui";
+import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import {
   FOOD_PORTFOLIO_MAX_PINS,
   portfolioPostImage,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
 import { FoodPortfolioShareSheet } from "@/components/foodPortfolio/FoodPortfolioShareSheet";
+import { PortfolioEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 import { portfolioCardPhotos, portfolioCardStatLine } from "@/features/foodPortfolio/shareCards";
 import { useFoodPortfolio } from "@/features/foodPortfolio/useFoodPortfolio";
+import { useBoardRank } from "@/features/leaderboard/boardRanks";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { Bite } from "@/lib/services/types";
 import { useUIStore } from "@/store/useUIStore";
@@ -23,8 +33,6 @@ type FoodPortfolioSectionProps = {
   navigation: { navigate: (...args: any[]) => void };
   /** Bump to refetch (your own grid after posting or deleting). */
   reloadKey?: number;
-  /** The dishes-posted count for a profile's stat row: null while loading, "20+" with more pages. */
-  onPostCountChange?: (count: number | string | null) => void;
 };
 
 type PortfolioTab = "dishes" | "stalls";
@@ -100,9 +108,36 @@ function PostTile({
   );
 }
 
+/** A dotted top-three slot on your own Portfolio: tap it to pick a dish to show first. */
+function EmptyPinSlot({ onPress, index }: { onPress: () => void; index: number }) {
+  const { componentRadii, palette } = useHungryTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Pick dish ${index + 1} of your top three`}
+      onPress={onPress}
+      testID={`food-portfolio-top-empty-${index}`}
+      style={({ pressed }) => ({
+        alignItems: "center",
+        aspectRatio: 1,
+        backgroundColor: pressed ? palette.bgSoft : "transparent",
+        borderColor: palette.border,
+        borderRadius: componentRadii.card,
+        borderStyle: "dashed",
+        borderWidth: 1.5,
+        flex: 1,
+        justifyContent: "center",
+      })}
+    >
+      <AppSymbol name="add" size={22} color={palette.textMuted} />
+    </Pressable>
+  );
+}
+
 /**
- * The Food Portfolio on a profile: the top three dishes, then every dish posted (a three-column
- * grid) or the stalls they were posted from. Yours adds Post a dish and Edit top three.
+ * The Food Portfolio on a profile: Dishes, Stalls and Rank (which opens the Leaderboard), the top
+ * three dishes, then every dish posted (a three-column grid) or the stalls they were posted from.
+ * Yours adds Share, Edit top three and Post a dish.
  */
 export function FoodPortfolioSection({
   userId,
@@ -110,7 +145,6 @@ export function FoodPortfolioSection({
   isSelf,
   navigation,
   reloadKey = 0,
-  onPostCountChange,
 }: FoodPortfolioSectionProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
@@ -126,10 +160,8 @@ export function FoodPortfolioSection({
       : portfolio.postsState === "failed"
         ? "–"
         : null;
-  useEffect(() => {
-    onPostCountChange?.(postCount);
-  }, [onPostCountChange, postCount]);
   const [isSharing, setIsSharing] = useState(false);
+  const boardRank = useBoardRank(userId, isSelf, FEATURE_FLAGS.foodPortfolioEnabled);
 
   if (!FEATURE_FLAGS.foodPortfolioEnabled) return null;
 
@@ -139,6 +171,12 @@ export function FoodPortfolioSection({
       source: `food_portfolio_${source}`,
     });
     navigation.navigate("ActivityPostDetail", { postId: post.id });
+  };
+  const openLeaderboard = () => {
+    trackAnalyticsEvent("leaderboard_opened", {
+      source: isSelf ? "own_portfolio" : "portfolio",
+    });
+    navigation.navigate("Leaderboard");
   };
   const openComposer = () => {
     trackAnalyticsEvent("food_portfolio_post_tapped", { source: "portfolio" });
@@ -168,37 +206,54 @@ export function FoodPortfolioSection({
     }
   };
 
-  const dishCount = portfolio.postsState === "loaded" ? portfolio.posts.length : null;
-  const dishCountLabel =
-    dishCount === null
-      ? ""
-      : `${portfolio.hasMorePosts ? `${dishCount}+` : dishCount} ${dishWord(dishCount)}`;
   const isChoosingPins = pinDraft !== null;
 
-  const tabButton = (key: PortfolioTab, label: string) => {
-    const selected = tab === key;
-    return (
-      <Pressable
-        key={key}
-        accessibilityRole="tab"
-        accessibilityLabel={`Show ${label.toLowerCase()}`}
-        accessibilityState={{ selected }}
-        onPress={() => setTab(key)}
-        style={{
-          flex: 1,
-          minHeight: 36,
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: radii.pill,
-          backgroundColor: selected ? palette.surface : "transparent",
-        }}
-      >
-        <AppText variant="bodySmall" style={{ fontWeight: selected ? "700" : "500" }}>
-          {label}
-        </AppText>
-      </Pressable>
-    );
+  const startPinning = () => {
+    setTab("dishes");
+    setPinDraft(portfolio.pinnedPostIds);
   };
+  const stallCount =
+    portfolio.stallsState === "loaded"
+      ? portfolio.stalls.length
+      : portfolio.stallsState === "failed"
+        ? STAT_UNAVAILABLE
+        : null;
+  const rankValue =
+    boardRank.state === "loaded"
+      ? boardRank.rank
+        ? `#${boardRank.rank}`
+        : STAT_UNAVAILABLE
+      : boardRank.state === "failed"
+        ? STAT_UNAVAILABLE
+        : null;
+  const stats = [
+    {
+      key: "dishes",
+      label: typeof postCount === "number" ? (postCount === 1 ? "Dish" : "Dishes") : "Dishes",
+      value: postCount,
+      accessibilityHint: "Shows every dish posted",
+      onPress: () => setTab("dishes"),
+    },
+    {
+      key: "stalls",
+      label: stallCount === 1 ? "Stall" : "Stalls",
+      value: stallCount,
+      accessibilityHint: "Shows the stalls these dishes came from",
+      onPress: () => setTab("stalls"),
+    },
+    {
+      key: "rank",
+      label:
+        boardRank.state === "loaded" && boardRank.periodLabel === "all time"
+          ? "Rank, all time"
+          : "Rank",
+      value: rankValue,
+      accessibilityHint: "Opens the Leaderboard",
+      onPress: openLeaderboard,
+    },
+  ];
+  const showTopThree =
+    !isChoosingPins && (portfolio.topPosts.length > 0 || (isSelf && portfolio.posts.length > 0));
 
   const grid = (
     <View
@@ -246,13 +301,21 @@ export function FoodPortfolioSection({
             ? "Snap what you eat. Every dish you post builds your Food Portfolio."
             : `${ownerName} hasn't posted a dish yet.`
         }
-        icon={<AppSymbol name="camera" size={36} weight="regular" color={palette.textSecondary} />}
+        icon={<PortfolioEmptyIllustration testID="food-portfolio-empty-art" />}
         ctaLabel={isSelf ? "Post a dish" : undefined}
         onPress={isSelf ? openComposer : undefined}
       />
     ) : (
       <>
         {grid}
+        {isSelf && !isChoosingPins ? (
+          <Button
+            testID="food-portfolio-post"
+            label="Post a dish"
+            leftIcon={<AppSymbol name="camera" size={18} color={palette.textOnOrange} />}
+            onPress={openComposer}
+          />
+        ) : null}
         {portfolio.hasMorePosts ? (
           <Button
             label="Load more"
@@ -332,42 +395,26 @@ export function FoodPortfolioSection({
   return (
     <View style={{ gap: spacing[3] }} testID="food-portfolio-section">
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-        <View>
-          <AppText variant="h2">Food Portfolio</AppText>
-          {dishCountLabel ? (
-            <AppText variant="micro" tone="secondary" testID="food-portfolio-count">
-              {dishCountLabel}
-            </AppText>
-          ) : null}
-        </View>
-        {isSelf ? (
-          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
-            {portfolio.posts.length > 0 ? (
-              <Pressable
-                testID="food-portfolio-share"
-                accessibilityRole="button"
-                accessibilityLabel="Share your Food Portfolio"
-                accessibilityHint="Makes a picture of your dishes to share"
-                hitSlop={4}
-                onPress={() => setIsSharing(true)}
-                style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
-              >
-                <AppSymbol name="share" size={20} color={palette.accentText} />
-              </Pressable>
-            ) : null}
-            <Button
-              label="Post a dish"
-              size="sm"
-              fullWidth={false}
-              leftIcon={<AppSymbol name="camera" size={16} color={palette.textOnOrange} />}
-              onPress={openComposer}
-              style={{ minHeight: 44 }}
-            />
-          </View>
+        <AppText variant="h2" accessibilityRole="header">
+          Food Portfolio
+        </AppText>
+        {isSelf && portfolio.posts.length > 0 ? (
+          <Pressable
+            testID="food-portfolio-share"
+            accessibilityRole="button"
+            accessibilityLabel="Share your Food Portfolio"
+            accessibilityHint="Makes a picture of your dishes to share"
+            hitSlop={4}
+            onPress={() => setIsSharing(true)}
+            style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}
+          >
+            <AppSymbol name="share" size={20} color={palette.accentText} />
+          </Pressable>
         ) : null}
       </View>
+      <ProfileStatRow stats={stats} testID="food-portfolio-stats" />
 
-      {portfolio.topPosts.length > 0 && !isChoosingPins ? (
+      {showTopThree ? (
         <View style={{ gap: spacing[2] }} testID="food-portfolio-top-three">
           <View
             style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
@@ -379,10 +426,7 @@ export function FoodPortfolioSection({
                 accessibilityLabel="Edit top three"
                 accessibilityHint="Pick up to three of your dishes to show first"
                 hitSlop={8}
-                onPress={() => {
-                  setTab("dishes");
-                  setPinDraft(portfolio.pinnedPostIds);
-                }}
+                onPress={startPinning}
                 style={{ minHeight: 44, justifyContent: "center" }}
               >
                 <AppText variant="bodySmall" style={{ color: palette.accentText }}>
@@ -410,11 +454,18 @@ export function FoodPortfolioSection({
                 />
               </View>
             ))}
-            {/* Keep three equal columns when fewer than three dishes exist. */}
+            {/* Three equal columns: yours shows a dotted slot to fill, anyone else's a gap. */}
             {Array.from({ length: FOOD_PORTFOLIO_MAX_PINS - portfolio.topPosts.length }).map(
-              (_, index) => (
-                <View key={`spacer-${index}`} style={{ flex: 1 }} />
-              ),
+              (_, index) =>
+                isSelf ? (
+                  <EmptyPinSlot
+                    key={`empty-${index}`}
+                    index={portfolio.topPosts.length + index}
+                    onPress={startPinning}
+                  />
+                ) : (
+                  <View key={`spacer-${index}`} style={{ flex: 1 }} />
+                ),
             )}
           </View>
         </View>
@@ -451,18 +502,16 @@ export function FoodPortfolioSection({
           />
         </View>
       ) : (
-        <View
-          accessibilityRole="tablist"
-          style={{
-            flexDirection: "row",
-            padding: 2,
-            borderRadius: radii.pill,
-            backgroundColor: palette.bgSoft,
-          }}
-        >
-          {tabButton("dishes", "Dishes")}
-          {tabButton("stalls", "Stalls")}
-        </View>
+        <SegmentedControl
+          testID="food-portfolio-tabs"
+          accessibilityLabel="Show dishes or stalls"
+          options={[
+            { value: "dishes", label: "Dishes", accessibilityLabel: "Show dishes" },
+            { value: "stalls", label: "Stalls", accessibilityLabel: "Show stalls" },
+          ]}
+          value={tab}
+          onChange={setTab}
+        />
       )}
 
       {tab === "dishes" || isChoosingPins ? dishesBody : stallsBody}

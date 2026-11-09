@@ -73,6 +73,19 @@ function sanitizeRouteParams(name: string, params: unknown): Record<string, unkn
     return undefined;
   }
 
+  if (name === "UserFollowers" && !isSafeDeepLinkId(next.userId)) {
+    return undefined;
+  }
+
+  if (name === "PlacePeople") {
+    const venueOk = next.venueId === undefined || isSafeDeepLinkId(next.venueId);
+    const dishOk = next.dishId === undefined || isSafeDeepLinkId(next.dishId);
+    // Exactly one of the two.
+    if (!venueOk || !dishOk || (next.venueId === undefined) === (next.dishId === undefined)) {
+      return undefined;
+    }
+  }
+
   if (name === "WheelStack") {
     // The join code rides on the nested WheelHome route, which is where WheelHome reads it.
     const nested =
@@ -245,9 +258,24 @@ function buildStateFromPath(rawPath: string): LinkingState | undefined {
     return postId ? createStateOverHome("ActivityPostDetail", { postId }) : undefined;
   }
   // Shared profiles: https://usehungry.com/user/:id (the screen loads the public name).
+  // /user/:id/people opens their People screen; /user/:id/portfolio is their profile,
+  // where the Food Portfolio sits.
   if (parts[0] === "user") {
     const authorId = decodePathSegment(parts[1]);
-    return authorId ? createStateOverHome("UserProfile", { authorId }) : undefined;
+    if (!authorId) return undefined;
+    if (parts[2] === "people" && FEATURE_FLAGS.foodPortfolioEnabled) {
+      return createStateOverHome("UserFollowers", { userId: authorId });
+    }
+    return createStateOverHome("UserProfile", { authorId });
+  }
+  // People here: https://usehungry.com/people?stall=:id or /people?dish=:id.
+  if (
+    path === "people" &&
+    FEATURE_FLAGS.foodPortfolioEnabled &&
+    FEATURE_FLAGS.followConnectionsEnabled
+  ) {
+    const params = parsePlacePeopleQuery(rawPath);
+    return params ? createStateOverHome("PlacePeople", params) : undefined;
   }
   // Shared searches: https://usehungry.com/search?q=laksa&filter=Halal&mode=stalls
   if (path === "search") {
@@ -511,6 +539,20 @@ export function createRootLinking(
  * allowlist is the set of filter chips on the results screen (one or several, comma
  * separated), so every chip state can be linked and nothing that is not a chip is accepted.
  */
+/** /people?stall=:id or /people?dish=:id: exactly one safe id, or nothing. */
+export function parsePlacePeopleQuery(
+  rawPath: string,
+): { venueId: string } | { dishId: string } | undefined {
+  const queryIndex = rawPath.indexOf("?");
+  if (queryIndex < 0) return undefined;
+  const params = new URLSearchParams(rawPath.slice(queryIndex + 1).split("#")[0]);
+  const stall = params.get("stall");
+  const dish = params.get("dish");
+  if (stall !== null && dish === null && isSafeDeepLinkId(stall)) return { venueId: stall };
+  if (dish !== null && stall === null && isSafeDeepLinkId(dish)) return { dishId: dish };
+  return undefined;
+}
+
 export function parseSearchDeepLinkQuery(rawPath: string): Record<string, unknown> {
   const queryIndex = rawPath.indexOf("?");
   if (queryIndex < 0) return {};

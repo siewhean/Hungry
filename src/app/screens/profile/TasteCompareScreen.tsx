@@ -3,7 +3,8 @@ import { View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppSymbol, AppText, EmptyState } from "@/components/ui";
+import { PersonFollowPill, peopleLinksEnabled } from "@/components/social/PersonFollowPill";
+import { AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
 import { comparePalates } from "@/features/profile/tastePalette";
 import { tasteMatchLabel } from "@/features/social/relationship";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -45,7 +46,7 @@ function PairBars({ mine, theirs }: { mine: number; theirs: number }) {
  * sentence for each ("Mei likes far more spice"). One read (get_taste_comparison); private or
  * blocked people and neutral palates return nothing and the page says so.
  */
-export function TasteCompareScreen({ route }: Props) {
+export function TasteCompareScreen({ navigation, route }: Props) {
   const { userId, userDisplayName } = route.params;
   const theirName = userDisplayName?.trim() || "They";
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -87,11 +88,7 @@ export function TasteCompareScreen({ route }: Props) {
   } as const;
 
   return (
-    <ProfileScreenShell
-      title="Compare palates"
-      subtitle={userDisplayName ? `You and ${userDisplayName}` : undefined}
-      testID="taste-compare-screen"
-    >
+    <ProfileScreenShell title="Compare palates" testID="taste-compare-screen">
       {state === "loading" ? (
         <View testID="taste-compare-loading" style={{ minHeight: 200 }} />
       ) : state === "failed" ? (
@@ -146,6 +143,28 @@ export function TasteCompareScreen({ route }: Props) {
           </View>
         </>
       )}
+      {state !== "loading" ? (
+        <View
+          testID="taste-compare-person"
+          style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}
+        >
+          <Button
+            label={theirName === "They" ? "Open their profile" : `Open ${theirName}'s profile`}
+            variant="secondary"
+            fullWidth={false}
+            style={{ flexShrink: 1 }}
+            onPress={() =>
+              navigation.navigate("UserProfile", {
+                authorId: userId,
+                authorName: userDisplayName?.trim() || undefined,
+              })
+            }
+          />
+          {peopleLinksEnabled() ? (
+            <PersonFollowPill userId={userId} name={userDisplayName?.trim() || "this diner"} />
+          ) : null}
+        </View>
+      ) : null}
     </ProfileScreenShell>
   );
 }

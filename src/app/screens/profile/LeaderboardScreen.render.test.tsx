@@ -107,7 +107,7 @@ afterEach(async () => {
   Object.assign(flags, savedFlags);
 });
 
-test("shows your points, the board, your pinned row and how points work; a row opens the person", async () => {
+test("shows your points, the podium, your pinned row and how points work; a row opens the person", async () => {
   const queries = stubBoard();
   const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
   assert.ok(view.findByText("85"), "total Portfolio points");
@@ -116,8 +116,19 @@ test("shows your points, the board, your pinned row and how points work; a row o
   assert.ok(view.findByTestId("leaderboard-row-a"));
   assert.ok(view.findByTestId("leaderboard-own-row"), "you are #51, outside the rows shown");
   assert.ok(view.findByTestId("leaderboard-be-first"), "fewer than 10 people on the board");
-  assert.ok(view.findByText("How points work"));
+  assert.ok(view.findByTestId("leaderboard-podium"), "the top three stand on the podium");
+  assert.ok(view.findByTestId("leaderboard-summary-art"));
+  assert.ok(view.findByText("Weeks reset on Monday"));
+
+  // The rules and your recent points live in a sheet.
+  assert.equal(view.findByText("Posted, tier 1"), null);
+  await view.press(view.findByText("How points work"));
+  assert.ok(view.findByTestId("leaderboard-points-sheet"));
+  assert.ok(view.findByText("Dish post with a photo, at a stall"));
+  await view.press(view.findByText("Your points"));
   assert.ok(view.findByText("Posted, tier 1"));
+  await view.press(view.findByLabel("Close"));
+  assert.equal(view.findByTestId("leaderboard-points-sheet"), null);
 
   await view.press(view.findByTestId("leaderboard-row-a"));
   assert.deepEqual(lastNavigate(view.navigation), [
@@ -141,7 +152,24 @@ test("switching board, period and scope reads the matching board", async () => {
   await view.press(view.findByText("Trending"));
   assert.equal(queries.at(-1)?.board, "trending");
   assert.equal(view.findByText("All time"), null, "Trending is always the last 7 days");
+  await view.press(view.findByText("How points work"));
   assert.ok(view.findByText(/each person counts once a day/));
+});
+
+test("an empty board shows its illustration and Post a dish", async () => {
+  stubBoard({ rows: [] });
+  const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
+  assert.ok(view.findByText("Nobody on the board yet"));
+  assert.ok(view.findByTestId("leaderboard-empty-art"));
+  await view.press(view.findByText("Post a dish"));
+  assert.deepEqual(lastNavigate(view.navigation), ["Post"]);
+});
+
+test("rows below the podium offer Follow for people you do not follow", async () => {
+  stubBoard({ rows: [row(1, "a"), row(2, "b"), row(3, "c"), row(4, "d")] });
+  const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
+  assert.ok(view.findByLabel("Follow Diner d"));
+  assert.equal(view.findByLabel("Follow Diner a"), null, "the podium has no pills");
 });
 
 test("a failed read shows Retry and reads again", async () => {
@@ -160,7 +188,7 @@ test("your own row is not tappable and not pinned twice", async () => {
   assert.equal(view.findByTestId("leaderboard-own-row"), null);
 });
 
-test("own Profile opens the Leaderboard only with the Food Portfolio on", async () => {
+test("own Profile opens the Leaderboard from the Portfolio's Rank, only with the Food Portfolio on", async () => {
   stubBoard();
   const service = getHungryService();
   stub(service.social, "getFollowCounts", async () => ({ followersCount: 0, followingCount: 0 }));
@@ -168,7 +196,8 @@ test("own Profile opens the Leaderboard only with the Food Portfolio on", async 
   stub(service.foodPortfolio, "getTopPosts", async () => ({ posts: [], pinnedPostIds: [] }));
   stub(service.foodPortfolio, "listStalls", async () => []);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  await view.press(view.findByTestId("profile-leaderboard-row"));
+  assert.equal(view.findByTestId("profile-leaderboard-row"), null, "no separate row any more");
+  await view.press(view.findByLabel(/^Rank/));
   assert.ok(
     view.navigation.calls.some(
       (call) => call.method === "navigate" && call.args[0] === "Leaderboard",
@@ -178,5 +207,27 @@ test("own Profile opens the Leaderboard only with the Food Portfolio on", async 
 
   flags.foodPortfolioEnabled = false;
   view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
-  assert.equal(view.findByTestId("profile-leaderboard-row"), null);
+  assert.equal(view.findByLabel(/^Rank/), null);
+});
+
+test("the summary says how far you moved since Monday and where you finished last week", async () => {
+  stubBoard();
+  stub(getHungryService().leaderboard, "getMyMovement", async () => ({
+    lastWeekRank: 5,
+    weekStartAllRank: 9,
+    allRank: 6,
+  }));
+  const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
+  assert.ok(view.findByText("Up 3 places since Monday · Last week #5"));
+});
+
+test("no movement and no last week: no movement line", async () => {
+  stubBoard();
+  stub(getHungryService().leaderboard, "getMyMovement", async () => ({
+    lastWeekRank: null,
+    weekStartAllRank: 4,
+    allRank: 4,
+  }));
+  const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
+  assert.equal(view.findByTestId("leaderboard-movement"), null);
 });

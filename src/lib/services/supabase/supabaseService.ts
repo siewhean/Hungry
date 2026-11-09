@@ -47,6 +47,7 @@ import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase
 import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import {
   mapNetworkStallPicks,
+  mapPlacePeople,
   mapPeopleSuggestions,
   mapProfileRelationship,
   mapTasteComparison,
@@ -6040,6 +6041,25 @@ export const supabaseService: HungryService = {
       return mapPeopleSuggestions(data);
     },
 
+    async getPlacePeople(place, limit = 5) {
+      const empty = { people: [], totalPeople: 0 };
+      const venueId = place.venueId?.trim();
+      const dishId = place.dishId?.trim();
+      if (!venueId === !dishId) return empty;
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return empty;
+      const { data, error } = await client.rpc("get_place_people", {
+        p_venue_id: venueId ?? null,
+        p_dish_id: dishId ?? null,
+        p_limit: Math.min(Math.max(Math.floor(limit), 1), 10),
+      });
+      if (error) {
+        if (isMissingBackendObjectError(error)) return empty;
+        throw error;
+      }
+      return mapPlacePeople(data);
+    },
+
     async listNetworkStallPicks(limit = 30) {
       const client = requireSupabaseClient();
       if (!(await getCurrentSupabaseUserId())) return [];
@@ -6327,6 +6347,22 @@ export const supabaseService: HungryService = {
         creditedPostsToday: asNumber(row.credited_posts_today) ?? 0,
         dailyCap: asNumber(row.daily_cap) ?? 6,
         computedAt: asString(row.computed_at),
+      };
+    },
+
+    async getMyMovement() {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return null;
+      const { data, error } = await client.rpc("get_my_rank_movement");
+      // An app build can run before the migration that adds the RPC: no movement yet.
+      if (error && (error.code === "42883" || error.code === "PGRST202")) return null;
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Row | undefined;
+      if (!row) return null;
+      return {
+        lastWeekRank: asNumber(row.last_week_rank) ?? null,
+        weekStartAllRank: asNumber(row.week_start_all_rank) ?? null,
+        allRank: asNumber(row.all_rank) ?? null,
       };
     },
 
@@ -9551,7 +9587,8 @@ export const supabaseService: HungryService = {
           | "new_comment"
           | "new_reply"
           | "new_follower"
-          | "follow_request",
+          | "follow_request"
+          | "board_top_ten",
         targetType: row.target_type as "post" | "comment" | "profile",
         targetId: row.target_id as string,
         readAt: row.read_at as string | undefined,

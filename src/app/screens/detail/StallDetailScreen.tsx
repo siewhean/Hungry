@@ -42,7 +42,6 @@ import {
   EmailSymbol,
   HelpSymbol,
   HoursSymbol,
-  NoReviewsSymbol,
   PhoneSymbol,
   SavedCountSymbol,
   WebsiteSymbol,
@@ -63,6 +62,8 @@ import { summarizeStallDietaryFlags } from "@/features/detail/dietaryLabels";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { ensureAiSearchConsent } from "@/features/privacy/consent";
 import { StallReviewCard } from "@/components/stall/StallReviewCard";
+import { PeopleHereRow } from "@/components/social/PeopleHereRow";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { StallHeroFallback } from "@/components/stall/StallHeroFallback";
 import { StallHelpFillCard } from "@/components/stall/StallHelpFillCard";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
@@ -123,6 +124,7 @@ import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tast
 import { useMissionStore } from "@/store/useMissionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import { PopularVisitorsSection } from "@/components/stall/PopularVisitorsSection";
+import { FollowsPostedHere } from "@/components/stall/FollowsPostedHere";
 import { StallInteractionBar } from "@/components/stall/StallInteractionBar";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -143,6 +145,7 @@ import type {
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 const CLAIM_STATUS_LABELS: Record<MerchantClaimStatus, string> = {
   none: "Claim this stall",
@@ -381,6 +384,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const followedCount = useSocialStore(
+    (state) => Object.values(state.followedUserIds).filter(Boolean).length,
+  );
   const requireAccount = useRequireAccount();
   const showToast = useUIStore((state) => state.showToast);
   const openSignInPrompt = useUIStore((state) => state.openSignInPrompt);
@@ -1829,6 +1835,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {showDeferredDetailControls && FEATURE_FLAGS.socialFeedEnabled ? (
                 <PopularVisitorsSection venueId={venue.id} horizontalPadding={0} />
               ) : null}
+              {/* People you follow who posted here: opens their dishes from this stall. */}
+              {showDeferredDetailControls && FEATURE_FLAGS.foodPortfolioEnabled ? (
+                <FollowsPostedHere
+                  venueId={venue.id}
+                  enabled={isAuthenticated && followedCount > 0}
+                  onOpen={() =>
+                    navigation.navigate("FollowingFeed", {
+                      venueId: venue.id,
+                      venueName: displayName,
+                    })
+                  }
+                />
+              ) : null}
               {/* Food Portfolio: post a dish from this stall (the composer asks which dish). */}
               {showDeferredDetailControls && FEATURE_FLAGS.foodPortfolioEnabled ? (
                 <Button
@@ -1887,6 +1906,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                             review={review}
                             venueId={venue.id}
                             isOwn={isOwn}
+                            followable={peopleLinksEnabled()}
                             onOpenAuthor={() =>
                               navigation.navigate("UserProfile", {
                                 authorId: review.authorId,
@@ -1930,10 +1950,31 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           ? "Be the first to review this stall."
                           : "Reviews for this stall will show here."
                       }
-                      icon={<NoReviewsSymbol size={36} color={palette.textMuted} />}
+                      icon={<ReviewBubblesIllustration testID="stall-reviews-empty-art" />}
                     />
                   )}
                 </View>
+              ) : null}
+              {showDeferredDetailControls && isAuthenticated && venue ? (
+                <PeopleHereRow
+                  place={{ venueId: venue.id }}
+                  enabled={peopleLinksEnabled()}
+                  screen="StallDetail"
+                  onOpenPerson={(person) => {
+                    trackAnalyticsEvent("people_here_opened", { source: "stall" });
+                    navigation.navigate("UserProfile", {
+                      authorId: person.userId,
+                      authorName: person.displayName,
+                    });
+                  }}
+                  onSeeAll={() =>
+                    navigation.navigate("PlacePeople", {
+                      venueId: venue.id,
+                      placeName: displayName,
+                    })
+                  }
+                  testID="stall-people-here"
+                />
               ) : null}
               {/* A quiet row, not a button: the bar's "Write a review" is the page's only filled button. */}
               {showDeferredDetailControls && FEATURE_FLAGS.merchantClaimCtaEnabled ? (

@@ -9,18 +9,20 @@ import { View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import { AppText, EmptyState } from "@/components/ui";
+import { AppText, Badge, EmptyState } from "@/components/ui";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
 import { MissionCard } from "@/components/gamification/MissionCard";
+import { missionStart } from "@/features/profile/missionStart";
 import { useMissionStore } from "@/store/useMissionStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { trackMissionViewed } from "@/lib/analytics/gamificationEvents";
 import { getDataTrustDisclosure } from "@/lib/services/dataTrustDisclosure";
+import { PassportStampIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "MissionsScreen">;
 
-export function MissionsScreen({ navigation: _nav }: Props) {
+export function MissionsScreen({ navigation }: Props) {
   const { spacing } = useHungryTheme();
   const profile = useProfileStore((s) => s.profile);
   const progressMap = useMissionStore((s) => s.progressMap);
@@ -47,12 +49,22 @@ export function MissionsScreen({ navigation: _nav }: Props) {
   })();
 
   return (
-    <ProfileScreenShell
-      title="Weekly missions"
-      subtitle={`${completedCount}/${missions.length} completed · ${weekLabel}`}
-    >
+    <ProfileScreenShell title="Weekly missions">
+      {missions.length > 0 ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+          <Badge
+            label={`${completedCount}/${missions.length} completed`}
+            tone={completedCount === missions.length ? "success" : "neutral"}
+          />
+          <Badge label={weekLabel} />
+        </View>
+      ) : null}
       {missions.length === 0 ? (
-        <EmptyState title="No missions this week" body="Check back on Monday for new missions." />
+        <EmptyState
+          title="No missions this week"
+          body="Check back on Monday for new missions."
+          icon={<PassportStampIllustration testID="missions-empty-art" />}
+        />
       ) : (
         <View style={{ gap: spacing[3] }}>
           {/* Active first (what is left to do), then completed */}
@@ -61,6 +73,10 @@ export function MissionsScreen({ navigation: _nav }: Props) {
               key={mission.id}
               mission={mission}
               progress={progressMap[mission.id] ?? null}
+              start={(() => {
+                const next = missionStart(mission.missionType);
+                return { label: next.label, onPress: () => next.open(navigation) };
+              })()}
             />
           ))}
 

@@ -6,6 +6,7 @@ import test from "node:test";
 import {
   boardScoreLabel,
   dailyCreditLabel,
+  movementLabel,
   portfolioPointsLabel,
   portfolioPointsValue,
   rankLabel,
@@ -129,4 +130,21 @@ test("mock leaderboard: ranked by score, following scope narrows it, summary and
   const points = await hungryService.leaderboard.listMyPoints(3);
   assert.ok(points.length <= 3);
   assert.ok(points.every((item) => item.points === 10 || item.points === 2));
+});
+
+test("movementLabel says how far you moved since Monday and where you finished last week", () => {
+  assert.equal(movementLabel(null), null);
+  assert.equal(movementLabel({ lastWeekRank: null, weekStartAllRank: 4, allRank: 4 }), null);
+  assert.equal(
+    movementLabel({ lastWeekRank: 5, weekStartAllRank: 9, allRank: 6 }),
+    "Up 3 places since Monday · Last week #5",
+  );
+  assert.equal(
+    movementLabel({ lastWeekRank: null, weekStartAllRank: 2, allRank: 3 }),
+    "Down 1 place since Monday",
+  );
+  assert.equal(
+    movementLabel({ lastWeekRank: 1, weekStartAllRank: null, allRank: 7 }),
+    "Last week #1",
+  );
 });

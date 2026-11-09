@@ -14,6 +14,7 @@ interface FollowPillButtonProps {
   minWidth?: number;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
 /** Follow / Following / Requested pill shared by profiles and the follower lists. */
@@ -26,6 +27,7 @@ export function FollowPillButton({
   minWidth = 78,
   onPress,
   style,
+  testID,
 }: FollowPillButtonProps) {
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
@@ -36,6 +38,7 @@ export function FollowPillButton({
       // With the 8pt hitSlop the tap target is at least 44pt.
       hitSlop={8}
       onPress={onPress}
+      testID={testID}
       style={[
         {
           alignItems: "center",

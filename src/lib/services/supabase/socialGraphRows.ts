@@ -1,10 +1,17 @@
 /**
  * Row mappers for the social graph RPCs (migration 20261107180000): the relationship line on a
- * profile, taste matches for a page of people, suggested people and network stall picks.
+ * profile, taste matches for a page of people, suggested people and network stall picks, and the
+ * people at a stall or dish (20261109090000).
  * Pure, so the shapes are tested without a database.
  */
 import type { TasteVector } from "@/types/domain";
-import type { NetworkStallPick, PeopleSuggestion, ProfileRelationship } from "@/lib/services/types";
+import type {
+  NetworkStallPick,
+  PeopleSuggestion,
+  PlacePeople,
+  PlacePerson,
+  ProfileRelationship,
+} from "@/lib/services/types";
 
 type Row = Record<string, unknown>;
 
@@ -79,6 +86,25 @@ export function mapPeopleSuggestions(data: unknown): PeopleSuggestion[] {
       },
     ];
   });
+}
+
+export function mapPlacePeople(data: unknown): PlacePeople {
+  if (!Array.isArray(data)) return { people: [], totalPeople: 0 };
+  const people = (data as Row[]).flatMap((row): PlacePerson[] => {
+    const userId = text(row?.user_id);
+    if (!userId) return [];
+    return [
+      {
+        userId,
+        displayName: text(row.display_name) ?? FALLBACK_NAME,
+        avatarUrl: text(row.avatar_url),
+        isFollowed: row.is_followed === true,
+        contributions: Math.max(1, count(row.contributions)),
+      },
+    ];
+  });
+  const total = (data as Row[]).reduce((most, row) => Math.max(most, count(row?.total_people)), 0);
+  return { people, totalPeople: Math.max(total, people.length) };
 }
 
 export function mapNetworkStallPicks(data: unknown): NetworkStallPick[] {

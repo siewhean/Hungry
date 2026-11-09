@@ -45,6 +45,7 @@ import { usePublishedPostStore } from "@/store/usePublishedPostStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useHungryTheme } from "@/theme";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { FeedEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
 type ActivityTab = "messages" | "updates";
@@ -502,9 +503,11 @@ function UpdatesTab({
         const description =
           update.kind === "follow_request"
             ? `${update.actorName} requested to follow you. Open follow requests`
-            : update.kind === "follow"
-              ? `${update.actorName} started following you. Open their profile`
-              : `${update.actorName} ${update.text}${update.target ? `: ${update.target}` : ""}. ${formatTimeAgo(update.time)}`;
+            : update.kind === "board"
+              ? `${update.text}. Open the Leaderboard`
+              : update.kind === "follow"
+                ? `${update.actorName} started following you. Open their profile`
+                : `${update.actorName} ${update.text}${update.target ? `: ${update.target}` : ""}. ${formatTimeAgo(update.time)}`;
 
         return (
           <Pressable
@@ -515,6 +518,10 @@ function UpdatesTab({
               update.memberIds.forEach((memberId) => markActivityRead("update", memberId));
               if (update.kind === "follow_request") {
                 navigation.navigate("FollowRequests");
+                return;
+              }
+              if (update.kind === "board") {
+                navigation.navigate("Leaderboard");
                 return;
               }
               if (update.kind === "follow") {
@@ -547,6 +554,8 @@ function UpdatesTab({
                 />
               ) : update.kind === "submission" ? (
                 <AppSymbol name="storefront" fallback={Store} size={20} color={kindColor} />
+              ) : update.kind === "board" ? (
+                <AppSymbol name="leaderboard" size={20} color={kindColor} />
               ) : update.kind === "follow_request" || update.kind === "follow" ? (
                 <AppSymbol
                   name="person.badge.plus"
@@ -635,7 +644,11 @@ function UpdatesTab({
       ) : null}
 
       {rows.length === 0 && !isFirstLoad && !activityLoadFailed ? (
-        <EmptyState title="No updates yet" body="Activity updates will appear here." />
+        <EmptyState
+          title="No updates yet"
+          body="Activity updates will appear here."
+          icon={<FeedEmptyIllustration testID="activity-empty-art" />}
+        />
       ) : null}
     </ScrollView>
   );

@@ -9,6 +9,7 @@ import { useHungryTheme } from "@/theme";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import type { ProfileStackParamList } from "./ProfileStack";
+import { StorefrontIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "StallSubmissions">;
 
@@ -27,7 +28,7 @@ export function StallSubmissionsScreen({ navigation }: Props) {
   const { failed: loadFailed, retry } = useRetryableLoad(loadSubmissions, "stall submissions");
 
   return (
-    <ProfileScreenShell title="My submissions" subtitle="Stalls you've added, and what happened.">
+    <ProfileScreenShell title="My submissions">
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {submissions.length ? (
           <>
@@ -82,6 +83,7 @@ export function StallSubmissionsScreen({ navigation }: Props) {
             body="Add a stall you found and it will show up here with its status."
             ctaLabel="Add a stall"
             onPress={() => navigation.navigate("AddStall")}
+            icon={<StorefrontIllustration testID="submissions-empty-art" />}
           />
         )}
       </View>

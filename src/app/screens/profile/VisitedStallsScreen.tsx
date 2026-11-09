@@ -10,6 +10,7 @@ import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { MapPinBowlIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "VisitedStalls">;
 
@@ -22,10 +23,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
   const visitedVenues = visited.stalls;
 
   return (
-    <ProfileScreenShell
-      title="Visited stalls"
-      subtitle="Stalls you marked as tried or ate a dish at."
-    >
+    <ProfileScreenShell title="Visited stalls">
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {visitedVenues.length ? (
           visitedVenues.map((venue) => (
@@ -79,6 +77,7 @@ export function VisitedStallsScreen({ navigation }: Props) {
           <EmptyState
             title="No visited stalls yet"
             body="Mark stalls or dishes as tried to add them to this list."
+            icon={<MapPinBowlIllustration testID="visited-empty-art" />}
           />
         )}
       </View>

@@ -14,6 +14,7 @@ import { useHungryTheme } from "@/theme";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { MapPinBowlIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "FollowedStalls">;
 
@@ -65,10 +66,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
   };
 
   return (
-    <ProfileScreenShell
-      title="Followed stalls"
-      subtitle="We'll let you know when a stall updates its menu on Hungry."
-    >
+    <ProfileScreenShell title="Followed stalls">
       <View style={{ gap: spacing[3], paddingBottom: spacing[5] }}>
         {venues.length ? (
           <>
@@ -129,6 +127,7 @@ export function FollowedStallsScreen({ navigation }: Props) {
           <EmptyState
             title="No followed stalls yet"
             body="Tap Follow on a stall page to hear about its menu changes."
+            icon={<MapPinBowlIllustration testID="followed-stalls-empty-art" />}
           />
         )}
       </View>

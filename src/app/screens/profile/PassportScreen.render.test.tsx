@@ -119,3 +119,43 @@ test("before any stamp, the first stamp to aim for sits at the top instead of an
     "the first stamp comes before the stamp grid",
   );
 });
+
+test("with Food Portfolio on, a Leaderboard row shows your weekly rank and opens the board", async () => {
+  const { FEATURE_FLAGS } = await import("@/constants/featureFlags");
+  const { getHungryService } = await import("@/lib/services/serviceProvider");
+  const { createFakeNavigation } = await import("@/test/render");
+  const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const savedFlag = flags.foodPortfolioEnabled;
+  const leaderboard = getHungryService().leaderboard;
+  const originalSummary = leaderboard.getMySummary;
+  flags.foodPortfolioEnabled = true;
+  leaderboard.getMySummary = async () => ({
+    totalPoints: 120,
+    weekPoints: 40,
+    activeWeekRank: 4,
+    activeAllRank: 9,
+    trendingRank: null,
+    creditedPostsToday: 1,
+    dailyCap: 6,
+  });
+  try {
+    const navigation = createFakeNavigation();
+    const view = await renderScreen(PassportScreen as never, {
+      name: "PassportScreen",
+      navigation,
+    });
+    await view.settle();
+    assert.ok(view.findByLabel("Leaderboard, #4"));
+    await view.press(view.findByTestId("passport-leaderboard") as HTMLElement);
+    const opened = navigation.calls.filter((call) => call.method === "navigate").at(-1)?.args;
+    assert.deepEqual(opened, ["Leaderboard"]);
+  } finally {
+    flags.foodPortfolioEnabled = savedFlag;
+    leaderboard.getMySummary = originalSummary;
+  }
+});
+
+test("with Food Portfolio off, the Passport has no Leaderboard row", async () => {
+  const view = await renderScreen(PassportScreen as never, { name: "PassportScreen" });
+  assert.equal(view.findByTestId("passport-leaderboard"), null);
+});

@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 
-import { AppText, Avatar } from "@/components/ui";
+import { PersonFollowPill } from "@/components/social/PersonFollowPill";
+import { AppText, Avatar, Badge } from "@/components/ui";
 import {
   CaptionPreview,
   OwnReviewActions,
@@ -25,7 +26,14 @@ type Props = {
   onDeleted: () => void;
   /** The review was reported or its author blocked: drop it from the list. */
   onRemoved: () => void;
+  /** Follows are on: show a Follow pill beside an author you do not follow yet. */
+  followable?: boolean;
+  /** The author's place on this week's board, shown only for the top ten. */
+  boardRank?: number | null;
 };
+
+/** Ranks at or under this show on a review author. */
+export const REVIEW_RANK_MAX = 10;
 
 /** One review on a dish page: who and how many stars, the text, photos, owner reply, date and Helpful. */
 export function DishReviewCard({
@@ -37,7 +45,10 @@ export function DishReviewCard({
   onUpdated,
   onDeleted,
   onRemoved,
+  followable = false,
+  boardRank = null,
 }: Props) {
+  const showRank = boardRank != null && boardRank > 0 && boardRank <= REVIEW_RANK_MAX;
   const { componentRadii, palette, spacing } = useHungryTheme();
   return (
     <View
@@ -67,9 +78,25 @@ export function DishReviewCard({
             <AppText style={{ fontWeight: "900" }} numberOfLines={1}>
               {review.authorName}
             </AppText>
-            <ReviewStars rating={review.rating} />
+            <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+              <ReviewStars rating={review.rating} />
+              {showRank ? (
+                <Badge
+                  label={`#${boardRank}`}
+                  tone="amber"
+                  accessibilityLabel={`Number ${boardRank} on this week's board`}
+                />
+              ) : null}
+            </View>
           </View>
         </Pressable>
+        {followable && !isOwn && review.authorId ? (
+          <PersonFollowPill
+            userId={review.authorId}
+            name={review.authorName}
+            avatarUrl={review.authorAvatarUrl}
+          />
+        ) : null}
         {isOwn ? null : (
           <ReviewMoreButton review={review} returnRoute={returnRoute} onRemoved={onRemoved} />
         )}

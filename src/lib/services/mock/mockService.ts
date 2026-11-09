@@ -56,6 +56,7 @@ import type {
   LeaderboardBoard,
   LeaderboardQuery,
   LeaderboardRow,
+  LeaderboardMovement,
   LeaderboardSummary,
   PortfolioPointsEntry,
   BuildingDetail,
@@ -2894,6 +2895,46 @@ export const hungryService: HungryService = {
       return resolve(suggestions.slice(0, Math.min(Math.max(limit, 1), 50)));
     },
 
+    async getPlacePeople(place, limit = 5) {
+      // Like get_place_people: reviewers and posters at the stall (any of its dishes) or the dish,
+      // the viewer and blocked people left out, followed first, then the most active.
+      const venueId = place.venueId?.trim();
+      const dishId = place.dishId?.trim();
+      if (!venueId === !dishId) return resolve({ people: [], totalPeople: 0 });
+      const byPerson = new Map<
+        string,
+        { userId: string; displayName: string; avatarUrl?: string; contributions: number }
+      >();
+      const count = (userId: string | undefined, displayName: string, avatarUrl?: string) => {
+        if (!userId || userId === _profile.id || _blockedUsers.has(userId)) return;
+        const seen = byPerson.get(userId);
+        if (seen) seen.contributions += 1;
+        else byPerson.set(userId, { userId, displayName, avatarUrl, contributions: 1 });
+      };
+      for (const dish of dishes) {
+        if (dishId ? dish.id !== dishId : dish.venueId !== venueId) continue;
+        for (const review of dish.reviews ?? []) {
+          if (isMockReviewHiddenForViewer(review)) continue;
+          count(review.authorId, review.authorName, review.authorAvatarUrl);
+        }
+      }
+      for (const post of MOCK_BITES_FEED) {
+        if (dishId ? post.dishId !== dishId : post.venueId !== venueId) continue;
+        count(post.authorId, post.authorName, post.authorAvatar);
+      }
+      const ranked = Array.from(byPerson.values())
+        .map((person) => ({ ...person, isFollowed: _userFollows.has(person.userId) }))
+        .sort(
+          (left, right) =>
+            Number(right.isFollowed) - Number(left.isFollowed) ||
+            right.contributions - left.contributions,
+        );
+      return resolve({
+        people: ranked.slice(0, Math.min(Math.max(Math.floor(limit), 1), 10)),
+        totalPeople: ranked.length,
+      });
+    },
+
     async listNetworkStallPicks(limit = 30) {
       // The people you follow "loved" a few seeded stalls; with no follows, nothing to show.
       const followed = Array.from(_userFollows).filter((id) => !_blockedUsers.has(id));
@@ -3113,6 +3154,21 @@ export const hungryService: HungryService = {
         ),
         dailyCap: MOCK_LEADERBOARD_DAILY_CAP,
       } satisfies LeaderboardSummary);
+    },
+
+    async getMyMovement() {
+      await hydrateSocial();
+      // The demo board has no history: no last week, and no move since Monday.
+      const scores = [...mockLeaderboardScores("active").values()].sort(
+        (a, b) => b.score - a.score,
+      );
+      const mine = scores.find((entry) => entry.userId === _profile.id);
+      const allRank = mine ? scores.filter((entry) => entry.score > mine.score).length + 1 : null;
+      return resolve({
+        lastWeekRank: null,
+        weekStartAllRank: allRank,
+        allRank,
+      } satisfies LeaderboardMovement);
     },
 
     async listMyPoints(limit = 30) {

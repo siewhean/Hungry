@@ -7,7 +7,6 @@ import { useHungryTheme } from "@/theme";
 
 interface ProfileScreenShellProps {
   title: string;
-  subtitle?: string;
   headerRight?: ReactNode;
   /** Replaces the back button, such as a Cancel on a form. */
   headerLeft?: ReactNode;
@@ -22,7 +21,6 @@ interface ProfileScreenShellProps {
 export function ProfileScreenShell({
   children,
   title,
-  subtitle,
   headerRight,
   headerLeft,
   showBack = true,
@@ -39,7 +37,6 @@ export function ProfileScreenShell({
   return (
     <Screen
       title={title}
-      subtitle={subtitle}
       headerRight={headerRight}
       headerLeft={headerLeft}
       showBack={showBack}

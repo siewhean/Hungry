@@ -156,3 +156,32 @@ test("a guest gets empty results and no call", async () => {
   assert.deepEqual(await service.leaderboard.listMyPoints(), []);
   assert.equal(fake.rpcCalls.length, 0);
 });
+
+test("getMyMovement maps the row, and an older backend without the RPC gives null", async () => {
+  fake.rpc.get_my_rank_movement = () => ({
+    data: [{ last_week_rank: 5, week_start_all_rank: "9", all_rank: null }],
+  });
+  assert.deepEqual(await service.leaderboard.getMyMovement(), {
+    lastWeekRank: 5,
+    weekStartAllRank: 9,
+    allRank: null,
+  });
+  assert.equal(fake.rpcCalls.at(-1)?.name, "get_my_rank_movement");
+
+  fake.rpc.get_my_rank_movement = () => ({
+    data: null,
+    error: { code: "PGRST202", message: "Could not find the function" },
+  });
+  assert.equal(await service.leaderboard.getMyMovement(), null);
+
+  fake.rpc.get_my_rank_movement = () => ({
+    data: null,
+    error: { code: "57014", message: "timeout" },
+  });
+  await assert.rejects(service.leaderboard.getMyMovement());
+
+  auth.userId = null;
+  fake.rpcCalls.length = 0;
+  assert.equal(await service.leaderboard.getMyMovement(), null);
+  assert.equal(fake.rpcCalls.length, 0);
+});

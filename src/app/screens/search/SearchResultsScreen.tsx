@@ -104,6 +104,7 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
+import { PeopleSearchResults } from "@/components/social/PeopleSearchResults";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
@@ -1402,6 +1403,21 @@ function RawCatalogBrowseGrid({
           ))}
         </View>
       ) : null}
+      <PeopleSearchResults
+        query={query}
+        enabled={
+          isAuthenticated &&
+          FEATURE_FLAGS.followConnectionsEnabled &&
+          FEATURE_FLAGS.foodPortfolioEnabled
+        }
+        onOpen={(person) =>
+          navigation.navigate("UserProfile", {
+            authorId: person.userId,
+            authorName: person.displayName,
+            authorAvatarUrl: person.avatarUrl,
+          })
+        }
+      />
       {/* One rail: the Dishes and Stalls segment, the filters read from the text, the chosen filters,
           and the location chip. */}
       <ScrollView

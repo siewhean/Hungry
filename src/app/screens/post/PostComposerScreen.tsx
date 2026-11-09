@@ -17,6 +17,7 @@ import {
   Screen,
 } from "@/components/ui";
 import { publishComposerPost } from "@/features/post/publishing";
+import { loadPostPoints, postedToastMessage } from "@/features/foodPortfolio/postAnnouncement";
 import { useComposerStore, type MediaItem } from "@/features/post/useComposerStore";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 import { createClientReviewId } from "@/features/review/reviewDraft";
@@ -228,19 +229,32 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         composer.setCaption(sanitizeFreeText(caption, POST_CAPTION_MAX_LENGTH) || targetDish.name);
         composer.addMedia(selectedMedia);
         pendingPostIdRef.current ??= createClientReviewId();
-        await publishComposerPost({
+        const published = await publishComposerPost({
           publishMode: "post",
           routeDishId: targetDish.id,
           routeVenueId: targetVenue?.id ?? targetDish.venueId,
           clientPostId: pendingPostIdRef.current,
         });
         pendingPostIdRef.current = null;
-        showToast({
-          message: FEATURE_FLAGS.foodPortfolioEnabled
-            ? "Posted to your Food Portfolio."
-            : "Post published successfully.",
-          tone: "success",
-        });
+        if (FEATURE_FLAGS.foodPortfolioEnabled) {
+          // The points read is capped, so the toast follows the post within a second or two.
+          const points = published?.id ? await loadPostPoints(published.id) : null;
+          showToast({
+            message: postedToastMessage(points),
+            tone: "success",
+            duration: 5000,
+            action: {
+              label: "See it",
+              onPress: () =>
+                navigation.navigate("MainTabs", {
+                  screen: "Profile",
+                  params: { screen: "ProfileHome" },
+                } as never),
+            },
+          });
+        } else {
+          showToast({ message: "Post published successfully.", tone: "success" });
+        }
         useComposerStore.getState().reset();
         hasPublishedRef.current = true;
         trackAnalyticsEvent("post_published", {
@@ -348,7 +362,7 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   }
 
   return (
-    <Screen keyboardAvoiding title="Create post" subtitle="Share a photo or video of what you ate.">
+    <Screen keyboardAvoiding title="Create post">
       <Card>
         <View style={{ gap: spacing[3] }}>
           <Badge label="Photo or video" tone="neutral" />

@@ -369,7 +369,13 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /chipId === "halal"[\s\S]*dietaryFlags\.includes\("halal"\)/);
   assert.match(discover, /chipId === "spicy"[\s\S]*tasteVector\.spicy >= 6/);
   assert.match(discover, /chipId === "cheap"[\s\S]*dish\.price < HOME_CHEAP_PRICE_LIMIT/);
-  assert.doesNotMatch(discover, /navigation\.navigate\("UserProfile"/);
+  // Follows are back (2026-11-08 connection plan): Home opens a person only from its
+  // "People you may know" rail, never from a dish or stall card.
+  assert.equal(discover.match(/navigation\.navigate\("UserProfile"/g)?.length ?? 0, 1);
+  assert.match(
+    discover,
+    /<PeopleSuggestionsSection[\s\S]{0,200}navigation\.navigate\("UserProfile"/,
+  );
   assert.match(
     discover,
     /const areaDishPool = areaDishes\.length \? areaDishes : allDiscoverDishes/,

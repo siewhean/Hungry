@@ -35,6 +35,7 @@ import { useHungryTheme } from "@/theme";
 import type { PublicUserProfile, Review, StallPost } from "@/types/domain";
 import { ProfileGridSkeleton, ProfileReviewsSkeleton } from "./ProfileGridSkeleton";
 import { ProfileScreenShell } from "./ProfileScreenShell";
+import { LockHeartIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 type UserProfileContentProps = {
   navigation: any;
@@ -485,8 +486,6 @@ export function UserProfileContent({
         },
       ]
     : [];
-  // Dishes posted, as the Food Portfolio counted them ("20+" while more pages remain).
-  const [portfolioPostCount, setPortfolioPostCount] = useState<number | string | null>(null);
   const reviewsStat: ProfileStat = {
     key: "reviews",
     label: pluralLabel(reviewCount, "Review"),
@@ -495,20 +494,12 @@ export function UserProfileContent({
     onPress: () => setActiveTab("reviews"),
   };
   // A private account you do not follow shows only the follow counts. With the Food Portfolio the
-  // row reads Posts, Reviews, Followers, Following (its own Stalls tab lists the stalls); without
-  // it, the stalls count closes the row (the visited-stalls list is never shown for others).
+  // row reads Reviews, Followers, Following; the Portfolio's own row carries Dishes, Stalls and
+  // Rank. Without it, the stalls count closes the row (the visited-stalls list is never shown).
   const stats: ProfileStat[] = isPrivateLocked
     ? followStats
     : FEATURE_FLAGS.foodPortfolioEnabled
-      ? [
-          {
-            key: "posts",
-            label: pluralLabel(portfolioPostCount, "Post"),
-            value: portfolioPostCount,
-          },
-          reviewsStat,
-          ...followStats,
-        ]
+      ? [reviewsStat, ...followStats]
       : [reviewsStat, ...followStats, { key: "stalls", label: "Stalls", value: stallsCount }];
 
   // A wrong or deleted id (or an account hidden from this viewer) is not a profile: no fake
@@ -719,14 +710,7 @@ export function UserProfileContent({
                       ? `Follow ${authorName} to see their posts and reviews.`
                       : `Follow ${authorName} to see their reviews.`
                 }
-                icon={
-                  <AppSymbol
-                    name="profilePrivate"
-                    size={36}
-                    weight="regular"
-                    color={palette.textSecondary}
-                  />
-                }
+                icon={<LockHeartIllustration testID="private-profile-art" />}
               />
             ) : (
               <View style={{ gap: spacing[4], marginTop: spacing[2] }}>
@@ -736,7 +720,6 @@ export function UserProfileContent({
                   ownerName={authorName}
                   isSelf={false}
                   navigation={rootNavigation}
-                  onPostCountChange={setPortfolioPostCount}
                 />
                 <FavouriteDishesRow
                   dishIds={pinnedDishIds}
@@ -853,6 +836,22 @@ export function UserProfileContent({
                           key={review.id}
                           review={review}
                           dish={reviewDishInfo(review.dishId)}
+                          onOpenReview={() => {
+                            trackAnalyticsEvent("profile_item_opened", {
+                              kind: "review",
+                              position: index,
+                              source: "user_profile",
+                            });
+                            rootNavigation.navigate("ReviewDetail", { reviewId: review.id });
+                          }}
+                          onOpenStall={
+                            review.venueId
+                              ? () =>
+                                  rootNavigation.navigate("StallDetail", {
+                                    venueId: review.venueId as string,
+                                  })
+                              : undefined
+                          }
                           onOpenDish={
                             review.dishId
                               ? () => {

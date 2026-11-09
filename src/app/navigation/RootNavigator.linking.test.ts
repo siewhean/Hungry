@@ -10,6 +10,7 @@ import {
   createRootLinking,
   parseAuthCallbackParams,
   parseOrderDeepLinkQuery,
+  parsePlacePeopleQuery,
   stripEmailQuery,
   withoutEmailParam,
 } from "@/app/navigation/linking";
@@ -56,6 +57,58 @@ test("with the Food Portfolio on, /following and /leaderboard open their screens
     unknown
   >;
   if (!saved) assert.equal(off.FollowingFeed, undefined);
+});
+
+test("/user/:id/people opens their People screen with the Food Portfolio on; /portfolio opens the profile", () => {
+  const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = flags.foodPortfolioEnabled;
+  flags.foodPortfolioEnabled = true;
+  const signedIn = () => ({ isAuthReady: true, isAuthenticated: true });
+  try {
+    const linking = createRootLinking("exp://127.0.0.1:8081/--/", signedIn);
+    assert.deepEqual(linking.getStateFromPath("user/user-1/people")?.routes?.[1], {
+      name: "UserFollowers",
+      params: { userId: "user-1" },
+    });
+    assert.deepEqual(linking.getStateFromPath("user/user-1/portfolio")?.routes?.[1], {
+      name: "UserProfile",
+      params: { authorId: "user-1" },
+    });
+    assert.equal(linking.getStateFromPath("user/%3Cscript%3E/people"), undefined);
+  } finally {
+    flags.foodPortfolioEnabled = saved;
+  }
+  if (!saved) {
+    const off = createRootLinking("exp://127.0.0.1:8081/--/", signedIn);
+    assert.equal(off.getStateFromPath("user/user-1/people")?.routes?.[1]?.name, "UserProfile");
+  }
+});
+
+test("/people?stall= and /people?dish= open People here with follows on; one safe id only", () => {
+  const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = { food: flags.foodPortfolioEnabled, follows: flags.followConnectionsEnabled };
+  flags.foodPortfolioEnabled = true;
+  flags.followConnectionsEnabled = true;
+  const signedIn = () => ({ isAuthReady: true, isAuthenticated: true });
+  try {
+    const linking = createRootLinking("exp://127.0.0.1:8081/--/", signedIn);
+    assert.deepEqual(linking.getStateFromPath("people?stall=venue-1")?.routes?.[1], {
+      name: "PlacePeople",
+      params: { venueId: "venue-1" },
+    });
+    assert.deepEqual(linking.getStateFromPath("people?dish=dish-1")?.routes?.[1], {
+      name: "PlacePeople",
+      params: { dishId: "dish-1" },
+    });
+    assert.equal(linking.getStateFromPath("people?stall=v1&dish=d1"), undefined);
+    assert.equal(linking.getStateFromPath("people"), undefined);
+    assert.equal(linking.getStateFromPath("people?stall=%3Cscript%3E"), undefined);
+  } finally {
+    flags.foodPortfolioEnabled = saved.food;
+    flags.followConnectionsEnabled = saved.follows;
+  }
+  assert.deepEqual(parsePlacePeopleQuery("people?dish=d-2#x"), { dishId: "d-2" });
+  assert.equal(parsePlacePeopleQuery("people?stall="), undefined);
 });
 
 test("weekly picks /home link opens the Home tab", () => {

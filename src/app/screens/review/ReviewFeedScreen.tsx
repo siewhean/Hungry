@@ -71,8 +71,11 @@ import { openTrustedExternalUrl } from "@/lib/security/safeLinking";
 import { SUPPORT_EMAIL } from "@/constants/links";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { ReviewFirstList } from "@/components/review/ReviewFirstList";
+import { ReviewersRail } from "@/components/review/ReviewersRail";
+import { peopleLinksEnabled } from "@/components/social/PersonFollowPill";
 import { useVisitedStalls } from "@/features/saved/useSavedStalls";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -714,6 +717,7 @@ export function ReviewFeedScreen() {
     trimmedQuery,
   ]);
   const searchHasMore = Boolean(serverSearchItems && searchState?.hasMore);
+  const railReviews = useMemo(() => filteredReviews.map((item) => item.review), [filteredReviews]);
 
   // review_tile_labels_v1: exposure only once a focused, non-empty live grid is on screen (the
   // tab is preloaded, and mock tiles open the dish page). Latched, so a tab swipe never flips
@@ -962,6 +966,22 @@ export function ReviewFeedScreen() {
             }
             onEndReached={() => void handleLoadMore()}
             onEndReachedThreshold={0.5}
+            ListHeaderComponent={
+              peopleLinksEnabled() && !searchQuery ? (
+                <ReviewersRail
+                  reviews={railReviews}
+                  viewerId={viewerId}
+                  onOpen={(person) => {
+                    trackAnalyticsEvent("reviewer_opened", { source: "review_feed" });
+                    navigation.navigate("UserProfile", {
+                      authorId: person.userId,
+                      authorName: person.name,
+                      authorAvatarUrl: person.avatarUrl,
+                    });
+                  }}
+                />
+              ) : null
+            }
             ListEmptyComponent={
               serviceLoadFailed ? (
                 <EmptyState
@@ -1009,6 +1029,7 @@ export function ReviewFeedScreen() {
                     body="Rate your next meal, with a photo if you like. Reviews show here."
                     ctaLabel="Write a review"
                     onPress={handleWriteReview}
+                    icon={<ReviewBubblesIllustration testID="review-feed-empty-art" />}
                   />
                   {/* Places the diner has been: each one tap from its review. */}
                   <ReviewFirstList

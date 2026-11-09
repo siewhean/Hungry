@@ -1,0 +1,14 @@
+{
+  "version": "20261109090000",
+  "name": "20261109090000_place_people",
+  "result": "pass",
+  "rehearsed_at": "2026-11-08T17:23:28Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "93b4e37ed169d74f3770c5672940ee2141b855b3",
+  "up_sha256": "8e7a6262b2d23fc29859e8f34aff6e38b82a6d912920c70dd513699daf1b084f",
+  "down_sha256": "5eb5ad1800d01e5ef5efcf3340f525ae3705c05561e9a397bc81207b627922ed",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/place_people.sql"]
+}

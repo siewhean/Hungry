@@ -39,7 +39,8 @@ export type ParamKey =
   | "stallVisited"
   | "story"
   | "otherUser"
-  | "tasteCompare";
+  | "tasteCompare"
+  | "placePeople";
 
 export interface ScreenRow {
   name: string;
@@ -612,13 +613,20 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "FollowingFeedScreen",
     file: "src/app/screens/profile/FollowingFeedScreen.tsx",
     scenario: "user",
-    expect: /New dishes from people you follow/,
+    expect: /Following/,
+  },
+  {
+    // Your own People on the Feed tab (Following when the Food Portfolio is off).
+    name: "PeopleFeedScreen",
+    file: "src/app/screens/profile/ProfileConnectionsScreen.tsx",
+    scenario: "user",
+    expect: /Following/,
   },
   {
     name: "LeaderboardScreen",
     file: "src/app/screens/profile/LeaderboardScreen.tsx",
     scenario: "user",
-    expect: /Post dishes to climb/,
+    expect: /How points work/,
   },
   {
     name: "TastePaletteScreen",
@@ -632,6 +640,13 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     scenario: "user",
     params: "tasteCompare",
     expect: /Compare palates/,
+  },
+  {
+    name: "PlacePeopleScreen",
+    file: "src/app/screens/profile/PlacePeopleScreen.tsx",
+    scenario: "user",
+    params: "placePeople",
+    expect: /People here/,
   },
   {
     name: "FollowedStallsScreen",

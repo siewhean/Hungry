@@ -1,12 +1,31 @@
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RouteProp, useRoute } from "@react-navigation/native";
 
-import { AppSymbol, AppText, Avatar, Button, EmptyState, Input, ListRow } from "@/components/ui";
+import {
+  AppSymbol,
+  AppText,
+  Avatar,
+  Button,
+  Chip,
+  EmptyState,
+  Input,
+  ListRow,
+  SegmentedControl,
+} from "@/components/ui";
+import { FollowingFeedList } from "@/components/social/FollowingFeedList";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { rankChipLabel, useWeeklyRanks } from "@/features/leaderboard/boardRanks";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 import { OverflowMenu } from "@/components/ui/OverflowMenu";
 import { FollowPillButton } from "@/components/social/FollowPillButton";
 import { PeopleSuggestionsSection } from "@/components/social/PeopleSuggestionsSection";
+import {
+  FollowersEmptyIllustration,
+  FollowingEmptyIllustration,
+  PeopleFoundIllustration,
+} from "@/components/icons/food/SocialIllustrations";
 import { getRootNavigation } from "@/app/navigation/getRootNavigation";
 import { useFollowPress } from "@/features/profile/useFollowPress";
 import { tasteMatchLabel } from "@/features/social/relationship";
@@ -23,11 +42,31 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import type { ProfileStackParamList } from "./ProfileStack";
 import { ProfileScreenShell } from "./ProfileScreenShell";
 
-// Also registered on the root stack (UserFollowers/UserFollowing) for other users' profiles.
+// Also registered on the root stack (UserFollowers/UserFollowing) for other users' profiles,
+// and as FollowingFeed (your own People, on the Feed tab).
 type ProfileConnectionsRoute = RouteProp<
-  ProfileStackParamList & Pick<RootStackParamList, "UserFollowers" | "UserFollowing">,
-  "Followers" | "Following" | "UserFollowers" | "UserFollowing"
+  ProfileStackParamList &
+    Pick<RootStackParamList, "UserFollowers" | "UserFollowing" | "FollowingFeed">,
+  "Followers" | "Following" | "UserFollowers" | "UserFollowing" | "FollowingFeed"
 >;
+
+/** People's tabs. Feed (dishes from people you follow) is on your own People only. */
+export type PeopleTab = "followers" | "following" | "feed";
+type PeopleSort = "match" | "newest";
+
+/** "Followers 120" for a tab label; the bare word while the count is unknown. */
+export function peopleTabLabel(word: string, count: number | null | undefined): string {
+  return typeof count === "number" ? `${word} ${count}` : word;
+}
+
+/** A person's second line: taste match and their place on this week's board. */
+export function personSubtitle(tasteMatch?: number, rank?: number | null): string | undefined {
+  const parts = [
+    tasteMatch !== undefined ? tasteMatchLabel(tasteMatch) : null,
+    rankChipLabel(rank) ? `${rankChipLabel(rank)} this week` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : undefined;
+}
 
 type UserProfileItem = {
   userId: string;
@@ -37,7 +76,7 @@ type UserProfileItem = {
 
 type Props =
   | NativeStackScreenProps<ProfileStackParamList, "Followers" | "Following">
-  | NativeStackScreenProps<RootStackParamList, "UserFollowers" | "UserFollowing">;
+  | NativeStackScreenProps<RootStackParamList, "UserFollowers" | "UserFollowing" | "FollowingFeed">;
 
 /** Rows per request; matches the list RPCs' default page size. */
 const CONNECTIONS_PAGE_SIZE = 100;
@@ -78,6 +117,7 @@ const PersonRow = memo(function PersonRow({
   canRemove,
   first,
   tasteMatch,
+  rank,
   onOpen,
   onRemove,
 }: {
@@ -85,6 +125,8 @@ const PersonRow = memo(function PersonRow({
   viewerId: string;
   /** 0-100 taste match with the viewer, when both have a palate. */
   tasteMatch?: number;
+  /** Their place on this week's Most active board. */
+  rank?: number | null;
   /** Your own Followers list: offer "Remove", and "Follow back" for people you do not follow. */
   canRemove: boolean;
   first: boolean;
@@ -162,9 +204,12 @@ const PersonRow = memo(function PersonRow({
     <ListRow
       first={first}
       title={person.name}
-      subtitle={tasteMatch !== undefined ? tasteMatchLabel(tasteMatch) : undefined}
+      subtitle={personSubtitle(tasteMatch, rank)}
       titleLines={2}
-      accessibilityHint="Opens their profile"
+      accessibilityHint={
+        FEATURE_FLAGS.foodPortfolioEnabled ? "Opens their Food Portfolio" : "Opens their profile"
+      }
+      chevron
       onPress={() => onOpen(person)}
       leading={<Avatar name={person.name} uri={person.avatarUrl} size={44} />}
       trailing={trailing}
@@ -174,7 +219,15 @@ const PersonRow = memo(function PersonRow({
 
 function ProfileConnectionsScreen({ navigation }: Props) {
   const { palette, spacing } = useHungryTheme();
-  const route = useRoute<ProfileConnectionsRoute>();
+  const screenRoute = useRoute<ProfileConnectionsRoute>();
+  // FollowingFeed's params are a stall filter, not a person: it is always your own People.
+  const route = {
+    name: screenRoute.name,
+    params:
+      screenRoute.name === "FollowingFeed"
+        ? undefined
+        : (screenRoute.params as { userId?: string; userDisplayName?: string } | undefined),
+  };
   const rootNavigation = getRootNavigation(navigation as any);
   const markFollowedUserIds = useSocialStore((state) => state.markFollowedUserIds);
   const [searchQuery, setSearchQuery] = useState("");
@@ -183,7 +236,60 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const targetUserId = route.params?.userId ?? profile.id;
   const targetDisplayName = route.params?.userDisplayName?.trim() || profile.displayName;
   const isOwnProfile = targetUserId === profile.id;
-  const isFollowingTab = route.name === "Following" || route.name === "UserFollowing";
+  const showFeedTab = isOwnProfile && FEATURE_FLAGS.foodPortfolioEnabled;
+  const initialTab: PeopleTab =
+    route.name === "FollowingFeed"
+      ? showFeedTab
+        ? "feed"
+        : "following"
+      : route.name === "Following" || route.name === "UserFollowing"
+        ? "following"
+        : "followers";
+  const [tab, setTab] = useState<PeopleTab>(initialTab);
+  const isFollowingTab = tab === "following";
+  const isFeedTab = tab === "feed";
+  const feedVenue =
+    route.name === "FollowingFeed"
+      ? (screenRoute.params as RootStackParamList["FollowingFeed"])
+      : undefined;
+  const [venueFilter, setVenueFilter] = useState(feedVenue?.venueId ? feedVenue : undefined);
+  const [sort, setSort] = useState<PeopleSort>("match");
+  const [followCounts, setFollowCounts] = useState<{
+    followersCount: number;
+    followingCount: number;
+  } | null>(null);
+  const [requestCount, setRequestCount] = useState(0);
+  const weeklyRanks = useWeeklyRanks(FEATURE_FLAGS.foodPortfolioEnabled && isAuthenticated);
+
+  useEffect(() => {
+    trackAnalyticsEvent("people_opened", { tab: initialTab, own: isOwnProfile });
+    // Once per screen.
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    void getHungryService()
+      .social.getFollowCounts(targetUserId)
+      .then((counts) => {
+        if (isActive) setFollowCounts(counts);
+      })
+      .catch((error) => {
+        reportError(error, { screen: "ProfileConnections", action: "load_follow_counts" });
+      });
+    if (isOwnProfile && isAuthenticated) {
+      void getHungryService()
+        .social.getFollowRequestCount()
+        .then((count) => {
+          if (isActive) setRequestCount(count);
+        })
+        .catch((error) => {
+          reportError(error, { screen: "ProfileConnections", action: "load_request_count" });
+        });
+    }
+    return () => {
+      isActive = false;
+    };
+  }, [isAuthenticated, isOwnProfile, targetUserId]);
   // Lists come only from the server for the profile being viewed; local follow state
   // only drives each row's Follow button.
   const [people, setPeople] = useState<UserProfileItem[]>([]);
@@ -284,8 +390,9 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const visiblePeople = useMemo(() => {
     // On your own lists you are not one of the people (you cannot follow yourself).
     const others = isOwnProfile ? people.filter((user) => user.userId !== profile.id) : people;
-    if (!normalizedQuery) return others;
-    return others.filter((user) => user.name.toLowerCase().includes(normalizedQuery));
+    return normalizedQuery
+      ? others.filter((user) => user.name.toLowerCase().includes(normalizedQuery))
+      : others;
   }, [isOwnProfile, people, normalizedQuery, profile.id]);
 
   // Find people: your own Following list also searches everyone on Hungry (server side).
@@ -337,6 +444,14 @@ function ProfileConnectionsScreen({ navigation }: Props) {
     scoredIds,
     isAuthenticated && profile.id !== "guest-user" && !listsHidden,
   );
+  // Best match first when there are scores to rank by; "Newest" keeps the server's order.
+  const hasScores = Object.keys(tasteMatches).length > 0;
+  const sortedPeople = useMemo(() => {
+    if (sort !== "match" || !hasScores) return visiblePeople;
+    return [...visiblePeople].sort(
+      (a, b) => (tasteMatches[b.userId] ?? -1) - (tasteMatches[a.userId] ?? -1),
+    );
+  }, [hasScores, sort, tasteMatches, visiblePeople]);
   const newPeople = useMemo(
     () =>
       foundPeople.filter((person) => !knownIds.has(person.userId) && person.userId !== profile.id),
@@ -387,6 +502,8 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   );
 
   const title = isFollowingTab ? "Following" : "Followers";
+  const screenTitle = isOwnProfile ? "People" : targetDisplayName;
+  const openFollowingTab = useCallback(() => setTab("following"), []);
   const emptyTitle = listsHidden
     ? "This account is private"
     : normalizedQuery
@@ -439,12 +556,18 @@ function ProfileConnectionsScreen({ navigation }: Props) {
       title={emptyTitle}
       body={emptyBody}
       icon={
-        <AppSymbol
-          name={listsHidden ? "profilePrivate" : "people"}
-          size={36}
-          weight="regular"
-          color={palette.textSecondary}
-        />
+        listsHidden || normalizedQuery ? (
+          <AppSymbol
+            name={listsHidden ? "profilePrivate" : "search"}
+            size={36}
+            weight="regular"
+            color={palette.textSecondary}
+          />
+        ) : isFollowingTab ? (
+          <FollowingEmptyIllustration testID="connections-empty-following-art" />
+        ) : (
+          <FollowersEmptyIllustration testID="connections-empty-followers-art" />
+        )
       }
     />
   );
@@ -460,7 +583,12 @@ function ProfileConnectionsScreen({ navigation }: Props) {
       ) : null}
       {canFindPeople && normalizedQuery.length >= 2 ? (
         <View testID="find-people-results">
-          <AppText variant="h3">People on Hungry</AppText>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[3] }}>
+            {newPeople.length > 0 && !isFindingPeople ? (
+              <PeopleFoundIllustration size={48} testID="find-people-art" />
+            ) : null}
+            <AppText variant="h3">People on Hungry</AppText>
+          </View>
           {isFindingPeople ? (
             <ActivityIndicator color={palette.orange} accessibilityLabel="Searching people" />
           ) : findPeopleFailed ? (
@@ -475,6 +603,7 @@ function ProfileConnectionsScreen({ navigation }: Props) {
                 person={person}
                 viewerId={profile.id}
                 tasteMatch={tasteMatches[person.userId]}
+                rank={weeklyRanks.get(person.userId)}
                 canRemove={false}
                 onOpen={openPerson}
                 onRemove={removeFollower}
@@ -496,47 +625,143 @@ function ProfileConnectionsScreen({ navigation }: Props) {
           }
         />
       ) : null}
+      {isOwnProfile && isAuthenticated && !isLoadingConnections ? (
+        <Pressable
+          testID="people-visibility-link"
+          accessibilityRole="link"
+          accessibilityLabel="Who can see your profile. Opens Settings"
+          onPress={() => rootNavigation.navigate("Settings")}
+          style={{
+            alignItems: "center",
+            alignSelf: "flex-start",
+            flexDirection: "row",
+            gap: spacing[1],
+            minHeight: 44,
+          }}
+        >
+          <AppSymbol name="profilePrivate" size={14} color={palette.textSecondary} />
+          <AppText variant="bodySmall" tone="secondary">
+            Who can see your profile
+          </AppText>
+        </Pressable>
+      ) : null}
     </View>
   );
 
+  const tabOptions = [
+    {
+      value: "followers" as const,
+      label: peopleTabLabel("Followers", followCounts?.followersCount),
+      accessibilityLabel: peopleTabLabel("Followers", followCounts?.followersCount),
+    },
+    {
+      value: "following" as const,
+      label: peopleTabLabel("Following", followCounts?.followingCount),
+      accessibilityLabel: peopleTabLabel("Following", followCounts?.followingCount),
+    },
+    ...(showFeedTab ? [{ value: "feed" as const, label: "Feed", accessibilityLabel: "Feed" }] : []),
+  ];
+
+  const requestsBanner =
+    isOwnProfile && requestCount > 0 ? (
+      <Pressable
+        testID="people-requests-banner"
+        accessibilityRole="button"
+        accessibilityLabel={`${requestCount} follow ${requestCount === 1 ? "request" : "requests"}. Review them`}
+        onPress={() => rootNavigation.navigate("FollowRequests")}
+        style={({ pressed }) => ({
+          alignItems: "center",
+          backgroundColor: pressed ? palette.bgSoft : palette.orangeLight,
+          borderRadius: 12,
+          flexDirection: "row",
+          gap: spacing[3],
+          minHeight: 48,
+          paddingHorizontal: spacing[3],
+        })}
+      >
+        <AppSymbol name="followRequests" size={20} color={palette.accentText} />
+        <AppText variant="bodyBold" style={{ flex: 1 }}>
+          {`${requestCount} follow ${requestCount === 1 ? "request" : "requests"}`}
+        </AppText>
+        <AppSymbol name="chevronRight" size={14} color={palette.textMuted} />
+      </Pressable>
+    ) : null;
+
   return (
-    <ProfileScreenShell title={title} scroll={false}>
-      <Input
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        placeholder={
-          canFindPeople ? "Search or find people..." : `Search ${title.toLowerCase()}...`
-        }
-        accessibilityLabel={`Search ${title.toLowerCase()}`}
-        leftIcon={<AppSymbol name="search" size={18} weight="regular" color={palette.textMuted} />}
-        autoCapitalize="none"
-        autoCorrect={false}
+    // The Feed tab scrolls with the shell; the two lists are their own virtualised lists.
+    <ProfileScreenShell title={screenTitle} scroll={isFeedTab} testID="people-screen">
+      <SegmentedControl
+        testID="people-tabs"
+        accessibilityLabel="Show followers, following or the feed"
+        options={tabOptions}
+        value={tab}
+        onChange={(next) => {
+          setSearchQuery("");
+          setTab(next);
+        }}
       />
-      <FlatList
-        style={{ flex: 1 }}
-        data={isLoadingConnections || loadFailed ? [] : visiblePeople}
-        keyExtractor={(person) => person.userId}
-        renderItem={({ item, index }) => (
-          <PersonRow
-            first={index === 0}
-            person={item}
-            viewerId={profile.id}
-            tasteMatch={tasteMatches[item.userId]}
-            canRemove={isOwnProfile && !isFollowingTab}
-            onOpen={openPerson}
-            onRemove={removeFollower}
+      {requestsBanner}
+      {isFeedTab ? (
+        <FollowingFeedList
+          navigation={rootNavigation}
+          venueId={venueFilter?.venueId}
+          venueName={venueFilter?.venueName}
+          onClearVenue={() => setVenueFilter(undefined)}
+          onFindPeople={openFollowingTab}
+        />
+      ) : (
+        <>
+          <Input
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={
+              canFindPeople ? "Search or find people..." : `Search ${title.toLowerCase()}...`
+            }
+            accessibilityLabel={`Search ${title.toLowerCase()}`}
+            leftIcon={
+              <AppSymbol name="search" size={18} weight="regular" color={palette.textMuted} />
+            }
+            autoCapitalize="none"
+            autoCorrect={false}
           />
-        )}
-        ListEmptyComponent={emptyComponent}
-        ListFooterComponent={footerComponent}
-        ListFooterComponentStyle={{ paddingTop: spacing[3] }}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: spacing[8] }}
-      />
+          {hasScores && visiblePeople.length > 1 ? (
+            <View style={{ flexDirection: "row", gap: spacing[2] }}>
+              <Chip
+                label="Best match"
+                selected={sort === "match"}
+                onPress={() => setSort("match")}
+              />
+              <Chip label="Newest" selected={sort === "newest"} onPress={() => setSort("newest")} />
+            </View>
+          ) : null}
+          <FlatList
+            style={{ flex: 1 }}
+            data={isLoadingConnections || loadFailed ? [] : sortedPeople}
+            keyExtractor={(person) => person.userId}
+            renderItem={({ item, index }) => (
+              <PersonRow
+                first={index === 0}
+                person={item}
+                viewerId={profile.id}
+                tasteMatch={tasteMatches[item.userId]}
+                rank={weeklyRanks.get(item.userId)}
+                canRemove={isOwnProfile && !isFollowingTab}
+                onOpen={openPerson}
+                onRemove={removeFollower}
+              />
+            )}
+            ListEmptyComponent={emptyComponent}
+            ListFooterComponent={footerComponent}
+            ListFooterComponentStyle={{ paddingTop: spacing[3] }}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: spacing[8] }}
+          />
+        </>
+      )}
     </ProfileScreenShell>
   );
 }
@@ -546,5 +771,10 @@ export function FollowersScreen(props: Props) {
 }
 
 export function FollowingScreen(props: Props) {
+  return <ProfileConnectionsScreen {...props} />;
+}
+
+/** Your own People on the Feed tab (the FollowingFeed route and the daily digest push). */
+export function PeopleFeedScreen(props: Props) {
   return <ProfileConnectionsScreen {...props} />;
 }

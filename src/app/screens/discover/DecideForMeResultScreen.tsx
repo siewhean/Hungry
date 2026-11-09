@@ -25,6 +25,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { MapPinBowlIllustration } from "@/components/icons/food/PlaceIllustrations";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { firstDishTimingProps } from "@/lib/analytics/firstDishTiming";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -832,6 +834,7 @@ export function DecideForMeResultScreen() {
                 ? `You've seen every match within ${radiusKm} km`
                 : "No match found"
           }
+          icon={<MapPinBowlIllustration testID="decide-empty-art" />}
         />
         {hasNothingOpen ? (
           <Button label="Show closed stalls too" onPress={() => setOpenNowOnly(false)} />
@@ -1217,6 +1220,22 @@ export function DecideForMeResultScreen() {
                 navigation.navigate("StallDetail", { venueId: dish.venueId });
               }}
             />
+            <Button
+              label="See the dish and its reviews"
+              variant="ghost"
+              onPress={() =>
+                navigation.navigate("DishDetail", { dishId: dish.id, source: "decide_for_me" })
+              }
+            />
+            {FEATURE_FLAGS.foodPortfolioEnabled ? (
+              <Button
+                label="Ate it? Post this dish"
+                variant="ghost"
+                onPress={() =>
+                  navigation.navigate("Post", { dishId: dish.id, venueId: dish.venueId })
+                }
+              />
+            ) : null}
           </View>
 
           {otherPicks.length ? (
