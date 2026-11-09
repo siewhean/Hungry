@@ -280,7 +280,8 @@ T16 two likes at once from one person on two posts by the same author (one Trend
 T17 a post deleted while someone likes it (no live points left on the deleted post)
 T18 two leaderboard refreshes at once (no error, each person ranked once, each tier paid once)
 T19 two refreshes at once after rank movement (one top ten Activity row per person a week)
-T20 two week closes at once (one rank snapshot row per person)"
+T20 two week closes at once (one rank snapshot row per person)
+T21 two dishes ranked at once by one person (both land in the ranking, neither overwrites the other)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -381,6 +382,19 @@ RM_WEEK="date_trunc('week', now() at time zone 'Asia/Singapore')::date"
 lb_race T20 "select app_private.close_leaderboard_week($RM_WEEK);" "select app_private.close_leaderboard_week($RM_WEEK);" >>"$LB_OUT"
 echo "T20_snapshots=$(lb_val "select count(*) from leaderboard_rank_snapshots")" >>"$LB_OUT"
 
+# Portfolio ranking (20261109150000): rank_portfolio_post is one UPDATE from the committed row.
+RK_MIGRATION=20261109150000_portfolio_ranking
+lb_val "alter table user_profiles add column pinned_post_ids uuid[] not null default '{}';" >/dev/null
+for pass in 1 2; do
+  "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$RK_MIGRATION.sql" >/dev/null 2>&1 \
+    || { echo "  FAIL  $RK_MIGRATION does not apply (pass $pass)"; fail=1; }
+done
+RK1=44444444-0000-0000-0000-000000000001
+RK2=44444444-0000-0000-0000-000000000002
+lb_val "insert into posts(id, author_id, status, venue_id, dish_id) values ('$RK1', '$U1', 'published', 'v1', 'd1'), ('$RK2', '$U1', 'published', 'v1', 'd2');" >/dev/null
+lb_race T21 "select set_config('request.jwt.claim.sub', '$U1', true); select app_private.rank_portfolio_post('$RK1', 1);" "select set_config('request.jwt.claim.sub', '$U1', true); select app_private.rank_portfolio_post('$RK2', 1);" >>"$LB_OUT"
+echo "T21_ranked=$(lb_val "select cardinality(pinned_post_ids) from user_profiles where id = '$U1'")" >>"$LB_OUT"
+
 LB_EXPECTED="T15_errors=0
 T15_credited=6
 T16_errors=0
@@ -393,13 +407,21 @@ T18_achievement_rows=2
 T19_errors=0
 T19_top_ten_rows=2
 T20_errors=0
-T20_snapshots=2"
+T20_snapshots=2
+T21_errors=0
+T21_ranked=2"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
   if [ "$line" = "$key=$want" ]; then echo "  ok    $line"; else echo "  FAIL  $line   (expected $want)"; fail=1; fi
 done <"$LB_OUT"
 [ "$(wc -l <"$LB_OUT")" = "$(printf '%s\n' "$LB_EXPECTED" | wc -l)" ] || { echo "  FAIL  leaderboard results missing"; fail=1; }
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$RK_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && [ "$(lb_val "select count(*) from pg_proc where proname in ('rank_portfolio_post', 'get_review_portfolio_ranks', 'get_my_portfolio_ranking')")" = 0 ] \
+  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$RK_MIGRATION.sql" >/dev/null 2>&1 \
+  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$RK_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && echo "  ok    portfolio ranking down migration removes its RPCs and re-applies after up" \
+  || { echo "  FAIL  portfolio ranking down/up migration"; fail=1; }
 "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$RM_MIGRATION.down.sql" >/dev/null 2>&1 \
   && [ "$(lb_val "select count(*) from pg_proc where proname = 'get_my_rank_movement'")" = 0 ] \
   && [ "$(lb_val "select count(*) from activity_events where event_type = 'board_top_ten'")" = 0 ] \

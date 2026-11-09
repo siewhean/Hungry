@@ -53,6 +53,7 @@ import type {
   BiteDraft,
   BitesFeedPage,
   FoodPortfolioStall,
+  ReviewPortfolioRank,
   LeaderboardBoard,
   LeaderboardQuery,
   LeaderboardRow,
@@ -3043,9 +3044,10 @@ export const hungryService: HungryService = {
       const authored = MOCK_BITES_FEED.filter(
         (bite) => bite.authorId === userId && !_blockedUsers.has(bite.authorId),
       );
-      const pins = (_mockPinnedPostIds[userId] ?? []).filter((id) =>
-        authored.some((bite) => bite.id === id),
-      );
+      // The ranking can be longer than three; the portfolio shows its first three.
+      const pins = (_mockPinnedPostIds[userId] ?? [])
+        .filter((id) => authored.some((bite) => bite.id === id))
+        .slice(0, 3);
       const pinned = pins.map((id) => authored.find((bite) => bite.id === id) as Bite);
       const rest = authored
         .filter((bite) => !pins.includes(bite.id))
@@ -3065,9 +3067,38 @@ export const hungryService: HungryService = {
         MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id).map((bite) => bite.id),
       );
       if (postIds.length > 3) throw new Error("Pin up to three dishes.");
-      const kept = [...new Set(postIds)].filter((id) => own.has(id));
-      _mockPinnedPostIds[_profile.id] = kept;
-      return resolve(kept);
+      const top = [...new Set(postIds)].filter((id) => own.has(id));
+      // The dishes ranked below the old top three stay ranked, like the server does.
+      const tail = (_mockPinnedPostIds[_profile.id] ?? [])
+        .slice(3)
+        .filter((id) => !top.includes(id) && own.has(id));
+      _mockPinnedPostIds[_profile.id] = [...top, ...tail];
+      return resolve([..._mockPinnedPostIds[_profile.id]]);
+    },
+
+    async getMyRanking() {
+      await hydrateSocial();
+      const own = new Set(
+        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id).map((bite) => bite.id),
+      );
+      return resolve((_mockPinnedPostIds[_profile.id] ?? []).filter((id) => own.has(id)));
+    },
+
+    async rankPost(postId: string, position: number) {
+      await hydrateSocial();
+      const owned = MOCK_BITES_FEED.some(
+        (bite) => bite.id === postId && bite.authorId === _profile.id,
+      );
+      if (!owned) throw new Error("Only your own published dishes can be ranked, up to 200.");
+      const others = (_mockPinnedPostIds[_profile.id] ?? []).filter((id) => id !== postId);
+      others.splice(Math.min(Math.max(1, position) - 1, others.length), 0, postId);
+      _mockPinnedPostIds[_profile.id] = others.slice(0, 200);
+      return resolve([..._mockPinnedPostIds[_profile.id]]);
+    },
+
+    async getReviewPortfolioRanks(_reviewIds: string[]): Promise<ReviewPortfolioRank[]> {
+      // The mock catalog has no reviews tied to posted dishes; no label shows.
+      return resolve([]);
     },
 
     async listStalls(userId: string, limit = 60) {

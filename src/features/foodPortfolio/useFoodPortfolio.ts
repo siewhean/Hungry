@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  FOOD_PORTFOLIO_MAX_PINS,
   FOOD_PORTFOLIO_PAGE_SIZE,
   loadPortfolioPostsPage,
   loadPortfolioStalls,
@@ -101,7 +102,8 @@ export function useFoodPortfolio(
   const savePins = useCallback(async (postIds: string[]) => {
     const kept = await savePortfolioPins(postIds);
     if (!kept) return false;
-    setPinnedPostIds(kept);
+    // The server returns the whole ranking; the top three is its first three.
+    setPinnedPostIds(kept.slice(0, FOOD_PORTFOLIO_MAX_PINS));
     // Re-read the top three so pins and "most liked" fill-ins are in the server's order.
     setRetryKey((key) => key + 1);
     return true;

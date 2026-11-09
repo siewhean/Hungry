@@ -96,6 +96,50 @@ test("setPinnedPosts sends at most three distinct account ids and returns what t
   });
 });
 
+test("getMyRanking reads the whole ranking in one call", async () => {
+  fake.rpc.get_my_portfolio_ranking = () => ({ data: [POST_B, POST_A] });
+  assert.deepEqual(await service.foodPortfolio.getMyRanking(), [POST_B, POST_A]);
+  assert.equal(fake.rpcCalls.length, 1);
+  fake.rpc.get_my_portfolio_ranking = () => ({ error: { message: "nope", code: "42501" } });
+  await assert.rejects(service.foodPortfolio.getMyRanking(), { message: "nope" });
+});
+
+test("rankPost sends one post and a whole-number place of at least 1, and returns the ranking", async () => {
+  fake.rpc.rank_portfolio_post = () => ({ data: [POST_B, POST_A] });
+  assert.deepEqual(await service.foodPortfolio.rankPost(POST_A, 2.7), [POST_B, POST_A]);
+  await service.foodPortfolio.rankPost(POST_A, 0);
+  assert.deepEqual(fake.rpcCalls[0].args, { p_post_id: POST_A, p_position: 2 });
+  assert.deepEqual(fake.rpcCalls[1].args, { p_post_id: POST_A, p_position: 1 });
+  await assert.rejects(service.foodPortfolio.rankPost("not-a-uuid", 1));
+  assert.equal(fake.rpcCalls.length, 2, "a bad id never reaches the server");
+});
+
+test("getReviewPortfolioRanks asks once with up to 50 distinct review ids and maps the rows", async () => {
+  fake.rpc.get_review_portfolio_ranks = () => ({
+    data: [
+      { review_id: POST_A, portfolio_rank: 2, dish_count: 7 },
+      { review_id: POST_B, portfolio_rank: null, dish_count: 7 },
+    ],
+  });
+  const many = Array.from(
+    { length: 60 },
+    (_, index) => `44444444-4444-4444-8444-${String(index).padStart(12, "0")}`,
+  );
+  const rows = await service.foodPortfolio.getReviewPortfolioRanks([
+    POST_A,
+    POST_A,
+    "bad",
+    ...many,
+  ]);
+  assert.deepEqual(rows, [{ reviewId: POST_A, rank: 2, dishCount: 7 }]);
+  assert.equal(fake.rpcCalls.length, 1);
+  const ids = (fake.rpcCalls[0].args as { p_review_ids: string[] }).p_review_ids;
+  assert.equal(ids.length, 50);
+  assert.equal(ids[0], POST_A);
+  assert.deepEqual(await service.foodPortfolio.getReviewPortfolioRanks(["bad"]), []);
+  assert.equal(fake.rpcCalls.length, 1, "nothing valid, nothing sent");
+});
+
 test("listStalls maps the grouped rows and drops rows without a stall", async () => {
   fake.rpc.get_food_portfolio_stalls = () => ({
     data: [
