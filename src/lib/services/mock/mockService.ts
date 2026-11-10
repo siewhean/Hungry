@@ -362,6 +362,8 @@ let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Mock: the portfolio entry made with each submitted review, for a retried submission. */
 const _mockReviewEntryIds = new Map<string, string>();
+/** Mock: reviews deleted this session, so a linked entry stops pointing at them. */
+const _mockDeletedReviewIds = new Set<string>();
 /** Reviews the mock viewer marked helpful. */
 const _helpfulReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
@@ -2325,6 +2327,7 @@ export const hungryService: HungryService = {
       const dish = findMockOwnReviewDish(reviewId, "delete");
       dish.reviews = dish.reviews.filter((review) => review.id !== reviewId);
       _helpfulReviewIds.delete(reviewId);
+      _mockDeletedReviewIds.add(reviewId);
       return resolve(undefined);
     },
   },
@@ -3247,6 +3250,26 @@ export const hungryService: HungryService = {
     async getReviewPortfolioLabels(_reviewIds: string[]): Promise<ReviewPortfolioLabel[]> {
       // The mock catalog has no reviews tied to posted dishes; no label shows.
       return resolve([]);
+    },
+
+    async getEntryForReview(reviewId: string) {
+      await hydrateSocial();
+      const postId = _mockReviewEntryIds.get(reviewId);
+      const live = MOCK_BITES_FEED.some(
+        (bite) => bite.id === postId && bite.authorId === _profile.id,
+      );
+      return resolve(live && postId ? postId : null);
+    },
+
+    async getReviewForEntry(postId: string) {
+      await hydrateSocial();
+      if (!MOCK_BITES_FEED.some((bite) => bite.id === postId && bite.authorId === _profile.id)) {
+        return resolve(null);
+      }
+      for (const [reviewId, entryId] of _mockReviewEntryIds) {
+        if (entryId === postId && !_mockDeletedReviewIds.has(reviewId)) return resolve(reviewId);
+      }
+      return resolve(null);
     },
 
     async listStalls(userId: string, limit = 60) {

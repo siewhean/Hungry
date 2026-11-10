@@ -6490,6 +6490,40 @@ export const supabaseService: HungryService = {
       });
     },
 
+    async getEntryForReview(reviewId) {
+      if (!UUID_PATTERN.test(reviewId)) return null;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return null;
+      // posts_review_id_live_key: at most one live entry per review.
+      const { data, error } = await client
+        .from("posts")
+        .select("id")
+        .eq("review_id", reviewId)
+        .eq("author_id", userId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      return asString((data as Row | null)?.id) ?? null;
+    },
+
+    async getReviewForEntry(postId) {
+      if (!UUID_PATTERN.test(postId)) return null;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return null;
+      // review_id goes to null when the review is deleted (on delete set null).
+      const { data, error } = await client
+        .from("posts")
+        .select("review_id")
+        .eq("id", postId)
+        .eq("author_id", userId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      return asString((data as Row | null)?.review_id) ?? null;
+    },
+
     async listStalls(userId, limit = 60) {
       if (!UUID_PATTERN.test(userId)) return [];
       const client = requireSupabaseClient();

@@ -1557,6 +1557,10 @@ export interface HungryService {
     getDiary(userId: string, page?: PortfolioDiaryPage): Promise<PortfolioDiaryEntry[]>;
     /** Best-of and top three labels for up to 50 reviews. One batched read. */
     getReviewPortfolioLabels(reviewIds: string[]): Promise<ReviewPortfolioLabel[]>;
+    /** Your live portfolio entry made with this review of yours, or null. */
+    getEntryForReview(reviewId: string): Promise<string | null>;
+    /** The review this entry of yours was made with, or null when there is none any more. */
+    getReviewForEntry(postId: string): Promise<string | null>;
     /** Stalls the person posted from, most dishes first (default 60). */
     listStalls(userId: string, limit?: number): Promise<FoodPortfolioStall[]>;
     /** Newest posts by people you follow (approved follows only). `cursor` is the last post shown. */

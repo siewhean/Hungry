@@ -5,6 +5,11 @@ import {
   describeReviewEditError,
   isExpectedPublishError,
 } from "@/features/review/publishErrorCopy";
+import {
+  askLinkedDelete,
+  deleteLinked,
+  linkedDeleteMessage,
+} from "@/features/foodPortfolio/linkedDelete";
 import { markReviewDeletedForSession } from "@/features/review/reviewExplore";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
@@ -49,14 +54,19 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
     }
   };
 
-  const remove = async () => {
+  const remove = async (entryId: string | null) => {
     setConfirmDelete(false);
     setIsSaving(true);
     try {
       await getHungryService().reviews.deleteReview(review.id);
       markReviewDeletedForSession(review.id);
       onDeleted();
-      showToast({ message: "Review deleted.", tone: "success" });
+      const entry = entryId
+        ? (await deleteLinked("review", entryId))
+          ? "deleted"
+          : "failed"
+        : "kept";
+      showToast(linkedDeleteMessage("review", entry));
     } catch (error) {
       if (!isExpectedPublishError(error)) {
         reportError(error, { action: "delete_own_review", reviewId: review.id });
@@ -116,7 +126,14 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
             variant="ghost"
             accessibilityLabel="Delete your review"
             loading={isSaving}
-            onPress={() => setConfirmDelete(true)}
+            onPress={() =>
+              void askLinkedDelete(
+                "review",
+                review.id,
+                () => setConfirmDelete(true),
+                (entryId) => void remove(entryId),
+              )
+            }
           />
         </View>
       )}
@@ -126,7 +143,7 @@ export function OwnReviewActions({ review, onUpdated, onDeleted }: OwnReviewActi
         message="It will be removed for everyone and stop counting in the dish rating."
         buttons={[
           { text: "Cancel", style: "cancel", onPress: () => setConfirmDelete(false) },
-          { text: "Delete", style: "destructive", onPress: () => void remove() },
+          { text: "Delete", style: "destructive", onPress: () => void remove(null) },
         ]}
         onClose={() => setConfirmDelete(false)}
       />

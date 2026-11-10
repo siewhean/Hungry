@@ -337,3 +337,35 @@ test("getReviewPortfolioLabels asks once with up to 50 distinct ids and drops em
   assert.deepEqual(await service.foodPortfolio.getReviewPortfolioLabels(["bad"]), []);
   assert.equal(fake.rpcCalls.length, 1);
 });
+
+test("the entry made with a review is looked up among your own live posts", async () => {
+  const REVIEW = "44444444-4444-4444-8444-444444444441";
+  fake.tables.posts = (call) => {
+    const filters = call.ops.filter(([op]) => op === "eq" || op === "is").map(([, args]) => args);
+    assert.deepEqual(filters, [
+      ["review_id", REVIEW],
+      ["author_id", ME],
+      ["deleted_at", null],
+    ]);
+    return { data: { id: POST_A }, error: null };
+  };
+  assert.equal(await service.foodPortfolio.getEntryForReview(REVIEW), POST_A);
+  fake.tables.posts = () => ({ data: null, error: null });
+  assert.equal(await service.foodPortfolio.getEntryForReview(REVIEW), null);
+  assert.equal(await service.foodPortfolio.getEntryForReview("not-a-uuid"), null);
+});
+
+test("the review behind an entry is null once the review is gone; signed out reads nothing", async () => {
+  const REVIEW = "44444444-4444-4444-8444-444444444442";
+  fake.tables.posts = (call) => {
+    assert.ok(call.ops.some(([op, args]) => op === "eq" && args[0] === "id" && args[1] === POST_B));
+    return { data: { review_id: REVIEW }, error: null };
+  };
+  assert.equal(await service.foodPortfolio.getReviewForEntry(POST_B), REVIEW);
+  fake.tables.posts = () => ({ data: { review_id: null }, error: null });
+  assert.equal(await service.foodPortfolio.getReviewForEntry(POST_B), null);
+  auth.userId = null;
+  fake.queries.length = 0;
+  assert.equal(await service.foodPortfolio.getReviewForEntry(POST_B), null);
+  assert.equal(fake.queries.length, 0);
+});
