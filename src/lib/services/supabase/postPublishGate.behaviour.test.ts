@@ -241,3 +241,137 @@ test("an older backend refuses a review with an entry instead of dropping the en
   await assert.rejects(() => service.reviews.submitReview(review), /Food Portfolio/);
   assert.deepEqual(writesOn("reviews"), [], "no review written behind its back");
 });
+
+test("a signed-out postBite is refused before anything is uploaded", async () => {
+  auth.userId = null;
+  await assert.rejects(() => service.social.postBite(bite), /signed in/);
+  assert.equal(fake.storageCalls.length, 0);
+});
+
+test("a post without a valid client id gets a fresh one; videos are published but not photo-checked", async () => {
+  fake.rpc.publish_post = (args) => ({
+    data: { post_id: (args as { p_post: { id: string } }).p_post.id, resumed: false },
+    error: null,
+  });
+  const posted = await service.social.postBite({
+    ...bite,
+    clientPostId: "not-a-uuid",
+    photoUrl: "file:///clips/a.mp4",
+    mediaUrls: ["file:///clips/a.mp4"],
+    mediaType: "video",
+    mediaTypes: ["video"],
+    rating: 0,
+  });
+  assert.notEqual(posted.id, "not-a-uuid");
+  const args = fake.callsTo("publish_post")[0]!.args as {
+    p_post: { id: string };
+    p_media: { media_type: string }[];
+  };
+  assert.notEqual(args.p_post.id, "not-a-uuid");
+  assert.deepEqual(
+    args.p_media.map((media) => media.media_type),
+    ["video"],
+  );
+});
+
+test("a server error without a photo hint is passed on as it came", async () => {
+  fake.rpc.publish_post = () => ({
+    data: null,
+    error: { code: "55000", message: "This post was deleted." },
+  });
+  await assert.rejects(
+    () => service.social.postBite(bite),
+    (error: { code?: string; message?: string }) =>
+      error.code === "55000" && error.message === "This post was deleted.",
+  );
+  assert.equal(removedPaths().length, 1);
+});
+
+test("the old table writes stop at the first refused write and remove the upload", async () => {
+  fake.rpc.publish_post = () => ({
+    data: null,
+    error: { code: "PGRST202", message: "Could not find the function" },
+  });
+  for (const failing of ["upsert", "delete", "insert", "update"]) {
+    fake.storageCalls.length = 0;
+    fake.queries.length = 0;
+    fake.tables.posts = (call) =>
+      call.ops.some(([method]) => method === failing)
+        ? { data: null, error: { message: `${failing} refused` } }
+        : { data: null, error: null };
+    fake.tables.post_media = fake.tables.posts;
+    await assert.rejects(
+      () => service.social.postBite(bite),
+      (error: { message?: string }) => error.message === `${failing} refused`,
+    );
+    assert.equal(removedPaths().length, 1, failing);
+  }
+});
+
+test("a resumed post that cannot be read back is still returned from the draft", async () => {
+  fake.rpc.publish_post = () => ({ data: { post_id: POST_ID, resumed: true }, error: null });
+  fake.rpc.get_post_by_id = () => ({ data: null, error: null });
+  const posted = await service.social.postBite(bite);
+  assert.equal(posted.id, POST_ID);
+});
+
+test("an entry photo the check blocks stops the review before submit_review", async () => {
+  let checks = 0;
+  functions.results["check-photo-safety"] = () => {
+    checks += 1;
+    return checks === 1
+      ? { data: { status: "clear", flagged: 0, photos: 1 }, error: null }
+      : { data: { status: "blocked", flagged: 1, photos: 1 }, error: null };
+  };
+  await assert.rejects(
+    () => service.reviews.submitReview(review),
+    (error: { code?: string }) => error.code === "photo_rejected",
+  );
+  assert.equal(fake.callsTo("submit_review").length, 0);
+  const removed = removedPaths();
+  assert.ok(
+    removed.some((path) => path.startsWith(`${ME}/${REVIEW_ID}/`)),
+    "review photos",
+  );
+  assert.ok(
+    removed.some((path) => !path.startsWith(`${ME}/${REVIEW_ID}/`)),
+    "entry copy",
+  );
+});
+
+test("a review without an entry sends no p_portfolio and returns no entry id", async () => {
+  fake.rpc.submit_review = () => ({
+    data: { review_id: REVIEW_ID, photos_added: 1 },
+    error: null,
+  });
+  const result = await service.reviews.submitReview({ ...review, portfolio: undefined });
+  assert.deepEqual(result, { portfolioPostId: null });
+  const args = fake.callsTo("submit_review")[0]!.args as Record<string, unknown>;
+  assert.equal("p_portfolio" in args, false);
+  assert.deepEqual(
+    functions.calls.map((call) => (call.body as { bucket: string }).bucket),
+    ["review-media"],
+  );
+});
+
+test("a retried review whose entry already exists drops both new copies", async () => {
+  fake.rpc.submit_review = () => ({
+    data: { review_id: REVIEW_ID, photos_added: 0, post_id: POST_ID, post_resumed: true },
+    error: null,
+  });
+  const result = await service.reviews.submitReview(review);
+  assert.deepEqual(result, { portfolioPostId: POST_ID });
+  const removed = removedPaths();
+  assert.ok(removed.some((path) => path.startsWith(`${ME}/${REVIEW_ID}/`)));
+  assert.ok(removed.some((path) => !path.startsWith(`${ME}/${REVIEW_ID}/`)));
+});
+
+test("an older backend without an entry asked for still takes the review through the tables", async () => {
+  fake.rpc.submit_review = () => ({
+    data: null,
+    error: { code: "PGRST202", message: "Could not find the function" },
+  });
+  const result = await service.reviews.submitReview({ ...review, portfolio: undefined });
+  assert.deepEqual(result, { portfolioPostId: null });
+  assert.ok(writesOn("reviews").length > 0);
+});
