@@ -1,6 +1,6 @@
 import { Pressable, View } from "react-native";
 
-import { PortfolioRankLabel } from "@/components/foodPortfolio/PortfolioRankLabel";
+import { PortfolioLabel } from "@/components/foodPortfolio/PortfolioLabel";
 import { PersonFollowPill } from "@/components/social/PersonFollowPill";
 import { AppText, Avatar, Badge } from "@/components/ui";
 import {
@@ -12,6 +12,7 @@ import {
   ReviewStars,
 } from "@/components/review";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
+import type { ReviewPortfolioLabel } from "@/lib/services/types";
 import type { PendingRoute } from "@/store/useSessionStore";
 import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
@@ -31,8 +32,8 @@ type Props = {
   followable?: boolean;
   /** The author's place on this week's board, shown only for the top ten. */
   boardRank?: number | null;
-  /** 1-3: the dish's place in the author's Food Portfolio (shown only for a portfolio of 5+ dishes). */
-  portfolioRank?: number | null;
+  /** The author's best of this dish type and/or top three place (only for a portfolio of 5+ dishes). */
+  portfolioLabel?: ReviewPortfolioLabel | null;
 };
 
 /** Ranks at or under this show on a review author. */
@@ -50,7 +51,7 @@ export function DishReviewCard({
   onRemoved,
   followable = false,
   boardRank = null,
-  portfolioRank = null,
+  portfolioLabel = null,
 }: Props) {
   const showRank = boardRank != null && boardRank > 0 && boardRank <= REVIEW_RANK_MAX;
   const { componentRadii, palette, spacing } = useHungryTheme();
@@ -105,9 +106,9 @@ export function DishReviewCard({
           <ReviewMoreButton review={review} returnRoute={returnRoute} onRemoved={onRemoved} />
         )}
       </View>
-      {portfolioRank ? (
+      {portfolioLabel ? (
         <View style={{ alignItems: "flex-start" }}>
-          <PortfolioRankLabel rank={portfolioRank} authorName={review.authorName} />
+          <PortfolioLabel label={portfolioLabel} authorName={review.authorName} />
         </View>
       ) : null}
       <CaptionPreview text={review.text} />

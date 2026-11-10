@@ -15,13 +15,20 @@ import {
   FOOD_PORTFOLIO_MAX_PINS,
   portfolioPostImage,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
+import {
+  dishTypeWords,
+  entryActionSheet,
+  topThreePlaceOptions,
+  type PortfolioEntryAction,
+} from "@/features/foodPortfolio/portfolioEntryActions";
 import { FoodPortfolioShareSheet } from "@/components/foodPortfolio/FoodPortfolioShareSheet";
 import { PortfolioEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 import { portfolioCardPhotos, portfolioCardStatLine } from "@/features/foodPortfolio/shareCards";
 import { useFoodPortfolio } from "@/features/foodPortfolio/useFoodPortfolio";
 import { useBoardRank } from "@/features/leaderboard/boardRanks";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import type { Bite } from "@/lib/services/types";
+import type { Bite, PortfolioDiaryEntry } from "@/lib/services/types";
+import { askChoice } from "@/store/useChoiceSheetStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 
@@ -35,7 +42,7 @@ type FoodPortfolioSectionProps = {
   reloadKey?: number;
 };
 
-type PortfolioTab = "dishes" | "stalls";
+type PortfolioTab = "diary" | "stalls";
 
 /** "1 dish", "2 dishes". */
 export function dishWord(count: number): string {
@@ -46,14 +53,20 @@ function PostTile({
   post,
   label,
   onPress,
+  onLongPress,
   selectedIndex,
+  onlyMe = false,
   testID,
 }: {
   post: Bite;
   label: string;
   onPress?: () => void;
-  /** 0-based pin position while choosing the top three. */
+  /** The owner's entry actions (also offered to screen readers). */
+  onLongPress?: () => void;
+  /** 0-based top three place, shown as a number. */
   selectedIndex?: number;
+  /** An Only me entry: shows a lock. */
+  onlyMe?: boolean;
   testID?: string;
 }) {
   const { palette, radii } = useHungryTheme();
@@ -91,6 +104,23 @@ function PostTile({
           </AppText>
         </View>
       ) : null}
+      {onlyMe ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 6,
+            left: 6,
+            width: 24,
+            height: 24,
+            borderRadius: radii.pill,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: palette.surface,
+          }}
+        >
+          <AppSymbol name="profilePrivate" size={13} color={palette.textSecondary} />
+        </View>
+      ) : null}
     </View>
   );
   if (!onPress) return tile;
@@ -98,8 +128,14 @@ function PostTile({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={selectedIndex !== undefined ? { selected: true } : undefined}
+      accessibilityActions={
+        onLongPress ? [{ name: "longpress", label: "Picks and who can see it" }] : undefined
+      }
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === "longpress") onLongPress?.();
+      }}
       onPress={onPress}
+      onLongPress={onLongPress}
       testID={testID}
       style={{ flex: 1 }}
     >
@@ -108,7 +144,7 @@ function PostTile({
   );
 }
 
-/** A dotted top-three slot on your own Portfolio: tap it to pick a dish to show first. */
+/** A dotted top-three slot on your own Portfolio: tap it to start choosing from the diary. */
 function EmptyPinSlot({ onPress, index }: { onPress: () => void; index: number }) {
   const { componentRadii, palette } = useHungryTheme();
   return (
@@ -136,8 +172,9 @@ function EmptyPinSlot({ onPress, index }: { onPress: () => void; index: number }
 
 /**
  * The Food Portfolio on a profile: Dishes, Stalls and Rank (which opens the Leaderboard), the top
- * three dishes, then every dish posted (a three-column grid) or the stalls they were posted from.
- * Yours adds Share, Edit top three and Post a dish.
+ * three, the bests by dish type, then the diary of every dish (a three-column grid) or the stalls
+ * they came from. Yours adds Share, Post a dish, Only me entries (with a lock) and, under Edit, a
+ * sheet on each entry: make it your best of its dish type, put it in the top three, or Only me.
  */
 export function FoodPortfolioSection({
   userId,
@@ -146,26 +183,29 @@ export function FoodPortfolioSection({
   navigation,
   reloadKey = 0,
 }: FoodPortfolioSectionProps) {
-  const { componentRadii, palette, radii, spacing } = useHungryTheme();
+  const { componentRadii, palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const portfolio = useFoodPortfolio(userId, FEATURE_FLAGS.foodPortfolioEnabled, reloadKey);
-  const [tab, setTab] = useState<PortfolioTab>("dishes");
-  const [pinDraft, setPinDraft] = useState<string[] | null>(null);
-  const [isSavingPins, setIsSavingPins] = useState(false);
-  const postCount =
-    portfolio.postsState === "loaded"
-      ? portfolio.hasMorePosts
-        ? `${portfolio.posts.length}+`
-        : portfolio.posts.length
-      : portfolio.postsState === "failed"
-        ? "–"
-        : null;
+  const [tab, setTab] = useState<PortfolioTab>("diary");
+  const [isEditing, setIsEditing] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const boardRank = useBoardRank(userId, isSelf, FEATURE_FLAGS.foodPortfolioEnabled);
 
   if (!FEATURE_FLAGS.foodPortfolioEnabled) return null;
 
-  const openPost = (post: Bite, source: "top_three" | "grid") => {
+  const { entries, picks } = portfolio;
+  const topPosts = picks.topThree.map((pick) => pick.post);
+  const publicPosts = entries.filter((entry) => entry.visibility !== "private").map((e) => e.post);
+  const postCount =
+    portfolio.entriesState === "loaded"
+      ? portfolio.hasMoreEntries
+        ? `${entries.length}+`
+        : entries.length
+      : portfolio.entriesState === "failed"
+        ? STAT_UNAVAILABLE
+        : null;
+
+  const openPost = (post: Bite, source: "top_three" | "bests" | "grid") => {
     trackAnalyticsEvent("profile_item_opened", {
       kind: "post",
       source: `food_portfolio_${source}`,
@@ -182,36 +222,51 @@ export function FoodPortfolioSection({
     trackAnalyticsEvent("food_portfolio_post_tapped", { source: "portfolio" });
     navigation.navigate("Post");
   };
-  const togglePin = (postId: string) => {
-    setPinDraft((current) => {
-      const draft = current ?? [];
-      if (draft.includes(postId)) return draft.filter((id) => id !== postId);
-      if (draft.length >= FOOD_PORTFOLIO_MAX_PINS) {
-        showToast({ message: "Pick up to three dishes.", tone: "info" });
-        return draft;
-      }
-      return [...draft, postId];
-    });
-  };
-  const savePins = async () => {
-    if (!pinDraft) return;
-    setIsSavingPins(true);
-    const saved = await portfolio.savePins(pinDraft);
-    setIsSavingPins(false);
-    if (saved) {
-      setPinDraft(null);
-      showToast({ message: "Top three updated.", tone: "success" });
-    } else {
-      showToast({ message: "Couldn't save your top three. Try again.", tone: "error" });
+
+  const runChange = async (
+    entry: PortfolioDiaryEntry,
+    action: PortfolioEntryAction,
+    place?: number,
+  ) => {
+    const done = await portfolio.changeEntry(entry, action, place);
+    if (!done) {
+      showToast({ message: "Couldn't save that. Try again.", tone: "error" });
+      return;
     }
+    const foodType = entry.dishFoodType ? dishTypeWords(entry.dishFoodType) : "dish";
+    const messages: Record<PortfolioEntryAction, string> = {
+      best: `Now your best ${foodType}.`,
+      remove_best: `No longer your best ${foodType}.`,
+      top_three: `Now #${place} in your top three.`,
+      remove_top_three: "Taken out of your top three.",
+      private: "Only you can see this dish now.",
+      public: "This dish is public again.",
+    };
+    showToast({ message: messages[action], tone: "success" });
   };
 
-  const isChoosingPins = pinDraft !== null;
-
-  const startPinning = () => {
-    setTab("dishes");
-    setPinDraft(portfolio.pinnedPostIds);
+  const openEntryActions = async (entry: PortfolioDiaryEntry) => {
+    const sheet = entryActionSheet(entry, picks);
+    const choice = (await askChoice(sheet)) as PortfolioEntryAction | null;
+    if (!choice) return;
+    if (choice === "top_three") {
+      const place = await askChoice({
+        title: "Which place?",
+        options: topThreePlaceOptions(entry, picks),
+      });
+      if (!place) return;
+      await runChange(entry, "top_three", Number(place));
+      return;
+    }
+    await runChange(entry, choice);
   };
+
+  const startChoosing = () => {
+    setTab("diary");
+    setIsEditing(true);
+    showToast({ message: "Tap a dish in your diary to pick it.", tone: "info" });
+  };
+
   const stallCount =
     portfolio.stallsState === "loaded"
       ? portfolio.stalls.length
@@ -229,10 +284,10 @@ export function FoodPortfolioSection({
   const stats = [
     {
       key: "dishes",
-      label: typeof postCount === "number" ? (postCount === 1 ? "Dish" : "Dishes") : "Dishes",
+      label: postCount === 1 ? "Dish" : "Dishes",
       value: postCount,
-      accessibilityHint: "Shows every dish posted",
-      onPress: () => setTab("dishes"),
+      accessibilityHint: "Shows the diary of every dish",
+      onPress: () => setTab("diary"),
     },
     {
       key: "stalls",
@@ -252,28 +307,34 @@ export function FoodPortfolioSection({
       onPress: openLeaderboard,
     },
   ];
-  const showTopThree =
-    !isChoosingPins && (portfolio.topPosts.length > 0 || (isSelf && portfolio.posts.length > 0));
+  const hasPublicEntries = publicPosts.length > 0;
+  const showTopThree = topPosts.length > 0 || (isSelf && hasPublicEntries);
+  const showBests = picks.bests.length > 0;
 
   const grid = (
     <View
       style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -spacing[4] }}
       testID="food-portfolio-grid"
     >
-      {portfolio.posts.map((post) => {
-        const pinIndex = pinDraft?.indexOf(post.id);
+      {entries.map((entry) => {
+        const { post } = entry;
         const dishName = post.dishName || "dish";
+        const onlyMe = entry.visibility === "private";
+        const place = picks.topThree.find((pick) => pick.post.id === post.id)?.place;
+        const ownActions = isSelf ? () => void openEntryActions(entry) : undefined;
         return (
           <View key={post.id} style={{ width: "33.333%", aspectRatio: 1, padding: 1 }}>
             <PostTile
               post={post}
               label={
-                isChoosingPins
-                  ? `${pinIndex !== undefined && pinIndex >= 0 ? "Unpin" : "Pin"} ${dishName}`
-                  : `Open ${dishName} at ${post.venueName || "this stall"}`
+                isEditing
+                  ? `Choose for ${dishName}`
+                  : `Open ${dishName} at ${post.venueName || "this stall"}${onlyMe ? ", Only me" : ""}`
               }
-              selectedIndex={pinIndex !== undefined && pinIndex >= 0 ? pinIndex : undefined}
-              onPress={isChoosingPins ? () => togglePin(post.id) : () => openPost(post, "grid")}
+              onlyMe={onlyMe}
+              selectedIndex={isSelf && place ? place - 1 : undefined}
+              onPress={isEditing && ownActions ? ownActions : () => openPost(post, "grid")}
+              onLongPress={ownActions}
               testID={`food-portfolio-tile-${post.id}`}
             />
           </View>
@@ -282,10 +343,10 @@ export function FoodPortfolioSection({
     </View>
   );
 
-  const dishesBody =
-    portfolio.postsState === "loading" && portfolio.posts.length === 0 ? (
+  const diaryBody =
+    portfolio.entriesState === "loading" && entries.length === 0 ? (
       <View testID="food-portfolio-loading" style={{ minHeight: 120 }} />
-    ) : portfolio.postsState === "failed" && portfolio.posts.length === 0 ? (
+    ) : portfolio.entriesState === "failed" && entries.length === 0 ? (
       <EmptyState
         title="Couldn't load dishes"
         body="Check your connection and try again."
@@ -293,12 +354,12 @@ export function FoodPortfolioSection({
         ctaLabel="Retry"
         onPress={portfolio.retry}
       />
-    ) : portfolio.posts.length === 0 ? (
+    ) : entries.length === 0 ? (
       <EmptyState
         title={isSelf ? "Post your first dish" : "No dishes yet"}
         body={
           isSelf
-            ? "Snap what you eat. Every dish you post builds your Food Portfolio."
+            ? "Snap what you eat. Every dish you post goes in your diary."
             : `${ownerName} hasn't posted a dish yet.`
         }
         icon={<PortfolioEmptyIllustration testID="food-portfolio-empty-art" />}
@@ -308,7 +369,7 @@ export function FoodPortfolioSection({
     ) : (
       <>
         {grid}
-        {isSelf && !isChoosingPins ? (
+        {isSelf && !isEditing ? (
           <Button
             testID="food-portfolio-post"
             label="Post a dish"
@@ -316,7 +377,7 @@ export function FoodPortfolioSection({
             onPress={openComposer}
           />
         ) : null}
-        {portfolio.hasMorePosts ? (
+        {portfolio.hasMoreEntries ? (
           <Button
             label="Load more"
             variant="ghost"
@@ -398,7 +459,7 @@ export function FoodPortfolioSection({
         <AppText variant="h2" accessibilityRole="header">
           Food Portfolio
         </AppText>
-        {isSelf && portfolio.posts.length > 0 ? (
+        {isSelf && hasPublicEntries ? (
           <Pressable
             testID="food-portfolio-share"
             accessibilityRole="button"
@@ -416,105 +477,127 @@ export function FoodPortfolioSection({
 
       {showTopThree ? (
         <View style={{ gap: spacing[2] }} testID="food-portfolio-top-three">
-          <View
-            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
-          >
-            <AppText variant="h3">Top three</AppText>
-            {isSelf && portfolio.posts.length > 0 ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Edit top three"
-                accessibilityHint="Pick up to three of your dishes to show first"
-                hitSlop={8}
-                onPress={startPinning}
-                style={{ minHeight: 44, justifyContent: "center" }}
-              >
-                <AppText variant="bodySmall" style={{ color: palette.accentText }}>
-                  Edit
-                </AppText>
-              </Pressable>
-            ) : null}
-          </View>
+          <AppText variant="h3" accessibilityRole="header">
+            Top picks
+          </AppText>
           <View style={{ flexDirection: "row", gap: spacing[2] }}>
-            {portfolio.topPosts.map((post) => (
-              <View
-                key={post.id}
-                style={{
-                  flex: 1,
-                  aspectRatio: 1,
-                  borderRadius: componentRadii.card,
-                  overflow: "hidden",
-                }}
-              >
-                <PostTile
-                  post={post}
-                  label={`Open ${post.dishName || "dish"} at ${post.venueName || "this stall"}`}
-                  onPress={() => openPost(post, "top_three")}
-                  testID={`food-portfolio-top-${post.id}`}
-                />
-              </View>
-            ))}
-            {/* Three equal columns: yours shows a dotted slot to fill, anyone else's a gap. */}
-            {Array.from({ length: FOOD_PORTFOLIO_MAX_PINS - portfolio.topPosts.length }).map(
-              (_, index) =>
-                isSelf ? (
-                  <EmptyPinSlot
-                    key={`empty-${index}`}
-                    index={portfolio.topPosts.length + index}
-                    onPress={startPinning}
-                  />
-                ) : (
-                  <View key={`spacer-${index}`} style={{ flex: 1 }} />
-                ),
-            )}
+            {Array.from({ length: FOOD_PORTFOLIO_MAX_PINS }, (_, index) => {
+              const pick = picks.topThree.find((item) => item.place === index + 1);
+              if (pick) {
+                return (
+                  <View
+                    key={pick.post.id}
+                    style={{
+                      flex: 1,
+                      aspectRatio: 1,
+                      borderRadius: componentRadii.card,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <PostTile
+                      post={pick.post}
+                      label={`Number ${pick.place}: open ${pick.post.dishName || "dish"} at ${pick.post.venueName || "this stall"}`}
+                      selectedIndex={index}
+                      onPress={() => openPost(pick.post, "top_three")}
+                      testID={`food-portfolio-top-${pick.post.id}`}
+                    />
+                  </View>
+                );
+              }
+              // Three equal columns: yours shows a dotted slot to fill, anyone else's a gap.
+              return isSelf ? (
+                <EmptyPinSlot key={`empty-${index}`} index={index} onPress={startChoosing} />
+              ) : (
+                <View key={`spacer-${index}`} style={{ flex: 1 }} />
+              );
+            })}
           </View>
         </View>
       ) : null}
 
-      {isChoosingPins ? (
+      {showBests ? (
+        <View style={{ gap: spacing[2] }} testID="food-portfolio-bests">
+          <AppText variant="h3" accessibilityRole="header">
+            {isSelf ? "My bests" : "Bests"}
+          </AppText>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
+            {picks.bests.map((best) => (
+              <View key={best.foodType} style={{ width: "31%", gap: spacing[1] }}>
+                <View
+                  style={{
+                    aspectRatio: 1,
+                    borderRadius: componentRadii.card,
+                    overflow: "hidden",
+                  }}
+                >
+                  <PostTile
+                    post={best.post}
+                    label={`Best ${dishTypeWords(best.foodType)}: open ${best.post.dishName || "dish"} at ${best.post.venueName || "this stall"}`}
+                    onPress={() => openPost(best.post, "bests")}
+                    testID={`food-portfolio-best-${best.post.id}`}
+                  />
+                </View>
+                <AppText variant="micro" tone="secondary" numberOfLines={2}>
+                  {`Best ${dishTypeWords(best.foodType)}`}
+                </AppText>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing[2] }}>
+        <View style={{ flex: 1 }}>
+          <SegmentedControl
+            testID="food-portfolio-tabs"
+            accessibilityLabel="Show the diary or stalls"
+            options={[
+              { value: "diary", label: "Diary", accessibilityLabel: "Show diary" },
+              { value: "stalls", label: "Stalls", accessibilityLabel: "Show stalls" },
+            ]}
+            value={tab}
+            onChange={(value) => {
+              setTab(value);
+              if (value !== "diary") setIsEditing(false);
+            }}
+          />
+        </View>
+        {isSelf && tab === "diary" && entries.length > 0 ? (
+          <Pressable
+            testID="food-portfolio-edit"
+            accessibilityRole="button"
+            accessibilityLabel={isEditing ? "Done choosing" : "Edit your picks"}
+            accessibilityHint={
+              isEditing ? undefined : "Then tap a dish to make it a best or Only me"
+            }
+            hitSlop={8}
+            onPress={() => setIsEditing((value) => !value)}
+            style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: spacing[1] }}
+          >
+            <AppText variant="bodySmall" style={{ color: palette.accentText }}>
+              {isEditing ? "Done" : "Edit"}
+            </AppText>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {isEditing ? (
         <View
-          testID="food-portfolio-pin-bar"
+          testID="food-portfolio-edit-bar"
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: spacing[2],
             padding: spacing[3],
             borderRadius: componentRadii.card,
             backgroundColor: palette.orangeLight,
           }}
         >
-          <AppText variant="bodySmall" style={{ flex: 1 }}>
-            {`Tap up to three dishes to show first (${pinDraft?.length ?? 0} of ${FOOD_PORTFOLIO_MAX_PINS}).`}
+          <AppText variant="bodySmall">
+            Tap a dish to make it your best of its kind, put it in your top three, or make it Only
+            me. Your other dishes stay in the diary.
           </AppText>
-          <Button
-            label="Cancel"
-            variant="ghost"
-            size="sm"
-            fullWidth={false}
-            onPress={() => setPinDraft(null)}
-          />
-          <Button
-            label="Save"
-            size="sm"
-            fullWidth={false}
-            loading={isSavingPins}
-            onPress={() => void savePins()}
-          />
         </View>
-      ) : (
-        <SegmentedControl
-          testID="food-portfolio-tabs"
-          accessibilityLabel="Show dishes or stalls"
-          options={[
-            { value: "dishes", label: "Dishes", accessibilityLabel: "Show dishes" },
-            { value: "stalls", label: "Stalls", accessibilityLabel: "Show stalls" },
-          ]}
-          value={tab}
-          onChange={setTab}
-        />
-      )}
+      ) : null}
 
-      {tab === "dishes" || isChoosingPins ? dishesBody : stallsBody}
+      {tab === "diary" ? diaryBody : stallsBody}
       {isSelf && isSharing ? (
         <FoodPortfolioShareSheet
           visible
@@ -523,9 +606,10 @@ export function FoodPortfolioSection({
             kind: "portfolio",
             ownerId: userId,
             ownerName,
-            photos: portfolioCardPhotos(portfolio.topPosts, portfolio.posts),
+            // Only me entries never go on a picture meant for others.
+            photos: portfolioCardPhotos(topPosts, publicPosts),
             statLine: portfolioCardStatLine(
-              portfolio.posts.length,
+              publicPosts.length,
               portfolio.stallsState === "loaded" ? portfolio.stalls.length : null,
             ),
           }}

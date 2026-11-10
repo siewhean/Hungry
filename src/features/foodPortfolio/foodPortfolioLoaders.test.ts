@@ -5,13 +5,14 @@ import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 
 import {
-  FOOD_PORTFOLIO_PAGE_SIZE,
-  loadPortfolioPostsPage,
+  FOOD_PORTFOLIO_DIARY_PAGE_SIZE,
+  loadPortfolioDiaryPage,
+  loadPortfolioPicks,
   loadPortfolioStalls,
-  loadPortfolioTopPosts,
-  savePortfolioPins,
+  mergeDiaryEntries,
 } from "@/features/foodPortfolio/foodPortfolioLoaders";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import type { Bite, PortfolioDiaryEntry } from "@/lib/services/types";
 
 const restores: (() => void)[] = [];
 function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K]) {
@@ -26,50 +27,55 @@ afterEach(() => {
   while (restores.length) restores.pop()!();
 });
 
-test("a posts page asks for one page at the offset and is null when the read fails", async () => {
+function entry(id: string, createdAt = "2026-11-06T10:00:00Z"): PortfolioDiaryEntry {
+  return { post: { id, createdAt } as Bite, visibility: "public", pickKinds: [] };
+}
+
+test("a diary page asks for one page after the last entry shown and is null when the read fails", async () => {
   const pages: unknown[] = [];
-  stub(getHungryService().social, "listUserPosts", async (_userId, page) => {
+  stub(getHungryService().foodPortfolio, "getDiary", async (_userId, page) => {
     pages.push(page);
     return [];
   });
-  assert.deepEqual(await loadPortfolioPostsPage("user-1", 60), []);
-  assert.deepEqual(pages, [{ limit: FOOD_PORTFOLIO_PAGE_SIZE, offset: 60 }]);
+  assert.deepEqual(await loadPortfolioDiaryPage("user-1"), []);
+  assert.deepEqual(await loadPortfolioDiaryPage("user-1", entry("p9", "2026-11-01T08:00:00Z")), []);
+  assert.deepEqual(pages, [
+    { limit: FOOD_PORTFOLIO_DIARY_PAGE_SIZE, before: undefined },
+    {
+      limit: FOOD_PORTFOLIO_DIARY_PAGE_SIZE,
+      before: { publishedAt: "2026-11-01T08:00:00Z", id: "p9" },
+    },
+  ]);
 
-  stub(getHungryService().social, "listUserPosts", async () => {
+  stub(getHungryService().foodPortfolio, "getDiary", async () => {
     throw new Error("offline");
   });
-  assert.equal(await loadPortfolioPostsPage("user-1", 0), null);
+  assert.equal(await loadPortfolioDiaryPage("user-1"), null);
 });
 
-test("a failed top three is empty, a failed stalls read is null, a refused pin save is null", async () => {
+test("failed picks are empty and a failed stalls read is null", async () => {
   const portfolio = getHungryService().foodPortfolio;
-  stub(portfolio, "getTopPosts", async () => {
+  stub(portfolio, "getPicks", async () => {
     throw new Error("rate limited");
   });
   stub(portfolio, "listStalls", async () => {
     throw new Error("rate limited");
   });
-  stub(portfolio, "setPinnedPosts", async () => {
-    throw new Error("Pin up to three dishes.");
-  });
-  assert.deepEqual(await loadPortfolioTopPosts("user-1"), { posts: [], pinnedPostIds: [] });
+  assert.deepEqual(await loadPortfolioPicks("user-1"), { topThree: [], bests: [] });
   assert.equal(await loadPortfolioStalls("user-1"), null);
-  assert.equal(await savePortfolioPins(["a"]), null);
 });
 
-test("pins are capped at three before they reach the server", async () => {
-  const sent: string[][] = [];
-  stub(getHungryService().foodPortfolio, "setPinnedPosts", async (ids: string[]) => {
-    sent.push(ids);
-    return ids;
-  });
-  assert.deepEqual(await savePortfolioPins(["a", "b", "c", "d"]), ["a", "b", "c"]);
-  assert.deepEqual(sent, [["a", "b", "c"]]);
+test("merging diary pages keeps the order and drops repeats", () => {
+  const merged = mergeDiaryEntries([entry("a"), entry("b")], [entry("b"), entry("c")]);
+  assert.deepEqual(
+    merged.map((item) => item.post.id),
+    ["a", "b", "c"],
+  );
 });
 
 test("the loaders pass mock data through untouched", async () => {
-  const top = await loadPortfolioTopPosts("user-sarah");
-  assert.ok(top.posts.every((post) => post.authorId === "user-sarah"));
+  const diary = await loadPortfolioDiaryPage("user-sarah");
+  assert.ok(diary && diary.every((item) => item.post.authorId === "user-sarah"));
   const stalls = await loadPortfolioStalls("user-sarah");
   assert.ok(Array.isArray(stalls) && stalls.length > 0);
 });
