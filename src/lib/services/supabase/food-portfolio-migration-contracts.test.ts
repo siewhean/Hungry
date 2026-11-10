@@ -88,7 +88,7 @@ test("pins are one UPDATE limited to your own published posts, three at most", (
   assert.match(rollback, /^-- expect-row-loss: app_private\.request_rate_rules/m);
 });
 
-test("Post a dish is reachable from the dish page and stall page only with the Food Portfolio flag", () => {
+test("Add a dish is reachable from the dish page and stall page only with the Food Portfolio flag", () => {
   const dish = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   assert.match(
     dish,
@@ -97,7 +97,7 @@ test("Post a dish is reachable from the dish page and stall page only with the F
   const stall = read("src/app/screens/detail/StallDetailScreen.tsx");
   assert.match(
     stall,
-    /FEATURE_FLAGS\.foodPortfolioEnabled \? \([\s\S]{0,200}label="Post a dish here"[\s\S]{0,500}navigation\.navigate\("Post", \{ venueId: venue\.id \}\)/,
+    /FEATURE_FLAGS\.foodPortfolioEnabled \? \([\s\S]{0,200}label="Add a dish here"[\s\S]{0,500}navigation\.navigate\("Post", \{ venueId: venue\.id \}\)/,
   );
   const composer = read("src/app/screens/post/PostComposerScreen.tsx");
   assert.match(

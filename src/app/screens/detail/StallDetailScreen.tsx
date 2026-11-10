@@ -1851,7 +1851,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
               {/* Food Portfolio: post a dish from this stall (the composer asks which dish). */}
               {showDeferredDetailControls && FEATURE_FLAGS.foodPortfolioEnabled ? (
                 <Button
-                  label="Post a dish here"
+                  label="Add a dish here"
                   variant="secondary"
                   leftIcon={<AppSymbol name="camera" size={18} color={palette.text} />}
                   accessibilityHint="Adds your photo of a dish from this stall to your Food Portfolio"

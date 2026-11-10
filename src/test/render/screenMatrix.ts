@@ -564,7 +564,8 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "PostComposerScreen",
     file: "src/app/screens/post/PostComposerScreen.tsx",
     scenario: "user",
-    expect: /Create post/,
+    // With the Food Portfolio on it hands over to the one "Add a dish" composer.
+    expect: /Add a dish|Create post/,
   },
   {
     name: "PostComposerScreenV2",
@@ -797,7 +798,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "ReviewScreen",
     file: "src/app/screens/review/ReviewScreen.tsx",
     scenario: "user",
-    expect: /Write a review/,
+    expect: /Add a dish|Write a review/,
   },
   {
     name: "DishSearchScreen",

@@ -501,10 +501,10 @@ export function LeaderboardScreen({ navigation }: Props) {
             body={
               scope === "following"
                 ? "Follow people whose taste you like to see how you compare."
-                : "Post a dish with a photo to get on the board. It refreshes every 10 minutes."
+                : "Add a dish with a photo to get on the board. It refreshes every 10 minutes."
             }
             icon={<EmptyBoardIllustration testID="leaderboard-empty-art" />}
-            ctaLabel="Post a dish"
+            ctaLabel="Add a dish"
             onPress={openComposer}
           />
         ) : (
@@ -537,7 +537,7 @@ export function LeaderboardScreen({ navigation }: Props) {
               <View testID="leaderboard-be-first" style={cardStyle}>
                 <AppText variant="bodyBold">Plenty of room at the top</AppText>
                 <Button
-                  label="Post a dish"
+                  label="Add a dish"
                   size="sm"
                   variant="secondary"
                   fullWidth={false}

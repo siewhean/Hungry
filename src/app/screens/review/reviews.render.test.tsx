@@ -574,7 +574,8 @@ test("tapping a review photo opens it full screen (REV-19)", async () => {
 
 test("the review page has no subtitle line under its title", async () => {
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
-  assert.ok(view.findByText("Write a review"));
+  // The one composer: "Add a dish" with the Food Portfolio on (as in production).
+  assert.ok(view.findByText("Add a dish"));
   assert.doesNotMatch(view.text(), /Share what you ate/);
 });
 

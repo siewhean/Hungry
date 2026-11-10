@@ -146,9 +146,9 @@ test("Share is in the header and Like is gone: the bar holds only Tried and Save
   assert.ok(bar);
   assert.equal(bar.querySelector(`[aria-label="Share ${dish.name}"]`), null, "no Share in the bar");
   assert.equal(bar.querySelector('[aria-label="Share"]'), null);
-  // Tried, Save, Post a dish (Food Portfolio) and the call to action.
+  // Tried, Save, Add a dish (Food Portfolio) and the call to action.
   assert.equal(bar.querySelectorAll('[role="button"], [role="checkbox"]').length, 4);
-  assert.ok(bar.querySelector('[aria-label="Post a dish"]'), "Post a dish sits in the bar");
+  assert.ok(bar.querySelector('[aria-label="Add a dish"]'), "Add a dish sits in the bar");
 });
 
 test("the Tried caption is the same short word before and after the mark", async () => {

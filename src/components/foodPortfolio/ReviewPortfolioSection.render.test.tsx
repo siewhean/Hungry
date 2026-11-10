@@ -1,11 +1,12 @@
-// "Add to my Food Portfolio" in the review editor: the section on its own, then the whole editor
-// publishing a review, posting the dish and pinning it at the chosen rank.
+// "Add a dish": the Food Portfolio part of the one composer (Public or Only me, the best switch that
+// names what it replaces, optional tastes) on its own, then the whole editor publishing the entry.
 // Run with `node scripts/test-render.mjs src/components/foodPortfolio/ReviewPortfolioSection.render.test.tsx`.
 
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
+import { PostComposerScreen } from "@/app/screens/post/PostComposerScreen";
 import { ReviewScreen } from "@/app/screens/review/ReviewScreen";
 import { ReviewPortfolioSection } from "@/components/foodPortfolio/ReviewPortfolioSection";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -46,12 +47,14 @@ function section(overrides: Partial<Parameters<typeof ReviewPortfolioSection>[0]
     enabled: false,
     onToggle: noop,
     hasPhoto: true,
-    placeCount: 1,
     felt: {},
     onFeltChange: noop,
     onUseGuess: noop,
-    rank: null,
-    onRankChange: noop,
+    visibility: "public",
+    onVisibilityChange: noop,
+    foodType: "Chicken Rice",
+    makeBest: false,
+    onMakeBestChange: noop,
     ...overrides,
   });
 }
@@ -59,119 +62,151 @@ function section(overrides: Partial<Parameters<typeof ReviewPortfolioSection>[0]
 test("off, the section is only the switch", async () => {
   const view = await render(section());
   assert.ok(view.findByText("Add to my Food Portfolio"));
-  assert.equal(view.findByText("Where does it rank?"), null);
-  assert.equal(view.findByText("Rate the tastes"), null);
+  assert.equal(view.findByText("Who can see it"), null);
+  assert.equal(view.findByText("Rate the tastes (optional)"), null);
 });
 
-test("on, it asks for a photo, the tastes and a place, and a place press reports the choice", async () => {
-  const picks: unknown[] = [];
+test("on, it asks for a photo, offers Public or Only me and the best switch naming what it replaces", async () => {
+  const choices: unknown[] = [];
   const view = await render(
     section({
       enabled: true,
       hasPhoto: false,
-      placeCount: 8,
       suggestions: { sweet: 5 },
-      onRankChange: (rank) => picks.push(rank),
+      currentBest: { dishName: "Hainanese chicken rice", venueName: "Tian Tian" },
+      onVisibilityChange: (value) => choices.push(value),
+      onMakeBestChange: (value) => choices.push(value),
     }),
   );
   assert.match(view.text(), /a portfolio entry needs one/);
   assert.match(view.text(), /0 of 6 rated/);
-  assert.match(view.text(), /Rate all six tastes and we will suggest a place/);
-  assert.match(view.text(), /Rank as many dishes as you like/);
   assert.ok(view.findByText("Use our guess for the rest"));
-  // Eight dishes' worth of places, not just a top three.
-  for (let place = 1; place <= 8; place += 1) assert.ok(view.findByText(`#${place}`));
-  assert.equal(view.findByText("#9"), null);
-  await view.press(view.findByText("#7"));
-  await view.press(view.findByText("Unranked"));
-  assert.deepEqual(picks, [7, null]);
+  assert.equal(view.findByText("Where does it rank?"), null, "no place picker any more");
+  assert.ok(view.findByText("Make this my best chicken rice"));
+  assert.match(
+    view.text(),
+    /Replaces Hainanese chicken rice at Tian Tian, which stays in your diary\./,
+  );
+  await view.press(view.findByLabel("Make this my best chicken rice"));
+  await view.press(view.findByLabel("Only me"));
+  assert.deepEqual(choices, [true, "private"]);
 });
 
-test("a rated dish shows the suggestion with its match, and says when it is top three", async () => {
-  const all = { sweet: 5, spicy: 5, sour: 5, salty: 5, rich: 5, aromatic: 5 };
-  const view = await render(
-    section({ enabled: true, felt: all, suggestedRank: 2, matchPercent: 82, rank: 2 }),
-  );
-  assert.match(view.text(), /We suggest #2, in your top three: close to your taste \(82% match\)/);
-  assert.equal(view.findByText("Use our guess for the rest"), null);
+test("Only me hides the best switch and says it earns no points; no dish type, no switch", async () => {
+  const onlyMe = await render(section({ enabled: true, visibility: "private" }));
+  assert.match(onlyMe.text(), /It earns no points and can't be one of your bests/);
+  assert.equal(onlyMe.findByText("Make this my best chicken rice"), null);
   await cleanup();
-  const lower = await render(
-    section({
-      enabled: true,
-      felt: all,
-      suggestedRank: 6,
-      matchPercent: 40,
-      rank: 6,
-      placeCount: 9,
-    }),
-  );
-  assert.match(lower.text(), /We suggest #6: some overlap \(40% match\)/);
+  const untyped = await render(section({ enabled: true, foodType: undefined }));
+  assert.doesNotMatch(untyped.text(), /Make this my best/);
+  await cleanup();
+  const first = await render(section({ enabled: true, currentBest: null }));
+  assert.match(first.text(), /Your first best chicken rice\./);
 });
 
-function dishWithTaste() {
+/** A catalog dish with a dish type (set for the test when the mock catalog has none). */
+function typedDish() {
   const repository = getDataRepository();
-  const dish = repository
+  const dishes = repository
     .listBuildings()
     .flatMap((building) => repository.listVenuesByBuilding(building.id))
-    .flatMap((venue) => repository.listDishesByVenue(venue.id))[0];
+    .flatMap((venue) => repository.listDishesByVenue(venue.id));
+  const dish = dishes.find((item) => item.foodTypeTag) ?? dishes[0];
+  const stored = repository.getDishById(dish.id) ?? dish;
+  if (!stored.foodTypeTag) {
+    stored.foodTypeTag = "laksa";
+    restores.push(() => {
+      stored.foodTypeTag = undefined;
+    });
+  }
+  return stored;
+}
+
+function stubPicks(best: { dishName: string; venueName: string } | null) {
+  const dish = typedDish();
+  stub(getHungryService().foodPortfolio, "getPicks", async () => ({
+    topThree: [],
+    bests: best
+      ? [{ foodType: dish.foodTypeTag as string, post: { id: "old", ...best } as never }]
+      : [],
+  }));
   return dish;
 }
 
-test("the editor holds Publish until the portfolio entry has a photo and all six tastes", async () => {
-  const dish = dishWithTaste();
+test("the editor is Add a dish: the entry is on by default and Publish waits only for a photo", async () => {
+  const dish = stubPicks(null);
   const draft = useReviewDraftStore.getState();
   draft.selectDish(dish.venueId, dish.id);
   draft.setRating(4);
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
-  assert.equal(view.findByText("Where does it rank?"), null, "off until switched on");
-  await view.press(view.findByLabel("Add to my Food Portfolio"));
   await view.settle();
+  assert.ok(view.findByText("Add a dish"));
+  assert.ok(view.findByText("Who can see it"), "on by default");
   assert.match(view.text(), /Add a photo to put this dish in your portfolio/);
   useReviewDraftStore.getState().addPhoto("file:///dish.jpg");
   await view.settle();
-  assert.match(view.text(), /Rate all six tastes to put this dish in your portfolio/);
-  await view.press(view.findByText("Use our guess for the rest"));
-  await view.settle();
-  assert.doesNotMatch(view.text(), /Rate all six tastes to put this dish/);
+  assert.doesNotMatch(view.text(), /Add a photo to put this dish/);
+  assert.doesNotMatch(view.text(), /Rate all six tastes/, "tastes are optional");
 });
 
-test("publishing sends the review and its portfolio entry, with the picked place, in one call", async () => {
-  const dish = dishWithTaste();
+test("publishing sends the entry with its visibility in one call, then makes it the best", async () => {
+  const dish = stubPicks({ dishName: "Old laksa", venueName: "Sungei Road" });
   const draft = useReviewDraftStore.getState();
   draft.selectDish(dish.venueId, dish.id);
   draft.setRating(5);
   draft.addPhoto("file:///dish.jpg");
   const submitted: SubmitReviewInput[] = [];
-  let separateWrites = 0;
+  const picked: unknown[][] = [];
   stub(getHungryService().reviews, "submitReview", async (input) => {
     submitted.push(input);
     return { portfolioPostId: "new-post" };
   });
-  stub(getHungryService().social, "postBite", async () => {
-    separateWrites += 1;
-    return { id: "new-post" } as never;
-  });
-  stub(getHungryService().foodPortfolio, "getMyRanking", async () => ["a", "b"]);
-  stub(getHungryService().social, "listUserPosts", async () => []);
-  stub(getHungryService().foodPortfolio, "rankPost", async () => {
-    separateWrites += 1;
-    return [];
+  stub(getHungryService().foodPortfolio, "setPick", async (postId, kind) => {
+    picked.push([postId, kind]);
+    return { kind, slot: "laksa", postId, replacedPostId: "old" };
   });
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
-  await view.press(view.findByLabel("Add to my Food Portfolio"));
   await view.settle();
-  await view.press(view.findByText("Use our guess for the rest"));
-  await view.press(view.findByText("#3"));
+  const typeWords = (dish.foodTypeTag as string).toLowerCase();
+  assert.match(view.text(), /Replaces Old laksa at Sungei Road, which stays in your diary/);
+  await view.press(view.findByLabel(`Make this my best ${typeWords}`));
   await view.press(view.findByText("Publish"));
   await view.settle();
   assert.equal(submitted.length, 1);
   assert.equal(submitted[0].dishId, dish.id);
-  assert.equal(submitted[0].portfolio?.rank, 3);
-  assert.equal(separateWrites, 0, "no second write that could fail on its own");
+  assert.equal(submitted[0].portfolio?.visibility, "public");
+  assert.deepEqual(picked, [["new-post", "dish_type"]]);
+});
+
+test("an Only me entry is sent private and never made a best", async () => {
+  const dish = stubPicks(null);
+  const draft = useReviewDraftStore.getState();
+  draft.selectDish(dish.venueId, dish.id);
+  draft.setRating(5);
+  draft.addPhoto("file:///dish.jpg");
+  const submitted: SubmitReviewInput[] = [];
+  let picks = 0;
+  stub(getHungryService().reviews, "submitReview", async (input) => {
+    submitted.push(input);
+    return { portfolioPostId: "new-post" };
+  });
+  stub(getHungryService().foodPortfolio, "setPick", async () => {
+    picks += 1;
+    return { kind: "dish_type", slot: "x", postId: "new-post" };
+  });
+  const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
+  await view.settle();
+  const typeWords = (dish.foodTypeTag as string).toLowerCase();
+  await view.press(view.findByLabel(`Make this my best ${typeWords}`));
+  await view.press(view.findByLabel("Only me"));
+  await view.press(view.findByText("Publish"));
+  await view.settle();
+  assert.equal(submitted[0].portfolio?.visibility, "private");
+  assert.equal(picks, 0);
 });
 
 test("a failed review with its entry keeps the draft and says nothing was posted", async () => {
-  const dish = dishWithTaste();
+  const dish = stubPicks(null);
   const draft = useReviewDraftStore.getState();
   draft.selectDish(dish.venueId, dish.id);
   draft.setRating(5);
@@ -181,12 +216,8 @@ test("a failed review with its entry keeps the draft and says nothing was posted
       code: "23514",
     });
   });
-  stub(getHungryService().foodPortfolio, "getMyRanking", async () => []);
-  stub(getHungryService().social, "listUserPosts", async () => []);
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
-  await view.press(view.findByLabel("Add to my Food Portfolio"));
   await view.settle();
-  await view.press(view.findByText("Use our guess for the rest"));
   await view.press(view.findByText("Publish"));
   await view.settle();
   assert.equal(
@@ -198,4 +229,17 @@ test("a failed review with its entry keeps the draft and says nothing was posted
     1,
     "the draft is kept for a retry",
   );
+});
+
+test("the Post route hands its dish and stall to the one Add a dish composer", async () => {
+  const view = await renderScreen(PostComposerScreen as never, {
+    name: "Post",
+    params: { dishId: "dish-1", venueId: "venue-1" },
+  });
+  await view.settle();
+  const replaced = view.navigation.calls.filter((call) => call.method === "replace").at(-1);
+  assert.deepEqual(replaced?.args, [
+    "ReviewStack",
+    { screen: "ReviewMain", params: { dishId: "dish-1", venueId: "venue-1" } },
+  ]);
 });

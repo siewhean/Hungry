@@ -596,8 +596,8 @@ export interface SubmitReviewInput {
 export interface SubmitReviewPortfolioInput {
   caption: string;
   tasteStamp: TasteStamp;
-  /** A place in the ranking (1 = best), or null for "in my portfolio, not ranked". */
-  rank: number | null;
+  /** "Only me" entries are seen by the owner alone and earn no points. Default public. */
+  visibility?: "public" | "private";
   author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;
 }
 

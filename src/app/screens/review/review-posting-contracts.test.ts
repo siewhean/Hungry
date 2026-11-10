@@ -14,7 +14,9 @@ test("review editor subscribes with selectors and never picks a dish for the use
 
   assert.doesNotMatch(review, /useReviewDraftStore\(\)/);
   assert.match(review, /const selectDish = useReviewDraftStore\(\(state\) => state\.selectDish\)/);
-  assert.match(review, /<Screen title="Write a review"/);
+  // One composer: "Add a dish" with the Food Portfolio on, "Write a review" without it.
+  assert.match(review, /<Screen title=\{editorTitle\(\)\}/);
+  assert.match(review, /foodPortfolioEnabled \? "Add a dish" : "Write a review"/);
   assert.doesNotMatch(review, /title="Create Post"/);
   assert.doesNotMatch(review, /dishes\[0\]/);
   assert.match(review, /setPickerVenueId\(item\.venue\.id\)/);

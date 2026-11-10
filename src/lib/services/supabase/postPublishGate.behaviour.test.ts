@@ -181,10 +181,10 @@ const review = {
   tags: ["Rich"],
   photos: ["file:///photos/a.jpg"],
   clientReviewId: REVIEW_ID,
-  portfolio: { caption: "Good", tasteStamp: NEUTRAL_TASTE_VECTOR, rank: 2 },
+  portfolio: { caption: "Good", tasteStamp: NEUTRAL_TASTE_VECTOR, visibility: "private" as const },
 };
 
-test("a review with a portfolio entry is one submit_review call carrying the entry and its place", async () => {
+test("a review with a portfolio entry is one submit_review call carrying the entry and who sees it", async () => {
   fake.rpc.submit_review = () => ({
     data: { review_id: REVIEW_ID, photos_added: 1, post_id: POST_ID, post_resumed: false },
     error: null,
@@ -200,11 +200,12 @@ test("a review with a portfolio entry is one submit_review call carrying the ent
   const calls = fake.callsTo("submit_review");
   assert.equal(calls.length, 1);
   const portfolio = (calls[0]!.args as { p_portfolio: Record<string, unknown> }).p_portfolio as {
-    post: { id: string; caption: string };
+    post: { id: string; caption: string; visibility: string };
     media: { storage_path: string }[];
-    rank: number;
+    rank?: number;
   };
-  assert.equal(portfolio.rank, 2);
+  assert.equal(portfolio.post.visibility, "private");
+  assert.equal(portfolio.rank, undefined, "no place in the old ranking");
   assert.equal(portfolio.post.caption, "Good");
   assert.ok(portfolio.media[0].storage_path.startsWith(`${ME}/${portfolio.post.id}/`));
   // No separate post or rank call that could fail on its own.

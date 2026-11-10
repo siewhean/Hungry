@@ -4915,9 +4915,9 @@ export const supabaseService: HungryService = {
               caption: sanitizeFreeText(draft.portfolio.caption, POST_CAPTION_MAX_LENGTH),
               generated_content: postMeta,
               building_id: venue?.buildingId ?? dish?.buildingId ?? null,
+              visibility: draft.portfolio.visibility === "private" ? "private" : "public",
             },
             media: publishPostMedia(entryMedia.rows),
-            rank: draft.portfolio.rank,
           };
         } catch (error) {
           await discardUploadedPhotos();

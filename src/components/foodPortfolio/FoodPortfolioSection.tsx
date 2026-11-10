@@ -173,7 +173,7 @@ function EmptyPinSlot({ onPress, index }: { onPress: () => void; index: number }
 /**
  * The Food Portfolio on a profile: Dishes, Stalls and Rank (which opens the Leaderboard), the top
  * three, the bests by dish type, then the diary of every dish (a three-column grid) or the stalls
- * they came from. Yours adds Share, Post a dish, Only me entries (with a lock) and, under Edit, a
+ * they came from. Yours adds Share, Add a dish, Only me entries (with a lock) and, under Edit, a
  * sheet on each entry: make it your best of its dish type, put it in the top three, or Only me.
  */
 export function FoodPortfolioSection({
@@ -363,7 +363,7 @@ export function FoodPortfolioSection({
             : `${ownerName} hasn't posted a dish yet.`
         }
         icon={<PortfolioEmptyIllustration testID="food-portfolio-empty-art" />}
-        ctaLabel={isSelf ? "Post a dish" : undefined}
+        ctaLabel={isSelf ? "Add a dish" : undefined}
         onPress={isSelf ? openComposer : undefined}
       />
     ) : (
@@ -372,7 +372,7 @@ export function FoodPortfolioSection({
         {isSelf && !isEditing ? (
           <Button
             testID="food-portfolio-post"
-            label="Post a dish"
+            label="Add a dish"
             leftIcon={<AppSymbol name="camera" size={18} color={palette.textOnOrange} />}
             onPress={openComposer}
           />

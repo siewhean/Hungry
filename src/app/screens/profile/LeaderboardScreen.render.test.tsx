@@ -156,12 +156,12 @@ test("switching board, period and scope reads the matching board", async () => {
   assert.ok(view.findByText(/each person counts once a day/));
 });
 
-test("an empty board shows its illustration and Post a dish", async () => {
+test("an empty board shows its illustration and Add a dish", async () => {
   stubBoard({ rows: [] });
   const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
   assert.ok(view.findByText("Nobody on the board yet"));
   assert.ok(view.findByTestId("leaderboard-empty-art"));
-  await view.press(view.findByText("Post a dish"));
+  await view.press(view.findByText("Add a dish"));
   assert.deepEqual(lastNavigate(view.navigation), ["Post"]);
 });
 

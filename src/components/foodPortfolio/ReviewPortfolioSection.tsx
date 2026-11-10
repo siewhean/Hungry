@@ -1,17 +1,17 @@
-import { ScrollView, View } from "react-native";
+import { View } from "react-native";
 
 import { TASTE_DIMENSIONS } from "@/constants/taste";
-import { FormSwitchRow, AppText, Button } from "@/components/ui";
+import { FormSwitchRow, AppText, Button, SegmentedControl } from "@/components/ui";
 import { TasteRatingInput } from "@/components/review";
-import { tasteMatchLabel } from "@/features/detail/tasteMatch";
-import {
-  PORTFOLIO_LABEL_MIN_DISHES,
-  hasRatedAllTastes,
-  isTopThreePlace,
-  type PortfolioRank,
-} from "@/features/foodPortfolio/reviewPortfolioRank";
+import { dishTypeWords, entryName } from "@/features/foodPortfolio/portfolioEntryActions";
+import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 import type { TasteKey } from "@/types/domain";
+
+/** Dishes a portfolio needs before its picks show as a label on reviews. */
+export const PORTFOLIO_LABEL_MIN_DISHES = 5;
+
+export type PortfolioEntryChoice = "public" | "private";
 
 type Props = {
   enabled: boolean;
@@ -24,35 +24,34 @@ type Props = {
   onFeltChange: (key: TasteKey, value: number | undefined) => void;
   /** Fills every taste still unanswered with our guess. */
   onUseGuess: () => void;
-  /** Places on offer: one more than the dishes already ranked. */
-  placeCount: number;
-  /** Where the dish would sit in the ranking; undefined until stars and tastes are in. */
-  suggestedRank?: PortfolioRank;
-  /** 0-100 palate match behind the suggestion. */
-  matchPercent?: number;
-  rank: PortfolioRank;
-  onRankChange: (rank: PortfolioRank) => void;
+  visibility: PortfolioEntryChoice;
+  onVisibilityChange: (visibility: PortfolioEntryChoice) => void;
+  /** The dish's type ("chicken rice"); without one the dish cannot be a best. */
+  foodType?: string;
+  makeBest: boolean;
+  onMakeBestChange: (makeBest: boolean) => void;
+  /** Your current best of this dish type, which this entry would replace. */
+  currentBest?: Pick<Bite, "dishName" | "venueName"> | null;
 };
 
 /** The sentence under Publish while a portfolio entry is not ready; null when it is. */
-export function portfolioBlockedReason(
-  felt: Partial<Record<TasteKey, number>>,
-  hasPhoto: boolean,
-): string | null {
-  if (!hasPhoto) return "Add a photo to put this dish in your portfolio.";
-  if (!hasRatedAllTastes(felt)) return "Rate all six tastes to put this dish in your portfolio.";
-  return null;
+export function portfolioBlockedReason(hasPhoto: boolean): string | null {
+  return hasPhoto ? null : "Add a photo to put this dish in your portfolio.";
 }
 
-function rankLabel(rank: PortfolioRank): string {
-  if (rank === null) return "no place";
-  return isTopThreePlace(rank) ? `#${rank}, in your top three` : `#${rank}`;
+/** What the best switch says it does: the dish it replaces, or that it is the first. */
+export function bestSwitchDescription(
+  foodType: string,
+  currentBest?: Pick<Bite, "dishName" | "venueName"> | null,
+): string {
+  return currentBest
+    ? `Replaces ${entryName(currentBest)}, which stays in your diary.`
+    : `Your first best ${dishTypeWords(foodType)}.`;
 }
 
 /**
- * "Add to my Food Portfolio" in the review editor: rate the six tastes, then pick the dish's
- * place in the top three. We suggest a place from the stars and how close the dish is to the
- * reviewer's palate; the reviewer can pick any other.
+ * "Add a dish" in the editor: put the dish in your Food Portfolio diary, Public or Only me, make it
+ * your best of its dish type (naming the one it replaces), and rate the tastes if you like.
  */
 export function ReviewPortfolioSection({
   enabled,
@@ -62,21 +61,22 @@ export function ReviewPortfolioSection({
   suggestions,
   onFeltChange,
   onUseGuess,
-  placeCount,
-  suggestedRank,
-  matchPercent,
-  rank,
-  onRankChange,
+  visibility,
+  onVisibilityChange,
+  foodType,
+  makeBest,
+  onMakeBestChange,
+  currentBest,
 }: Props) {
   const { spacing } = useHungryTheme();
-  const rated = hasRatedAllTastes(felt);
   const answered = TASTE_DIMENSIONS.filter(({ key }) => typeof felt[key] === "number").length;
+  const canBeBest = Boolean(foodType?.trim()) && visibility === "public";
 
   return (
-    <View style={{ gap: spacing[3] }}>
+    <View style={{ gap: spacing[3] }} testID="review-portfolio-section">
       <FormSwitchRow
         label="Add to my Food Portfolio"
-        description="Show this dish on your profile and choose where it ranks."
+        description="Keep this dish in the diary on your profile."
         value={enabled}
         onValueChange={onToggle}
       />
@@ -88,63 +88,47 @@ export function ReviewPortfolioSection({
             </AppText>
           ) : null}
           <View style={{ gap: spacing[2] }}>
+            <AppText variant="h3">Who can see it</AppText>
+            <SegmentedControl
+              testID="review-portfolio-visibility"
+              accessibilityLabel="Who can see this dish"
+              options={[
+                { value: "public", label: "Public", accessibilityLabel: "Public" },
+                { value: "private", label: "Only me", accessibilityLabel: "Only me" },
+              ]}
+              value={visibility}
+              onChange={onVisibilityChange}
+            />
+            {visibility === "private" ? (
+              <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
+                {"Only you see it. It earns no points and can't be one of your bests."}
+              </AppText>
+            ) : null}
+          </View>
+          {canBeBest && foodType ? (
+            <FormSwitchRow
+              label={`Make this my best ${dishTypeWords(foodType)}`}
+              description={bestSwitchDescription(foodType, currentBest)}
+              value={makeBest}
+              onValueChange={onMakeBestChange}
+            />
+          ) : null}
+          <View style={{ gap: spacing[2] }}>
             <View style={{ gap: spacing[1] }}>
-              <AppText variant="h3">Rate the tastes</AppText>
+              <AppText variant="h3">Rate the tastes (optional)</AppText>
               <AppText variant="bodySmall" tone="secondary">
                 {answered} of {TASTE_DIMENSIONS.length} rated. Dashed rings are our guess for your
                 palate.
               </AppText>
             </View>
             <TasteRatingInput values={felt} suggestions={suggestions} onChange={onFeltChange} />
-            {!rated && suggestions ? (
+            {answered < TASTE_DIMENSIONS.length && suggestions ? (
               <Button label="Use our guess for the rest" variant="secondary" onPress={onUseGuess} />
             ) : null}
           </View>
-          <View style={{ gap: spacing[2] }}>
-            <AppText variant="h3">Where does it rank?</AppText>
-            {rated && suggestedRank !== undefined ? (
-              <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
-                {`We suggest ${rankLabel(suggestedRank)}${
-                  matchPercent !== undefined
-                    ? `: ${tasteMatchLabel(matchPercent).toLowerCase()} (${matchPercent}% match)`
-                    : ""
-                }.`}
-              </AppText>
-            ) : (
-              <AppText variant="bodySmall" tone="secondary">
-                Rate all six tastes and we will suggest a place.
-              </AppText>
-            )}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: spacing[2] }}
-              accessibilityLabel="Places in your ranking"
-            >
-              {Array.from({ length: placeCount }, (_, index) => index + 1).map((place) => (
-                <Button
-                  key={place}
-                  label={`#${place}`}
-                  size="sm"
-                  fullWidth={false}
-                  variant={rank === place ? "primary" : "secondary"}
-                  accessibilityState={{ selected: rank === place }}
-                  onPress={() => onRankChange(place)}
-                />
-              ))}
-              <Button
-                label="Unranked"
-                size="sm"
-                fullWidth={false}
-                variant={rank === null ? "primary" : "secondary"}
-                accessibilityState={{ selected: rank === null }}
-                onPress={() => onRankChange(null)}
-              />
-            </ScrollView>
-            <AppText variant="micro" tone="muted">
-              {`Rank as many dishes as you like. A top-three place shows on this review once your portfolio has ${PORTFOLIO_LABEL_MIN_DISHES} dishes.`}
-            </AppText>
-          </View>
+          <AppText variant="micro" tone="muted">
+            {`Your bests show on your reviews once your portfolio has ${PORTFOLIO_LABEL_MIN_DISHES} public dishes.`}
+          </AppText>
         </View>
       ) : null}
     </View>

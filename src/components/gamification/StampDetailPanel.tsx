@@ -211,7 +211,7 @@ export function StampDetailPanel({
           ) : null}
           {onPostDish ? (
             <Button
-              label="Post a dish"
+              label="Add a dish"
               size="sm"
               variant="secondary"
               fullWidth={false}

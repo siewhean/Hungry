@@ -1013,14 +1013,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           ? [
               {
                 id: "post-dish",
-                label: "Post a dish",
-                caption: "Post",
+                label: "Add a dish",
+                caption: "Add",
                 icon: PostDishSymbol,
                 onPress: () => {
                   trackAnalyticsEvent("food_portfolio_post_tapped", { source: "dish" });
                   navigation.navigate("Post", { dishId: dish.id, venueId: dish.venueId });
                 },
-                accessibilityLabel: "Post a dish",
+                accessibilityLabel: "Add a dish",
                 accessibilityHint: "Adds your photo of this dish to your Food Portfolio",
               },
             ]
