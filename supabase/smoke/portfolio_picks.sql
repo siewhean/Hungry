@@ -9,7 +9,8 @@
 -- 4. get_review_portfolio_labels labels a review with its dish's best and top three place, only
 --    when the author has 5 public dishes.
 -- 5. Moderation hiding a post drops its picks.
--- 6. anon cannot run the RPCs, nobody writes the table directly, and each RPC has a rate rule.
+-- 6. The data export includes the picks. anon cannot run the RPCs, nobody writes the table
+--    directly, and each RPC has a rate rule.
 -- Runs in a transaction and rolls back.
 --   viewer:   00000000-0000-1111-b000-000000000001
 --   author:   00000000-0000-1111-b000-000000000002
@@ -162,6 +163,9 @@ begin
   from public.get_portfolio_diary('00000000-0000-1111-b000-000000000002');
   if v_diary <> 7 then
     raise exception 'the owner''s diary had % entries, expected 7 (private ones included)', v_diary;
+  end if;
+  if jsonb_array_length(public.export_my_data() -> 'data' -> 'portfolioPicks') <> 2 then
+    raise exception 'the data export must include the diner''s picks';
   end if;
 end $$;
 
