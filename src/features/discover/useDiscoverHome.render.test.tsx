@@ -21,11 +21,12 @@ afterEach(cleanup);
 
 type Filters = ReturnType<typeof useDiscoverFilters>;
 
-async function mountFilters(options: { hours?: string } = {}) {
+async function mountFilters(options: { hours?: string; onSetUpDietaryNeeds?: () => void } = {}) {
   let latest: Filters | undefined;
   function Probe() {
     latest = useDiscoverFilters({
       getVenueHours: () => options.hours,
+      onSetUpDietaryNeeds: options.onSetUpDietaryNeeds,
     });
     return null;
   }
@@ -91,6 +92,27 @@ test("the dietary chip points to settings when none are saved (before onboarding
   filters().toggleDiscoverChip("dietary");
   await view.settle();
   assert.deepEqual(filters().activeDiscoverChipIds, ["dietary"], "and on again");
+});
+
+test("with no dietary needs saved the chip opens where to set them, even after onboarding", async () => {
+  useProfileStore.getState().setDietaryPreferences([]);
+  useUIStore.setState({ toast: null } as never);
+  useSessionStore.setState({ hasCompletedOnboarding: true });
+  let opened = 0;
+  const { view, filters } = await mountFilters({ onSetUpDietaryNeeds: () => (opened += 1) });
+
+  filters().toggleDiscoverChip("dietary");
+  await view.settle();
+  assert.equal(opened, 1, "the tap is never silent");
+  assert.deepEqual(filters().activeDiscoverChipIds, []);
+
+  useProfileStore.getState().setDietaryPreferences(["vegetarian"]);
+  await view.settle();
+  assert.deepEqual(filters().activeDiscoverChipIds, ["dietary"], "saving a need switches it on");
+  filters().toggleDiscoverChip("dietary");
+  await view.settle();
+  assert.deepEqual(filters().activeDiscoverChipIds, [], "and a tap switches it off");
+  assert.equal(opened, 1, "the screen only opens when nothing is saved");
 });
 
 test("clearing the filters empties the chips and says so", async () => {

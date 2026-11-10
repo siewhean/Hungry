@@ -7,7 +7,6 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
@@ -152,7 +151,6 @@ import {
 } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
 import { DiscoverChipIcon } from "@/components/discover/home/DiscoverChipIcon";
-import { HomeWaveBackground } from "@/components/discover/home/HomeWaveBackground";
 import {
   DiscoverSearchPlaceholder,
   NARROW_SEARCH_WIDTH,
@@ -270,7 +268,15 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     clearDiscoverFilters,
     activeDiscoverChipIds,
     currentHour,
-  } = useDiscoverFilters({ getVenueHours });
+  } = useDiscoverFilters({
+    getVenueHours,
+    // No dietary needs saved yet: the chip opens where they are set, instead of doing nothing.
+    onSetUpDietaryNeeds: () =>
+      navigation.navigate("OnboardingStack", {
+        screen: "TasteQuiz",
+        params: { mode: "profile", initialPhase: "dietary", source: "home" },
+      }),
+  });
   const scrollRef = useRef<ScrollView>(null);
   useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
@@ -287,8 +293,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   } = useHungryTheme();
   const discoverCardChrome = useDiscoverCardChrome();
   const insets = useSafeAreaInsets();
-  // How far the page has scrolled: the wavy background at the top fades out as it grows.
-  const scrollY = useSharedValue(0);
   const [discoverViewportHeight, setDiscoverViewportHeight] = useState(0);
   const discoverSectionGap = spacing[4];
   const discoverContentGap = spacing[2];
@@ -1841,19 +1845,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
-      <HomeWaveBackground
-        width={screenWidth}
-        topInset={insets.top}
-        scrollY={scrollY}
-        active={isFocused}
-      />
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
-        onScroll={(event) => {
-          scrollY.value = event.nativeEvent.contentOffset.y;
-        }}
-        scrollEventThrottle={16}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
           gap: discoverSectionGap,

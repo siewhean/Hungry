@@ -59,10 +59,15 @@ export const INTENT_CHIPS: readonly {
 type UseDiscoverFiltersOptions = {
   /** Opening hours of a stall, for the late-night chip. */
   getVenueHours: (venueId?: string) => string | undefined;
+  /** Tapping Dietary needs with none saved: open where they are set (the chip switches on once saved). */
+  onSetUpDietaryNeeds?: () => void;
 };
 
 /** The Home chips: which are on, the deferred copy the page filters by, and what each chip keeps. */
-export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions) {
+export function useDiscoverFilters({
+  getVenueHours,
+  onSetUpDietaryNeeds,
+}: UseDiscoverFiltersOptions) {
   const showToast = useUIStore((state) => state.showToast);
   // A diner who finished onboarding was already asked about dietary needs (and may have said
   // none), so the chip never tells them to go and set them up.
@@ -147,7 +152,9 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
           selected: false,
           no_saved_needs: true,
         });
-        if (!hasCompletedOnboarding) {
+        if (onSetUpDietaryNeeds) {
+          onSetUpDietaryNeeds();
+        } else if (!hasCompletedOnboarding) {
           showToast({ message: "Add your dietary needs in Profile settings to filter by them." });
         }
         return;
@@ -182,6 +189,7 @@ export function useDiscoverFilters({ getVenueHours }: UseDiscoverFiltersOptions)
     [
       activeDiscoverChipIds,
       hasCompletedOnboarding,
+      onSetUpDietaryNeeds,
       profile.dietaryPreferences.length,
       recordTasteInteraction,
       showToast,
