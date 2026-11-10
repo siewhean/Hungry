@@ -82,7 +82,6 @@ import type {
   BitesFeedPage,
   BlockUserRequest,
   FoodPortfolioStall,
-  ReviewPortfolioRank,
   ReviewPortfolioLabel,
   PortfolioDiaryEntry,
   PortfolioEntryVisibility,
@@ -6300,72 +6299,6 @@ export const supabaseService: HungryService = {
   },
 
   foodPortfolio: {
-    async getTopPosts(userId) {
-      if (!UUID_PATTERN.test(userId)) return { posts: [], pinnedPostIds: [] };
-      const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("get_food_portfolio_top_posts", {
-        p_user_id: userId,
-      });
-      if (error) throw error;
-      const rows = Array.isArray(data) ? (data as Row[]) : [];
-      // One signing call for every photo on the three cards, then map.
-      await presignPostMediaRows(
-        client,
-        rows.flatMap((row) => asRowArray(row.media)),
-      );
-      const posts = await Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
-      return {
-        posts,
-        pinnedPostIds: rows
-          .filter((row) => row.is_pinned === true)
-          .map((row) => asString(row.id))
-          .filter((id): id is string => Boolean(id)),
-      };
-    },
-
-    async setPinnedPosts(postIds) {
-      const client = requireSupabaseClient();
-      const ids = [...new Set(postIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 3);
-      const { data, error } = await client.rpc("set_pinned_posts", { p_post_ids: ids });
-      if (error) throw error;
-      return Array.isArray(data) ? data.map((id) => String(id)) : [];
-    },
-
-    async getMyRanking() {
-      const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("get_my_portfolio_ranking");
-      if (error) throw error;
-      return Array.isArray(data) ? data.map((id) => String(id)) : [];
-    },
-
-    async rankPost(postId, position) {
-      if (!UUID_PATTERN.test(postId)) throw new Error("Only your own dishes can be ranked.");
-      const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("rank_portfolio_post", {
-        p_post_id: postId,
-        p_position: Math.max(1, Math.floor(position)),
-      });
-      if (error) throw error;
-      return Array.isArray(data) ? data.map((id) => String(id)) : [];
-    },
-
-    async getReviewPortfolioRanks(reviewIds) {
-      const ids = [...new Set(reviewIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 50);
-      if (ids.length === 0) return [];
-      const client = requireSupabaseClient();
-      const { data, error } = await client.rpc("get_review_portfolio_ranks", {
-        p_review_ids: ids,
-      });
-      if (error) throw error;
-      const rows = Array.isArray(data) ? (data as Row[]) : [];
-      return rows.flatMap((row): ReviewPortfolioRank[] => {
-        const reviewId = asString(row.review_id);
-        const rank = asNumber(row.portfolio_rank);
-        if (!reviewId || !rank) return [];
-        return [{ reviewId, rank, dishCount: asNumber(row.dish_count) ?? 0 }];
-      });
-    },
-
     async getPicks(userId) {
       if (!UUID_PATTERN.test(userId)) return { topThree: [], bests: [] };
       const client = requireSupabaseClient();

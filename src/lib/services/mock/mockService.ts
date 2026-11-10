@@ -53,7 +53,6 @@ import type {
   BiteDraft,
   BitesFeedPage,
   FoodPortfolioStall,
-  ReviewPortfolioRank,
   ReviewPortfolioLabel,
   PortfolioDiaryEntry,
   PortfolioPickKind,
@@ -349,8 +348,6 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 // ─── Mutable in-memory state (mirrors what Supabase would persist) ─────────────
 
 let _profile: UserProfile = { ...guestProfile };
-/** Food Portfolio top-three pins by user id (mock only; Supabase keeps them on user_profiles). */
-const _mockPinnedPostIds: Record<string, string[]> = {};
 // Portfolio picks by person, and the entries set to Only me. The mock catalog has no dish types,
 // so a dish's name stands in for its type.
 const _mockPortfolioPicks: Record<
@@ -3081,68 +3078,6 @@ export const hungryService: HungryService = {
   },
 
   foodPortfolio: {
-    async getTopPosts(userId: string) {
-      await hydrateSocial();
-      const authored = MOCK_BITES_FEED.filter(
-        (bite) => bite.authorId === userId && !_blockedUsers.has(bite.authorId),
-      );
-      // The ranking can be longer than three; the portfolio shows its first three.
-      const pins = (_mockPinnedPostIds[userId] ?? [])
-        .filter((id) => authored.some((bite) => bite.id === id))
-        .slice(0, 3);
-      const pinned = pins.map((id) => authored.find((bite) => bite.id === id) as Bite);
-      const rest = authored
-        .filter((bite) => !pins.includes(bite.id))
-        .sort(
-          (a, b) =>
-            b.cravingCount - a.cravingCount || Date.parse(b.createdAt) - Date.parse(a.createdAt),
-        );
-      return resolve({
-        posts: [...pinned, ...rest].slice(0, 3).map(withMockViewerReactions),
-        pinnedPostIds: pins,
-      });
-    },
-
-    async setPinnedPosts(postIds: string[]) {
-      await hydrateSocial();
-      const own = new Set(
-        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id).map((bite) => bite.id),
-      );
-      if (postIds.length > 3) throw new Error("Pin up to three dishes.");
-      const top = [...new Set(postIds)].filter((id) => own.has(id));
-      // The dishes ranked below the old top three stay ranked, like the server does.
-      const tail = (_mockPinnedPostIds[_profile.id] ?? [])
-        .slice(3)
-        .filter((id) => !top.includes(id) && own.has(id));
-      _mockPinnedPostIds[_profile.id] = [...top, ...tail];
-      return resolve([..._mockPinnedPostIds[_profile.id]]);
-    },
-
-    async getMyRanking() {
-      await hydrateSocial();
-      const own = new Set(
-        MOCK_BITES_FEED.filter((bite) => bite.authorId === _profile.id).map((bite) => bite.id),
-      );
-      return resolve((_mockPinnedPostIds[_profile.id] ?? []).filter((id) => own.has(id)));
-    },
-
-    async rankPost(postId: string, position: number) {
-      await hydrateSocial();
-      const owned = MOCK_BITES_FEED.some(
-        (bite) => bite.id === postId && bite.authorId === _profile.id,
-      );
-      if (!owned) throw new Error("Only your own published dishes can be ranked, up to 200.");
-      const others = (_mockPinnedPostIds[_profile.id] ?? []).filter((id) => id !== postId);
-      others.splice(Math.min(Math.max(1, position) - 1, others.length), 0, postId);
-      _mockPinnedPostIds[_profile.id] = others.slice(0, 200);
-      return resolve([..._mockPinnedPostIds[_profile.id]]);
-    },
-
-    async getReviewPortfolioRanks(_reviewIds: string[]): Promise<ReviewPortfolioRank[]> {
-      // The mock catalog has no reviews tied to posted dishes; no label shows.
-      return resolve([]);
-    },
-
     async getPicks(userId: string): Promise<PortfolioPicks> {
       await hydrateSocial();
       const byId = new Map(MOCK_BITES_FEED.map((bite) => [bite.id, bite]));
