@@ -31,47 +31,23 @@ values
   ('00000000-0000-1111-b000-000000000003', 'Picks Stranger')
 on conflict (id) do nothing;
 
--- Dishes 1 and 2 share a dish type; dishes 3 to 6 are four other dishes with a type. Each post
--- uses its dish's own stall.
-create temp table smoke_dishes (n int, id text, venue_id text, food_type text) on commit drop;
+-- Six dishes, each posted at its own stall. The smoke gives them its own dish types (rolled back
+-- with everything else): dishes 1 and 2 share one, dishes 3 to 6 each have another.
+create temp table smoke_dishes on commit drop as
+select d.id, d.venue_id, row_number() over (order by d.id) as n, null::text as food_type
+from (select d.id, d.venue_id from dishes d where d.venue_id is not null order by d.id limit 6) d;
 
-with shared as (
-  select d.food_type
-  from dishes d
-  where nullif(trim(d.food_type), '') is not null and d.venue_id is not null
-  group by d.food_type
-  having count(*) >= 2
-  order by d.food_type
-  limit 1
-)
-insert into smoke_dishes
-select row_number() over (order by d.id), d.id, d.venue_id, d.food_type
-from (
-  select d.id, d.venue_id, d.food_type
-  from dishes d join shared s on s.food_type = d.food_type
-  where d.venue_id is not null
-  order by d.id
-  limit 2
-) d;
-
-insert into smoke_dishes
-select 2 + row_number() over (order by d.id), d.id, d.venue_id, d.food_type
-from (
-  select d.id, d.venue_id, d.food_type
-  from dishes d
-  where nullif(trim(d.food_type), '') is not null
-    and d.venue_id is not null
-    and d.id not in (select id from smoke_dishes)
-  order by d.id
-  limit 4
-) d;
+update smoke_dishes
+set food_type = case when n <= 2 then 'Smoke picks shared' else 'Smoke picks ' || n end;
 
 do $$
 begin
   if (select count(*) from smoke_dishes) < 6 then
-    raise exception 'smoke needs six dishes with a dish type, two of them sharing one';
+    raise exception 'smoke needs six dishes with a stall in the catalog';
   end if;
 end $$;
+
+update dishes d set food_type = sd.food_type from smoke_dishes sd where sd.id = d.id;
 
 -- Author: p1..p6 public (dishes 1-6), p7 published as "Only me" (dish 1). Stranger: p8 (dish 1).
 insert into posts (id, author_id, status, visibility, caption, published_at, venue_id, dish_id)
