@@ -839,6 +839,52 @@ export interface ReviewPortfolioRank {
   dishCount: number;
 }
 
+/** A pick on a Food Portfolio: the best of a dish type, or a place in the top three. */
+export type PortfolioPickKind = "dish_type" | "overall";
+
+/** Who sees a portfolio entry. "Only me" entries are "private" and earn no points. */
+export type PortfolioEntryVisibility = "public" | "followers" | "private";
+
+/** A diner's top three (places 1-3) and their best of each dish type (get_portfolio_picks). */
+export interface PortfolioPicks {
+  topThree: { place: number; post: Bite }[];
+  bests: { foodType: string; post: Bite }[];
+}
+
+/** What set_portfolio_pick changed: the slot taken and the post it replaced, if any. */
+export interface PortfolioPickResult {
+  kind: PortfolioPickKind;
+  /** The dish type, or the place "1"-"3". */
+  slot: string;
+  postId: string;
+  replacedPostId?: string;
+}
+
+/** One entry in a Food Portfolio diary, newest first. */
+export interface PortfolioDiaryEntry {
+  post: Bite;
+  visibility: PortfolioEntryVisibility;
+  dishFoodType?: string;
+  /** The picks this entry holds. */
+  pickKinds: PortfolioPickKind[];
+}
+
+/** Keyset paging for the diary: the last entry shown (its createdAt and id). */
+export interface PortfolioDiaryPage {
+  limit?: number;
+  before?: { publishedAt: string; id: string };
+}
+
+/** The label beside a review: its author's best of that dish type and/or its top three place. */
+export interface ReviewPortfolioLabel {
+  reviewId: string;
+  foodType?: string;
+  /** 1-3 when the dish is in the author's top three. */
+  overallPlace?: number;
+  /** The author's public dishes (at least 5 for a label to show). */
+  dishCount: number;
+}
+
 /** The top three dishes on a Food Portfolio and which of them the owner pinned. */
 export interface FoodPortfolioTopPosts {
   posts: Bite[];
@@ -1493,6 +1539,24 @@ export interface HungryService {
     rankPost(postId: string, position: number): Promise<string[]>;
     /** Which of these reviews (up to 50) show a top-three portfolio rank. One batched read. */
     getReviewPortfolioRanks(reviewIds: string[]): Promise<ReviewPortfolioRank[]>;
+    /** A diner's top three and bests by dish type, in one read. */
+    getPicks(userId: string): Promise<PortfolioPicks>;
+    /**
+     * Makes one of your own public published posts the best of its dish type, or puts it at a
+     * place (1-3) in your top three. Replaces whatever held that slot. Atomic on the server.
+     */
+    setPick(postId: string, kind: PortfolioPickKind, place?: number): Promise<PortfolioPickResult>;
+    /** Takes a post out of your picks (one kind, or all when kind is left out). Returns how many. */
+    removePick(postId: string, kind?: PortfolioPickKind): Promise<number>;
+    /** "Public" or "Only me" on one of your entries. Only me drops its picks and its points. */
+    setEntryVisibility(
+      postId: string,
+      visibility: "public" | "private",
+    ): Promise<"public" | "private">;
+    /** Every entry, newest first (default 30, at most 60). The owner also sees Only me entries. */
+    getDiary(userId: string, page?: PortfolioDiaryPage): Promise<PortfolioDiaryEntry[]>;
+    /** Best-of and top three labels for up to 50 reviews. One batched read. */
+    getReviewPortfolioLabels(reviewIds: string[]): Promise<ReviewPortfolioLabel[]>;
     /** Stalls the person posted from, most dishes first (default 60). */
     listStalls(userId: string, limit?: number): Promise<FoodPortfolioStall[]>;
     /** Newest posts by people you follow (approved follows only). `cursor` is the last post shown. */

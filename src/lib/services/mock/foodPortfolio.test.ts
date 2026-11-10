@@ -136,3 +136,70 @@ test("mergePortfolioPosts appends without repeating, portfolioPostImage prefers 
   assert.equal(portfolioPostImage(b), "https://x/b.jpg");
   assert.equal(portfolioPostImage(c), undefined);
 });
+
+test("picks: a best per dish type, a top three, and Only me entries drop out of both", async () => {
+  const profile = await hungryService.profile.getProfile();
+  const make = async (caption: string) => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    return hungryService.social.postBite({
+      dishId: "dish-chicken-rice",
+      venueId: "venue-tian-tian",
+      photoUrl: "https://example.com/pick.jpg",
+      caption,
+      rating: 0,
+    } as never);
+  };
+  const a = await make("pick a");
+  const b = await make("pick b");
+
+  const first = await hungryService.foodPortfolio.setPick(a.id, "dish_type");
+  assert.equal(first.replacedPostId, undefined);
+  const second = await hungryService.foodPortfolio.setPick(b.id, "dish_type");
+  assert.equal(second.replacedPostId, a.id, "the same dish type replaces the old best");
+  assert.equal(second.slot, first.slot);
+
+  await hungryService.foodPortfolio.setPick(a.id, "overall", 1);
+  await hungryService.foodPortfolio.setPick(a.id, "overall", 3);
+  await assert.rejects(hungryService.foodPortfolio.setPick(a.id, "overall", 4));
+  let picks = await hungryService.foodPortfolio.getPicks(profile.id);
+  assert.deepEqual(
+    picks.topThree.map((pick) => [pick.place, pick.post.id]),
+    [[3, a.id]],
+    "moving within the top three frees the old place",
+  );
+  assert.ok(picks.bests.some((pick) => pick.post.id === b.id));
+
+  assert.equal(await hungryService.foodPortfolio.setEntryVisibility(a.id, "private"), "private");
+  picks = await hungryService.foodPortfolio.getPicks(profile.id);
+  assert.equal(picks.topThree.length, 0, "Only me drops the entry's picks");
+  await assert.rejects(hungryService.foodPortfolio.setPick(a.id, "overall", 1));
+
+  const diary = await hungryService.foodPortfolio.getDiary(profile.id, { limit: 2 });
+  assert.deepEqual(
+    diary.map((entry) => [entry.post.id, entry.visibility]),
+    [
+      [b.id, "public"],
+      [a.id, "private"],
+    ],
+    "the owner sees Only me entries, newest first",
+  );
+  assert.deepEqual(diary[0].pickKinds, ["dish_type"]);
+  const next = await hungryService.foodPortfolio.getDiary(profile.id, {
+    limit: 1,
+    before: { publishedAt: diary[0].post.createdAt, id: diary[0].post.id },
+  });
+  assert.equal(next[0]?.post.id, a.id, "paging starts after the last entry shown");
+
+  assert.equal(await hungryService.foodPortfolio.removePick(b.id), 1);
+  await hungryService.foodPortfolio.setEntryVisibility(a.id, "public");
+  assert.deepEqual(await hungryService.foodPortfolio.getReviewPortfolioLabels([a.id]), []);
+});
+
+test("other people's diaries hide Only me entries and nobody picks someone else's post", async () => {
+  const { posts } = await hungryService.foodPortfolio.getTopPosts("user-emma");
+  assert.ok(posts.length > 0);
+  await assert.rejects(hungryService.foodPortfolio.setPick(posts[0].id, "dish_type"));
+  await assert.rejects(hungryService.foodPortfolio.setEntryVisibility(posts[0].id, "private"));
+  const diary = await hungryService.foodPortfolio.getDiary("user-emma");
+  assert.ok(diary.length > 0 && diary.every((entry) => entry.visibility === "public"));
+});

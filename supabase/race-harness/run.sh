@@ -283,7 +283,8 @@ T19 two refreshes at once after rank movement (one top ten Activity row per pers
 T20 two week closes at once (one rank snapshot row per person)
 T21 two dishes ranked at once by one person (both land in the ranking, neither overwrites the other)
 T22 one post published twice at once (one live post with one set of media)
-T23 one review submitted twice at once with two different entry ids (one linked portfolio entry)"
+T23 one review submitted twice at once with two different entry ids (one linked portfolio entry)
+T24 two dishes made the best of the same dish type at once (one best, the later one)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -429,6 +430,22 @@ REV() { echo "select set_config('request.jwt.claim.sub', '$U1', true); select pu
 lb_race T23 "$(REV $PP2)" "$(REV $PP3)" >>"$LB_OUT"
 echo "T23_entries=$(lb_val "select count(*) from posts where review_id = '$PR1' and deleted_at is null")" >>"$LB_OUT"
 
+# Portfolio picks (20261111090000): two picks for the same dish type at once leave one best.
+# The read functions are SQL over tables these stand-ins do not have, so bodies are not checked.
+PK_MIGRATION=20261111090000_portfolio_picks
+lb_val "alter table dishes add column if not exists food_type text;
+  insert into dishes(id, name, food_type) values ('dpk1', 'laksa a', 'Laksa'), ('dpk2', 'laksa b', 'Laksa');" >/dev/null
+for pass in 1 2; do
+  PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$PK_MIGRATION.sql" >/dev/null 2>&1 \
+    || { echo "  FAIL  $PK_MIGRATION does not apply (pass $pass)"; fail=1; }
+done
+PK1=77777777-0000-0000-0000-000000000001
+PK2=77777777-0000-0000-0000-000000000002
+lb_val "insert into posts(id, author_id, status, venue_id, dish_id) values ('$PK1', '$U1', 'published', 'v5', 'dpk1'), ('$PK2', '$U1', 'published', 'v5', 'dpk2');" >/dev/null
+PICK() { echo "select set_config('request.jwt.claim.sub', '$U1', true); select public.set_portfolio_pick('$1', 'dish_type');"; }
+lb_race T24 "$(PICK $PK1)" "$(PICK $PK2)" >>"$LB_OUT"
+echo "T24_bests=$(lb_val "select count(*) from portfolio_picks where user_id = '$U1' and kind = 'dish_type' and slot = 'Laksa'")" >>"$LB_OUT"
+
 LB_EXPECTED="T15_errors=0
 T15_credited=6
 T16_errors=0
@@ -447,13 +464,22 @@ T21_ranked=2
 T22_errors=0
 T22_posts=1_1
 T23_errors=0
-T23_entries=1"
+T23_entries=1
+T24_errors=0
+T24_bests=1"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
   if [ "$line" = "$key=$want" ]; then echo "  ok    $line"; else echo "  FAIL  $line   (expected $want)"; fail=1; fi
 done <"$LB_OUT"
 [ "$(wc -l <"$LB_OUT")" = "$(printf '%s\n' "$LB_EXPECTED" | wc -l)" ] || { echo "  FAIL  leaderboard results missing"; fail=1; }
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$PK_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && [ "$(lb_val "select to_regclass('public.portfolio_picks') is null")" = t ] \
+  && [ "$(lb_val "select count(*) from pg_proc where prosrc like '%visibility = ''private''%' and proname in ('credit_post_board_points', 'void_post_board_points', 'publish_post_core')")" = 0 ] \
+  && PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$PK_MIGRATION.sql" >/dev/null 2>&1 \
+  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$PK_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && echo "  ok    portfolio picks down migration restores the board triggers and re-applies after up" \
+  || { echo "  FAIL  portfolio picks down/up migration"; fail=1; }
 "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$RK_MIGRATION.down.sql" >/dev/null 2>&1 \
   && [ "$(lb_val "select count(*) from pg_proc where proname in ('rank_portfolio_post', 'get_review_portfolio_ranks', 'get_my_portfolio_ranking')")" = 0 ] \
   && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$RK_MIGRATION.sql" >/dev/null 2>&1 \

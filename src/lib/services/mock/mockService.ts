@@ -54,6 +54,12 @@ import type {
   BitesFeedPage,
   FoodPortfolioStall,
   ReviewPortfolioRank,
+  ReviewPortfolioLabel,
+  PortfolioDiaryEntry,
+  PortfolioPickKind,
+  PortfolioPickResult,
+  PortfolioPicks,
+  PortfolioDiaryPage,
   LeaderboardBoard,
   LeaderboardQuery,
   LeaderboardRow,
@@ -345,6 +351,13 @@ function createMockUserStallSubmission(input: SubmitUserStallSubmissionInput): U
 let _profile: UserProfile = { ...guestProfile };
 /** Food Portfolio top-three pins by user id (mock only; Supabase keeps them on user_profiles). */
 const _mockPinnedPostIds: Record<string, string[]> = {};
+// Portfolio picks by person, and the entries set to Only me. The mock catalog has no dish types,
+// so a dish's name stands in for its type.
+const _mockPortfolioPicks: Record<
+  string,
+  { kind: PortfolioPickKind; slot: string; postId: string }[]
+> = {};
+const _mockPrivatePostIds = new Set<string>();
 let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
 /** Mock: the portfolio entry made with each submitted review, for a retried submission. */
@@ -3125,6 +3138,115 @@ export const hungryService: HungryService = {
     },
 
     async getReviewPortfolioRanks(_reviewIds: string[]): Promise<ReviewPortfolioRank[]> {
+      // The mock catalog has no reviews tied to posted dishes; no label shows.
+      return resolve([]);
+    },
+
+    async getPicks(userId: string): Promise<PortfolioPicks> {
+      await hydrateSocial();
+      const byId = new Map(MOCK_BITES_FEED.map((bite) => [bite.id, bite]));
+      const picks: PortfolioPicks = { topThree: [], bests: [] };
+      for (const pick of _mockPortfolioPicks[userId] ?? []) {
+        const bite = byId.get(pick.postId);
+        if (!bite || bite.authorId !== userId || _mockPrivatePostIds.has(bite.id)) continue;
+        const post = withMockViewerReactions(bite);
+        if (pick.kind === "overall") picks.topThree.push({ place: Number(pick.slot), post });
+        else picks.bests.push({ foodType: pick.slot, post });
+      }
+      picks.topThree.sort((a, b) => a.place - b.place);
+      picks.bests.sort((a, b) => a.foodType.localeCompare(b.foodType));
+      return resolve(picks);
+    },
+
+    async setPick(
+      postId: string,
+      kind: PortfolioPickKind,
+      place?: number,
+    ): Promise<PortfolioPickResult> {
+      await hydrateSocial();
+      const bite = MOCK_BITES_FEED.find(
+        (item) => item.id === postId && item.authorId === _profile.id,
+      );
+      if (!bite) throw new Error("Only your own live dishes can be your bests.");
+      if (_mockPrivatePostIds.has(postId)) {
+        throw new Error("Make this dish public before choosing it as a best.");
+      }
+      if (kind === "overall" && !(place && place >= 1 && place <= 3)) {
+        throw new Error("Choose a place from 1 to 3.");
+      }
+      const slot = kind === "overall" ? String(Math.floor(place as number)) : bite.dishName;
+      const mine = (_mockPortfolioPicks[_profile.id] ?? []).filter(
+        (pick) => !(pick.kind === kind && pick.postId === postId && pick.slot !== slot),
+      );
+      const held = mine.find((pick) => pick.kind === kind && pick.slot === slot);
+      _mockPortfolioPicks[_profile.id] = [
+        ...mine.filter((pick) => pick !== held),
+        { kind, slot, postId },
+      ];
+      return resolve({
+        kind,
+        slot,
+        postId,
+        replacedPostId: held && held.postId !== postId ? held.postId : undefined,
+      });
+    },
+
+    async removePick(postId: string, kind?: PortfolioPickKind) {
+      const mine = _mockPortfolioPicks[_profile.id] ?? [];
+      const kept = mine.filter(
+        (pick) => !(pick.postId === postId && (!kind || pick.kind === kind)),
+      );
+      _mockPortfolioPicks[_profile.id] = kept;
+      return resolve(mine.length - kept.length);
+    },
+
+    async setEntryVisibility(postId: string, visibility: "public" | "private") {
+      await hydrateSocial();
+      const owned = MOCK_BITES_FEED.some(
+        (bite) => bite.id === postId && bite.authorId === _profile.id,
+      );
+      if (!owned) throw new Error("Only your own dishes can be changed.");
+      if (visibility === "private") {
+        _mockPrivatePostIds.add(postId);
+        _mockPortfolioPicks[_profile.id] = (_mockPortfolioPicks[_profile.id] ?? []).filter(
+          (pick) => pick.postId !== postId,
+        );
+      } else {
+        _mockPrivatePostIds.delete(postId);
+      }
+      return resolve(visibility);
+    },
+
+    async getDiary(userId: string, page?: PortfolioDiaryPage): Promise<PortfolioDiaryEntry[]> {
+      await hydrateSocial();
+      const limit = Math.min(Math.max(1, Math.floor(page?.limit ?? 30)), 60);
+      const before = page?.before;
+      const picks = _mockPortfolioPicks[userId] ?? [];
+      const entries = MOCK_BITES_FEED.filter(
+        (bite) =>
+          bite.authorId === userId && (userId === _profile.id || !_mockPrivatePostIds.has(bite.id)),
+      )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id))
+        .filter(
+          (bite) =>
+            !before ||
+            bite.createdAt < before.publishedAt ||
+            (bite.createdAt === before.publishedAt && bite.id < before.id),
+        )
+        .slice(0, limit);
+      return resolve(
+        entries.map((bite) => ({
+          post: withMockViewerReactions(bite),
+          visibility: _mockPrivatePostIds.has(bite.id) ? "private" : "public",
+          dishFoodType: bite.dishName,
+          pickKinds: [
+            ...new Set(picks.filter((pick) => pick.postId === bite.id).map((pick) => pick.kind)),
+          ].sort(),
+        })),
+      );
+    },
+
+    async getReviewPortfolioLabels(_reviewIds: string[]): Promise<ReviewPortfolioLabel[]> {
       // The mock catalog has no reviews tied to posted dishes; no label shows.
       return resolve([]);
     },

@@ -83,6 +83,11 @@ import type {
   BlockUserRequest,
   FoodPortfolioStall,
   ReviewPortfolioRank,
+  ReviewPortfolioLabel,
+  PortfolioDiaryEntry,
+  PortfolioEntryVisibility,
+  PortfolioPickKind,
+  PortfolioPicks,
   LeaderboardRow,
   PortfolioPointsEntry,
   PortfolioPointsKind,
@@ -6358,6 +6363,130 @@ export const supabaseService: HungryService = {
         const rank = asNumber(row.portfolio_rank);
         if (!reviewId || !rank) return [];
         return [{ reviewId, rank, dishCount: asNumber(row.dish_count) ?? 0 }];
+      });
+    },
+
+    async getPicks(userId) {
+      if (!UUID_PATTERN.test(userId)) return { topThree: [], bests: [] };
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_portfolio_picks", { p_user_id: userId });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      // One signing call for every photo, then map.
+      await presignPostMediaRows(
+        client,
+        rows.flatMap((row) => asRowArray(row.media)),
+      );
+      const posts = await Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+      const picks: PortfolioPicks = { topThree: [], bests: [] };
+      rows.forEach((row, index) => {
+        const slot = asString(row.slot);
+        if (!slot) return;
+        if (row.kind === "overall") {
+          const place = Number(slot);
+          if (place >= 1 && place <= 3) picks.topThree.push({ place, post: posts[index] });
+        } else if (row.kind === "dish_type") {
+          picks.bests.push({ foodType: slot, post: posts[index] });
+        }
+      });
+      picks.topThree.sort((a, b) => a.place - b.place);
+      return picks;
+    },
+
+    async setPick(postId, kind, place) {
+      if (!UUID_PATTERN.test(postId))
+        throw new Error("Only your own live dishes can be your bests.");
+      const wholePlace = Math.floor(place ?? 0);
+      if (kind === "overall" && !(wholePlace >= 1 && wholePlace <= 3)) {
+        throw new Error("Choose a place from 1 to 3.");
+      }
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("set_portfolio_pick", {
+        p_post_id: postId,
+        p_kind: kind,
+        p_place: kind === "overall" ? wholePlace : null,
+      });
+      if (error) throw error;
+      const row = (data ?? {}) as Row;
+      return {
+        kind: row.kind === "overall" ? "overall" : "dish_type",
+        slot: asString(row.slot) ?? "",
+        postId: asString(row.post_id) ?? postId,
+        replacedPostId: asString(row.replaced_post_id),
+      };
+    },
+
+    async removePick(postId, kind) {
+      if (!UUID_PATTERN.test(postId)) return 0;
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("remove_portfolio_pick", {
+        p_post_id: postId,
+        p_kind: kind ?? null,
+      });
+      if (error) throw error;
+      return asNumber(data) ?? 0;
+    },
+
+    async setEntryVisibility(postId, visibility) {
+      if (!UUID_PATTERN.test(postId)) throw new Error("Only your own dishes can be changed.");
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("set_post_visibility", {
+        p_post_id: postId,
+        p_visibility: visibility,
+      });
+      if (error) throw error;
+      return data === "private" ? "private" : "public";
+    },
+
+    async getDiary(userId, page) {
+      if (!UUID_PATTERN.test(userId)) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_portfolio_diary", {
+        p_user_id: userId,
+        p_limit: Math.min(Math.max(1, Math.floor(page?.limit ?? 30)), 60),
+        p_before_published_at: page?.before?.publishedAt ?? null,
+        p_before_id: page?.before?.id ?? null,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      await presignPostMediaRows(
+        client,
+        rows.flatMap((row) => asRowArray(row.media)),
+      );
+      const posts = await Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+      return rows.map((row, index): PortfolioDiaryEntry => {
+        const visibility: PortfolioEntryVisibility =
+          row.visibility === "private" || row.visibility === "followers"
+            ? row.visibility
+            : "public";
+        const kinds = Array.isArray(row.pick_kinds) ? row.pick_kinds : [];
+        return {
+          post: posts[index],
+          visibility,
+          dishFoodType: asString(row.dish_food_type),
+          pickKinds: kinds.filter(
+            (kind): kind is PortfolioPickKind => kind === "dish_type" || kind === "overall",
+          ),
+        };
+      });
+    },
+
+    async getReviewPortfolioLabels(reviewIds) {
+      const ids = [...new Set(reviewIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 50);
+      if (ids.length === 0) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_review_portfolio_labels", {
+        p_review_ids: ids,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): ReviewPortfolioLabel[] => {
+        const reviewId = asString(row.review_id);
+        const foodType = asString(row.food_type);
+        const place = asNumber(row.overall_place);
+        const overallPlace = place && place >= 1 && place <= 3 ? place : undefined;
+        if (!reviewId || (!foodType && !overallPlace)) return [];
+        return [{ reviewId, foodType, overallPlace, dishCount: asNumber(row.dish_count) ?? 0 }];
       });
     },
 
