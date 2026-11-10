@@ -82,7 +82,8 @@ test.describe("settings page walk", () => {
   }) => {
     await openSettings(page, 390);
     await expect(page.getByRole("button", { name: "Profile visibility" })).toHaveCount(1);
-    await expect(page.getByRole("button", { name: "Blocked people" })).toHaveCount(1);
+    // "Blocked and hidden" while the (archived) social feed is on, as in this suite.
+    await expect(page.getByRole("button", { name: /^Blocked (people|and hidden)/ })).toHaveCount(1);
   });
 
   test("switches flip when tapped", async ({ page }) => {
