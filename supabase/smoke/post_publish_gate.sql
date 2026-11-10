@@ -21,8 +21,9 @@ insert into user_profiles (id, display_name)
 values ('00000000-0000-1110-b000-000000000001', 'Publish Gate Author')
 on conflict (id) do nothing;
 
-select set_config('smoke.venue', (select v.id from venues v order by v.id limit 1), true);
+-- The stall is the dish's own: a review takes its venue from its dish.
 select set_config('smoke.dish', (select d.id from dishes d order by d.id limit 1), true);
+select set_config('smoke.venue', (select d.venue_id from dishes d where d.id = current_setting('smoke.dish')), true);
 
 -- Files "uploaded" for three posts and one review entry.
 insert into storage.objects (bucket_id, name, owner, metadata)
