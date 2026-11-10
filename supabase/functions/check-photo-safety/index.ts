@@ -5,9 +5,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 // Checks photos a person has just uploaded for explicit or violent content before the review
-// is published (App Store 1.2: filter objectionable material before it is posted). The app
-// calls this between the upload and `submit_review`; "blocked" stops the post and the app
-// discards the files. Google Cloud Vision SafeSearch does the check.
+// or post is published (App Store 1.2: filter objectionable material before it is posted). The
+// app calls this between the upload and `submit_review` / `publish_post`; "blocked" stops the
+// post and the app discards the files. Google Cloud Vision SafeSearch does the check.
+//
+// Each answer is recorded per photo (record_photo_safety_checks): publish_post refuses a post
+// photo with no answer or a blocked one, so skipping this call cannot publish an unchecked photo.
+// `bucket` is "review-media" (the default) or "post-media".
 //
 // Fails open: with no Vision key, or when Google is down, the answer is "unchecked", the error
 // is reported, and the post goes ahead (reports and blocking still apply). The reporter of a
@@ -15,7 +19,8 @@ import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 
 type JsonObject = Record<string, unknown>;
 
-const BUCKET = "review-media";
+const BUCKETS = new Set(["review-media", "post-media"]);
+const DEFAULT_BUCKET = "review-media";
 const MAX_PHOTOS = 10;
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
 const MAX_CALLS_PER_USER_PER_MINUTE = 30;
@@ -104,6 +109,31 @@ function validPaths(value: unknown, userId: string): string[] | null {
   return ok ? [...new Set(paths)] : null;
 }
 
+type Verdict = "clear" | "unchecked" | "blocked";
+
+/** Keeps each photo's answer for publish_post. A failure is reported, never shown to the caller. */
+async function recordVerdicts(
+  client: ReturnType<typeof createClient>,
+  request: Request,
+  userId: string,
+  bucket: string,
+  verdicts: { path: string; status: Verdict }[],
+): Promise<void> {
+  const { error } = await client.rpc("record_photo_safety_checks", {
+    p_user_id: userId,
+    p_bucket: bucket,
+    p_checks: verdicts,
+  });
+  if (error) {
+    await reportFunctionError(
+      "check-photo-safety",
+      new Error(`record_photo_safety_checks failed: ${error.message}`),
+      { stage: "record" },
+      request,
+    );
+  }
+}
+
 serveWithSentry("check-photo-safety", async (request) => {
   const allowedOrigin = resolveAllowedOrigin(request, getAllowedOrigins());
   if (request.method === "OPTIONS") {
@@ -143,6 +173,11 @@ serveWithSentry("check-photo-safety", async (request) => {
   if (!paths) {
     return toJson(400, { error: "invalid_paths" }, allowedOrigin);
   }
+  const bucket = body.bucket === undefined ? DEFAULT_BUCKET : String(body.bucket);
+  if (!BUCKETS.has(bucket)) {
+    return toJson(400, { error: "invalid_bucket" }, allowedOrigin);
+  }
+  const all = (status: Verdict) => paths.map((path) => ({ path, status }));
 
   const client = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -166,11 +201,12 @@ serveWithSentry("check-photo-safety", async (request) => {
       { stage: "config" },
       request,
     );
+    await recordVerdicts(client, request, userId, bucket, all("unchecked"));
     return toJson(200, { status: "unchecked", photos: paths.length }, allowedOrigin);
   }
 
   try {
-    const signed = await client.storage.from(BUCKET).createSignedUrls(paths, SIGNED_URL_SECONDS);
+    const signed = await client.storage.from(bucket).createSignedUrls(paths, SIGNED_URL_SECONDS);
     if (signed.error || !Array.isArray(signed.data)) {
       throw new Error(signed.error?.message ?? "signed_urls_failed");
     }
@@ -209,9 +245,18 @@ serveWithSentry("check-photo-safety", async (request) => {
     if (responses.length !== images.length) throw new Error("vision_response_mismatch");
     if (responses.some((entry) => entry?.error)) throw new Error("vision_item_error");
 
-    const flagged = responses.filter((entry) =>
+    const blockedFlags = responses.map((entry) =>
       isBlocked(entry?.safeSearchAnnotation as JsonObject | undefined),
-    ).length;
+    );
+    const flagged = blockedFlags.filter(Boolean).length;
+    // createSignedUrls answers in the order asked, so photo i is paths[i].
+    await recordVerdicts(
+      client,
+      request,
+      userId,
+      bucket,
+      paths.map((path, index) => ({ path, status: blockedFlags[index] ? "blocked" : "clear" })),
+    );
     if (flagged > 0) {
       // Not an error: a person posted something that broke the rules. Kept as a warning so ops
       // can see the volume without the image or its text.
@@ -221,6 +266,7 @@ serveWithSentry("check-photo-safety", async (request) => {
     return toJson(200, { status: "clear", photos: images.length }, allowedOrigin);
   } catch (error) {
     await reportFunctionError("check-photo-safety", error, { stage: "safe_search" }, request);
+    await recordVerdicts(client, request, userId, bucket, all("unchecked"));
     return toJson(200, { status: "unchecked", photos: paths.length }, allowedOrigin);
   }
 });

@@ -195,3 +195,58 @@ test("check-photo-safety fails open and reports when storage or Vision fails", a
     assert.equal(exceptions(sentryEvents).length, 1);
   }
 });
+
+test("check-photo-safety checks post photos in the post-media bucket and refuses other buckets", async () => {
+  const { handler, supabase } = await load();
+  const response = await handler(
+    post({ paths: ["u1/p1/a.jpg"], bucket: "post-media" }, "user-jwt"),
+  );
+  assert.equal((await json(response)).status, "clear");
+  assert.equal(supabase.storageCalls[0].bucket, "post-media");
+  const other = await handler(post({ paths: ["u1/p1/a.jpg"], bucket: "avatars" }, "user-jwt"));
+  assert.equal(other.status, 400);
+  assert.equal((await json(other)).error, "invalid_bucket");
+});
+
+test("check-photo-safety records each photo's answer for publish_post", async () => {
+  const { handler, supabase } = await load({
+    annotations: [{ adult: "UNLIKELY" }, { adult: "VERY_LIKELY" }],
+  });
+  await handler(post({ paths: ["u1/p1/a.jpg", "u1/p1/b.jpg"], bucket: "post-media" }, "user-jwt"));
+  assert.deepEqual(supabase.callsTo("record_photo_safety_checks")[0].args, {
+    p_user_id: "u1",
+    p_bucket: "post-media",
+    p_checks: [
+      { path: "u1/p1/a.jpg", status: "clear" },
+      { path: "u1/p1/b.jpg", status: "blocked" },
+    ],
+  });
+});
+
+test("check-photo-safety records unchecked when it cannot check, so posting still works", async () => {
+  const { handler, supabase } = await load({ env: { GOOGLE_CLOUD_VISION_API_KEY: "" } });
+  await handler(check(["u1/r/a.jpg"]));
+  assert.deepEqual(supabase.callsTo("record_photo_safety_checks")[0].args.p_checks, [
+    { path: "u1/r/a.jpg", status: "unchecked" },
+  ]);
+  const down = await load({ visionStatus: 503 });
+  await down.handler(check(["u1/r/a.jpg"]));
+  assert.equal(
+    (
+      down.supabase.callsTo("record_photo_safety_checks")[0].args.p_checks as { status: string }[]
+    )[0].status,
+    "unchecked",
+  );
+});
+
+test("check-photo-safety reports a failed record but still answers", async () => {
+  const { handler, supabase, sentryEvents } = await load();
+  supabase.rpc.record_photo_safety_checks = () => ({ data: null, error: { message: "down" } });
+  const body = await json(await handler(check()));
+  assert.equal(body.status, "clear");
+  assert.ok(
+    exceptions(sentryEvents).some((event) =>
+      String((event.error as Error | undefined)?.message).includes("record_photo_safety_checks"),
+    ),
+  );
+});

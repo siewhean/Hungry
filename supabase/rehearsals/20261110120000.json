@@ -1,0 +1,14 @@
+{
+  "version": "20261110120000",
+  "name": "20261110120000_post_publish_gate",
+  "result": "pass",
+  "rehearsed_at": "2026-11-10T15:39:44Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "fd18abf8d5fccff8e9a2a992ca3c8366ebbc8d90",
+  "up_sha256": "587e545964ec7b2579c1378cd5d7ee17a0181f3383d8c9f224df8b2355b459ed",
+  "down_sha256": "351af73f5a98445708ff8f06fda030ed4974991c15a384a6a23ccc722e5395f6",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/post_publish_gate.sql"]
+}

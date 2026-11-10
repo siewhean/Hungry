@@ -1,11 +1,10 @@
-// Review-to-portfolio: the score, the suggested rank, the pin placement and the publish step.
+// Review-to-portfolio: the score, the suggested rank, the pin placement and the review's portfolio entry.
 
 import assert from "node:assert/strict";
 import test, { afterEach } from "node:test";
 
 import { NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import {
-  addReviewToPortfolio,
   hasRatedAllTastes,
   portfolioScore,
   postPortfolioScore,
@@ -99,19 +98,23 @@ test("the ranked scores follow the ranking order and are null for a post we did 
   assert.deepEqual(await loadRankedScores("u1", NEUTRAL_TASTE_VECTOR), []);
 });
 
-const input = {
+const portfolioReview = (clientReviewId: string, rank: number | null) => ({
   dishId: "d1",
   venueId: "v1",
-  photoUrl: "file:///p.jpg",
-  caption: "Good",
-  tags: [],
   rating: 4,
-  tasteStamp: NEUTRAL_TASTE_VECTOR,
-  clientPostId: "post-1",
-  author: { id: "u1", displayName: "Sh" },
-};
+  text: "Good",
+  tags: [],
+  photos: ["file:///p.jpg"],
+  clientReviewId,
+  portfolio: {
+    caption: "Good",
+    tasteStamp: NEUTRAL_TASTE_VECTOR,
+    rank,
+    author: { id: "u1", displayName: "Sh" },
+  },
+});
 
-test("publishing posts the dish and ranks it at the chosen place, however far down", async () => {
+test("a review with a portfolio entry posts the dish and ranks it in the same call", async () => {
   const posted: unknown[] = [];
   const ranked: [string, number][] = [];
   stub(getHungryService().social, "postBite", async (draft) => {
@@ -122,38 +125,38 @@ test("publishing posts the dish and ranks it at the chosen place, however far do
     ranked.push([id, position]);
     return [id];
   });
-  const result = await addReviewToPortfolio({ ...input, rank: 12 });
-  assert.deepEqual(result, { postId: "new-post", ranked: true });
+  const result = await getHungryService().reviews.submitReview(portfolioReview("rv-entry-1", 12));
+  assert.deepEqual(result, { portfolioPostId: "new-post" });
   assert.deepEqual(ranked, [["new-post", 12]]);
-  assert.equal((posted[0] as { clientPostId: string }).clientPostId, "post-1");
+  assert.equal((posted[0] as { caption: string }).caption, "Good");
+
+  // A retry of the same review finds the same entry instead of posting a second one.
+  assert.deepEqual(
+    await getHungryService().reviews.submitReview(portfolioReview("rv-entry-1", 12)),
+    { portfolioPostId: "new-post" },
+  );
+  assert.equal(posted.length, 1);
 });
 
-test("no place posts without ranking", async () => {
+test("no place posts the entry without ranking; no portfolio asked means no entry", async () => {
   let rankCalls = 0;
-  stub(getHungryService().social, "postBite", async () => ({ id: "new-post" }) as never);
+  let postCalls = 0;
+  stub(getHungryService().social, "postBite", async () => {
+    postCalls += 1;
+    return { id: "new-post" } as never;
+  });
   stub(getHungryService().foodPortfolio, "rankPost", async () => {
     rankCalls += 1;
     return [];
   });
-  assert.deepEqual(await addReviewToPortfolio({ ...input, rank: null }), {
-    postId: "new-post",
-    ranked: false,
-  });
+  assert.deepEqual(
+    await getHungryService().reviews.submitReview(portfolioReview("rv-entry-2", null)),
+    { portfolioPostId: "new-post" },
+  );
   assert.equal(rankCalls, 0);
-});
-
-test("a failed rank keeps the post and reports not ranked; a failed post throws", async () => {
-  stub(getHungryService().social, "postBite", async () => ({ id: "new-post" }) as never);
-  stub(getHungryService().foodPortfolio, "rankPost", async () => {
-    throw new Error("refused");
+  const { portfolio: _skip, ...plain } = portfolioReview("rv-entry-3", null);
+  assert.deepEqual(await getHungryService().reviews.submitReview(plain), {
+    portfolioPostId: null,
   });
-  assert.deepEqual(await addReviewToPortfolio({ ...input, rank: 2 }), {
-    postId: "new-post",
-    ranked: false,
-  });
-
-  stub(getHungryService().social, "postBite", async () => {
-    throw new Error("offline");
-  });
-  await assert.rejects(addReviewToPortfolio({ ...input, rank: 2 }), /offline/);
+  assert.equal(postCalls, 1);
 });

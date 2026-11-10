@@ -347,6 +347,8 @@ let _profile: UserProfile = { ...guestProfile };
 const _mockPinnedPostIds: Record<string, string[]> = {};
 let _mockPinnedDishIds: string[] = [];
 const _submittedClientReviewIds = new Set<string>();
+/** Mock: the portfolio entry made with each submitted review, for a retried submission. */
+const _mockReviewEntryIds = new Map<string, string>();
 /** Reviews the mock viewer marked helpful. */
 const _helpfulReviewIds = new Set<string>();
 let _followedStallIds = new Set<string>();
@@ -2209,8 +2211,34 @@ export const hungryService: HungryService = {
     async submitReview(draft: SubmitReviewInput) {
       // Mock: a retried submission with the same client id is a no-op, like the Supabase resume.
       if (draft.clientReviewId) {
-        if (_submittedClientReviewIds.has(draft.clientReviewId)) return resolve(undefined);
+        if (_submittedClientReviewIds.has(draft.clientReviewId)) {
+          return resolve({
+            portfolioPostId: _mockReviewEntryIds.get(draft.clientReviewId) ?? null,
+          });
+        }
         _submittedClientReviewIds.add(draft.clientReviewId);
+      }
+      // Mock: the portfolio entry is made with the review, as the server does in one transaction.
+      let portfolioPostId: string | null = null;
+      if (draft.portfolio && draft.photos[0]) {
+        const bite = await hungryService.social.postBite({
+          dishId: draft.dishId,
+          venueId: draft.venueId,
+          photoUrl: draft.photos[0],
+          mediaUrls: [draft.photos[0]],
+          mediaType: "photo",
+          mediaTypes: ["photo"],
+          caption: draft.portfolio.caption,
+          tags: draft.tags,
+          tasteStamp: draft.portfolio.tasteStamp,
+          rating: draft.rating,
+          author: draft.portfolio.author,
+        });
+        if (draft.portfolio.rank !== null) {
+          await hungryService.foodPortfolio.rankPost(bite.id, draft.portfolio.rank);
+        }
+        portfolioPostId = bite.id;
+        if (draft.clientReviewId) _mockReviewEntryIds.set(draft.clientReviewId, bite.id);
       }
       // Mock: persist the reviewed dish into the in-memory profile
       if (!_profile.reviewedDishIds.includes(draft.dishId)) {
@@ -2223,7 +2251,7 @@ export const hungryService: HungryService = {
           },
         };
       }
-      return resolve(undefined);
+      return resolve({ portfolioPostId });
     },
 
     async listRecentReviews(options) {

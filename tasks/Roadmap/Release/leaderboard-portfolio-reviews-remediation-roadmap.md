@@ -1,6 +1,6 @@
 # Food Portfolio, Reviews and Leaderboards: remediation roadmap
 
-Status: Accepted by the owner on 2026-11-10 with the recommended defaults. Phase 0 is in progress; nothing else is implemented yet.
+Status: Accepted by the owner on 2026-11-10 with the recommended defaults. Phase 0 merged (#261). Phase 1 steps 1.1 to 1.5 in review (migration 20261110120000); the delete prompt in 1.4 and the owner check in 1.6 remain.
 Source: `tasks/Roadmap/Audit/2026-11-leaderboard-portfolio-reviews-integrated-audit.md` (commit `ecb90e07`, 2026-11-10).
 
 Recommendation in one line: **redesign first (small), then release in stages.** Production holds no posts,
