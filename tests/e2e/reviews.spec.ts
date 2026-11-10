@@ -16,7 +16,8 @@ async function openEditor(page: import("@playwright/test").Page) {
   await resetAppState(page);
   await startOnboardedMockSession(page);
   await clickDevButton(page, "QuickRate", "Profile & Review");
-  await expect(page.getByText("Write a review", { exact: true }).first()).toBeVisible({
+  // The one composer: "Add a dish" with the Food Portfolio on (as in production).
+  await expect(page.getByText("Add a dish", { exact: true }).first()).toBeVisible({
     timeout: 30_000,
   });
 }

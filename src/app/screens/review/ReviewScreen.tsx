@@ -45,7 +45,6 @@ import {
 } from "@/components/review";
 import {
   ReviewPortfolioSection,
-  portfolioBlockedReason,
   type PortfolioEntryChoice,
 } from "@/components/foodPortfolio/ReviewPortfolioSection";
 import { loadPortfolioPicks } from "@/features/foodPortfolio/foodPortfolioLoaders";
@@ -268,7 +267,6 @@ export function ReviewScreen({ navigation, route }: Props) {
     };
   }, [dishFoodType, portfolioOn, profileId]);
   const bestOnOffer = portfolioOn && entryVisibility === "public" && Boolean(dishFoodType);
-  const portfolioBlocked = portfolioOn ? portfolioBlockedReason(draft.photos.length > 0) : null;
   const selectedVenue = useMemo(
     () => repository.getVenueById(draft.selectedVenueId || selectedDish?.venueId || ""),
     [repository, draft.selectedVenueId, selectedDish?.venueId],
@@ -759,7 +757,7 @@ export function ReviewScreen({ navigation, route }: Props) {
   }
 
   const missingField = firstMissingReviewField(draft, Boolean(selectedDish));
-  const publishBlockedReason = missingField?.message ?? portfolioBlocked;
+  const publishBlockedReason = missingField?.message;
   const optionalCount =
     draft.selectedTags.length +
     (typeof draft.recommend === "boolean" ? 1 : 0) +
@@ -1002,34 +1000,24 @@ export function ReviewScreen({ navigation, route }: Props) {
   );
 
   // The header Publish is the only one; the footer says why it is off and scrolls to the gap.
-  const publishBlockedHint =
-    portfolioBlocked && !missingField ? (
+  const publishBlockedHint = missingField ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Scrolls to the missing field"
+      onPress={() => scrollToSection(missingField.field)}
+      style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
+    >
       <AppText
         variant="bodySmall"
         tone="secondary"
         accessibilityLiveRegion="polite"
+        // Plain secondary text: an underline read as a web link (Apple design pass).
         style={{ textAlign: "center" }}
       >
-        {portfolioBlocked}
+        {missingField.message}
       </AppText>
-    ) : missingField ? (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityHint="Scrolls to the missing field"
-        onPress={() => scrollToSection(missingField.field)}
-        style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
-      >
-        <AppText
-          variant="bodySmall"
-          tone="secondary"
-          accessibilityLiveRegion="polite"
-          // Plain secondary text: an underline read as a web link (Apple design pass).
-          style={{ textAlign: "center" }}
-        >
-          {missingField.message}
-        </AppText>
-      </Pressable>
-    ) : null;
+    </Pressable>
+  ) : null;
 
   return (
     <EdgeSwipeZones {...cardEdgeSwipes}>

@@ -34,11 +34,6 @@ type Props = {
   currentBest?: Pick<Bite, "dishName" | "venueName"> | null;
 };
 
-/** The sentence under Publish while a portfolio entry is not ready; null when it is. */
-export function portfolioBlockedReason(hasPhoto: boolean): string | null {
-  return hasPhoto ? null : "Add a photo to put this dish in your portfolio.";
-}
-
 /** What the best switch says it does: the dish it replaces, or that it is the first. */
 export function bestSwitchDescription(
   foodType: string,
@@ -84,7 +79,8 @@ export function ReviewPortfolioSection({
         <View style={{ gap: spacing[4] }}>
           {!hasPhoto ? (
             <AppText variant="bodySmall" tone="secondary" accessibilityLiveRegion="polite">
-              Add a photo above: a portfolio entry needs one.
+              Add a photo above to put it in your portfolio too. Without one, only the review is
+              posted.
             </AppText>
           ) : null}
           <View style={{ gap: spacing[2] }}>

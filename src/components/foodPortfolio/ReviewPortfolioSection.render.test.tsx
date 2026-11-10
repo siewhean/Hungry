@@ -78,7 +78,7 @@ test("on, it asks for a photo, offers Public or Only me and the best switch nami
       onMakeBestChange: (value) => choices.push(value),
     }),
   );
-  assert.match(view.text(), /a portfolio entry needs one/);
+  assert.match(view.text(), /Without one, only the review is posted/);
   assert.match(view.text(), /0 of 6 rated/);
   assert.ok(view.findByText("Use our guess for the rest"));
   assert.equal(view.findByText("Where does it rank?"), null, "no place picker any more");
@@ -133,7 +133,7 @@ function stubPicks(best: { dishName: string; venueName: string } | null) {
   return dish;
 }
 
-test("the editor is Add a dish: the entry is on by default and Publish waits only for a photo", async () => {
+test("the editor is Add a dish: the entry is on by default and a photo is still optional", async () => {
   const dish = stubPicks(null);
   const draft = useReviewDraftStore.getState();
   draft.selectDish(dish.venueId, dish.id);
@@ -142,10 +142,9 @@ test("the editor is Add a dish: the entry is on by default and Publish waits onl
   await view.settle();
   assert.ok(view.findByText("Add a dish"));
   assert.ok(view.findByText("Who can see it"), "on by default");
-  assert.match(view.text(), /Add a photo to put this dish in your portfolio/);
-  useReviewDraftStore.getState().addPhoto("file:///dish.jpg");
-  await view.settle();
-  assert.doesNotMatch(view.text(), /Add a photo to put this dish/);
+  // A photo stays optional (sh, 2026-11-04): without one only the review goes out.
+  assert.match(view.text(), /Without one, only the review is posted/);
+  assert.equal(view.findByLabel("Publish")?.getAttribute("aria-disabled") === "true", false);
   assert.doesNotMatch(view.text(), /Rate all six tastes/, "tastes are optional");
 });
 
