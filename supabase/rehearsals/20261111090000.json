@@ -1,0 +1,14 @@
+{
+  "version": "20261111090000",
+  "name": "20261111090000_portfolio_picks",
+  "result": "pass",
+  "rehearsed_at": "2026-11-10T17:37:34Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "0e9d4dbbff05d9eaa8ebe406bd892242f4f3e3ce",
+  "up_sha256": "4c75a3a93274b533d6c5d7b50aad8a7e05ad81d14441c26f5350ab426f77bfe8",
+  "down_sha256": "c6e3bf2828b2b166ddc14669c41ff34bcaebb674c85c953344b36c1e3e5ab53e",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/portfolio_picks.sql"]
+}
