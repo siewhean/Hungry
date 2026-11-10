@@ -204,7 +204,7 @@ test("another person's portfolio: top picks, bests, diary, stalls tab, taps open
   assert.ok(view.findByText("Best laksa"));
   await view.press(view.findByTestId("food-portfolio-best-b"));
   assert.deepEqual(lastNavigate(navigation), ["ActivityPostDetail", { postId: "b" }]);
-  assert.equal(view.findByText("Post a dish"), null, "no posting on someone else's portfolio");
+  assert.equal(view.findByText("Add a dish"), null, "no posting on someone else's portfolio");
   assert.equal(view.findByTestId("food-portfolio-edit"), null, "no editing someone else's picks");
 
   await view.press(view.findByTestId("food-portfolio-tile-c"));
@@ -218,7 +218,7 @@ test("another person's portfolio: top picks, bests, diary, stalls tab, taps open
   assert.deepEqual(lastNavigate(navigation), ["StallDetail", { venueId: "venue-2" }]);
 });
 
-test("your own portfolio: Only me shows a lock, Post a dish opens the composer, the share card leaves Only me out", async () => {
+test("your own portfolio: Only me shows a lock, Add a dish opens the composer, the share card leaves Only me out", async () => {
   stubPortfolio();
   const navigation = createFakeNavigation();
   const view = await render(

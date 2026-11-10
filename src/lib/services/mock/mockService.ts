@@ -2247,9 +2247,7 @@ export const hungryService: HungryService = {
           rating: draft.rating,
           author: draft.portfolio.author,
         });
-        if (draft.portfolio.rank !== null) {
-          await hungryService.foodPortfolio.rankPost(bite.id, draft.portfolio.rank);
-        }
+        if (draft.portfolio.visibility === "private") _mockPrivatePostIds.add(bite.id);
         portfolioPostId = bite.id;
         if (draft.clientReviewId) _mockReviewEntryIds.set(draft.clientReviewId, bite.id);
       }

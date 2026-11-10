@@ -75,7 +75,7 @@ test("MissionCard shows Start while unfinished and hides it once complete", asyn
   assert.equal(view.findByLabel("Write a review for Write 2 reviews"), null);
 });
 
-test("an open stamp offers Find more stalls and Post a dish when given", async () => {
+test("an open stamp offers Find more stalls and Add a dish when given", async () => {
   const category = ALL_PASSPORT_CATEGORIES.find((item) => item.id === "hood-chinatown");
   assert.ok(category);
   const history = buildStampHistory({
@@ -97,7 +97,7 @@ test("an open stamp offers Find more stalls and Post a dish when given", async (
     }),
   );
   await view.press(view.findByLabel(`Find more ${category.name} stalls`));
-  await view.press(view.findByText("Post a dish"));
+  await view.press(view.findByText("Add a dish"));
   assert.deepEqual(pressed, ["find", "post"]);
 
   await view.rerender(

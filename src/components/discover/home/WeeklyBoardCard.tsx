@@ -64,7 +64,7 @@ export function WeeklyBoardCard({
   const hasPosted = (summary?.totalPoints ?? 0) > 0;
   const yourLine = hasPosted
     ? `You ${rankLabel(summary?.activeWeekRank)} · ${Math.round(summary?.weekPoints ?? 0)} pts this week`
-    : "Post a dish to join";
+    : "Add a dish to join";
 
   return (
     <Pressable

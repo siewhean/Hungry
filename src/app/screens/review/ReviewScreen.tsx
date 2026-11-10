@@ -45,16 +45,9 @@ import {
 } from "@/components/review";
 import {
   ReviewPortfolioSection,
-  portfolioBlockedReason,
+  type PortfolioEntryChoice,
 } from "@/components/foodPortfolio/ReviewPortfolioSection";
-import {
-  hasRatedAllTastes,
-  loadRankedScores,
-  portfolioScore,
-  reviewPalateMatch,
-  suggestRankedPlace,
-  type PortfolioRank,
-} from "@/features/foodPortfolio/reviewPortfolioRank";
+import { loadPortfolioPicks } from "@/features/foodPortfolio/foodPortfolioLoaders";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
 import {
   NEUTRAL_TASTE_VECTOR,
@@ -69,6 +62,7 @@ import { selectHaptic, tapHaptic } from "@/lib/haptics";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { adjacentTabKey, mainTabOrder } from "@/features/navigation/swipeIntent";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import type { Bite } from "@/lib/services/types";
 import { useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useReviewDraftHydrated, useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
@@ -103,6 +97,11 @@ import type { ReviewStackParamList, RootStackParamList } from "@/app/navigation/
 import type { DishDetail, TasteKey } from "@/types/domain";
 
 /** The optional fold opens and closes in 200ms: the chevron turns and the content fades in. */
+
+/** One composer: with the Food Portfolio on, writing a review is adding a dish. */
+function editorTitle(): string {
+  return FEATURE_FLAGS.foodPortfolioEnabled ? "Add a dish" : "Write a review";
+}
 const FOLD_MS = 200;
 function FoldChevron({ open, color }: { open: boolean; color: string }) {
   const reduceMotion = useReduceMotion();
@@ -242,42 +241,32 @@ export function ReviewScreen({ navigation, route }: Props) {
       ]),
     ) as Partial<Record<TasteKey, number>>;
   }, [selectedDish?.tasteVector, userTasteVector]);
-  // "Add to my Food Portfolio": the dish is posted too and, for a place, ranked in the portfolio.
-  const [addToPortfolio, setAddToPortfolio] = useState(false);
-  // undefined follows our suggestion; the reviewer's own pick (even "unranked") overrides it.
-  const [pickedRank, setPickedRank] = useState<PortfolioRank | undefined>(undefined);
-  // Scores of the dishes already ranked, best first (null: could not be scored).
-  const [rankedScores, setRankedScores] = useState<(number | null)[]>([]);
+  // "Add a dish": the dish also goes in your Food Portfolio diary (on by default), Public or
+  // Only me, and can be made your best of its dish type.
+  const [addToPortfolio, setAddToPortfolio] = useState(FEATURE_FLAGS.foodPortfolioEnabled);
+  const [entryVisibility, setEntryVisibility] = useState<PortfolioEntryChoice>("public");
+  const [makeBest, setMakeBest] = useState(false);
   const portfolioOn = FEATURE_FLAGS.foodPortfolioEnabled && addToPortfolio;
   const profileId = useProfileStore((state) => state.profile.id);
+  const dishFoodType = selectedDish?.foodTypeTag?.trim() || undefined;
+  // Your current best of this dish type, so the switch can say what it replaces.
+  const [currentBest, setCurrentBest] = useState<{
+    foodType: string;
+    post: Pick<Bite, "dishName" | "venueName"> | null;
+  } | null>(null);
   useEffect(() => {
-    if (!portfolioOn) return undefined;
+    if (!portfolioOn || !dishFoodType || !profileId) return undefined;
     let cancelled = false;
-    void loadRankedScores(profileId, userTasteVector ?? NEUTRAL_TASTE_VECTOR).then((scores) => {
-      if (!cancelled) setRankedScores(scores);
+    void loadPortfolioPicks(profileId).then((picks) => {
+      if (cancelled) return;
+      const best = picks.bests.find((pick) => pick.foodType === dishFoodType)?.post ?? null;
+      setCurrentBest({ foodType: dishFoodType, post: best });
     });
     return () => {
       cancelled = true;
     };
-  }, [portfolioOn, profileId, userTasteVector]);
-  const portfolioRated = hasRatedAllTastes(feltTaste);
-  const portfolioMatch =
-    portfolioOn && portfolioRated && selectedDish?.tasteVector
-      ? reviewPalateMatch(
-          selectedDish.tasteVector,
-          feltTaste,
-          userTasteVector ?? NEUTRAL_TASTE_VECTOR,
-        )
-      : undefined;
-  const suggestedRank: PortfolioRank | undefined =
-    portfolioMatch !== undefined && draft.rating > 0
-      ? suggestRankedPlace(portfolioScore(draft.rating, portfolioMatch), rankedScores)
-      : undefined;
-  const portfolioRank: PortfolioRank =
-    pickedRank !== undefined ? pickedRank : (suggestedRank ?? null);
-  const portfolioBlocked = portfolioOn
-    ? portfolioBlockedReason(feltTaste, draft.photos.length > 0)
-    : null;
+  }, [dishFoodType, portfolioOn, profileId]);
+  const bestOnOffer = portfolioOn && entryVisibility === "public" && Boolean(dishFoodType);
   const selectedVenue = useMemo(
     () => repository.getVenueById(draft.selectedVenueId || selectedDish?.venueId || ""),
     [repository, draft.selectedVenueId, selectedDish?.venueId],
@@ -622,7 +611,7 @@ export function ReviewScreen({ navigation, route }: Props) {
           ? {
               caption: reviewText || selectedDish.name,
               tasteStamp: selectedDish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
-              rank: portfolioRank,
+              visibility: entryVisibility,
               author: {
                 id: profile.id,
                 displayName: profile.displayName,
@@ -632,11 +621,25 @@ export function ReviewScreen({ navigation, route }: Props) {
           : undefined,
       });
       if (withPortfolioEntry && submitted?.portfolioPostId) {
+        const madeBest = bestOnOffer && makeBest;
         trackAnalyticsEvent("review_added_to_portfolio", {
           dish_id: selectedDish.id,
-          rank: portfolioRank ?? 0,
-          ranked: portfolioRank !== null,
+          visibility: entryVisibility,
+          made_best: madeBest,
         });
+        if (madeBest) {
+          // The review and entry are saved; a refused pick is reported and can be redone from
+          // the profile, so it never fails the publish.
+          try {
+            await getHungryService().foodPortfolio.setPick(submitted.portfolioPostId, "dish_type");
+          } catch (error) {
+            reportError(error, { screen: "ReviewScreen", action: "set_best_pick" });
+            useUIStore.getState().showToast({
+              message: "Posted, but we couldn't make it your best. Try again from your profile.",
+              tone: "warning",
+            });
+          }
+        }
       }
 
       // The felt levels go in as the dish's standard levels, undoing this reviewer's palate.
@@ -743,7 +746,7 @@ export function ReviewScreen({ navigation, route }: Props) {
 
   if (!draftHydrated) {
     return (
-      <Screen title="Write a review">
+      <Screen title={editorTitle()}>
         <View accessibilityLabel="Loading your draft" style={{ gap: spacing[4] }}>
           <Skeleton width="100%" height={88} />
           <Skeleton width="60%" height={32} />
@@ -754,7 +757,7 @@ export function ReviewScreen({ navigation, route }: Props) {
   }
 
   const missingField = firstMissingReviewField(draft, Boolean(selectedDish));
-  const publishBlockedReason = missingField?.message ?? portfolioBlocked;
+  const publishBlockedReason = missingField?.message;
   const optionalCount =
     draft.selectedTags.length +
     (typeof draft.recommend === "boolean" ? 1 : 0) +
@@ -997,40 +1000,30 @@ export function ReviewScreen({ navigation, route }: Props) {
   );
 
   // The header Publish is the only one; the footer says why it is off and scrolls to the gap.
-  const publishBlockedHint =
-    portfolioBlocked && !missingField ? (
+  const publishBlockedHint = missingField ? (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Scrolls to the missing field"
+      onPress={() => scrollToSection(missingField.field)}
+      style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
+    >
       <AppText
         variant="bodySmall"
         tone="secondary"
         accessibilityLiveRegion="polite"
+        // Plain secondary text: an underline read as a web link (Apple design pass).
         style={{ textAlign: "center" }}
       >
-        {portfolioBlocked}
+        {missingField.message}
       </AppText>
-    ) : missingField ? (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityHint="Scrolls to the missing field"
-        onPress={() => scrollToSection(missingField.field)}
-        style={{ alignItems: "center", justifyContent: "center", minHeight: 44 }}
-      >
-        <AppText
-          variant="bodySmall"
-          tone="secondary"
-          accessibilityLiveRegion="polite"
-          // Plain secondary text: an underline read as a web link (Apple design pass).
-          style={{ textAlign: "center" }}
-        >
-          {missingField.message}
-        </AppText>
-      </Pressable>
-    ) : null;
+    </Pressable>
+  ) : null;
 
   return (
     <EdgeSwipeZones {...cardEdgeSwipes}>
       <Screen
         keyboardAvoiding
-        title="Write a review"
+        title={editorTitle()}
         scroll
         scrollRef={scrollRef}
         headerLeft={
@@ -1089,11 +1082,12 @@ export function ReviewScreen({ navigation, route }: Props) {
                     }
                   }
                 }}
-                placeCount={rankedScores.length + 1}
-                suggestedRank={suggestedRank}
-                matchPercent={portfolioMatch}
-                rank={portfolioRank}
-                onRankChange={setPickedRank}
+                visibility={entryVisibility}
+                onVisibilityChange={setEntryVisibility}
+                foodType={dishFoodType}
+                makeBest={makeBest}
+                onMakeBestChange={setMakeBest}
+                currentBest={currentBest?.foodType === dishFoodType ? currentBest?.post : undefined}
               />
             ) : null}
             <View style={{ gap: spacing[4] }}>

@@ -489,7 +489,29 @@ function PostComposerScreenInner({ navigation, route }: Props) {
   );
 }
 
+/**
+ * With the Food Portfolio on there is one composer, "Add a dish" (the review editor): the Post
+ * route hands its dish and stall over to it, so every "Add a dish" button lands in the same place.
+ */
+function AddDishRedirect({ navigation, route }: Props) {
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
+  const dishId = route.params?.dishId;
+  const venueId = route.params?.venueId;
+  useEffect(() => {
+    const params = dishId || venueId ? { dishId, venueId } : undefined;
+    if (!isAuthenticated) {
+      setReturnRoute({ name: "ReviewStack", params: { screen: "ReviewMain", params } });
+      navigation.replace("AuthStack", { screen: "Login" });
+      return;
+    }
+    navigation.replace("ReviewStack", { screen: "ReviewMain", params });
+  }, [dishId, isAuthenticated, navigation, setReturnRoute, venueId]);
+  return <Screen title="Add a dish">{null}</Screen>;
+}
+
 export function PostComposerScreen(props: Props) {
+  if (FEATURE_FLAGS.foodPortfolioEnabled) return <AddDishRedirect {...props} />;
   return (
     <FeedErrorBoundary
       title="Post composer failed"
