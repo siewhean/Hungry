@@ -93,7 +93,14 @@ const events = (name: string) =>
 function stubPortfolio() {
   const service = getHungryService();
   stub(service.social, "listUserPosts", async () => [bite("a"), bite("b"), bite("c")]);
-  stub(service.foodPortfolio, "getTopPosts", async () => ({ posts: [], pinnedPostIds: [] }));
+  stub(service.foodPortfolio, "getPicks", async () => ({ topThree: [], bests: [] }));
+  stub(service.foodPortfolio, "getDiary", async () =>
+    [bite("a"), bite("b"), bite("c")].map((post) => ({
+      post,
+      visibility: "public" as const,
+      pickKinds: [],
+    })),
+  );
   stub(service.foodPortfolio, "listStalls", async () => [
     { venueId: "venue-1", venueName: "Hill Street", dishCount: 3 },
   ]);

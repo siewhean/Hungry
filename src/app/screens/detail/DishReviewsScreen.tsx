@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { DishReviewCard } from "@/components/dish/DishReviewCard";
-import { useReviewPortfolioRanks } from "@/features/foodPortfolio/useReviewPortfolioRanks";
+import { useReviewPortfolioLabels } from "@/features/foodPortfolio/useReviewPortfolioLabels";
 import { DishReviewSummary } from "@/components/dish/DishReviewSummary";
 import { AppText, Button, EmptyState, FeedErrorBoundary, Screen } from "@/components/ui";
 import {
@@ -125,7 +125,7 @@ export function DishReviewsScreen({ navigation, route }: Props) {
   };
 
   const summary = useMemo(() => buildReviewSummary(reviews), [reviews]);
-  const portfolioRanks = useReviewPortfolioRanks(reviews.map((review) => review.id));
+  const portfolioLabels = useReviewPortfolioLabels(reviews.map((review) => review.id));
   const shown = useMemo(
     () => sortReviews(filterReviews(reviews, { withPhotos }), sort),
     [reviews, sort, withPhotos],
@@ -187,7 +187,7 @@ export function DishReviewsScreen({ navigation, route }: Props) {
                     review={review}
                     dishName={dish?.name ?? "This dish"}
                     isOwn={isOwnReview(review, viewerId)}
-                    portfolioRank={portfolioRanks.get(review.id) ?? null}
+                    portfolioLabel={portfolioLabels.get(review.id) ?? null}
                     returnRoute={actions.returnRoute}
                     onOpenAuthor={actions.openAuthor}
                     onUpdated={(patch) => actions.updateReview(review.id, patch)}

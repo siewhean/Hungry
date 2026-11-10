@@ -1,6 +1,11 @@
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import type { Bite, FoodPortfolioStall, FoodPortfolioTopPosts } from "@/lib/services/types";
+import type {
+  Bite,
+  FoodPortfolioStall,
+  PortfolioDiaryEntry,
+  PortfolioPicks,
+} from "@/lib/services/types";
 
 /** Posts per page; matches listUserPosts' default page size. */
 export const FOOD_PORTFOLIO_PAGE_SIZE = 60;
@@ -18,32 +23,47 @@ export function portfolioPostImage(post: Bite): string | undefined {
   return post.mediaUrls?.find((url) => Boolean(url?.trim())) ?? (post.photoUrl || undefined);
 }
 
-/** One page of someone's posts, newest first; null when the read failed (already reported). */
-export async function loadPortfolioPostsPage(
+/** Diary entries per page (the server's default; it allows up to 60). */
+export const FOOD_PORTFOLIO_DIARY_PAGE_SIZE = 30;
+
+/** Newest first, no duplicates (a retry or page overlap can repeat an entry). */
+export function mergeDiaryEntries(
+  current: PortfolioDiaryEntry[],
+  next: PortfolioDiaryEntry[],
+): PortfolioDiaryEntry[] {
+  const seen = new Set(current.map((entry) => entry.post.id));
+  return [...current, ...next.filter((entry) => !seen.has(entry.post.id))];
+}
+
+/**
+ * One page of someone's diary, newest first, after `last` (the last entry shown) when given; null
+ * when the read failed (already reported).
+ */
+export async function loadPortfolioDiaryPage(
   userId: string,
-  offset: number,
-): Promise<Bite[] | null> {
+  last?: PortfolioDiaryEntry,
+): Promise<PortfolioDiaryEntry[] | null> {
   try {
-    return await getHungryService().social.listUserPosts(userId, {
-      limit: FOOD_PORTFOLIO_PAGE_SIZE,
-      offset,
+    return await getHungryService().foodPortfolio.getDiary(userId, {
+      limit: FOOD_PORTFOLIO_DIARY_PAGE_SIZE,
+      before: last ? { publishedAt: last.post.createdAt, id: last.post.id } : undefined,
     });
   } catch (error) {
     reportError(error, {
       screen: "FoodPortfolio",
-      action: offset === 0 ? "load_posts" : "load_more_posts",
+      action: last ? "load_more_diary" : "load_diary",
     });
     return null;
   }
 }
 
-/** The top three. A failed read is empty: the grid still shows every dish. */
-export async function loadPortfolioTopPosts(userId: string): Promise<FoodPortfolioTopPosts> {
+/** The top three and bests by dish type. A failed read is empty: the diary still shows. */
+export async function loadPortfolioPicks(userId: string): Promise<PortfolioPicks> {
   try {
-    return await getHungryService().foodPortfolio.getTopPosts(userId);
+    return await getHungryService().foodPortfolio.getPicks(userId);
   } catch (error) {
-    reportError(error, { screen: "FoodPortfolio", action: "load_top_posts" });
-    return { posts: [], pinnedPostIds: [] };
+    reportError(error, { screen: "FoodPortfolio", action: "load_picks" });
+    return { topThree: [], bests: [] };
   }
 }
 
@@ -53,18 +73,6 @@ export async function loadPortfolioStalls(userId: string): Promise<FoodPortfolio
     return await getHungryService().foodPortfolio.listStalls(userId);
   } catch (error) {
     reportError(error, { screen: "FoodPortfolio", action: "load_stalls" });
-    return null;
-  }
-}
-
-/** Saves up to three pins; the ids the server kept, or null when it refused (already reported). */
-export async function savePortfolioPins(postIds: string[]): Promise<string[] | null> {
-  try {
-    return await getHungryService().foodPortfolio.setPinnedPosts(
-      postIds.slice(0, FOOD_PORTFOLIO_MAX_PINS),
-    );
-  } catch (error) {
-    reportError(error, { screen: "FoodPortfolio", action: "save_pins" });
     return null;
   }
 }

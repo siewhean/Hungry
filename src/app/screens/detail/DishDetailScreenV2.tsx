@@ -62,7 +62,7 @@ import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { ReviewPhotoStrip } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { useReviewPortfolioRanks } from "@/features/foodPortfolio/useReviewPortfolioRanks";
+import { useReviewPortfolioLabels } from "@/features/foodPortfolio/useReviewPortfolioLabels";
 import { useWeeklyRanks } from "@/features/leaderboard/boardRanks";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import {
@@ -219,7 +219,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const reviewFollowsOn =
     FEATURE_FLAGS.followConnectionsEnabled && FEATURE_FLAGS.foodPortfolioEnabled;
   const weeklyRanks = useWeeklyRanks(reviewFollowsOn && dishReviews.length > 0);
-  const portfolioRanks = useReviewPortfolioRanks(dishReviews.map((review) => review.id));
+  const portfolioLabels = useReviewPortfolioLabels(dishReviews.map((review) => review.id));
   const {
     addToPortfolio,
     collectionOptions,
@@ -1599,7 +1599,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                         onRemoved={() => reviewActions.removeReview(review.id)}
                         followable={reviewFollowsOn}
                         boardRank={review.authorId ? weeklyRanks.get(review.authorId) : null}
-                        portfolioRank={portfolioRanks.get(review.id) ?? null}
+                        portfolioLabel={portfolioLabels.get(review.id) ?? null}
                       />
                     ))}
                     {dishReviews.length > DISH_REVIEW_PREVIEW_COUNT || hasMoreReviews ? (

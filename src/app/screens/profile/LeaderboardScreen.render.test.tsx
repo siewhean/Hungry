@@ -193,7 +193,8 @@ test("own Profile opens the Leaderboard from the Portfolio's Rank, only with the
   const service = getHungryService();
   stub(service.social, "getFollowCounts", async () => ({ followersCount: 0, followingCount: 0 }));
   stub(service.social, "listUserPosts", async () => []);
-  stub(service.foodPortfolio, "getTopPosts", async () => ({ posts: [], pinnedPostIds: [] }));
+  stub(service.foodPortfolio, "getPicks", async () => ({ topThree: [], bests: [] }));
+  stub(service.foodPortfolio, "getDiary", async () => []);
   stub(service.foodPortfolio, "listStalls", async () => []);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.equal(view.findByTestId("profile-leaderboard-row"), null, "no separate row any more");
