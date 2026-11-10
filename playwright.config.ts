@@ -74,9 +74,9 @@ export default defineConfig({
           EXPO_PUBLIC_ENABLE_MESSAGES: "1",
           // The browser onboarding specs walk today's flow; the slider flow is on in dev builds.
           EXPO_PUBLIC_ENABLE_SLIDER_ONBOARDING: "0",
-          // The Food Portfolio (on in dev builds) turns follows back on; the browser specs walk
-          // today's archived follows, so keep it off here as the production build does.
-          EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "0",
+          // The Food Portfolio (with follows) is on in production builds, so the browser specs
+          // walk the app as users see it.
+          EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "1",
         },
       }
     : undefined,

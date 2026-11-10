@@ -273,6 +273,8 @@ test("avatar falls back to initials when the photo fails to load", async () => {
 // --- Profile home -----------------------------------------------------------------------
 
 test("follow requests are archived: no count read, badge or banner without the flag", async () => {
+  flags.foodPortfolioEnabled = false;
+  flags.followConnectionsEnabled = false;
   let reads = 0;
   stub(getHungryService().social, "getFollowRequestCount", async () => {
     reads += 1;
