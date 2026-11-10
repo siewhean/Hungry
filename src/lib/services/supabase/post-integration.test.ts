@@ -25,29 +25,42 @@ function functionSegment(source: string, functionName: string, nextMarker: strin
   return source.slice(start, end);
 }
 
-test("Supabase social publish writes posts and post_media instead of legacy bites", () => {
+test("Supabase social publish goes through publish_post after the photo check, not table writes", () => {
   const service = read("src/lib/services/supabase/supabaseService.ts");
-  const postBite = methodSegment(service, "postBite", "async reactToBite");
+  const postBite = methodSegment(service, "postBite", "async getPostById");
   const buildPostMediaRows = functionSegment(
     service,
     "buildPostMediaRows",
     "function postTypeForMedia",
   );
+  const withoutRpc = functionSegment(
+    service,
+    "publishPostWithoutRpc",
+    "async function buildPostMediaRows",
+  );
 
-  assert.match(postBite, /from\("posts"\)[\s\S]*\.insert/);
-  assert.match(postBite, /status: "draft"/);
   assert.match(buildPostMediaRows, /uploadPostMediaFromUri/);
   assert.match(buildPostMediaRows, /bucket: "post-media"/);
   assert.match(buildPostMediaRows, /mediaTypes\?\.\[index\]/);
   assert.match(buildPostMediaRows, /Post media must be uploaded from local device files/);
   assert.doesNotMatch(buildPostMediaRows, /storage_bucket: "external"/);
   assert.doesNotMatch(buildPostMediaRows, /image\/external|video\/external/);
-  assert.match(postBite, /from\("post_media"\)\.insert/);
-  assert.match(postBite, /from\("posts"\)[\s\S]*\.update/);
-  assert.match(postBite, /status: "published"/);
+  // Upload, then the photo check on the post's own files, then one server call.
+  assert.ok(
+    postBite.indexOf("buildPostMediaRows(") <
+      postBite.indexOf('photosAreBlocked(client, postImagePaths(media.rows), "post-media")'),
+  );
+  assert.ok(postBite.indexOf('"post-media")') < postBite.indexOf('client.rpc("publish_post"'));
+  assert.doesNotMatch(postBite, /from\("posts"\)/);
+  assert.doesNotMatch(postBite, /from\("post_media"\)/);
+  assert.match(postBite, /isMissingBackendObjectError\(error\)[\s\S]*publishPostWithoutRpc/);
   assert.match(postBite, /refreshSupabaseRepositoryCache/);
   assert.doesNotMatch(postBite, /from\("bites"\)/);
   assert.doesNotMatch(postBite, /"bites-media"/);
+  // The fallback for a backend without publish_post: draft, media rows, then published.
+  assert.match(withoutRpc, /status: "draft"/);
+  assert.match(withoutRpc, /from\("post_media"\)\.insert/);
+  assert.match(withoutRpc, /status: "published"/);
 });
 
 test("composer cache uses returned post media URLs after upload", () => {

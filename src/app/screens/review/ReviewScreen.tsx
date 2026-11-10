@@ -48,7 +48,6 @@ import {
   portfolioBlockedReason,
 } from "@/components/foodPortfolio/ReviewPortfolioSection";
 import {
-  addReviewToPortfolio,
   hasRatedAllTastes,
   loadRankedScores,
   portfolioScore,
@@ -94,7 +93,6 @@ import { useHungryTheme } from "@/theme";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
 import {
-  createClientReviewId,
   REVIEW_PHOTOS_NOT_ATTACHED,
   firstMissingReviewField,
   resolveWouldRecommend,
@@ -250,7 +248,6 @@ export function ReviewScreen({ navigation, route }: Props) {
   const [pickedRank, setPickedRank] = useState<PortfolioRank | undefined>(undefined);
   // Scores of the dishes already ranked, best first (null: could not be scored).
   const [rankedScores, setRankedScores] = useState<(number | null)[]>([]);
-  const portfolioPostIdRef = useRef<string | null>(null);
   const portfolioOn = FEATURE_FLAGS.foodPortfolioEnabled && addToPortfolio;
   const profileId = useProfileStore((state) => state.profile.id);
   useEffect(() => {
@@ -605,9 +602,11 @@ export function ReviewScreen({ navigation, route }: Props) {
     };
 
     const reviewText = sanitizeFreeText(draft.text, REVIEW_TEXT_MAX_LENGTH);
+    const withPortfolioEntry = portfolioOn && Boolean(draft.photos[0]);
     setSubmitting(true);
     try {
-      await getHungryService().reviews.submitReview({
+      const profile = useProfileStore.getState().profile;
+      const submitted = await getHungryService().reviews.submitReview({
         dishId: selectedDish.id,
         venueId: selectedDish.venueId,
         rating: draft.rating,
@@ -617,7 +616,28 @@ export function ReviewScreen({ navigation, route }: Props) {
         wouldRecommend: resolveWouldRecommend(draft.recommend, draft.rating),
         // Reused on retry so a failed photo step never creates a second review.
         clientReviewId: reviewId,
+        // The review and its portfolio entry are one server write: both land or neither does,
+        // and a retry finds the entry the first attempt made.
+        portfolio: withPortfolioEntry
+          ? {
+              caption: reviewText || selectedDish.name,
+              tasteStamp: selectedDish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
+              rank: portfolioRank,
+              author: {
+                id: profile.id,
+                displayName: profile.displayName,
+                avatarUrl: profile.avatarUrl,
+              },
+            }
+          : undefined,
       });
+      if (withPortfolioEntry && submitted?.portfolioPostId) {
+        trackAnalyticsEvent("review_added_to_portfolio", {
+          dish_id: selectedDish.id,
+          rank: portfolioRank ?? 0,
+          ranked: portfolioRank !== null,
+        });
+      }
 
       // The felt levels go in as the dish's standard levels, undoing this reviewer's palate.
       if (Object.keys(feltTaste).length > 0) {
@@ -631,42 +651,6 @@ export function ReviewScreen({ navigation, route }: Props) {
             reportError(error, { screen: "ReviewScreen", action: "adjust_taste_vector" }),
           );
         clearFeltTaste();
-      }
-
-      if (portfolioOn && draft.photos[0]) {
-        const profile = useProfileStore.getState().profile;
-        portfolioPostIdRef.current ??= createClientReviewId();
-        try {
-          const added = await addReviewToPortfolio({
-            dishId: selectedDish.id,
-            venueId: selectedDish.venueId,
-            photoUrl: draft.photos[0],
-            caption: reviewText || selectedDish.name,
-            tags: reviewTags,
-            rating: draft.rating,
-            tasteStamp: selectedDish.tasteVector ?? NEUTRAL_TASTE_VECTOR,
-            rank: portfolioRank,
-            clientPostId: portfolioPostIdRef.current,
-            author: {
-              id: profile.id,
-              displayName: profile.displayName,
-              avatarUrl: profile.avatarUrl,
-            },
-          });
-          portfolioPostIdRef.current = null;
-          trackAnalyticsEvent("review_added_to_portfolio", {
-            dish_id: selectedDish.id,
-            rank: portfolioRank ?? 0,
-            ranked: added.ranked,
-          });
-        } catch (error) {
-          // The review is saved; only the portfolio entry failed.
-          reportError(error, { screen: "ReviewScreen", action: "add_review_to_portfolio" });
-          useUIStore.getState().showToast({
-            message: "Your review is posted, but it did not reach your Food Portfolio.",
-            tone: "warning",
-          });
-        }
       }
 
       useProfileStore.getState().addReviewedDish(selectedDish.id);

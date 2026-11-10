@@ -11,6 +11,8 @@ import { ReviewPortfolioSection } from "@/components/foodPortfolio/ReviewPortfol
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
+import { useUIStore } from "@/store/useUIStore";
+import type { SubmitReviewInput } from "@/lib/services/types";
 import { cleanup, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 
@@ -133,26 +135,27 @@ test("the editor holds Publish until the portfolio entry has a photo and all six
   assert.doesNotMatch(view.text(), /Rate all six tastes to put this dish/);
 });
 
-test("publishing posts the dish after the review and ranks it at the picked place", async () => {
+test("publishing sends the review and its portfolio entry, with the picked place, in one call", async () => {
   const dish = dishWithTaste();
   const draft = useReviewDraftStore.getState();
   draft.selectDish(dish.venueId, dish.id);
   draft.setRating(5);
   draft.addPhoto("file:///dish.jpg");
-  const calls: string[] = [];
-  const ranked: [string, number][] = [];
-  stub(getHungryService().reviews, "submitReview", async () => {
-    calls.push("review");
+  const submitted: SubmitReviewInput[] = [];
+  let separateWrites = 0;
+  stub(getHungryService().reviews, "submitReview", async (input) => {
+    submitted.push(input);
+    return { portfolioPostId: "new-post" };
   });
-  stub(getHungryService().social, "postBite", async (bite) => {
-    calls.push(`post:${bite.dishId}:${bite.rating}`);
+  stub(getHungryService().social, "postBite", async () => {
+    separateWrites += 1;
     return { id: "new-post" } as never;
   });
   stub(getHungryService().foodPortfolio, "getMyRanking", async () => ["a", "b"]);
   stub(getHungryService().social, "listUserPosts", async () => []);
-  stub(getHungryService().foodPortfolio, "rankPost", async (id, position) => {
-    ranked.push([id, position]);
-    return [id];
+  stub(getHungryService().foodPortfolio, "rankPost", async () => {
+    separateWrites += 1;
+    return [];
   });
   const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
   await view.press(view.findByLabel("Add to my Food Portfolio"));
@@ -161,6 +164,38 @@ test("publishing posts the dish after the review and ranks it at the picked plac
   await view.press(view.findByText("#3"));
   await view.press(view.findByText("Publish"));
   await view.settle();
-  assert.deepEqual(calls, ["review", `post:${dish.id}:5`]);
-  assert.deepEqual(ranked, [["new-post", 3]]);
+  assert.equal(submitted.length, 1);
+  assert.equal(submitted[0].dishId, dish.id);
+  assert.equal(submitted[0].portfolio?.rank, 3);
+  assert.equal(separateWrites, 0, "no second write that could fail on its own");
+});
+
+test("a failed review with its entry keeps the draft and says nothing was posted", async () => {
+  const dish = dishWithTaste();
+  const draft = useReviewDraftStore.getState();
+  draft.selectDish(dish.venueId, dish.id);
+  draft.setRating(5);
+  draft.addPhoto("file:///dish.jpg");
+  stub(getHungryService().reviews, "submitReview", async () => {
+    throw Object.assign(new Error("We could not check your photo yet. Try again."), {
+      code: "23514",
+    });
+  });
+  stub(getHungryService().foodPortfolio, "getMyRanking", async () => []);
+  stub(getHungryService().social, "listUserPosts", async () => []);
+  const view = await renderScreen(ReviewScreen as never, { name: "ReviewMain" });
+  await view.press(view.findByLabel("Add to my Food Portfolio"));
+  await view.settle();
+  await view.press(view.findByText("Use our guess for the rest"));
+  await view.press(view.findByText("Publish"));
+  await view.settle();
+  assert.equal(
+    useUIStore.getState().toast?.message,
+    "We could not check your photo yet. Try again.",
+  );
+  assert.equal(
+    useReviewDraftStore.getState().draft.photos.length,
+    1,
+    "the draft is kept for a retry",
+  );
 });

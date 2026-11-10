@@ -281,7 +281,9 @@ T17 a post deleted while someone likes it (no live points left on the deleted po
 T18 two leaderboard refreshes at once (no error, each person ranked once, each tier paid once)
 T19 two refreshes at once after rank movement (one top ten Activity row per person a week)
 T20 two week closes at once (one rank snapshot row per person)
-T21 two dishes ranked at once by one person (both land in the ranking, neither overwrites the other)"
+T21 two dishes ranked at once by one person (both land in the ranking, neither overwrites the other)
+T22 one post published twice at once (one live post with one set of media)
+T23 one review submitted twice at once with two different entry ids (one linked portfolio entry)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -395,6 +397,38 @@ lb_val "insert into posts(id, author_id, status, venue_id, dish_id) values ('$RK
 lb_race T21 "select set_config('request.jwt.claim.sub', '$U1', true); select app_private.rank_portfolio_post('$RK1', 1);" "select set_config('request.jwt.claim.sub', '$U1', true); select app_private.rank_portfolio_post('$RK2', 1);" >>"$LB_OUT"
 echo "T21_ranked=$(lb_val "select cardinality(pinned_post_ids) from user_profiles where id = '$U1'")" >>"$LB_OUT"
 
+# Post publish gate (20261110120000): publish_post and submit_review with a portfolio entry, each
+# serialised so a double tap or a retry makes one post (and one entry per review).
+PG_MIGRATION=20261110120000_post_publish_gate
+lb_val "create schema if not exists storage;
+  create table if not exists storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, metadata jsonb);
+  alter table posts add column if not exists post_type text, add column if not exists building_id text, add column if not exists review_id uuid references reviews(id) on delete set null, add column if not exists updated_at timestamptz;
+  alter table post_media add column if not exists storage_bucket text, add column if not exists public_url text, add column if not exists mime_type text, add column if not exists size_bytes bigint;
+  alter table reviews add column if not exists venue_id text, add column if not exists tags text[], add column if not exists would_recommend boolean;
+  create table if not exists review_photos (id uuid primary key default gen_random_uuid(), review_id uuid references reviews(id) on delete cascade, url text, storage_bucket text, storage_path text, thumb_path text, sort_order int);" >/dev/null
+for pass in 1 2; do
+  "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$PG_MIGRATION.sql" >/dev/null 2>&1 \
+    || { echo "  FAIL  $PG_MIGRATION does not apply (pass $pass)"; fail=1; }
+done
+PP1=55555555-0000-0000-0000-000000000001
+PP2=55555555-0000-0000-0000-000000000002
+PP3=55555555-0000-0000-0000-000000000003
+PR1=66666666-0000-0000-0000-0000000000a1
+lb_val "insert into storage.objects(bucket_id, name, metadata) values
+    ('post-media', '$U1/$PP1/a.jpg', '{\"mimetype\": \"image/jpeg\"}'),
+    ('post-media', '$U1/$PP2/a.jpg', '{\"mimetype\": \"image/jpeg\"}'),
+    ('post-media', '$U1/$PP3/a.jpg', '{\"mimetype\": \"image/jpeg\"}');
+  select public.record_photo_safety_checks('$U1', 'post-media', jsonb_build_array(
+    jsonb_build_object('path', '$U1/$PP1/a.jpg', 'status', 'clear'),
+    jsonb_build_object('path', '$U1/$PP2/a.jpg', 'status', 'clear'),
+    jsonb_build_object('path', '$U1/$PP3/a.jpg', 'status', 'clear')));" >/dev/null
+PUB1="select set_config('request.jwt.claim.sub', '$U1', true); select public.publish_post('{\"id\": \"$PP1\", \"venue_id\": \"v3\"}', '[{\"storage_path\": \"$U1/$PP1/a.jpg\", \"media_type\": \"image\"}]');"
+lb_race T22 "$PUB1" "$PUB1" >>"$LB_OUT"
+echo "T22_posts=$(lb_val "select count(*) from posts where id = '$PP1' and status = 'published'")_$(lb_val "select count(*) from post_media where post_id = '$PP1'")" >>"$LB_OUT"
+REV() { echo "select set_config('request.jwt.claim.sub', '$U1', true); select public.submit_review('{\"id\": \"$PR1\", \"dish_id\": \"d1\", \"venue_id\": \"v4\", \"rating\": 5}', '[{\"storage_path\": \"$U1/r/x.jpg\"}]', '{\"post\": {\"id\": \"$1\"}, \"media\": [{\"storage_path\": \"$U1/$1/a.jpg\", \"media_type\": \"image\"}]}');"; }
+lb_race T23 "$(REV $PP2)" "$(REV $PP3)" >>"$LB_OUT"
+echo "T23_entries=$(lb_val "select count(*) from posts where review_id = '$PR1' and deleted_at is null")" >>"$LB_OUT"
+
 LB_EXPECTED="T15_errors=0
 T15_credited=6
 T16_errors=0
@@ -409,7 +443,11 @@ T19_top_ten_rows=2
 T20_errors=0
 T20_snapshots=2
 T21_errors=0
-T21_ranked=2"
+T21_ranked=2
+T22_errors=0
+T22_posts=1_1
+T23_errors=0
+T23_entries=1"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)

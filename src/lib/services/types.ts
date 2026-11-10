@@ -585,7 +585,25 @@ export interface SubmitReviewInput {
    * submission (photo upload) instead of inserting a duplicate review.
    */
   clientReviewId?: string;
+  /**
+   * Also make the review an entry in the reviewer's Food Portfolio (the first photo, linked to
+   * the review). The server writes the review, the entry and its place in one transaction.
+   */
+  portfolio?: SubmitReviewPortfolioInput;
   // TODO(api): include upload references (asset ids / signed urls) once media service is wired.
+}
+
+export interface SubmitReviewPortfolioInput {
+  caption: string;
+  tasteStamp: TasteStamp;
+  /** A place in the ranking (1 = best), or null for "in my portfolio, not ranked". */
+  rank: number | null;
+  author?: Pick<UserProfile, "id" | "displayName" | "avatarUrl">;
+}
+
+export interface SubmitReviewResult {
+  /** The linked portfolio entry, when one was asked for. */
+  portfolioPostId: string | null;
 }
 
 /** Fields an author may change on their own review; identity fields stay locked. */
@@ -1222,7 +1240,7 @@ export interface HungryService {
     ): Promise<DishDetail["reviews"]>;
     /** Totals and the 1-5 histogram over all of your reviews; undefined on a backend without it. */
     getMyReviewStats(): Promise<ReviewStats | undefined>;
-    submitReview(draft: SubmitReviewInput): Promise<void>;
+    submitReview(draft: SubmitReviewInput): Promise<SubmitReviewResult>;
     /** Newest-first review feed across all dishes, fetched as one paginated query. */
     listRecentReviews(options?: ListRecentReviewsOptions): Promise<RecentReviewFeedEntry[]>;
     /** The same feed as listRecentReviews, with paging state that survives dropped rows. */
