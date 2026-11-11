@@ -18,6 +18,12 @@ values ('smoke-rv-venue', 'smoke-rv-building', 'Smoke RV Laksa Stall', '1');
 insert into dishes (id, venue_id, building_id, name, price, menu_approved_for_display, menu_rights_status)
 values ('smoke-rv-dish', 'smoke-rv-venue', 'smoke-rv-building', 'Smoke RV Curry Laksa', 5.5, true, 'operator_owned');
 
+insert into auth.users (id, email)
+values
+  ('00000000-0000-004a-b000-000000000001', 'reviews-smoke-1@example.test'),
+  ('00000000-0000-004a-b000-000000000002', 'reviews-smoke-2@example.test')
+on conflict (id) do nothing;
+
 insert into user_profiles (id, display_name)
 values
   ('00000000-0000-004a-b000-000000000001', 'RV Smoke Author'),
