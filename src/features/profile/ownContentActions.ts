@@ -38,23 +38,31 @@ export async function deleteOwnReview(reviewId: string): Promise<void> {
   await methods.deleteReview(reviewId);
 }
 
-/** "..." menu for the viewer's own post or review: an action sheet with Edit and Delete (confirmed). */
+/** The usual "Delete this post?" confirm, for content with nothing linked to it. */
+export function confirmOwnDelete(label: "post" | "review", onDelete: () => void): void {
+  Alert.alert(
+    `Delete this ${label}?`,
+    label === "review"
+      ? "It is removed from your profile and the dish page. This can't be undone."
+      : "It is removed from your profile. This can't be undone.",
+    [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: onDelete },
+    ],
+  );
+}
+
+/**
+ * "..." menu for the viewer's own post or review: an action sheet with Edit and Delete (confirmed).
+ * `askDelete` replaces the usual confirm, for a review and entry that ask about each other.
+ */
 export function promptOwnContentActions(target: {
   label: "post" | "review";
   onEdit: () => void;
   onDelete: () => void;
+  askDelete?: () => void;
 }): void {
-  const confirmDelete = () =>
-    Alert.alert(
-      `Delete this ${target.label}?`,
-      target.label === "review"
-        ? "It is removed from your profile and the dish page. This can't be undone."
-        : "It is removed from your profile. This can't be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: target.onDelete },
-      ],
-    );
+  const confirmDelete = target.askDelete ?? (() => confirmOwnDelete(target.label, target.onDelete));
 
   // A choice of actions is an action sheet, not an alert (HIG, Action sheets); the delete
   // confirmation that follows stays an alert, since it guards an action that can't be undone.

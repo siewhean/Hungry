@@ -6,6 +6,11 @@ import {
   describeReviewEditError,
   isExpectedPublishError,
 } from "@/features/review/publishErrorCopy";
+import {
+  askLinkedDelete,
+  deleteLinked,
+  linkedDeleteMessage,
+} from "@/features/foodPortfolio/linkedDelete";
 import { markReviewDeletedForSession } from "@/features/review/reviewExplore";
 import { reportError } from "@/lib/monitoring/reportError";
 import { REVIEW_TEXT_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
@@ -14,6 +19,7 @@ import { useHungryTheme } from "@/theme";
 import type { Review } from "@/types/domain";
 import {
   canEditOwnReviews,
+  confirmOwnDelete,
   deleteOwnReview,
   promptOwnContentActions,
   updateOwnReview,
@@ -49,12 +55,17 @@ export function useOwnReviewEditor(options: {
   const [editing, setEditing] = useState<Review | null>(null);
 
   const removeReview = useCallback(
-    async (review: Review) => {
+    async (review: Review, entryId: string | null) => {
       try {
         await deleteOwnReview(review.id);
         markReviewDeletedForSession(review.id);
         onDeleted(review.id);
-        showToast({ message: "Review deleted.", tone: "success" });
+        const entry = entryId
+          ? (await deleteLinked("review", entryId))
+            ? "deleted"
+            : "failed"
+          : "kept";
+        showToast(linkedDeleteMessage("review", entry));
       } catch (error) {
         // A text-filter refusal or the rate limit is an expected outcome, not a fault.
         if (!isExpectedPublishError(error)) {
@@ -71,7 +82,14 @@ export function useOwnReviewEditor(options: {
       promptOwnContentActions({
         label: "review",
         onEdit: () => setEditing(review),
-        onDelete: () => void removeReview(review),
+        onDelete: () => void removeReview(review, null),
+        askDelete: () =>
+          void askLinkedDelete(
+            "review",
+            review.id,
+            () => confirmOwnDelete("review", () => void removeReview(review, null)),
+            (entryId) => void removeReview(review, entryId),
+          ),
       }),
     [removeReview],
   );
