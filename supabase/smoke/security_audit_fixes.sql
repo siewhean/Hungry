@@ -77,6 +77,15 @@ begin
     and storage_path = v_u || '/00000000-0000-1111-c000-000000000002/a.jpg';
 end $$;
 
+create function app_private.smoke_saf_post_state(p_id uuid)
+returns table (deleted_at timestamptz)
+language sql
+security definer
+set search_path = public
+as $$ select p.deleted_at from public.posts p where p.id = p_id $$;
+grant usage on schema app_private to authenticated;
+grant execute on function app_private.smoke_saf_post_state(uuid) to authenticated;
+
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-1111-b000-000000000001', true);
 set local role authenticated;
@@ -177,7 +186,11 @@ begin
   exception when insufficient_privilege then
     v_refused := true;
   end;
-  if not v_refused then
+  -- Row security may already hide a deleted post from the update (no row changes, no error);
+  -- either way the post must still be deleted.
+  if not v_refused and exists (
+    select 1 from app_private.smoke_saf_post_state('00000000-0000-1111-c000-000000000001') s where s.deleted_at is null
+  ) then
     raise exception 'a deleted post was brought back from the phone';
   end if;
 end $$;
