@@ -62,7 +62,7 @@ beforeEach(() => {
   fake.storage = {};
   resizeCalls.length = 0;
   functions.calls.length = 0;
-  functions.results = {};
+  functions.results = { "check-photo-safety": () => ({ data: { status: "clear" }, error: null }) };
   auth.userId = ME;
 });
 
@@ -117,7 +117,7 @@ test("REV-7/REV-2: submitReview uploads a photo and a thumbnail for each photo, 
 test("App Store 1.2: a photo that fails the explicit-content check stops the post and is removed", async () => {
   fake.storage.createSignedUploadUrl = () => ({ data: { token: "t" }, error: null });
   functions.results["check-photo-safety"] = () => ({
-    data: { status: "blocked", flagged: 1, photos: 2 },
+    data: { status: "blocked", flagged: 1, photos: 4 },
     error: null,
   });
   await assert.rejects(
@@ -128,28 +128,33 @@ test("App Store 1.2: a photo that fails the explicit-content check stops the pos
   assert.equal(functions.calls.length, 1);
   assert.equal(functions.calls[0].name, "check-photo-safety");
   const sent = (functions.calls[0].body as { paths: string[] }).paths;
-  assert.equal(sent.length, 2, "only the photos are sent, not their thumbnails");
-  assert.ok(
-    sent.every((path) => path.startsWith(`${ME}/${REVIEW_ID}/`) && !path.includes(".thumb.")),
-  );
+  assert.equal(sent.length, 4, "the photos and their thumbnails are checked");
+  assert.ok(sent.every((path) => path.startsWith(`${ME}/${REVIEW_ID}/`)));
+  assert.equal(sent.filter((path) => path.includes(".thumb.")).length, 2);
   assert.equal(fake.callsTo("submit_review").length, 0, "no review is created");
   const removed = fake.storageCalls.filter((call) => call.method === "remove");
   assert.equal(removed.length, 1);
   assert.equal((removed[0].args[0] as string[]).length, 4, "photos and thumbnails are removed");
 });
 
-test("App Store 1.2: an unchecked, failed or clear answer lets the review through", async () => {
+test("App Store 1.2: only a clear answer lets the review through; anything else asks to try again", async () => {
   fake.storage.createSignedUploadUrl = () => ({ data: { token: "t" }, error: null });
+  fake.rpc.submit_review = () => ({ data: { photos_added: 2 }, error: null });
+  functions.results["check-photo-safety"] = () => ({ data: { status: "clear", photos: 4 }, error: null });
+  await service.reviews.submitReview(draft);
+  assert.equal(fake.callsTo("submit_review").length, 1);
+
   for (const result of [
-    () => ({ data: { status: "clear", photos: 2 }, error: null }),
-    () => ({ data: { status: "unchecked", photos: 2 }, error: null }),
+    () => ({ data: { status: "unchecked", photos: 4 }, error: null }),
     () => ({ data: null, error: { message: "function not deployed" } }),
   ]) {
     fake.rpcCalls.length = 0;
     functions.results["check-photo-safety"] = result;
-    fake.rpc.submit_review = () => ({ data: { photos_added: 2 }, error: null });
-    await service.reviews.submitReview(draft);
-    assert.equal(fake.callsTo("submit_review").length, 1);
+    await assert.rejects(
+      () => service.reviews.submitReview(draft),
+      (error: { code?: string }) => error.code === "photo_unchecked",
+    );
+    assert.equal(fake.callsTo("submit_review").length, 0, "no review is sent without a clear answer");
   }
 });
 

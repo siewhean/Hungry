@@ -788,25 +788,50 @@ export class ReviewPhotoRejectedError extends Error {
   }
 }
 
+/** The photo check could not answer (Google down, a file it cannot read): the person tries again. */
+export class PhotoCheckUnavailableError extends Error {
+  readonly code = "photo_unchecked";
+  constructor() {
+    super("We couldn't check your photo just now. Try again in a minute.");
+    this.name = "PhotoCheckUnavailableError";
+  }
+}
+
+/** check-photo-safety looks at up to this many files per call. */
+const PHOTO_CHECK_BATCH = 10;
+
 /**
- * Asks check-photo-safety about photos just uploaded, before the review exists. Only an
- * explicit "blocked" stops the post: a missing key, an outage or a bad answer lets it through
- * (the function reports those), so posting never depends on Google being up.
+ * Asks check-photo-safety about files just uploaded, before the review or post exists. Returns
+ * the error to show, or null when every file is clear. Only "clear" lets a photo through: the
+ * server refuses anything else too, so an outage means "try again", never an unchecked photo.
  */
-async function photosAreBlocked(
+async function photoCheckRefusal(
   client: SupabaseClient,
   paths: string[],
   bucket: "review-media" | "post-media" = "review-media",
-): Promise<boolean> {
-  if (paths.length === 0) return false;
-  try {
-    const { data, error } = await client.functions.invoke("check-photo-safety", {
-      body: { paths, bucket },
-    });
-    return !error && (data as Row | null)?.status === "blocked";
-  } catch {
-    return false;
+): Promise<Error | null> {
+  const unique = [...new Set(paths)];
+  if (unique.length === 0) return null;
+  const batches: string[][] = [];
+  for (let start = 0; start < unique.length; start += PHOTO_CHECK_BATCH) {
+    batches.push(unique.slice(start, start + PHOTO_CHECK_BATCH));
   }
+  const statuses = await Promise.all(
+    batches.map(async (batch) => {
+      try {
+        // n-plus-one-ok: the function takes at most 10 files per call; a review has photos and thumbnails.
+        const { data, error } = await client.functions.invoke("check-photo-safety", {
+          body: { paths: batch, bucket },
+        });
+        return error ? "unchecked" : String((data as Row | null)?.status ?? "unchecked");
+      } catch {
+        return "unchecked";
+      }
+    }),
+  );
+  if (statuses.includes("blocked")) return new ReviewPhotoRejectedError();
+  if (statuses.some((status) => status !== "clear")) return new PhotoCheckUnavailableError();
+  return null;
 }
 
 function mapPushPreferencesRow(row: {
@@ -1911,13 +1936,13 @@ function publishPostMedia(rows: Row[]): Row[] {
   return rows.map((row) => ({
     storage_path: row.storage_path,
     media_type: row.media_type,
-    public_url: row.public_url ?? null,
   }));
 }
 
 /** publish_post's refusals, as the errors the composer and the review editor already show. */
 function publishPostError(error: PostgrestError): Error {
   if (error.hint === "photo_blocked") return new ReviewPhotoRejectedError();
+  if (error.hint === "photo_unchecked") return new PhotoCheckUnavailableError();
   return error as unknown as Error;
 }
 
@@ -4868,13 +4893,15 @@ export const supabaseService: HungryService = {
       const discardUploadedPhotos = () =>
         removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
 
-      // Explicit or violent photos are stopped here, before anyone can see them.
-      const photoPaths = uploadedPhotos.flatMap((photo) =>
-        asString(photo.storage_path) ? [asString(photo.storage_path) as string] : [],
+      // Explicit or violent photos are stopped here, before anyone can see them. Thumbnails are
+      // checked too: the server refuses a review photo whose thumbnail has no clear answer.
+      const photoPaths = uploadedObjectPaths(uploadedPhotos).filter(
+        (path): path is string => Boolean(path),
       );
-      if (await photosAreBlocked(client, photoPaths)) {
+      const photoRefusal = await photoCheckRefusal(client, photoPaths);
+      if (photoRefusal) {
         await discardUploadedPhotos();
-        throw new ReviewPhotoRejectedError();
+        throw photoRefusal;
       }
 
       // The portfolio entry: a copy of the first photo in the post's own folder, checked like any
@@ -4906,9 +4933,12 @@ export const supabaseService: HungryService = {
             entryDraft.mediaType,
             entryUploads,
           );
-          if (await photosAreBlocked(client, postImagePaths(entryMedia.rows), "post-media")) {
-            throw new ReviewPhotoRejectedError();
-          }
+          const entryRefusal = await photoCheckRefusal(
+            client,
+            postImagePaths(entryMedia.rows),
+            "post-media",
+          );
+          if (entryRefusal) throw entryRefusal;
           const { venue, dish, postMeta } = buildPostContext(entryDraft);
           portfolioArg = {
             post: {
@@ -5677,9 +5707,8 @@ export const supabaseService: HungryService = {
           draft.mediaType,
           uploadedPaths,
         );
-        if (await photosAreBlocked(client, postImagePaths(media.rows), "post-media")) {
-          throw new ReviewPhotoRejectedError();
-        }
+        const mediaRefusal = await photoCheckRefusal(client, postImagePaths(media.rows), "post-media");
+        if (mediaRefusal) throw mediaRefusal;
         const { data, error } = await client.rpc("publish_post", {
           p_post: { id: postId, ...postPayload },
           p_media: publishPostMedia(media.rows),

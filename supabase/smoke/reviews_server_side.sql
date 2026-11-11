@@ -24,6 +24,20 @@ values
   ('00000000-0000-004a-b000-000000000002', 'RV Smoke Reader')
 on conflict (id) do nothing;
 
+-- The photo and its thumbnail are stored and the photo check answered clear (required since
+-- 20261111130000).
+insert into storage.objects (bucket_id, name, owner, metadata)
+values
+  ('review-media', '00000000-0000-004a-b000-000000000001/aaaaaaaa/photo-0-a.jpg',
+   '00000000-0000-004a-b000-000000000001', '{"mimetype": "image/jpeg", "size": 1000}'),
+  ('review-media', '00000000-0000-004a-b000-000000000001/aaaaaaaa/photo-0-a.thumb.jpg',
+   '00000000-0000-004a-b000-000000000001', '{"mimetype": "image/jpeg", "size": 500}');
+select public.record_photo_safety_checks(
+  '00000000-0000-004a-b000-000000000001', 'review-media',
+  '[{"path": "00000000-0000-004a-b000-000000000001/aaaaaaaa/photo-0-a.jpg", "status": "clear"},
+    {"path": "00000000-0000-004a-b000-000000000001/aaaaaaaa/photo-0-a.thumb.jpg", "status": "clear"}]'
+);
+
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-004a-b000-000000000001', true);
 set local role authenticated;
