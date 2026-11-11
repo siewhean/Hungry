@@ -59,10 +59,11 @@ test.describe("profile page walk", () => {
     });
   }
 
-  test("Followers and Following are archived: no tiles on the own profile", async ({ page }) => {
+  // Follows came back with the Food Portfolio, which production builds have on.
+  test("Followers and Following tiles show on the own profile", async ({ page }) => {
     await openProfile(page, 375);
-    await expect(page.getByRole("button", { name: /^Followers/ })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /^Following/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^Followers/ })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: /^Following/ }).first()).toBeVisible();
   });
 
   test("the header settings icon opens Settings, where Sign out asks first", async ({ page }) => {

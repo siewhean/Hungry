@@ -734,22 +734,6 @@ export const EXPERIMENTS = {
     minSamplePerArm: 1100,
   },
   /**
-   * The moving water behind the top of Home (control) against a plain background. Read in
-   * HomeWaveBackground, so only diners who reach Home are exposed. Draft until there is Home
-   * traffic; the PostHog flag exists and is off.
-   */
-  home_background_v1: {
-    variants: ["control", "plain"],
-    fallback: "control",
-    status: "draft",
-    surface: "home",
-    hypothesis:
-      "The animated water costs GPU time on every Home visit. A plain background gets at least as many stall opens per Home visitor (no more than 3 points fewer), so the cheaper design is safe to ship if it does.",
-    primaryMetric: "stall_viewed",
-    guardrailMetrics: ["discover_search_opened", "dish_viewed"],
-    minSamplePerArm: 4000,
-  },
-  /**
    * The unread mark on the Profile Activity bell: a number (control) or a plain dot. Read in
    * ActivityBellButton. Measure profile_item_opened with kind "activity_bell". Draft until the
    * Food Portfolio ships to production; the PostHog flag exists and is off.

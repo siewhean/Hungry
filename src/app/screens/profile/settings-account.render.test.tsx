@@ -227,19 +227,36 @@ test("SET-V4: a Settings dining edit tags surface settings, and an unchanged fin
 // --- SET-4, SET-15, SET-19, SET-14 ----------------------------------------------------------
 
 test("Settings drops archived-posts copy, shows left-handed mode only to merchants, and Privacy policy is a link", async () => {
-  const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
-  assert.doesNotMatch(view.text(), /posts/i);
-  assert.equal(view.findByText("Left-handed mode"), null);
-  assert.equal(view.findByText("Sign in or create an account"), null);
-  assert.equal(view.findByText("Blocked people"), null, "blocked people is archived with follows");
-  assert.equal(view.findByLabel("Profile visibility"), null, "profile visibility is archived too");
-  const privacy = view.findByLabel("Privacy policy");
-  assert.equal(privacy?.getAttribute("role"), "link");
+  // Follow connections and the Food Portfolio are on in production; this pins the archived state.
+  const flagValues = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = { ...flagValues };
+  flagValues.foodPortfolioEnabled = false;
+  flagValues.followConnectionsEnabled = false;
+  try {
+    const view = await renderScreen(SettingsScreen as never, { name: "Settings" });
+    assert.doesNotMatch(view.text(), /posts/i);
+    assert.equal(view.findByText("Left-handed mode"), null);
+    assert.equal(view.findByText("Sign in or create an account"), null);
+    assert.equal(
+      view.findByText("Blocked people"),
+      null,
+      "blocked people is archived with follows",
+    );
+    assert.equal(
+      view.findByLabel("Profile visibility"),
+      null,
+      "profile visibility is archived too",
+    );
+    const privacy = view.findByLabel("Privacy policy");
+    assert.equal(privacy?.getAttribute("role"), "link");
 
-  await enterScenario("merchant");
-  const merchantView = await renderScreen(SettingsScreen as never, { name: "Settings" });
-  assert.ok(merchantView.findByText("Left-handed mode"));
-  assert.match(merchantView.text(), /add button on your merchant menu/);
+    await enterScenario("merchant");
+    const merchantView = await renderScreen(SettingsScreen as never, { name: "Settings" });
+    assert.ok(merchantView.findByText("Left-handed mode"));
+    assert.match(merchantView.text(), /add button on your merchant menu/);
+  } finally {
+    Object.assign(flagValues, saved);
+  }
 });
 
 test("Blocked people and Profile visibility come back when a build opts in to follow connections", async () => {
@@ -295,9 +312,16 @@ test("row labels and values are not cut off at 2x text", async () => {
 test("Notifications has no Follow requests switch while followers are archived", async () => {
   const push = getHungryService().push;
   stub(push, "getPreferences", async () => ({ ...DEFAULT_PUSH_PREFERENCES }));
-  const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
-  assert.equal(view.findByLabel("Follow requests"), null);
-  assert.ok(view.findByLabel("Lunch and dinner ideas"));
+  const flagValues = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const saved = flagValues.followConnectionsEnabled;
+  flagValues.followConnectionsEnabled = false;
+  try {
+    const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+    assert.equal(view.findByLabel("Follow requests"), null);
+    assert.ok(view.findByLabel("Lunch and dinner ideas"));
+  } finally {
+    flagValues.followConnectionsEnabled = saved;
+  }
 });
 
 test("Notifications has a Follow requests switch that saves social_activity when followers are on", async () => {

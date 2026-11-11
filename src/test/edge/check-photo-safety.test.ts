@@ -171,7 +171,7 @@ test("check-photo-safety blocks the whole post when one photo of several is flag
   assert.deepEqual(body, { status: "blocked", flagged: 1, photos: 2 });
 });
 
-test("check-photo-safety fails open and reports when Vision is not configured", async () => {
+test("check-photo-safety answers unchecked and reports when Vision is not configured", async () => {
   const { handler, sentryEvents, visionBodies } = await load({
     env: { GOOGLE_CLOUD_VISION_API_KEY: "" },
   });
@@ -181,7 +181,7 @@ test("check-photo-safety fails open and reports when Vision is not configured", 
   assert.equal(exceptions(sentryEvents).length, 1, "missing key reaches error tracking");
 });
 
-test("check-photo-safety fails open and reports when storage or Vision fails", async () => {
+test("check-photo-safety answers unchecked and reports when storage or Vision fails", async () => {
   for (const options of [
     { signed: { data: null, error: { message: "storage down" } } },
     { imageStatus: 500 },
@@ -194,4 +194,70 @@ test("check-photo-safety fails open and reports when storage or Vision fails", a
     assert.equal((await json(response)).status, "unchecked");
     assert.equal(exceptions(sentryEvents).length, 1);
   }
+});
+
+test("check-photo-safety checks post photos in the post-media bucket and refuses other buckets", async () => {
+  const { handler, supabase } = await load();
+  const response = await handler(
+    post({ paths: ["u1/p1/a.jpg"], bucket: "post-media" }, "user-jwt"),
+  );
+  assert.equal((await json(response)).status, "clear");
+  assert.equal(supabase.storageCalls[0].bucket, "post-media");
+  const other = await handler(post({ paths: ["u1/p1/a.jpg"], bucket: "avatars" }, "user-jwt"));
+  assert.equal(other.status, 400);
+  assert.equal((await json(other)).error, "invalid_bucket");
+});
+
+test("check-photo-safety records each photo's answer for publish_post", async () => {
+  const { handler, supabase } = await load({
+    annotations: [{ adult: "UNLIKELY" }, { adult: "VERY_LIKELY" }],
+  });
+  const before = Date.now();
+  await handler(post({ paths: ["u1/p1/a.jpg", "u1/p1/b.jpg"], bucket: "post-media" }, "user-jwt"));
+  const args = supabase.callsTo("record_photo_safety_checks")[0].args;
+  const startedAt = Date.parse(String(args.p_started_at));
+  assert.ok(
+    startedAt >= before - 1000 && startedAt <= Date.now(),
+    "the answer carries when the check started",
+  );
+  assert.deepEqual(
+    { ...args, p_started_at: undefined },
+    {
+      p_user_id: "u1",
+      p_bucket: "post-media",
+      p_checks: [
+        { path: "u1/p1/a.jpg", status: "clear" },
+        { path: "u1/p1/b.jpg", status: "blocked" },
+      ],
+      p_started_at: undefined,
+    },
+  );
+});
+
+test("check-photo-safety records unchecked when it cannot check, so the photo cannot be posted yet", async () => {
+  const { handler, supabase } = await load({ env: { GOOGLE_CLOUD_VISION_API_KEY: "" } });
+  await handler(check(["u1/r/a.jpg"]));
+  assert.deepEqual(supabase.callsTo("record_photo_safety_checks")[0].args.p_checks, [
+    { path: "u1/r/a.jpg", status: "unchecked" },
+  ]);
+  const down = await load({ visionStatus: 503 });
+  await down.handler(check(["u1/r/a.jpg"]));
+  assert.equal(
+    (
+      down.supabase.callsTo("record_photo_safety_checks")[0].args.p_checks as { status: string }[]
+    )[0].status,
+    "unchecked",
+  );
+});
+
+test("check-photo-safety reports a failed record but still answers", async () => {
+  const { handler, supabase, sentryEvents } = await load();
+  supabase.rpc.record_photo_safety_checks = () => ({ data: null, error: { message: "down" } });
+  const body = await json(await handler(check()));
+  assert.equal(body.status, "clear");
+  assert.ok(
+    exceptions(sentryEvents).some((event) =>
+      String((event.error as Error | undefined)?.message).includes("record_photo_safety_checks"),
+    ),
+  );
 });

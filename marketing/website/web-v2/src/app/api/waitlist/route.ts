@@ -71,7 +71,8 @@ export async function POST(request: NextRequest) {
       await sendWaitlistWelcomeEmail({ audience, name, to: email });
     }
 
-    return NextResponse.json({ ok: true, alreadyExists: result.alreadyExists });
+    // Same reply for a new and a repeat signup, so the form cannot be used to learn who is on the list.
+    return NextResponse.json({ ok: true });
   } catch (error) {
     const validationResponse = validationErrorResponse(error);
     if (validationResponse) return validationResponse;

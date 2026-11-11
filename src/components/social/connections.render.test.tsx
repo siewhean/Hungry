@@ -221,7 +221,7 @@ test("Follow requests rows say they open the profile, and approving offers View"
   stub(getHungryService().social, "approveFollowRequest", async () => undefined);
   const { useUIStore } = await import("@/store/useUIStore");
   const view = await renderScreen(FollowRequestsScreen as never, { name: "FollowRequests" });
-  assert.ok(view.findByText("See their profile"));
+  assert.ok(view.findByText("See their Food Portfolio"));
   await view.press(view.findByLabel("Approve follow request from Ahmad"));
   const toast = useUIStore.getState().toast;
   assert.equal(toast?.action?.label, "View");

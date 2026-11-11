@@ -136,3 +136,11 @@ test("PKCE SHA-256 fallback produces the standard digest", () => {
     "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
   );
 });
+
+test("PKCE polyfill takes random bytes only from a secure source", () => {
+  const source = read("src/lib/services/supabase/pkceCryptoPolyfill.ts");
+
+  assert.doesNotMatch(source, /Math\.random/, "the code verifier must never come from Math.random");
+  assert.match(source, /require\("expo-crypto"\)/);
+  assert.match(source, /No secure random source is available/);
+});

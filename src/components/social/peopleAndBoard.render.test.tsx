@@ -155,7 +155,7 @@ test("WeeklyBoardCard shows your rank and opens the Leaderboard; before a post i
     createElement(WeeklyBoardCard, { enabled: true, followCount: 1, onOpen: () => undefined }),
   );
   await fresh.settle();
-  assert.match(fresh.text(), /Post a dish to join/);
+  assert.match(fresh.text(), /Add a dish to join/);
   assert.ok(fresh.findByTestId("home-weekly-board-art"));
 });
 

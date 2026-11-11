@@ -1,6 +1,7 @@
 import { View } from "react-native";
 
 import { AppText, Button, Screen } from "@/components/ui";
+import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useHungryTheme } from "@/theme";
 
 /**
@@ -21,7 +22,11 @@ export function PostTabPage({ onStart }: { onStart: () => void }) {
         <AppText variant="body" style={{ color: palette.textSecondary }}>
           Add the dish, a photo and how it tasted, so the next person can find it.
         </AppText>
-        <Button label="Write a review" onPress={onStart} fullWidth />
+        <Button
+          label={FEATURE_FLAGS.foodPortfolioEnabled ? "Add a dish" : "Write a review"}
+          onPress={onStart}
+          fullWidth
+        />
       </View>
     </Screen>
   );

@@ -20,7 +20,7 @@ export function missionStart(type: MissionType): MissionStart {
           nav.navigate("MainTabs", { screen: "Profile", params: { screen: "AddStall" } }),
       };
     case "create_post":
-      return { label: "Post a dish", open: (nav) => nav.navigate("Post") };
+      return { label: "Add a dish", open: (nav) => nav.navigate("Post") };
     case "write_review":
       return {
         label: "Write a review",

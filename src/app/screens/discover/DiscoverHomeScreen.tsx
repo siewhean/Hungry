@@ -1,6 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -8,7 +7,6 @@ import {
   useWindowDimensions,
   type LayoutChangeEvent,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "@/lib/haptics";
 import {
@@ -155,12 +153,6 @@ import {
 import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
 import { DiscoverChipIcon } from "@/components/discover/home/DiscoverChipIcon";
 import {
-  HomeWaveBackground,
-  ON_WATER_TEXT,
-  WAVE_FADE_DISTANCE,
-} from "@/components/discover/home/HomeWaveBackground";
-import { StatusBar } from "expo-status-bar";
-import {
   DiscoverSearchPlaceholder,
   NARROW_SEARCH_WIDTH,
 } from "@/components/discover/home/DiscoverSearchPlaceholder";
@@ -277,7 +269,15 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     clearDiscoverFilters,
     activeDiscoverChipIds,
     currentHour,
-  } = useDiscoverFilters({ getVenueHours });
+  } = useDiscoverFilters({
+    getVenueHours,
+    // No dietary needs saved yet: the chip opens where they are set, instead of doing nothing.
+    onSetUpDietaryNeeds: () =>
+      navigation.navigate("OnboardingStack", {
+        screen: "TasteQuiz",
+        params: { mode: "profile", initialPhase: "dietary", source: "home" },
+      }),
+  });
   const scrollRef = useRef<ScrollView>(null);
   useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
@@ -294,10 +294,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   } = useHungryTheme();
   const discoverCardChrome = useDiscoverCardChrome();
   const insets = useSafeAreaInsets();
-  // How far the page has scrolled: the wavy background at the top fades out as it grows.
-  const scrollY = useSharedValue(0);
-  // True while the orange water is still behind the header: its text turns near-black to stay readable.
-  const [overWater, setOverWater] = useState(true);
   const [discoverViewportHeight, setDiscoverViewportHeight] = useState(0);
   const discoverSectionGap = spacing[4];
   const discoverContentGap = spacing[2];
@@ -372,10 +368,6 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       Math.abs(currentHeight - nextHeight) > 1 ? nextHeight : currentHeight,
     );
   }, []);
-
-  // The web build keeps faint SVG waves instead of the orange shader, so its text keeps the theme colours.
-  const hasWater = useExperimentVariant("home_background_v1") !== "plain";
-  const headerInk = overWater && hasWater && Platform.OS !== "web" ? ON_WATER_TEXT : undefined;
 
   const wheelCtaLabel = FEATURE_FLAGS.wheelPartyEnabled ? "With friends" : "Spin the wheel";
 
@@ -1859,26 +1851,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
-      {isFocused ? (
-        <StatusBar style={headerInk ? "dark" : themeTints.isDark ? "light" : "dark"} />
-      ) : null}
-      <HomeWaveBackground
-        width={screenWidth}
-        topInset={insets.top}
-        scrollY={scrollY}
-        active={isFocused}
-      />
       <ScrollView
         ref={scrollRef}
         {...TAPS_WHILE_SCROLLING}
         showsVerticalScrollIndicator={false}
-        onScroll={(event) => {
-          const y = event.nativeEvent.contentOffset.y;
-          scrollY.value = y;
-          const nextOverWater = y < WAVE_FADE_DISTANCE / 2;
-          if (nextOverWater !== overWater) setOverWater(nextOverWater);
-        }}
-        scrollEventThrottle={16}
         onLayout={handleDiscoverViewportLayout}
         contentContainerStyle={{
           gap: discoverSectionGap,
@@ -1928,7 +1904,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             >
               {/* A small line over the place name, so the name itself fits beside List / Map:
                   "Across Singapore" as one title was cut to "Across Singap..." at 390 pt. */}
-              <AppText variant="bodySmall" style={{ color: headerInk ?? themeTints.secondaryText }}>
+              <AppText variant="bodySmall" style={{ color: themeTints.secondaryText }}>
                 {needsDiscoverAreaChoice
                   ? "Picks across"
                   : hasManualAreaPick
@@ -1940,14 +1916,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <SlideText
                   value={discoverHeaderLabel}
                   variant="h2"
-                  style={{ color: headerInk ?? themeTints.text }}
+                  style={{ color: themeTints.text }}
                   numberOfLines={1}
                   containerStyle={{ flexShrink: 1 }}
                 />
                 <AppSymbol
                   name="chevron.down"
                   fallback={ChevronDown}
-                  color={headerInk ?? (themeTints.isDark ? palette.white : palette.textMuted)}
+                  color={themeTints.isDark ? palette.white : palette.textMuted}
                   size={20}
                 />
               </View>
@@ -1975,14 +1951,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 opacity: pressed ? 0.7 : 1,
               })}
             >
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{
-                  fontWeight: "700",
-                  ...(headerInk ? { color: headerInk, textDecorationLine: "underline" } : null),
-                }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 Turn on location for stalls near you
               </AppText>
             </Pressable>
@@ -2005,9 +1974,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 <NumericText
                   value={shownCountLabel}
                   variant="micro"
-                  style={{ color: headerInk ?? themeTints.secondaryText }}
+                  style={{ color: themeTints.secondaryText }}
                 />
-                <AppText variant="micro" style={{ color: headerInk ?? themeTints.secondaryText }}>
+                <AppText variant="micro" style={{ color: themeTints.secondaryText }}>
                   {` stalls ${discoverAreaName ? "in this area" : "near you"}`}
                 </AppText>
               </View>
@@ -2020,14 +1989,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               hitSlop={DISCOVER_TEXT_LINK_HIT_SLOP}
               onPress={() => void handleUseCurrentLocation()}
             >
-              <AppText
-                variant="micro"
-                tone="accent"
-                style={{
-                  fontWeight: "700",
-                  ...(headerInk ? { color: headerInk, textDecorationLine: "underline" } : null),
-                }}
-              >
+              <AppText variant="micro" tone="accent" style={{ fontWeight: "700" }}>
                 Use current location
               </AppText>
             </Pressable>
@@ -2123,10 +2085,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           options={sortedChips}
           selectedIds={activeDiscoverChipIds}
           onSelect={toggleDiscoverChip}
+          solidSelected
           renderLeftIcon={(chip, isActive) => (
             <DiscoverChipIcon
               chipId={chip.id}
-              color={isActive ? palette.orange : themeTints.secondaryText}
+              color={isActive ? palette.textOnOrange : themeTints.secondaryText}
             />
           )}
         />

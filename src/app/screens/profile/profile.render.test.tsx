@@ -51,10 +51,16 @@ function stub<T extends object, K extends keyof T>(target: T, key: K, value: T[K
   });
 }
 
-/** Production defaults: the posts feed and Activity are off; the Passport is on. */
+/**
+ * The baseline these tests were written for: the posts feed, Activity, follows and the Food
+ * Portfolio off; the Passport on. Production builds now have the Food Portfolio (with follows and
+ * Activity) on; tests that need it switch it on themselves.
+ */
 function productionFlags() {
   flags.socialFeedEnabled = false;
   flags.activityEnabled = false;
+  flags.foodPortfolioEnabled = false;
+  flags.followConnectionsEnabled = false;
   flags.gamificationEnabled = false;
   flags.passportEnabled = true;
   flags.storiesEnabled = false;

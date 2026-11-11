@@ -156,6 +156,14 @@ test("with Food Portfolio on, a Leaderboard row shows your weekly rank and opens
 });
 
 test("with Food Portfolio off, the Passport has no Leaderboard row", async () => {
-  const view = await renderScreen(PassportScreen as never, { name: "PassportScreen" });
-  assert.equal(view.findByTestId("passport-leaderboard"), null);
+  const { FEATURE_FLAGS } = await import("@/constants/featureFlags");
+  const flags = FEATURE_FLAGS as unknown as Record<string, boolean>;
+  const savedFlag = flags.foodPortfolioEnabled;
+  flags.foodPortfolioEnabled = false;
+  try {
+    const view = await renderScreen(PassportScreen as never, { name: "PassportScreen" });
+    assert.equal(view.findByTestId("passport-leaderboard"), null);
+  } finally {
+    flags.foodPortfolioEnabled = savedFlag;
+  }
 });

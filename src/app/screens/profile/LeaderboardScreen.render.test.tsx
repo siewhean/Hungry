@@ -156,12 +156,12 @@ test("switching board, period and scope reads the matching board", async () => {
   assert.ok(view.findByText(/each person counts once a day/));
 });
 
-test("an empty board shows its illustration and Post a dish", async () => {
+test("an empty board shows its illustration and Add a dish", async () => {
   stubBoard({ rows: [] });
   const view = await renderScreen(LeaderboardScreen as never, { name: "Leaderboard" });
   assert.ok(view.findByText("Nobody on the board yet"));
   assert.ok(view.findByTestId("leaderboard-empty-art"));
-  await view.press(view.findByText("Post a dish"));
+  await view.press(view.findByText("Add a dish"));
   assert.deepEqual(lastNavigate(view.navigation), ["Post"]);
 });
 
@@ -193,7 +193,8 @@ test("own Profile opens the Leaderboard from the Portfolio's Rank, only with the
   const service = getHungryService();
   stub(service.social, "getFollowCounts", async () => ({ followersCount: 0, followingCount: 0 }));
   stub(service.social, "listUserPosts", async () => []);
-  stub(service.foodPortfolio, "getTopPosts", async () => ({ posts: [], pinnedPostIds: [] }));
+  stub(service.foodPortfolio, "getPicks", async () => ({ topThree: [], bests: [] }));
+  stub(service.foodPortfolio, "getDiary", async () => []);
   stub(service.foodPortfolio, "listStalls", async () => []);
   let view = await renderScreen(ProfileHomeScreen as never, { name: "ProfileHome" });
   assert.equal(view.findByTestId("profile-leaderboard-row"), null, "no separate row any more");

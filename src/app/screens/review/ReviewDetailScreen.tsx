@@ -2,6 +2,8 @@
  * ReviewDetailScreen
  * One review on its own page: what a shared review link (usehungry.com/review/:id) opens.
  */
+import { PortfolioLabel } from "@/components/foodPortfolio/PortfolioLabel";
+import { useReviewPortfolioLabels } from "@/features/foodPortfolio/useReviewPortfolioLabels";
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Pressable,
@@ -200,6 +202,8 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
   });
 
   const review = entry?.review;
+  const portfolioLabels = useReviewPortfolioLabels(review ? [review.id] : []);
+  const portfolioLabel = review ? portfolioLabels.get(review.id) : undefined;
   const hidden = review && isContentHiddenForSession({ id: review.id, authorId: review.authorId });
   const isOwn = Boolean(review?.authorId && review.authorId === viewerId);
   const returnRoute = useMemo(() => ({ name: "ReviewDetail", params: { reviewId } }), [reviewId]);
@@ -368,6 +372,12 @@ export function ReviewDetailScreen({ navigation, route }: Props) {
             />
           ) : null}
         </View>
+
+        {portfolioLabel ? (
+          <View style={{ alignItems: "flex-start" }}>
+            <PortfolioLabel label={portfolioLabel} authorName={review.authorName} />
+          </View>
+        ) : null}
 
         {review.photos.length > 0 ? (
           <ReviewPhotoHero photos={review.photos} onOpen={setViewerIndex} />

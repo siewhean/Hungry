@@ -364,6 +364,7 @@ test("composer publish requires an explicit dish and never guesses one from a lo
   let writes = 0;
   service.reviews.submitReview = async () => {
     writes += 1;
+    return { portfolioPostId: null };
   };
   service.social.postBite = async (...args) => {
     writes += 1;

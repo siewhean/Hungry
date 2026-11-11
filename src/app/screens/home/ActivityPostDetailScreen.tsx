@@ -12,7 +12,12 @@ import { AppText, EmptyState, Screen, Skeleton } from "@/components/ui";
 import { venueFromPost, type HomeFeedItem } from "@/features/home/feed";
 import { ACTIVITY_UPDATES } from "@/features/home/activity";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import { promptOwnContentActions } from "@/features/profile/ownContentActions";
+import {
+  askLinkedDelete,
+  deleteLinked,
+  linkedDeleteMessage,
+} from "@/features/foodPortfolio/linkedDelete";
+import { confirmOwnDelete, promptOwnContentActions } from "@/features/profile/ownContentActions";
 import {
   isContentHiddenForSession,
   markPostRemovedForSession,
@@ -98,21 +103,29 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const removePublishedPost = usePublishedPostStore((state) => state.removePost);
   const isOwnPost = Boolean(isAuthenticated && post?.authorId && post.authorId === viewerId);
   const [isEditingCaption, setIsEditingCaption] = useState(false);
-  const deleteOwnPost = useCallback(async () => {
-    try {
-      await getHungryService().social.deletePost(postId);
-      markPostRemovedForSession(postId);
-      removePublishedPost(postId);
-      showToast({ message: "Post deleted.", tone: "success" });
-      if (navigation.canGoBack()) navigation.goBack();
-      else navigation.navigate("MainTabs", { screen: "Home" });
-    } catch (error) {
-      showToast({
-        message: error instanceof Error ? error.message : "Could not delete this post.",
-        tone: "error",
-      });
-    }
-  }, [navigation, postId, removePublishedPost, showToast]);
+  const deleteOwnPost = useCallback(
+    async (reviewId: string | null) => {
+      try {
+        await getHungryService().social.deletePost(postId);
+        markPostRemovedForSession(postId);
+        removePublishedPost(postId);
+        const review = reviewId
+          ? (await deleteLinked("entry", reviewId))
+            ? "deleted"
+            : "failed"
+          : "kept";
+        showToast(linkedDeleteMessage("entry", review));
+        if (navigation.canGoBack()) navigation.goBack();
+        else navigation.navigate("MainTabs", { screen: "Home" });
+      } catch (error) {
+        showToast({
+          message: error instanceof Error ? error.message : "Could not delete this post.",
+          tone: "error",
+        });
+      }
+    },
+    [navigation, postId, removePublishedPost, showToast],
+  );
   const saveOwnCaption = useCallback(
     async ({ text }: { text: string }) => {
       try {
@@ -314,7 +327,14 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         ? promptOwnContentActions({
             label: "post",
             onEdit: () => setIsEditingCaption(true),
-            onDelete: () => void deleteOwnPost(),
+            onDelete: () => void deleteOwnPost(null),
+            askDelete: () =>
+              void askLinkedDelete(
+                "entry",
+                post.id,
+                () => confirmOwnDelete("post", () => void deleteOwnPost(null)),
+                (reviewId) => void deleteOwnPost(reviewId),
+              ),
           })
         : requireSignIn() &&
           promptPostSafetyActions({

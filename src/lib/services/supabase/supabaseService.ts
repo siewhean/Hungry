@@ -82,6 +82,12 @@ import type {
   BitesFeedPage,
   BlockUserRequest,
   FoodPortfolioStall,
+  ReviewPortfolioRank,
+  ReviewPortfolioLabel,
+  PortfolioDiaryEntry,
+  PortfolioEntryVisibility,
+  PortfolioPickKind,
+  PortfolioPicks,
   LeaderboardRow,
   PortfolioPointsEntry,
   PortfolioPointsKind,
@@ -782,21 +788,50 @@ export class ReviewPhotoRejectedError extends Error {
   }
 }
 
-/**
- * Asks check-photo-safety about photos just uploaded, before the review exists. Only an
- * explicit "blocked" stops the post: a missing key, an outage or a bad answer lets it through
- * (the function reports those), so posting never depends on Google being up.
- */
-async function photosAreBlocked(client: SupabaseClient, paths: string[]): Promise<boolean> {
-  if (paths.length === 0) return false;
-  try {
-    const { data, error } = await client.functions.invoke("check-photo-safety", {
-      body: { paths },
-    });
-    return !error && (data as Row | null)?.status === "blocked";
-  } catch {
-    return false;
+/** The photo check could not answer (Google down, a file it cannot read): the person tries again. */
+export class PhotoCheckUnavailableError extends Error {
+  readonly code = "photo_unchecked";
+  constructor() {
+    super("We couldn't check your photo just now. Try again in a minute.");
+    this.name = "PhotoCheckUnavailableError";
   }
+}
+
+/** check-photo-safety looks at up to this many files per call. */
+const PHOTO_CHECK_BATCH = 10;
+
+/**
+ * Asks check-photo-safety about files just uploaded, before the review or post exists. Returns
+ * the error to show, or null when every file is clear. Only "clear" lets a photo through: the
+ * server refuses anything else too, so an outage means "try again", never an unchecked photo.
+ */
+async function photoCheckRefusal(
+  client: SupabaseClient,
+  paths: string[],
+  bucket: "review-media" | "post-media" = "review-media",
+): Promise<Error | null> {
+  const unique = [...new Set(paths)];
+  if (unique.length === 0) return null;
+  const batches: string[][] = [];
+  for (let start = 0; start < unique.length; start += PHOTO_CHECK_BATCH) {
+    batches.push(unique.slice(start, start + PHOTO_CHECK_BATCH));
+  }
+  const statuses = await Promise.all(
+    batches.map(async (batch) => {
+      try {
+        // n-plus-one-ok: the function takes at most 10 files per call; a review has photos and thumbnails.
+        const { data, error } = await client.functions.invoke("check-photo-safety", {
+          body: { paths: batch, bucket },
+        });
+        return error ? "unchecked" : String((data as Row | null)?.status ?? "unchecked");
+      } catch {
+        return "unchecked";
+      }
+    }),
+  );
+  if (statuses.includes("blocked")) return new ReviewPhotoRejectedError();
+  if (statuses.some((status) => status !== "clear")) return new PhotoCheckUnavailableError();
+  return null;
 }
 
 function mapPushPreferencesRow(row: {
@@ -1847,9 +1882,111 @@ async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Pro
     if (cached) return cached;
     const signed = await createSignedStorageUrl(client, bucket, path);
     if (signed) rememberSignedMediaUrl("post-media", path, signed);
-    return signed ?? publicUrl ?? "";
+    // Never the row's public_url: post-media is private and that column is not trusted.
+    return signed ?? "";
   }
   return publicUrl ?? path;
+}
+
+/** The catalog rows a post names and the post's generated_content, as the composer writes it. */
+function buildPostContext(draft: BiteDraft) {
+  const dish = supabaseRepository.getDishById(draft.dishId);
+  const venue = supabaseRepository.getVenueById(draft.venueId);
+  const building = supabaseRepository
+    .listBuildings()
+    .find((item) => item.id === venue?.buildingId || item.id === dish?.buildingId);
+  // No author in generated_content: readers take the author from public_profiles.
+  const postMeta = {
+    source: "post_composer",
+    dish: {
+      id: draft.dishId,
+      name: dish?.name ?? "",
+      price: dish?.price ?? 0,
+      imageUrl: dish?.imageUrl,
+    },
+    venue: {
+      id: draft.venueId,
+      name: venue?.name ?? "",
+      unitNumber: venue?.unitNumber ?? "",
+      buildingId: venue?.buildingId ?? dish?.buildingId ?? "",
+      buildingName: building?.name ?? "",
+    },
+    tasteStamp: draft.tasteStamp,
+    // Only the poster's own rating is stored; no rating means no star on the post.
+    rating: draft.rating > 0 ? draft.rating : undefined,
+    tags: draft.tags ?? [],
+    mediaType: draft.mediaType ?? "photo",
+    mediaTypes: draft.mediaTypes ?? [],
+    showFoodContextOverlay: draft.showFoodContextOverlay ?? true,
+  };
+  return { dish, venue, building, postMeta };
+}
+
+/** Storage paths of the photos (not videos) among post media rows: the ones the photo check reads. */
+function postImagePaths(rows: Row[]): string[] {
+  return rows.flatMap((row) =>
+    row.media_type === "image" && asString(row.storage_path)
+      ? [asString(row.storage_path) as string]
+      : [],
+  );
+}
+
+/** What publish_post needs about each file; the server reads its type and size from storage. */
+function publishPostMedia(rows: Row[]): Row[] {
+  return rows.map((row) => ({
+    storage_path: row.storage_path,
+    media_type: row.media_type,
+  }));
+}
+
+/** publish_post's refusals, as the errors the composer and the review editor already show. */
+function publishPostError(error: PostgrestError): Error {
+  if (error.hint === "photo_blocked") return new ReviewPhotoRejectedError();
+  if (error.hint === "photo_unchecked") return new PhotoCheckUnavailableError();
+  return error as unknown as Error;
+}
+
+/**
+ * The table writes publish_post replaced, for a backend that has not shipped it: a draft, its
+ * media rows, then the switch to published (the board trigger pays on that switch).
+ */
+async function publishPostWithoutRpc(
+  client: SupabaseClient,
+  userId: string,
+  postId: string,
+  payload: Row,
+  media: { rows: Row[]; canonicalMediaType: Bite["mediaType"] },
+): Promise<void> {
+  const { error: postError } = await client.from("posts").upsert(
+    {
+      id: postId,
+      author_id: userId,
+      post_type: "text",
+      status: "draft",
+      visibility: "public",
+      ...payload,
+    },
+    { onConflict: "id" },
+  );
+  if (postError) throw postError;
+  const { error: clearError } = await client.from("post_media").delete().eq("post_id", postId);
+  if (clearError) throw clearError;
+  if (media.rows.length > 0) {
+    const { error: mediaError } = await client.from("post_media").insert(media.rows);
+    if (mediaError) throw mediaError;
+  }
+  const publishedAt = new Date().toISOString();
+  const { error } = await client
+    .from("posts")
+    .update({
+      post_type: postTypeForMedia(media.rows, media.canonicalMediaType),
+      status: "published",
+      published_at: publishedAt,
+      updated_at: publishedAt,
+    })
+    .eq("id", postId)
+    .eq("author_id", userId);
+  if (error) throw error;
 }
 
 async function buildPostMediaRows(
@@ -4756,17 +4893,73 @@ export const supabaseService: HungryService = {
       const discardUploadedPhotos = () =>
         removeUploadedObjects(client, "review-media", uploadedObjectPaths(uploadedPhotos));
 
-      // Explicit or violent photos are stopped here, before anyone can see them.
-      const photoPaths = uploadedPhotos.flatMap((photo) =>
-        asString(photo.storage_path) ? [asString(photo.storage_path) as string] : [],
+      // Explicit or violent photos are stopped here, before anyone can see them. Thumbnails are
+      // checked too: the server refuses a review photo whose thumbnail has no clear answer.
+      const photoPaths = uploadedObjectPaths(uploadedPhotos).filter((path): path is string =>
+        Boolean(path),
       );
-      if (await photosAreBlocked(client, photoPaths)) {
+      const photoRefusal = await photoCheckRefusal(client, photoPaths);
+      if (photoRefusal) {
         await discardUploadedPhotos();
-        throw new ReviewPhotoRejectedError();
+        throw photoRefusal;
       }
 
-      // One transaction: the review and its photo rows go in together, or neither does. The
-      // server refuses a review with no photo and resumes the same review on a retry.
+      // The portfolio entry: a copy of the first photo in the post's own folder, checked like any
+      // post photo. The server makes the entry with the review, in the same transaction.
+      const entryUploads: string[] = [];
+      const discardEntryUploads = () => removeUploadedObjects(client, "post-media", entryUploads);
+      let portfolioArg: Row | undefined;
+      if (draft.portfolio && draft.photos[0]) {
+        const entryId = createClientReviewId();
+        const entryDraft: BiteDraft = {
+          dishId: draft.dishId,
+          venueId: draft.venueId,
+          photoUrl: draft.photos[0],
+          mediaUrls: [draft.photos[0]],
+          mediaType: "photo",
+          mediaTypes: ["photo"],
+          caption: draft.portfolio.caption,
+          tags: normalizeReviewTags(draft.tags),
+          tasteStamp: draft.portfolio.tasteStamp,
+          rating: draft.rating,
+        };
+        try {
+          const entryMedia = await buildPostMediaRows(
+            client,
+            userId,
+            entryId,
+            entryDraft.mediaUrls ?? [],
+            entryDraft.mediaTypes,
+            entryDraft.mediaType,
+            entryUploads,
+          );
+          const entryRefusal = await photoCheckRefusal(
+            client,
+            postImagePaths(entryMedia.rows),
+            "post-media",
+          );
+          if (entryRefusal) throw entryRefusal;
+          const { venue, dish, postMeta } = buildPostContext(entryDraft);
+          portfolioArg = {
+            post: {
+              id: entryId,
+              caption: sanitizeFreeText(draft.portfolio.caption, POST_CAPTION_MAX_LENGTH),
+              generated_content: postMeta,
+              building_id: venue?.buildingId ?? dish?.buildingId ?? null,
+              visibility: draft.portfolio.visibility === "private" ? "private" : "public",
+            },
+            media: publishPostMedia(entryMedia.rows),
+          };
+        } catch (error) {
+          await discardUploadedPhotos();
+          await discardEntryUploads();
+          throw error;
+        }
+      }
+
+      // One transaction: the review, its photo rows and (when asked) its portfolio entry go in
+      // together, or nothing does. The server refuses a review with no photo and resumes the same
+      // review, and finds the same entry, on a retry.
       const { data, error } = await client.rpc("submit_review", {
         p_review: {
           id: reviewId,
@@ -4781,20 +4974,31 @@ export const supabaseService: HungryService = {
           storage_path: photo.storage_path,
           thumb_path: photo.thumb_path ?? null,
         })),
+        ...(portfolioArg ? { p_portfolio: portfolioArg } : {}),
       });
       if (isMissingBackendObjectError(error)) {
-        // A backend that has not shipped submit_review yet: write the tables, as before.
+        // A backend that has not shipped submit_review yet: write the tables, as before. With a
+        // portfolio entry asked for, an older backend is refused instead of dropping the entry.
+        await discardEntryUploads();
+        if (portfolioArg) {
+          await discardUploadedPhotos();
+          throw new Error("Your Food Portfolio can't take reviews yet. Try again later.");
+        }
         await submitReviewWithoutRpc(client, userId, reviewRow, uploadedPhotos);
-        return;
+        return { portfolioPostId: null };
       }
       if (error) {
         await discardUploadedPhotos();
-        throw error;
+        await discardEntryUploads();
+        throw publishPostError(error);
       }
+      const result = (data as Row | null) ?? {};
       // The review already had its photos (a retry whose first answer was lost): the files just
-      // uploaded are not used.
-      const photosAdded = asNumber((data as Row | null)?.photos_added) ?? uploadedPhotos.length;
+      // uploaded are not used. The same goes for an entry that already existed.
+      const photosAdded = asNumber(result.photos_added) ?? uploadedPhotos.length;
       if (photosAdded === 0) await discardUploadedPhotos();
+      if (result.post_resumed === true) await discardEntryUploads();
+      return { portfolioPostId: asString(result.post_id) ?? null };
     },
 
     async listRecentReviews(options) {
@@ -5468,43 +5672,10 @@ export const supabaseService: HungryService = {
         throw new Error("You must be signed in to publish a post.");
       }
       const user = await supabaseService.profile.getProfile();
-      const dish = supabaseRepository.getDishById(draft.dishId);
-      const venue = supabaseRepository.getVenueById(draft.venueId);
-      const building = supabaseRepository
-        .listBuildings()
-        .find((item) => item.id === venue?.buildingId || item.id === dish?.buildingId);
-
+      const { dish, venue, building, postMeta } = buildPostContext(draft);
       const author = draft.author ?? user;
-      // No author in generated_content: readers take the author from public_profiles.
-      const postMeta = {
-        source: "post_composer",
-        dish: {
-          id: draft.dishId,
-          name: dish?.name ?? "",
-          price: dish?.price ?? 0,
-          imageUrl: dish?.imageUrl,
-        },
-        venue: {
-          id: draft.venueId,
-          name: venue?.name ?? "",
-          unitNumber: venue?.unitNumber ?? "",
-          buildingId: venue?.buildingId ?? dish?.buildingId ?? "",
-          buildingName: building?.name ?? "",
-        },
-        tasteStamp: draft.tasteStamp,
-        // Only the poster's own rating is stored; no rating means no star on the post.
-        rating: draft.rating > 0 ? draft.rating : undefined,
-        tags: draft.tags ?? [],
-        mediaType: draft.mediaType ?? "photo",
-        mediaTypes: draft.mediaTypes ?? [],
-        showFoodContextOverlay: draft.showFoodContextOverlay ?? true,
-      };
 
-      const initialPayload = {
-        author_id: userId,
-        post_type: "text",
-        status: "draft",
-        visibility: "public",
+      const postPayload = {
         caption: draft.caption,
         generated_content: postMeta,
         dish_id: draft.dishId,
@@ -5513,76 +5684,20 @@ export const supabaseService: HungryService = {
       };
 
       // A client post id makes a retry resume this post instead of creating a second one.
-      let clientPostId =
+      const postId =
         draft.clientPostId && UUID_PATTERN.test(draft.clientPostId)
           ? draft.clientPostId
-          : undefined;
-      let resumeDraft = false;
-      if (clientPostId) {
-        const { data: existing, error: existingError } = await client
-          .from("posts")
-          .select("id,status,deleted_at")
-          .eq("id", clientPostId)
-          .eq("author_id", userId)
-          .maybeSingle();
-        if (existingError) throw existingError;
-        if (existing) {
-          const existingStatus = asString((existing as Row).status);
-          if (existingStatus === "published" && !(existing as Row).deleted_at) {
-            // The earlier attempt published it and only its response was lost.
-            const alreadyPublished = await supabaseService.social.getPostById(clientPostId);
-            if (alreadyPublished) return alreadyPublished;
-          }
-          if (existingStatus === "draft") {
-            resumeDraft = true;
-          } else {
-            // Not reusable (deleted): publish under a new id.
-            clientPostId = undefined;
-          }
-        }
-      }
-
-      let postId = clientPostId ?? "";
-      if (resumeDraft) {
-        const { error: resumeError } = await client
-          .from("posts")
-          .update({
-            caption: initialPayload.caption,
-            generated_content: initialPayload.generated_content,
-            dish_id: initialPayload.dish_id,
-            venue_id: initialPayload.venue_id,
-            building_id: initialPayload.building_id,
-          })
-          .eq("id", postId)
-          .eq("author_id", userId);
-        if (resumeError) throw resumeError;
-        // Media rows from the earlier attempt are replaced by this attempt's uploads.
-        const { error: clearError } = await client
-          .from("post_media")
-          .delete()
-          .eq("post_id", postId);
-        if (clearError) throw clearError;
-      } else {
-        const { data: postData, error: postError } = await client
-          .from("posts")
-          .insert((clientPostId ? { id: clientPostId, ...initialPayload } : initialPayload) as Row)
-          .select("*")
-          .maybeSingle();
-        if (postError || !postData) throw postError ?? new Error("Failed to create post draft.");
-        postId = asString((postData as Row).id) ?? "";
-        if (!postId) {
-          throw new Error("Failed to create post id.");
-        }
-      }
+          : createClientReviewId();
 
       const mediaUrls = draft.mediaUrls?.length
         ? draft.mediaUrls
         : [draft.photoUrl].filter(Boolean);
       const uploadedPaths: string[] = [];
       let media: Awaited<ReturnType<typeof buildPostMediaRows>>;
-      let publishedPostData: unknown;
       const publishedAt = new Date().toISOString();
       try {
+        // Files go up first, under <user>/<post>/, then the photo check answers for each photo,
+        // then publish_post checks both on the server and publishes in one transaction.
         media = await buildPostMediaRows(
           client,
           userId,
@@ -5592,41 +5707,31 @@ export const supabaseService: HungryService = {
           draft.mediaType,
           uploadedPaths,
         );
-        if (media.rows.length > 0) {
-          const { error: mediaError } = await client.from("post_media").insert(media.rows);
-          if (mediaError) throw mediaError;
-        }
-
-        const postType = postTypeForMedia(media.rows, media.canonicalMediaType);
-        const publishResult = await client
-          .from("posts")
-          .update({
-            post_type: postType,
-            status: "published",
-            published_at: publishedAt,
-            updated_at: publishedAt,
-          })
-          .eq("id", postId)
-          .select("*")
-          .maybeSingle();
-        publishedPostData = publishResult.data;
-        if (publishResult.error || !publishedPostData) {
-          throw publishResult.error ?? new Error("Failed to publish post.");
+        const mediaRefusal = await photoCheckRefusal(
+          client,
+          postImagePaths(media.rows),
+          "post-media",
+        );
+        if (mediaRefusal) throw mediaRefusal;
+        const { data, error } = await client.rpc("publish_post", {
+          p_post: { id: postId, ...postPayload },
+          p_media: publishPostMedia(media.rows),
+        });
+        if (isMissingBackendObjectError(error)) {
+          // A backend that has not shipped publish_post yet: write the tables, as before.
+          await publishPostWithoutRpc(client, userId, postId, postPayload, media);
+        } else if (error) {
+          throw publishPostError(error);
+        } else if ((data as Row | null)?.resumed === true) {
+          // The earlier attempt published it and only its answer was lost.
+          await removeUploadedObjects(client, "post-media", uploadedPaths);
+          const alreadyPublished = await supabaseService.social.getPostById(postId);
+          if (alreadyPublished) return alreadyPublished;
         }
       } catch (error) {
-        // Leave no orphan draft or uploaded files behind (best effort; a scheduled purge
-        // removes whatever is left after 24 hours). A retry starts clean.
+        // Leave no uploaded files behind (best effort; a scheduled purge removes whatever is
+        // left after 24 hours). A retry uploads afresh under the same post id.
         await removeUploadedObjects(client, "post-media", uploadedPaths);
-        try {
-          await client
-            .from("posts")
-            .delete()
-            .eq("id", postId)
-            .eq("author_id", userId)
-            .eq("status", "draft");
-        } catch {
-          // Offline: the retry resumes this draft by its id.
-        }
         throw error;
       }
 
@@ -6258,6 +6363,199 @@ export const supabaseService: HungryService = {
       const { data, error } = await client.rpc("set_pinned_posts", { p_post_ids: ids });
       if (error) throw error;
       return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async getMyRanking() {
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_my_portfolio_ranking");
+      if (error) throw error;
+      return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async rankPost(postId, position) {
+      if (!UUID_PATTERN.test(postId)) throw new Error("Only your own dishes can be ranked.");
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("rank_portfolio_post", {
+        p_post_id: postId,
+        p_position: Math.max(1, Math.floor(position)),
+      });
+      if (error) throw error;
+      return Array.isArray(data) ? data.map((id) => String(id)) : [];
+    },
+
+    async getReviewPortfolioRanks(reviewIds) {
+      const ids = [...new Set(reviewIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 50);
+      if (ids.length === 0) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_review_portfolio_ranks", {
+        p_review_ids: ids,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): ReviewPortfolioRank[] => {
+        const reviewId = asString(row.review_id);
+        const rank = asNumber(row.portfolio_rank);
+        if (!reviewId || !rank) return [];
+        return [{ reviewId, rank, dishCount: asNumber(row.dish_count) ?? 0 }];
+      });
+    },
+
+    async getPicks(userId) {
+      if (!UUID_PATTERN.test(userId)) return { topThree: [], bests: [] };
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_portfolio_picks", { p_user_id: userId });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      // One signing call for every photo, then map.
+      await presignPostMediaRows(
+        client,
+        rows.flatMap((row) => asRowArray(row.media)),
+      );
+      const posts = await Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+      const picks: PortfolioPicks = { topThree: [], bests: [] };
+      rows.forEach((row, index) => {
+        const slot = asString(row.slot);
+        if (!slot) return;
+        if (row.kind === "overall") {
+          const place = Number(slot);
+          if (place >= 1 && place <= 3) picks.topThree.push({ place, post: posts[index] });
+        } else if (row.kind === "dish_type") {
+          picks.bests.push({ foodType: slot, post: posts[index] });
+        }
+      });
+      picks.topThree.sort((a, b) => a.place - b.place);
+      return picks;
+    },
+
+    async setPick(postId, kind, place) {
+      if (!UUID_PATTERN.test(postId))
+        throw new Error("Only your own live dishes can be your bests.");
+      const wholePlace = Math.floor(place ?? 0);
+      if (kind === "overall" && !(wholePlace >= 1 && wholePlace <= 3)) {
+        throw new Error("Choose a place from 1 to 3.");
+      }
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("set_portfolio_pick", {
+        p_post_id: postId,
+        p_kind: kind,
+        p_place: kind === "overall" ? wholePlace : null,
+      });
+      if (error) throw error;
+      const row = (data ?? {}) as Row;
+      return {
+        kind: row.kind === "overall" ? "overall" : "dish_type",
+        slot: asString(row.slot) ?? "",
+        postId: asString(row.post_id) ?? postId,
+        replacedPostId: asString(row.replaced_post_id),
+      };
+    },
+
+    async removePick(postId, kind) {
+      if (!UUID_PATTERN.test(postId)) return 0;
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("remove_portfolio_pick", {
+        p_post_id: postId,
+        p_kind: kind ?? null,
+      });
+      if (error) throw error;
+      return asNumber(data) ?? 0;
+    },
+
+    async setEntryVisibility(postId, visibility) {
+      if (!UUID_PATTERN.test(postId)) throw new Error("Only your own dishes can be changed.");
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("set_post_visibility", {
+        p_post_id: postId,
+        p_visibility: visibility,
+      });
+      if (error) throw error;
+      return data === "private" ? "private" : "public";
+    },
+
+    async getDiary(userId, page) {
+      if (!UUID_PATTERN.test(userId)) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_portfolio_diary", {
+        p_user_id: userId,
+        p_limit: Math.min(Math.max(1, Math.floor(page?.limit ?? 30)), 60),
+        p_before_published_at: page?.before?.publishedAt ?? null,
+        p_before_id: page?.before?.id ?? null,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      await presignPostMediaRows(
+        client,
+        rows.flatMap((row) => asRowArray(row.media)),
+      );
+      const posts = await Promise.all(rows.map((row) => mapFeedRpcRowToBite(client, row)));
+      return rows.map((row, index): PortfolioDiaryEntry => {
+        const visibility: PortfolioEntryVisibility =
+          row.visibility === "private" || row.visibility === "followers"
+            ? row.visibility
+            : "public";
+        const kinds = Array.isArray(row.pick_kinds) ? row.pick_kinds : [];
+        return {
+          post: posts[index],
+          visibility,
+          dishFoodType: asString(row.dish_food_type),
+          pickKinds: kinds.filter(
+            (kind): kind is PortfolioPickKind => kind === "dish_type" || kind === "overall",
+          ),
+        };
+      });
+    },
+
+    async getReviewPortfolioLabels(reviewIds) {
+      const ids = [...new Set(reviewIds.filter((id) => UUID_PATTERN.test(id)))].slice(0, 50);
+      if (ids.length === 0) return [];
+      const client = requireSupabaseClient();
+      const { data, error } = await client.rpc("get_review_portfolio_labels", {
+        p_review_ids: ids,
+      });
+      if (error) throw error;
+      const rows = Array.isArray(data) ? (data as Row[]) : [];
+      return rows.flatMap((row): ReviewPortfolioLabel[] => {
+        const reviewId = asString(row.review_id);
+        const foodType = asString(row.food_type);
+        const place = asNumber(row.overall_place);
+        const overallPlace = place && place >= 1 && place <= 3 ? place : undefined;
+        if (!reviewId || (!foodType && !overallPlace)) return [];
+        return [{ reviewId, foodType, overallPlace, dishCount: asNumber(row.dish_count) ?? 0 }];
+      });
+    },
+
+    async getEntryForReview(reviewId) {
+      if (!UUID_PATTERN.test(reviewId)) return null;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return null;
+      // posts_review_id_live_key: at most one live entry per review.
+      const { data, error } = await client
+        .from("posts")
+        .select("id")
+        .eq("review_id", reviewId)
+        .eq("author_id", userId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      return asString((data as Row | null)?.id) ?? null;
+    },
+
+    async getReviewForEntry(postId) {
+      if (!UUID_PATTERN.test(postId)) return null;
+      const client = requireSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!userId) return null;
+      // review_id goes to null when the review is deleted (on delete set null).
+      const { data, error } = await client
+        .from("posts")
+        .select("review_id")
+        .eq("id", postId)
+        .eq("author_id", userId)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (error) throw error;
+      return asString((data as Row | null)?.review_id) ?? null;
     },
 
     async listStalls(userId, limit = 60) {
