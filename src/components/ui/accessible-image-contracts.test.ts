@@ -67,10 +67,13 @@ test("production surfaces do not import raw React Native Image", () => {
 
 test("animated brand imagery keeps explicit image semantics", () => {
   const splash = read("src/app/screens/SplashScreen.tsx");
+  const logo = read("src/components/ui/AnimatedHungryLogo.tsx");
 
-  assert.match(splash, /<Animated\.Image/);
-  assert.match(splash, /accessibilityLabel="Hungry logo"/);
-  assert.match(splash, /accessibilityRole="image"/);
+  assert.match(splash, /<AnimatedHungryLogo/);
+  // One labelled image for the whole lockup; the two pieces inside are decorative.
+  assert.match(logo, /accessibilityLabel="Hungry logo"/);
+  assert.match(logo, /accessibilityRole="image"/);
+  assert.equal(logo.match(/<AccessibleImage[\s\S]*?decorative/g)?.length, 2);
 });
 
 test("zoomable social media exposes actionable media and video controls to assistive tech", () => {
