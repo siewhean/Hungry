@@ -41,8 +41,10 @@ grant insert, update, delete, truncate on table public.orders to authenticated;
 grant truncate on table public.messages to authenticated;
 grant insert, update, delete, truncate on table
   public.posts, public.post_media, public.user_profiles, public.reviews, public.review_photos,
-  public.orders, public.messages
+  public.orders
 to anon;
+-- anon only ever had truncate (no insert, update or delete) on messages.
+grant truncate on table public.messages to anon;
 
 alter function app_private.catalog_quality_score(numeric, integer) reset search_path;
 alter function app_private.catalog_dish_cards_set_quality() reset search_path;
