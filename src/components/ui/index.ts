@@ -21,6 +21,7 @@ export * from "./RailScrollView";
 export * from "./FloatingToast";
 export * from "./FormSwitchRow";
 export * from "./AnimatedSwitch";
+export * from "./AnimatedHungryLogo";
 export * from "./HalalMark";
 export * from "./HungryLogo";
 export * from "./IconButton";

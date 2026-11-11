@@ -56,7 +56,7 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     name: "SplashScreen",
     file: "src/app/screens/SplashScreen.tsx",
     scenario: "user",
-    expect: /Find the dish\. Not just the restaurant\./,
+    expect: /^$/, // the splash is the animated logo alone: no text on screen
   },
   {
     name: "EmailChangeScreen",

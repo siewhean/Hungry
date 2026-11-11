@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { DISCOVER_FIRST_PAGE_LIMIT } from "@/features/discover/bites";
+import { LOGO_SPLASH_DURATION_MS } from "@/features/splash/logoSplash";
 import {
   getServiceProvider,
   resetServiceProvider,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/services/serviceProvider";
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
 import { useSessionStore } from "@/store/useSessionStore";
+import { useUIStore } from "@/store/useUIStore";
 import { cleanup, createFakeNavigation, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
 import { SplashScreen } from "./SplashScreen";
@@ -55,11 +57,12 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  useUIStore.setState({ reducedMotionEnabled: false });
   resetServiceProvider();
   await cleanup();
 });
 
-test("a signed-in diner stays on Splash until Home's nearest stalls land, then opens Home", async () => {
+test("a signed-in diner stays on Splash until Home's nearest stalls land and the logo animation ends, then opens Home", async () => {
   const firstPage = installLiveProvider();
   const navigation = createFakeNavigation();
   const view = await renderScreen(SplashScreen as never, { name: "Splash", navigation });
@@ -70,10 +73,25 @@ test("a signed-in diner stays on Splash until Home's nearest stalls land, then o
   firstPage.resolve({ venues: [], results: [] });
   await wait(100);
   await view.settle();
+  assert.equal(resets(navigation).length, 0, "the stalls are in, but the logo is still animating");
+
+  await wait(LOGO_SPLASH_DURATION_MS - 1300 + 150);
+  await view.settle();
   assert.deepEqual(resets(navigation)[0]?.args[0], {
     index: 0,
     routes: [{ name: "MainTabs", params: { screen: "Home" } }],
   });
+});
+
+test("Reduce Motion shows the finished logo and opens Home after the short minimum, not the full animation", async () => {
+  useUIStore.setState({ reducedMotionEnabled: true });
+  const firstPage = installLiveProvider();
+  firstPage.resolve({ venues: [], results: [] });
+  const navigation = createFakeNavigation();
+  const view = await renderScreen(SplashScreen as never, { name: "Splash", navigation });
+  await wait(1000);
+  await view.settle();
+  assert.equal(resets(navigation).length, 1, "left well before the 2.2 s animation would end");
 });
 
 test("a slow network does not hold the diner on Splash past the cap", async () => {

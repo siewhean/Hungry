@@ -1,27 +1,30 @@
 /**
  * SplashScreen — animated brand intro and mandatory-auth entry router.
  *
- * The splash only stays up until auth/bootstrap is ready, with a short
- * minimum (motion.splashTotal) so the logo animation does not flash.
+ * The official logo springs into place (AnimatedHungryLogo, about 2.2 s) while auth/bootstrap and
+ * Home's first stalls load behind it. The splash stays up until both the animation and the
+ * bootstrap are done. Under Reduce Motion the finished logo shows with only the short minimum
+ * (motion.splashTotal).
  * New users go to onboarding (which ends at sign-up/sign-in); signed-out
  * returning users go to Login. Main app screens never mount without a session.
  * A signed-in merchant who left the app in Merchant mode reopens in the Merchant Centre.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Animated, StyleSheet } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View, StyleSheet } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Constants from "expo-constants";
 
 import type { MainTabParamList, RootStackParamList } from "@/app/navigation/navigationTypes";
 import { onboardingEntryRoute } from "@/app/navigation/onboardingEntry";
 import { warmHomeFeed } from "@/features/discover/warmHomeFeed";
-import { HUNGRY_LOGO_ICON, HUNGRY_LOGO_STANDARD_SIZE } from "@/constants/brandAssets";
+import { LOGO_SPLASH_DURATION_MS } from "@/features/splash/logoSplash";
+import { reportError } from "@/lib/monitoring/reportError";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useHungryTheme, type HungryTheme } from "@/theme";
-import { AppText } from "@/components/ui";
+import { AnimatedHungryLogo, AppText } from "@/components/ui";
 
 const SAFE_MAIN_TAB_RETURNS = new Set<keyof MainTabParamList>([
   "Home",
@@ -73,84 +76,17 @@ export function SplashScreen({ navigation }: Props) {
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const merchantModeRestore = useMerchantStore((state) => state.merchantModeRestore);
   const dismissMerchantModeRestore = useMerchantStore((state) => state.dismissMerchantModeRestore);
-  const { palette, motion, spacing, radii, typography } = useHungryTheme();
+  const { palette, motion, spacing } = useHungryTheme();
   const appVersion = Constants.expoConfig?.version ?? "0.1.0";
   const reduceMotion = useReduceMotion();
-  const styles = useMemo(
-    () => createStyles({ palette, typography, spacing, radii }),
-    [palette, radii, spacing, typography],
-  );
-
-  // ── Animated values ───────────────────────────────────────────────────────
-  const logoScale = useRef(new Animated.Value(0.4)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
-  const taglineOpacity = useRef(new Animated.Value(0)).current;
-  const dotScale = useRef(new Animated.Value(0.6)).current;
-  const dotOpacity = useRef(new Animated.Value(0)).current;
+  const styles = useMemo(() => createStyles({ palette }), [palette]);
   const [mountedAt] = useState(() => Date.now());
+  // The logo animation plays out in full; Reduce Motion shows the finished logo for a moment.
+  const minimumMs = reduceMotion ? motion.splashTotal : LOGO_SPLASH_DURATION_MS;
   const [homeFeedSettled, setHomeFeedSettled] = useState(false);
   // Only a signed-in diner who has finished onboarding lands on Home, so only they warm its feed.
   const opensHome =
     isAuthReady && isAuthenticated && hasCompletedOnboarding && merchantModeRestore !== "restore";
-
-  useEffect(() => {
-    if (reduceMotion) {
-      // Reduce Motion: show the final frame without scaling or springs.
-      logoScale.setValue(1);
-      logoOpacity.setValue(1);
-      taglineOpacity.setValue(1);
-      dotScale.setValue(1);
-      dotOpacity.setValue(1);
-      return;
-    }
-    // Staggered entrance animation
-    Animated.sequence([
-      // Logo scales in.
-      Animated.parallel([
-        Animated.spring(logoScale, {
-          toValue: 1,
-          damping: 12,
-          mass: 0.8,
-          stiffness: 180,
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: motion.splashFast,
-          useNativeDriver: true,
-        }),
-      ]),
-
-      // Tagline + dot fade in together
-      Animated.parallel([
-        Animated.timing(taglineOpacity, {
-          toValue: 1,
-          duration: motion.splashReveal,
-          useNativeDriver: true,
-        }),
-        Animated.spring(dotScale, {
-          toValue: 1,
-          damping: 8,
-          useNativeDriver: true,
-        }),
-        Animated.timing(dotOpacity, {
-          toValue: 1,
-          duration: motion.splashDot,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  }, [
-    dotOpacity,
-    dotScale,
-    logoOpacity,
-    logoScale,
-    motion.splashDot,
-    motion.splashFast,
-    motion.splashReveal,
-    reduceMotion,
-    taglineOpacity,
-  ]);
 
   useEffect(() => {
     if (isAuthReady) return;
@@ -193,7 +129,7 @@ export function SplashScreen({ navigation }: Props) {
       return;
     }
 
-    const remaining = Math.max(0, motion.splashTotal - (Date.now() - mountedAt));
+    const remaining = Math.max(0, minimumMs - (Date.now() - mountedAt));
     const timer = setTimeout(() => {
       // Fresh users complete local onboarding before they are offered account
       // creation/sign-in. Main app screens never mount during either step.
@@ -293,7 +229,7 @@ export function SplashScreen({ navigation }: Props) {
     isAuthenticated,
     isAuthReady,
     merchantModeRestore,
-    motion.splashTotal,
+    minimumMs,
     homeFeedSettled,
     mountedAt,
     navigation,
@@ -304,85 +240,31 @@ export function SplashScreen({ navigation }: Props) {
 
   return (
     <View style={styles.root}>
-      {/* Brand lockup */}
-      <View style={styles.lockup}>
-        <Animated.Image
-          source={HUNGRY_LOGO_ICON}
-          resizeMode="contain"
-          accessibilityLabel="Hungry logo"
-          accessibilityRole="image"
-          style={{
-            height: HUNGRY_LOGO_STANDARD_SIZE,
-            opacity: logoOpacity,
-            transform: [{ scale: logoScale }],
-            width: HUNGRY_LOGO_STANDARD_SIZE,
-          }}
-        />
-
-        {/* Pulsing orange dot */}
-        <Animated.View
-          style={{
-            opacity: dotOpacity,
-            transform: [{ scale: dotScale }],
-            alignSelf: "flex-end",
-            marginBottom: spacing[2],
-          }}
-        >
-          <View
-            style={[styles.dot, { backgroundColor: palette.orange, borderRadius: radii.pill }]}
-          />
-        </Animated.View>
-      </View>
-
-      {/* Tagline */}
-      <Animated.View style={{ opacity: taglineOpacity }}>
-        <AppText variant="body" tone="secondary" style={styles.tagline}>
-          Find the dish. Not just the restaurant.
-        </AppText>
-      </Animated.View>
+      {/* Reduce Motion: the finished logo, no movement. */}
+      <AnimatedHungryLogo
+        animated={!reduceMotion}
+        onImageError={(error) => reportError(error, { screen: "Splash", step: "logo-image" })}
+      />
 
       {/* Version stamp: development builds only. */}
       {__DEV__ ? (
-        <Animated.View
-          style={{
-            opacity: taglineOpacity,
-            position: "absolute",
-            bottom: spacing[12],
-          }}
-        >
+        <View style={{ position: "absolute", bottom: spacing[12] }}>
           <AppText variant="micro" tone="muted">
             Hungry v{appVersion} · Singapore
           </AppText>
-        </Animated.View>
+        </View>
       ) : null}
     </View>
   );
 }
 
-const createStyles = ({
-  palette,
-  typography,
-  spacing,
-  radii,
-}: Pick<HungryTheme, "palette" | "typography" | "spacing" | "radii">) =>
+const createStyles = ({ palette }: Pick<HungryTheme, "palette">) =>
   StyleSheet.create({
     root: {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: palette.bg,
-      gap: spacing[4],
-    },
-    lockup: {
-      alignItems: "center",
-    },
-    dot: {
-      width: 10,
-      height: 10,
-    },
-    tagline: {
-      ...typography.body,
-      letterSpacing: 0.2,
-      color: palette.textSecondary,
+      // Always white: the official logo is drawn for white, and it matches the native launch screen.
+      backgroundColor: palette.white,
     },
   });
