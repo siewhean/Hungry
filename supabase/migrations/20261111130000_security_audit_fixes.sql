@@ -488,7 +488,7 @@ begin
     raise exception 'Unknown passport event.' using errcode = '22023';
   end if;
 
-  if not case p_event_type
+  if not (case p_event_type
     when 'stall_submitted' then exists (
       select 1 from user_stall_submissions uss where uss.id::text = v_ref and uss.user_id = v_user
     )
@@ -508,7 +508,7 @@ begin
       where p.id::text = v_ref and p.owner_id = v_user and p.type = 'trail' and p.published_at is not null
     )
     else false
-  end then
+  end) then
     return;
   end if;
 
