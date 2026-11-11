@@ -1857,7 +1857,8 @@ async function resolvePostMediaDisplayUrl(client: SupabaseClient, row: Row): Pro
     if (cached) return cached;
     const signed = await createSignedStorageUrl(client, bucket, path);
     if (signed) rememberSignedMediaUrl("post-media", path, signed);
-    return signed ?? publicUrl ?? "";
+    // Never the row's public_url: post-media is private and that column is not trusted.
+    return signed ?? "";
   }
   return publicUrl ?? path;
 }

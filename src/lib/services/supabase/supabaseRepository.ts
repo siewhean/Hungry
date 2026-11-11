@@ -639,7 +639,13 @@ function mapPostRowToStallPost(
   const mediaUrls = mediaRows
     .slice()
     .sort((left, right) => toNumber(left.sort_order) - toNumber(right.sort_order))
-    .map((mediaRow) => toString(mediaRow.public_url) || toString(mediaRow.storage_path))
+    // post-media is private: its rows carry no usable public URL (publish_post drops any the client
+    // sends), so these posts show the dish photo here and the signed URL on the post screens.
+    .map((mediaRow) =>
+      toString(mediaRow.storage_bucket) === "post-media"
+        ? ""
+        : toString(mediaRow.public_url) || toString(mediaRow.storage_path),
+    )
     .filter(Boolean);
   const fallbackImage = dish?.imageUrl ?? toString(dishMeta.imageUrl);
   const mediaUrl = mediaUrls[0] ?? fallbackImage;

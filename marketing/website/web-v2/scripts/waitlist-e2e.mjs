@@ -127,7 +127,7 @@ async function runMode(label, serviceRoleKey, sitePort) {
     check(emails[0]?.reply_to === "usehungrysingapore@gmail.com", "Welcome email should reply to support.");
 
     const repeat = await post({ audience: "foodie", email: "foodie@example.com" });
-    check(repeat.status === 200 && repeat.payload.alreadyExists === true, "Repeat signup should report alreadyExists.");
+    check(repeat.status === 200 && repeat.payload.alreadyExists === undefined, "Repeat signup should get the same reply as a new one.");
     check(rows.size === 1, "Repeat signup must not create a second row.");
     check(emails.length === 1, "Repeat signup must not send a second welcome email.");
 
@@ -147,7 +147,7 @@ async function runMode(label, serviceRoleKey, sitePort) {
       email: "foodie@example.com",
       establishmentType: "hawker",
     });
-    check(upgrade.status === 200 && upgrade.payload.alreadyExists === true, "Upgrading an existing email should succeed.");
+    check(upgrade.status === 200 && upgrade.payload.alreadyExists === undefined, "Upgrading an existing email should succeed.");
     if (serviceRoleKey) {
       check(rows.get("foodie@example.com")?.audience === "merchant", "Service path should update the repeat signup details.");
     }
