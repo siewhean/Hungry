@@ -48,7 +48,9 @@ test("Supabase social publish goes through publish_post after the photo check, n
   // Upload, then the photo check on the post's own files, then one server call.
   assert.ok(
     postBite.indexOf("buildPostMediaRows(") <
-      postBite.indexOf('photoCheckRefusal(client, postImagePaths(media.rows), "post-media")'),
+      postBite.search(
+        /photoCheckRefusal\(\s*client,\s*postImagePaths\(media\.rows\),\s*"post-media",?\s*\)/,
+      ),
   );
   assert.ok(postBite.indexOf('"post-media")') < postBite.indexOf('client.rpc("publish_post"'));
   assert.doesNotMatch(postBite, /from\("posts"\)/);
