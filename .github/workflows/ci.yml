@@ -112,7 +112,7 @@ jobs:
         run: npm run check:rate-limits
 
       - name: Expo Doctor
-        run: npx expo-doctor
+        run: npx expo-doctor@1.21.6 # 1.21.7 (2026-11-11) ships without @expo/env; unpin once fixed
 
   merge-compatibility:
     # Branch protection requires this check. The ordinary PR checkout validates the
