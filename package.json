@@ -207,7 +207,7 @@
     "@xmldom/xmldom": "0.8.15",
     "uuid": "14.0.0",
     "joi": "17.13.9",
-    "node-forge": "1.4.2"
+    "node-forge": "1.4.3"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [

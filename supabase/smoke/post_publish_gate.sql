@@ -35,6 +35,11 @@ values
   ('post-media', '00000000-0000-1110-b000-000000000001/00000000-0000-1110-c000-000000000003/a.jpg',
    '00000000-0000-1110-b000-000000000001', '{"mimetype": "image/jpeg", "size": 1000}'),
   ('post-media', '00000000-0000-1110-b000-000000000001/00000000-0000-1110-c000-000000000004/a.jpg',
+   '00000000-0000-1110-b000-000000000001', '{"mimetype": "image/jpeg", "size": 1000}'),
+  -- The review photos (checked like post photos since 20261111130000).
+  ('review-media', '00000000-0000-1110-b000-000000000001/r1/a.jpg',
+   '00000000-0000-1110-b000-000000000001', '{"mimetype": "image/jpeg", "size": 1000}'),
+  ('review-media', '00000000-0000-1110-b000-000000000001/r2/a.jpg',
    '00000000-0000-1110-b000-000000000001', '{"mimetype": "image/jpeg", "size": 1000}');
 
 -- 5. Who can do what.
@@ -43,7 +48,7 @@ begin
   if has_function_privilege('anon', 'public.publish_post(jsonb, jsonb)', 'execute') then
     raise exception 'anon can run publish_post';
   end if;
-  if has_function_privilege('authenticated', 'public.record_photo_safety_checks(uuid, text, jsonb)', 'execute') then
+  if has_function_privilege('authenticated', 'public.record_photo_safety_checks(uuid, text, jsonb, timestamptz)', 'execute') then
     raise exception 'signed-in users can record photo checks';
   end if;
   if not exists (select 1 from app_private.request_rate_rules where route = 'rpc/publish_post') then
@@ -69,6 +74,11 @@ select public.record_photo_safety_checks(
   '[{"path": "00000000-0000-1110-b000-000000000001/00000000-0000-1110-c000-000000000001/a.jpg", "status": "clear"},
     {"path": "00000000-0000-1110-b000-000000000001/00000000-0000-1110-c000-000000000002/a.jpg", "status": "blocked"},
     {"path": "00000000-0000-1110-b000-000000000001/00000000-0000-1110-c000-000000000004/a.jpg", "status": "clear"}]'
+);
+select public.record_photo_safety_checks(
+  '00000000-0000-1110-b000-000000000001', 'review-media',
+  '[{"path": "00000000-0000-1110-b000-000000000001/r1/a.jpg", "status": "clear"},
+    {"path": "00000000-0000-1110-b000-000000000001/r2/a.jpg", "status": "clear"}]'
 );
 -- A blocked answer never turns back to clear.
 select public.record_photo_safety_checks(

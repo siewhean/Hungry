@@ -39,6 +39,7 @@ export function isExpectedPublishError(error: unknown): boolean {
   return (
     (parsed.code === "23514" && parsed.message.length > 0) ||
     parsed.code === "photo_rejected" ||
+    parsed.code === "photo_unchecked" ||
     /cannot review a stall you manage/i.test(parsed.message) ||
     isRateLimited(parsed)
   );
@@ -79,6 +80,9 @@ export function describePublishError(error: unknown, kind: PublishKind): string 
   }
   if (code === "photo_rejected") {
     return `One of your photos can't be posted because it may break our community rules. Choose a different photo. ${draftKept}`;
+  }
+  if (code === "photo_unchecked") {
+    return `We couldn't check your photos just now. Try again in a minute. ${draftKept}`;
   }
   if (isRateLimited(parsed)) {
     return `You're posting quickly. Wait a minute, then try again. ${draftKept}`;

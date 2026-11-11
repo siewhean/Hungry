@@ -55,7 +55,7 @@ beforeEach(() => {
   fake.tables = {};
   fake.storage = { createSignedUploadUrl: () => ({ data: { token: "t" }, error: null }) };
   functions.calls.length = 0;
-  functions.results = {};
+  functions.results = { "check-photo-safety": () => ({ data: { status: "clear" }, error: null }) };
   auth.userId = ME;
 });
 
@@ -148,7 +148,7 @@ test("a server refusal removes the uploaded files; a blocked hint reads as the p
   });
   await assert.rejects(
     () => service.social.postBite(bite),
-    (error: { message?: string }) => /could not check your photo/.test(error.message ?? ""),
+    (error: { code?: string }) => error.code === "photo_unchecked",
   );
   assert.equal(removedPaths().length, 1);
 });

@@ -71,6 +71,13 @@ test("a photo that fails the explicit-content check is explained and is not a fa
   assert.equal(isExpectedPublishError(rejected), true);
 });
 
+test("a photo the check could not answer asks to try again and is not a fault", () => {
+  const unchecked = { code: "photo_unchecked", message: "We couldn't check your photo just now." };
+  assert.match(describePublishError(unchecked, "post"), /couldn't check your photos/);
+  assert.match(describePublishError(unchecked, "post"), /Try again in a minute/);
+  assert.equal(isExpectedPublishError(unchecked), true);
+});
+
 test("expected publish refusals are not faults; unknown ones are (REV-X1)", () => {
   assert.equal(
     isExpectedPublishError({ code: "rate_limited", message: "Too many requests" }),

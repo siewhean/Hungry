@@ -153,11 +153,17 @@ function ensureCryptoPolyfill(): void {
   ensureTextEncoderPolyfill();
 
   if (typeof cryptoRef.getRandomValues !== "function") {
+    // The PKCE code verifier must come from a secure random source. expo-crypto uses the
+    // platform's (SecRandomCopyBytes / SecureRandom). There is no insecure fallback: if no
+    // secure source exists, sign-in fails instead of using a guessable verifier.
     cryptoRef.getRandomValues = (array) => {
-      for (let i = 0; i < array.length; i += 1) {
-        array[i] = Math.floor(Math.random() * 0x100000000);
+      const { getRandomValues } = require("expo-crypto") as {
+        getRandomValues?: <T extends Uint8Array | Uint16Array | Uint32Array>(typedArray: T) => T;
+      };
+      if (typeof getRandomValues !== "function") {
+        throw new Error("No secure random source is available for sign-in.");
       }
-      return array;
+      return getRandomValues(array);
     };
   }
 
