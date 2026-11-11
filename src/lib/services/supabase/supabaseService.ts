@@ -4895,8 +4895,8 @@ export const supabaseService: HungryService = {
 
       // Explicit or violent photos are stopped here, before anyone can see them. Thumbnails are
       // checked too: the server refuses a review photo whose thumbnail has no clear answer.
-      const photoPaths = uploadedObjectPaths(uploadedPhotos).filter(
-        (path): path is string => Boolean(path),
+      const photoPaths = uploadedObjectPaths(uploadedPhotos).filter((path): path is string =>
+        Boolean(path),
       );
       const photoRefusal = await photoCheckRefusal(client, photoPaths);
       if (photoRefusal) {
@@ -5707,7 +5707,11 @@ export const supabaseService: HungryService = {
           draft.mediaType,
           uploadedPaths,
         );
-        const mediaRefusal = await photoCheckRefusal(client, postImagePaths(media.rows), "post-media");
+        const mediaRefusal = await photoCheckRefusal(
+          client,
+          postImagePaths(media.rows),
+          "post-media",
+        );
         if (mediaRefusal) throw mediaRefusal;
         const { data, error } = await client.rpc("publish_post", {
           p_post: { id: postId, ...postPayload },

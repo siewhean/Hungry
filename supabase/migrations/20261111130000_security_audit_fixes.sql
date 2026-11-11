@@ -26,6 +26,10 @@
 -- 8. Housekeeping: merchant analytics counters get tighter per-IP limits (their own limit was keyed
 --    on a session id the caller picks), fixed search_path on three catalog functions, no anon write
 --    grants on user tables, and the unused legacy orders table is read-only.
+-- 9. Batch audit items: activity events can only be marked read; conversations are written only by
+--    the chat functions (a participant could rewrite created_by_user_id and then add anyone); the
+--    hidden posts list shows nothing of a post the caller can no longer read; a review's author name
+--    comes from the profile, never the client.
 --
 -- Rollback: supabase/rollbacks/20261111130000_security_audit_fixes.down.sql.
 
@@ -561,3 +565,26 @@ revoke truncate on table public.messages from authenticated;
 
 -- The legacy orders table is not used by the app (0 rows): read-only for its owner.
 revoke insert, update, delete, truncate on table public.orders from authenticated;
+
+-- 9. Batch audit items.
+-- Activity events: the phone only marks them read (mark_activity_read / mark_all_activity_read).
+revoke insert, update on table public.activity_events from authenticated;
+grant update (read_at) on table public.activity_events to authenticated;
+
+-- Conversations are opened and written only by the chat functions (security definer).
+revoke insert, update on table public.conversations from authenticated;
+revoke insert on table public.conversation_participants from authenticated;
+
+-- Hidden posts: no caption or author of a post the caller can no longer read.
+select pg_temp.patch_function(
+  'app_private.list_my_hidden_posts()'::regprocedure,
+  $find$left join public.posts p on p.id = hp.post_id$find$,
+  $repl$left join public.posts p on p.id = hp.post_id and app_private.can_read_post(hp.post_id)$repl$
+);
+
+-- A review's author name is the profile's, never the client's.
+select pg_temp.patch_function(
+  'app_private.reviews_before_insert_integrity()'::regprocedure,
+  $find$new.author_name := coalesce(v_display_name, nullif(btrim(new.author_name), ''), 'Hungry User');$find$,
+  $repl$new.author_name := coalesce(v_display_name, 'Hungry User');$repl$
+);

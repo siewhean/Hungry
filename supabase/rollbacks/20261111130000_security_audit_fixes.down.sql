@@ -20,6 +20,22 @@ begin
 end;
 $patch$;
 
+-- 9. Batch audit items.
+select pg_temp.patch_function(
+  'app_private.reviews_before_insert_integrity()'::regprocedure,
+  $find$new.author_name := coalesce(v_display_name, 'Hungry User');$find$,
+  $repl$new.author_name := coalesce(v_display_name, nullif(btrim(new.author_name), ''), 'Hungry User');$repl$
+);
+select pg_temp.patch_function(
+  'app_private.list_my_hidden_posts()'::regprocedure,
+  $find$left join public.posts p on p.id = hp.post_id and app_private.can_read_post(hp.post_id)$find$,
+  $repl$left join public.posts p on p.id = hp.post_id$repl$
+);
+grant insert on table public.conversation_participants to authenticated;
+grant insert, update on table public.conversations to authenticated;
+revoke update (read_at) on table public.activity_events from authenticated;
+grant insert, update on table public.activity_events to authenticated;
+
 -- 8. Housekeeping.
 grant insert, update, delete, truncate on table public.orders to authenticated;
 grant truncate on table public.messages to authenticated;

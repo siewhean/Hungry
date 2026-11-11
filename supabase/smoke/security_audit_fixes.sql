@@ -6,7 +6,8 @@
 -- 3. A deleted post cannot be brought back; a post's dish must belong to its stall.
 -- 4. award_food_cred pays nothing for an action the phone cannot prove; mission progress counts
 --    real saves, not calls; passport progress ignores a reference that is not the caller's.
--- 5. Grants and storage rules: anon cannot write user tables, orders is read-only, post-media and
+-- 5. Grants and storage rules: anon cannot write user tables, orders is read-only, activity events
+--    are marked read only, conversations are written by the chat functions only, post-media and
 --    review-media files cannot be overwritten, a moderated review's photos are not readable.
 -- Runs in a transaction and rolls back. Brings its own building, stall and dish.
 --   user: 00000000-0000-1111-b000-000000000001
@@ -255,6 +256,19 @@ begin
   end if;
   if has_function_privilege('authenticated', 'app_private.photo_check_verdict(text, text, uuid)', 'execute') then
     raise exception 'signed-in users can call photo_check_verdict';
+  end if;
+  if has_column_privilege('authenticated', 'public.activity_events', 'actor_id', 'update')
+     or not has_column_privilege('authenticated', 'public.activity_events', 'read_at', 'update') then
+    raise exception 'activity events are not limited to marking read';
+  end if;
+  if has_table_privilege('authenticated', 'public.conversations', 'update')
+     or has_table_privilege('authenticated', 'public.conversations', 'insert')
+     or has_table_privilege('authenticated', 'public.conversation_participants', 'insert') then
+    raise exception 'conversations can still be written directly';
+  end if;
+  if position('can_read_post' in (select prosrc from pg_proc
+       where oid = 'app_private.list_my_hidden_posts()'::regprocedure)) = 0 then
+    raise exception 'the hidden posts list shows posts the caller cannot read';
   end if;
 end $$;
 

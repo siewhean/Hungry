@@ -140,7 +140,10 @@ test("App Store 1.2: a photo that fails the explicit-content check stops the pos
 test("App Store 1.2: only a clear answer lets the review through; anything else asks to try again", async () => {
   fake.storage.createSignedUploadUrl = () => ({ data: { token: "t" }, error: null });
   fake.rpc.submit_review = () => ({ data: { photos_added: 2 }, error: null });
-  functions.results["check-photo-safety"] = () => ({ data: { status: "clear", photos: 4 }, error: null });
+  functions.results["check-photo-safety"] = () => ({
+    data: { status: "clear", photos: 4 },
+    error: null,
+  });
   await service.reviews.submitReview(draft);
   assert.equal(fake.callsTo("submit_review").length, 1);
 
@@ -154,7 +157,11 @@ test("App Store 1.2: only a clear answer lets the review through; anything else 
       () => service.reviews.submitReview(draft),
       (error: { code?: string }) => error.code === "photo_unchecked",
     );
-    assert.equal(fake.callsTo("submit_review").length, 0, "no review is sent without a clear answer");
+    assert.equal(
+      fake.callsTo("submit_review").length,
+      0,
+      "no review is sent without a clear answer",
+    );
   }
 });
 

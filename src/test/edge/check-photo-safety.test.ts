@@ -216,7 +216,10 @@ test("check-photo-safety records each photo's answer for publish_post", async ()
   await handler(post({ paths: ["u1/p1/a.jpg", "u1/p1/b.jpg"], bucket: "post-media" }, "user-jwt"));
   const args = supabase.callsTo("record_photo_safety_checks")[0].args;
   const startedAt = Date.parse(String(args.p_started_at));
-  assert.ok(startedAt >= before - 1000 && startedAt <= Date.now(), "the answer carries when the check started");
+  assert.ok(
+    startedAt >= before - 1000 && startedAt <= Date.now(),
+    "the answer carries when the check started",
+  );
   assert.deepEqual(
     { ...args, p_started_at: undefined },
     {
