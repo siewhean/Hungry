@@ -32,6 +32,8 @@ const DISCOVER_AREA_RADIUS_METERS = 3000;
 const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
 /** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
 const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
+/** How long Home waits for the first feed with nothing on screen before showing the offline page. */
+export const DISCOVER_FEED_TIMEOUT_MS = 15_000;
 
 /**
  * The reads one Home load makes: the area's stall count, a small first read of the nearest stalls
@@ -247,6 +249,8 @@ export function useDiscoverFeed() {
 
     let isActive = true;
     let liveFeedLanded = false;
+    // True once any feed (saved copy or live) is on screen: a slow read must not replace it.
+    let hasFeedOnScreen = false;
     // The small first read, once it is on screen: the full feed is merged behind it.
     let shownFirstPage: DiscoveryLocationFeed | null = null;
     // Keep the current feed on screen while a new area or GPS fix loads.
@@ -257,6 +261,7 @@ export function useDiscoverFeed() {
     if (discoverReloadKey === 0 && loadedFeedKeyRef.current !== discoverFeedKey) {
       void readCachedDiscoverFeed(discoverFeedKey).then((cachedFeed) => {
         if (!isActive || liveFeedLanded || shownFirstPage || !cachedFeed) return;
+        hasFeedOnScreen = true;
         setSupabaseDiscoveryFeed(cachedFeed);
         loadedFeedKeyRef.current = discoverFeedKey;
         setLoadedDiscoverFeedKey(discoverFeedKey);
@@ -324,6 +329,7 @@ export function useDiscoverFeed() {
         if (!isActive || liveFeedLanded || !firstPage) return;
         if (firstPage.isFallback || firstPage.venues.length === 0) return;
         shownFirstPage = firstPage;
+        hasFeedOnScreen = true;
         setSupabaseDiscoveryFeed(firstPage);
         setIsDiscoverFeedPartial(true);
         loadedFeedKeyRef.current = discoverFeedKey;
@@ -376,8 +382,20 @@ export function useDiscoverFeed() {
       },
     );
 
+    // A read that never answers (a dead connection that still looks online) must not leave the
+    // skeleton up for ever: with nothing on screen, Home hands over to the offline page.
+    const timeoutId = setTimeout(() => {
+      if (!isActive || liveFeedLanded || hasFeedOnScreen || loadedFeedKeyRef.current !== null) {
+        return;
+      }
+      reportError(new Error("Home feed timed out"), { surface: "discover_home_feed" });
+      setDiscoverLoadError(true);
+      setIsSupabaseDiscoveryFeedLoading(false);
+    }, DISCOVER_FEED_TIMEOUT_MS);
+
     return () => {
       isActive = false;
+      clearTimeout(timeoutId);
     };
   }, [
     discoverAreaRequest,

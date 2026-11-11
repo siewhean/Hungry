@@ -792,8 +792,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // matches nothing shows one page-level empty state instead. Horizontal rails need a few
   // dishes to look like a rail, so they wait for MIN_DISCOVER_RAIL_ITEMS (one dish is enough
   // once a filter has narrowed them).
-  const shouldRenderDiscoverRail = (count: number, minItems = 1) =>
-    showDiscoverFilterRailSkeleton || count >= (isDiscoverFiltering ? 1 : minItems);
+  // On the first read only the lead rail (showWhileLoading) shows its skeleton: the other rails
+  // may not exist on the finished page, so they appear when their dishes do.
+  const shouldRenderDiscoverRail = (count: number, minItems = 1, showWhileLoading = false) =>
+    (showInitialDiscoverSkeleton ? showWhileLoading : showDiscoverFilterRailSkeleton) ||
+    count >= (isDiscoverFiltering ? 1 : minItems);
   const unfilteredAreaStallCards = useMemo(() => {
     if (isSupabaseDataSource) {
       const dishesByVenueId = new Map(
@@ -1616,7 +1619,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   });
   // A diner with a palate sees the palate-ranked "Dishes near you" first, then the classics, then
   // "Most reviewed"; everyone else keeps "Most reviewed" first.
-  const showNearYouRail = shouldRenderDiscoverRail(quickBiteCards.length, MIN_DISCOVER_RAIL_ITEMS);
+  const showNearYouRail = shouldRenderDiscoverRail(
+    quickBiteCards.length,
+    MIN_DISCOVER_RAIL_ITEMS,
+    true,
+  );
   const personalFirst = !inMallMode && rankByTaste && showNearYouRail;
   const classicsSlot =
     aboveFoldVariant === "compact" && hasFirstDishSection
@@ -1654,15 +1661,21 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           minHeight: 44,
         }}
       >
-        <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
-          {popularFoodTitle}
-        </AppText>
-        <AppSymbol
-          name="chevron.right"
-          fallback={ChevronRight}
-          color={themeTints.isDark ? palette.white : palette.textMuted}
-          size={20}
-        />
+        {showInitialDiscoverSkeleton ? (
+          <Skeleton width="45%" height={24} />
+        ) : (
+          <>
+            <AppText variant="h2" style={{ color: themeTints.text, flexShrink: 1 }}>
+              {popularFoodTitle}
+            </AppText>
+            <AppSymbol
+              name="chevron.right"
+              fallback={ChevronRight}
+              color={themeTints.isDark ? palette.white : palette.textMuted}
+              size={20}
+            />
+          </>
+        )}
       </Pressable>
       {shouldShowPopularFoodSkeleton ? (
         <RailScrollView

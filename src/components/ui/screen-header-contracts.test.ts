@@ -852,10 +852,10 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
   assert.doesNotMatch(discover, /Sparkles/);
   assert.match(
     discover,
-    /const shouldRenderDiscoverRail = \(count: number, minItems = 1\) =>\s*showDiscoverFilterRailSkeleton \|\| count >= \(isDiscoverFiltering \? 1 : minItems\)/,
+    /const shouldRenderDiscoverRail = \(count: number, minItems = 1, showWhileLoading = false\) =>\s*\(showInitialDiscoverSkeleton \? showWhileLoading : showDiscoverFilterRailSkeleton\) \|\|\s*count >= \(isDiscoverFiltering \? 1 : minItems\)/,
   );
   for (const cards of ["quickBiteCards", "editorChoiceCards", "budgetCards", "areaStallCards"]) {
-    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(${cards}\\.length[,)]`));
+    assert.match(discover, new RegExp(`shouldRenderDiscoverRail\\(\\s*${cards}\\.length[,)]`));
   }
   assert.match(
     discover,

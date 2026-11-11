@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
-import { AppSymbol, AppText, PressableScale, RailScrollView } from "@/components/ui";
+import { AppSymbol, AppText, PressableScale, RailScrollView, Skeleton } from "@/components/ui";
 import { DiscoverFoodRailLoadingSkeleton } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { DiscoverBiteImage } from "@/components/discover/home/DiscoverImages";
 import { useDiscoverCardChrome } from "@/components/discover/home/homeCardChrome";
@@ -285,7 +285,12 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
           justifyContent: "space-between",
         }}
       >
-        {canSeeAll ? (
+        {isLoading ? (
+          // While the dishes load the title is a bar: the rail may not be on the finished page.
+          <View style={{ flex: 1, justifyContent: "center", minHeight: 44 }}>
+            <Skeleton width="45%" height={24} />
+          </View>
+        ) : canSeeAll ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={seeAllLabel}
