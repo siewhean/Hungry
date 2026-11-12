@@ -830,15 +830,6 @@ export interface NetworkStallPick {
   lastAt?: string;
 }
 
-/** A review whose dish sits in its author's top three, in a portfolio of at least five dishes. */
-export interface ReviewPortfolioRank {
-  reviewId: string;
-  /** 1-3: the dish's place in its author's ranking. */
-  rank: number;
-  /** Dishes in the author's portfolio (at least 5 for a rank to show). */
-  dishCount: number;
-}
-
 /** A pick on a Food Portfolio: the best of a dish type, or a place in the top three. */
 export type PortfolioPickKind = "dish_type" | "overall";
 
@@ -883,12 +874,6 @@ export interface ReviewPortfolioLabel {
   overallPlace?: number;
   /** The author's public dishes (at least 5 for a label to show). */
   dishCount: number;
-}
-
-/** The top three dishes on a Food Portfolio and which of them the owner pinned. */
-export interface FoodPortfolioTopPosts {
-  posts: Bite[];
-  pinnedPostIds: string[];
 }
 
 /** Most active ranks Portfolio points; Trending ranks the last 7 days of engagement. */
@@ -1523,22 +1508,6 @@ export interface HungryService {
 
   // Food Portfolio (a person's posted dishes, top three, stalls, and the Following feed)
   foodPortfolio: {
-    /** Up to three readable posts: the owner's pins in order, then their most liked. */
-    getTopPosts(userId: string): Promise<FoodPortfolioTopPosts>;
-    /**
-     * Sets your top three (up to three of your own published posts, in order) and keeps every
-     * dish ranked below it. Returns your whole ranking, best first.
-     */
-    setPinnedPosts(postIds: string[]): Promise<string[]>;
-    /** Your whole ranking, best first (any number of dishes): the ids of your ranked posts. */
-    getMyRanking(): Promise<string[]>;
-    /**
-     * Puts one of your own published posts at a place in your ranking (1 = first; past the end
-     * goes last), moving it if it was ranked. Atomic on the server. Returns the new ranking.
-     */
-    rankPost(postId: string, position: number): Promise<string[]>;
-    /** Which of these reviews (up to 50) show a top-three portfolio rank. One batched read. */
-    getReviewPortfolioRanks(reviewIds: string[]): Promise<ReviewPortfolioRank[]>;
     /** A diner's top three and bests by dish type, in one read. */
     getPicks(userId: string): Promise<PortfolioPicks>;
     /**
