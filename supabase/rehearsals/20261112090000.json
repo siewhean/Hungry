@@ -1,0 +1,14 @@
+{
+  "version": "20261112090000",
+  "name": "20261112090000_audit_batch_fixes",
+  "result": "pass",
+  "rehearsed_at": "2026-11-12T03:34:27Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "3122b0a47b7d39057c97d0d597a44052a6404116",
+  "up_sha256": "c5702bd21a3fbaa78eef52ffe16fc2b8582f107640f8b3d7b8a7feb25342974a",
+  "down_sha256": "8ad0f09b0648c163899fb0ae86cea51ae5c5614c3595ac9489cedb4f18e31472",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/audit_batch_fixes.sql"]
+}
