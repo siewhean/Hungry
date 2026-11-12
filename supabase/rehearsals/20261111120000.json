@@ -1,0 +1,14 @@
+{
+  "version": "20261111120000",
+  "name": "20261111120000_drop_portfolio_ranking",
+  "result": "pass",
+  "rehearsed_at": "2026-11-12T02:43:25Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "1e9d323831d9fe6bbf369d4ddf066df93ea1ee65",
+  "up_sha256": "7a9d4691140c033f79f373b2b354d5a5d4426f2577eb483d9e486b04461c1963",
+  "down_sha256": "74063d2c1f8d8cbd04e91dfdf50c6d1566524c5c567a3962d7442c4936d5785b",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/drop_portfolio_ranking.sql"]
+}
