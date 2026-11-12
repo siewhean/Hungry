@@ -109,7 +109,10 @@ test("AddStall starts with no hours, validates input, and gates gamification", (
   assert.match(source, /SINGAPORE_POSTAL_CODE_PATTERN = \/\^\\d\{6\}\$\//);
   assert.match(source, /isHttpsUrl\(deliveryLink\.trim\(\)\)/);
   assert.match(source, /addListener\("beforeRemove"/);
-  assert.match(source, /if \(FEATURE_FLAGS\.gamificationEnabled\) \{\s*const rewards = await Promise\.allSettled/);
+  assert.match(
+    source,
+    /if \(FEATURE_FLAGS\.gamificationEnabled\) \{\s*const rewards = await Promise\.allSettled/,
+  );
   assert.doesNotMatch(source, /\{\.\.\.PanResponder\.create/);
   assert.match(source, /onAccessibilityAction=/);
 });

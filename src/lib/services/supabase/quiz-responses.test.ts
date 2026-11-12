@@ -49,7 +49,10 @@ test("queued quiz answers are cleared only after the server accepted them, and f
     /await getHungryService\(\)\.profile\.recordQuizResponse\(saved\.responses, saved\.tasteVector\);\s*\/\/[^\n]*\n\s*if \(pending === saved\) clearPending\(\);/,
   );
   assert.match(flush, /if \(flushInFlight\) return flushInFlight;/);
-  assert.match(flush, /\} catch \(error\) \{\s*\/\/ Kept on the device[^\n]*\n\s*reportError\(error/);
+  assert.match(
+    flush,
+    /\} catch \(error\) \{\s*\/\/ Kept on the device[^\n]*\n\s*reportError\(error/,
+  );
 
   // The dietary Continue cannot double-insert: handleFinish runs once per visit.
   const screen = read("src/app/screens/onboarding/TasteQuizScreen.tsx");
