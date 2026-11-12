@@ -336,11 +336,17 @@ export const useWheelStore = create<WheelState>((set, get) => ({
     if (party.spinMode === "elimination") {
       const remaining = entries.filter((e) => !e.isEliminated && e.id !== landedEntryId);
       const nextRound = party.currentRound + 1;
-      const winnerEntryId = remaining.length === 1 ? remaining[0].id : undefined;
+      // The last entry standing wins; with only one entry left, the spin lands on the winner.
+      const lastEntryLanded = remaining.length === 0;
+      const winnerEntryId = lastEntryLanded
+        ? landedEntryId
+        : remaining.length === 1
+          ? remaining[0].id
+          : undefined;
 
       set((state) => ({
         entries: state.entries.map((e) =>
-          e.id === landedEntryId ? { ...e, isEliminated: true } : e,
+          e.id === landedEntryId && !lastEntryLanded ? { ...e, isEliminated: true } : e,
         ),
         party: state.party
           ? {
@@ -355,7 +361,13 @@ export const useWheelStore = create<WheelState>((set, get) => ({
       }));
 
       if (isHost && _channel) {
-        _channel.broadcast({ type: "round_resolved", eliminatedEntryId: landedEntryId, nextRound });
+        if (!lastEntryLanded) {
+          _channel.broadcast({
+            type: "round_resolved",
+            eliminatedEntryId: landedEntryId,
+            nextRound,
+          });
+        }
         if (winnerEntryId) _channel.broadcast({ type: "party_resolved", winnerEntryId });
       }
       return;

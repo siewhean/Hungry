@@ -106,7 +106,10 @@ export function LocationPermissionScreen({ navigation }: Props) {
     return () => subscription.remove();
   }, [permissionBlocked]);
 
-  const openSettings = () => void Linking.openSettings().catch(() => undefined);
+  const openSettings = () =>
+    void Linking.openSettings().catch((error: unknown) =>
+      reportError(error, { screen: "LocationPermission", action: "open_settings" }),
+    );
   // Blocked by the phone, "Allow location" can do nothing; Settings is the way forward.
   const showSettingsPrimary = permissionBlocked && !manualLocation;
 

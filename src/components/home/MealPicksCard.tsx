@@ -87,14 +87,17 @@ export function MealPicksCard({
 
   const turnOn = async () => {
     setBusy(true);
+    let allowed: boolean | null = null;
     try {
-      const allowed = await register({ askPermission: true });
+      allowed = await register({ askPermission: true });
       trackAnalyticsEvent("meal_picks_card_answered", { allowed });
       if (allowed) await getHungryService().push.updatePreferences({ mealtimeSuggestions: true });
       setPermission(allowed ? "granted" : "denied");
     } catch (error) {
       reportError(error, { area: "meal_picks_card", action: "turn_on" });
-      setPermission("denied");
+      // Only a refusal from the phone counts as denied. If the phone said yes but saving the
+      // preference failed, the card stays so the person can try again.
+      if (allowed === false || allowed === null) setPermission("denied");
     } finally {
       setBusy(false);
     }

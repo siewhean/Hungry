@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RouteProp, useRoute } from "@react-navigation/native";
@@ -332,8 +332,11 @@ function ProfileConnectionsScreen({ navigation }: Props) {
       .catch(() => undefined);
   }, [targetUserId, isFollowingTab]);
 
+  // Bumped whenever the list being shown changes, so a page loaded for an older list is dropped.
+  const listGeneration = useRef(0);
   useEffect(() => {
     let isActive = true;
+    listGeneration.current += 1;
     const service = getHungryService().social;
     setIsLoadingConnections(true);
     setListsHidden(false);
@@ -345,7 +348,11 @@ function ProfileConnectionsScreen({ navigation }: Props) {
       loadPage(0),
       isOwnProfile
         ? Promise.resolve(true)
-        : service.canViewFollowLists(targetUserId).catch(() => true),
+        : service.canViewFollowLists(targetUserId).catch((error) => {
+            // Fails closed: if we cannot tell, the lists stay hidden.
+            reportError(error, { screen: "ProfileConnections", action: "can_view_follow_lists" });
+            return false;
+          }),
     ])
       .then(([{ nextPeople, rowCount }, canView]) => {
         if (!isActive) return;
@@ -373,14 +380,17 @@ function ProfileConnectionsScreen({ navigation }: Props) {
   const loadMore = useCallback(() => {
     if (isLoadingConnections || isLoadingMore || !hasMore || loadFailed) return;
     setIsLoadingMore(true);
+    const generation = listGeneration.current;
     void loadPage(loadedRowCount)
       .then(({ nextPeople, rowCount }) => {
+        if (generation !== listGeneration.current) return;
         setPeople((current) => mergePeople(current, nextPeople));
         setLoadedRowCount((current) => current + rowCount);
         setHasMore(rowCount === CONNECTIONS_PAGE_SIZE);
       })
       .catch((error) => {
         reportError(error, { screen: "ProfileConnections", action: "load_more_connections" });
+        if (generation !== listGeneration.current) return;
         // Stop auto-paging after a failure; scrolling away and back tries again.
         setHasMore(false);
       })

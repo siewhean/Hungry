@@ -97,6 +97,15 @@ export function TasteSliderQuizScreen({ navigation, route }: Props) {
     });
   }, [draft, flowMode, index]);
 
+  // Coming back from the next step re-opens the quiz, so Done, Skip and Back work again.
+  useEffect(
+    () =>
+      navigation.addListener("focus", () => {
+        finishedRef.current = false;
+      }),
+    [navigation],
+  );
+
   // Back (button, swipe or the Android key) steps to the previous question before it leaves the quiz.
   useEffect(() => {
     if (index === 0) return undefined;

@@ -11,6 +11,7 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import type { VenueSummary } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 /** How many stalls from the last visit the page lists. */
 const LAST_VISIT_LIMIT = 6;
@@ -28,7 +29,7 @@ export const HOME_OFFLINE_COPY = {
 
 type Props = {
   /** Tries the live Home again (Try again, pull to refresh, or the connection coming back). */
-  onRetry: () => void;
+  onRetry: () => unknown;
 };
 
 function ListRow({
@@ -158,7 +159,13 @@ export function HomeOfflineScreen({ onRetry }: Props) {
           <RefreshControl
             onRefresh={() => {
               setRefreshing(true);
-              onRetry();
+              // The spinner stops once the retry settles, whether or not the feed came back.
+              void Promise.resolve()
+                .then(onRetry)
+                .catch((error: unknown) =>
+                  reportError(error, { screen: "HomeOffline", action: "retry" }),
+                )
+                .finally(() => setRefreshing(false));
             }}
             refreshing={refreshing}
             tintColor={palette.orange}

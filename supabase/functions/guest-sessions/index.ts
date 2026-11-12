@@ -1,6 +1,6 @@
 // @ts-nocheck
 /* eslint-disable import/no-unresolved */
-import { serveWithSentry } from "../_shared/sentry.ts";
+import { reportFunctionError, serveWithSentry } from "../_shared/sentry.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.52.0";
 import { timingSafeEqual } from "../_shared/timingSafeEqual.ts";
 
@@ -149,7 +149,12 @@ serveWithSentry("guest-sessions", async (request) => {
 
   const configuredApiKey = Deno.env.get("GUEST_SESSION_API_KEY")?.trim() ?? "";
   if (!configuredApiKey) {
-    console.error("Guest session function missing GUEST_SESSION_API_KEY");
+    await reportFunctionError(
+      "guest-sessions",
+      new Error("Guest session function missing GUEST_SESSION_API_KEY"),
+      { stage: "config" },
+      request,
+    );
     return toJsonResponse(
       500,
       {
@@ -185,7 +190,12 @@ serveWithSentry("guest-sessions", async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
-    console.error("Guest session function missing Supabase environment");
+    await reportFunctionError(
+      "guest-sessions",
+      new Error("Guest session function missing Supabase environment"),
+      { stage: "config" },
+      request,
+    );
     return toJsonResponse(
       500,
       {
@@ -252,7 +262,12 @@ serveWithSentry("guest-sessions", async (request) => {
     .eq("device_id", payload.deviceId)
     .gte("created_at", oneHourAgo);
   if (countError) {
-    console.error("Guest session device rate-limit check failed", countError);
+    await reportFunctionError(
+      "guest-sessions",
+      countError,
+      { stage: "device_rate_limit" },
+      request,
+    );
     return toJsonResponse(
       500,
       {
@@ -280,7 +295,12 @@ serveWithSentry("guest-sessions", async (request) => {
       .eq("client_ip", clientIp)
       .gte("created_at", oneHourAgo);
     if (ipCountError) {
-      console.error("Guest session IP rate-limit check failed", ipCountError);
+      await reportFunctionError(
+        "guest-sessions",
+        ipCountError,
+        { stage: "ip_rate_limit" },
+        request,
+      );
       return toJsonResponse(
         500,
         {
@@ -315,7 +335,7 @@ serveWithSentry("guest-sessions", async (request) => {
     .single();
 
   if (error || !data?.id) {
-    console.error("Guest session create failed", error);
+    await reportFunctionError("guest-sessions", error, { stage: "create" }, request);
     return toJsonResponse(
       500,
       {

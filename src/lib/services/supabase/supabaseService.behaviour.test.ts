@@ -135,6 +135,24 @@ test("getFollowStatus is 'none' when signed out and reads the caller's own row o
   await rejectsWith(service.social.getFollowStatus(OTHER), /rls/);
 });
 
+test("getFollowStatuses reads every followee in one query and defaults the rest to 'none'", async () => {
+  const THIRD = "44444444-4444-4444-8444-444444444444";
+  auth.userId = null;
+  assert.deepEqual(await service.social.getFollowStatuses([OTHER]), { [OTHER]: "none" });
+
+  auth.userId = ME;
+  assert.deepEqual(await service.social.getFollowStatuses([]), {});
+  fake.tables.follows = () => ({ data: [{ followee_id: OTHER, status: "pending" }] });
+  fake.queries.length = 0;
+  assert.deepEqual(await service.social.getFollowStatuses([OTHER, THIRD, OTHER]), {
+    [OTHER]: "pending",
+    [THIRD]: "none",
+  });
+  assert.equal(fake.queriesOn("follows").length, 1);
+  fake.tables.follows = () => ({ error: { message: "rls" } });
+  await rejectsWith(service.social.getFollowStatuses([OTHER]), /rls/);
+});
+
 test("follow-request actions call their rpc and raise its errors", async () => {
   await service.social.approveFollowRequest(OTHER);
   await service.social.declineFollowRequest(OTHER);

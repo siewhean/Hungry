@@ -29,12 +29,26 @@ export function showDeletionAlreadyStartedAlert() {
  */
 export async function explainNothingCancelled(): Promise<{ scheduledFor: string } | null> {
   const auth = getHungryService().auth;
+  let pendingReadFailed = false;
   const [pending, processing] = await Promise.all([
-    auth.getPendingAccountDeletion().catch(() => null),
-    auth.isAccountDeletionProcessing().catch(() => true),
+    auth.getPendingAccountDeletion().catch((error: unknown) => {
+      pendingReadFailed = true;
+      reportError(error, { screen: "account_deletion_grace", action: "read_pending_deletion" });
+      return null;
+    }),
+    auth.isAccountDeletionProcessing().catch((error: unknown) => {
+      reportError(error, { screen: "account_deletion_grace", action: "read_deletion_processing" });
+      return true;
+    }),
   ]);
   if (processing) {
     showDeletionAlreadyStartedAlert();
+  } else if (pendingReadFailed) {
+    // The lookup failed, so we cannot say the account is not scheduled for deletion.
+    useUIStore.getState().showToast({
+      message: "Couldn't check your account. Try again.",
+      tone: "error",
+    });
   } else if (!pending) {
     useUIStore.getState().showToast({
       message: "Your account is not scheduled for deletion.",

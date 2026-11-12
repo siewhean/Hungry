@@ -993,12 +993,31 @@ async function applyBatchUpdate(table, rows, label) {
     if (!rows.length) return { count: 0 };
     if (runOptions.dryRun) return { dryRun: true, count: rows.length };
 
-    let count = 0;
+    // Rows that get the same change share one UPDATE .. WHERE id IN (..), so a batch is one
+    // write per distinct change instead of one per row.
+    const groups = new Map();
     for (const row of rows) {
         const { id, ...updates } = row;
-        const result = await applyUpdate(table, updates, id);
-        if (result?.error) return { ...result, count };
-        count += 1;
+        if (Object.keys(updates).length === 0) continue;
+        const key = JSON.stringify(Object.entries(updates).sort(([a], [b]) => a.localeCompare(b)));
+        const group = groups.get(key) ?? { updates, ids: [] };
+        group.ids.push(id);
+        groups.set(key, group);
+    }
+
+    let count = 0;
+    for (const { updates, ids } of groups.values()) {
+        // n-plus-one-ok: one write per distinct change; rows with different values cannot share an UPDATE
+        const result = await scheduleWrite(() => runWithRetry(
+            () => supabase.from(table).update(updates).in("id", ids),
+            `${label || table}:${ids.length} rows`,
+            runOptions.maxWriteTimeouts,
+        ));
+        if (result?.error) {
+            markCurrentVenueWriteError();
+            return { ...result, count };
+        }
+        count += ids.length;
     }
     return { count };
 }

@@ -3,6 +3,8 @@ import type { VenueSummary } from "@/types/domain";
 const COMPANY_SUFFIX_PATTERN =
   /\b(?:pte\.?\s*ltd\.?|private\s+limited|ltd\.?|llp|management|singapore)\b/g;
 
+const BRANCH_MARKER_PATTERN = /\([^)]*\)|\s+(?:@|at)\s+\S|\s+-\s+\S/i;
+
 function normalizeHost(value: string) {
   return value
     .toLowerCase()
@@ -41,6 +43,11 @@ export function getVenueBrandKey(venue: Pick<VenueSummary, "id" | "logoUrl">) {
 export function getVenueChainKey(venue: VenueSummary) {
   const logoDomain = getLogoDomain(venue.logoUrl);
   if (logoDomain) return `logo:${logoDomain}`;
+
+  // Without a logo, only a name written as a branch ("Toast Box - Chinatown", "Ya Kun @ Bugis",
+  // "Ah Kow (Tampines)") is treated as a chain. A plain generic name such as "Chicken Rice" is
+  // shared by unrelated stalls, so it keeps its own key and is never merged away.
+  if (!BRANCH_MARKER_PATTERN.test(venue.name)) return `id:${venue.id}`;
 
   const normalizedName = venue.name
     .toLowerCase()

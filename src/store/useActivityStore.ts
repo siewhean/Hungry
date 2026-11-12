@@ -15,6 +15,7 @@ import { getHungryService, getServiceProvider } from "@/lib/services/serviceProv
 import { webShareUrl } from "@/constants/links";
 
 import { hungryPersistStorage } from "./persistStorage";
+import { reportError } from "@/lib/monitoring/reportError";
 
 /** Inbox rows per read; "Show older updates" loads the next page. */
 export const ACTIVITY_PAGE_SIZE = 50;
@@ -87,6 +88,7 @@ export const useActivityStore = create<ActivityState>()(
               .notifications.markActivityRead(id)
               .catch((error) => {
                 console.warn("Failed to mark activity read", error);
+                reportError(error, { screen: "activity_store", action: "mark_activity_read" });
               });
           }
           return;
@@ -118,6 +120,7 @@ export const useActivityStore = create<ActivityState>()(
           await getHungryService().notifications.markAllActivityRead();
         } catch (error) {
           console.warn("Failed to mark all activity read", error);
+          reportError(error, { screen: "activity_store", action: "mark_all_activity_read" });
           showActivityToast("Couldn't mark updates as read. Please try again.");
           // Put back what the server still has as unread.
           await get().fetchActivityEvents();
@@ -158,6 +161,7 @@ export const useActivityStore = create<ActivityState>()(
           });
         } catch (error) {
           console.warn("Failed to fetch activity events", error);
+          reportError(error, { screen: "activity_store", action: "fetch_activity_events" });
           // Keep the last good list (and its unread badge); the inbox shows a banner.
           set({ hasLoadedActivity: true, activityLoadFailed: true });
         }
@@ -185,6 +189,7 @@ export const useActivityStore = create<ActivityState>()(
           });
         } catch (error) {
           console.warn("Failed to load older activity events", error);
+          reportError(error, { screen: "activity_store", action: "load_older_activity_events" });
           set({ isLoadingMoreActivity: false });
           showActivityToast("Couldn't load older updates. Please try again.");
         }

@@ -81,11 +81,15 @@ export function ChatDetailScreen({ navigation, route }: Props) {
 
     setIsLoading(true);
     setLoadError(null);
+    setMessages([]);
     service
       .listMessages(chatId)
       .then((loadedMessages) => {
         if (!isActive) return;
-        setMessages(loadedMessages);
+        // Keep any realtime message that arrived while the history was loading.
+        setMessages((current) =>
+          current.reduce((merged, item) => appendUniqueMessage(merged, item), loadedMessages),
+        );
         void service.markConversationRead(chatId);
       })
       .catch((error: unknown) => {

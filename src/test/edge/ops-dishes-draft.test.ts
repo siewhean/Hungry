@@ -220,7 +220,8 @@ test("ops-dishes-draft review records the decision, trims long notes, and audits
     const update = supabase.queriesOn("dishes_draft")[0].ops;
     const fields = update[0][1][0] as Record<string, unknown>;
     assert.equal(fields.review_status, decision);
-    assert.equal((fields.ocr_raw_text as string).length, 4000);
+    assert.equal((fields.review_notes as string).length, 4000);
+    assert.equal("ocr_raw_text" in fields, false, "the OCR text is never overwritten");
     assert.equal(fields.reviewed_at, NOW.toISOString());
     assert.deepEqual(update[1], ["eq", ["id", "d1"]]);
 
@@ -240,6 +241,7 @@ test("ops-dishes-draft review without notes leaves the stored text alone, and re
   await handler(call({ action: "review", draftDishId: "d1", decision: "accepted" }));
   const fields = supabase.queriesOn("dishes_draft")[0].ops[0][1][0] as Record<string, unknown>;
   assert.equal(fields.ocr_raw_text, undefined);
+  assert.equal(fields.review_notes, undefined);
 
   const failing = await load({ review: { error: { message: "rls" } } });
   const response = await failing.handler(

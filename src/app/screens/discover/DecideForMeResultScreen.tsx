@@ -321,7 +321,10 @@ async function loadCandidates(
   // Hours are read once per visit: a wider ring or a new answer only asks for the stalls not seen.
   const unread = venueIds.filter((id) => !venueCache.has(id));
   if (unread.length > 0) {
-    const venues = await service.discovery.getVenuesByIds(unread).catch(() => []);
+    const venues = await service.discovery.getVenuesByIds(unread).catch((error: unknown) => {
+      reportError(error, { screen: "DecideForMeResult", action: "load_venue_hours" });
+      return [];
+    });
     for (const venue of venues) venueCache.set(venue.id, venue);
   }
   return { ...preferOpenStalls(ranked, venueCache), radius: usedRadius };
@@ -615,7 +618,9 @@ export function DecideForMeResultScreen() {
       .then((nextVenue) => {
         if (active) setFetchedVenue(nextVenue);
       })
-      .catch(() => undefined);
+      .catch((error: unknown) =>
+        reportError(error, { screen: "DecideForMeResult", action: "load_venue" }),
+      );
     return () => {
       active = false;
     };
@@ -628,7 +633,9 @@ export function DecideForMeResultScreen() {
     if (!dish) return;
     void getHungryService()
       .recommendations.recordImpression("decide", [dish.id])
-      .catch(() => undefined);
+      .catch((error: unknown) =>
+        reportError(error, { screen: "DecideForMeResult", action: "record_impression" }),
+      );
   }, [dish?.id]);
   const shownDishId = dish?.id;
 

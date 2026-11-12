@@ -224,14 +224,8 @@ export const useStoryStore = create<StoryState>()(
           const newStory = await getHungryService().social.addStory(content);
           const { stories } = get();
           const freshStories = pruneExpiredStories(stories);
-          const yourStoryIndex = freshStories.findIndex((s) => s.isOwn);
-
-          const newStories = [...freshStories];
-          if (yourStoryIndex >= 0) {
-            newStories[yourStoryIndex] = newStory;
-          } else {
-            newStories.unshift(newStory);
-          }
+          // Each story is its own item: add the new one beside any existing own stories.
+          const newStories = [newStory, ...freshStories.filter((s) => s.id !== newStory.id)];
 
           set({ stories: orderStories(newStories) });
         } catch (e) {

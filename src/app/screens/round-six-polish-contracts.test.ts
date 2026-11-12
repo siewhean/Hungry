@@ -78,6 +78,6 @@ test("the review share sheet reports what it catches", () => {
   );
   assert.match(
     sheet,
-    /reportError\(error, \{ screen: "ReviewShareSheet", action: "share_to_chat" \}\)/,
+    /reportError\(firstFailure\?\.reason, \{\s*screen: "ReviewShareSheet",\s*action: "share_to_chat",?\s*\}\)/,
   );
 });

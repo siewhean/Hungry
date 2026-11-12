@@ -31,7 +31,7 @@ test("taste quiz finish records its answers without blocking navigation", () => 
   // Signed in: saved now, fire-and-forget. Guest: kept on the device until sign-in.
   assert.match(
     helper,
-    /isAuthenticated\) \{\s*void getHungryService\(\)\s*\.profile\.recordQuizResponse\(responses, tasteVector\)\s*\.catch\(\(\) => undefined\)/,
+    /isAuthenticated\) \{\s*void getHungryService\(\)\s*\.profile\.recordQuizResponse\(responses, tasteVector\)\s*\.catch\(\(error: unknown\) =>\s*reportError\(error/,
   );
   assert.match(helper, /hungryPersistStorage\?\.setItem\(STORAGE_KEY/);
   assert.match(
@@ -49,7 +49,10 @@ test("queued quiz answers are cleared only after the server accepted them, and f
     /await getHungryService\(\)\.profile\.recordQuizResponse\(saved\.responses, saved\.tasteVector\);\s*\/\/[^\n]*\n\s*if \(pending === saved\) clearPending\(\);/,
   );
   assert.match(flush, /if \(flushInFlight\) return flushInFlight;/);
-  assert.match(flush, /\} catch \{\s*\/\/ Kept on the device/);
+  assert.match(
+    flush,
+    /\} catch \(error\) \{\s*\/\/ Kept on the device[^\n]*\n\s*reportError\(error/,
+  );
 
   // The dietary Continue cannot double-insert: handleFinish runs once per visit.
   const screen = read("src/app/screens/onboarding/TasteQuizScreen.tsx");

@@ -2086,7 +2086,6 @@ const jemL3Stalls: StallPolygon[] = [
     ],
     status: "open",
     label: "IKEA Jurong",
-    venueId: "venue-koufu-yong-tau-foo",
   }),
   jemTenantRect({
     stallId: "jem-l3-3-18",

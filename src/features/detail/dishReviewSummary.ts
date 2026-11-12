@@ -80,7 +80,8 @@ export function ratingsHeadline(
   writtenCount: number,
   moreWrittenAvailable = false,
 ): string {
-  const written = Math.min(writtenCount, ratingCount);
+  // The rating total can lag behind the written reviews; with no total, count what is written.
+  const written = ratingCount > 0 ? Math.min(writtenCount, ratingCount) : writtenCount;
   const writtenText = `${written}${moreWrittenAvailable ? "+" : ""} written ${
     written === 1 && !moreWrittenAvailable ? "review" : "reviews"
   }`;

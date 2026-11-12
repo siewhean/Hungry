@@ -66,6 +66,7 @@ function formatFromDate(date: Date): string {
     return `${months}mo ago`;
   }
 
-  const years = Math.floor(days / 365);
+  // Days 360-364 are 12 "months" but not yet a year: still at least 1y.
+  const years = Math.max(1, Math.floor(days / 365));
   return `${years}y ago`;
 }

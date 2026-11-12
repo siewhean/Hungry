@@ -1464,6 +1464,8 @@ export interface HungryService {
     isFollowing(userId: string): Promise<boolean>;
     /** The viewer's follow toward this user: approved, a pending request, or none. */
     getFollowStatus(userId: string): Promise<"approved" | "pending" | "none">;
+    /** getFollowStatus for many users in one read, keyed by user id. */
+    getFollowStatuses(userIds: string[]): Promise<Record<string, "approved" | "pending" | "none">>;
     /** Withdraw the viewer's pending request to follow this user; no-op when there is none. */
     cancelFollowRequest(userId: string): Promise<void>;
     /** One page of the viewer's incoming pending follow requests; `limit` defaults to 50 (max 200). */

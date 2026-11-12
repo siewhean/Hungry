@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import { ArrowDown, ArrowUp, Pin, PinOff, RefreshCw, Users } from "lucide-react-native";
 
@@ -36,7 +36,11 @@ export function FeaturedVisitorsScreen() {
 
   const pinnedReviewIds = useMemo(() => new Set(pins.map((pin) => pin.reviewId)), [pins]);
 
+  // Each load gets a number; only the latest one may write, so a slow load for the outlet
+  // that was open before cannot overwrite the current outlet's lists.
+  const loadSeq = useRef(0);
   const loadVisitors = useCallback(async () => {
+    const seq = ++loadSeq.current;
     if (!activeOutlet) {
       setPins([]);
       setCandidates([]);
@@ -52,16 +56,18 @@ export function FeaturedVisitorsScreen() {
         merchant.listPopularVisitorPins(activeOutlet.id),
         merchant.listPopularVisitorCandidates(activeOutlet.id, { limit: CANDIDATE_PAGE_SIZE }),
       ]);
+      if (seq !== loadSeq.current) return;
       setPins(activePins);
       setCandidates(reviewCandidates);
       setHasMoreCandidates(reviewCandidates.length >= CANDIDATE_PAGE_SIZE);
     } catch (caughtError) {
+      if (seq !== loadSeq.current) return;
       reportError(caughtError, { screen: "FeaturedVisitors", action: "load" });
       setError(
         caughtError instanceof Error ? caughtError.message : "Unable to load featured visitors.",
       );
     } finally {
-      setIsLoading(false);
+      if (seq === loadSeq.current) setIsLoading(false);
     }
   }, [activeOutlet]);
 
@@ -72,6 +78,7 @@ export function FeaturedVisitorsScreen() {
   const loadMoreCandidates = useCallback(async () => {
     const oldest = candidates[candidates.length - 1];
     if (!activeOutlet || !oldest || isLoadingMore) return;
+    const seq = loadSeq.current;
     setIsLoadingMore(true);
     setActionError(null);
     try {
@@ -79,6 +86,7 @@ export function FeaturedVisitorsScreen() {
         activeOutlet.id,
         { limit: CANDIDATE_PAGE_SIZE, before: oldest.visitedAt, beforeId: oldest.reviewId },
       );
+      if (seq !== loadSeq.current) return;
       setCandidates((current) => {
         const known = new Set(current.map((item) => item.reviewId));
         return [...current, ...older.filter((item) => !known.has(item.reviewId))];

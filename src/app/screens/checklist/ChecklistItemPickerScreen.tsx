@@ -14,6 +14,7 @@ import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistItemPicker">;
 
@@ -90,7 +91,9 @@ export function ChecklistItemPickerScreen({ navigation, route }: Props) {
 
     // Debounce typing; `mounted` drops results from a superseded search.
     const timer = setTimeout(() => {
-      void loadChoices().catch((error) => console.error("Failed to search:", error));
+      void loadChoices().catch((error) =>
+        reportError(error, { screen: "ChecklistItemPicker", action: "search" }),
+      );
     }, 250);
     return () => {
       mounted = false;

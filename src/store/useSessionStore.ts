@@ -13,6 +13,7 @@ import { useLocationStore } from "./useLocationStore";
 import { useOnboardingAnswersStore } from "./useOnboardingAnswersStore";
 import { useOnboardingDraftStore } from "./useOnboardingDraftStore";
 import { hungryPersistStorage } from "./persistStorage";
+import { reportError } from "@/lib/monitoring/reportError";
 
 export interface PendingRoute {
   name: string;
@@ -250,6 +251,7 @@ function syncFollowStateFromServer(
     .syncFollowedUserIds(userId)
     .catch((error) => {
       console.error("Failed to load follow state", error);
+      reportError(error, { screen: "session_store", action: "load_follow_state" });
     });
 }
 
@@ -368,9 +370,10 @@ function markAccountOnboarded(): void {
   onboardedStampedForUserId = userId;
   void getHungryService()
     .auth.markOnboarded()
-    .catch(() => {
+    .catch((error: unknown) => {
       // Try again on the next auth event.
       onboardedStampedForUserId = null;
+      reportError(error, { screen: "session_store", action: "mark_onboarded" });
     });
 }
 
@@ -413,7 +416,7 @@ function signOutOfSupabase(): Promise<void> {
       await service.auth.signOut();
       useSessionStore.setState({ signOutPending: false });
     })
-    .catch(() => undefined);
+    .catch((error: unknown) => reportError(error, { screen: "session_store", action: "sign_out" }));
 }
 
 export const useSessionStore = create<SessionState>()(

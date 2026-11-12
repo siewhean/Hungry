@@ -6,6 +6,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { hungryPersistStorage } from "@/store/persistStorage";
 import { useSessionStore } from "@/store/useSessionStore";
 import type { TasteVector } from "@/types/domain";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const STORAGE_KEY = "hungry-pending-quiz-response-v1";
 // Answers older than this are not attached to whichever account signs in later.
@@ -54,7 +55,9 @@ export function recordQuizResponse(
   if (useSessionStore.getState().isAuthenticated) {
     void getHungryService()
       .profile.recordQuizResponse(responses, tasteVector)
-      .catch(() => undefined);
+      .catch((error: unknown) =>
+        reportError(error, { screen: "pending_quiz_response", action: "record_quiz" }),
+      );
     return;
   }
   pending = { responses, tasteVector, savedAt: Date.now() };
@@ -83,8 +86,9 @@ export function flushPendingQuizResponse(now: number = Date.now()): Promise<void
       await getHungryService().profile.recordQuizResponse(saved.responses, saved.tasteVector);
       // A newer quiz taken while this one was in flight stays pending.
       if (pending === saved) clearPending();
-    } catch {
+    } catch (error) {
       // Kept on the device; the next sign-in tries again.
+      reportError(error, { screen: "pending_quiz_response", action: "flush_quiz" });
     }
   })().finally(() => {
     flushInFlight = null;

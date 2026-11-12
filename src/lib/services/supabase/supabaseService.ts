@@ -678,22 +678,6 @@ function portfolioEditConflictError(): Error {
   );
 }
 
-async function assertSupabasePortfolioVersion(
-  client: SupabaseClient,
-  portfolioId: string | undefined,
-  options?: PortfolioMutationOptions,
-): Promise<void> {
-  if (!portfolioId || !options?.expectedUpdatedAt) return;
-  const { data, error } = await client
-    .from("portfolios")
-    .select("id")
-    .eq("id", portfolioId)
-    .eq("updated_at", options.expectedUpdatedAt)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw portfolioEditConflictError();
-}
-
 async function getCurrentSupabaseUserId(): Promise<string | null> {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -731,7 +715,9 @@ async function ensureCurrentUserProfileRow(
     id: user.id,
     email: user.email ?? null,
   };
-  if (!existingDisplayName && providerDisplayName) {
+  // Only fill the name when the read worked and found none; a failed read must not overwrite
+  // the name the person chose with the sign-in provider's.
+  if (!existingProfile.error && !existingDisplayName && providerDisplayName) {
     // user_profiles caps display names at 40 characters.
     payload.display_name = providerDisplayName.slice(0, PROFILE_DISPLAY_NAME_MAX_LENGTH).trim();
   }
@@ -2484,14 +2470,18 @@ function toRpcRadiusMeters(radiusMeters: number | undefined): number | null {
 }
 
 // Loaded on first use: Sentry is a native module that plain service tests never need.
-function reportTasteRecommendationsError(error: unknown): void {
+function reportServiceError(error: unknown, action: string): void {
   try {
     const { reportError } =
       require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
-    reportError(error, { screen: "service", action: "get_taste_recommendations" });
+    reportError(error, { screen: "service", action });
   } catch {
-    // Reporting must never break the recommendations fallback.
+    // Reporting must never break the caller's fallback.
   }
+}
+
+function reportTasteRecommendationsError(error: unknown): void {
+  reportServiceError(error, "get_taste_recommendations");
 }
 
 async function getLiveTasteRecommendations(
@@ -2695,7 +2685,7 @@ async function persistFeedbackEvent({
   }
 
   if (!isMissingPgVectorTypeError(error)) {
-    console.warn("Failed to persist taste interaction event via RPC", error.message);
+    reportServiceError(error, "persist_taste_interaction_rpc");
   }
   const { error: insertError } = await client.from("taste_interaction_events").insert({
     user_id: userId,
@@ -2714,7 +2704,7 @@ async function persistFeedbackEvent({
   });
   if (insertError) {
     if (!isMissingPgVectorTypeError(insertError)) {
-      console.warn("Failed to persist taste interaction event", insertError.message);
+      reportServiceError(insertError, "persist_taste_interaction");
     }
   }
 
@@ -3204,11 +3194,11 @@ async function getMerchantAccountRows(client: SupabaseClient): Promise<Row | nul
     .eq("user_id", userId)
     .maybeSingle();
   if (direct.error) throw direct.error;
-  if (direct.data) return direct.data as Row;
+  if (direct.data) return { ...(direct.data as Row), __role: "owner" };
 
   const role = await client
     .from("merchant_roles")
-    .select("merchant_account_id")
+    .select("merchant_account_id, role")
     .eq("user_id", userId)
     .limit(1)
     .maybeSingle();
@@ -3222,7 +3212,9 @@ async function getMerchantAccountRows(client: SupabaseClient): Promise<Row | nul
     .eq("id", accountId)
     .maybeSingle();
   if (account.error) throw account.error;
-  return (account.data as Row | null) ?? null;
+  if (!account.data) return null;
+  // The caller's role on the account comes from merchant_roles (staff and managers are not owners).
+  return { ...(account.data as Row), __role: (role.data as Row | null)?.role };
 }
 
 async function getSupabaseMerchantAccount(
@@ -3254,7 +3246,7 @@ async function getSupabaseMerchantAccount(
     userId: asString(account.user_id) ?? "",
     displayName: asString(account.display_name) ?? "",
     email: asString(account.email) ?? "",
-    role: "owner",
+    role: asMerchantRole(account.__role),
     outlets,
     createdAt: asString(account.created_at) ?? new Date().toISOString(),
   };
@@ -5983,6 +5975,7 @@ export const supabaseService: HungryService = {
         .from("post_likes")
         .select("post_id")
         .eq("user_id", userId);
+      if (error) reportServiceError(error, "get_liked_bites");
       if (error || !Array.isArray(data)) return [];
       const likedIds = new Set(
         (data as Row[]).map((row) => asString(row.post_id)).filter((id): id is string => !!id),
@@ -6205,6 +6198,33 @@ export const supabaseService: HungryService = {
       return status === "approved" ? "approved" : status === "pending" ? "pending" : "none";
     },
 
+    async getFollowStatuses(userIds: string[]) {
+      const ids = Array.from(new Set(userIds.filter(Boolean)));
+      const statuses: Record<string, "approved" | "pending" | "none"> = {};
+      ids.forEach((id) => {
+        statuses[id] = "none";
+      });
+      if (ids.length === 0) return statuses;
+      const client = requireSupabaseClient();
+      const currentUserId = await getCurrentSupabaseUserId();
+      if (!currentUserId) return statuses;
+      // The follows SELECT policy lets the follower read their own rows.
+      const { data, error } = await client
+        .from("follows")
+        .select("followee_id, status")
+        .eq("follower_id", currentUserId)
+        .in("followee_id", ids);
+      if (error) throw error;
+      for (const row of (data as Row[] | null) ?? []) {
+        const followeeId = asString(row.followee_id);
+        const status = asString(row.status);
+        if (!followeeId) continue;
+        statuses[followeeId] =
+          status === "approved" ? "approved" : status === "pending" ? "pending" : "none";
+      }
+      return statuses;
+    },
+
     async cancelFollowRequest(userId: string) {
       const client = requireSupabaseClient();
       const { error } = await client.rpc("cancel_follow_request", { p_target_user_id: userId });
@@ -6298,6 +6318,7 @@ export const supabaseService: HungryService = {
         .eq("post_id", postId)
         .is("deleted_at", null)
         .order("created_at", { ascending: true });
+      if (error) reportServiceError(error, "list_comments_for_post");
       if (error || !data) return [];
       const rows = data as Row[];
       const authorIds = Array.from(
@@ -6771,10 +6792,8 @@ export const supabaseService: HungryService = {
 
     subscribeToConversation(conversationId, handlers: ChatSubscriptionHandlers) {
       const client = requireSupabaseClient();
-      let currentUserId: string | null = null;
-      void getCurrentSupabaseUserId().then((userId) => {
-        currentUserId = userId;
-      });
+      // Messages can arrive before the user id is known; each waits for it so "sent by me" is right.
+      const currentUserIdPromise = getCurrentSupabaseUserId().catch(() => null);
       const channel = client
         .channel(`conversation:${conversationId}`)
         .on(
@@ -6788,8 +6807,9 @@ export const supabaseService: HungryService = {
           (payload) => {
             const row = payload.new as Row;
             if (asString(row.deleted_at)) return;
-            const userId = currentUserId ?? "";
-            handlers.onMessage?.(mapChatMessage(row, userId, new Map()));
+            void currentUserIdPromise.then((userId) => {
+              handlers.onMessage?.(mapChatMessage(row, userId ?? "", new Map()));
+            });
           },
         )
         .on(
@@ -7050,6 +7070,8 @@ export const supabaseService: HungryService = {
         .rpc("submit_user_stall_submission", rpcPayload)
         .maybeSingle();
       let finalResult: { data: unknown; error: PostgrestError | null } = primarySubmit;
+      // True when the row that was saved has no gallery_images, so the extra photos are unused.
+      let savedWithoutGallery = false;
       // Set when every direct insert failed on the schema: no row was written by it.
       let directInsertFailed = false;
       const isFunctionSchemaError = (error: PostgrestError | null | undefined) => {
@@ -7097,11 +7119,9 @@ export const supabaseService: HungryService = {
         finalResult = await client
           .rpc("submit_user_stall_submission", rpcPayloadWithoutGallery)
           .maybeSingle();
-        if (uploadedImages.length > 1) {
-          void client.storage
-            .from("user-stall-submission-images")
-            .remove(uploadedImages.slice(1).map((image) => image.path));
-        }
+        // The extra photos are removed only once a save without the gallery has worked (below):
+        // a later fallback may still save gallery_images.
+        savedWithoutGallery = !finalResult.error;
       }
 
       if (
@@ -7112,6 +7132,7 @@ export const supabaseService: HungryService = {
         finalResult = await client
           .rpc("submit_user_stall_submission", legacyRpcPayload)
           .maybeSingle();
+        savedWithoutGallery = !finalResult.error;
       }
 
       if (
@@ -7196,6 +7217,7 @@ export const supabaseService: HungryService = {
           }
         }
 
+        savedWithoutGallery = !insertError && !("gallery_images" in mutableInsertRow);
         if (!insertError && insertedRows) {
           finalResult = { data: insertedRows, error: null };
         } else if (!insertError && !insertedRows) {
@@ -7214,6 +7236,11 @@ export const supabaseService: HungryService = {
       if (error) {
         await removeUploadedImages();
         throw error;
+      }
+      if (savedWithoutGallery && uploadedImages.length > 1) {
+        void client.storage
+          .from("user-stall-submission-images")
+          .remove(uploadedImages.slice(1).map((image) => image.path));
       }
 
       try {
@@ -7353,6 +7380,7 @@ export const supabaseService: HungryService = {
           "[submitDiscoveredStall] failed to parse rpc response, using fallback",
           parseError,
         );
+        reportServiceError(parseError, "submit_stall_parse_response");
         return {
           id: `submission_${Date.now()}`,
           userId,
@@ -8070,7 +8098,11 @@ export const supabaseService: HungryService = {
           .from("dishes_draft")
           .update({ review_status: "accepted" })
           .in("id", newlyAcceptedIds);
-        if (updateError) console.warn("Could not mark photo drafts accepted", updateError.message);
+        if (updateError) {
+          // The dishes were added; only the drafts' status did not change, so they may show again.
+          console.warn("Could not mark photo drafts accepted", updateError.message);
+          reportServiceError(updateError, "mark_ocr_drafts_accepted");
+        }
       }
       return { acceptedIds, failedIds };
     },
@@ -8787,22 +8819,18 @@ export const supabaseService: HungryService = {
     },
 
     async updateNotificationPreferences(merchantAccountId, prefs) {
-      const current = await this.getNotificationPreferences(merchantAccountId);
-      const next = { ...current, ...prefs };
+      // Only the changed columns go in the upsert (ON CONFLICT updates just those; a new row
+      // takes the column defaults, all on), so two quick toggles cannot overwrite each other.
+      const row: Record<string, unknown> = { merchant_account_id: merchantAccountId };
+      if (prefs.newReviews !== undefined) row.new_reviews = prefs.newReviews;
+      if (prefs.lowRatingAlerts !== undefined) row.low_rating_alerts = prefs.lowRatingAlerts;
+      if (prefs.newComments !== undefined) row.new_comments = prefs.newComments;
+      if (prefs.promotionUpdates !== undefined) row.promotion_updates = prefs.promotionUpdates;
+      if (prefs.weeklyDigest !== undefined) row.weekly_digest = prefs.weeklyDigest;
+      if (prefs.aiInsights !== undefined) row.ai_insights = prefs.aiInsights;
       const { error } = await requireSupabaseClient()
         .from("merchant_notification_preferences")
-        .upsert(
-          {
-            merchant_account_id: merchantAccountId,
-            new_reviews: next.newReviews,
-            low_rating_alerts: next.lowRatingAlerts,
-            new_comments: next.newComments,
-            promotion_updates: next.promotionUpdates,
-            weekly_digest: next.weeklyDigest,
-            ai_insights: next.aiInsights,
-          },
-          { onConflict: "merchant_account_id" },
-        );
+        .upsert(row, { onConflict: "merchant_account_id" });
       if (error) throw error;
     },
   },
@@ -8836,7 +8864,10 @@ export const supabaseService: HungryService = {
         dish_ids: ids,
         ...(Object.keys(shownBuckets).length > 0 ? { buckets: shownBuckets } : {}),
       });
-      if (error) console.warn("Failed to record recommendation impression", error.message);
+      if (error) {
+        console.warn("Failed to record recommendation impression", error.message);
+        reportServiceError(error, "record_recommendation_impression");
+      }
     },
 
     async getFoodHistory() {
@@ -8845,7 +8876,10 @@ export const supabaseService: HungryService = {
       if (!client || !userId) return [];
       const { data, error } = await client.rpc("get_my_food_history", { p_limit: 300 });
       if (error || !Array.isArray(data)) {
-        if (error) console.warn("Failed to load food history", error.message);
+        if (error) {
+          console.warn("Failed to load food history", error.message);
+          reportServiceError(error, "get_food_history");
+        }
         return [];
       }
       return (data as Row[]).map((row) => ({
@@ -9520,11 +9554,13 @@ export const supabaseService: HungryService = {
     ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      await assertSupabasePortfolioVersion(client, portfolioId, options);
-      const { error } = await client.from("portfolio_collaborators").insert({
-        portfolio_id: portfolioId,
-        user_id: userId,
-        role,
+      // The version check and the insert run in one transaction (20261112090000).
+      const { error } = await client.rpc("change_portfolio_collaborator", {
+        p_portfolio_id: portfolioId,
+        p_user_id: userId,
+        p_action: "add",
+        p_role: role,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
     },
@@ -9536,12 +9572,12 @@ export const supabaseService: HungryService = {
     ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      await assertSupabasePortfolioVersion(client, portfolioId, options);
-      const { error } = await client
-        .from("portfolio_collaborators")
-        .delete()
-        .eq("portfolio_id", portfolioId)
-        .eq("user_id", userId);
+      const { error } = await client.rpc("change_portfolio_collaborator", {
+        p_portfolio_id: portfolioId,
+        p_user_id: userId,
+        p_action: "remove",
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
+      });
       if (error) throw error;
     },
 
@@ -9553,16 +9589,15 @@ export const supabaseService: HungryService = {
     ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      await assertSupabasePortfolioVersion(client, portfolioId, options);
-      // Only the owner's update policy matches; anyone else changes zero rows.
-      const { data, error } = await client
-        .from("portfolio_collaborators")
-        .update({ role })
-        .eq("portfolio_id", portfolioId)
-        .eq("user_id", userId)
-        .select("id");
+      // Only the owner may; the RPC raises "Couldn't change that role." when no row changed.
+      const { error } = await client.rpc("change_portfolio_collaborator", {
+        p_portfolio_id: portfolioId,
+        p_user_id: userId,
+        p_action: "role",
+        p_role: role,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
+      });
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Couldn't change that role.");
     },
 
     async getPortfolioCollaborators(portfolioId: string) {

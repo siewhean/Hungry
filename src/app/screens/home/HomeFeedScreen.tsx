@@ -765,6 +765,7 @@ export function HomeFeedScreen() {
 
     const results = await Promise.allSettled(
       selectedShareChatIds.map((chatId) =>
+        // n-plus-one-ok: one message per chat; each send stands alone so a failed chat can be retried by itself
         sharePostToChat(chatId, {
           postId: activeShareItem.id,
           title: activeShareItem.dishes[0]?.name ?? activeShareItem.venue.name,

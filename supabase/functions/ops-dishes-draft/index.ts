@@ -220,7 +220,8 @@ serveWithSentry("ops-dishes-draft", async (request) => {
       .from("dishes_draft")
       .update({
         review_status: decision,
-        ocr_raw_text: notes.length > 0 ? notes.slice(0, 4000) : undefined,
+        // Notes have their own column (20261112090000), so ocr_raw_text keeps the extraction.
+        review_notes: notes.length > 0 ? notes.slice(0, 4000) : undefined,
         reviewed_at: new Date().toISOString(),
       })
       .eq("id", draftDishId);

@@ -67,12 +67,14 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   const [fetchAttempt, setFetchAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
+    setFetchedBite(null);
     setFetchState("loading");
     getHungryService()
       .social.getPostById(postId)
       .then((bite) => {
         if (cancelled) return;
-        setFetchedBite(bite);
+        // Only show the post that was asked for.
+        setFetchedBite(bite && bite.id === postId ? bite : null);
         setFetchState("done");
       })
       .catch(() => {

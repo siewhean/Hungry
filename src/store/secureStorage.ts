@@ -135,10 +135,12 @@ const secureStateStorage: StateStorage = {
         const legacyValue = await asyncStorage.getItem(name);
         if (legacyValue !== null) {
           try {
+            // Only drop the AsyncStorage copy once it is safely in the secure store; without a
+            // secure store, AsyncStorage is where setItem keeps the value.
             if (secureStore) {
               await secureStore.setItemAsync(name, legacyValue);
+              await asyncStorage.removeItem(name);
             }
-            await asyncStorage.removeItem(name);
           } catch {
             // Keep legacy value readable even if migration write fails.
           }

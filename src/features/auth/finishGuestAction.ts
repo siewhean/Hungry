@@ -17,7 +17,10 @@ import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 export async function saveDishAfterSignIn(dish: DishDetail): Promise<boolean> {
   const savedIds = await getHungryService()
     .profile.getFavouriteDishIds()
-    .catch(() => null);
+    .catch((error: unknown) => {
+      reportError(error, { screen: "finish_guest_action", action: "read_favourites" });
+      return null;
+    });
   if (!savedIds) return false;
   if (savedIds.includes(dish.id)) return true;
   const profile = useProfileStore.getState();
@@ -33,7 +36,10 @@ export async function saveDishAfterSignIn(dish: DishDetail): Promise<boolean> {
 export async function saveDishesAfterSignIn(dishes: DishDetail[]): Promise<DishDetail[]> {
   const savedIds = await getHungryService()
     .profile.getFavouriteDishIds()
-    .catch(() => null);
+    .catch((error: unknown) => {
+      reportError(error, { screen: "finish_guest_action", action: "read_favourites" });
+      return null;
+    });
   if (!savedIds) return dishes;
   const saved = new Set(savedIds);
   const missing = dishes.filter((dish) => !saved.has(dish.id));
@@ -104,9 +110,17 @@ export function followUserAfterSignIn(userId: string) {
 
 export async function followStallAfterSignIn(stallId: string) {
   const stalls = useStallFollowStore.getState();
-  await stalls.loadFollowedStalls().catch(() => undefined);
+  await stalls
+    .loadFollowedStalls()
+    .catch((error: unknown) =>
+      reportError(error, { screen: "finish_guest_action", action: "load_followed_stalls" }),
+    );
   if (!useStallFollowStore.getState().followedStallIds.includes(stallId)) {
-    await stalls.toggleFollow(stallId).catch(() => undefined);
+    await stalls
+      .toggleFollow(stallId)
+      .catch((error: unknown) =>
+        reportError(error, { screen: "finish_guest_action", action: "follow_stall" }),
+      );
   }
 }
 
@@ -123,7 +137,10 @@ export async function saveStallAfterSignIn(
   const loaded = await stalls
     .loadInteractions(userId)
     .then(() => true)
-    .catch(() => false);
+    .catch((error: unknown) => {
+      reportError(error, { screen: "finish_guest_action", action: "load_stall_interactions" });
+      return false;
+    });
   if (!loaded) return false;
   if (useStallInteractionStore.getState().interactions[stallId]?.isSaved) return true;
   return stalls
@@ -132,5 +149,8 @@ export async function saveStallAfterSignIn(
       onNewlySaved?.();
       return true;
     })
-    .catch(() => false);
+    .catch((error: unknown) => {
+      reportError(error, { screen: "finish_guest_action", action: "save_stall" });
+      return false;
+    });
 }

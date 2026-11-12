@@ -3006,6 +3006,18 @@ export const hungryService: HungryService = {
       return resolve(status as "approved" | "pending" | "none");
     },
 
+    async getFollowStatuses(userIds: string[]) {
+      const statuses: Record<string, "approved" | "pending" | "none"> = {};
+      for (const userId of userIds) {
+        statuses[userId] = _userFollows.has(userId)
+          ? "approved"
+          : _userFollowRequests.has(userId)
+            ? "pending"
+            : "none";
+      }
+      return resolve(statuses);
+    },
+
     async cancelFollowRequest(userId: string) {
       _userFollowRequests.delete(userId);
       return resolve(undefined as void);
@@ -3240,7 +3252,18 @@ export const hungryService: HungryService = {
         (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || b.id.localeCompare(a.id),
       );
       const cursor = page?.cursor;
-      const start = cursor ? sorted.findIndex((bite) => bite.id === cursor.postId) + 1 : 0;
+      // Keyset paging on (createdAt, id), like the server: the cursor post may have left the
+      // list (unfollowed or blocked), so find the first post after it rather than the post itself.
+      const cursorTime = cursor ? Date.parse(cursor.createdAt) : 0;
+      const start = cursor
+        ? sorted.findIndex((bite) => {
+            const time = Date.parse(bite.createdAt);
+            return (
+              time < cursorTime || (time === cursorTime && bite.id.localeCompare(cursor.postId) < 0)
+            );
+          })
+        : 0;
+      if (start < 0) return resolve([]);
       return resolve(sorted.slice(start, start + (page?.limit ?? 20)).map(withMockViewerReactions));
     },
   },
@@ -4894,7 +4917,10 @@ export const hungryService: HungryService = {
         return {
           ...portfolio,
           ...updates,
-          name: updates.name?.trim() ?? portfolio.name,
+          name:
+            updates.name === undefined
+              ? portfolio.name
+              : updates.name.trim() || "Untitled portfolio",
           description: updates.description?.trim() ?? portfolio.description,
           updatedAt,
         };
@@ -5229,7 +5255,8 @@ export const hungryService: HungryService = {
 
     async followPortfolio(portfolioId: string) {
       const portfolio = _portfolios.find((entry) => entry.id === portfolioId);
-      if (!portfolio) {
+      // A portfolio the viewer cannot see cannot be followed (same answer as a missing one).
+      if (!portfolio || !canViewMockPortfolio(portfolio)) {
         throw new Error(`Portfolio ${portfolioId} not found`);
       }
       if (portfolio.ownerId === _profile.id) {

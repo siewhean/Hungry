@@ -102,11 +102,20 @@ for (const dish of dishes) {
   dishesByVenue.set(venueId, current);
 }
 
-const pilotVenues = venues.filter(
-  (venue) =>
-    validCoordinate(venue.latitude, venue.longitude) &&
-    distanceMeters(venue.latitude, venue.longitude) <= PILOT.radiusMeters,
-);
+const buildingById = new Map(buildings.map((building) => [text(building.id), building]));
+
+// A venue is in the pilot area by its own coordinate, or by its building's when it has none, so
+// coordinate coverage below can fall short of 1 when pilot venues are missing their own.
+function pilotAreaCoordinate(venue) {
+  if (validCoordinate(venue.latitude, venue.longitude)) return venue;
+  const building = buildingById.get(text(venue.buildingId));
+  return building && validCoordinate(building.latitude, building.longitude) ? building : null;
+}
+
+const pilotVenues = venues.filter((venue) => {
+  const point = pilotAreaCoordinate(venue);
+  return Boolean(point) && distanceMeters(point.latitude, point.longitude) <= PILOT.radiusMeters;
+});
 const pilotVenueIds = new Set(pilotVenues.map((venue) => text(venue.id)));
 const pilotDishes = dishes.filter((dish) => pilotVenueIds.has(text(dish.venueId)));
 const coordinateBackedVenues = pilotVenues.filter((venue) =>

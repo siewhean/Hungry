@@ -50,11 +50,11 @@ function requiredEnv(name: string): string {
 
 function parseAction(value: unknown): EmailAction | null {
   return value === "signup" ||
-      value === "recovery" ||
-      value === "magiclink" ||
-      value === "invite" ||
-      value === "reauthentication" ||
-      value === "email_change"
+    value === "recovery" ||
+    value === "magiclink" ||
+    value === "invite" ||
+    value === "reauthentication" ||
+    value === "email_change"
     ? value
     : null;
 }
@@ -98,8 +98,9 @@ function isNonEmptyString(value: unknown): value is string {
 async function makeIdempotencyKey(webhookId: string, messageLabel: string): Promise<string> {
   const source = new TextEncoder().encode(`${webhookId}\0${messageLabel}`);
   const digest = await crypto.subtle.digest("SHA-256", source);
-  const hexDigest = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
+  const hexDigest = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
   return `hungry-auth-${hexDigest}`;
 }
 
@@ -204,7 +205,8 @@ serveWithSentry("send-email", async (request) => {
     return jsonResponse(500, { error: "email_hook_not_configured" });
   }
 
-  const messages: Array<{ recipient: string; token: unknown; tokenHash: unknown; label: string }> = [];
+  const messages: Array<{ recipient: string; token: unknown; tokenHash: unknown; label: string }> =
+    [];
   if (action === "email_change") {
     // Supabase documents these legacy reversed pairs: token + token_hash_new
     // goes to the current address, while token_new + token_hash goes to the
@@ -215,10 +217,10 @@ serveWithSentry("send-email", async (request) => {
     const tokenHash = emailData?.token_hash;
     const tokenNew = emailData?.token_new;
     const tokenHashNew = emailData?.token_hash_new;
-    const hasCurrentPair = isNonEmptyString(currentEmail) && isNonEmptyString(token) &&
-      isNonEmptyString(tokenHashNew);
-    const hasNewPair = isNonEmptyString(newEmail) && isNonEmptyString(tokenNew) &&
-      isNonEmptyString(tokenHash);
+    const hasCurrentPair =
+      isNonEmptyString(currentEmail) && isNonEmptyString(token) && isNonEmptyString(tokenHashNew);
+    const hasNewPair =
+      isNonEmptyString(newEmail) && isNonEmptyString(tokenNew) && isNonEmptyString(tokenHash);
 
     if (hasCurrentPair && hasNewPair) {
       messages.push(
@@ -230,7 +232,12 @@ serveWithSentry("send-email", async (request) => {
       // token field, but the documented hash for the new address is token_hash.
       const newToken = isNonEmptyString(tokenNew) ? tokenNew : token;
       if (isNonEmptyString(newToken)) {
-        messages.push({ recipient: newEmail, token: newToken, tokenHash, label: "email-change-new" });
+        messages.push({
+          recipient: newEmail,
+          token: newToken,
+          tokenHash,
+          label: "email-change-new",
+        });
       }
     }
   } else {
@@ -244,9 +251,11 @@ serveWithSentry("send-email", async (request) => {
 
   if (
     messages.length === 0 ||
-    messages.some((message) =>
-      !isNonEmptyString(message.recipient) || !isNonEmptyString(message.token) ||
-      !isNonEmptyString(message.tokenHash)
+    messages.some(
+      (message) =>
+        !isNonEmptyString(message.recipient) ||
+        !isNonEmptyString(message.token) ||
+        !isNonEmptyString(message.tokenHash),
     )
   ) {
     return jsonResponse(400, { error: "invalid_email_hook_payload" });

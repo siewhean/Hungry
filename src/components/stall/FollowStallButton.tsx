@@ -10,6 +10,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
+import { reportError } from "@/lib/monitoring/reportError";
 
 /**
  * Alerts for followed stalls come only from a signed-in merchant editing the menu
@@ -88,7 +89,10 @@ export function FollowStallButton({
         return;
       }
       if (STALL_ALERTS_CAN_FIRE && isFirstFollow) {
-        const alertsOn = await enableStallAlertsOnFirstFollow().catch(() => false);
+        const alertsOn = await enableStallAlertsOnFirstFollow().catch((error: unknown) => {
+          reportError(error, { screen: "FollowStallButton", action: "enable_stall_alerts" });
+          return false;
+        });
         if (alertsOn) {
           showToast({
             message: `Following ${stallName}. We'll tell you when its menu changes.`,

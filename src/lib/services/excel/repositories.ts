@@ -351,6 +351,8 @@ export const excelRepository: DataRepository = {
     return filterDishes(filters, tasteProfile);
   },
   getDecideForMe(tasteProfile: TasteVector, options: DecideForMeOptions = {}) {
+    const excluded = new Set(options.excludeDishIds ?? []);
+    const required = options.dietaryFlags ?? [];
     const results = filterDishes(
       {
         query: "",
@@ -362,15 +364,21 @@ export const excelRepository: DataRepository = {
         longitude: options.longitude,
       },
       tasteProfile,
-    ).filter((dish) => !(options.excludeDishIds ?? []).includes(dish.id));
+    ).filter((dish) => !excluded.has(dish.id));
 
+    // The wider fallback (any distance) still respects the excluded dishes and dietary needs.
     return (
       results[0] ??
-      [...dishes].sort(
-        (left, right) =>
-          similarityScore(right.tasteVector, tasteProfile) -
-          similarityScore(left.tasteVector, tasteProfile),
-      )[0]
+      dishes
+        .filter(
+          (dish) =>
+            !excluded.has(dish.id) && required.every((flag) => dish.dietaryFlags.includes(flag)),
+        )
+        .sort(
+          (left, right) =>
+            similarityScore(right.tasteVector, tasteProfile) -
+            similarityScore(left.tasteVector, tasteProfile),
+        )[0]
     );
   },
 };
