@@ -18,6 +18,7 @@ import {
 } from "@/features/discover/homeCategories";
 import { FRESH_REVIEW_LIMIT } from "@/features/discover/rankingBalance";
 import { STALL_LEAN_CONFIDENCE, stallTasteLean, stallText } from "@/features/discover/stallTaste";
+import { tasteWeight } from "@/lib/ai/tasteTrust";
 import { MEAL_KEYS, type MealKey, type MealTimes } from "@/features/onboarding/mealTimes";
 import type { FoodOpenness, TasteKey, TasteVector } from "@/types/domain";
 
@@ -67,8 +68,6 @@ export const TASTE_SECTIONS: readonly {
 export const TASTE_SECTION_MIN_AXIS = 6.5;
 /** A dish this hot is left out for someone who cannot take spice. */
 const TOO_SPICY = 6;
-const NEUTRAL_AXIS = 5;
-const MIN_TASTE_CONFIDENCE = 0.5;
 /** A taste section shows at most this many stalls of one food kind. */
 const MAX_PER_KIND_IN_TASTE_SECTION = 2;
 const MIN_KINDS = 2;
@@ -97,27 +96,28 @@ export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
 
 type Tasted = { vector: TasteVector; confidence: number };
 
+/** The dish's taste at its trust weight (tasteTrust): verified in full, an estimate at its confidence. */
 function tastedDish(dish: HomeSectionDish | undefined): Tasted | undefined {
   if (!dish?.tasteVector) return undefined;
-  if (dish.tasteConfidence !== undefined && dish.tasteConfidence < MIN_TASTE_CONFIDENCE) {
-    return undefined;
-  }
-  const vector = dish.tasteVector;
-  // All fives is the untagged default, not a taste.
-  return AXES.some((axis) => vector[axis] !== NEUTRAL_AXIS)
-    ? { vector, confidence: dish.tasteConfidence ?? 1 }
-    : undefined;
+  const weight = tasteWeight({
+    tasteVector: dish.tasteVector,
+    tasteConfidence: dish.tasteConfidence,
+  });
+  return weight > 0 ? { vector: dish.tasteVector, confidence: weight } : undefined;
 }
 
-/** The top dish's tagged taste, or else the stall's lean from its name and cuisine tags. */
+/**
+ * The top dish's taste, or else the stall's lean from its name and cuisine tags. A verified dish
+ * always wins; between an estimate and the lean, the more confident one is used.
+ */
 function tasteOf(card: HomeSectionCard): Tasted | undefined {
   const dish = tastedDish(card.topDish);
-  if (dish) return dish;
+  if (dish && dish.confidence >= STALL_LEAN_CONFIDENCE) return dish;
   const lean = stallTasteLean(
     `${card.venue.name} ${card.topDish?.name ?? ""}`,
     card.venue.cuisineTags,
   );
-  return lean ? { vector: lean, confidence: STALL_LEAN_CONFIDENCE } : undefined;
+  return lean ? { vector: lean, confidence: STALL_LEAN_CONFIDENCE } : dish;
 }
 
 /** 0 to 1: how close the dish's taste is to the palate, averaged over the six tastes. */
