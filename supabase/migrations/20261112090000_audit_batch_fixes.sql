@@ -15,7 +15,8 @@
 --     check in the same transaction (public.change_portfolio_collaborator).
 --  8. dishes_draft.review_notes keeps reviewer notes, so ops-dishes-draft stops overwriting
 --     ocr_raw_text.
---  9. Low security items: record_taste_interaction_event uses the server clock; the public
+--  9. Low security items: record_taste_interaction_event uses the server clock (and locks the
+--     caller before its cap check); the public
 --     block-check wrapper is no longer callable by signed-in users (RLS and definer functions
 --     use app_private's); stall submission photos must be the submitter's own files in the stall
 --     bucket; a popular visitor pin keeps its review on update; moving a photo, dietary or taste
@@ -249,6 +250,16 @@ select pg_temp.patch_function(
       and app_private.leaderboard_actor_is_eligible(f.follower_id)
       and not app_private.app_user_block_exists(f.follower_id, f.followee_id)
     group by f.followee_id$repl$
+);
+select pg_temp.patch_function(
+  'app_private.record_taste_interaction_event(text,text,double precision[],double precision[],text,text,text,text,numeric,boolean,numeric,text,timestamp with time zone,jsonb)'::regprocedure,
+  $find$  if v_effective_applied
+    and p_type in ('search_query', 'dish_result_click', 'food_button_click')$find$,
+  $repl$  -- race:taste-cap (the 3-in-10-minutes cap is count-then-insert)
+  perform pg_advisory_xact_lock(hashtextextended('taste_cap:' || v_user_id::text, 0));
+
+  if v_effective_applied
+    and p_type in ('search_query', 'dish_result_click', 'food_button_click')$repl$
 );
 
 -- 4. A review inserted by a signed-in client starts unedited.

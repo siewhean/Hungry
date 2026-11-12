@@ -21,6 +21,16 @@ end;
 $patch$;
 
 select pg_temp.patch_function(
+  'app_private.record_taste_interaction_event(text,text,double precision[],double precision[],text,text,text,text,numeric,boolean,numeric,text,timestamp with time zone,jsonb)'::regprocedure,
+  $find$  -- race:taste-cap (the 3-in-10-minutes cap is count-then-insert)
+  perform pg_advisory_xact_lock(hashtextextended('taste_cap:' || v_user_id::text, 0));
+
+  if v_effective_applied
+    and p_type in ('search_query', 'dish_result_click', 'food_button_click')$find$,
+  $repl$  if v_effective_applied
+    and p_type in ('search_query', 'dish_result_click', 'food_button_click')$repl$
+);
+select pg_temp.patch_function(
   'app_private.unlock_board_achievements()'::regprocedure,
   $find$    from public.follows f
     where f.status = 'approved'
