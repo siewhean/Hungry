@@ -446,6 +446,29 @@ PICK() { echo "select set_config('request.jwt.claim.sub', '$U1', true); select p
 lb_race T24 "$(PICK $PK1)" "$(PICK $PK2)" >>"$LB_OUT"
 echo "T24_bests=$(lb_val "select count(*) from portfolio_picks where user_id = '$U1' and kind = 'dish_type' and slot = 'Laksa'")" >>"$LB_OUT"
 
+# Ranking cleanup (20261111120000): applies twice, drops the column and the RPCs, takes the rank
+# branch out of submit_review; the down puts all of it back and the up re-applies. Ends at "down"
+# so the ranking down/up checks below still find the column.
+DR_MIGRATION=20261111120000_drop_portfolio_ranking
+DR_RPCS="proname in ('set_pinned_posts', 'rank_portfolio_post', 'get_my_portfolio_ranking', 'get_review_portfolio_ranks')"
+DR_HAS_COL="select count(*) from information_schema.columns where table_name = 'user_profiles' and column_name = 'pinned_post_ids'"
+DR_RANKS="select count(*) from pg_proc where proname = 'submit_review' and prosrc like '%rank_portfolio_post%'"
+lb_val "update user_profiles set pinned_post_ids = array['$RK2'::uuid] where id = '$U1'" >/dev/null
+"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$DR_MIGRATION.sql" >/dev/null 2>&1 \
+  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$DR_MIGRATION.sql" >/dev/null 2>&1 \
+  && [ "$(lb_val "$DR_HAS_COL")" = 0 ] \
+  && [ "$(lb_val "select count(*) from pg_proc where $DR_RPCS")" = 0 ] \
+  && [ "$(lb_val "$DR_RANKS")" = 0 ] \
+  && PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$DR_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && [ "$(lb_val "$DR_HAS_COL")" = 1 ] \
+  && [ "$(lb_val "select pinned_post_ids = array['$RK2'::uuid] from user_profiles where id = '$U1'")" = t ] \
+  && [ "$(lb_val "select count(*) from pg_proc where $DR_RPCS")" = 8 ] \
+  && [ "$(lb_val "$DR_RANKS")" = 1 ] \
+  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$DR_MIGRATION.sql" >/dev/null 2>&1 \
+  && PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$DR_MIGRATION.down.sql" >/dev/null 2>&1 \
+  && echo "  ok    ranking cleanup drops the column and RPCs, the down restores them with their values" \
+  || { echo "  FAIL  ranking cleanup up/down migration"; fail=1; }
+
 LB_EXPECTED="T15_errors=0
 T15_credited=6
 T16_errors=0
