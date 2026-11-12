@@ -74,6 +74,7 @@ import type {
   VenueSummary,
   WeeklyMission,
 } from "@/types/domain";
+import type { SentStallSignal, UserStallAffinity } from "@/lib/ai/stallHistory";
 
 export type VerificationSubmission = Omit<VerificationEvidence, "id" | "uploadedAt"> & {
   additionalFileUrls?: string[];
@@ -1600,6 +1601,12 @@ export interface HungryService {
     getFoodHistory(): Promise<UserDishAffinity[]>;
     /** Clear the signed-in user's food history ("Reset food history" in Settings). */
     resetFoodHistory(): Promise<void>;
+    /** Which stalls the signed-in user keeps coming back to (user_stall_affinities); [] for guests. */
+    getStallHistory(): Promise<UserStallAffinity[]>;
+    /** Best-effort: one stall signal (view, review opened, directions, share, Not for me). */
+    recordStallSignal(venueId: string, signal: SentStallSignal): Promise<void>;
+    /** Clear the signed-in user's stall history (with "Reset food history" in Settings). */
+    resetStallHistory(): Promise<void>;
     recordExplicitFeedback(
       feedback: ExplicitFeedbackInput,
     ): Promise<RecordRecommendationFeedbackResult>;

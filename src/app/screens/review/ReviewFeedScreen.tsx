@@ -44,6 +44,7 @@ import {
 } from "@/lib/services/serviceProvider";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { useRequireAccount } from "@/features/auth/useRequireAccount";
 import { useSessionStore } from "@/store/useSessionStore";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
@@ -799,6 +800,7 @@ export function ReviewFeedScreen() {
       viewerId,
     ],
   );
+  const recordStallSignal = useStallHistoryStore((state) => state.record);
   const handleOpenReview = useCallback(
     (item: ReviewFeedItem, index: number) => {
       trackAnalyticsEvent("review_opened", {
@@ -807,6 +809,7 @@ export function ReviewFeedScreen() {
         source: "grid",
         position: index,
       });
+      recordStallSignal(item.venueId, "review_opened");
       // Mock reviews live on their dish; live reviews open on their own page.
       if (serviceProviderMode === "mock") {
         navigation.navigate("DishDetail", { dishId: item.dishId, source: "review_feed" });
@@ -814,7 +817,7 @@ export function ReviewFeedScreen() {
       }
       navigation.navigate("ReviewDetail", { reviewId: item.review.id });
     },
-    [navigation, serviceProviderMode],
+    [navigation, recordStallSignal, serviceProviderMode],
   );
 
   const renderItem = useCallback(

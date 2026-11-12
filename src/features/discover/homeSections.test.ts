@@ -346,3 +346,16 @@ test("the hour's section follows the diner's own meal times", async () => {
   assert.equal(hourSectionTitle(23, true, "supper"), "Supper here");
   assert.equal(hourSectionTitle(23, false), "Late night");
 });
+
+test("stall history: a hidden stall is in no section and a liked stall's food counts as familiar", () => {
+  const sections = buildHomeSections(BIG, {
+    hour: 19,
+    hiddenVenueIds: new Set(["4-0"]),
+    stallScores: new Map([["2-1", 0.8]]),
+  });
+  const shown = sections.flatMap((section) => section.cards.map((c) => c.venue.id));
+  assert.ok(!shown.includes("4-0"), "Not for me hides the stall");
+  const recommended = sections.find((section) => section.id === "recommended");
+  assert.ok(recommended, "a liked stall gives Just for you something to go on");
+  assert.equal(recommended.cards[0].topDish?.name, "Chicken Rice");
+});

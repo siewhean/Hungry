@@ -144,6 +144,8 @@ import type {
 } from "@/types/domain";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
+import { STALL_VIEW_DWELL_MS } from "@/lib/ai/stallHistory";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
@@ -624,6 +626,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
       userId: isAuthenticated ? profile.id : undefined,
     });
   }, [isAuthenticated, profile.id, venue]);
+
+  // A view counts toward the diner's stall history once the page has stayed open a moment, so a
+  // stall opened by mistake and closed at once teaches nothing.
+  const recordStallSignal = useStallHistoryStore((state) => state.record);
+  const viewedStallId = venue?.id;
+  useEffect(() => {
+    if (!viewedStallId) return;
+    const timer = setTimeout(() => recordStallSignal(viewedStallId, "view"), STALL_VIEW_DWELL_MS);
+    return () => clearTimeout(timer);
+  }, [recordStallSignal, viewedStallId]);
 
   // Keyed on the id: the cached venue renders first and the hydrated one replaces it,
   // which must not re-run these three reads.
@@ -1128,6 +1140,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     if (!venue) return;
     trackAnalyticsEvent("directions_opened", { stall_id: venue.id, source: "stall_detail" });
     recordTap("direction_tap");
+    recordStallSignal(venue.id, "directions");
     // Searches Google Maps by name + building + postcode so it lands on the stall's listing;
     // the map pin is used only when the stall has no building or address to search by.
     void openTrustedMapsUrl(
@@ -1212,6 +1225,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   // The merchant "share" counts a completed share, not an opened sheet.
   const recordMerchantShare = () => {
+    recordStallSignal(venue.id, "share");
     void getHungryService().discovery.recordMerchantActionEvent({
       eventType: "share",
       venueId: venue.id,

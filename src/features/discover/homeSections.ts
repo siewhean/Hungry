@@ -19,6 +19,7 @@ import {
 import { FRESH_REVIEW_LIMIT } from "@/features/discover/rankingBalance";
 import { STALL_LEAN_CONFIDENCE, stallTasteLean, stallText } from "@/features/discover/stallTaste";
 import { tasteWeight } from "@/lib/ai/tasteTrust";
+import { LIKED_AFFINITY_THRESHOLD } from "@/lib/ai/foodHistory";
 import { MEAL_KEYS, type MealKey, type MealTimes } from "@/features/onboarding/mealTimes";
 import type { FoodOpenness, TasteKey, TasteVector } from "@/types/domain";
 
@@ -92,6 +93,10 @@ export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
   openness?: FoodOpenness;
   /** The diner's usual meal times from onboarding: the hour's section follows them. */
   mealTimes?: MealTimes;
+  /** Stall history (stallHistory.ts): venueId -> affinity in [-1, 1]. */
+  stallScores?: ReadonlyMap<string, number>;
+  /** Stalls the diner said "Not for me" to: left out of every section. */
+  hiddenVenueIds?: ReadonlySet<string>;
 };
 
 type Tasted = { vector: TasteVector; confidence: number };
@@ -233,7 +238,10 @@ export function buildHomeSections<T extends HomeSectionCard>(
   const maxSections = options.maxSections ?? 8;
   const minItems = options.minItems ?? 3;
   const perSection = options.perSection ?? 10;
-  const claimed = new Set<string>(options.excludeVenueIds ?? []);
+  const claimed = new Set<string>([
+    ...(options.excludeVenueIds ?? []),
+    ...(options.hiddenVenueIds ?? []),
+  ]);
   const palate = options.palate;
   const trusted = Boolean(palate && options.palateTrusted);
   const familiarKinds = new Set<HomeCategoryId>();
@@ -266,6 +274,18 @@ export function buildHomeSections<T extends HomeSectionCard>(
     const kind = kindOf(card) as HomeCategoryId;
     return (pinnedKinds.has(kind) ? 0.3 : 0) + (familiarKinds.has(kind) ? 0.25 : 0);
   };
+  // Stalls the diner keeps coming back to (viewed, saved, visited, got directions to) count up;
+  // ones they keep passing over count down a little. Their kinds of food count as familiar.
+  const stallAffinity = (card: T) => options.stallScores?.get(card.venue.id) ?? 0;
+  const historyBoost = (card: T) => {
+    const score = stallAffinity(card);
+    return score > 0 ? score * 0.3 : score * 0.15;
+  };
+  for (const card of cards) {
+    if (stallAffinity(card) < LIKED_AFFINITY_THRESHOLD) continue;
+    const kind = classifyHomeText(textOf(card));
+    if (kind) familiarKinds.add(kind);
+  }
   // Inside a mall its own stalls come first in every section.
   const hereBoost = (card: T) =>
     options.preferBuildingId && card.venue.buildingId === options.preferBuildingId ? 0.2 : 0;
@@ -326,6 +346,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
       score:
         fit(card) * 0.45 +
         kindBoost(card) +
+        historyBoost(card) +
         hereBoost(card) +
         ((card.topDish?.rating ?? 0) / 5) * 0.15 +
         (1 - index / Math.max(pool.length, 1)) * 0.15,

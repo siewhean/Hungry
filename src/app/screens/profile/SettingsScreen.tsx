@@ -42,6 +42,7 @@ import { formatDeletionDate } from "@/features/auth/useAccountDeletionGracePromp
 import { useLocationStore } from "@/store/useLocationStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
@@ -522,15 +523,19 @@ export function SettingsScreen() {
       trackAnalyticsEvent("settings_changed", { setting, value: enabled });
     };
 
+  const viewHistoryPaused = useStallHistoryStore((state) => state.viewHistoryPaused);
+  const setViewHistoryPaused = useStallHistoryStore((state) => state.setViewHistoryPaused);
+  const resetStallHistory = useStallHistoryStore((state) => state.reset);
+
   const handleResetFoodHistory = () => {
     confirmAction({
       title: "Reset food history",
       message:
-        "Recommendations will forget your dish history: the dishes you liked, tapped or hid. Your taste profile, favourites and reviews stay.",
+        "Recommendations will forget your history: the dishes you liked, tapped or hid, and the stalls you viewed, shared or hid. Your taste profile, favourites and reviews stay.",
       confirmLabel: "Reset",
       destructive: true,
       onConfirm: () => {
-        void resetFoodHistory()
+        void Promise.all([resetFoodHistory(), resetStallHistory()])
           .then(() =>
             showToast({
               message: "Food history reset. Recommendations start fresh.",
@@ -754,6 +759,18 @@ export function SettingsScreen() {
           }
           isLast={!isAuthenticated}
         />
+        {isAuthenticated ? (
+          <SettingsRow
+            {...neutralRow}
+            label="Learn from stalls I view"
+            description="Stalls you open and reviews you read help pick what Home shows you. Only you see this."
+            icon={<AppSymbol name="stall" size={20} color={iconColor} />}
+            type="toggle"
+            isEnabled={!viewHistoryPaused}
+            onToggle={(enabled) => setViewHistoryPaused(!enabled)}
+            isLast={false}
+          />
+        ) : null}
         {isAuthenticated ? (
           <SettingsRow
             {...neutralRow}
