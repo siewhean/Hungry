@@ -679,22 +679,6 @@ function portfolioEditConflictError(): Error {
   );
 }
 
-async function assertSupabasePortfolioVersion(
-  client: SupabaseClient,
-  portfolioId: string | undefined,
-  options?: PortfolioMutationOptions,
-): Promise<void> {
-  if (!portfolioId || !options?.expectedUpdatedAt) return;
-  const { data, error } = await client
-    .from("portfolios")
-    .select("id")
-    .eq("id", portfolioId)
-    .eq("updated_at", options.expectedUpdatedAt)
-    .maybeSingle();
-  if (error) throw error;
-  if (!data) throw portfolioEditConflictError();
-}
-
 async function getCurrentSupabaseUserId(): Promise<string | null> {
   const client = getSupabaseClient();
   if (!client) return null;
@@ -9637,11 +9621,13 @@ export const supabaseService: HungryService = {
     ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      await assertSupabasePortfolioVersion(client, portfolioId, options);
-      const { error } = await client.from("portfolio_collaborators").insert({
-        portfolio_id: portfolioId,
-        user_id: userId,
-        role,
+      // The version check and the insert run in one transaction (20261112090000).
+      const { error } = await client.rpc("change_portfolio_collaborator", {
+        p_portfolio_id: portfolioId,
+        p_user_id: userId,
+        p_action: "add",
+        p_role: role,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
       });
       if (error) throw error;
     },
@@ -9653,12 +9639,12 @@ export const supabaseService: HungryService = {
     ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      await assertSupabasePortfolioVersion(client, portfolioId, options);
-      const { error } = await client
-        .from("portfolio_collaborators")
-        .delete()
-        .eq("portfolio_id", portfolioId)
-        .eq("user_id", userId);
+      const { error } = await client.rpc("change_portfolio_collaborator", {
+        p_portfolio_id: portfolioId,
+        p_user_id: userId,
+        p_action: "remove",
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
+      });
       if (error) throw error;
     },
 
@@ -9670,16 +9656,15 @@ export const supabaseService: HungryService = {
     ) {
       const client = getSupabaseClient();
       if (!client) throw new Error("Supabase client not initialized");
-      await assertSupabasePortfolioVersion(client, portfolioId, options);
-      // Only the owner's update policy matches; anyone else changes zero rows.
-      const { data, error } = await client
-        .from("portfolio_collaborators")
-        .update({ role })
-        .eq("portfolio_id", portfolioId)
-        .eq("user_id", userId)
-        .select("id");
+      // Only the owner may; the RPC raises "Couldn't change that role." when no row changed.
+      const { error } = await client.rpc("change_portfolio_collaborator", {
+        p_portfolio_id: portfolioId,
+        p_user_id: userId,
+        p_action: "role",
+        p_role: role,
+        p_expected_portfolio_updated_at: options?.expectedUpdatedAt ?? null,
+      });
       if (error) throw error;
-      if (!data || data.length === 0) throw new Error("Couldn't change that role.");
     },
 
     async getPortfolioCollaborators(portfolioId: string) {

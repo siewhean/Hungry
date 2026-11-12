@@ -115,8 +115,11 @@ async function main() {
           !dishVenueIds.has(target.id) &&
           (!target.menu_source_url || sourceHost(target.menu_source_url) === sourceDomain),
       );
-      if (targets.length) candidates.push({ brandId, source, targets });
-      break;
+      // Stop at the first source that has outlets to fill; a source with none moves on.
+      if (targets.length) {
+        candidates.push({ brandId, source, targets });
+        break;
+      }
     }
   }
 

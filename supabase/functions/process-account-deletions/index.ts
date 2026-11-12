@@ -124,7 +124,7 @@ async function markFailure(
   error: unknown,
 ): Promise<void> {
   const message = String((error as { message?: unknown } | null)?.message ?? error);
-  await client
+  const { error: unlockError } = await client
     .from("account_deletion_requests")
     .update({
       last_error: message.slice(0, 1000),
@@ -132,12 +132,25 @@ async function markFailure(
       worker_locked_at: null,
     })
     .eq("id", requestId);
-  await client.from("account_deletion_processing_events").insert({
+  if (unlockError) {
+    // The request stays locked until the stale-lock window passes; make that visible.
+    await reportFunctionError("process-account-deletions", unlockError, {
+      requestId,
+      stage: "mark_failure_unlock",
+    });
+  }
+  const { error: eventError } = await client.from("account_deletion_processing_events").insert({
     request_id: requestId,
     user_id: userId,
     event_type: "failed",
     metadata: { worker_id: workerId, error: message.slice(0, 1000) },
   });
+  if (eventError) {
+    await reportFunctionError("process-account-deletions", eventError, {
+      requestId,
+      stage: "mark_failure_event",
+    });
+  }
 }
 
 serveWithSentry("process-account-deletions", async (request) => {

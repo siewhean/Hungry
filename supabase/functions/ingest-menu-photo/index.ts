@@ -376,7 +376,12 @@ serveWithSentry("ingest-menu-photo", async (request) => {
     const ocrText = await runVision(visionApiKey, imageBase64);
     // The AI step is optional: if it times out, fall back to the plain OCR text parse.
     const llmResult = await runLlmExtraction(llmApiKey, ocrText).catch(async (llmError) => {
-      await reportFunctionError("ingest-menu-photo", llmError, { stage: "llm_extraction" }, request);
+      await reportFunctionError(
+        "ingest-menu-photo",
+        llmError,
+        { stage: "llm_extraction" },
+        request,
+      );
       return null;
     });
     const extracted = (
@@ -453,7 +458,9 @@ serveWithSentry("ingest-menu-photo", async (request) => {
       if (insertError) throw insertError;
     }
 
-    await client
+    // A failed final update would leave the submission 'processing' forever behind a success
+    // response, so it fails the request instead (the catch reports it and marks it failed).
+    const { error: finalStatusError } = await client
       .from("menu_photo_submissions")
       .update({
         ocr_status: extracted.length > 0 ? "succeeded" : "skipped",
@@ -462,6 +469,7 @@ serveWithSentry("ingest-menu-photo", async (request) => {
         ocr_error: null,
       })
       .eq("id", submissionId);
+    if (finalStatusError) throw finalStatusError;
 
     return toJson(200, { ok: true, submissionId, extracted: extracted.length }, allowedOrigin);
   } catch (error) {
