@@ -1,0 +1,14 @@
+{
+  "version": "20261111130000",
+  "name": "20261111130000_security_audit_fixes",
+  "result": "pass",
+  "rehearsed_at": "2026-11-11T11:07:23Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "04f09c636c649eeb389e0fe3e7d9727bf1cb3883",
+  "up_sha256": "f54fd29bd3eaf357c13eb0491ea145ab3be12dee3694ed850d8844d653d23f56",
+  "down_sha256": "b72ed74aff31351c56b5e31f33a11579e65d064d28f10e2b435c0139c36ed8f2",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/security_audit_fixes.sql","supabase/smoke/post_publish_gate.sql","supabase/smoke/reviews_server_side.sql"]
+}

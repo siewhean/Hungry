@@ -34,6 +34,10 @@ jobs:
       - name: NPM Audit (moderate+, allowlisted advisories excluded)
         run: node scripts/npm-audit-gate.mjs
 
+      - name: NPM Audit, marketing website (moderate+, allowlisted advisories excluded)
+        working-directory: marketing/website/web-v2
+        run: node ../../../scripts/npm-audit-gate.mjs
+
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
         env:

@@ -13,9 +13,11 @@ import { TIMEOUT_MS } from "../_shared/timeouts.ts";
 // photo with no answer or a blocked one, so skipping this call cannot publish an unchecked photo.
 // `bucket` is "review-media" (the default) or "post-media".
 //
-// Fails open: with no Vision key, or when Google is down, the answer is "unchecked", the error
-// is reported, and the post goes ahead (reports and blocking still apply). The reporter of a
-// blocked photo is not told which rule it broke.
+// Fails closed: with no Vision key, or when Google is down, the answer is "unchecked" and the
+// error is reported. publish_post and the review photo trigger accept only "clear", so the app asks
+// the person to try again (owner decision 11 Nov 2026). Each answer is tied to the stored file as it
+// was when this check started, so a file uploaded or replaced afterwards has no answer. The
+// person whose photo is blocked is not told which rule it broke.
 
 type JsonObject = Record<string, unknown>;
 
@@ -118,11 +120,13 @@ async function recordVerdicts(
   userId: string,
   bucket: string,
   verdicts: { path: string; status: Verdict }[],
+  startedAt: string,
 ): Promise<void> {
   const { error } = await client.rpc("record_photo_safety_checks", {
     p_user_id: userId,
     p_bucket: bucket,
     p_checks: verdicts,
+    p_started_at: startedAt,
   });
   if (error) {
     await reportFunctionError(
@@ -194,6 +198,9 @@ serveWithSentry("check-photo-safety", async (request) => {
     return toJson(429, { error: "rate_limited" }, allowedOrigin);
   }
 
+  // Files changed after this moment get no answer from this call.
+  const startedAt = new Date().toISOString();
+
   if (!visionApiKey) {
     await reportFunctionError(
       "check-photo-safety",
@@ -201,7 +208,7 @@ serveWithSentry("check-photo-safety", async (request) => {
       { stage: "config" },
       request,
     );
-    await recordVerdicts(client, request, userId, bucket, all("unchecked"));
+    await recordVerdicts(client, request, userId, bucket, all("unchecked"), startedAt);
     return toJson(200, { status: "unchecked", photos: paths.length }, allowedOrigin);
   }
 
@@ -256,6 +263,7 @@ serveWithSentry("check-photo-safety", async (request) => {
       userId,
       bucket,
       paths.map((path, index) => ({ path, status: blockedFlags[index] ? "blocked" : "clear" })),
+      startedAt,
     );
     if (flagged > 0) {
       // Not an error: a person posted something that broke the rules. Kept as a warning so ops
@@ -266,7 +274,7 @@ serveWithSentry("check-photo-safety", async (request) => {
     return toJson(200, { status: "clear", photos: images.length }, allowedOrigin);
   } catch (error) {
     await reportFunctionError("check-photo-safety", error, { stage: "safe_search" }, request);
-    await recordVerdicts(client, request, userId, bucket, all("unchecked"));
+    await recordVerdicts(client, request, userId, bucket, all("unchecked"), startedAt);
     return toJson(200, { status: "unchecked", photos: paths.length }, allowedOrigin);
   }
 });
