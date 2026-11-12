@@ -25,16 +25,36 @@ export class MockRealtimeChannel implements IRealtimeChannel {
 
   constructor(channelId: string) {
     this.channelId = channelId;
-    if (!eventBus.has(channelId)) eventBus.set(channelId, new Set());
-    if (!presenceBus.has(channelId)) presenceBus.set(channelId, {});
+    this.subscribers();
+    this.presence();
+  }
+
+  /** The channel's subscriber set, re-created if clearChannel removed it. */
+  private subscribers(): Set<ChannelEventHandler> {
+    let set = eventBus.get(this.channelId);
+    if (!set) {
+      set = new Set();
+      eventBus.set(this.channelId, set);
+    }
+    return set;
+  }
+
+  /** The channel's presence map, re-created if clearChannel removed it. */
+  private presence(): PresenceState {
+    let state = presenceBus.get(this.channelId);
+    if (!state) {
+      state = {};
+      presenceBus.set(this.channelId, state);
+    }
+    return state;
   }
 
   subscribe(onEvent: ChannelEventHandler, onPresence: (state: PresenceState) => void): void {
     this.eventHandler = onEvent;
     this.presenceHandler = onPresence;
-    eventBus.get(this.channelId)!.add(onEvent);
+    this.subscribers().add(onEvent);
     // Deliver current presence state immediately
-    onPresence({ ...presenceBus.get(this.channelId)! });
+    onPresence({ ...this.presence() });
   }
 
   broadcast(event: WheelChannelEvent): void {
@@ -46,7 +66,7 @@ export class MockRealtimeChannel implements IRealtimeChannel {
   }
 
   track(member: WheelMember): void {
-    const state = presenceBus.get(this.channelId)!;
+    const state = this.presence();
     state[member.id] = { ...member, isPresent: true };
     presenceBus.set(this.channelId, state);
     // Notify all presence handlers
@@ -60,7 +80,7 @@ export class MockRealtimeChannel implements IRealtimeChannel {
 
   /** Simulate another user joining — useful for demos and testing. */
   simulateJoin(member: WheelMember): void {
-    const state = presenceBus.get(this.channelId)!;
+    const state = this.presence();
     state[member.id] = { ...member, isPresent: true };
     presenceBus.set(this.channelId, state);
     this.broadcast({ type: "member_joined", member });
@@ -69,7 +89,7 @@ export class MockRealtimeChannel implements IRealtimeChannel {
 
   /** Simulate another user leaving. */
   simulateLeave(memberId: string): void {
-    const state = presenceBus.get(this.channelId)!;
+    const state = this.presence();
     delete state[memberId];
     presenceBus.set(this.channelId, state);
     this.broadcast({ type: "member_left", memberId });

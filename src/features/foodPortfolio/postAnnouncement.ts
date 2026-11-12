@@ -4,6 +4,7 @@
 
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { PortfolioPointsEntry } from "@/lib/services/types";
+import { reportError } from "@/lib/monitoring/reportError";
 
 /** How long the toast waits for the points read. */
 export const POST_POINTS_WAIT_MS = 1500;
@@ -33,7 +34,10 @@ export async function loadPostPoints(
   const read = getHungryService()
     .leaderboard.listMyPoints(POINTS_ROWS)
     .then((entries) => pointsForPost(entries, postId))
-    .catch(() => null);
+    .catch((error: unknown) => {
+      reportError(error, { screen: "post_announcement", action: "read_points" });
+      return null;
+    });
   try {
     return await Promise.race([read, timeout]);
   } finally {

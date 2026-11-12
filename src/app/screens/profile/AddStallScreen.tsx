@@ -626,11 +626,19 @@ export function AddStallScreen({ navigation }: Props) {
       const submission = await submitStall(input);
       hasSubmittedRef.current = true;
       if (FEATURE_FLAGS.gamificationEnabled) {
-        await Promise.allSettled([
+        const rewards = await Promise.allSettled([
           awardFoodCred("stall_submitted", submission.id),
           incrementMission(profile.id, "add_stall"),
           recordPassportContribution(profile.id, "stall_submitted", submission.id),
         ]);
+        rewards.forEach((result, index) => {
+          if (result.status === "rejected") {
+            reportError(result.reason, {
+              screen: "AddStall",
+              action: ["award_food_cred", "increment_mission", "record_passport"][index],
+            });
+          }
+        });
       }
       addActivityUpdate({
         kind: "submission",

@@ -88,6 +88,28 @@ async function runAuthenticatedCatalogFallback<T>(
   }
 }
 
+/**
+ * Best-effort reads (typeahead, place search): a rejected session is expired and nothing is
+ * shown; an availability failure falls back only for a signed-in session, like the other
+ * catalog fallbacks. Every failure is reported. Resolves to an empty list otherwise.
+ */
+async function bestEffortCatalogFallback<T>(
+  error: unknown,
+  action: string,
+  fallback: () => Promise<T[]>,
+): Promise<T[]> {
+  expireRejectedSession(error);
+  try {
+    const { reportError } =
+      require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
+    reportError(error, { screen: "service", action });
+  } catch {
+    // Reporting must never break the read.
+  }
+  if (!isCatalogFallbackEligibleError(error) || !hasValidAuthenticatedSession()) return [];
+  return fallback().catch(() => []);
+}
+
 export async function runAuthenticatedDiscoveryFallback<T>(
   primary: () => Promise<T>,
   fallback: () => Promise<T>,
@@ -468,11 +490,21 @@ export function createResilientCatalogReadService(
     },
     // Typeahead is best effort: an unavailable live catalog just gives no suggestions.
     async suggest(prefix) {
-      return primary.suggest(prefix).catch(() => fallback.suggest(prefix));
+      return primary
+        .suggest(prefix)
+        .catch((error: unknown) =>
+          bestEffortCatalogFallback(error, "catalog_suggest", () => fallback.suggest(prefix)),
+        );
     },
     // Place search is best effort too: an unavailable live catalog finds no places.
     async listPlaces(request) {
-      return primary.listPlaces(request).catch(() => fallback.listPlaces(request));
+      return primary
+        .listPlaces(request)
+        .catch((error: unknown) =>
+          bestEffortCatalogFallback(error, "catalog_list_places", () =>
+            fallback.listPlaces(request),
+          ),
+        );
     },
   };
 }

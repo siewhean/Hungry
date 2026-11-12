@@ -41,6 +41,7 @@ import { useHungryTheme } from "@/theme";
 import type { StallPost } from "@/types/domain";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { webShareUrl } from "@/constants/links";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const CommentIcon = MessageCircle ?? MessageCircleMore;
 
@@ -95,8 +96,10 @@ export function SocialPostDetailScreen({ navigation, route }: Props) {
           setPosts(sharedPosts);
         }
       })
-      // Offline: keep the posts already shown.
-      .catch(() => undefined);
+      // Offline: keep the posts already shown, but still report the failure.
+      .catch((error: unknown) =>
+        reportError(error, { screen: "SocialPostDetail", action: "load_shared_posts" }),
+      );
     return () => {
       isMounted = false;
     };

@@ -17,6 +17,7 @@ import type { LifecycleSnapshot, WelcomeBackDish } from "@/types/domain";
 import type { SingaporeArea } from "@/app/screens/onboarding/singaporeAreas";
 import { AppText, Button, Card, IconButton } from "../ui";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { reportError } from "@/lib/monitoring/reportError";
 
 interface WelcomeBackCardProps {
   horizontalPadding: number;
@@ -80,7 +81,9 @@ function WelcomeBackExperiment({
       .then((dishes) => {
         if (!cancelled) setNewDishes(dishes);
       })
-      .catch(() => undefined);
+      .catch((error: unknown) =>
+        reportError(error, { screen: "WelcomeBackCard", action: "load_new_dishes" }),
+      );
     return () => {
       cancelled = true;
     };

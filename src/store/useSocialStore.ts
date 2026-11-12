@@ -356,6 +356,7 @@ export const useSocialStore = create<SocialState>()(
               );
             } catch (e) {
               console.error("Failed to sync liked post reaction; rolled back optimistic state.", e);
+              reportError(e, { screen: "social_store", action: "sync_liked_post_reaction" });
               showSocialToast(
                 isLiked
                   ? "Couldn't like this post. Please try again."
@@ -414,6 +415,7 @@ export const useSocialStore = create<SocialState>()(
               );
             } catch (e) {
               console.error("Failed to sync saved post reaction; rolled back optimistic state.", e);
+              reportError(e, { screen: "social_store", action: "sync_saved_post_reaction" });
               showSocialToast(
                 isSaved
                   ? "Couldn't save this post. Please try again."
@@ -574,14 +576,16 @@ export const useSocialStore = create<SocialState>()(
         );
         if (!pendingIds.length) return;
         const social = getHungryService().social;
-        const statuses = await Promise.all(
-          pendingIds.map((userId) => social.getFollowStatus(userId).catch(() => null)),
-        );
+        const statuses = await social.getFollowStatuses(pendingIds).catch((error: unknown) => {
+          reportError(error, { screen: "social_store", action: "reconcile_requested_follows" });
+          return null;
+        });
+        if (!statuses) return;
         set((prev) => {
           const followed = { ...prev.followedUserIds };
           const requested = { ...prev.requestedUserIds };
-          pendingIds.forEach((userId, index) => {
-            const status = statuses[index];
+          pendingIds.forEach((userId) => {
+            const status = statuses[userId] ?? null;
             // Unknown (offline/error): keep the local state; and skip users the
             // viewer re-tapped while the checks were in flight.
             if (status === null || !requested[userId]) return;
@@ -727,6 +731,7 @@ export const useSocialStore = create<SocialState>()(
               await getHungryService().social.shareBite(postId, { channel });
             } catch (e) {
               console.error("Failed to sync shared post; rolled back optimistic state.", e);
+              reportError(e, { screen: "social_store", action: "sync_shared_post" });
               set((prev) => {
                 if (!interactionStatesMatch(prev.interactions[postId], nextState)) return prev;
                 return {
@@ -794,6 +799,7 @@ export const useSocialStore = create<SocialState>()(
             })
             .catch((error) => {
               console.error("Failed to sync comment to backend", error);
+              reportError(error, { screen: "social_store", action: "sync_comment_to_backend" });
               // Never leave a comment on screen that was not saved.
               set((prev) => ({
                 commentsByPostId: {
@@ -875,6 +881,7 @@ export const useSocialStore = create<SocialState>()(
             })
             .catch((error) => {
               console.error("Failed to sync reply to backend", error);
+              reportError(error, { screen: "social_store", action: "sync_reply_to_backend" });
               set((prev) => ({
                 repliesByCommentId: {
                   ...prev.repliesByCommentId,

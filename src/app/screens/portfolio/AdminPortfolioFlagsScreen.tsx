@@ -9,6 +9,7 @@ import { getHungryService } from "@/lib/services/serviceProvider";
 import { useHungryTheme } from "@/theme";
 import type { PortfolioFlag } from "@/types/domain";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<RootStackParamList, "AdminPortfolioFlags">;
 
@@ -22,6 +23,8 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
     try {
       const nextFlags = await getHungryService().portfolio.getPortfolioFlags({ status: "pending" });
       setFlags(nextFlags);
+    } catch (error) {
+      reportError(error, { screen: "AdminPortfolioFlags", action: "load_flags" });
     } finally {
       setIsLoading(false);
     }
@@ -31,7 +34,7 @@ export function AdminPortfolioFlagsScreen({ navigation }: Props) {
     try {
       await getHungryService().portfolio.resolvePortfolioFlag(flagId, resolution);
     } catch (error) {
-      console.error("Failed to resolve portfolio flag", error);
+      reportError(error, { screen: "AdminPortfolioFlags", action: "resolve_flag" });
       Alert.alert("Couldn't resolve report", "Please try again.");
       return;
     }

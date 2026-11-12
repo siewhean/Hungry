@@ -28,6 +28,8 @@ interface FoodCredState {
   /** Points earned in the most recent action — drives the reward toast animation */
   lastEarnedPoints: number;
   isLoaded: boolean;
+  /** The user whose cred is loaded; a different user reloads instead of keeping it. */
+  loadedUserId: string | null;
 
   // Derived (computed — not stored in persist)
   currentLevel: () => FoodCredLevel;
@@ -82,16 +84,23 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
   levelIndex: 1, // "Regular"
   lastEarnedPoints: 0,
   isLoaded: false,
+  loadedUserId: null,
 
   currentLevel: () => resolveFoodCredLevel(get().totalPoints),
   levelProgress: () => resolveLevelProgress(get().totalPoints),
 
   loadCredProfile: async (userId) => {
-    if (get().isLoaded) return;
+    if (get().isLoaded && get().loadedUserId === userId) return;
+    if (get().loadedUserId !== null && get().loadedUserId !== userId) {
+      // Another account was loaded: never show its points to this one.
+      set({ totalPoints: 0, levelIndex: 0, lastEarnedPoints: 0, isLoaded: false });
+    }
+    set({ loadedUserId: userId });
 
     // Active repository handles mock or Supabase `user_food_cred` hydration.
     const repo = getDataRepository();
     const cred = (await repo.getUserFoodCred?.(userId)) ?? null;
+    if (get().loadedUserId !== userId) return;
 
     if (cred) {
       set({
@@ -128,6 +137,9 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
 
       return remoteCred.totalPoints;
     }
+    // A server-backed repository answered null (dedupe, cap or failure): it granted nothing,
+    // so the local total must not grow. Local math is only for the mock repository.
+    if (repo.awardFoodCred) return get().totalPoints;
 
     const earned = FOOD_CRED_POINTS[action] ?? 0;
     if (earned === 0) return get().totalPoints;
@@ -198,7 +210,14 @@ export const useFoodCredStore = create<FoodCredState>()((set, get) => ({
     return newTotal;
   },
 
-  _reset: () => set({ totalPoints: 0, levelIndex: 0, lastEarnedPoints: 0, isLoaded: false }),
+  _reset: () =>
+    set({
+      totalPoints: 0,
+      levelIndex: 0,
+      lastEarnedPoints: 0,
+      isLoaded: false,
+      loadedUserId: null,
+    }),
 }));
 
 // ─── Selectors ────────────────────────────────────────────────────────────────

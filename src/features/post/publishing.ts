@@ -10,6 +10,7 @@ import { useSessionStore } from "@/store/useSessionStore";
 import { useSocialStore } from "@/store/useSocialStore";
 import type { DishDetail, StallPost } from "@/types/domain";
 import { useComposerStore, type MediaItem, type PublishMode } from "./useComposerStore";
+import { reportError } from "@/lib/monitoring/reportError";
 
 export interface PublishComposerPostOptions {
   publishMode: PublishMode;
@@ -40,7 +41,10 @@ async function resolvePublishTarget(
 
   const dish =
     repository.getDishById(routeDishId) ??
-    (await service.discovery.getDish(routeDishId).catch(() => undefined));
+    (await service.discovery.getDish(routeDishId).catch((error: unknown) => {
+      reportError(error, { screen: "post_publishing", action: "get_dish" });
+      return undefined;
+    }));
   if (!dish) {
     throw new Error("We couldn't find that dish. Choose it again before publishing.");
   }

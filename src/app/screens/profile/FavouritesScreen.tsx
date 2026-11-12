@@ -185,14 +185,18 @@ export function FavouritesScreen({ navigation, route }: Props) {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.allSettled([
+      const results = await Promise.allSettled([
         savedDishes.reload(),
         canLoadLists ? loadPortfolioScope("mine") : Promise.resolve(),
       ]);
+      const failed = results.find(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
+      );
       if (stallsWanted) {
         savedStalls.retry();
         if (activeSection === "stalls" && stallTab === "visited") visitedStalls.retry();
       }
+      if (failed) throw failed.reason;
     } catch (error) {
       reportError(error, { screen: "Favourites", action: "refresh" });
       showToast({ message: "Couldn't refresh. Try again.", tone: "error" });

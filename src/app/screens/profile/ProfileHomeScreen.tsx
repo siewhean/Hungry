@@ -586,20 +586,31 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     if (!FEATURE_FLAGS.directMessagesEnabled) return;
     if (selectedShareChatIds.length === 0) return;
 
-    try {
-      await Promise.all(
-        selectedShareChatIds.map((chatId) =>
-          sharePostToChat(chatId, {
-            postId: `taste-fingerprint-${profile.id}`,
-            title: "Taste fingerprint",
-            subtitle: `${profile.displayName} · Taste profile`,
-            imageUrl: profile.avatarUrl ?? "",
-            authorName: profile.displayName,
-          }),
-        ),
+    const results = await Promise.allSettled(
+      selectedShareChatIds.map((chatId) =>
+        // n-plus-one-ok: one message per chat; each send stands alone so a failed chat can be retried by itself
+        sharePostToChat(chatId, {
+          postId: `taste-fingerprint-${profile.id}`,
+          title: "Taste fingerprint",
+          subtitle: `${profile.displayName} · Taste profile`,
+          imageUrl: profile.avatarUrl ?? "",
+          authorName: profile.displayName,
+        }),
+      ),
+    );
+    const failedChatIds = selectedShareChatIds.filter(
+      (_chatId, index) => results[index]?.status === "rejected",
+    );
+    if (failedChatIds.length > 0) {
+      const firstFailure = results.find(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
       );
-    } catch (error) {
-      reportError(error, { screen: "ProfileHome", action: "send_taste_fingerprint" });
+      reportError(firstFailure?.reason, {
+        screen: "ProfileHome",
+        action: "send_taste_fingerprint",
+      });
+      // Keep only the chats that failed selected, so a retry does not resend to the others.
+      setSelectedShareChatIds(failedChatIds);
       showToast({ message: "Couldn't share your taste profile. Please try again.", tone: "error" });
       return;
     }

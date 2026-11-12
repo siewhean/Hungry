@@ -1096,11 +1096,11 @@ export async function searchDishesViaRpc(
 }
 
 // Loaded on first use: Sentry is a native module that plain service tests never need.
-function reportDiscoveryTasteError(error: unknown): void {
+function reportDiscoveryTasteError(error: unknown, action = "discovery_feed_taste_vectors"): void {
   try {
     const { reportError } =
       require("@/lib/monitoring/reportError") as typeof import("@/lib/monitoring/reportError");
-    reportError(error, { screen: "service", action: "discovery_feed_taste_vectors" });
+    reportError(error, { screen: "service", action });
   } catch {
     // Reporting must never break the feed.
   }
@@ -1148,6 +1148,10 @@ async function loadDishDietaryFlagsByDishId(
     !Array.isArray(flagResult.data)
   ) {
     console.warn("Supabase discovery dietary flags read failed");
+    reportDiscoveryTasteError(
+      linkResult.error ?? flagResult.error ?? new Error("dietary flags read failed"),
+      "discovery_feed_dietary_flags",
+    );
     return undefined;
   }
   const slugById = new Map(

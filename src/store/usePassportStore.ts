@@ -216,6 +216,8 @@ export const usePassportStore = create<PassportState>()(
       /** Stall ids with a facts read in flight, so one is not asked for twice. */
       const factsRequested = new Set<string>();
       let factsInFlight = 0;
+      /** Bumped by _reset, so a facts load started before it neither writes nor counts. */
+      let factsGeneration = 0;
 
       return {
         stallFacts: {},
@@ -314,10 +316,12 @@ export const usePassportStore = create<PassportState>()(
           const ids = stallIds.filter((id) => !factsRequested.has(id));
           if (ids.length === 0) return;
           ids.forEach((id) => factsRequested.add(id));
+          const generation = factsGeneration;
           factsInFlight += 1;
           set({ stallFactsPending: true });
           try {
             const rows = await getHungryService().discovery.getStallStampFacts(ids);
+            if (generation !== factsGeneration) return;
             const known = new Map(rows.map((row) => [row.stallId, row]));
             set((state) => ({
               stallFacts: {
@@ -330,12 +334,15 @@ export const usePassportStore = create<PassportState>()(
             }));
             get().computeProgress(lastTriedStallIds);
           } catch (error) {
+            if (generation !== factsGeneration) return;
             // Let the next compute ask again; progress stays at what the dish tags give.
             ids.forEach((id) => factsRequested.delete(id));
             reportError(error, { screen: "Passport", action: "load_stall_facts" });
           } finally {
-            factsInFlight -= 1;
-            if (factsInFlight === 0) set({ stallFactsPending: false });
+            if (generation === factsGeneration) {
+              factsInFlight -= 1;
+              if (factsInFlight === 0) set({ stallFactsPending: false });
+            }
           }
         },
 
@@ -381,6 +388,7 @@ export const usePassportStore = create<PassportState>()(
         _reset: () => {
           factsRequested.clear();
           factsInFlight = 0;
+          factsGeneration += 1;
           set({
             progressMap: {},
             celebratedStampIds: {},

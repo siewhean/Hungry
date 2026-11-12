@@ -181,21 +181,35 @@ export function ReviewShareSheet({
     if (!directMessagesEnabled) return;
     if (!activeReview || selectedChatIds.length === 0) return;
 
-    try {
-      await Promise.all(
-        selectedChatIds.map((chatId) =>
-          sharePostToChat(chatId, {
-            postId: activeReview.postId,
-            title: activeReview.title,
-            subtitle: activeReview.subtitle,
-            imageUrl: activeReview.imageUrl,
-            authorName: activeReview.authorName,
-          }),
-        ),
+    const results = await Promise.allSettled(
+      selectedChatIds.map((chatId) =>
+        // n-plus-one-ok: one message per chat; each send stands alone so a failed chat can be retried by itself
+        sharePostToChat(chatId, {
+          postId: activeReview.postId,
+          title: activeReview.title,
+          subtitle: activeReview.subtitle,
+          imageUrl: activeReview.imageUrl,
+          authorName: activeReview.authorName,
+        }),
+      ),
+    );
+    const failedChatIds = selectedChatIds.filter(
+      (_chatId, index) => results[index]?.status === "rejected",
+    );
+    if (failedChatIds.length > 0) {
+      const firstFailure = results.find(
+        (result): result is PromiseRejectedResult => result.status === "rejected",
       );
-    } catch (error) {
-      reportError(error, { screen: "ReviewShareSheet", action: "share_to_chat" });
-      showToast({ message: "Could not share review. Please try again.", tone: "error" });
+      reportError(firstFailure?.reason, { screen: "ReviewShareSheet", action: "share_to_chat" });
+      // Keep only the chats that failed selected, so a retry does not resend to the others.
+      setSelectedChatIds(failedChatIds);
+      showToast({
+        message:
+          failedChatIds.length === selectedChatIds.length
+            ? "Could not share review. Please try again."
+            : `Could not send to ${failedChatIds.length} chat${failedChatIds.length === 1 ? "" : "s"}. Try again for those.`,
+        tone: "error",
+      });
       return;
     }
     trackShare(activeReview, "in_app", selectedChatIds.length);

@@ -110,9 +110,13 @@ export const MEAL_RAILS: Record<Exclude<MealPeriod, "lateNight">, MealRail> = {
 export function bitesForMealPeriod(bites: readonly Bite[], period: MealPeriod): Bite[] {
   if (period === "lateNight") return [];
   const { keywords } = MEAL_RAILS[period];
+  // A keyword must start a word: "ice" matches "ice kachang" but not "rice", "tea" not "steak".
+  const patterns = keywords.map(
+    (keyword) => new RegExp(`(^|[^a-z])${keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`),
+  );
   return bites.filter((bite) => {
     const name = bite.dishName.toLowerCase();
-    return keywords.some((keyword) => name.includes(keyword));
+    return patterns.some((pattern) => pattern.test(name));
   });
 }
 

@@ -22,6 +22,7 @@ import { useLocationStore } from "@/store/useLocationStore";
 import { isMerchantModeActive, useMerchantStore } from "@/store/useMerchantStore";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";
+import { reportError } from "@/lib/monitoring/reportError";
 
 function shouldEnablePostHogSink() {
   return (
@@ -363,7 +364,9 @@ export function useAppBootstrap() {
               // restore before accepting a potentially older profile read.
               await applySignedInProfile(profile);
             })
-            .catch(() => undefined);
+            .catch((error: unknown) =>
+              reportError(error, { screen: "app_bootstrap", action: "hydrate_profile" }),
+            );
         });
         if (!active) cancelProfileHydration();
       })

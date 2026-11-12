@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/monitoring/reportError";
 import type { Coordinate } from "@/types/domain";
 import { hungryPersistStorage } from "./persistStorage";
 
@@ -145,6 +146,7 @@ export const useLocationStore = create<LocationState>()(
       manualCoordinate: undefined,
       gpsBadgeState: "live",
       grantLocation: async (options) => {
+        let osGranted = false;
         try {
           const Location = loadExpoLocationModule();
           if (!Location) {
@@ -161,6 +163,7 @@ export const useLocationStore = create<LocationState>()(
             set(getDeniedLocationState(options?.manualLocation));
             return false;
           }
+          osGranted = true;
 
           // A fix that never arrives (indoors, no GPS) must not leave the caller waiting.
           let fixTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -187,7 +190,21 @@ export const useLocationStore = create<LocationState>()(
           });
           trackAnalyticsEvent("location_permission_result", { result: "granted" });
           return true;
-        } catch {
+        } catch (error) {
+          if (osGranted) {
+            // The OS granted access but no fix arrived (timeout, no GPS): keep the grant and the
+            // last known location, and let a later refresh try again.
+            set({ permission: "granted" });
+            if (!(error instanceof Error && error.message === "Location fix timed out")) {
+              reportError(error, { screen: "location_store", action: "grant_location_fix" });
+            }
+            trackAnalyticsEvent("location_permission_result", {
+              result: "granted",
+              reason: "no_fix",
+            });
+            return false;
+          }
+          reportError(error, { screen: "location_store", action: "grant_location" });
           set(getDeniedLocationState(options?.manualLocation));
           trackAnalyticsEvent("location_permission_result", {
             result: "denied",

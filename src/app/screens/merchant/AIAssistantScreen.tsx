@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
@@ -45,6 +45,8 @@ export function AIAssistantScreen() {
   const [weeklySummary, setWeeklySummary] = useState<AIBusinessInsight | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** Dismissal writes run in order, so a quick second dismissal does not overwrite the first. */
+  const dismissalWrites = useRef<Promise<unknown>>(Promise.resolve());
 
   const loadInsights = useCallback(async () => {
     setIsLoading(true);
@@ -99,16 +101,18 @@ export function AIAssistantScreen() {
     setInsights((prev) => prev.filter((i) => i.id !== id));
     if (!activeOutlet) return;
     const outletId = activeOutlet.id;
-    void readDismissedInsightIds(outletId).then((ids) =>
-      Promise.resolve(
+    // One read-then-write at a time, so two quick dismissals both land.
+    dismissalWrites.current = dismissalWrites.current
+      .then(() => readDismissedInsightIds(outletId))
+      .then((ids) =>
         safeAsyncStorage.setItem(
           dismissedInsightsKey(outletId),
           JSON.stringify(Array.from(new Set([...ids, id])).slice(-100)),
         ),
-      ).catch((e) => {
+      )
+      .catch((e: unknown) => {
         reportError(e, { screen: "AIAssistant", action: "save_dismissed_insight" });
-      }),
-    );
+      });
   };
 
   const handleInsightAction = (target?: string) => {

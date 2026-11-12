@@ -41,6 +41,7 @@ import { hungryPersistStorage } from "./persistStorage";
 import { useFeedFeedbackStore } from "./useFeedFeedbackStore";
 import { useUIStore } from "./useUIStore";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
+import { reportError } from "@/lib/monitoring/reportError";
 
 const SUPABASE_USER_GUEST_PROFILE: UserProfile = {
   id: "guest-user",
@@ -538,6 +539,7 @@ export const useProfileStore = create<ProfileState>()(
           }));
         } catch (error) {
           console.warn("Failed to load food history", error);
+          reportError(error, { screen: "profile_store", action: "load_food_history" });
         }
       },
       resetFoodHistory: async () => {
@@ -569,6 +571,7 @@ export const useProfileStore = create<ProfileState>()(
           .profile.updateTasteProfile(tasteProfile)
           .catch((error) => {
             console.error("Failed to sync food openness", error);
+            reportError(error, { screen: "profile_store", action: "sync_food_openness" });
             if (get().profile !== optimisticProfile) return;
             set(previousSnapshot);
           });
@@ -637,6 +640,10 @@ export const useProfileStore = create<ProfileState>()(
             })
             .catch((error) => {
               console.warn("Failed to rehydrate favourite dish IDs", error);
+              reportError(error, {
+                screen: "profile_store",
+                action: "rehydrate_favourite_dish_ids",
+              });
               set({ favouritesRehydrationFailed: true });
             });
         };
@@ -791,6 +798,7 @@ export const useProfileStore = create<ProfileState>()(
         } catch (error) {
           if (!isStillOwner()) return staleFavouriteResult();
           console.error("Failed to sync favourite toggle", error);
+          reportError(error, { screen: "profile_store", action: "sync_favourite_toggle" });
           if (get().profile === optimisticProfile) {
             set(previousSnapshot);
           } else {
@@ -892,6 +900,7 @@ export const useProfileStore = create<ProfileState>()(
         } catch (error) {
           if (!isStillOwner()) return toAdd;
           console.error("Failed to save favourites", error);
+          reportError(error, { screen: "profile_store", action: "save_favourites" });
           if (get().profile === optimisticProfile) {
             set(previousSnapshot);
           } else {
@@ -918,6 +927,7 @@ export const useProfileStore = create<ProfileState>()(
           .profile.updateProfile(next)
           .catch((error) => {
             console.error("Failed to sync profile update", error);
+            reportError(error, { screen: "profile_store", action: "sync_profile_update" });
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
           });
@@ -941,6 +951,7 @@ export const useProfileStore = create<ProfileState>()(
           return true;
         } catch (error) {
           console.error("Failed to update profile visibility", error);
+          reportError(error, { screen: "profile_store", action: "update_profile_visibility" });
           if (get().profile === optimisticProfile) set({ profile: previousProfile });
           return false;
         }
@@ -992,6 +1003,7 @@ export const useProfileStore = create<ProfileState>()(
           .profile.updateTasteVector(tasteVector)
           .catch((error) => {
             console.error("Failed to sync taste vector", error);
+            reportError(error, { screen: "profile_store", action: "sync_taste_vector" });
             if (get().profile !== optimisticProfile) return;
             set(previousSnapshot);
           });
@@ -1040,6 +1052,7 @@ export const useProfileStore = create<ProfileState>()(
           .profile.updateTasteProfile(tasteProfile)
           .catch((error) => {
             console.error("Failed to sync taste profile", error);
+            reportError(error, { screen: "profile_store", action: "sync_taste_profile" });
             if (get().profile !== optimisticProfile) return;
             set(previousSnapshot);
           });
@@ -1067,6 +1080,7 @@ export const useProfileStore = create<ProfileState>()(
           .profile.updateDietaryPreferences(dietaryPreferences)
           .catch((error) => {
             console.error("Failed to sync dietary preferences", error);
+            reportError(error, { screen: "profile_store", action: "sync_dietary_preferences" });
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
           });
@@ -1086,6 +1100,7 @@ export const useProfileStore = create<ProfileState>()(
           .profile.updateMaxDishBudget(maxDishBudget ?? null)
           .catch((error) => {
             console.error("Failed to sync dish budget", error);
+            reportError(error, { screen: "profile_store", action: "sync_dish_budget" });
             if (get().profile !== optimisticProfile) return;
             set({ profile: previousProfile });
           });
@@ -1137,6 +1152,7 @@ export const useProfileStore = create<ProfileState>()(
           return true;
         } catch (error) {
           console.error("Failed to save the Tried mark", error);
+          reportError(error, { screen: "profile_store", action: "save_the_tried_mark" });
           set((state) => ({ profile: { ...state.profile, reviewedDishIds: previousIds } }));
           return false;
         }

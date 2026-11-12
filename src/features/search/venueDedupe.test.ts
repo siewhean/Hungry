@@ -96,7 +96,7 @@ test("getVenueChainKey keeps stored brand logos from merging different chains", 
 });
 
 test("items without a venue are each kept, and an unknown distance loses to a known one", () => {
-  const kopi = (id: string) => venue({ id, name: "Kopi Corner" });
+  const kopi = (id: string) => venue({ id, name: `Kopi Corner - ${id}` });
   const items = [
     { id: "a", venue: kopi("v1"), distance: undefined },
     { id: "orphan-1", venue: undefined, distance: 10 },
@@ -120,4 +120,21 @@ test("a malformed or empty logo URL falls back to the venue id or name", () => {
   assert.equal(getVenueBrandKey({ id: "v1", logoUrl: "   " }), "id:v1");
   assert.equal(getVenueBrandKey({ id: "v1", logoUrl: "https://logo.clearbit.com/" }), "id:v1");
   assert.equal(getVenueChainKey(venue({ id: "v9", name: "(Pte Ltd)", logoUrl: "::" })), "name:v9");
+});
+
+test("unrelated stalls with the same plain name are not merged", () => {
+  const one = venue({ id: "cr-1", name: "Chicken Rice" });
+  const two = venue({ id: "cr-2", name: "Chicken Rice" });
+  assert.notEqual(getVenueChainKey(one), getVenueChainKey(two));
+  assert.deepEqual(
+    dedupeNearestVenueCandidates(
+      [
+        { distanceMeters: 300, venue: one },
+        { distanceMeters: 90, venue: two },
+      ],
+      (item) => item.venue,
+      (item) => item.distanceMeters,
+    ).map((item) => item.venue.id),
+    ["cr-1", "cr-2"],
+  );
 });

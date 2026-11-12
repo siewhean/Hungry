@@ -1,7 +1,5 @@
 {
   "screens": [
-    "src/app/screens/checklist/ChecklistDetailScreen.tsx",
-    "src/app/screens/checklist/ChecklistItemPickerScreen.tsx",
     "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
     "src/app/screens/dev/DeveloperLauncherScreen.tsx",
     "src/app/screens/home/ActivityInboxScreen.tsx",
@@ -11,9 +9,7 @@
     "src/app/screens/home/DirectMessagesScreen.tsx",
     "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/home/StoryViewerScreen.tsx",
-    "src/app/screens/portfolio/AdminPortfolioFlagsScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
-    "src/app/screens/profile/SocialGridScreen.tsx",
-    "src/app/screens/profile/SocialPostDetailScreen.tsx"
+    "src/app/screens/profile/SocialGridScreen.tsx"
   ]
 }

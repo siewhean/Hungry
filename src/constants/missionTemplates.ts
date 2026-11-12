@@ -86,13 +86,20 @@ export const MISSION_TEMPLATE_POOL: Omit<WeeklyMission, "weekStart" | "weekEnd" 
 
 // ─── Current Week Helper ──────────────────────────────────────────────────────
 
+/** Local calendar date as YYYY-MM-DD (toISOString would shift it to the UTC day). */
+function localIsoDate(d: Date): string {
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
 /** Returns ISO date string for the most recent Monday (start of current week) */
 function getWeekStart(): string {
   const d = new Date();
   const day = d.getDay(); // 0 = Sunday
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  return localIsoDate(d);
 }
 
 /** Returns ISO date string for the coming Sunday (end of current week) */
@@ -101,7 +108,7 @@ function getWeekEnd(): string {
   const day = d.getDay();
   const diff = day === 0 ? 0 : 7 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().split("T")[0];
+  return localIsoDate(d);
 }
 
 // ─── Active Mock Missions ─────────────────────────────────────────────────────

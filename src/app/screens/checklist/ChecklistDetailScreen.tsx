@@ -14,6 +14,7 @@ import { useChecklistStore } from "@/store/useChecklistStore";
 import { useHungryTheme } from "@/theme";
 import type { ChecklistItem } from "@/types/domain";
 import { AppSymbol } from "@/components/ui/AppSymbol";
+import { reportError } from "@/lib/monitoring/reportError";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "ChecklistDetail">;
 
@@ -63,9 +64,11 @@ export function ChecklistDetailScreen({ navigation, route }: Props) {
   const topSpacing = Math.max(insets.top, spacing[4]);
 
   useEffect(() => {
-    void loadChecklists().catch((error) => console.error("Failed to load list:", error));
+    void loadChecklists().catch((error) =>
+      reportError(error, { screen: "ChecklistDetail", action: "load_checklists" }),
+    );
     void loadChecklistItems(checklistId).catch((error) =>
-      console.error("Failed to load list:", error),
+      reportError(error, { screen: "ChecklistDetail", action: "load_checklist_items" }),
     );
   }, [checklistId, loadChecklistItems, loadChecklists]);
 

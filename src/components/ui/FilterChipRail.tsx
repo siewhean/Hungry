@@ -70,17 +70,18 @@ export function FilterChipRail<T extends string = string>({
     unlockTimerRef.current = null;
   }, []);
 
-  const setLocked = useCallback(
-    (locked: boolean) => {
-      if (lockStateRef.current === locked) {
-        return;
-      }
+  // The latest callback, so an inline parent callback does not re-run the unmount cleanup below.
+  const onSwipeLockChangeRef = useRef(onSwipeLockChange);
+  onSwipeLockChangeRef.current = onSwipeLockChange;
 
-      lockStateRef.current = locked;
-      onSwipeLockChange?.(locked);
-    },
-    [onSwipeLockChange],
-  );
+  const setLocked = useCallback((locked: boolean) => {
+    if (lockStateRef.current === locked) {
+      return;
+    }
+
+    lockStateRef.current = locked;
+    onSwipeLockChangeRef.current?.(locked);
+  }, []);
 
   const handleGestureStart = useCallback(() => {
     clearUnlockTimer();
@@ -99,10 +100,11 @@ export function FilterChipRail<T extends string = string>({
     () => () => {
       clearUnlockTimer();
       if (lockStateRef.current) {
-        onSwipeLockChange?.(false);
+        lockStateRef.current = false;
+        onSwipeLockChangeRef.current?.(false);
       }
     },
-    [clearUnlockTimer, onSwipeLockChange],
+    [clearUnlockTimer],
   );
 
   return (
