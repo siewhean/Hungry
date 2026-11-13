@@ -12,7 +12,9 @@ export type AchievementId =
   | "sweet-tooth"
   | "budget-eater"
   | "critic"
-  | "curator";
+  | "curator"
+  | "taste-explorer"
+  | "food-explorer";
 
 export type AchievementIcon =
   | "utensils"
@@ -22,7 +24,9 @@ export type AchievementIcon =
   | "candy"
   | "coins"
   | "pen"
-  | "bookmark";
+  | "bookmark"
+  | "compass"
+  | "bowls";
 
 export type AchievementInput = {
   /** Dishes marked tried or reviewed. */
@@ -39,6 +43,10 @@ export type AchievementInput = {
   budgetDishes: number;
   reviewsWritten: number;
   dishesSaved: number;
+  /** Of the six tastes (sweet, spicy, sour, salty, rich, aromatic), how many led a tried dish. */
+  tasteLeads: number;
+  /** Different kinds of food tried (noodles, rice, dessert, ...). */
+  foodTypes: number;
 };
 
 type AchievementDefinition = {
@@ -124,6 +132,25 @@ export const ACHIEVEMENT_DEFINITIONS: readonly AchievementDefinition[] = [
     icon: "bookmark",
     tiers: [5, 20, 50],
     read: (input) => input.dishesSaved,
+  },
+  // Range, not volume: these reward trying something different rather than more of the same.
+  {
+    id: "taste-explorer",
+    title: "Taste explorer",
+    describe: (n) => `Try dishes led by ${n} of the six tastes`,
+    unit: "tastes",
+    icon: "compass",
+    tiers: [3, 5, 6],
+    read: (input) => input.tasteLeads,
+  },
+  {
+    id: "food-explorer",
+    title: "Food explorer",
+    describe: (n) => `Try ${n} different kinds of food`,
+    unit: "kinds of food",
+    icon: "bowls",
+    tiers: [5, 12, 25],
+    read: (input) => input.foodTypes,
   },
 ];
 

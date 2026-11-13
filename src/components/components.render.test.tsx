@@ -1007,6 +1007,8 @@ test("AchievementsSection shows levels, progress and a completed goal", async ()
     budgetDishes: 0,
     reviewsWritten: 1,
     dishesSaved: 60,
+    tasteLeads: 0,
+    foodTypes: 0,
   });
   const view = await render(createElement(AchievementsSection, { rows }));
   assert.match(view.text(), /Dish collector/);

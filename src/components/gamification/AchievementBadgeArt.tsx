@@ -263,5 +263,24 @@ function AchievementEmblem({
           />
         </G>
       );
+    case "compass":
+      // Taste explorer: a compass with its needle.
+      return (
+        <G>
+          <Circle cx={20} cy={20} r={16} {...line} />
+          <Polygon points="20,6 25,20 20,34 15,20" fill={color} />
+          <Circle cx={20} cy={20} r={2.5} fill={cut} />
+        </G>
+      );
+    case "bowls":
+      // Food explorer: two bowls side by side, one with chopsticks.
+      return (
+        <G>
+          <Path d="M2 20 H19 C18 28 14 32 10.5 32 C7 32 3 28 2 20 Z" fill={color} />
+          <Path d="M21 24 H38 C37 32 33 36 29.5 36 C26 36 22 32 21 24 Z" fill={color} />
+          <Line x1={8} y1={18} x2={16} y2={4} {...line} />
+          <Line x1={12} y1={18} x2={19} y2={6} {...line} />
+        </G>
+      );
   }
 }

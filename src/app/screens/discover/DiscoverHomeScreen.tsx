@@ -55,6 +55,7 @@ import { HomeFeedbackCard } from "@/components/feedback/HomeFeedbackCard";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import { MealPicksCard } from "@/components/home/MealPicksCard";
 import { NextStampCard } from "@/components/gamification/NextStampCard";
+import { WeeklyRecapCard } from "@/components/gamification/WeeklyRecapCard";
 import {
   DISCOVER_FEED_LIMIT,
   getDiscoverBiteCollections,
@@ -2142,6 +2143,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             visible={isFocused}
             onOpenPassport={() => navigation.navigate("PassportScreen")}
           />
+        ) : null}
+
+        {/* Sunday recap: the week's new places and the streak, only when there were some. */}
+        {hasDiscoverContent ? (
+          <WeeklyRecapCard onOpenPassport={() => navigation.navigate("PassportScreen")} />
         ) : null}
 
         {isFilteredPageEmpty ? (

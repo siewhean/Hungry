@@ -29,7 +29,7 @@ import {
 import { computeAchievements } from "@/features/achievements/achievements";
 import { useAchievementInput } from "@/features/achievements/useAchievementInput";
 import { buildStampHistory } from "@/features/passport/stampHistory";
-import { useWeeklyGoal } from "@/features/passport/useWeeklyGoal";
+import { useWeeklyGoal, useWeeklyStreak } from "@/features/passport/useWeeklyGoal";
 import { milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -131,6 +131,7 @@ export function PassportScreen({ navigation }: Props) {
   );
 
   const weeklyGoal = useWeeklyGoal();
+  const weeklyStreak = useWeeklyStreak();
 
   const earnedStamps = useMemo(() => getEarnedPassportStamps(progressMap), [progressMap]);
   const nextStamp = useMemo(() => getNextPassportStamp(progressMap), [progressMap]);
@@ -437,6 +438,7 @@ export function PassportScreen({ navigation }: Props) {
         </View>
         <WeeklyGoalCard
           progress={weeklyGoal}
+          streak={weeklyStreak}
           celebrating={celebratingGoal}
           reduceMotion={reduceMotion}
         />

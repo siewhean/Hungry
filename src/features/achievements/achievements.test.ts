@@ -16,6 +16,8 @@ const empty: AchievementInput = {
   budgetDishes: 0,
   reviewsWritten: 0,
   dishesSaved: 0,
+  tasteLeads: 0,
+  foodTypes: 0,
 };
 
 const byId = (rows: ReturnType<typeof computeAchievements>, id: string) =>
@@ -62,4 +64,14 @@ test("negative or fractional counts never break a row", () => {
   assert.equal(row.progress, 0);
   const fractional = byId(computeAchievements({ ...empty, triedDishes: 10.9 }), "dish-collector");
   assert.equal(fractional.level, 1);
+});
+
+test("range achievements count different tastes and kinds of food, not volume", () => {
+  const rows = computeAchievements({ ...empty, tasteLeads: 5, foodTypes: 4 });
+  const taste = rows.find((row) => row.id === "taste-explorer");
+  const food = rows.find((row) => row.id === "food-explorer");
+  assert.equal(taste?.level, 2);
+  assert.equal(taste?.target, 6);
+  assert.equal(food?.level, 0);
+  assert.equal(food?.description, "Try 5 different kinds of food");
 });
