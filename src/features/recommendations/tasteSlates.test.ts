@@ -11,6 +11,8 @@ import {
   loadWorthTheTrip,
   pickTasteSearch,
   pickWorthTheTrip,
+  tasteSearchKey,
+  worthTheTripKey,
 } from "./tasteSlates";
 
 const PALATE: TasteVector = { sweet: 4, spicy: 8, sour: 5, salty: 6, rich: 7, aromatic: 6 };
@@ -91,4 +93,24 @@ test("loaders send the palate, radius and query to one slate read", async () => 
   assert.equal(requests[1].radiusMeters, TASTE_SEARCH_RADIUS_METERS);
   assert.equal(requests[1].query, "laksa");
   assert.deepEqual(requests[1].dietaryFlags, ["halal"]);
+});
+
+test("reads are keyed on what they depend on and skipped without a palate, point or query", () => {
+  assert.equal(worthTheTripKey(undefined, POINT, []), undefined);
+  assert.equal(worthTheTripKey(PALATE, undefined, []), undefined);
+  assert.equal(
+    worthTheTripKey(PALATE, POINT, ["b", "a"]),
+    worthTheTripKey(PALATE, POINT, ["a", "b"]),
+  );
+  assert.notEqual(
+    worthTheTripKey(PALATE, POINT, ["a"]),
+    worthTheTripKey(PALATE, POINT, ["a", "c"]),
+  );
+  assert.equal(tasteSearchKey(PALATE, " l ", POINT), undefined);
+  assert.equal(tasteSearchKey(undefined, "laksa", POINT), undefined);
+  assert.equal(tasteSearchKey(PALATE, "Laksa ", POINT), tasteSearchKey(PALATE, "laksa", POINT));
+  assert.notEqual(
+    tasteSearchKey(PALATE, "laksa", POINT, ["halal"]),
+    tasteSearchKey(PALATE, "laksa", POINT),
+  );
 });

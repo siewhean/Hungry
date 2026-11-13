@@ -137,6 +137,36 @@ const palateKey = (palate: TasteVector) =>
     .map((value) => Math.round(value))
     .join(",");
 
+/** What the Worth the trip read depends on; undefined means do not read. */
+export function worthTheTripKey(
+  palate: TasteVector | undefined,
+  point: Coordinate | undefined,
+  nearbyVenueIds: readonly string[],
+  dietaryFlags: readonly DietaryFlag[] = [],
+): string | undefined {
+  if (!palate || !point) return undefined;
+  return [
+    palateKey(palate),
+    pointKey(point),
+    dietaryFlags.join(","),
+    [...nearbyVenueIds].sort().join(","),
+  ].join("|");
+}
+
+/** What the taste search read depends on; undefined without a palate, a point or 2+ letters. */
+export function tasteSearchKey(
+  palate: TasteVector | undefined,
+  query: string,
+  point: Coordinate | undefined,
+  dietaryFlags: readonly DietaryFlag[] = [],
+): string | undefined {
+  const trimmed = query.trim();
+  if (!palate || !point || trimmed.length < 2) return undefined;
+  return [palateKey(palate), trimmed.toLowerCase(), pointKey(point), dietaryFlags.join(",")].join(
+    "|",
+  );
+}
+
 function useSlate(key: string | undefined, load: () => Promise<DishDetail[]>, screen: string) {
   const [items, setItems] = useState<DishDetail[]>([]);
   useEffect(() => {
@@ -168,15 +198,7 @@ export function useWorthTheTrip(
   nearbyVenueIds: readonly string[],
   dietaryFlags: DietaryFlag[] = [],
 ): DishDetail[] {
-  const key =
-    palate && point
-      ? [
-          palateKey(palate),
-          pointKey(point),
-          dietaryFlags.join(","),
-          [...nearbyVenueIds].sort().join(","),
-        ].join("|")
-      : undefined;
+  const key = worthTheTripKey(palate, point, nearbyVenueIds, dietaryFlags);
   return useSlate(
     key,
     () =>
@@ -201,12 +223,7 @@ export function useTasteSearch(
   dietaryFlags: DietaryFlag[] = [],
 ): DishDetail[] {
   const trimmed = query.trim();
-  const key =
-    palate && point && trimmed.length >= 2
-      ? [palateKey(palate), trimmed.toLowerCase(), pointKey(point), dietaryFlags.join(",")].join(
-          "|",
-        )
-      : undefined;
+  const key = tasteSearchKey(palate, trimmed, point, dietaryFlags);
   return useSlate(
     key,
     () =>
