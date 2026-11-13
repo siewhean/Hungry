@@ -145,6 +145,8 @@ import type {
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
 import { STALL_VIEW_DWELL_MS } from "@/lib/ai/stallHistory";
+import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
+import { useSimilarStalls } from "@/features/recommendations/moreLikeThis";
 import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
@@ -636,6 +638,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
     const timer = setTimeout(() => recordStallSignal(viewedStallId, "view"), STALL_VIEW_DWELL_MS);
     return () => clearTimeout(timer);
   }, [recordStallSignal, viewedStallId]);
+
+  // Stalls whose food tastes like this one's lead dish, around this stall.
+  const similarStallsPoint = useMemo(
+    () => (venue ? (getStallPin(venue, building?.coordinate) ?? building?.coordinate) : undefined),
+    [building?.coordinate, venue],
+  );
+  const similarStalls = useSimilarStalls(leadDish, similarStallsPoint, profile.dietaryPreferences);
 
   // Keyed on the id: the cached venue renders first and the hydrated one replaces it,
   // which must not re-run these three reads.
@@ -2049,6 +2058,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </Pressable>
                 </View>
               ) : null}
+              <MoreLikeThisRail
+                title="Similar stalls nearby"
+                subtitle={`Food that tastes like ${displayName}'s`}
+                items={similarStalls}
+                mode="stall"
+                venueNameOf={(dish) => dish.venueName}
+                testID="stall-similar-stalls"
+                onOpen={(dish, position) => {
+                  trackAnalyticsEvent("more_like_this_opened", {
+                    surface: "stall_detail",
+                    stall_id: venue.id,
+                    target_stall_id: dish.venueId,
+                    position,
+                  });
+                  navigation.push("StallDetail", { venueId: dish.venueId });
+                }}
+              />
               <ReportProblemLink venueId={venue.id} subjectName={displayName} />
             </View>
           </Animated.ScrollView>

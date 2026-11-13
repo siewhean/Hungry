@@ -97,7 +97,14 @@ export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
   stallScores?: ReadonlyMap<string, number>;
   /** Stalls the diner said "Not for me" to: left out of every section. */
   hiddenVenueIds?: ReadonlySet<string>;
+  /** The stall the diner looked at last: "Because you viewed <name>" holds stalls like it. */
+  lastViewedVenueId?: string;
+  /** Stalls the diner keeps looking at or saved but has not been to, most liked first. */
+  nextToTryVenueIds?: readonly string[];
 };
+
+/** A stall belongs in "Because you viewed" from this likeness (0-1) up. */
+const VIEWED_LIKENESS_MIN = 0.6;
 
 type Tasted = { vector: TasteVector; confidence: number };
 
@@ -330,6 +337,50 @@ export function buildHomeSections<T extends HomeSectionCard>(
       title: `Because you like ${style.label}`,
       query: style.query,
       cards: ordered.slice(0, perSection),
+      kind: "favourite",
+    });
+  }
+
+  // 1b. Next to try: stalls the diner looked at, saved or got directions to, but has not been to.
+  // The one rail that is about them, so it goes first among the reasons.
+  if (options.nextToTryVenueIds?.length) {
+    const byId = new Map(free().map((card) => [card.venue.id, card]));
+    add({
+      id: "next-to-try",
+      title: "Next to try",
+      query: "",
+      cards: options.nextToTryVenueIds.flatMap((id) => byId.get(id) ?? []).slice(0, perSection),
+      kind: "favourite",
+    });
+  }
+
+  // 1c. Because you viewed X: stalls of the same kind of food or a close taste.
+  const viewed = options.lastViewedVenueId
+    ? cards.find((card) => card.venue.id === options.lastViewedVenueId)
+    : undefined;
+  if (viewed) {
+    claimed.add(viewed.venue.id);
+    const viewedKind = kindOf(viewed);
+    const viewedTaste = tasteOfCard(viewed);
+    const likeness = (card: T) => {
+      const taste = tasteOfCard(card);
+      const sameKind = viewedKind !== "other" && kindOf(card) === viewedKind ? 0.6 : 0;
+      const tasteLike =
+        viewedTaste && taste
+          ? palateFit(viewedTaste.vector, taste.vector) *
+            Math.min(viewedTaste.confidence, taste.confidence) *
+            0.6
+          : 0;
+      return Math.min(1, sameKind + tasteLike);
+    };
+    const scored = free()
+      .map((card) => ({ card, score: likeness(card) }))
+      .filter((entry) => entry.score >= VIEWED_LIKENESS_MIN);
+    add({
+      id: "because-viewed",
+      title: `Because you viewed ${viewed.venue.name}`,
+      query: "",
+      cards: best(scored),
       kind: "favourite",
     });
   }

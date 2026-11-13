@@ -15,6 +15,7 @@ export const DISH_DETAIL_SOURCES = [
   "home",
   "home_pick",
   "more_from_stall",
+  "more_like_this",
   "profile",
   "quick_bites",
   "report_problem",

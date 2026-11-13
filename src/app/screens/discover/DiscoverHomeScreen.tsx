@@ -122,6 +122,7 @@ import { buildFoodHistory, normalizeFoodType } from "@/lib/ai/foodHistory";
 import { useFeedFeedbackStore } from "@/store/useFeedFeedbackStore";
 import { askChoice } from "@/store/useChoiceSheetStore";
 import { useStallHistoryStore } from "@/store/useStallHistoryStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { buildStallHistory } from "@/lib/ai/stallHistory";
 import { useUIStore } from "@/store/useUIStore";
 import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
@@ -422,6 +423,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const stallHistoryRows = useStallHistoryStore((state) => state.rows);
   const recordStallSignal = useStallHistoryStore((state) => state.record);
   const stallHistory = useMemo(() => buildStallHistory(stallHistoryRows), [stallHistoryRows]);
+  const stallInteractions = useStallInteractionStore((state) => state.interactions);
+  // Next to try: stalls the diner keeps coming back to or saved, but has not been to yet.
+  const nextToTryVenueIds = useMemo(
+    () => stallHistory.likedVenueIds.filter((id) => !stallInteractions[id]?.isTried),
+    [stallHistory, stallInteractions],
+  );
   const mutedFoodTypes = useFeedFeedbackStore((state) => state.mutedFoodTypes);
   const favouriteFoodStyleIds = useFeedFeedbackStore((state) => state.favouriteFoodStyleIds);
   const sessionActions = useFeedFeedbackStore((state) => state.sessionActions);
@@ -1156,9 +1163,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       mealTimes: usualMealTimes,
       stallScores: stallHistory.scores,
       hiddenVenueIds: stallHistory.hiddenVenueIds,
+      lastViewedVenueId: stallHistory.recentVenueIds[0],
+      nextToTryVenueIds,
     });
   }, [
     stallHistory,
+    nextToTryVenueIds,
     usualMealTimes,
     allAreaStallCards,
     areaStallCards,

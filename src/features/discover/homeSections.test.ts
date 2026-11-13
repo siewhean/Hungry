@@ -359,3 +359,35 @@ test("stall history: a hidden stall is in no section and a liked stall's food co
   assert.ok(recommended, "a liked stall gives Just for you something to go on");
   assert.equal(recommended.cards[0].topDish?.name, "Chicken Rice");
 });
+
+test("stall history: Next to try holds liked stalls in order, Because you viewed holds stalls like the last one", () => {
+  const sections = buildHomeSections(HUGE, {
+    hour: 15,
+    nextToTryVenueIds: ["4-0-h0", "8-0-h0", "missing", "2-0-h0"],
+    lastViewedVenueId: "9-1-h1",
+  });
+  const next = sections.find((section) => section.id === "next-to-try");
+  assert.ok(next);
+  assert.deepEqual(
+    next.cards.map((c) => c.venue.id),
+    ["4-0-h0", "8-0-h0", "2-0-h0"],
+  );
+  const viewed = sections.find((section) => section.id === "because-viewed");
+  assert.ok(viewed);
+  assert.equal(viewed.title, "Because you viewed Stall 9");
+  // The viewed stall itself is not in it, and every stall in it is noodles like Laksa Noodles.
+  assert.ok(viewed.cards.every((c) => c.venue.id !== "9-1-h1"));
+  assert.ok(viewed.cards.length >= 3);
+  assert.ok(viewed.cards.every((c) => /Noodles/.test(c.topDish?.name ?? "")));
+  // A stall sits in one section only.
+  const ids = sections.flatMap((section) => section.cards.map((c) => c.venue.id));
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test("stall history: Next to try with fewer than three stalls is not shown", () => {
+  const sections = buildHomeSections(HUGE, { hour: 15, nextToTryVenueIds: ["4-0-h0"] });
+  assert.equal(
+    sections.some((section) => section.id === "next-to-try"),
+    false,
+  );
+});

@@ -17,6 +17,8 @@ import {
   similarDishQuery,
   useSimilarDishesNearby,
 } from "@/features/detail/similarDishes";
+import { useMoreLikeThis } from "@/features/recommendations/moreLikeThis";
+import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
 import { isSoldOut } from "@/features/merchant/menuSections";
 import { DeliveryButtonRow } from "@/components/dish/DeliveryPlatformButton";
 import {
@@ -279,6 +281,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return getStallPin(venue, buildingPoint) ?? buildingPoint;
   }, [venue]);
   const similarNearby = useSimilarDishesNearby(dish, similarSearchPoint);
+  // Different dishes with the same character nearby; never one already in the rail above.
+  const similarNearbyIds = useMemo(() => similarNearby.map((item) => item.id), [similarNearby]);
+  const moreLikeThis = useMoreLikeThis(dish, similarSearchPoint, {
+    dietaryFlags: profile.dietaryPreferences,
+    excludeDishIds: similarNearbyIds,
+  });
   // A rail where no dish has a photo drops the grey photo block: text tiles read as complete.
   const moreFromHasPhotos = moreFromStall.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarHasPhotos = similarNearby.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
@@ -1481,6 +1489,28 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                                 style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
                               />
                             ) : null}
+
+                            <MoreLikeThisRail
+                              title="More like this"
+                              subtitle="Other dishes nearby with a similar taste"
+                              items={moreLikeThis}
+                              mode="dish"
+                              venueNameOf={(item) => item.venueName}
+                              testID="dish-more-like-this"
+                              onOpen={(item, position) => {
+                                trackAnalyticsEvent("more_like_this_opened", {
+                                  surface: "dish_detail",
+                                  dish_id: dish.id,
+                                  target_dish_id: item.id,
+                                  position,
+                                });
+                                navigation.push("DishDetail", {
+                                  dishId: item.id,
+                                  source: "more_like_this",
+                                  prefill: dishPrefillFrom(item),
+                                });
+                              }}
+                            />
                             {away && similarHasPhotos ? (
                               <View
                                 style={{
