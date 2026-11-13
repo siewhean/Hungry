@@ -56,6 +56,8 @@ import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import { MealPicksCard } from "@/components/home/MealPicksCard";
 import { NextStampCard } from "@/components/gamification/NextStampCard";
 import { WeeklyRecapCard } from "@/components/gamification/WeeklyRecapCard";
+import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
+import { useWorthTheTrip } from "@/features/recommendations/tasteSlates";
 import {
   DISCOVER_FEED_LIMIT,
   getDiscoverBiteCollections,
@@ -1768,6 +1770,40 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     </RailScrollView>
   );
 
+  // Worth the trip: further out than the nearest stalls Home ranks, close to a trusted palate,
+  // and well reviewed or a strong verified match. Hidden inside a mall and without a palate.
+  const worthTheTripPoint = useMemo(
+    () =>
+      discoverLocationLatitude !== undefined && discoverLocationLongitude !== undefined
+        ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
+        : undefined,
+    [discoverLocationLatitude, discoverLocationLongitude],
+  );
+  const nearbyHomeVenueIds = useMemo(
+    () => allAreaStallCards.map((card) => card.venue.id),
+    [allAreaStallCards],
+  );
+  const worthTheTrip = useWorthTheTrip(
+    hasTasteProfile && !inMallMode ? rankingTasteVector : undefined,
+    worthTheTripPoint,
+    nearbyHomeVenueIds,
+    profile.dietaryPreferences,
+  );
+  const worthTheTripRail =
+    worthTheTrip.length >= 3 ? (
+      <MoreLikeThisRail
+        title="Worth the trip"
+        subtitle="A little further out, and close to your taste"
+        items={worthTheTrip}
+        mode="dish"
+        venueNameOf={(dish) => dish.venueName}
+        testID="home-worth-the-trip"
+        onOpen={(dish, position) => {
+          trackAnalyticsEvent("worth_the_trip_opened", { dish_id: dish.id, position });
+          navigation.navigate("DishDetail", { dishId: dish.id, source: "worth_the_trip" });
+        }}
+      />
+    ) : null;
   const moreSections =
     showInitialDiscoverSkeleton ||
     (categorySections.length === 0 && nearbyPlaces.length === 0) ? null : (
@@ -1811,6 +1847,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             {renderStallRail(section.cards, true)}
           </View>
         ))}
+        {worthTheTripRail}
         {nearbyPlaces.length ? (
           <View style={{ gap: discoverContentGap }} testID="nearby-places">
             <Pressable

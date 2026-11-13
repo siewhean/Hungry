@@ -25,6 +25,7 @@ export const DISH_DETAIL_SOURCES = [
   "saved",
   "search",
   "search_featured",
+  "search_taste",
   "search_typeahead",
   "similar_nearby",
   "social_grid",
@@ -35,6 +36,7 @@ export const DISH_DETAIL_SOURCES = [
   "taste_result",
   "user_profile",
   "welcome_back",
+  "worth_the_trip",
 ] as const;
 
 export type DishDetailSource = (typeof DISH_DETAIL_SOURCES)[number];

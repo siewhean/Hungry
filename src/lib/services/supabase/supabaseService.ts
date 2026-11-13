@@ -8846,7 +8846,7 @@ export const supabaseService: HungryService = {
       return {
         surface: request.surface,
         generatedAt: new Date().toISOString(),
-        items: liveItems ?? getRankedRecommendations(request, profile),
+        items: liveItems ?? (request.liveOnly ? [] : getRankedRecommendations(request, profile)),
       };
     },
 

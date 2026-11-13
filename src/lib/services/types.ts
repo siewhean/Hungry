@@ -477,6 +477,8 @@ export interface RecommendationSlateRequest {
   query?: string;
   limit?: number;
   neophiliaIndex?: number;
+  /** Only the server's ranking: no local fallback over the whole catalog (Home, HOME-X5). */
+  liveOnly?: boolean;
 }
 
 export interface RecommendationSlate {

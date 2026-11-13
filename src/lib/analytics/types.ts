@@ -133,6 +133,8 @@ export type AnalyticsEventName =
   | "passport_stamp_earned"
   | "weekly_goal_completed"
   | "weekly_streak_milestone"
+  | "worth_the_trip_opened"
+  | "taste_search_opened"
   | "achievement_unlocked"
   | "stamp_moment_shown"
   | "stamp_moment_opened"
