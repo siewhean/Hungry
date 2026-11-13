@@ -27,6 +27,7 @@ export const hi: Record<MessageKey, string> = {
   "settings.row.signOutAll": "सभी डिवाइस से साइन आउट करें",
   "settings.row.deleteAccount": "खाता हटाएँ",
   "settings.row.haptics": "हैप्टिक फ़ीडबैक",
+  "settings.row.sounds": "ध्वनियाँ",
   "settings.row.leftHanded": "बाएँ हाथ का मोड",
   "settings.row.leftHandedHint": 'आपके मर्चेंट मेन्यू का "जोड़ें" बटन बाईं ओर कर देता है।',
   "settings.row.feedback": "फ़ीडबैक भेजें",

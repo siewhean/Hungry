@@ -132,6 +132,7 @@ export type AnalyticsEventName =
   | "wheel_result_viewed"
   | "passport_stamp_earned"
   | "weekly_goal_completed"
+  | "weekly_streak_milestone"
   | "achievement_unlocked"
   | "stamp_moment_shown"
   | "stamp_moment_opened"

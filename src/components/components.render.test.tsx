@@ -1016,7 +1016,7 @@ test("AchievementsSection shows levels, progress and a completed goal", async ()
   assert.match(view.text(), /12 \/ 25/);
   // Curator has all three levels done.
   assert.match(view.text(), /Complete/);
-  assert.match(view.text(), /3 of 8 started/);
+  assert.match(view.text(), /3 of 10 started/);
 });
 
 test("the Post button in the bottom bar has the same slot, label colour and weight as other tabs", async () => {

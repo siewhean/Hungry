@@ -100,7 +100,8 @@ import type {
   TasteKey,
 } from "@/types/domain";
 import { hasDishTasteSignal, isNeutralTasteVector } from "@/lib/ai/tasteEngine";
-import { tapHaptic } from "@/lib/haptics";
+import { confirmHaptic, tapHaptic } from "@/lib/haptics";
+import { playMilestoneSound } from "@/lib/sounds";
 import { openStallFromDish } from "./stallNavigation";
 import {
   formatHoursRows,
@@ -907,6 +908,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       showToast({ message: "Couldn't mark this dish as tried. Try again.", ...triedToastStyle });
       return;
     }
+    // The one moment of marking a dish tried: a soft thud and, with Sounds on, a short pluck.
+    confirmHaptic();
+    playMilestoneSound("tried");
     const message = stallMarkFailed
       ? "Marked as tried, but couldn't mark the stall visited. Try again from the stall page."
       : "Marked as tried.";

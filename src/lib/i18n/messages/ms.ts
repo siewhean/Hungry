@@ -27,6 +27,7 @@ export const ms: Record<MessageKey, string> = {
   "settings.row.signOutAll": "Log keluar daripada semua peranti",
   "settings.row.deleteAccount": "Padam akaun",
   "settings.row.haptics": "Maklum balas haptik",
+  "settings.row.sounds": "Bunyi",
   "settings.row.leftHanded": "Mod kidal",
   "settings.row.leftHandedHint":
     "Mengalihkan butang tambah pada menu peniaga anda ke sebelah kiri.",

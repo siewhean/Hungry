@@ -494,7 +494,7 @@ test("once the data has settled the host reports the diner's achievements", asyn
     assert.equal(reported.length, 0, "nothing is reported while data may still be arriving");
     await wait(MOMENT_SETTLE_MS + 200);
     assert.ok(reported.length >= 1);
-    assert.match(reported[0], /:8$/, "all eight achievements are checked");
+    assert.match(reported[0], /:10$/, "all ten achievements are checked");
   } finally {
     useMomentStore.setState({ reportAchievements: original });
   }

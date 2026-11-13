@@ -48,6 +48,7 @@ import { useSearchStore } from "@/store/useSearchStore";
 import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
 import { useConsentStore } from "@/store/useConsentStore";
 import { useDeveloperToolsStore } from "@/store/useDeveloperToolsStore";
+import { soundsAvailable } from "@/lib/sounds";
 import { useUIStore } from "@/store/useUIStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import {
@@ -129,6 +130,8 @@ export function SettingsScreen() {
   const {
     hapticFeedbackEnabled,
     setHapticFeedbackEnabled,
+    soundsEnabled,
+    setSoundsEnabled,
     allowSearchHistory,
     setAllowSearchHistory,
     analyticsEnabled,
@@ -139,6 +142,8 @@ export function SettingsScreen() {
     useShallow((state) => ({
       hapticFeedbackEnabled: state.hapticFeedbackEnabled,
       setHapticFeedbackEnabled: state.setHapticFeedbackEnabled,
+      soundsEnabled: state.soundsEnabled,
+      setSoundsEnabled: state.setSoundsEnabled,
       allowSearchHistory: state.allowSearchHistory,
       setAllowSearchHistory: state.setAllowSearchHistory,
       analyticsEnabled: state.analyticsEnabled,
@@ -985,8 +990,20 @@ export function SettingsScreen() {
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
           onToggle={handleDeviceToggle("haptic_feedback", setHapticFeedbackEnabled)}
-          isLast={!hasMerchantAccount}
+          isLast={!hasMerchantAccount && !soundsAvailable()}
         />
+        {/* Only in builds that carry the audio module; quiet on silent either way. */}
+        {soundsAvailable() ? (
+          <SettingsRow
+            {...neutralRow}
+            label={t("settings.row.sounds")}
+            icon={<AppSymbol name="sounds" size={20} color={iconColor} />}
+            type="toggle"
+            isEnabled={soundsEnabled}
+            onToggle={handleDeviceToggle("sounds", setSoundsEnabled)}
+            isLast={!hasMerchantAccount}
+          />
+        ) : null}
         {hasMerchantAccount ? (
           <SettingsRow
             {...neutralRow}
