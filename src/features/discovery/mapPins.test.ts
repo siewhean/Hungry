@@ -41,3 +41,19 @@ test("single stalls and the server's own clusters pass through", () => {
   assert.deepEqual(groupColocatedVenues(items), items);
   assert.equal(isColocatedCluster(server), false);
 });
+
+test("menuStallsFirst puts stalls with dishes first and keeps each group's order", async () => {
+  const { menuStallsFirst } = await import("./mapPins");
+  const stalls = [
+    { id: "a", menuCount: 0 },
+    { id: "b", menuCount: 3 },
+    { id: "c", menuCount: 0 },
+    { id: "d", menuCount: 1 },
+  ];
+  assert.deepEqual(
+    menuStallsFirst(stalls).map((s) => s.id),
+    ["b", "d", "a", "c"],
+  );
+  // Nothing is dropped and the input is left alone.
+  assert.equal(stalls[0].id, "a");
+});

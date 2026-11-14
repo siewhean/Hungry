@@ -346,3 +346,30 @@ test("the hour's section follows the diner's own meal times", async () => {
   assert.equal(hourSectionTitle(23, true, "supper"), "Supper here");
   assert.equal(hourSectionTitle(23, false), "Late night");
 });
+
+test("stalls without dishes rank below stalls with dishes in every section, but still show", () => {
+  // Menu-less stalls first in the feed, with tastes that fit the palate well.
+  const menuLess = [0, 1, 2, 3, 4, 5].flatMap((copy) => [
+    stall(`thai-${copy}`, "Spicy Thai Kitchen", ["thai"]),
+    stall(`curry-${copy}`, "Curry House", ["indian"]),
+  ]);
+  const withMenus = MIXED.map((c) => ({ ...c, venue: { ...c.venue, id: `m-${c.venue.id}` } }));
+  const sections = buildHomeSections([...menuLess, ...withMenus], {
+    hour: 19,
+    palate: SPICY_LOVER,
+    palateTrusted: true,
+    maxSections: 10,
+  });
+  assert.ok(sections.length > 0);
+  for (const section of sections) {
+    const firstMenuLess = section.cards.findIndex((c) => !c.topDish);
+    if (firstMenuLess < 0) continue;
+    assert.ok(
+      section.cards.slice(firstMenuLess).every((c) => !c.topDish),
+      `${section.id}: a stall with dishes comes after one without`,
+    );
+  }
+  // Not hidden: a stall without dishes still appears somewhere.
+  const shown = sections.flatMap((s) => s.cards);
+  assert.ok(shown.some((c) => !c.topDish));
+});
