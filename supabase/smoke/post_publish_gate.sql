@@ -3,8 +3,9 @@
 --    not in storage and a file outside the post's folder; with a clear answer it publishes once,
 --    and a retry returns the same post. (A post with no media is allowed since 20261114090000:
 --    supabase/smoke/photo_optional.sql.)
--- 2. A signed-in author can no longer write posts.status, the counters, post_media or
---    user_profiles.pinned_post_ids directly, and can still edit a caption and soft delete.
+-- 2. A signed-in author can no longer write posts.status, the counters or post_media
+--    directly, and can still edit a caption and soft delete. (user_profiles.pinned_post_ids was
+--    dropped in 20261111120000.)
 -- 3. submit_review with p_portfolio makes the review and its linked entry together (posts.review_id
 --    set, dish and stall from the review); a retry makes no second entry; a blocked entry photo
 --    rolls the review back too.
@@ -57,7 +58,6 @@ begin
   end if;
   if has_column_privilege('authenticated', 'public.posts', 'like_count', 'update')
      or has_column_privilege('authenticated', 'public.posts', 'status', 'update')
-     or has_column_privilege('authenticated', 'public.user_profiles', 'pinned_post_ids', 'update')
      or has_table_privilege('authenticated', 'public.post_media', 'insert')
      or has_table_privilege('authenticated', 'public.posts', 'insert') then
     raise exception 'a locked column or table is still writable from the phone';
@@ -165,7 +165,6 @@ begin
     'update posts set like_count = 999 where id = ''00000000-0000-1110-c000-000000000001''',
     'update posts set status = ''draft'' where id = ''00000000-0000-1110-c000-000000000001''',
     'update posts set board_credit_points = 999 where id = ''00000000-0000-1110-c000-000000000001''',
-    'update user_profiles set pinned_post_ids = ''{}'' where id = ''00000000-0000-1110-b000-000000000001''',
     'insert into posts (author_id, status) values (''00000000-0000-1110-b000-000000000001'', ''published'')',
     'insert into post_media (post_id, media_type, storage_path) values (''00000000-0000-1110-c000-000000000001'', ''image'', ''x'')'
   ] loop
