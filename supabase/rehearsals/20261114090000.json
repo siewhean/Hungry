@@ -1,0 +1,14 @@
+{
+  "version": "20261114090000",
+  "name": "20261114090000_photo_optional",
+  "result": "pass",
+  "rehearsed_at": "2026-11-14T14:02:50Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": false,
+  "git_sha": "fb185d0cad6153a7d59a3388408b907fdacaa748",
+  "up_sha256": "1f9151785da839fc63ed883e158b7b83f5e4b1216579788c0bd0fd00590cf7f4",
+  "down_sha256": "319160070d3312424b30adab7f360c9f1961bc01562c9ba73132a8ac85de8d6d",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/photo_optional.sql","supabase/smoke/reviews_server_side.sql","supabase/smoke/post_publish_gate.sql"]
+}
