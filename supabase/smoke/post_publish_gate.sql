@@ -1,7 +1,8 @@
 -- Smoke checks for 20261110120000_post_publish_gate.sql.
 -- 1. publish_post refuses a photo the photo check has not answered, a blocked photo, a file that is
---    not in storage, a file outside the post's folder and an empty post; with a clear answer it
---    publishes once, and a retry returns the same post.
+--    not in storage and a file outside the post's folder; with a clear answer it publishes once,
+--    and a retry returns the same post. (A post with no media is allowed since 20261114090000:
+--    supabase/smoke/photo_optional.sql.)
 -- 2. A signed-in author can no longer write posts.status, the counters, post_media or
 --    user_profiles.pinned_post_ids directly, and can still edit a caption and soft delete.
 -- 3. submit_review with p_portfolio makes the review and its linked entry together (posts.review_id
@@ -100,7 +101,6 @@ declare
 begin
   for v_case in
     select * from (values
-      ('no media', '00000000-0000-1110-c000-000000000001', '[]'),
       ('unanswered photo', '00000000-0000-1110-c000-000000000003',
         '[{"storage_path": "' || v_author || '/00000000-0000-1110-c000-000000000003/a.jpg", "media_type": "image"}]'),
       ('blocked photo', '00000000-0000-1110-c000-000000000002',
