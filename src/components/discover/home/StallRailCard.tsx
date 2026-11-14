@@ -27,7 +27,11 @@ interface StallRailCardProps {
   accessibilityLabel: string;
   onPress: () => void;
   onPressIn?: () => void;
+  /** Long press, or the screen reader's action: "Not for me" on a recommendation. */
+  onOptions?: () => void;
 }
+
+const STALL_OPTIONS_ACTION = "stallOptions";
 
 /**
  * A stall in one of Home's sideways rails: a picture on top (the food, with the stall's logo
@@ -48,6 +52,7 @@ export function StallRailCard({
   accessibilityLabel,
   onPress,
   onPressIn,
+  onOptions,
 }: StallRailCardProps) {
   const { colorScheme, componentRadii, palette, radii, shadows, spacing } = useHungryTheme();
   return (
@@ -56,6 +61,17 @@ export function StallRailCard({
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       onPressIn={onPressIn}
+      onLongPress={onOptions}
+      accessibilityActions={
+        onOptions ? [{ name: STALL_OPTIONS_ACTION, label: "Not for me" }] : undefined
+      }
+      onAccessibilityAction={
+        onOptions
+          ? (event) => {
+              if (event.nativeEvent.actionName === STALL_OPTIONS_ACTION) onOptions();
+            }
+          : undefined
+      }
       testID="stall-rail-card"
       style={[
         shadows.card,

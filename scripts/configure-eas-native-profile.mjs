@@ -49,8 +49,9 @@ const RELEASED_IOS_ENTITLEMENTS = `<?xml version="1.0" encoding="UTF-8"?>
   </dict>
 </plist>
 `;
-// @rnmapbox/maps stays linked (owner decision 2026-10-25); keep in step with app.config.js.
-const RELEASED_NATIVE_MODULES = ["expo-dev-client", "expo-audio", "expo-video"];
+// @rnmapbox/maps stays linked (owner decision 2026-10-25) and expo-audio for milestone sounds,
+// playback only (owner decision 2026-11-14); keep in step with app.config.js.
+const RELEASED_NATIVE_MODULES = ["expo-dev-client", "expo-video"];
 
 function resolveAppEnv(env) {
   const raw = env.EXPO_PUBLIC_APP_ENV || env.APP_ENV || env.NODE_ENV;

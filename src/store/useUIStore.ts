@@ -81,6 +81,9 @@ interface UIState {
   setThemePreference: (preference: ThemePreference) => void;
   hapticFeedbackEnabled: boolean;
   setHapticFeedbackEnabled: (enabled: boolean) => void;
+  /** Settings > Sounds: the three short milestone sounds (src/lib/sounds.ts). */
+  soundsEnabled: boolean;
+  setSoundsEnabled: (enabled: boolean) => void;
   reducedMotionEnabled: boolean;
   setReducedMotionEnabled: (enabled: boolean) => void;
   allowSearchHistory: boolean;
@@ -146,6 +149,8 @@ export const useUIStore = create<UIState>()(
       setThemePreference: (themePreference) => set({ themePreference }),
       hapticFeedbackEnabled: true,
       setHapticFeedbackEnabled: (hapticFeedbackEnabled) => set({ hapticFeedbackEnabled }),
+      soundsEnabled: true,
+      setSoundsEnabled: (soundsEnabled) => set({ soundsEnabled }),
       reducedMotionEnabled: false,
       setReducedMotionEnabled: (reducedMotionEnabled) => set({ reducedMotionEnabled }),
       allowSearchHistory: true,
@@ -206,6 +211,7 @@ export const useUIStore = create<UIState>()(
       },
       partialize: (state) => ({
         hapticFeedbackEnabled: state.hapticFeedbackEnabled,
+        soundsEnabled: state.soundsEnabled,
         allowSearchHistory: state.allowSearchHistory,
         analyticsEnabled: state.analyticsEnabled,
         leftHandedMode: state.leftHandedMode,

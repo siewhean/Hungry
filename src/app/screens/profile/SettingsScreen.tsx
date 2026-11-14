@@ -42,11 +42,13 @@ import { formatDeletionDate } from "@/features/auth/useAccountDeletionGracePromp
 import { useLocationStore } from "@/store/useLocationStore";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { useReviewDraftStore } from "@/store/useReviewDraftStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { expectSignOut, useSessionStore } from "@/store/useSessionStore";
 import { useConsentStore } from "@/store/useConsentStore";
 import { useDeveloperToolsStore } from "@/store/useDeveloperToolsStore";
+import { soundsAvailable } from "@/lib/sounds";
 import { useUIStore } from "@/store/useUIStore";
 import { useLanguageStore } from "@/store/useLanguageStore";
 import {
@@ -128,6 +130,8 @@ export function SettingsScreen() {
   const {
     hapticFeedbackEnabled,
     setHapticFeedbackEnabled,
+    soundsEnabled,
+    setSoundsEnabled,
     allowSearchHistory,
     setAllowSearchHistory,
     analyticsEnabled,
@@ -138,6 +142,8 @@ export function SettingsScreen() {
     useShallow((state) => ({
       hapticFeedbackEnabled: state.hapticFeedbackEnabled,
       setHapticFeedbackEnabled: state.setHapticFeedbackEnabled,
+      soundsEnabled: state.soundsEnabled,
+      setSoundsEnabled: state.setSoundsEnabled,
       allowSearchHistory: state.allowSearchHistory,
       setAllowSearchHistory: state.setAllowSearchHistory,
       analyticsEnabled: state.analyticsEnabled,
@@ -522,15 +528,19 @@ export function SettingsScreen() {
       trackAnalyticsEvent("settings_changed", { setting, value: enabled });
     };
 
+  const viewHistoryPaused = useStallHistoryStore((state) => state.viewHistoryPaused);
+  const setViewHistoryPaused = useStallHistoryStore((state) => state.setViewHistoryPaused);
+  const resetStallHistory = useStallHistoryStore((state) => state.reset);
+
   const handleResetFoodHistory = () => {
     confirmAction({
       title: "Reset food history",
       message:
-        "Recommendations will forget your dish history: the dishes you liked, tapped or hid. Your taste profile, favourites and reviews stay.",
+        "Recommendations will forget your history: the dishes you liked, tapped or hid, and the stalls you viewed, shared or hid. Your taste profile, favourites and reviews stay.",
       confirmLabel: "Reset",
       destructive: true,
       onConfirm: () => {
-        void resetFoodHistory()
+        void Promise.all([resetFoodHistory(), resetStallHistory()])
           .then(() =>
             showToast({
               message: "Food history reset. Recommendations start fresh.",
@@ -757,6 +767,18 @@ export function SettingsScreen() {
         {isAuthenticated ? (
           <SettingsRow
             {...neutralRow}
+            label="Learn from stalls I view"
+            description="Stalls you open and reviews you read help pick what Home shows you. Only you see this."
+            icon={<AppSymbol name="stall" size={20} color={iconColor} />}
+            type="toggle"
+            isEnabled={!viewHistoryPaused}
+            onToggle={(enabled) => setViewHistoryPaused(!enabled)}
+            isLast={false}
+          />
+        ) : null}
+        {isAuthenticated ? (
+          <SettingsRow
+            {...neutralRow}
             label="Reset food history"
             icon={<AppSymbol name="foodHistory" size={20} color={iconColor} />}
             type="action"
@@ -968,8 +990,20 @@ export function SettingsScreen() {
           type="toggle"
           isEnabled={hapticFeedbackEnabled}
           onToggle={handleDeviceToggle("haptic_feedback", setHapticFeedbackEnabled)}
-          isLast={!hasMerchantAccount}
+          isLast={!hasMerchantAccount && !soundsAvailable()}
         />
+        {/* Only in builds that carry the audio module; quiet on silent either way. */}
+        {soundsAvailable() ? (
+          <SettingsRow
+            {...neutralRow}
+            label={t("settings.row.sounds")}
+            icon={<AppSymbol name="sounds" size={20} color={iconColor} />}
+            type="toggle"
+            isEnabled={soundsEnabled}
+            onToggle={handleDeviceToggle("sounds", setSoundsEnabled)}
+            isLast={!hasMerchantAccount}
+          />
+        ) : null}
         {hasMerchantAccount ? (
           <SettingsRow
             {...neutralRow}

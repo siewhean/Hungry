@@ -59,9 +59,12 @@ export function useAchievementInput(): AchievementInput {
     let spicyDishes = 0;
     let sweetDishes = 0;
     let budgetDishes = 0;
+    const leads = new Set<string>();
+    const foodTypes = new Set<string>();
     for (const dishId of profile.reviewedDishIds) {
       let facts = triedFacts?.[dishId];
-      if (!facts) {
+      // Marks saved before lead taste and food type were kept read them from the cached dish.
+      if (!facts || (facts.lead === undefined && facts.foodType === undefined)) {
         const dish = repository.getDishById(dishId);
         if (dish)
           facts = triedDishFacts(
@@ -72,6 +75,8 @@ export function useAchievementInput(): AchievementInput {
       if (facts?.spicy) spicyDishes += 1;
       if (facts?.sweet) sweetDishes += 1;
       if (facts?.budget) budgetDishes += 1;
+      if (facts?.lead) leads.add(facts.lead);
+      if (facts?.foodType) foodTypes.add(facts.foodType);
     }
     return {
       triedDishes: profile.reviewedDishIds.length,
@@ -84,6 +89,8 @@ export function useAchievementInput(): AchievementInput {
       budgetDishes,
       reviewsWritten: Math.max(profile.stats.dishesReviewed, Object.keys(reviewEntries).length),
       dishesSaved: profile.favouriteDishIds.length,
+      tasteLeads: leads.size,
+      foodTypes: foodTypes.size,
     };
   }, [centreByStall, profile, reviewEntries, triedFacts, visitedStallIds]);
 }

@@ -109,7 +109,8 @@ test("production Expo config strips development-only and unjustified native capa
 
   assert.equal(productionConfig.extra?.appEnv, "production");
   assert.equal(pluginNames.includes("expo-dev-client"), false);
-  assert.equal(pluginNames.includes("expo-audio"), false);
+  // expo-audio ships for milestone sounds (2026-11-14); the microphone key below stays out.
+  assert.equal(pluginNames.includes("expo-audio"), true);
   assert.equal("NSBonjourServices" in infoPlist, false);
   assert.equal("NSLocalNetworkUsageDescription" in infoPlist, false);
   assert.equal("NSLocationAlwaysUsageDescription" in infoPlist, false);

@@ -27,6 +27,7 @@ export const zh: Record<MessageKey, string> = {
   "settings.row.signOutAll": "退出所有设备",
   "settings.row.deleteAccount": "删除账户",
   "settings.row.haptics": "触感反馈",
+  "settings.row.sounds": "声音",
   "settings.row.leftHanded": "左手模式",
   "settings.row.leftHandedHint": "将商家菜单上的添加按钮移到左侧。",
   "settings.row.feedback": "发送反馈",

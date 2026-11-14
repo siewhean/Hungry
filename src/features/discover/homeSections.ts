@@ -18,6 +18,8 @@ import {
 } from "@/features/discover/homeCategories";
 import { FRESH_REVIEW_LIMIT } from "@/features/discover/rankingBalance";
 import { STALL_LEAN_CONFIDENCE, stallTasteLean, stallText } from "@/features/discover/stallTaste";
+import { tasteWeight } from "@/lib/ai/tasteTrust";
+import { LIKED_AFFINITY_THRESHOLD } from "@/lib/ai/foodHistory";
 import { MEAL_KEYS, type MealKey, type MealTimes } from "@/features/onboarding/mealTimes";
 import type { FoodOpenness, TasteKey, TasteVector } from "@/types/domain";
 
@@ -67,8 +69,6 @@ export const TASTE_SECTIONS: readonly {
 export const TASTE_SECTION_MIN_AXIS = 6.5;
 /** A dish this hot is left out for someone who cannot take spice. */
 const TOO_SPICY = 6;
-const NEUTRAL_AXIS = 5;
-const MIN_TASTE_CONFIDENCE = 0.5;
 /** A taste section shows at most this many stalls of one food kind. */
 const MAX_PER_KIND_IN_TASTE_SECTION = 2;
 const MIN_KINDS = 2;
@@ -93,31 +93,43 @@ export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
   openness?: FoodOpenness;
   /** The diner's usual meal times from onboarding: the hour's section follows them. */
   mealTimes?: MealTimes;
+  /** Stall history (stallHistory.ts): venueId -> affinity in [-1, 1]. */
+  stallScores?: ReadonlyMap<string, number>;
+  /** Stalls the diner said "Not for me" to: left out of every section. */
+  hiddenVenueIds?: ReadonlySet<string>;
+  /** The stall the diner looked at last: "Because you viewed <name>" holds stalls like it. */
+  lastViewedVenueId?: string;
+  /** Stalls the diner keeps looking at or saved but has not been to, most liked first. */
+  nextToTryVenueIds?: readonly string[];
 };
+
+/** A stall belongs in "Because you viewed" from this likeness (0-1) up. */
+const VIEWED_LIKENESS_MIN = 0.6;
 
 type Tasted = { vector: TasteVector; confidence: number };
 
+/** The dish's taste at its trust weight (tasteTrust): verified in full, an estimate at its confidence. */
 function tastedDish(dish: HomeSectionDish | undefined): Tasted | undefined {
   if (!dish?.tasteVector) return undefined;
-  if (dish.tasteConfidence !== undefined && dish.tasteConfidence < MIN_TASTE_CONFIDENCE) {
-    return undefined;
-  }
-  const vector = dish.tasteVector;
-  // All fives is the untagged default, not a taste.
-  return AXES.some((axis) => vector[axis] !== NEUTRAL_AXIS)
-    ? { vector, confidence: dish.tasteConfidence ?? 1 }
-    : undefined;
+  const weight = tasteWeight({
+    tasteVector: dish.tasteVector,
+    tasteConfidence: dish.tasteConfidence,
+  });
+  return weight > 0 ? { vector: dish.tasteVector, confidence: weight } : undefined;
 }
 
-/** The top dish's tagged taste, or else the stall's lean from its name and cuisine tags. */
+/**
+ * The top dish's taste, or else the stall's lean from its name and cuisine tags. A verified dish
+ * always wins; between an estimate and the lean, the more confident one is used.
+ */
 function tasteOf(card: HomeSectionCard): Tasted | undefined {
   const dish = tastedDish(card.topDish);
-  if (dish) return dish;
+  if (dish && dish.confidence >= STALL_LEAN_CONFIDENCE) return dish;
   const lean = stallTasteLean(
     `${card.venue.name} ${card.topDish?.name ?? ""}`,
     card.venue.cuisineTags,
   );
-  return lean ? { vector: lean, confidence: STALL_LEAN_CONFIDENCE } : undefined;
+  return lean ? { vector: lean, confidence: STALL_LEAN_CONFIDENCE } : dish;
 }
 
 /** 0 to 1: how close the dish's taste is to the palate, averaged over the six tastes. */
@@ -233,7 +245,10 @@ export function buildHomeSections<T extends HomeSectionCard>(
   const maxSections = options.maxSections ?? 8;
   const minItems = options.minItems ?? 3;
   const perSection = options.perSection ?? 10;
-  const claimed = new Set<string>(options.excludeVenueIds ?? []);
+  const claimed = new Set<string>([
+    ...(options.excludeVenueIds ?? []),
+    ...(options.hiddenVenueIds ?? []),
+  ]);
   const palate = options.palate;
   const trusted = Boolean(palate && options.palateTrusted);
   const familiarKinds = new Set<HomeCategoryId>();
@@ -266,6 +281,18 @@ export function buildHomeSections<T extends HomeSectionCard>(
     const kind = kindOf(card) as HomeCategoryId;
     return (pinnedKinds.has(kind) ? 0.3 : 0) + (familiarKinds.has(kind) ? 0.25 : 0);
   };
+  // Stalls the diner keeps coming back to (viewed, saved, visited, got directions to) count up;
+  // ones they keep passing over count down a little. Their kinds of food count as familiar.
+  const stallAffinity = (card: T) => options.stallScores?.get(card.venue.id) ?? 0;
+  const historyBoost = (card: T) => {
+    const score = stallAffinity(card);
+    return score > 0 ? score * 0.3 : score * 0.15;
+  };
+  for (const card of cards) {
+    if (stallAffinity(card) < LIKED_AFFINITY_THRESHOLD) continue;
+    const kind = classifyHomeText(textOf(card));
+    if (kind) familiarKinds.add(kind);
+  }
   // Inside a mall its own stalls come first in every section.
   const hereBoost = (card: T) =>
     options.preferBuildingId && card.venue.buildingId === options.preferBuildingId ? 0.2 : 0;
@@ -314,6 +341,50 @@ export function buildHomeSections<T extends HomeSectionCard>(
     });
   }
 
+  // 1b. Next to try: stalls the diner looked at, saved or got directions to, but has not been to.
+  // The one rail that is about them, so it goes first among the reasons.
+  if (options.nextToTryVenueIds?.length) {
+    const byId = new Map(free().map((card) => [card.venue.id, card]));
+    add({
+      id: "next-to-try",
+      title: "Next to try",
+      query: "",
+      cards: options.nextToTryVenueIds.flatMap((id) => byId.get(id) ?? []).slice(0, perSection),
+      kind: "favourite",
+    });
+  }
+
+  // 1c. Because you viewed X: stalls of the same kind of food or a close taste.
+  const viewed = options.lastViewedVenueId
+    ? cards.find((card) => card.venue.id === options.lastViewedVenueId)
+    : undefined;
+  if (viewed) {
+    claimed.add(viewed.venue.id);
+    const viewedKind = kindOf(viewed);
+    const viewedTaste = tasteOfCard(viewed);
+    const likeness = (card: T) => {
+      const taste = tasteOfCard(card);
+      const sameKind = viewedKind !== "other" && kindOf(card) === viewedKind ? 0.6 : 0;
+      const tasteLike =
+        viewedTaste && taste
+          ? palateFit(viewedTaste.vector, taste.vector) *
+            Math.min(viewedTaste.confidence, taste.confidence) *
+            0.6
+          : 0;
+      return Math.min(1, sameKind + tasteLike);
+    };
+    const scored = free()
+      .map((card) => ({ card, score: likeness(card) }))
+      .filter((entry) => entry.score >= VIEWED_LIKENESS_MIN);
+    add({
+      id: "because-viewed",
+      title: `Because you viewed ${viewed.venue.name}`,
+      query: "",
+      cards: best(scored),
+      kind: "favourite",
+    });
+  }
+
   // 2. Just for you: the best fits, one food kind at a time. It follows the palate, or the kinds
   // of food the diner has had or pinned. With neither, this is the popular stalls, so the page
   // still leads with something worth opening.
@@ -326,6 +397,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
       score:
         fit(card) * 0.45 +
         kindBoost(card) +
+        historyBoost(card) +
         hereBoost(card) +
         ((card.topDish?.rating ?? 0) / 5) * 0.15 +
         (1 - index / Math.max(pool.length, 1)) * 0.15,

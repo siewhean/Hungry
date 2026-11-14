@@ -59,6 +59,7 @@ import {
   decideInitialRadiusMeters,
   DECIDE_RADIUS_STEPS_METERS,
   formatOpenLabel,
+  decideTasteScore,
   keepScoreOrder,
   spreadAcrossBuildings,
   preferOpenStalls,
@@ -76,6 +77,8 @@ import {
   tasteAxisMatchPercent,
   tasteMatchPercent,
 } from "@/lib/ai/tasteEngine";
+import { canShowTastePercent, tasteTrust } from "@/lib/ai/tasteTrust";
+import { LIKELY_MATCH_MIN_PERCENT } from "@/features/detail/menuPalate";
 import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
 import { useFoodHistory } from "@/hooks/useFoodHistory";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
@@ -354,6 +357,7 @@ function buildPickReason(
   dish: DishDetail,
   match: number,
   hasProfile: boolean,
+  estimatedTaste = false,
 ) {
   // A guest who skipped the quiz has no profile to be "dialled in" to.
   if (!hasProfile) return "Popular nearby. Take the taste quiz to get picks tuned to you.";
@@ -362,6 +366,12 @@ function buildPickReason(
     diff: Math.abs(userVector[dimension.key] - dish.tasteVector[dimension.key]),
   })).sort((left, right) => left.diff - right.diff);
   const topMatch = sortedDims[0];
+  // An estimated taste is a guess from dishes like it, so the reason says so.
+  if (estimatedTaste) {
+    return match >= LIKELY_MATCH_MIN_PERCENT
+      ? `Dishes like this usually suit your ${topMatch.label.toLowerCase()} preference.`
+      : "A nearby pick. Its taste is an estimate until someone reviews it.";
+  }
   return match >= 80
     ? `This dish is dialled in to your taste profile — especially the ${topMatch.label.toLowerCase()}.`
     : match >= 60
@@ -552,7 +562,7 @@ export function DecideForMeResultScreen() {
         openness,
         lookup: (dishId) => repository.getDishById(dishId),
       }),
-      (candidate) => (hasTasteProfile ? tasteMatchPercent(tasteVector, candidate.tasteVector) : 0),
+      (candidate) => (hasTasteProfile ? decideTasteScore(tasteVector, candidate) : 0),
     );
     // Stalls that are closed now come after the open ones (their pick says Closed), or not at all.
     const isClosed = (candidate: DishDetail) =>
@@ -647,6 +657,11 @@ export function DecideForMeResultScreen() {
     });
   }, [shownDishId]);
   const match = dish ? tasteMatchPercent(tasteVector, dish.tasteVector) : 0;
+  // One trust rule (tasteTrust): a percentage only for verified tags; an estimate is a reason.
+  const dishTrust = dish ? tasteTrust(dish) : "unknown";
+  const showMatchPercent = hasTasteProfile && dishTrust === "verified";
+  const showLikelyTaste =
+    hasTasteProfile && dishTrust === "estimated" && match >= LIKELY_MATCH_MIN_PERCENT;
 
   // Short enough that the dish name, price and stall sit above the fold on a 390 x 844 screen.
   // Without a photo the hero shrinks to a slim plate under the back button, so the answer
@@ -931,7 +946,13 @@ export function DecideForMeResultScreen() {
       "system_share",
     );
   };
-  const explanation = buildPickReason(tasteVector, dish, match, hasTasteProfile);
+  const explanation = buildPickReason(
+    tasteVector,
+    dish,
+    match,
+    hasTasteProfile,
+    dishTrust === "estimated",
+  );
   const updatedLabel = formatDishUpdated(dish.updatedAt);
   const otherPicks = getOtherPicks(candidates, resultIndex);
   const answerChips = answers ? describeDecideAnswers(answers) : [];
@@ -1075,11 +1096,13 @@ export function DecideForMeResultScreen() {
             </Card>
           ) : null}
 
-          {hasTasteProfile ? (
+          {showMatchPercent ? (
             <AnimatedMatchBadge percent={match} />
-          ) : (
+          ) : showLikelyTaste ? (
+            <Badge label="Likely your taste" tone="amber" />
+          ) : !hasTasteProfile ? (
             <Badge label="Popular nearby" tone="neutral" />
-          )}
+          ) : null}
 
           {answers ? (
             <View style={{ gap: spacing[2] }} testID="decide-answers">
@@ -1173,8 +1196,8 @@ export function DecideForMeResultScreen() {
             </AppText>
           </Card>
 
-          {/* Taste Breakdown: only meaningful against a real taste profile. */}
-          {hasTasteProfile ? (
+          {/* Taste Breakdown: only meaningful against a real profile and verified dish tags. */}
+          {showMatchPercent ? (
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Palate match</AppText>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[3] }}>
@@ -1249,9 +1272,10 @@ export function DecideForMeResultScreen() {
             <View style={{ gap: spacing[3] }}>
               <AppText variant="h3">Other picks</AppText>
               {otherPicks.map((pick) => {
-                const pickMatch = hasTasteProfile
-                  ? tasteMatchPercent(tasteVector, pick.tasteVector)
-                  : undefined;
+                const pickMatch =
+                  hasTasteProfile && canShowTastePercent(pick)
+                    ? tasteMatchPercent(tasteVector, pick.tasteVector)
+                    : undefined;
                 // Same rule as the main pick: no distance from the default point.
                 const pickDistance = isLocationApproximate
                   ? undefined

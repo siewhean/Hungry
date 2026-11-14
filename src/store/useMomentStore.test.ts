@@ -14,6 +14,8 @@ const EMPTY: AchievementInput = {
   budgetDishes: 0,
   reviewsWritten: 0,
   dishesSaved: 0,
+  tasteLeads: 0,
+  foodTypes: 0,
 };
 
 beforeEach(() => {

@@ -19,7 +19,7 @@ test("persist migration drops the removed Theme and Reduce motion values and kee
   assert.deepEqual(migrate?.(undefined, 0), {});
 });
 
-test("only the four device settings are persisted", () => {
+test("only the five device settings are persisted", () => {
   const { partialize } = useUIStore.persist.getOptions();
   const saved = partialize?.(useUIStore.getState()) as Record<string, unknown>;
   assert.deepEqual(Object.keys(saved).sort(), [
@@ -27,6 +27,7 @@ test("only the four device settings are persisted", () => {
     "analyticsEnabled",
     "hapticFeedbackEnabled",
     "leftHandedMode",
+    "soundsEnabled",
   ]);
 });
 
