@@ -3,7 +3,7 @@
 // - Off with Settings > Sounds, and quiet when the phone is on silent.
 // - Mixed under the diner's music or podcast, never pausing it.
 // - Dropped when another sound played a moment ago, so a burst of unlocks stays one sound.
-// - A no-op where the audio module is not in the build (release builds strip it until it ships).
+// - A no-op where the audio module is not in the build (released builds include it, playback only).
 import { useUIStore } from "@/store/useUIStore";
 
 export type MilestoneSound = "tried" | "milestone" | "streak";
