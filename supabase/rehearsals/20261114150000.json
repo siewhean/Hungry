@@ -1,0 +1,14 @@
+{
+  "version": "20261114150000",
+  "name": "20261114150000_menu_import_columns",
+  "result": "pass",
+  "rehearsed_at": "2026-11-15T07:32:37Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "f7de545afdfe35464e263ba1613b073a3943dfb3",
+  "up_sha256": "bb3f953fe79536a2afd49f07aa1aa243dcf3c38549938ddb39aafc8cb2c2cf8a",
+  "down_sha256": "50d83df81a22b65e9e983210de8b026f578973ef0e31c186813634b9476550da",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/menu_import_columns.sql"]
+}
