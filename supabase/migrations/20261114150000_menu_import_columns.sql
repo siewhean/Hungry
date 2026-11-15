@@ -4,7 +4,10 @@
 -- Replaces the unversioned draft 20261111120000_staging_menu_import_columns.sql, whose version
 -- collided with 20261111120000_drop_portfolio_ranking.sql on main.
 -- Backout: supabase/rollbacks/20261114150000_menu_import_columns.down.sql
--- (archives every populated value to rollback_archive, then drops only these columns/indexes/constraint).
+-- (archives every populated value to rollback_archive, then drops only the columns/indexes/constraint this file owns).
+-- dishes.price_confidence and dishes.dietary_status are shared with the price and halal label migration
+-- (20261114130000), which adds the same two columns. Both use ADD COLUMN IF NOT EXISTS so either order works,
+-- and this file's rollback never drops them (it only drops dishes_price_confidence_check).
 
 alter table public.buildings
   add column if not exists import_batch_id uuid;
