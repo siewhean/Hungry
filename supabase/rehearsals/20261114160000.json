@@ -1,0 +1,14 @@
+{
+  "version": "20261114160000",
+  "name": "20261114160000_hygiene_grade_nullable",
+  "result": "pass",
+  "rehearsed_at": "2026-11-15T12:52:26Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "c8f5aa46defb9005ed85c23dc966ecb195609114",
+  "up_sha256": "7aeabd96ad420b4eee2417c38409968362932ff1399a190f15837a6a22b00f78",
+  "down_sha256": "a90ddb3c06efd50c3f13ecef6e94a9c63117430e3d367a17a8966bd711de80e7",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/hygiene_grade_nullable.sql"]
+}
