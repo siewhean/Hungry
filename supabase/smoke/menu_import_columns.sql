@@ -33,6 +33,14 @@ begin
     raise exception 'menu_import_columns smoke: missing indexes: %', v_missing;
   end if;
 
+  if to_regclass('rollback_archive.menu_import_created_columns_20261114150000') is null then
+    raise exception 'menu_import_columns smoke: ownership marker table rollback_archive.menu_import_created_columns_20261114150000 is missing';
+  end if;
+  if exists (select 1 from rollback_archive.menu_import_created_columns_20261114150000
+             where column_name not in ('price_confidence', 'dietary_status')) then
+    raise exception 'menu_import_columns smoke: ownership marker lists an unknown column';
+  end if;
+
   if exists (select 1 from public.dishes where price_confidence is not null
              and price_confidence not in ('counter_price','delivery_price','listed_price')) then
     raise exception 'menu_import_columns smoke: a dish has an unknown price_confidence';

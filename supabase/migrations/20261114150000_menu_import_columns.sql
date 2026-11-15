@@ -4,10 +4,26 @@
 -- Replaces the unversioned draft 20261111120000_staging_menu_import_columns.sql, whose version
 -- collided with 20261111120000_drop_portfolio_ranking.sql on main.
 -- Backout: supabase/rollbacks/20261114150000_menu_import_columns.down.sql
--- (archives every populated value to rollback_archive, then drops only the columns/indexes/constraint this file owns).
+-- (archives every populated value to rollback_archive, then drops the columns/indexes/constraint this file owns).
 -- dishes.price_confidence and dishes.dietary_status are shared with the price and halal label migration
--- (20261114130000), which adds the same two columns. Both use ADD COLUMN IF NOT EXISTS so either order works,
--- and this file's rollback never drops them (it only drops dishes_price_confidence_check).
+-- (20261114130000), which adds the same two columns with ADD COLUMN IF NOT EXISTS, so either order works.
+-- Ownership: before adding them, this file records in rollback_archive.menu_import_created_columns_20261114150000
+-- which of the two columns it is actually creating (the column did not exist yet). The rollback drops exactly
+-- those and leaves the other thread's columns, data and comments alone. Re-running this file keeps earlier marker rows.
+-- Order risk: if the other migration is applied AFTER this one, the columns count as ours and our rollback drops them
+-- (after archiving their values to rollback_archive).
+
+create schema if not exists rollback_archive;
+
+create table if not exists rollback_archive.menu_import_created_columns_20261114150000 (column_name text primary key);
+
+insert into rollback_archive.menu_import_created_columns_20261114150000 (column_name)
+select c
+from unnest(array['price_confidence', 'dietary_status']) as c
+where not exists (
+  select 1 from pg_attribute
+  where attrelid = 'public.dishes'::regclass and attname = c and not attisdropped)
+on conflict do nothing;
 
 alter table public.buildings
   add column if not exists import_batch_id uuid;
@@ -47,8 +63,18 @@ create index if not exists idx_dishes_import_batch on public.dishes (import_batc
 create index if not exists idx_dish_taste_vectors_import_batch on public.dish_taste_vectors (import_batch_id) where import_batch_id is not null;
 create index if not exists idx_dish_dietary_flags_import_batch on public.dish_dietary_flags (import_batch_id) where import_batch_id is not null;
 
-comment on column public.dishes.price_confidence is 'counter_price | delivery_price | listed_price. Set by the staging menu importer.';
 comment on column public.dishes.is_generic_cuisine is 'True when cuisine is a generic default; search suggestion lists should hide it.';
 comment on column public.dishes.secondary_menu_url is 'Delivery-app link kept only as a secondary menu link; never the price source.';
-comment on column public.dishes.dietary_status is 'Tri-state dietary/allergen status (yes|no|unknown); blank source values stay unknown.';
 comment on column public.venues.is_generic_cuisine is 'True when cuisine_tags holds only a generic default.';
+
+-- Comments on the two shared columns are set only where this file created the column, so a rollback that
+-- leaves a shared column in place also leaves its comment (and never overwrites the other migration's).
+do $$
+begin
+  if exists (select 1 from rollback_archive.menu_import_created_columns_20261114150000 where column_name = 'price_confidence') then
+    comment on column public.dishes.price_confidence is 'counter_price | delivery_price | listed_price. Set by the staging menu importer.';
+  end if;
+  if exists (select 1 from rollback_archive.menu_import_created_columns_20261114150000 where column_name = 'dietary_status') then
+    comment on column public.dishes.dietary_status is 'Tri-state dietary/allergen status (yes|no|unknown); blank source values stay unknown.';
+  end if;
+end $$;
