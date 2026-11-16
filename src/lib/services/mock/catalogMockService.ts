@@ -424,6 +424,11 @@ export function createLocalCatalogService(repository: DataRepository): CatalogRa
         .slice(0, Math.max(1, Math.min(request.limit ?? 8, 20)));
     },
 
+    // The sample catalog has no launch zone, so the list is empty.
+    async listLaunchZonePlaces() {
+      return [];
+    },
+
     async getDish(id) {
       const catalog = loadCatalog(repository);
       const dish = repository.getDishById(id);

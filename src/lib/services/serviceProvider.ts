@@ -506,6 +506,16 @@ export function createResilientCatalogReadService(
           ),
         );
     },
+    // The launch zone list is best effort too: without the live catalog it is empty.
+    async listLaunchZonePlaces() {
+      return primary
+        .listLaunchZonePlaces()
+        .catch((error: unknown) =>
+          bestEffortCatalogFallback(error, "catalog_launch_zone_places", () =>
+            fallback.listLaunchZonePlaces(),
+          ),
+        );
+    },
   };
 }
 

@@ -24,6 +24,9 @@ function services(primaryError: () => unknown) {
     async listPlaces() {
       throw primaryError();
     },
+    async listLaunchZonePlaces() {
+      throw primaryError();
+    },
   } as unknown as CatalogReadService;
   const fallback = {
     clearCache() {},
@@ -34,6 +37,10 @@ function services(primaryError: () => unknown) {
     async listPlaces() {
       calls.push("listPlaces");
       return [{ id: "fallback-place" }];
+    },
+    async listLaunchZonePlaces() {
+      calls.push("listLaunchZonePlaces");
+      return [];
     },
   } as unknown as CatalogReadService;
   return { service: createResilientCatalogReadService(primary, fallback), calls };
@@ -64,6 +71,18 @@ test("a signed-in session falls back when the live catalog is unavailable", asyn
     assert.deepEqual(await service.suggest("ch"), [{ id: "fallback-suggestion" }]);
     assert.deepEqual(await service.listPlaces({} as never), [{ id: "fallback-place" }]);
     assert.deepEqual(calls, ["suggest:ch", "listPlaces"]);
+  });
+});
+
+test("the launch zone list is empty when the live catalog is unavailable", async () => {
+  await withSession(true, async () => {
+    const { service } = services(unavailable);
+    assert.deepEqual(await service.listLaunchZonePlaces(), []);
+  });
+  await withSession(false, async () => {
+    const { service, calls } = services(unavailable);
+    assert.deepEqual(await service.listLaunchZonePlaces(), []);
+    assert.deepEqual(calls, []);
   });
 });
 

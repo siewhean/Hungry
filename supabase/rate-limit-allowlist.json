@@ -15,7 +15,8 @@
     "merchant_outlet_matches_catalog_link": "Row-level-security helper; cheap indexed lookup. Too cheap to need its own cap."
   },
   "userRpcs": {
-    "get_dish_taste_rating_summary": "Signed-in diners only (execute revoked from anon). One indexed aggregate over a single dish's taste ratings per dish page open, STABLE so the shared counter cannot count it; the REST default cap still bounds the traffic."
+    "get_dish_taste_rating_summary": "Signed-in diners only (execute revoked from anon). One indexed aggregate over a single dish's taste ratings per dish page open, STABLE so the shared counter cannot count it; the REST default cap still bounds the traffic.",
+    "get_launch_zone_places": "Signed-in diners only (execute revoked from anon). Reads at most three zone rows and counts their stalls in the active release by building id, STABLE so the shared counter cannot count it; the REST default cap still bounds the traffic."
   },
   "edgeFunctions": {
     "send-email": "Supabase Auth Send Email hook. Every request must carry a valid Standard Webhooks signature from the project's hook secret, so only Auth can call it; Auth's own email rate limits cap volume."
