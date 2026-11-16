@@ -86,6 +86,25 @@ test("the launch zone list is empty when the live catalog is unavailable", async
   });
 });
 
+test("a fallback that throws while it is resolved still gives an empty list", async () => {
+  await withSession(true, async () => {
+    const primary = {
+      clearCache() {},
+      async listLaunchZonePlaces() {
+        throw unavailable();
+      },
+    } as unknown as CatalogReadService;
+    const fallback = {
+      clearCache() {},
+      get listLaunchZonePlaces(): never {
+        throw new Error("Excel catalog is not bundled");
+      },
+    } as unknown as CatalogReadService;
+    const service = createResilientCatalogReadService(primary, fallback);
+    assert.deepEqual(await service.listLaunchZonePlaces(), []);
+  });
+});
+
 test("a signed-out session gets an empty list, not the fallback", async () => {
   await withSession(false, async () => {
     const { service, calls } = services(unavailable);

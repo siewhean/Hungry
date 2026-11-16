@@ -107,7 +107,12 @@ async function bestEffortCatalogFallback<T>(
     // Reporting must never break the read.
   }
   if (!isCatalogFallbackEligibleError(error) || !hasValidAuthenticatedSession()) return [];
-  return fallback().catch(() => []);
+  try {
+    return await fallback();
+  } catch {
+    // The fallback can throw while it is resolved (no Excel catalog in a release bundle).
+    return [];
+  }
 }
 
 export async function runAuthenticatedDiscoveryFallback<T>(

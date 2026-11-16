@@ -124,8 +124,7 @@ test("the down migration puts rows back and drops everything the up created", ()
     );
   }
   // The cards are refreshed from the restored rows before the backups they need are dropped.
-  assert.ok(
-    rollback.indexOf("launch_zone_sync_cards();") <
-      rollback.indexOf("drop table if exists public.launch_zone_places"),
-  );
+  const syncAt = rollback.indexOf("launch_zone_sync_cards();");
+  const dropAt = rollback.indexOf("drop table if exists public.launch_zone_places");
+  assert.ok(syncAt >= 0 && dropAt >= 0 && syncAt < dropAt);
 });

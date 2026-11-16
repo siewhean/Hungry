@@ -30,7 +30,7 @@ insert into dishes (
   menu_approved_for_display, menu_rights_status, media_approved_for_display, media_rights_status
 )
 values
-  ('smoke-lz-dish', 'smoke-lz-v-pm-b1', 'smoke-lz-pm-b', 'Smoke LZ Noodles', 5,
+  ('smoke-lz-dish', 'smoke-lz-v-pm-a', 'smoke-lz-pm-a', 'Smoke LZ Noodles', 5,
    true, 'merchant_owned', false, 'unverified');
 
 do $$

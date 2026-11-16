@@ -91,6 +91,8 @@ as $$
     from app_private.launch_zone_definition() d
     join public.buildings b
       on lower(btrim(b.name)) = any (select lower(btrim(n)) from unnest(d.aliases || d.display_name) n)
+      -- the row already registered for the slug stays found after display_name is changed
+      or b.id in (select lp.building_id from public.launch_zone_places lp where lp.slug = d.slug)
   )
   select f.slug, f.building_id,
          first_value(f.building_id) over (partition by f.slug order by f.stalls desc, f.building_id),
