@@ -14,7 +14,7 @@ values
   ('smoke-rm-photo', 'smoke-rm-photo', 'Smoke RM Photo Mall', 'mall', 1.5301, 103.8301, array['01'],
    'https://example.com/smoke-rm-mall.jpg', true, 'operator_owned'),
   ('smoke-rm-plain', 'smoke-rm-plain', 'Smoke RM Plain Mall', 'mall', 1.5302, 103.8301, array['01'],
-   null, false, null);
+   null, false, 'unverified');
 
 insert into venues (id, building_id, name, unit_number, floor, latitude, longitude)
 values
@@ -26,7 +26,7 @@ insert into dishes (
   menu_approved_for_display, menu_rights_status, media_approved_for_display, media_rights_status
 )
 values
-  ('smoke-rm-dish', 'smoke-rm-menu', 'smoke-rm-plain', 'Smoke RM Noodles', 5, true, 'merchant_owned', false, null);
+  ('smoke-rm-dish', 'smoke-rm-menu', 'smoke-rm-plain', 'Smoke RM Noodles', 5, true, 'merchant_owned', false, 'unverified');
 
 do $$
 declare
