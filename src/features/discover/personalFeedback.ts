@@ -8,6 +8,7 @@
  * The screen passes what it already holds; nothing here reads a service or a store.
  */
 import { isNeutralTasteVector } from "@/lib/ai/tasteEngine";
+import { VERIFIED_TASTE_CONFIDENCE } from "@/lib/ai/tasteTrust";
 import type { Bite } from "@/lib/services/types";
 import type { DishSummary, TasteVector } from "@/types/domain";
 
@@ -21,8 +22,8 @@ export const SESSION_WINDOW_MS = 30 * 60 * 1000;
 export const SESSION_ACTION_LIMIT = 10;
 /** The most one axis can move for this visit. */
 export const SESSION_SHIFT_MAX = 3;
-/** A dish tagged with less confidence than this does not show a match percentage. */
-export const MATCH_PERCENT_MIN_CONFIDENCE = 0.7;
+/** A dish tagged with less confidence than this does not show a match percentage (tasteTrust). */
+export const MATCH_PERCENT_MIN_CONFIDENCE = VERIFIED_TASTE_CONFIDENCE;
 
 export type SessionActionKind = "open" | "save" | "hide";
 

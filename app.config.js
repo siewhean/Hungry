@@ -32,7 +32,8 @@ const RELEASED_ANDROID_BLOCKED_PERMISSIONS = [
 ];
 
 // @rnmapbox/maps ships in released builds (owner decision 2026-10-25): the Home map needs real tiles.
-const RELEASED_NATIVE_MODULES = new Set(["expo-dev-client", "expo-audio", "expo-video"]);
+// expo-audio ships in released builds for milestone sounds, playback only (owner decision 2026-11-14).
+const RELEASED_NATIVE_MODULES = new Set(["expo-dev-client", "expo-video"]);
 
 const RELEASED_INFO_PLIST_KEYS = [
   "DEV_CLIENT_TRY_TO_LAUNCH_LAST_BUNDLE",

@@ -8846,7 +8846,7 @@ export const supabaseService: HungryService = {
       return {
         surface: request.surface,
         generatedAt: new Date().toISOString(),
-        items: liveItems ?? getRankedRecommendations(request, profile),
+        items: liveItems ?? (request.liveOnly ? [] : getRankedRecommendations(request, profile)),
       };
     },
 
@@ -8898,6 +8898,54 @@ export const supabaseService: HungryService = {
       const userId = await getCurrentSupabaseUserId();
       if (!client || !userId) return;
       const { error } = await client.from("user_dish_affinities").delete().eq("user_id", userId);
+      if (error) throw error;
+    },
+
+    async getStallHistory() {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return [];
+      const { data, error } = await client
+        .from("user_stall_affinities")
+        .select("venue_id, evidence, abs_evidence, last_event_at, dismissed_until")
+        .eq("user_id", userId)
+        .order("last_event_at", { ascending: false })
+        .limit(300);
+      if (error || !Array.isArray(data)) {
+        if (error) {
+          console.warn("Failed to load stall history", error.message);
+          reportServiceError(error, "get_stall_history");
+        }
+        return [];
+      }
+      return (data as Row[]).map((row) => ({
+        venueId: String(row.venue_id ?? ""),
+        evidence: Number(row.evidence ?? 0),
+        absEvidence: Number(row.abs_evidence ?? 0),
+        lastEventAt: String(row.last_event_at ?? new Date().toISOString()),
+        dismissedUntil: typeof row.dismissed_until === "string" ? row.dismissed_until : undefined,
+      }));
+    },
+
+    async recordStallSignal(venueId, signal) {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId || !venueId) return;
+      const { error } = await client.rpc("record_stall_signal", {
+        p_venue_id: venueId,
+        p_signal: signal,
+      });
+      if (error) {
+        console.warn("Failed to record stall signal", error.message);
+        reportServiceError(error, "record_stall_signal");
+      }
+    },
+
+    async resetStallHistory() {
+      const client = getSupabaseClient();
+      const userId = await getCurrentSupabaseUserId();
+      if (!client || !userId) return;
+      const { error } = await client.from("user_stall_affinities").delete().eq("user_id", userId);
       if (error) throw error;
     },
 

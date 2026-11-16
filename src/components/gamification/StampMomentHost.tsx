@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+
+import { playMilestoneSound } from "@/lib/sounds";
 import { AccessibilityInfo } from "react-native";
 
 import { StampMoment, type StampMomentContent } from "@/components/gamification/StampMoment";
@@ -216,6 +218,7 @@ function StampMomentRuntime({ onOpenPassport, blocked = false }: StampMomentHost
   useEffect(() => {
     if (!shownId || !shownKind || !hasContent) return;
     trackStampMomentShown({ kind: shownKind, momentId: shownId });
+    playMilestoneSound("milestone");
     const timer = screenReader
       ? null
       : setTimeout(() => {

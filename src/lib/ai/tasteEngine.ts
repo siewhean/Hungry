@@ -27,6 +27,7 @@ import { filterSafeDishes } from "./dietaryGate";
 import { applyContextModifier, computeContextModifier, getCurrentContext } from "./contextEngine";
 import type { ContextState } from "./contextEngine";
 import { hasLikedHistory, type FoodHistory } from "./foodHistory";
+import { tasteWeight } from "./tasteTrust";
 import {
   allocateByBuckets,
   bucketExplanation,
@@ -506,7 +507,7 @@ function stage2CandidateGeneration<T extends DishSummary>(
  *   10% — Community rating (normalized)
  *   10% — Novelty/diversity readiness
  *
- * A dish's taste weight is scaled by its tasteConfidence; the weight it loses
+ * A dish's taste weight is scaled by its trust (`tasteWeight`); the weight it loses
  * moves to distance and rating in equal halves, so weights still sum to 1.
  */
 function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
@@ -532,7 +533,8 @@ function stage3PrecisionScoring<T extends DishSummary & { _rawScore: number }>(
     const ratingScore = (dish.rating ?? 0) / 5;
     const noveltyScore = isWildCardScore(tasteScore) ? 1 : 0.5;
 
-    const confidence = Math.min(1, Math.max(0, dish.tasteConfidence ?? 1));
+    // One trust rule (tasteTrust): verified tags count in full, estimates at their confidence.
+    const confidence = tasteWeight(dish);
     const shiftedWeight = RECOMMENDATION_SCORE_WEIGHTS.taste * (1 - confidence);
 
     if (distanceMode === "decay") {
@@ -921,7 +923,13 @@ export function processExplicitFeedback(
   ) {
     return currentVector;
   }
-  const alpha = applyFeedbackRecencyDecay(FEEDBACK_WEIGHTS[event.type], event.timestamp);
+  // An estimated taste (the menu workbook's category baseline) teaches at its confidence, so a
+  // guess cannot pull the palate as hard as a verified tag.
+  const trust = tasteWeight({
+    tasteVector: event.dishVector,
+    tasteConfidence: event.dishConfidence,
+  });
+  const alpha = applyFeedbackRecencyDecay(FEEDBACK_WEIGHTS[event.type], event.timestamp) * trust;
   if (alpha === 0) return currentVector;
 
   return calibrateVector(currentVector, event.dishVector, alpha);

@@ -144,6 +144,10 @@ import type {
 } from "@/types/domain";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { webShareUrl } from "@/constants/links";
+import { STALL_VIEW_DWELL_MS } from "@/lib/ai/stallHistory";
+import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
+import { useSimilarStalls } from "@/features/recommendations/moreLikeThis";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { ReviewBubblesIllustration } from "@/components/icons/food/PlaceIllustrations";
 
@@ -624,6 +628,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
       userId: isAuthenticated ? profile.id : undefined,
     });
   }, [isAuthenticated, profile.id, venue]);
+
+  // A view counts toward the diner's stall history once the page has stayed open a moment, so a
+  // stall opened by mistake and closed at once teaches nothing.
+  const recordStallSignal = useStallHistoryStore((state) => state.record);
+  const viewedStallId = venue?.id;
+  useEffect(() => {
+    if (!viewedStallId) return;
+    const timer = setTimeout(() => recordStallSignal(viewedStallId, "view"), STALL_VIEW_DWELL_MS);
+    return () => clearTimeout(timer);
+  }, [recordStallSignal, viewedStallId]);
+
+  // Stalls whose food tastes like this one's lead dish, around this stall.
+  const similarStallsPoint = useMemo(
+    () => (venue ? (getStallPin(venue, building?.coordinate) ?? building?.coordinate) : undefined),
+    [building?.coordinate, venue],
+  );
+  const similarStalls = useSimilarStalls(leadDish, similarStallsPoint, profile.dietaryPreferences);
 
   // Keyed on the id: the cached venue renders first and the hydrated one replaces it,
   // which must not re-run these three reads.
@@ -1128,6 +1149,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     if (!venue) return;
     trackAnalyticsEvent("directions_opened", { stall_id: venue.id, source: "stall_detail" });
     recordTap("direction_tap");
+    recordStallSignal(venue.id, "directions");
     // Searches Google Maps by name + building + postcode so it lands on the stall's listing;
     // the map pin is used only when the stall has no building or address to search by.
     void openTrustedMapsUrl(
@@ -1212,6 +1234,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
   // The merchant "share" counts a completed share, not an opened sheet.
   const recordMerchantShare = () => {
+    recordStallSignal(venue.id, "share");
     void getHungryService().discovery.recordMerchantActionEvent({
       eventType: "share",
       venueId: venue.id,
@@ -2035,6 +2058,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   </Pressable>
                 </View>
               ) : null}
+              <MoreLikeThisRail
+                title="Similar stalls nearby"
+                subtitle={`Food that tastes like ${displayName}'s`}
+                items={similarStalls}
+                mode="stall"
+                venueNameOf={(dish) => dish.venueName}
+                testID="stall-similar-stalls"
+                onOpen={(dish, position) => {
+                  trackAnalyticsEvent("more_like_this_opened", {
+                    surface: "stall_detail",
+                    stall_id: venue.id,
+                    target_stall_id: dish.venueId,
+                    position,
+                  });
+                  navigation.push("StallDetail", { venueId: dish.venueId });
+                }}
+              />
               <ReportProblemLink venueId={venue.id} subjectName={displayName} />
             </View>
           </Animated.ScrollView>

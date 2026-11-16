@@ -74,7 +74,7 @@ test("passport weekly goal: counted from tried items, celebrated once per week",
   // The count lives in useWeeklyGoal, shared with the Home next-stamp card and the tab ring.
   assert.match(
     read("src/features/passport/useWeeklyGoal.ts"),
-    /computeWeeklyGoal\(\[\.\.\.triedAtByItem\.values\(\)\]\)/,
+    /return \[\.\.\.triedAtByItem\.values\(\)\];[\s\S]*computeWeeklyGoal\(triedAt\)/,
   );
   assert.match(screen, /useWeeklyGoal\(\)/);
   assert.match(screen, /celebratedGoalWeeks\[weeklyGoal\.weekKey\]/);

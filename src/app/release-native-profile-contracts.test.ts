@@ -98,7 +98,7 @@ test("released config retains only nearby-discovery native permissions", () => {
 
   const pluginNames = (config: typeof staging) =>
     (config.plugins ?? []).map((plugin) => (Array.isArray(plugin) ? plugin[0] : plugin));
-  const removedPlugins = ["expo-dev-client", "expo-audio", "expo-video"];
+  const removedPlugins = ["expo-dev-client", "expo-video"];
   const removedKeys = ["NSMicrophoneUsageDescription", "NSPhotoLibraryAddUsageDescription"];
 
   assert.equal(pluginNames(development).includes("expo-dev-client"), true);
@@ -115,6 +115,13 @@ test("released config retains only nearby-discovery native permissions", () => {
     for (const plugin of removedPlugins) assert.equal(pluginNames(config).includes(plugin), false);
     // Real map and camera photos ship in released builds (owner decisions 2026-10-25).
     assert.equal(pluginNames(config).includes("@rnmapbox/maps"), true);
+    // Milestone sounds ship too (owner decision 2026-11-14): playback only, no microphone.
+    const audio = (config.plugins ?? []).find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === "expo-audio",
+    ) as [string, Record<string, unknown>] | undefined;
+    assert.equal(audio?.[1].microphonePermission, false);
+    assert.equal(audio?.[1].recordAudioAndroid, false);
+    assert.equal(audio?.[1].enableBackgroundPlayback, false);
     assert.equal(typeof config.ios?.infoPlist?.NSCameraUsageDescription, "string");
     for (const key of removedKeys) assert.equal(key in (config.ios?.infoPlist ?? {}), false);
   }
@@ -212,11 +219,7 @@ test("EAS pre-install strips release-only native capabilities in its isolated wo
       "utf8",
     );
 
-    assert.deepEqual(packageJson.expo?.autolinking?.exclude, [
-      "expo-audio",
-      "expo-dev-client",
-      "expo-video",
-    ]);
+    assert.deepEqual(packageJson.expo?.autolinking?.exclude, ["expo-dev-client", "expo-video"]);
     assert.equal(plist.includes("NSMicrophoneUsageDescription"), false);
     assert.equal(plist.includes("NSCameraUsageDescription"), true);
     assert.equal(plist.includes("NSPhotoLibraryUsageDescription"), true);
