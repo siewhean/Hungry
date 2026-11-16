@@ -28,6 +28,10 @@ insert into dishes (
 values
   ('smoke-rm-dish', 'smoke-rm-menu', 'smoke-rm-plain', 'Smoke RM Noodles', 5, true, 'merchant_owned', false, 'unverified');
 
+-- The catalogue reads need a signed-in caller (catalog_raw_require_authenticated), as in the app.
+select set_config('request.jwt.claim.sub', '00000000-0000-1114-a000-000000000001', true);
+set local role authenticated;
+
 do $$
 declare
   v_menu_pos integer;
