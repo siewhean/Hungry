@@ -106,7 +106,9 @@ jobs:
           npm run audit:supabase:migration-safety
 
       - name: Edge Function static check
-        run: npm run check:edge-functions
+        run: |
+          npm run check:edge-functions
+          npm run check:staging-functions
 
       - name: Rate-limit contract
         run: npm run check:rate-limits

@@ -25,6 +25,7 @@ run_step "2) Test suite" npm run test
 run_step "3) Static Supabase audit" npm run audit:supabase:static
 run_step "4) Supabase Advisor non-password guard" npm run audit:supabase:advisor-security:non-password
 run_step "5) Edge Function static checks" npm run check:edge-functions
+run_step "5b) Staging function manifest" npm run check:staging-functions
 run_step "6) Asset audit" npm run audit:assets
 run_step "7) TruffleHog filesystem scan" npm run security:trufflehog
 run_step "8) Gitleaks tracked/unignored scan" npm run security:gitleaks
@@ -34,6 +35,7 @@ run_step "11) Expo Doctor" env EXPO_NO_DOTENV=1 CI=1 NPM_CONFIG_CACHE=/tmp/hungr
 
 echo
 echo "[Hungry] Native proof status"
+echo "- Edge Functions changed? Run scripts/staging-functions.sh deploy, then smoke, on staging before the production deploy."
 echo "- iOS prepared Maestro smoke: run npm run smoke:native:ios:prepared and record current evidence before release."
 if [[ -d android ]]; then
   echo "- Android native project exists locally; run Android smoke/build proof before release."
