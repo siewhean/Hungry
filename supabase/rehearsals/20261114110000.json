@@ -1,0 +1,14 @@
+{
+  "version": "20261114110000",
+  "name": "20261114110000_rank_menuless_stalls_lower",
+  "result": "pass",
+  "rehearsed_at": "2026-11-16T08:05:19Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "0814f681a8f9703359d061098e2c20966d7eb9fa",
+  "up_sha256": "0869288d2f68a41da1f40c386db062a326a656ccd9af226bc496be476a379d98",
+  "down_sha256": "9107329765d2f2b85371d3b8154c9c0ca7cdde53039be1a4b51221cced9830a4",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/rank_menuless_stalls_lower.sql"]
+}
