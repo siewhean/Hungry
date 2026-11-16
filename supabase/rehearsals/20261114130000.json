@@ -1,0 +1,14 @@
+{
+  "version": "20261114130000",
+  "name": "20261114130000_price_basis_halal_status",
+  "result": "pass",
+  "rehearsed_at": "2026-11-16T09:03:37Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "2a2f125c5d088520002234d8ff8221d17d199b49",
+  "up_sha256": "92a53635eed7af33bd71c440eca08c7545e54f5466460b93307aee386bbcc91c",
+  "down_sha256": "929e93494cf3ac38e6b602977bc47c402a68c257e04788676de85d5729efc29f",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/price_basis_halal_status.sql"]
+}
