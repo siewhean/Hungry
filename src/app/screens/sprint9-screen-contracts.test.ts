@@ -581,7 +581,7 @@ test("Sprint 9 screen contract: Stitch-inspired dish detail v2 is routed and dat
   // Unpriced dishes show the range or "Price not listed", never S$0.00.
   assert.match(read("src/features/detail/dishPrice.ts"), /function formatDishPrice\(/);
   assert.match(read("src/features/detail/dishPrice.ts"), /Price not listed/);
-  assert.match(source, /const dishPrice = formatDishPrice\(dish\)/);
+  assert.match(source, /formatPriceWithBasis\(dish, "long"\)/);
   assert.match(source, /fontSize: 28, lineHeight: 34/);
   assert.match(source, /const heroGradientColors: readonly \[ColorValue, ColorValue, ColorValue\]/);
   assert.match(source, /palette\.detailHeroGradientStart/);

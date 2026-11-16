@@ -1,3 +1,5 @@
+import { toPriceBasis } from "@/features/detail/priceBasis";
+import type { PriceBasis } from "@/types/domain";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
 import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import {
@@ -85,6 +87,8 @@ export interface CatalogRawDishCard {
   description?: string;
   price?: number;
   priceRange?: string;
+  /** Where the price came from (counter / menu / delivery); undefined when unknown. */
+  priceBasis?: PriceBasis;
   imageUrl?: string;
   distanceMeters?: number;
   rating?: number;
@@ -556,6 +560,7 @@ function mapDishCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Cat
     description: asString(row.description),
     price: asNumber(row.price),
     priceRange: asString(row.price_range),
+    ...(toPriceBasis(row.price_basis) ? { priceBasis: toPriceBasis(row.price_basis) } : {}),
     imageUrl: sanitizeCatalogCardImageUrl(asString(row.image_url), sourceRpc, {
       rightsStatus: mediaRightsStatus,
       approvedForDisplay: asBoolean(row.media_approved_for_display),

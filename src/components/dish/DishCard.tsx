@@ -2,11 +2,12 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import type { DishDetail } from "@/types/domain";
 import { formatDishUpdated } from "@/features/detail/dishFreshness";
-import { formatDishPrice } from "@/features/detail/dishPrice";
+import { formatPriceWithBasis } from "@/features/detail/priceBasis";
 import { useHungryTheme, type HungryTheme } from "@/theme";
 import { AccessibleImage, AppSymbol, AppText, Badge, Card } from "../ui";
 import { NoDishPhoto } from "./NoDishPhoto";
 import { RatingStarSymbol } from "./dishSymbols";
+import { PriceWithBasis } from "./PriceLabels";
 
 /** "Venue · #01-23 · L1", skipping empty parts so no stray separators show. */
 export function formatDishLocation(
@@ -45,7 +46,7 @@ export function DishCard({
   const isHorizontal = variant === "horizontal";
   const updatedLabel = formatDishUpdated(dish.updatedAt);
   const hasRating = dish.reviewCount > 0 && dish.rating > 0;
-  const priceLabel = formatDishPrice(dish);
+  const priceLabel = formatPriceWithBasis(dish).text;
   const imageStyle = [
     styles.image,
     {
@@ -121,7 +122,7 @@ export function DishCard({
             ) : null}
           </View>
           <View style={styles.rowWrap}>
-            <AppText variant="price">{priceLabel}</AppText>
+            <PriceWithBasis dish={dish} color={palette.text} />
             {hasRating ? (
               <Badge
                 label={dish.rating.toFixed(1)}

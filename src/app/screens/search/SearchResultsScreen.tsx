@@ -1,4 +1,5 @@
 import { FeedbackThumbs } from "@/components/feedback/FeedbackThumbs";
+import { PriceWithBasis } from "@/components/dish/PriceLabels";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -319,9 +320,10 @@ const RawCatalogCard = memo(function RawCatalogCard({
             >
               <View style={{ alignItems: "baseline", flexDirection: "row", flexShrink: 1, gap: 4 }}>
                 {dish?.price !== undefined ? (
-                  <AppText style={{ color: palette.text }} variant="price">
-                    S${dish.price.toFixed(2)}
-                  </AppText>
+                  <PriceWithBasis
+                    dish={{ price: dish.price, priceRange: "", priceBasis: dish.priceBasis }}
+                    color={palette.text}
+                  />
                 ) : null}
                 <AppText numberOfLines={1} tone="muted" variant="micro" style={{ flexShrink: 1 }}>
                   {dish?.price !== undefined ? "· " : ""}
@@ -1327,7 +1329,7 @@ function RawCatalogBrowseGrid({
   if (filters.includes("Halal") || parsed.dietary.includes("halal")) {
     notes.push({
       id: "halal",
-      text: "Halal tags come from stalls and public listings, and are not all MUIS-certified. Check the stall's certificate if it matters to you.",
+      text: "Showing confirmed halal dishes only. Most dishes are not confirmed yet, so ask the stall if you don't see one. Halal tags come from stalls and public listings, and are not all MUIS-certified.",
     });
   }
   const turnOnLocation = () => {

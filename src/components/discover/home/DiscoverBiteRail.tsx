@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { PriceBasisTag } from "@/components/dish/PriceLabels";
 import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
@@ -148,9 +149,16 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
             </AppText>
           ) : null}
           <View style={chrome.biteCardPriceRow}>
-            <AppText variant="bodySmallBold" style={{ color: palette.text, ...HOME_PRICE_STYLE }}>
-              S${bite.price.toFixed(2)}
+            <AppText
+              variant="bodySmallBold"
+              style={{
+                color: bite.priceBasis === "delivery" ? palette.warningText : palette.text,
+                ...HOME_PRICE_STYLE,
+              }}
+            >
+              {bite.priceBasis === "delivery" ? "~" : ""}S${bite.price.toFixed(2)}
             </AppText>
+            <PriceBasisTag basis={bite.priceBasis} />
             {variant !== "price" && hasRating ? (
               <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[1] }}>
                 <AppSymbol name="rating" size={12} color={palette.starFill} />

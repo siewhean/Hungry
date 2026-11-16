@@ -10,7 +10,9 @@ import {
   Bell,
   BellOff,
   BellRing,
+  Bike,
   CakeSlice,
+  Calendar,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -21,6 +23,7 @@ import {
   CircleAlert,
   CircleCheck,
   CircleDollarSign,
+  CircleHelp,
   CircleX,
   Compass,
   Database,
@@ -254,6 +257,14 @@ const APP_SYMBOLS = {
   // Retention: the weekly streak and the milestone sounds switch.
   streak: { ios: "flame.fill", lucide: Flame, filled: true },
   sounds: { ios: "speaker.wave.2", lucide: Volume2 },
+  // Price labels: where a dish's price came from.
+  priceCounter: { ios: "storefront", lucide: Store },
+  priceMenu: { ios: "menucard", lucide: FileText },
+  priceDelivery: { ios: "scooter", lucide: Bike },
+  // Halal status on the dish page (halal itself is HalalMark).
+  notHalal: { ios: "xmark.circle", lucide: CircleX },
+  halalUnknown: { ios: "questionmark.circle", lucide: CircleHelp },
+  checkedDate: { ios: "calendar", lucide: Calendar },
 } as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon; filled?: boolean }> &
   Record<ReviewTasteTagSymbol, unknown>;
 

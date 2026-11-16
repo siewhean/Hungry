@@ -34,7 +34,7 @@ test("detail-M3/M17/L17/L24: sold-out dishes and prices read the same everywhere
     readRepoFile("src/components/stall/StallMenuDish.tsx"),
     /export function menuDishAccessibilityLabel/,
   );
-  assert.match(card, /formatDishPrice/);
+  assert.match(card, /formatPriceWithBasis|PriceWithBasis/);
   assert.match(card, /No ratings yet/);
   assert.match(card, /reviewCount > 0 && /);
   assert.doesNotMatch(card, /distanceMeters/);

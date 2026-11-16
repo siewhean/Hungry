@@ -1,3 +1,4 @@
+import { toHalalStatus, toPriceBasis } from "@/features/detail/priceBasis";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
@@ -307,6 +308,8 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     reviewCount: toNumber(row.review_count),
     price: toNumber(row.price),
     priceRange: toString(row.price_range),
+    ...(toPriceBasis(row.price_basis) ? { priceBasis: toPriceBasis(row.price_basis) } : {}),
+    ...(toString(row.price_checked_at) ? { priceCheckedAt: toString(row.price_checked_at) } : {}),
     liveCrowd: (toString(row.live_crowd) as DishDetail["liveCrowd"]) || undefined,
     tasteTags: toStringArray(row.taste_tags),
     tasteVector: presentation?.tasteVector ?? {
@@ -375,8 +378,10 @@ function mapRpcDish(row: Row): DishDetail {
     venue,
     presentation,
   );
+  const halalStatus = toHalalStatus(row.halal_status);
+  const withHalal = halalStatus ? { ...dish, halalStatus } : dish;
   const reviews = mapReviewRows(row.reviews);
-  return reviews.length > 0 ? { ...dish, reviews } : dish;
+  return reviews.length > 0 ? { ...withHalal, reviews } : withHalal;
 }
 
 /**
@@ -516,6 +521,7 @@ function mapDiscoveryFeedDish(
       rating_avg: row.top_dish_rating,
       review_count: row.top_dish_review_count,
       price: row.top_dish_price,
+      price_basis: row.top_dish_price_basis,
       price_range: "",
       live_crowd: row.live_crowd,
       taste_tags: row.cuisine_tags,
