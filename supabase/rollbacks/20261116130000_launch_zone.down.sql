@@ -1,5 +1,5 @@
 -- expect-row-loss: public.launch_zone_places, app_private.launch_zone_building_backup, app_private.launch_zone_move_backup
--- Undo 20261116120000_launch_zone: every stall, dish and other row that was moved goes back to the
+-- Undo 20261116130000_launch_zone: every stall, dish and other row that was moved goes back to the
 -- building row it came from, every building row gets its old name, type and stall count back, the
 -- catalog cards take the old building fields from those rows, and the zone list, the backups and
 -- the functions are dropped. Rows moved or created since the up (a stall added to the surviving
@@ -74,14 +74,14 @@ alter table public.dishes enable trigger trg_dishes_updated_at;
 
 -- Keep what is about to be dropped (the zone list and both backups), so nothing is lost for good.
 create schema if not exists rollback_archive;
-drop table if exists rollback_archive.launch_zone_places_20261116120000;
-create table rollback_archive.launch_zone_places_20261116120000 as
+drop table if exists rollback_archive.launch_zone_places_20261116130000;
+create table rollback_archive.launch_zone_places_20261116130000 as
   select * from public.launch_zone_places;
-drop table if exists rollback_archive.launch_zone_building_backup_20261116120000;
-create table rollback_archive.launch_zone_building_backup_20261116120000 as
+drop table if exists rollback_archive.launch_zone_building_backup_20261116130000;
+create table rollback_archive.launch_zone_building_backup_20261116130000 as
   select * from app_private.launch_zone_building_backup;
-drop table if exists rollback_archive.launch_zone_move_backup_20261116120000;
-create table rollback_archive.launch_zone_move_backup_20261116120000 as
+drop table if exists rollback_archive.launch_zone_move_backup_20261116130000;
+create table rollback_archive.launch_zone_move_backup_20261116130000 as
   select * from app_private.launch_zone_move_backup;
 
 drop function if exists public.get_launch_zone_places();

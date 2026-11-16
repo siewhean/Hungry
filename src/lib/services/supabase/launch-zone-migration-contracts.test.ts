@@ -1,4 +1,4 @@
-// Source contracts for the launch zone migration (20261116120000). Its behaviour is checked by
+// Source contracts for the launch zone migration (20261116130000). Its behaviour is checked by
 // supabase/smoke/launch_zone.sql on staging and by the rehearsal's down and re-up round trip.
 
 import assert from "node:assert/strict";
@@ -6,8 +6,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const read = (file: string) => readFileSync(file, "utf8");
-const migration = read("supabase/migrations/20261116120000_launch_zone.sql");
-const rollback = read("supabase/rollbacks/20261116120000_launch_zone.down.sql");
+const migration = read("supabase/migrations/20261116130000_launch_zone.sql");
+const rollback = read("supabase/rollbacks/20261116130000_launch_zone.down.sql");
 const smoke = read("supabase/smoke/launch_zone.sql");
 const allowlist = JSON.parse(read("supabase/rate-limit-allowlist.json")) as {
   userRpcs: Record<string, string>;
@@ -86,7 +86,7 @@ test("the down migration puts rows back and drops everything the up created", ()
     assert.ok(rollback.includes(`drop ${object};`), `down drops ${object}`);
   }
   for (const table of ["launch_zone_places", "launch_zone_building_backup", "launch_zone_move_backup"]) {
-    assert.match(rollback, new RegExp(`create table rollback_archive\\.${table}_20261116120000 as`));
+    assert.match(rollback, new RegExp(`create table rollback_archive\\.${table}_20261116130000 as`));
   }
   // The cards are refreshed from the restored rows before the backups they need are dropped.
   assert.ok(

@@ -1,4 +1,4 @@
--- Smoke checks for 20261116120000_launch_zone.sql.
+-- Smoke checks for 20261116130000_launch_zone.sql.
 -- 1. Stalls in buildings named by the street addresses of the three launch zone places (and in the
 --    split Pioneer Mall rows) end up in one building per place, with the place's real name and type,
 --    and the dish follows its stall.

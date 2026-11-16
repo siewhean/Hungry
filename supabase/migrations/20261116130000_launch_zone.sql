@@ -24,7 +24,7 @@
 -- updated_at is left alone (the updated_at triggers on buildings, venues and dishes are switched off
 -- for the moves and the rename, as 20261114170000 did) because moving a stall between two rows of
 -- the same place is not a content edit, and so the down migration can put every row back exactly.
--- Rollback: supabase/rollbacks/20261116120000_launch_zone.down.sql.
+-- Rollback: supabase/rollbacks/20261116130000_launch_zone.down.sql.
 -- race-ok: runs from the migration or from ship scripts, one caller at a time; it also takes an
 -- advisory lock so two callers cannot interleave.
 
