@@ -45,7 +45,7 @@ export function OpenInHungry({ href }: { href: string }) {
         style={{ flexBasis: "100%", margin: 0, order: 2 }}
       >
         {missed
-          ? "Hungry didn't open. It may not be on this phone yet, so tap Get early access above."
+          ? "Hungry didn't open. It may not be on this phone yet, so use the button above to get it."
           : null}
       </p>
     </>

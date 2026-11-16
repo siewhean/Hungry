@@ -94,6 +94,8 @@ const site = spawn(
     env: {
       ...process.env,
       NEXT_DISABLE_SWC: "1",
+      // Until the App Store listing exists the page offers early access; keep the fixture there.
+      NEXT_PUBLIC_APP_STORE_URL: "",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "share-e2e-anon-key",
       NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${mockPort}`,
     },
@@ -164,7 +166,8 @@ try {
         "Phone: 'Open in Hungry' should carry the app link and the share tag.",
       );
       expect(
-        (await mobile.getByText("Hungry did not open").count()) === 0,
+        (await mobile.getByText(/didn.t open/i).count()) === 0 ||
+          !(await mobile.getByText(/didn.t open/i).first().isVisible()),
         "Phone: no 'did not open' note before the button is tapped.",
       );
       await open.click();
