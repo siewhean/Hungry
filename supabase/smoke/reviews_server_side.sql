@@ -1,5 +1,5 @@
 -- Smoke checks for 20261030120000_reviews_server_side.sql.
--- submit_review refuses a review with no photo and rolls the review back with it, keeps the photo
+-- submit_review saves a review with no photo (optional since 20261114090000), keeps the photo
 -- thumbnail path, resumes the same review on a retry (one review, one set of photos), and refuses a
 -- photo path under another user. get_review_feed_page and search_reviews return the dish, stall,
 -- photo paths and cursor in one call. A review cannot be reported by its author, and a taste
@@ -48,7 +48,8 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-004a-b000-000000000001', true);
 set local role authenticated;
 
--- No photo: refused, and no review is left behind.
+-- No photo: saved since 20261114090000, with no photo rows. Undone afterwards (the block raises
+-- its own code) so the feed checks below still see only the one review with a photo.
 do $$
 begin
   begin
@@ -56,13 +57,16 @@ begin
       '{"id":"aaaaaaaa-004a-4000-8000-000000000001","dish_id":"smoke-rv-dish","venue_id":"smoke-rv-venue","rating":4,"text":"Rich gravy","tags":["Rich"]}'::jsonb,
       '[]'::jsonb
     );
-    raise exception 'submit_review should refuse a review with no photo';
-  exception when sqlstate '23514' then
+    if not exists (select 1 from public.reviews where id = 'aaaaaaaa-004a-4000-8000-000000000001') then
+      raise exception 'submit_review should save a review with no photo';
+    end if;
+    if exists (select 1 from public.review_photos where review_id = 'aaaaaaaa-004a-4000-8000-000000000001') then
+      raise exception 'a review with no photo should have no photo rows';
+    end if;
+    raise exception 'undo the photo-less review' using errcode = 'HS001';
+  exception when sqlstate 'HS001' then
     null;
   end;
-  if exists (select 1 from public.reviews where id = 'aaaaaaaa-004a-4000-8000-000000000001') then
-    raise exception 'a refused review must not be left behind';
-  end if;
 end $$;
 
 -- A photo under someone else's folder: refused.

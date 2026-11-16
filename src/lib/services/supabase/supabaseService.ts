@@ -4949,8 +4949,8 @@ export const supabaseService: HungryService = {
       }
 
       // One transaction: the review, its photo rows and (when asked) its portfolio entry go in
-      // together, or nothing does. The server refuses a review with no photo and resumes the same
-      // review, and finds the same entry, on a retry.
+      // together, or nothing does. A photo is optional (20261114090000). The server resumes the
+      // same review, and finds the same entry, on a retry.
       const { data, error } = await client.rpc("submit_review", {
         p_review: {
           id: reviewId,
