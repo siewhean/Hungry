@@ -1,5 +1,5 @@
 // https://docs.expo.dev/guides/using-eslint/
-const { defineConfig } = require('eslint/config');
+const { defineConfig } = require("eslint/config");
 const expoConfig = require("eslint-config-expo/flat");
 
 module.exports = defineConfig([
@@ -41,7 +41,12 @@ module.exports = defineConfig([
           paths: [
             {
               name: "expo-haptics",
-              message: 'Import haptics from "@/lib/haptics" so Settings > Haptic feedback is respected.',
+              message:
+                'Import haptics from "@/lib/haptics" so Settings > Haptic feedback is respected.',
+            },
+            {
+              name: "expo-audio",
+              message: 'Play sounds through "@/lib/sounds" so Settings > Sounds is respected.',
             },
           ],
         },
@@ -60,7 +65,7 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ["src/lib/haptics.ts"],
+    files: ["src/lib/haptics.ts", "src/lib/sounds.ts"],
     rules: { "no-restricted-imports": "off" },
-  }
+  },
 ]);

@@ -1,0 +1,14 @@
+{
+  "version": "20261113090000",
+  "name": "20261113090000_stall_history",
+  "result": "pass",
+  "rehearsed_at": "2026-11-16T00:45:56Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "345aab0365eca7ef3068a8a52068d71fa80765e9",
+  "up_sha256": "d33ec86222c8187711b0929fd00931b8026cf0a4ebfb7332f9082425754876bd",
+  "down_sha256": "81434ca3de18757ebedf177e71c7e54ad51ec5c097ab03aa65ca7ef2a024546a",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/stall_history.sql"]
+}

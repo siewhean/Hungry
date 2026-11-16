@@ -3621,6 +3621,19 @@ export const hungryService: HungryService = {
       return resolve(undefined);
     },
 
+    async getStallHistory() {
+      // The mock keeps no server history; the stall history store keeps this device's signals.
+      return resolve([]);
+    },
+
+    async recordStallSignal() {
+      return resolve(undefined);
+    },
+
+    async resetStallHistory() {
+      return resolve(undefined);
+    },
+
     async recordExplicitFeedback(feedback) {
       const dish = feedback.dishId ? dishes.find((item) => item.id === feedback.dishId) : undefined;
       if (!dish && feedback.feedbackType !== "search_query") {

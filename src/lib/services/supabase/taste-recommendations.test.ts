@@ -86,7 +86,10 @@ test("supabase service prefers live recommendation RPC with mock-compatible fall
   assert.match(source, /client\.rpc\("get_taste_recommendations"/);
   assert.match(source, /refreshSupabaseRepositoryCache\(\)/);
   assert.match(getSlate, /getLiveTasteRecommendations\(client, request, profile\)/);
-  assert.match(getSlate, /liveItems \?\? getRankedRecommendations\(request, profile\)/);
+  assert.match(
+    getSlate,
+    /liveItems \?\? \(request\.liveOnly \? \[\] : getRankedRecommendations\(request, profile\)\)/,
+  );
 });
 
 test("supabase service records explicit feedback through RPC and preserves fallback update", () => {

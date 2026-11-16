@@ -101,6 +101,8 @@ import { trackAnalyticsEvent } from "@/lib/analytics";
 import { selectHaptic } from "@/lib/haptics";
 import { reportError } from "@/lib/monitoring/reportError";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
+import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
+import { useTasteSearch, useTrustedPalate } from "@/features/recommendations/tasteSlates";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useSearchStore } from "@/store/useSearchStore";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -1340,8 +1342,36 @@ function RawCatalogBrowseGrid({
   };
 
   // Everything above the first card scrolls away with the list; only the search row stays put.
+  // Search by taste: the typed words ranked by a trusted palate, above the full list. Only for
+  // dishes, outside a picked place, and only when three or more fit.
+  const trustedPalate = useTrustedPalate();
+  const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
+  const tasteSearchPoint = useMemo(
+    () => ({ latitude: liveLatitude, longitude: liveLongitude }),
+    [liveLatitude, liveLongitude],
+  );
+  const tasteSearch = useTasteSearch(
+    mode === "dishes" && !place ? trustedPalate : undefined,
+    query,
+    tasteSearchPoint,
+    dietaryPreferences,
+  );
   const listHeader = (
     <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}>
+      {tasteSearch.length >= 3 ? (
+        <MoreLikeThisRail
+          title="Closest to your taste"
+          subtitle={`"${query}" dishes ranked by what you like`}
+          items={tasteSearch}
+          mode="dish"
+          venueNameOf={(dish) => dish.venueName}
+          testID="search-taste-rail"
+          onOpen={(dish, position) => {
+            trackAnalyticsEvent("taste_search_opened", { dish_id: dish.id, position });
+            navigation.navigate("DishDetail", { dishId: dish.id, source: "search_taste" });
+          }}
+        />
+      ) : null}
       {place ? (
         <PressableScale
           accessibilityRole="button"

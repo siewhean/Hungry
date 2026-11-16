@@ -38,6 +38,7 @@ import type {
 } from "@/types/domain";
 import { NEUTRAL_TASTE_PROFILE, NEUTRAL_TASTE_VECTOR } from "@/constants/taste";
 import { hungryPersistStorage } from "./persistStorage";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
 import { useFeedFeedbackStore } from "./useFeedFeedbackStore";
 import { useUIStore } from "./useUIStore";
 import { getConfiguredDataSource } from "@/lib/services/supabase/client";
@@ -650,7 +651,10 @@ export const useProfileStore = create<ProfileState>()(
 
         if (isAuthenticated && userId && currentProfile.id === userId) {
           rehydrateFavouriteDishIds();
-          if (authenticatedUserId) void get().loadFoodHistory();
+          if (authenticatedUserId) {
+            void get().loadFoodHistory();
+            void useStallHistoryStore.getState().load(authenticatedUserId);
+          }
           return;
         }
 
@@ -669,6 +673,8 @@ export const useProfileStore = create<ProfileState>()(
           foodHistory: [],
         });
         rehydrateFavouriteDishIds();
+        // Stall history belongs to the account: another account (or a guest) starts empty.
+        void useStallHistoryStore.getState().load(authenticatedUserId ?? "");
         if (authenticatedUserId) void get().loadFoodHistory();
       },
       toggleFavourite: async (dish, options) => {
@@ -1317,6 +1323,7 @@ export const useProfileStore = create<ProfileState>()(
           favouritesRehydrationFailed: false,
           foodHistory: [],
         });
+        void useStallHistoryStore.getState().load("");
       },
     }),
     {

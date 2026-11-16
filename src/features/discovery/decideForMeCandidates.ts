@@ -1,6 +1,7 @@
 import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { filterSafeDishes } from "@/lib/ai/dietaryGate";
 import { hasPersonalTasteProfile, tasteMatchPercent } from "@/lib/ai/tasteEngine";
+import { tasteWeight } from "@/lib/ai/tasteTrust";
 import { getClosureLabel, isClosureActive } from "@/features/merchant/closure";
 import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 import { getSingaporeMinutes, getVenueOpenState, type OpenState } from "@/utils/operatingHours";
@@ -21,8 +22,26 @@ export function decideInitialRadiusMeters(options: { expose?: boolean } = {}): n
 /** Picks within this many match points are "the same quality"; the food-history mix may swap them. */
 export const DECIDE_SCORE_BAND = 5;
 
+/** A dish with no taste to go on scores as an average match, or by its rating once reviewed. */
+const NO_TASTE_SCORE = 50;
+
 /**
- * Dishes ranked by the match the screen shows (`tasteMatchPercent`), nearest then best rated
+ * 0 to 100: the taste match, weighted by how far the dish's tags are trusted (tasteTrust). A
+ * verified dish scores its match; an estimate (the menu workbook's baseline) is pulled toward
+ * its rating, or the middle, by its lack of confidence; an unknown taste scores by rating alone.
+ */
+export function decideTasteScore(
+  tasteVector: TasteVector,
+  dish: Pick<DishDetail, "tasteVector" | "tasteConfidence" | "rating" | "reviewCount">,
+): number {
+  const weight = tasteWeight(dish);
+  const fallback = dish.reviewCount > 0 ? (dish.rating / 5) * 100 : NO_TASTE_SCORE;
+  if (weight === 0) return fallback;
+  return weight * tasteMatchPercent(tasteVector, dish.tasteVector) + (1 - weight) * fallback;
+}
+
+/**
+ * Dishes ranked by the trust-weighted match (`decideTasteScore`), nearest then best rated
  * breaking ties. A diner without a trusted taste profile sees "Popular nearby" instead of a
  * number, so those picks rank by rating, then distance. The budget is a preference, not a rule.
  */
@@ -42,7 +61,7 @@ export function rankDecideCandidates(
   const hasTasteProfile = options.hasTasteProfile ?? hasPersonalTasteProfile(options.tasteVector);
   const baseScoreOf = (dish: DishDetail) =>
     hasTasteProfile
-      ? tasteMatchPercent(options.tasteVector, dish.tasteVector)
+      ? decideTasteScore(options.tasteVector, dish)
       : dish.reviewCount > 0
         ? dish.rating
         : 0;

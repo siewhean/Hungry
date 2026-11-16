@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import * as Haptics from "@/lib/haptics";
+import { playMilestoneSound } from "@/lib/sounds";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { ProfileScreenShell } from "@/app/screens/profile/ProfileScreenShell";
@@ -29,7 +30,7 @@ import {
 import { computeAchievements } from "@/features/achievements/achievements";
 import { useAchievementInput } from "@/features/achievements/useAchievementInput";
 import { buildStampHistory } from "@/features/passport/stampHistory";
-import { useWeeklyGoal } from "@/features/passport/useWeeklyGoal";
+import { useWeeklyGoal, useWeeklyStreak } from "@/features/passport/useWeeklyGoal";
 import { milestoneReachedThisWeek } from "@/features/passport/weeklyGoal";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -131,6 +132,7 @@ export function PassportScreen({ navigation }: Props) {
   );
 
   const weeklyGoal = useWeeklyGoal();
+  const weeklyStreak = useWeeklyStreak();
 
   const earnedStamps = useMemo(() => getEarnedPassportStamps(progressMap), [progressMap]);
   const nextStamp = useMemo(() => getNextPassportStamp(progressMap), [progressMap]);
@@ -251,6 +253,25 @@ export function PassportScreen({ navigation }: Props) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }, [celebratedGoalWeeks, markGoalWeekCelebrated, passportHydrated, reduceMotion, weeklyGoal]);
+
+  // A streak milestone (2, 4, 8, 12, 26, 52 weeks) is marked once, the week it is reached.
+  const streakMilestone = weeklyStreak.milestoneReached;
+  useEffect(() => {
+    if (!passportHydrated || !streakMilestone) return;
+    const key = `streak:${weeklyGoal.weekKey}`;
+    if (celebratedGoalWeeks[key]) return;
+    markGoalWeekCelebrated(key);
+    trackAnalyticsEvent("weekly_streak_milestone", { weeks: streakMilestone });
+    AccessibilityInfo.announceForAccessibility(`${streakMilestone}-week streak!`);
+    Haptics.successHaptic();
+    playMilestoneSound("streak");
+  }, [
+    celebratedGoalWeeks,
+    markGoalWeekCelebrated,
+    passportHydrated,
+    streakMilestone,
+    weeklyGoal.weekKey,
+  ]);
 
   useEffect(() => {
     if (!celebratingGoal) return;
@@ -437,6 +458,7 @@ export function PassportScreen({ navigation }: Props) {
         </View>
         <WeeklyGoalCard
           progress={weeklyGoal}
+          streak={weeklyStreak}
           celebrating={celebratingGoal}
           reduceMotion={reduceMotion}
         />
