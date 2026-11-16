@@ -19,7 +19,9 @@ test("Open in Hungry is offered on phones only", () => {
     true,
   );
   assert.equal(
-    isPhoneUserAgent("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36"),
+    isPhoneUserAgent(
+      "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36",
+    ),
     true,
   );
   assert.equal(
@@ -27,7 +29,10 @@ test("Open in Hungry is offered on phones only", () => {
     false,
   );
   assert.equal(isPhoneUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0"), false);
-  assert.equal(isPhoneUserAgent("Mozilla/5.0 (Linux; Android 14; Pixel Tablet) Safari/537.36"), false);
+  assert.equal(
+    isPhoneUserAgent("Mozilla/5.0 (Linux; Android 14; Pixel Tablet) Safari/537.36"),
+    false,
+  );
   assert.equal(isPhoneUserAgent(""), false);
   assert.equal(isPhoneUserAgent(null), false);
   assert.ok(APP_OPEN_WAIT_MS >= 1000 && APP_OPEN_WAIT_MS <= 3000);
