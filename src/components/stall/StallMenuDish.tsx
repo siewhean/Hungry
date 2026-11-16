@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, View } from "react-native";
+import { PriceWithBasis } from "@/components/dish/PriceLabels";
 import { useMemo } from "react";
 
 import { AccessibleImage, AppText } from "@/components/ui";
 import { RatingStarSymbol } from "@/components/dish/dishSymbols";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
-import { formatDishPrice } from "@/features/detail/dishPrice";
+import { formatPriceWithBasis } from "@/features/detail/priceBasis";
 import { isSoldOut, isStallsPick } from "@/features/merchant/menuSections";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
 import { useHungryTheme } from "@/theme";
@@ -38,7 +39,9 @@ export function shouldUseMenuList(dishes: readonly DishDetail[]) {
 
 /** Screen-reader label for a menu tile: name, price or sold out. */
 export function menuDishAccessibilityLabel(dish: DishDetail, likelyMatch = false) {
-  const status = isSoldOut(dish.availabilityFlags) ? "sold out today" : formatDishPrice(dish);
+  const status = isSoldOut(dish.availabilityFlags)
+    ? "sold out today"
+    : formatPriceWithBasis(dish).text;
   return [
     dish.name,
     isStallsPick(dish.availabilityFlags) ? "stall's pick" : null,
@@ -210,9 +213,7 @@ export function StallMenuDishCard({
                 Sold out today
               </AppText>
             ) : (
-              <AppText variant="price" style={{ color: palette.text }}>
-                {formatDishPrice(dish)}
-              </AppText>
+              <PriceWithBasis dish={dish} color={palette.text} />
             )}
             {dish.reviewCount > 0 ? <MenuDishRating rating={dish.rating} /> : null}
           </View>
@@ -277,9 +278,7 @@ export function StallMenuDishRow({ dish, onPress, likelyMatch = false }: MenuDis
           Sold out today
         </AppText>
       ) : (
-        <AppText variant="price" style={{ color: palette.text }}>
-          {formatDishPrice(dish)}
-        </AppText>
+        <PriceWithBasis dish={dish} color={palette.text} />
       )}
       {photo ? (
         <AccessibleImage

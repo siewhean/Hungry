@@ -173,7 +173,7 @@ test("H31: dietary labels render on the dish and as a stall summary, halal first
       ["vegetarian", 1, false],
     ],
   );
-  assert.match(dishDetail, /<DietaryFlagChips flags=\{dish\.dietaryFlags\} \/>/);
+  assert.match(dishDetail, /<DietaryFlagChips flags=\{dietaryChipFlags\} \/>/);
   assert.match(stallDetail, /summarizeStallDietaryFlags\(dishes\)/);
   const chips = read("src/components/dish/DietaryFlagChips.tsx");
   assert.match(chips, /const isHalal = flag === "halal"/);

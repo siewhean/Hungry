@@ -24,7 +24,7 @@ test("dish page: Order on under the stall card, rating only after Tried, no flav
     /icon: isDishTried \? TriedOnSymbol : TriedOffSymbol,\s+active: isDishTried,\s+mutedWhenInactive: true/,
   );
   assert.doesNotMatch(dish, /dish\.tasteTags/);
-  assert.match(dish, /<DietaryFlagChips flags=\{dish\.dietaryFlags\}/);
+  assert.match(dish, /<DietaryFlagChips flags=\{dietaryChipFlags\}/);
   // The review's stars sit under the author; the like and the "..." share the card's actions.
   const reviewCard = read("src/components/dish/DishReviewCard.tsx");
   assert.match(reviewCard, /<ReviewStars/);

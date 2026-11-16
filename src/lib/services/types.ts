@@ -73,6 +73,7 @@ import type {
   StallStampFacts,
   VenueSummary,
   WeeklyMission,
+  PriceBasis,
 } from "@/types/domain";
 import type { SentStallSignal, UserStallAffinity } from "@/lib/ai/stallHistory";
 
@@ -397,6 +398,8 @@ export interface Bite {
   viewerHasSaved?: boolean;
   rating: number;
   price: number;
+  /** Where the price came from; shown as a tag next to it. Undefined when unknown. */
+  priceBasis?: PriceBasis;
   expiresAt: string; // ISO 8601 — Bites expire after 7 days
   createdAt: string;
 }

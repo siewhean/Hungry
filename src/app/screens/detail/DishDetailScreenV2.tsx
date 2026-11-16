@@ -61,6 +61,12 @@ import {
   TriedOnSymbol,
 } from "@/components/dish/dishSymbols";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
+import { HalalStatusTag, PriceBasisTag } from "@/components/dish/PriceLabels";
+import {
+  formatPriceWithBasis,
+  halalStatusCopy,
+  priceBasisDetail,
+} from "@/features/detail/priceBasis";
 import { ReviewPhotoStrip } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -699,7 +705,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     palette.detailHeroGradientMid,
     palette.bg,
   ];
-  const dishPrice = formatDishPrice(dish);
+  const dishPriceShown = formatPriceWithBasis(dish, "long");
+  const dishPrice = dishPriceShown.text;
+  const priceDetail = priceBasisDetail(dish);
+  const halalCopy = dish.halalStatus ? halalStatusCopy(dish.halalStatus) : undefined;
+  // The halal status line replaces the halal chip, so halal is not shown twice.
+  const dietaryChipFlags = dish.halalStatus
+    ? dish.dietaryFlags.filter((flag) => flag !== "halal")
+    : dish.dietaryFlags;
   const shareReviewTarget: ReviewShareTarget = {
     kind: "dish",
     reviewId: `dish-${dish.id}`,
@@ -1138,13 +1151,53 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     style={[
                       DISH_PRICE_FONT,
                       dish.price > 0
-                        ? { color: palette.orange, fontSize: 24, lineHeight: 34 }
+                        ? {
+                            color: dishPriceShown.estimated ? palette.warningText : palette.orange,
+                            fontSize: 24,
+                            lineHeight: 34,
+                          }
                         : { color: palette.textSecondary, fontSize: 16, lineHeight: 34 },
                     ]}
                   >
                     {dishPrice}
                   </AppText>
                 </View>
+                {(dish.priceBasis && dishPriceShown.listed) || dish.halalStatus ? (
+                  <View
+                    testID="dish-price-halal-labels"
+                    style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}
+                  >
+                    {dishPriceShown.listed ? (
+                      <PriceBasisTag basis={dish.priceBasis} form="long" />
+                    ) : null}
+                    {dish.halalStatus ? <HalalStatusTag status={dish.halalStatus} /> : null}
+                  </View>
+                ) : null}
+                {(priceDetail && dishPriceShown.listed) || halalCopy ? (
+                  <View
+                    style={{
+                      backgroundColor: palette.surfaceRaised,
+                      borderColor: palette.border,
+                      borderRadius: radii.md,
+                      borderWidth: 1,
+                      gap: spacing[2],
+                      padding: spacing[3],
+                    }}
+                  >
+                    {priceDetail && dishPriceShown.listed ? (
+                      <AppText variant="bodySmall" tone="secondary">
+                        <AppText variant="bodySmallBold">{priceDetail.title}</AppText>{" "}
+                        {priceDetail.body}
+                      </AppText>
+                    ) : null}
+                    {halalCopy ? (
+                      <AppText variant="bodySmall" tone="secondary">
+                        <AppText variant="bodySmallBold">{halalCopy.title}</AppText>{" "}
+                        {halalCopy.body}
+                      </AppText>
+                    ) : null}
+                  </View>
+                ) : null}
                 {isDishSoldOut ? (
                   <View
                     accessible
@@ -1210,9 +1263,9 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     </View>
                   ) : null}
                 </View>
-                {dish.dietaryFlags.length > 0 ? (
+                {dietaryChipFlags.length > 0 ? (
                   <View style={{ gap: spacing[1] }}>
-                    <DietaryFlagChips flags={dish.dietaryFlags} />
+                    <DietaryFlagChips flags={dietaryChipFlags} />
                     <AppText variant="micro" tone="muted">
                       Labels come from the stall or our catalogue. Check with the stall if it
                       matters to you.

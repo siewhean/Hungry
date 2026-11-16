@@ -279,6 +279,13 @@ export interface DishSummary {
   reviewCount: number;
   price: number;
   priceRange: string;
+  /**
+   * Where the price came from: counter (seen at the stall, the true price), menu (the stall's own
+   * menu or site) or delivery (a delivery app, usually higher). Undefined when unknown.
+   */
+  priceBasis?: PriceBasis;
+  /** ISO time the price was last checked (or first seen). Undefined when unknown. */
+  priceCheckedAt?: string;
   liveCrowd?: "low" | "medium" | "high";
   tasteTags: string[];
   tasteVector: TasteVector;
@@ -365,6 +372,11 @@ export interface PopularVisitorCandidate {
   sortOrder?: number;
 }
 
+export type PriceBasis = "counter" | "menu" | "delivery";
+
+/** Halal status of one dish. Shown on the dish page only (owner rule, 2026-11-14). */
+export type HalalStatus = "yes" | "no" | "unknown";
+
 export interface DishDetail extends DishSummary {
   gallery: string[];
   description?: string;
@@ -376,6 +388,8 @@ export interface DishDetail extends DishSummary {
    * hidden until the outlet is verified. Unset elsewhere.
    */
   isMerchantDraft?: boolean;
+  /** Dish page read only: halal yes / no / not confirmed. Never shown on cards. */
+  halalStatus?: HalalStatus;
 }
 
 export interface BlogPost {
