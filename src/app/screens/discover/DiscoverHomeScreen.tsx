@@ -55,6 +55,9 @@ import { HomeFeedbackCard } from "@/components/feedback/HomeFeedbackCard";
 import { WelcomeBackCard } from "@/components/home/WelcomeBackCard";
 import { MealPicksCard } from "@/components/home/MealPicksCard";
 import { NextStampCard } from "@/components/gamification/NextStampCard";
+import { WeeklyRecapCard } from "@/components/gamification/WeeklyRecapCard";
+import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
+import { useWorthTheTrip } from "@/features/recommendations/tasteSlates";
 import {
   DISCOVER_FEED_LIMIT,
   getDiscoverBiteCollections,
@@ -121,6 +124,9 @@ import { resolveFoodOpenness } from "@/lib/ai/exploration";
 import { buildFoodHistory, normalizeFoodType } from "@/lib/ai/foodHistory";
 import { useFeedFeedbackStore } from "@/store/useFeedFeedbackStore";
 import { askChoice } from "@/store/useChoiceSheetStore";
+import { useStallHistoryStore } from "@/store/useStallHistoryStore";
+import { useStallInteractionStore } from "@/store/useStallInteractionStore";
+import { buildStallHistory } from "@/lib/ai/stallHistory";
 import { useUIStore } from "@/store/useUIStore";
 import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
@@ -417,6 +423,15 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // What the diner told Home: dishes marked "Not for me" are gone (they stay hidden for 30 days),
   // and food types they asked to see less of drop to the end of every rail.
   const foodHistoryRows = useProfileStore((state) => state.foodHistory);
+  const stallHistoryRows = useStallHistoryStore((state) => state.rows);
+  const recordStallSignal = useStallHistoryStore((state) => state.record);
+  const stallHistory = useMemo(() => buildStallHistory(stallHistoryRows), [stallHistoryRows]);
+  const stallInteractions = useStallInteractionStore((state) => state.interactions);
+  // Next to try: stalls the diner keeps coming back to or saved, but has not been to yet.
+  const nextToTryVenueIds = useMemo(
+    () => stallHistory.likedVenueIds.filter((id) => !stallInteractions[id]?.isTried),
+    [stallHistory, stallInteractions],
+  );
   const mutedFoodTypes = useFeedFeedbackStore((state) => state.mutedFoodTypes);
   const favouriteFoodStyleIds = useFeedFeedbackStore((state) => state.favouriteFoodStyleIds);
   const sessionActions = useFeedFeedbackStore((state) => state.sessionActions);
@@ -1149,8 +1164,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       preferBuildingId: inMallMode ? currentPlaceId : undefined,
       openness: rankingOpenness,
       mealTimes: usualMealTimes,
+      stallScores: stallHistory.scores,
+      hiddenVenueIds: stallHistory.hiddenVenueIds,
+      lastViewedVenueId: stallHistory.recentVenueIds[0],
+      nextToTryVenueIds,
     });
   }, [
+    stallHistory,
+    nextToTryVenueIds,
     usualMealTimes,
     allAreaStallCards,
     areaStallCards,
@@ -1697,7 +1718,19 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   // stall's logo) over the name, rating, opening line and location.
   const mallCardWidth = Math.min(screenWidth * 0.78, 320);
   const stallRailCardWidth = Math.min(screenWidth * 0.62, 260);
-  const renderStallRail = (cards: typeof areaStallCards) => (
+  // "Not for me" on a recommended stall: hidden from Home's sections for 30 days.
+  const openStallOptions = async (venue: (typeof areaStallCards)[number]["venue"]) => {
+    const choice = await askChoice({
+      title: venue.name,
+      message: "Tell Hungry what to change.",
+      options: [{ id: "hide", label: "Not for me" }],
+    });
+    if (choice !== "hide") return;
+    recordStallSignal(venue.id, "not_for_me");
+    trackAnalyticsEvent("home_stall_hidden", { surface: "home", stall_id: venue.id });
+    showToast({ message: `Hidden. You won't see ${venue.name} in recommendations for 30 days.` });
+  };
+  const renderStallRail = (cards: typeof areaStallCards, recommended = false) => (
     <RailScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -1731,11 +1764,46 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           accessibilityLabel={`Open ${venue.name} ${isUserMode ? "details" : "in map zoomed view"}`}
           onPressIn={() => prefetchAreaStall(venue, topDish)}
           onPress={() => openAreaStall(venue, stallIndex)}
+          onOptions={recommended && isSignedIn ? () => void openStallOptions(venue) : undefined}
         />
       ))}
     </RailScrollView>
   );
 
+  // Worth the trip: further out than the nearest stalls Home ranks, close to a trusted palate,
+  // and well reviewed or a strong verified match. Hidden inside a mall and without a palate.
+  const worthTheTripPoint = useMemo(
+    () =>
+      discoverLocationLatitude !== undefined && discoverLocationLongitude !== undefined
+        ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
+        : undefined,
+    [discoverLocationLatitude, discoverLocationLongitude],
+  );
+  const nearbyHomeVenueIds = useMemo(
+    () => allAreaStallCards.map((card) => card.venue.id),
+    [allAreaStallCards],
+  );
+  const worthTheTrip = useWorthTheTrip(
+    hasTasteProfile && !inMallMode ? rankingTasteVector : undefined,
+    worthTheTripPoint,
+    nearbyHomeVenueIds,
+    profile.dietaryPreferences,
+  );
+  const worthTheTripRail =
+    worthTheTrip.length >= 3 ? (
+      <MoreLikeThisRail
+        title="Worth the trip"
+        subtitle="A little further out, and close to your taste"
+        items={worthTheTrip}
+        mode="dish"
+        venueNameOf={(dish) => dish.venueName}
+        testID="home-worth-the-trip"
+        onOpen={(dish, position) => {
+          trackAnalyticsEvent("worth_the_trip_opened", { dish_id: dish.id, position });
+          navigation.navigate("DishDetail", { dishId: dish.id, source: "worth_the_trip" });
+        }}
+      />
+    ) : null;
   const moreSections =
     showInitialDiscoverSkeleton ||
     (categorySections.length === 0 && nearbyPlaces.length === 0) ? null : (
@@ -1776,9 +1844,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 size={20}
               />
             </Pressable>
-            {renderStallRail(section.cards)}
+            {renderStallRail(section.cards, true)}
           </View>
         ))}
+        {worthTheTripRail}
         {nearbyPlaces.length ? (
           <View style={{ gap: discoverContentGap }} testID="nearby-places">
             <Pressable
@@ -2111,6 +2180,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             visible={isFocused}
             onOpenPassport={() => navigation.navigate("PassportScreen")}
           />
+        ) : null}
+
+        {/* Sunday recap: the week's new places and the streak, only when there were some. */}
+        {hasDiscoverContent ? (
+          <WeeklyRecapCard onOpenPassport={() => navigation.navigate("PassportScreen")} />
         ) : null}
 
         {isFilteredPageEmpty ? (

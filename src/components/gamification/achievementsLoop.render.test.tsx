@@ -494,7 +494,7 @@ test("once the data has settled the host reports the diner's achievements", asyn
     assert.equal(reported.length, 0, "nothing is reported while data may still be arriving");
     await wait(MOMENT_SETTLE_MS + 200);
     assert.ok(reported.length >= 1);
-    assert.match(reported[0], /:8$/, "all eight achievements are checked");
+    assert.match(reported[0], /:10$/, "all ten achievements are checked");
   } finally {
     useMomentStore.setState({ reportAchievements: original });
   }
@@ -523,6 +523,8 @@ test("an achievement card opens a pop-up with every level and what earns it, and
     budgetDishes: 0,
     reviewsWritten: 1,
     dishesSaved: 0,
+    tasteLeads: 0,
+    foodTypes: 0,
   });
   const view = await render(createElement(AchievementsSection, { rows }));
   assert.equal(view.findByTestId("achievement-detail-dish-collector"), null, "closed at first");
@@ -549,6 +551,8 @@ test("tapping outside the pop-up closes it", async () => {
     budgetDishes: 0,
     reviewsWritten: 0,
     dishesSaved: 0,
+    tasteLeads: 0,
+    foodTypes: 0,
   });
   const view = await render(createElement(AchievementsSection, { rows }));
   await view.press(view.findByLabel(/^Critic, level 0 of 4/));
@@ -567,6 +571,8 @@ test("the detail panel names a finished achievement and has no next step", async
     budgetDishes: 0,
     reviewsWritten: 0,
     dishesSaved: 0,
+    tasteLeads: 0,
+    foodTypes: 0,
   });
   assert.ok(row);
   let closed = 0;

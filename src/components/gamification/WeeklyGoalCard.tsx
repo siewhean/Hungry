@@ -11,7 +11,9 @@ import Animated, {
 import { PartyPopper } from "lucide-react-native";
 
 import { AppText } from "@/components/ui";
+import { AppSymbol } from "@/components/ui/AppSymbol";
 import type { WeeklyGoalProgress } from "@/features/passport/weeklyGoal";
+import { streakLabel, type WeeklyStreak } from "@/features/passport/weeklyStreak";
 import { useHungryTheme } from "@/theme";
 
 interface WeeklyGoalCardProps {
@@ -19,10 +21,17 @@ interface WeeklyGoalCardProps {
   /** True for a moment after this week's goal is first met. */
   celebrating: boolean;
   reduceMotion: boolean;
+  /** The weekly streak: one new place keeps a week. Hidden until the first week is kept. */
+  streak?: WeeklyStreak;
 }
 
 /** "This week's goal" on the Passport: a progress bar, weeks met and the next milestone. */
-export function WeeklyGoalCard({ progress, celebrating, reduceMotion }: WeeklyGoalCardProps) {
+export function WeeklyGoalCard({
+  progress,
+  celebrating,
+  reduceMotion,
+  streak,
+}: WeeklyGoalCardProps) {
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const pop = useSharedValue(1);
 
@@ -38,6 +47,13 @@ export function WeeklyGoalCard({ progress, celebrating, reduceMotion }: WeeklyGo
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
   const ratio = Math.min(1, progress.count / progress.target);
   const weeksLabel = `${progress.weeksCompleted} ${progress.weeksCompleted === 1 ? "week" : "weeks"} met`;
+  const streakLine = streak ? streakLabel(streak) : null;
+  const restLine =
+    streak && streak.restWeeks > 0
+      ? `${streak.restWeeks} rest ${streak.restWeeks === 1 ? "week" : "weeks"} saved for a busy week`
+      : streak?.restWeekUsedLastWeek
+        ? "A rest week covered last week"
+        : null;
   const milestoneLabel = progress.nextMilestone
     ? ` · next: ${progress.nextMilestone.title} (${progress.nextMilestone.weeks} weeks)`
     : "";
@@ -45,7 +61,13 @@ export function WeeklyGoalCard({ progress, celebrating, reduceMotion }: WeeklyGo
   return (
     <Animated.View
       accessible
-      accessibilityLabel={`This week's goal: ${progress.count} of ${progress.target} tried. ${weeksLabel}.`}
+      accessibilityLabel={[
+        `This week's goal: ${progress.count} of ${progress.target} tried. ${weeksLabel}.`,
+        streakLine ? `${streakLine}.` : "",
+        restLine ? `${restLine}.` : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={[
         {
           backgroundColor: celebrating ? palette.orangeLight : palette.surface,
@@ -100,6 +122,25 @@ export function WeeklyGoalCard({ progress, celebrating, reduceMotion }: WeeklyGo
         {weeksLabel}
         {milestoneLabel}
       </AppText>
+      {streakLine ? (
+        <View style={{ gap: spacing[1] }} testID="weekly-streak">
+          <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
+            <AppSymbol
+              name="streak"
+              size={16}
+              color={streak?.keptThisWeek ? palette.orange : palette.textSecondary}
+            />
+            <AppText variant="bodySmallBold" style={{ flex: 1 }}>
+              {streakLine}
+            </AppText>
+          </View>
+          {restLine ? (
+            <AppText tone="muted" variant="micro">
+              {restLine}
+            </AppText>
+          ) : null}
+        </View>
+      ) : null}
     </Animated.View>
   );
 }

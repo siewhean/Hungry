@@ -1,0 +1,14 @@
+{
+  "version": "20261114170000",
+  "name": "20261114170000_clear_hygiene_grade",
+  "result": "pass",
+  "rehearsed_at": "2026-11-15T16:49:42Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "6331396f1750a7725e0a298f1cd0c848a2a16d5a",
+  "up_sha256": "f20ba4551a41e1bb64c6adec206eec98efa4efa9546322071d714c047bf01862",
+  "down_sha256": "70ec25d5fcedf9b7b8078f62e9f88c755d5d8da82ac1969f3b0ab776bf517875",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/hygiene_grade_cleared.sql"]
+}

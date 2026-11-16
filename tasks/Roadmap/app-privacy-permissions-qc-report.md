@@ -13,7 +13,8 @@ Status: **Partial / No-Go for store submission.**
 | photo library                                  | keep; the released avatar update flow uses gallery selection and upload  |
 | microphone                                     | removed from internal-alpha, preview, and production                     |
 | video media and legacy external storage        | removed from internal-alpha, preview, and production                     |
-| Mapbox, `expo-audio`, `expo-video`, dev client | excluded from released native autolinking; retained only for development |
+| Mapbox, `expo-video`, dev client | excluded from released native autolinking; retained only for development |
+| `expo-audio` | ships in released builds for milestone sounds (2026-11-14): playback only, no microphone, no background playback |
 | local network / Bonjour                        | dev-only; stripped by release config                                     |
 | always location                                | remove from production config                                            |
 | Face ID                                        | remove from production config unless biometric auth ships                |

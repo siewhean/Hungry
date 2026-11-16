@@ -26,6 +26,7 @@ export const en = {
   "settings.row.signOutAll": "Sign out of all devices",
   "settings.row.deleteAccount": "Delete account",
   "settings.row.haptics": "Haptic feedback",
+  "settings.row.sounds": "Sounds",
   "settings.row.leftHanded": "Left-handed mode",
   "settings.row.leftHandedHint": "Moves the add button on your merchant menu to the left side.",
   "settings.row.feedback": "Send feedback",

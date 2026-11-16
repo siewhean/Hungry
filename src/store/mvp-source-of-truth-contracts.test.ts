@@ -74,6 +74,8 @@ test("every Settings switch backed by useUIStore has a consumer outside Settings
   const consumers: Record<string, string> = {
     // Every haptic goes through the wrapper (expo-haptics is lint-banned elsewhere).
     hapticFeedbackEnabled: "src/lib/haptics.ts",
+    // Every milestone sound goes through the wrapper (expo-audio is lint-banned elsewhere).
+    soundsEnabled: "src/lib/sounds.ts",
     leftHandedMode: "src/components/ui/FAB.tsx",
     allowSearchHistory: "src/store/useSearchStore.ts",
     // "Share usage analytics" gates trackAnalyticsEvent.

@@ -31,6 +31,7 @@ import {
   EyeOff,
   FileText,
   Flame,
+  Volume2,
   Folder,
   Gift,
   Globe,
@@ -250,6 +251,9 @@ const APP_SYMBOLS = {
   done: { ios: "checkmark.circle.fill", lucide: CheckCircle2 },
   notDone: { ios: "circle", lucide: Circle },
   problem: { ios: "exclamationmark.circle", lucide: CircleAlert },
+  // Retention: the weekly streak and the milestone sounds switch.
+  streak: { ios: "flame.fill", lucide: Flame, filled: true },
+  sounds: { ios: "speaker.wave.2", lucide: Volume2 },
 } as const satisfies Record<string, { ios: SFSymbolName; lucide: LucideIcon; filled?: boolean }> &
   Record<ReviewTasteTagSymbol, unknown>;
 

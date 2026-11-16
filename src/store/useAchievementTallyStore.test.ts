@@ -10,7 +10,12 @@ test("a tagged spicy dish counts as spicy and an untagged one never does", () =>
     price: 4.5,
     tasteConfidence: 1,
   };
-  assert.deepEqual(triedDishFacts(dish, true), { spicy: true, sweet: false, budget: true });
+  assert.deepEqual(triedDishFacts(dish, true), {
+    spicy: true,
+    sweet: false,
+    budget: true,
+    lead: "spicy",
+  });
   assert.deepEqual(triedDishFacts(dish, false), { spicy: false, sweet: false, budget: true });
   assert.equal(triedDishFacts({ ...dish, price: 0 }, true).budget, false);
 });
