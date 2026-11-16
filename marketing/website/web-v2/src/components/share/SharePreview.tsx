@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import styles from "@/components/seo/SeoPage.module.css";
 import { siteConfig } from "@/app/seo";
+import { OpenInHungry } from "@/components/share/OpenInHungry";
 import { appDeepLink } from "@/lib/share/sharedLinks";
 
 type SharePreviewProps = {
@@ -40,20 +41,29 @@ export function SharePreview({
               <span className={styles.eyebrow}>{eyebrow}</span>
               <h1>{title}</h1>
               {lead ? <p className={styles.lead}>{lead}</p> : null}
-              <a className={styles.ctaLink} href={appDeepLink(appPath, shareSource)}>
-                Open in Hungry
-              </a>
-              {mapsUrl ? (
-                <a
-                  className={styles.inlineLink}
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ display: "inline-block", marginLeft: 16 }}
-                >
-                  Get directions
+              {siteConfig.appStoreUrl ? (
+                <a className={styles.ctaLink} href={siteConfig.appStoreUrl}>
+                  Download on the App Store
                 </a>
-              ) : null}
+              ) : (
+                <Link className={styles.ctaLink} href="/join-waitlist">
+                  Get early access
+                </Link>
+              )}
+              <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 16 }}>
+                <OpenInHungry href={appDeepLink(appPath, shareSource)} />
+                {mapsUrl ? (
+                  <a
+                    className={styles.inlineLink}
+                    href={mapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: "inline-block" }}
+                  >
+                    Get directions
+                  </a>
+                ) : null}
+              </div>
             </div>
             <aside className={styles.answerCard}>
               {imageUrl ? (
@@ -84,15 +94,6 @@ export function SharePreview({
         </div>
       </section>
       {children}
-      <section className={`${styles.section} ${styles.ctaBand}`}>
-        <div className={styles.sectionInner}>
-          <h2>Find your next favourite dish</h2>
-          <p>Hungry shows what to order at Singapore hawker stalls, with prices kept up to date.</p>
-          <Link href="/join-waitlist" className={styles.ctaLink}>
-            Get Hungry
-          </Link>
-        </div>
-      </section>
     </main>
   );
 }
