@@ -21,7 +21,10 @@ test("the migration is rehearsable: smoke header, no transaction control, a matc
 });
 
 test("the zone is the three places sh named, with the block 651 name still a placeholder", () => {
-  assert.match(migration, /'jurong-west-hawker-centre', 'Jurong West Hawker Centre', 'hawker_centre'/);
+  assert.match(
+    migration,
+    /'jurong-west-hawker-centre', 'Jurong West Hawker Centre', 'hawker_centre'/,
+  );
   assert.match(migration, /'pioneer-mall', 'Pioneer Mall', 'mall'/);
   assert.match(migration, /array\['638A Jurong West Street 61', '638 Jurong West Street 61'\]/);
   assert.match(migration, /'block-651', 'Block 651'/);
@@ -35,12 +38,19 @@ test("nothing is deleted: rows move, every move and old name is backed up first"
   assert.match(migration, /launch_zone_building_backup/);
   assert.match(migration, /launch_zone_move_backup/);
   for (const table of ["venues", "dishes", "posts", "stall_posts", "merchant_outlets"]) {
-    assert.match(migration, new RegExp(`update public\\.${table} t set building_id = m\\.survivor_id`));
+    assert.match(
+      migration,
+      new RegExp(`update public\\.${table} t set building_id = m\\.survivor_id`),
+    );
   }
 });
 
 test("updated_at triggers are switched off for the move and back on, and the run is serialised", () => {
-  for (const trigger of ["trg_buildings_updated_at", "trg_venues_updated_at", "trg_dishes_updated_at"]) {
+  for (const trigger of [
+    "trg_buildings_updated_at",
+    "trg_venues_updated_at",
+    "trg_dishes_updated_at",
+  ]) {
     assert.match(migration, new RegExp(`disable trigger ${trigger}`));
     assert.match(migration, new RegExp(`enable trigger ${trigger}`));
     assert.match(rollback, new RegExp(`disable trigger ${trigger}`));
@@ -51,11 +61,23 @@ test("updated_at triggers are switched off for the move and back on, and the run
 });
 
 test("the zone list is for signed-in callers only, and the report is closed to the app", () => {
-  assert.match(migration, /revoke all on function public\.get_launch_zone_places\(\) from public, anon;/);
-  assert.match(migration, /grant execute on function public\.get_launch_zone_places\(\) to authenticated;/);
+  assert.match(
+    migration,
+    /revoke all on function public\.get_launch_zone_places\(\) from public, anon;/,
+  );
+  assert.match(
+    migration,
+    /grant execute on function public\.get_launch_zone_places\(\) to authenticated;/,
+  );
   assert.match(migration, /catalog_raw_require_authenticated\(\)/);
-  assert.match(migration, /revoke all on function app_private\.launch_zone_report\(\) from public, anon, authenticated;/);
-  assert.match(migration, /revoke all on function app_private\.apply_launch_zone\(\) from public, anon, authenticated;/);
+  assert.match(
+    migration,
+    /revoke all on function app_private\.launch_zone_report\(\) from public, anon, authenticated;/,
+  );
+  assert.match(
+    migration,
+    /revoke all on function app_private\.apply_launch_zone\(\) from public, anon, authenticated;/,
+  );
   assert.match(migration, /alter table public\.launch_zone_places enable row level security;/);
   assert.ok(allowlist.userRpcs.get_launch_zone_places, "rate-limit allowlist entry with a reason");
 });
@@ -63,7 +85,10 @@ test("the zone list is for signed-in callers only, and the report is closed to t
 test("the catalog cards take the new names at once, for live and unexpired releases only", () => {
   assert.match(migration, /update public\.catalog_raw_venue_cards c/);
   assert.match(migration, /update public\.catalog_raw_dish_cards c/);
-  assert.match(migration, /r\.status = 'active' or \(r\.status = 'retired' and r\.expires_at > now\(\)\)/);
+  assert.match(
+    migration,
+    /r\.status = 'active' or \(r\.status = 'retired' and r\.expires_at > now\(\)\)/,
+  );
 });
 
 test("the down migration puts rows back and drops everything the up created", () => {
@@ -71,7 +96,10 @@ test("the down migration puts rows back and drops everything the up created", ()
     rollback,
     /^-- expect-row-loss: public\.launch_zone_places, app_private\.launch_zone_building_backup, app_private\.launch_zone_move_backup/m,
   );
-  assert.match(rollback, /set name = k\.old_name, building_type = k\.old_type, venue_count = k\.old_venue_count/);
+  assert.match(
+    rollback,
+    /set name = k\.old_name, building_type = k\.old_type, venue_count = k\.old_venue_count/,
+  );
   for (const object of [
     "function if exists public.get_launch_zone_places()",
     "function if exists app_private.launch_zone_report()",
@@ -85,11 +113,19 @@ test("the down migration puts rows back and drops everything the up created", ()
   ]) {
     assert.ok(rollback.includes(`drop ${object};`), `down drops ${object}`);
   }
-  for (const table of ["launch_zone_places", "launch_zone_building_backup", "launch_zone_move_backup"]) {
-    assert.match(rollback, new RegExp(`create table rollback_archive\\.${table}_20261116130000 as`));
+  for (const table of [
+    "launch_zone_places",
+    "launch_zone_building_backup",
+    "launch_zone_move_backup",
+  ]) {
+    assert.match(
+      rollback,
+      new RegExp(`create table rollback_archive\\.${table}_20261116130000 as`),
+    );
   }
   // The cards are refreshed from the restored rows before the backups they need are dropped.
   assert.ok(
-    rollback.indexOf("launch_zone_sync_cards();") < rollback.indexOf("drop table if exists public.launch_zone_places"),
+    rollback.indexOf("launch_zone_sync_cards();") <
+      rollback.indexOf("drop table if exists public.launch_zone_places"),
   );
 });
