@@ -733,7 +733,7 @@ def build_preamble(replace: bool) -> str:
             "  loop",
             "    execute format('select count(*) from %s where %I is not null', r.child, r.col) into n;",
             "    if n > 0 then",
-            "      raise exception '--replace refused: % rows in % reference catalog tables', n, r.child;",
+            "      raise exception '--replace refused: % rows in % reference catalog tables; archive dishes that have reviews (set archived_at) instead of deleting them', n, r.child;",
             "    end if;",
             "  end loop;",
             "end $$;",
