@@ -165,6 +165,27 @@ Nothing inside Supabase schedules `process-account-deletions`; the host must. No
 - Exit codes: `0` ok/empty queue, `1` a request or the call failed (alert on this), `2` missing config. Logs carry request ids only.
 - Per request: anonymize (0040 RPC) -> `purge_account_deletion_residual_data` (post-0040 tables, avatar URL) -> delete `<uid>/` objects in avatars, review-media, bites-media, post-media, menu-photos, user-stall-submission-images (accepted stall-submission images kept) -> `auth.admin.deleteUser` -> complete. Idempotent; failures retry next run; after 10 attempts a request stops auto-claiming and needs manual review (`last_error`, `account_deletion_processing_events`).
 
+## Staging Edge Functions (package 0.5)
+
+Staging (`uuylnktiipkmcweyqnpd`) runs the same 11 functions as production, with its own secrets, so photo safety, menu-photo intake, push sending and account deletion can be tried before a release. Production is never touched by these scripts (`scripts/staging-functions.sh` hard-codes the staging ref and refuses the production one).
+
+Run on the Mac, in a clean checkout of `main` (the Supabase CLI must be logged in):
+
+```
+scripts/staging-functions.sh secrets   # makes the six worker tokens/keys, pushes secrets (values never printed)
+scripts/staging-functions.sh deploy    # deploys all functions; verify_jwt comes from supabase/config.toml
+scripts/staging-functions.sh check     # lists secret NAMES on staging and reports any missing
+scripts/staging-functions.sh smoke     # calls each function once
+```
+
+`all` runs the four in order. Worker tokens are saved to `~/.hungry/staging-functions.env` (mode 600) so `smoke` can use them. Third-party keys are pushed only if exported in the shell first: `GOOGLE_CLOUD_VISION_API_KEY`, `GEMINI_API_KEY` (menu-photo intake), `AI_PROVIDER`/`AI_MODEL`/`ANTHROPIC_API_KEY` (taste tagging), `RESEND_API_KEY`, `RESEND_FROM`, `REPORT_DIGEST_TO`, `SENTRY_DSN`. Allowed origins default to `https://usehungry.com,http://localhost:3000` (`STAGING_ALLOWED_ORIGINS` overrides).
+
+The smoke has two steps per function: an anonymous call must be refused (401 or 403; 404 means not deployed), then worker functions run once with `{limit: 1}` and `guest-sessions` creates one `smoke-...` session. The manifest in `scripts/staging-functions/manifest.mjs` lists each function's secrets; `npm run check:staging-functions` (CI) fails when a function, a secret it reads, or its `verify_jwt` setting drifts from the manifest.
+
+Not wired on staging: the `send-email` auth hook (staging auth mail uses the default sender; the smoke only checks the function is deployed and signature-guarded), the cron Vault secrets (`manual/new-project-bootstrap.md` section 3), and `MERCHANT_ALERTS_ENABLED`.
+
+Release checklist: after any change under `supabase/functions/`, run `deploy` then `smoke` on staging before the production deploy.
+
 ## Self-Hosted Supabase Targets
 
 Hungry's Supabase runs self-hosted (docker compose); there is no linked Supabase Cloud project or Management API. Set values locally or as CI secrets only, never in the repo.
