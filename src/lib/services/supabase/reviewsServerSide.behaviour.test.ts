@@ -187,7 +187,7 @@ test("REV-7: when the server refuses the review, the uploaded photos and thumbna
   fake.storage.createSignedUploadUrl = () => ({ data: { token: "t" }, error: null });
   fake.rpc.submit_review = () => ({
     data: null,
-    error: { code: "23514", message: "Add a photo to publish your review." },
+    error: { code: "23514", message: "A review can have up to 10 photos." },
   });
 
   await assert.rejects(service.reviews.submitReview(draft), (error: { code?: string }) => {
@@ -198,6 +198,20 @@ test("REV-7: when the server refuses the review, the uploaded photos and thumbna
   const removed = fake.storageCalls.filter((call) => call.method === "remove");
   assert.equal(removed.length, 1);
   assert.equal((removed[0]!.args[0] as string[]).length, 4, "both photos and both thumbnails");
+});
+
+test("0.1: a review with no photo uploads nothing and is sent with an empty photo list", async () => {
+  fake.rpc.submit_review = () => ({
+    data: { review_id: REVIEW_ID, resumed: false, photos_added: 0 },
+    error: null,
+  });
+
+  await service.reviews.submitReview({ ...draft, photos: [], portfolio: undefined });
+
+  assert.equal(fake.storageCalls.filter((call) => call.method === "uploadToSignedUrl").length, 0);
+  const args = fake.callsTo("submit_review")[0]!.args as Record<string, unknown>;
+  assert.deepEqual(args.p_photos, []);
+  assert.equal("p_portfolio" in args, false, "no portfolio entry without a photo");
 });
 
 test("REV-7: a retry that finds the photos already attached removes the files it just uploaded", async () => {
