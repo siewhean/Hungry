@@ -42,3 +42,11 @@ export function groupColocatedVenues(items: readonly CatalogMapItem[]): CatalogM
   }
   return result;
 }
+
+/**
+ * Stalls with dishes first, each group in the order it came (the server's nearest or top rated
+ * order). A stall without a menu still shows, below the ones with one.
+ */
+export function menuStallsFirst<T extends { menuCount: number }>(stalls: readonly T[]): T[] {
+  return [...stalls].sort((a, b) => Number(a.menuCount <= 0) - Number(b.menuCount <= 0));
+}

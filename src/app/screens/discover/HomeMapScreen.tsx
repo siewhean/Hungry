@@ -80,7 +80,11 @@ import {
   shortOpenLabel,
   type MapCardMatchedDish,
 } from "@/features/discovery/mapCardText";
-import { groupColocatedVenues, isColocatedCluster } from "@/features/discovery/mapPins";
+import {
+  groupColocatedVenues,
+  isColocatedCluster,
+  menuStallsFirst,
+} from "@/features/discovery/mapPins";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getExperimentVariant } from "@/lib/experiments/experiments";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
@@ -646,9 +650,12 @@ export function HomeMapScreen() {
       currentZoom < 14 || !(mapFilters.topRated || mapQuery)
         ? rawVenueCards
         : rawVenueCards.filter((card) => pinIds.has(card.id));
-    return openNowActive
-      ? narrowedByPins.filter((card) => openLabelByVenue.get(card.id) === "Open")
-      : narrowedByPins;
+    // Stalls with dishes lead the cards; stalls without a menu follow (never hidden).
+    return menuStallsFirst(
+      openNowActive
+        ? narrowedByPins.filter((card) => openLabelByVenue.get(card.id) === "Open")
+        : narrowedByPins,
+    );
   }, [
     currentZoom,
     mapFilters.topRated,
@@ -718,7 +725,12 @@ export function HomeMapScreen() {
           reportError(error, { screen: "HomeMapScreen", action: "load_cluster_hours" });
         }
         if (run !== clusterPickRun.current) return;
-        setClusterPick({ count: item.count, venues: page.items, hoursById, loading: false });
+        setClusterPick({
+          count: item.count,
+          venues: menuStallsFirst(page.items),
+          hoursById,
+          loading: false,
+        });
       } catch (error) {
         reportError(error, { screen: "HomeMapScreen", action: "load_cluster_stalls" });
         if (run !== clusterPickRun.current) return;

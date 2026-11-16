@@ -6,7 +6,8 @@
  *
  * Most stalls have no menu in the app yet, so a stall is read by its top dish when it has one and
  * otherwise by its name and cuisine tags (stallTaste.ts): a stall without a menu can still be a
- * fit. Inside a mall (`preferBuildingId`) the mall's own stalls lead each section.
+ * fit. Inside a mall (`preferBuildingId`) the mall's own stalls lead each section. A stall without
+ * a menu is never hidden but ranks below the stalls with one (MENU_BOOST).
  * Pure: the screen passes the stalls it holds and the diner's palate, and gets the sections back.
  */
 import { isLateNightHour } from "@/features/discover/bites";
@@ -76,6 +77,14 @@ const MIN_KINDS = 2;
 const DEFAULT_TASTE_ORDER: readonly TasteKey[] = ["rich", "spicy", "sweet", "aromatic"];
 
 const AXES = ["sweet", "spicy", "sour", "salty", "rich", "aromatic"] as const;
+/**
+ * Added to a stall's score in every section when it has a menu (a top dish). Larger than any other
+ * part of a score, so a stall without dishes still shows but comes after the stalls with them.
+ */
+export const MENU_BOOST = 1;
+/** Stalls with a menu first; order kept otherwise (Array.prototype.sort is stable). */
+const menuFirst = <T extends HomeSectionCard>(a: T, b: T) =>
+  Number(!a.topDish) - Number(!b.topDish);
 
 export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
   /** The palate to fit stalls to (saved one, nudged by this visit). */
@@ -150,11 +159,32 @@ const kindOf = (card: HomeSectionCard): string =>
     .toLowerCase() ??
   "other";
 
-/** One of each food kind in turn, best first, so the section is made of different foods. */
+/**
+ * One of each food kind in turn, best first, so the section is made of different foods. Stalls
+ * with a menu take every turn first; stalls without one fill what is left.
+ */
 function roundRobinByKind<T extends HomeSectionCard>(
   scored: readonly { card: T; score: number }[],
   limit: number,
 ): T[] {
+  const withMenu = roundRobinOf(
+    scored.filter((entry) => entry.card.topDish),
+    limit,
+  );
+  return [
+    ...withMenu,
+    ...roundRobinOf(
+      scored.filter((entry) => !entry.card.topDish),
+      limit - withMenu.length,
+    ),
+  ];
+}
+
+function roundRobinOf<T extends HomeSectionCard>(
+  scored: readonly { card: T; score: number }[],
+  limit: number,
+): T[] {
+  if (limit <= 0) return [];
   const byKind = new Map<string, { card: T; score: number }[]>();
   for (const entry of [...scored].sort((a, b) => b.score - a.score)) {
     const kind = kindOf(entry.card);
@@ -296,6 +326,8 @@ export function buildHomeSections<T extends HomeSectionCard>(
   // Inside a mall its own stalls come first in every section.
   const hereBoost = (card: T) =>
     options.preferBuildingId && card.venue.buildingId === options.preferBuildingId ? 0.2 : 0;
+  // A stall with dishes ranks above one without in every section (sh, 2026-11-14).
+  const menuBoost = (card: T) => (card.topDish ? MENU_BOOST : 0);
   // Something to go on: a menu, a taste, or a known kind of food. A stall known only by a bare
   // name is not a recommendation.
   const knowable = (card: T) =>
@@ -331,7 +363,9 @@ export function buildHomeSections<T extends HomeSectionCard>(
   for (const style of (options.favourites ?? []).slice(0, 2)) {
     const pattern = new RegExp(`\\b${escapeForRegex(style.label.toLowerCase())}\\b`, "i");
     const found = free().filter((card) => pattern.test(textOf(card)));
-    const ordered = options.compare ? [...found].sort(options.compare) : found;
+    const ordered = (options.compare ? [...found].sort(options.compare) : [...found]).sort(
+      menuFirst,
+    );
     add({
       id: `favourite-${style.id}`,
       title: `Because you like ${style.label}`,
@@ -375,7 +409,8 @@ export function buildHomeSections<T extends HomeSectionCard>(
     };
     const scored = free()
       .map((card) => ({ card, score: likeness(card) }))
-      .filter((entry) => entry.score >= VIEWED_LIKENESS_MIN);
+      .filter((entry) => entry.score >= VIEWED_LIKENESS_MIN)
+      .map((entry) => ({ ...entry, score: entry.score + menuBoost(entry.card) }));
     add({
       id: "because-viewed",
       title: `Because you viewed ${viewed.venue.name}`,
@@ -399,6 +434,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
         kindBoost(card) +
         historyBoost(card) +
         hereBoost(card) +
+        menuBoost(card) +
         ((card.topDish?.rating ?? 0) / 5) * 0.15 +
         (1 - index / Math.max(pool.length, 1)) * 0.15,
     }));
@@ -442,6 +478,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
             (taste.vector[axis] / 10) * 0.5 +
             fit(card) * 0.35 +
             hereBoost(card) +
+            menuBoost(card) +
             ((card.topDish?.rating ?? 0) / 5) * 0.15 +
             kindBoost(card) * 0.2,
         },
@@ -488,6 +525,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
             (wanted.has(kindOf(card) as HomeCategoryId) ? 0.4 : 0) +
             fit(card) * 0.3 +
             hereBoost(card) +
+            menuBoost(card) +
             ((card.topDish?.rating ?? 0) / 5) * 0.3,
         })),
       perSection,
@@ -523,7 +561,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
             const kind = kindOf(card);
             return kind !== "other" && !shownKinds.has(kind);
           })
-          .map((card) => ({ card, score: fit(card) * 0.6 + hereBoost(card) })),
+          .map((card) => ({ card, score: fit(card) * 0.6 + hereBoost(card) + menuBoost(card) })),
         perSection,
       ),
       kind: "context",
