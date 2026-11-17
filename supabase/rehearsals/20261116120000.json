@@ -1,0 +1,14 @@
+{
+  "version": "20261116120000",
+  "name": "20261116120000_reviews_survive_dish_removal",
+  "result": "pass",
+  "rehearsed_at": "2026-11-16T15:28:39Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "cde2ba1429b34ef3eaf6faede11b04404649d8d0",
+  "up_sha256": "76e4236e5e1a753ec90328325e4547e0ca19fd7d6c16ac47e26f04cf1d3f8f66",
+  "down_sha256": "eb65b98e0386bdf205263ca1c36b46ea5369734829dbcaa4747509d3b2724592",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/reviews_survive_dish_removal.sql"]
+}
