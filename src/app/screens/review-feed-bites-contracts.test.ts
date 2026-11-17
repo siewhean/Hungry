@@ -1,0 +1,116 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import test from "node:test";
+
+const root = process.cwd();
+
+function read(relativePath: string): string {
+  return readFileSync(path.join(root, relativePath), "utf8");
+}
+
+test("Review feed cards do not render bottom bites sections", () => {
+  const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
+  const reviewShareSheet = read("src/app/screens/review/ReviewShareSheet.tsx");
+  const commentsSheet = read("src/components/social/ReviewCommentsSheet.tsx");
+  const bitesCarousel = read("src/components/social/BitesCarousel.tsx");
+  const biteCommentsSheet = read("src/components/social/BiteCommentsSheet.tsx");
+
+  assert.doesNotMatch(reviewFeed, /ReviewBitesStrip/);
+  assert.doesNotMatch(reviewFeed, /BiteCommentsSheet/);
+  assert.doesNotMatch(reviewFeed, /getHomeBitesFeed\(\)/);
+  assert.doesNotMatch(reviewFeed, /useDelayedLoadingSkeleton\(isBitesLoading\)/);
+  assert.doesNotMatch(reviewFeed, /bitesByDishId/);
+  assert.doesNotMatch(reviewFeed, /activeCommentBite/);
+  assert.match(reviewFeed, /useSocialStore/);
+  assert.match(reviewFeed, /initializeInteractions\(/);
+  assert.match(reviewFeed, /const reviewReactionsEnabled = serviceProviderMode === "mock"/);
+  assert.match(reviewFeed, /toggleLike/);
+  assert.match(reviewFeed, /toggleSave\(item\.interactionId\)/);
+  assert.match(
+    reviewFeed,
+    /const localDish = item\.dish \?\? repository\.getDishById\(item\.dishId\)/,
+  );
+  assert.match(reviewFeed, /toggleFavourite\(localDish\)/);
+  assert.match(reviewFeed, /saved: favouriteDishIds\.includes\(item\.dishId\)/);
+  assert.match(reviewFeed, /saveCount: baseInteraction\.saveCount/);
+  assert.doesNotMatch(reviewFeed, /incrementShare/);
+  assert.match(reviewFeed, /ReviewCommentsSheet/);
+  assert.match(reviewFeed, /ReviewShareSheet/);
+  assert.match(reviewFeed, /commentsEnabled=\{commentsEnabled\}/);
+  assert.match(reviewFeed, /const openCommentsSheet = useCallback/);
+  assert.match(reviewFeed, /const commentSheet = commentsSheetRef\.current/);
+  assert.match(reviewFeed, /openCommentsSheet\(\)/);
+  assert.match(reviewFeed, /shareSheetRef\.current\?\.present\(\)/);
+  assert.match(
+    reviewFeed,
+    /const reviewDate = new Date\(item\.review\.createdAt\)\.toLocaleDateString/,
+  );
+  assert.match(
+    reviewFeed,
+    /<AppText variant="micro" tone="muted" numberOfLines=\{1\}>\s*\{item\.venueName\}\s*<\/AppText>/,
+  );
+  assert.match(reviewFeed, /\{reviewDate\}[\s\S]*<Send/);
+  assert.match(reviewFeed, /accessibilityLabel="Share dish"/);
+  assert.match(reviewFeed, /"Remove saved dish"/);
+  assert.match(reviewFeed, /"Save dish"/);
+  assert.doesNotMatch(reviewFeed, /"Unsave review"/);
+  assert.doesNotMatch(reviewFeed, /"Save review"/);
+  assert.match(reviewFeed, /accessibilityLabel="Open review comments"/);
+  assert.match(
+    reviewFeed,
+    /accessibilityLabel=\{interaction\.liked \? "Unlike review" : "Like review"\}/,
+  );
+  assert.match(reviewFeed, /interaction\.commentCount > 0/);
+  assert.match(reviewFeed, /interaction\.likeCount > 0/);
+  assert.match(reviewFeed, /interaction\.shareCount > 0/);
+  assert.match(reviewFeed, /shareCount: 0/);
+  assert.doesNotMatch(reviewFeed, /postId: linkedPost/);
+  assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
+  assert.match(reviewFeed, /commentCount: 0/);
+  assert.match(reviewFeed, /likeCount: 0/);
+  assert.doesNotMatch(reviewFeed, /commentCount: 1/);
+  assert.doesNotMatch(reviewFeed, /likeCount: item\.review\.rating/);
+  assert.doesNotMatch(reviewFeed, /seededCommentsForActiveReview/);
+  assert.doesNotMatch(reviewFeed, /seededComments=\{/);
+  assert.match(reviewFeed, /<Send[\s\S]*<Bookmark[\s\S]*<CommentIcon[\s\S]*<Heart/);
+  assert.match(reviewFeed, /justifyContent: "space-between"[\s\S]*justifyContent: "flex-end"/);
+
+  assert.match(commentsSheet, /<BottomSheetModal/);
+  assert.match(commentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
+  assert.match(commentsSheet, /<BottomSheetFooter/);
+  assert.match(commentsSheet, /commentsByPostId\[activeReview\.id\] \?\? \[\]/);
+  assert.match(commentsSheet, /addComment\(activeReview\.id, newComment\)/);
+  assert.match(commentsSheet, /addReply\(activeReview\.id, newReply\)/);
+  assert.match(commentsSheet, /repliesByCommentId\[comment\.id\] \?\? \[\]/);
+  assert.match(
+    commentsSheet,
+    /placeholder=\{activeReplyCommentId \? "Write a reply\.\.\." : "Add a comment\.\.\."\}/,
+  );
+
+  assert.match(reviewShareSheet, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
+  assert.match(reviewShareSheet, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
+  assert.match(reviewShareSheet, /toChatShareRecipient/);
+  assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
+  assert.match(reviewShareSheet, /selectedChatIds/);
+  assert.match(reviewShareSheet, /chat\.sendMessage\(/);
+  assert.match(reviewShareSheet, /clientNonce/);
+  assert.match(
+    reviewShareSheet,
+    /Clipboard\.setString\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
+  );
+  assert.match(reviewShareSheet, /Share\.share\(\{/);
+  assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
+  assert.match(reviewShareSheet, /FloatingShareSendButton/);
+  assert.match(reviewShareSheet, /selectedCount=\{selectedChatIds\.length\}/);
+  assert.match(reviewShareSheet, /accessibilityLabel=\{`Send \$\{subjectLabel\} link`\}/);
+  assert.doesNotMatch(reviewShareSheet, /showSendAction/);
+
+  assert.match(bitesCarousel, /FEATURE_FLAGS\.commentsEnabled/);
+  assert.match(
+    bitesCarousel,
+    /commented=\{commentsEnabled && Boolean\(commentedBites\[item\.id\]\)\}/,
+  );
+  assert.match(bitesCarousel, /onCommentPress=\{\s*commentsEnabled\s*\?/);
+  assert.match(biteCommentsSheet, /if \(!FEATURE_FLAGS\.commentsEnabled\) \{\s*return null;\s*\}/);
+});

@@ -1,0 +1,120 @@
+.main {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.hero,
+.linkSection {
+  padding: clamp(4rem, 9vw, 7rem) 0;
+}
+
+.hero {
+  background: var(--color-surface-warm);
+}
+
+.container {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0 0 1rem;
+  color: var(--color-orange);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero h1,
+.linkSection h2 {
+  margin: 0;
+  color: var(--color-navy);
+  font-size: clamp(2.5rem, 8vw, 5.75rem);
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.linkSection h2 {
+  font-size: clamp(2rem, 5vw, 3.75rem);
+}
+
+.hero p {
+  max-width: 760px;
+  margin: 1.5rem 0 0;
+  color: var(--color-ink-muted);
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  line-height: 1.7;
+}
+
+.emailLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 2rem;
+  padding: 0.95rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: var(--shadow-md);
+}
+
+.emailLink:focus-visible,
+.linkCard:focus-visible {
+  outline: 3px solid var(--color-orange);
+  outline-offset: 4px;
+}
+
+.linkGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.linkCard {
+  display: grid;
+  gap: 0.75rem;
+  min-height: 13rem;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 24px;
+  background: var(--color-white);
+  color: var(--color-navy);
+  text-decoration: none;
+  box-shadow: var(--shadow-card);
+}
+
+.linkCard span {
+  font-size: 1.25rem;
+  font-weight: 850;
+}
+
+.linkCard p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  line-height: 1.6;
+}
+
+.linkCard svg {
+  align-self: end;
+  color: var(--color-orange);
+}
+
+@media (max-width: 760px) {
+  .hero,
+  .linkSection {
+    padding: 3rem 0;
+  }
+
+  .linkGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .linkCard {
+    min-height: 0;
+  }
+}

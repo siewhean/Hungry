@@ -1,0 +1,26 @@
+[
+  {
+    "stage": "after-sweet-forward-click",
+    "snapshot": {
+      "hungry-onboarding-draft-v2:guest-user": "{\"state\":{\"draft\":{\"subjectId\":\"guest-user\",\"mode\":\"onboarding\",\"values\":{\"sweet\":8,\"spicy\":5,\"sour\":5,\"salty\":5,\"rich\":5,\"aromatic\":5},\"dietaryPreferences\":[],\"step\":0,\"answeredKeys\":{\"sweet\":true},\"cuisineIds\":[\"local\"],\"selectedDishIds\":[],\"committed\":false}},\"version\":0}"
+    }
+  },
+  {
+    "stage": "spicy-before-reload",
+    "snapshot": {
+      "hungry-onboarding-draft-v2:guest-user": "{\"state\":{\"draft\":{\"subjectId\":\"guest-user\",\"mode\":\"onboarding\",\"values\":{\"sweet\":8,\"spicy\":5,\"sour\":5,\"salty\":5,\"rich\":5,\"aromatic\":5},\"dietaryPreferences\":[],\"step\":1,\"answeredKeys\":{\"sweet\":true},\"cuisineIds\":[\"local\"],\"selectedDishIds\":[],\"committed\":false}},\"version\":0}"
+    }
+  },
+  {
+    "stage": "resumed-spicy",
+    "snapshot": {
+      "hungry-onboarding-draft-v2:guest-user": "{\"state\":{\"draft\":{\"subjectId\":\"guest-user\",\"mode\":\"onboarding\",\"values\":{\"sweet\":8,\"spicy\":5,\"sour\":5,\"salty\":5,\"rich\":5,\"aromatic\":5},\"dietaryPreferences\":[],\"step\":1,\"answeredKeys\":{\"sweet\":true},\"cuisineIds\":[\"local\"],\"selectedDishIds\":[],\"committed\":false}},\"version\":0}"
+    }
+  },
+  {
+    "stage": "after-back",
+    "snapshot": {
+      "hungry-onboarding-draft-v2:guest-user": "{\"state\":{\"draft\":{\"subjectId\":\"guest-user\",\"mode\":\"onboarding\",\"values\":{\"sweet\":8,\"spicy\":5,\"sour\":5,\"salty\":5,\"rich\":5,\"aromatic\":5},\"dietaryPreferences\":[],\"step\":0,\"answeredKeys\":{\"sweet\":true},\"cuisineIds\":[\"local\"],\"selectedDishIds\":[],\"committed\":false}},\"version\":0}"
+    }
+  }
+]

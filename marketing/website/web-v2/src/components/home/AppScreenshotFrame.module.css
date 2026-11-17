@@ -1,0 +1,79 @@
+.frame {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  isolation: isolate;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+}
+
+.portrait {
+  aspect-ratio: 71.5 / 149.6;
+  border-radius: 42px;
+}
+
+.landscape {
+  aspect-ratio: 4 / 3;
+  border-width: 8px;
+  border-radius: 32px;
+  background: #0f1115;
+}
+
+.screenChrome {
+  position: absolute;
+  top: var(--space-3);
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  gap: 5px;
+  transform: translateX(-50%);
+  opacity: 0.48;
+}
+
+.portrait .screenChrome {
+  width: 6rem;
+  height: 1.45rem;
+  border-radius: var(--radius-full);
+  background: #000;
+  opacity: 1;
+}
+
+.portrait .screenChrome span {
+  display: none;
+}
+
+.landscape .screenChrome {
+  top: var(--space-4);
+}
+
+.screenChrome span {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-muted);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.caption {
+  position: absolute;
+  left: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 4;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-ink-deep);
+  color: var(--color-white);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}

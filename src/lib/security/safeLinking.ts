@@ -1,0 +1,143 @@
+import { Alert, Linking } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import { SUPPORT_EMAIL, WEB_HOST } from "@/constants/links";
+
+const ALLOWED_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
+const ALLOWED_SCHEMES = new Set(["https"]);
+const ALLOWED_MAILTO_ADDRESSES = new Set([SUPPORT_EMAIL]);
+const ALLOWED_BLOG_HOSTS = new Set([WEB_HOST, `www.${WEB_HOST}`]);
+const ALLOWED_MAPS_HOSTS = new Set(["www.google.com", "maps.google.com"]);
+const ALLOWED_MESSAGING_SHARE_HOSTS = new Set(["wa.me", "t.me"]);
+const ALLOWED_DELIVERY_SCHEMES: Record<string, Set<string>> = {
+  grabfood: new Set(["grab"]),
+  foodpanda: new Set(["foodpanda"]),
+  deliveroo: new Set(["deliveroo"]),
+};
+const ALLOWED_DELIVERY_HOSTS: Record<string, Set<string>> = {
+  grabfood: new Set(["food.grab.com", "grab.com", "www.grab.com"]),
+  foodpanda: new Set(["foodpanda.sg", "www.foodpanda.sg"]),
+  deliveroo: new Set(["deliveroo.com.sg", "www.deliveroo.com.sg"]),
+};
+
+function parseUrl(url: string): URL {
+  return new URL(url);
+}
+
+export async function openTrustedExternalUrl(url: string): Promise<void> {
+  try {
+    if (url.toLowerCase().startsWith("mailto:")) {
+      const address = (url.slice("mailto:".length).split("?")[0] ?? "").toLowerCase();
+      if (!ALLOWED_MAILTO_ADDRESSES.has(address)) {
+        throw new Error("Blocked non-allowlisted email address.");
+      }
+      await Linking.openURL(url);
+      return;
+    }
+    const parsed = parseUrl(url);
+    if (!ALLOWED_SCHEMES.has(parsed.protocol.replace(":", ""))) {
+      throw new Error("Blocked non-HTTPS URL.");
+    }
+    if (!ALLOWED_HOSTS.has(parsed.hostname.toLowerCase())) {
+      throw new Error("Blocked non-allowlisted host.");
+    }
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Unable to open link", "Please try again later.");
+  }
+}
+
+export async function openTrustedBlogUrl(url: string): Promise<boolean> {
+  try {
+    const parsed = parseUrl(url);
+    if (parsed.protocol !== "https:" || !ALLOWED_BLOG_HOSTS.has(parsed.hostname.toLowerCase())) {
+      throw new Error("Blocked non-allowlisted article host.");
+    }
+    await WebBrowser.openBrowserAsync(url);
+    return true;
+  } catch {
+    Alert.alert("Unable to open article", "Please try again later.");
+    return false;
+  }
+}
+
+export async function openTrustedMapsUrl(url: string): Promise<void> {
+  try {
+    const parsed = parseUrl(url);
+    if (parsed.protocol !== "https:" || !ALLOWED_MAPS_HOSTS.has(parsed.hostname.toLowerCase())) {
+      throw new Error("Blocked non-allowlisted maps host.");
+    }
+    if (!parsed.pathname.startsWith("/maps/search")) {
+      throw new Error("Blocked non-search maps URL.");
+    }
+    await Linking.openURL(url);
+  } catch {
+    Alert.alert("Unable to open maps", "Please try again later.");
+  }
+}
+
+/** Opens a WhatsApp (wa.me) or Telegram (t.me/share) share link; any other host is refused. */
+export async function openTrustedMessagingShareUrl(url: string): Promise<boolean> {
+  try {
+    const parsed = parseUrl(url);
+    if (
+      parsed.protocol !== "https:" ||
+      !ALLOWED_MESSAGING_SHARE_HOSTS.has(parsed.hostname.toLowerCase())
+    ) {
+      throw new Error("Blocked non-allowlisted messaging host.");
+    }
+    await Linking.openURL(url);
+    return true;
+  } catch {
+    Alert.alert("Unable to open app", "Please try again later.");
+    return false;
+  }
+}
+
+export async function openTrustedDeliveryUrl(
+  platform: string,
+  nativeUrl: string,
+  webUrl: string,
+): Promise<void> {
+  const normalizedPlatform = platform.toLowerCase();
+  const allowedNativeSchemes = ALLOWED_DELIVERY_SCHEMES[normalizedPlatform] ?? new Set<string>();
+  const allowedWebHosts = ALLOWED_DELIVERY_HOSTS[normalizedPlatform] ?? new Set<string>();
+
+  try {
+    const parsedNative = parseUrl(nativeUrl);
+    if (allowedNativeSchemes.has(parsedNative.protocol.replace(":", "").toLowerCase())) {
+      await Linking.openURL(nativeUrl);
+      return;
+    }
+  } catch {
+    // Fall back to the allowlisted HTTPS URL below.
+  }
+
+  try {
+    const parsedWeb = parseUrl(webUrl);
+    if (parsedWeb.protocol !== "https:" || !allowedWebHosts.has(parsedWeb.hostname.toLowerCase())) {
+      throw new Error("Blocked non-allowlisted delivery URL.");
+    }
+    await Linking.openURL(webUrl);
+  } catch {
+    Alert.alert("Unable to open delivery link", "Please try again later.");
+  }
+}
+
+/** Catalog attribution is limited to the explicit provenance publisher allowlist. */
+export async function openTrustedCatalogSourceUrl(url: string): Promise<boolean> {
+  const { isTrustedCatalogSourceUrl } = await import("./catalogSourcePolicy");
+  if (!isTrustedCatalogSourceUrl(url)) {
+    Alert.alert(
+      "Source link unavailable",
+      "This source is not yet approved for opening in Hungry.",
+    );
+    return false;
+  }
+  try {
+    await WebBrowser.openBrowserAsync(url);
+    return true;
+  } catch {
+    Alert.alert("Unable to open source", "Please try again later.");
+    return false;
+  }
+}

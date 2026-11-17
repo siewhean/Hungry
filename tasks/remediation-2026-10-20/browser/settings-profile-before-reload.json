@@ -1,0 +1,14 @@
+{
+  "hungry-profile-v2:user-1": {
+    "id": "user-1",
+    "email": "weiming@example.sg"
+  },
+  "hungry-session-v1": {
+    "isAuthenticated": true,
+    "userId": "user-1"
+  },
+  "hungry-profile-v2:guest-user": {
+    "id": "guest-user",
+    "email": ""
+  }
+}

@@ -1,0 +1,42 @@
+[
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  },
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  },
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  },
+  {
+    "type": "warning",
+    "message": "expo-file-system is not supported on web"
+  },
+  {
+    "type": "warning",
+    "message": "expo-file-system is not supported on web"
+  },
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  }
+]

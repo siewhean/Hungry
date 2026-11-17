@@ -1,0 +1,41 @@
+Settings
+ACCOUNT AND PRIVACY
+Authentication email
+weiming@example.sg
+Profile visibility
+Public
+Hide reviewed dishes
+Exclude dishes you reviewed from your recommendations. Your public reviews stay visible.
+Delete account
+APPEARANCE AND INTERACTION
+Theme
+system
+Reduce motion
+Haptic feedback
+LOCATION AND DATA
+Selected area
+Device location when available
+Use current device location
+Clear the selected area and request a fresh device location. If access is denied, choose an area from discovery.
+Location permissions
+Save search history
+Clear search history
+Removes recent searches only. Your account, profile, location and drafts are preserved.
+Export my data
+Share a JSON file. Missing sections are disclosed before sharing.
+ALERTS
+Menu changes at followed stalls
+New dishes, price changes and restocks. Quiet 10pm to 8am, at most 3 a week.
+Weekly picks
+A Monday nudge when your new dish picks are ready on Home.
+Followed stalls
+SUPPORT AND LEGAL
+Contact support
+usehungrysingapore@gmail.com
+Privacy policy
+Terms of service
+Account deletion information
+ABOUT
+Hungry version
+0.1.0
+Sign out

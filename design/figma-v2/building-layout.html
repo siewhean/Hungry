@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hungry v2 — Building Layout (3 Variants)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+<main class="page">
+
+  <div class="intro-panel">
+    <p class="eyebrow">Hungry v2 / 04 Building Layout</p>
+    <h1>Three building directory directions — from floor plan to 3D isometric.</h1>
+    <p>The current BuildingDrillDownScreen uses Badge chips for floor selection and has no building exterior image. The floor "map" is absent entirely — just a list. All three variants fix the floor selector (segmented tab strip, not badge chips), add visual context, and remove the redundant "Open stall menu" button from every row.</p>
+    <div class="summary-chips">
+      <span class="summary-chip">Floor selector → tab strip (no Badge chips)</span>
+      <span class="summary-chip">Building exterior hero image</span>
+      <span class="summary-chip">No "Open stall menu" button in rows</span>
+      <span class="summary-chip">Visual floor map SVG</span>
+      <span class="summary-chip">3D isometric option</span>
+    </div>
+  </div>
+
+  <!-- Audit -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Current Implementation Audit</p>
+      <h2>What's wrong with BuildingDrillDownScreen.tsx</h2>
+    </div>
+    <div class="critique-grid">
+      <div class="critique-card">
+        <p class="critique-label">Issue · Lines 91–97</p>
+        <h4>Floor selector uses Badge chips</h4>
+        <p>Pressing a Badge to select a floor is the exact "unnecessary pill button" pattern the user wants to eliminate. Replaced with a proper underline tab strip in all variants — standard mobile navigation pattern.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Issue · Line 39</p>
+        <h4>"Open stall menu" button inside every pressable card</h4>
+        <p>The entire StallRow card is already wrapped in a Pressable. A Button inside it creates redundant tap targets and visual noise. Removed in all variants — tap the card to open.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>No building exterior image or context</h4>
+        <p>Users arriving at a building drill-down have zero visual confirmation they're looking at the right place. A hero photo of the building entrance dramatically reduces disorientation.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>No floor plan visual — only a text list</h4>
+        <p>Hawker centres and food courts have spatial layouts. A simplified SVG floor map with stall nodes gives users a mental model of where stalls are — especially useful for first-timers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT A: Floor Directory ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant A — Recommended</p>
+      <h2>Floor Directory</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag recommended">Recommended</span>
+        <h3>Building hero → tab strip floor selector → SVG floor map → stall list</h3>
+        <p>The most spatially grounded experience. Building exterior photo at top establishes place. The floor selector is a tab strip — underline indicator, no pill chips. A simplified SVG floor plan shows stall positions. Below: stall rows with thumbnail, name, open dot — no redundant buttons.</p>
+        <ul class="feature-list">
+          <li>Building exterior photo (16:9 hero)</li>
+          <li>Building name, address, stall count, overall rating</li>
+          <li>Segmented tab strip: B1 / G / L1 / L2 / L3</li>
+          <li>Search bar: "Find a stall or dish in this building"</li>
+          <li>SVG floor plan with stall node positions</li>
+          <li>"Popular dishes here" horizontal scroll</li>
+          <li>Stall rows: thumbnail + name + open dot + hygiene shield</li>
+          <li>No "Open stall menu" button — row is pressable</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <!-- Phone A1: Building hero + L1 selected -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar" style="position:absolute;top:0;left:0;right:0;z-index:20;color:white;text-shadow:0 1px 3px rgba(0,0,0,0.6);">
+              <span>12:22</span>
+              <div class="signal"><span>5G</span><div class="battery"><span style="background:white;"></span></div></div>
+            </div>
+            <!-- Building hero -->
+            <div class="hero-image" style="height:180px;flex-shrink:0;">
+              <div style="font-size:60px;">🏢</div>
+              <div class="hero-gradient"></div>
+              <div class="hero-back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <!-- Building info over gradient -->
+              <div style="position:absolute;bottom:14px;left:16px;right:16px;z-index:5;">
+                <div style="font-size:18px;font-weight:900;color:white;line-height:1.1;">Maxwell Food Centre</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+                  <span style="font-size:11px;color:rgba(255,255,255,0.8);">1 Kadayanallur St · 43 stalls</span>
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.9);font-weight:700;">4.6</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search bar -->
+            <div style="padding:10px 16px 6px;flex-shrink:0;">
+              <div class="search-bar" style="margin:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span class="search-placeholder">Find a stall or dish here…</span>
+              </div>
+            </div>
+
+            <!-- Floor selector: TAB STRIP, not badge chips -->
+            <div class="floor-selector">
+              <div class="floor-tab">G</div>
+              <div class="floor-tab active">L1</div>
+              <div class="floor-tab">L2</div>
+            </div>
+
+            <div class="scroll-content">
+              <!-- Popular dishes on this floor -->
+              <div class="screen-section-heading" style="padding-top:10px;">
+                <h3>Popular on L1</h3>
+                <span class="see-all">All dishes</span>
+              </div>
+              <div class="dish-scroll" style="padding-top:0;">
+                <div class="dish-card-sm"><div class="dish-img">🍜</div><div class="dish-info"><div class="dish-name">Wanton Mee</div><div class="dish-meta">#01-77</div><div class="dish-price">S$4.50</div></div></div>
+                <div class="dish-card-sm"><div class="dish-img">🍚</div><div class="dish-info"><div class="dish-name">Chicken Rice</div><div class="dish-meta">#01-10</div><div class="dish-price">S$5.00</div></div></div>
+                <div class="dish-card-sm"><div class="dish-img">🍛</div><div class="dish-info"><div class="dish-name">Nasi Lemak</div><div class="dish-meta">#01-45</div><div class="dish-price">S$3.50</div></div></div>
+              </div>
+
+              <!-- SVG floor map -->
+              <div class="floor-map">
+                <div class="floor-map-title">L1 Floor Plan — 18 stalls</div>
+                <div class="floor-svg-wrap">
+                  <svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Floor outline -->
+                    <rect x="2" y="2" width="316" height="96" rx="6" fill="none" stroke="#E8E4DF" stroke-width="1.5"/>
+                    <!-- Central corridor -->
+                    <rect x="130" y="2" width="60" height="96" fill="#F9F8F6" opacity="0.6"/>
+                    <!-- Stall blocks left side -->
+                    <rect x="8" y="8" width="36" height="20" rx="3" fill="#FEF0EB" stroke="#E8531E" stroke-width="1"/>
+                    <text x="26" y="21" text-anchor="middle" font-size="7" fill="#E8531E" font-family="DM Mono">77</text>
+                    <rect x="50" y="8" width="36" height="20" rx="3" fill="#FEF0EB" stroke="#E8531E" stroke-width="1"/>
+                    <text x="68" y="21" text-anchor="middle" font-size="7" fill="#E8531E" font-family="DM Mono">10</text>
+                    <rect x="92" y="8" width="32" height="20" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="108" y="21" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">14</text>
+                    <!-- Stall blocks right side -->
+                    <rect x="196" y="8" width="36" height="20" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="214" y="21" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">45</text>
+                    <rect x="238" y="8" width="36" height="20" rx="3" fill="#CCFBF1" stroke="#0D9488" stroke-width="1"/>
+                    <text x="256" y="21" text-anchor="middle" font-size="7" fill="#0D9488" font-family="DM Mono">51</text>
+                    <rect x="280" y="8" width="34" height="20" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="297" y="21" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">62</text>
+                    <!-- Bottom row stalls -->
+                    <rect x="8" y="70" width="36" height="22" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="26" y="83" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">03</text>
+                    <rect x="50" y="70" width="36" height="22" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="68" y="83" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">05</text>
+                    <rect x="92" y="70" width="32" height="22" rx="3" fill="#FEF0EB" stroke="#E8531E" stroke-width="1"/>
+                    <text x="108" y="83" text-anchor="middle" font-size="7" fill="#E8531E" font-family="DM Mono">08</text>
+                    <rect x="196" y="70" width="36" height="22" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="214" y="83" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">55</text>
+                    <rect x="238" y="70" width="36" height="22" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="256" y="83" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">60</text>
+                    <rect x="280" y="70" width="34" height="22" rx="3" fill="#F3F1EE" stroke="#E8E4DF" stroke-width="1"/>
+                    <text x="297" y="83" text-anchor="middle" font-size="7" fill="#9C9188" font-family="DM Mono">68</text>
+                    <!-- Corridor label -->
+                    <text x="160" y="54" text-anchor="middle" font-size="8" fill="#C4B5A5" font-family="DM Mono">WALKWAY</text>
+                    <!-- You are here dot -->
+                    <circle cx="26" cy="18" r="4" fill="white" opacity="0.7"/>
+                    <circle cx="26" cy="18" r="2.5" fill="#E8531E"/>
+                  </svg>
+                </div>
+                <!-- Legend -->
+                <div style="display:flex;gap:12px;margin-top:4px;">
+                  <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;background:#FEF0EB;border:1px solid #E8531E;border-radius:2px;"></div><span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);">Open stall</span></div>
+                  <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;background:#CCFBF1;border:1px solid #0D9488;border-radius:2px;"></div><span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);">Drink stall</span></div>
+                  <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;background:#F3F1EE;border:1px solid #E8E4DF;border-radius:2px;"></div><span style="font-size:9px;color:var(--text-muted);font-family:var(--font-mono);">Other</span></div>
+                </div>
+              </div>
+
+              <!-- Stall list: no "Open stall menu" button -->
+              <div class="screen-section-heading">
+                <h3>Stalls on L1</h3>
+                <span class="see-all">18 total</span>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb" style="border:2px solid var(--orange);">🍜</div>
+                <div class="stall-info">
+                  <div class="stall-name">Ah Kow Wanton Mee</div>
+                  <div class="stall-meta"><span class="open-dot"></span> Open · #01-77 · Noodles</div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb" style="border:2px solid var(--orange);">🍚</div>
+                <div class="stall-info">
+                  <div class="stall-name">Tian Tian Chicken Rice</div>
+                  <div class="stall-meta"><span class="open-dot"></span> Open · #01-10 · Rice</div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb">🍛</div>
+                <div class="stall-info">
+                  <div class="stall-name">Zhen Zhen Porridge</div>
+                  <div class="stall-meta"><span class="open-dot closed"></span> Closed today · #01-45</div>
+                </div>
+                <div class="hygiene-grade b">B</div>
+              </div>
+              <div style="height:24px;"></div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div><span class="tab-label" style="color:var(--orange);">Map</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT B: Vertical Level Stack ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant B</p>
+      <h2>Vertical Level Stack</h2>
+    </div>
+    <div class="variant-block reverse">
+      <div class="variant-meta">
+        <span class="variant-tag">Accordion navigation</span>
+        <h3>Levels as expandable accordion cards — tap to reveal stall grid</h3>
+        <p>Best for buildings with many levels (5+). Instead of a tab strip that gets crowded, each level is a card that expands inline. Users can have multiple levels open simultaneously for comparison. 2-col stall grid inside each level is more compact than rows.</p>
+        <ul class="feature-list">
+          <li>Compact building header (no full hero)</li>
+          <li>Each level: expandable accordion card</li>
+          <li>Inside each level: 2-col stall mini-card grid</li>
+          <li>Type filter strip: All / Chinese / Indian / Malay / Western</li>
+          <li>No pill badges — type shown as text in stall card</li>
+          <li>Open/closed: coloured dot only</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:22</span>
+              <div class="signal"><span>5G</span><div class="battery"><span></span></div></div>
+            </div>
+            <!-- Compact header -->
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 16px 8px;flex-shrink:0;">
+              <div style="cursor:pointer;color:var(--text-muted);font-size:22px;line-height:1;">‹</div>
+              <div style="flex:1;">
+                <div style="font-size:17px;font-weight:900;color:var(--text);">Maxwell Food Centre</div>
+                <div style="font-size:11px;color:var(--text-muted);">43 stalls across 2 levels</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:3px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span style="font-size:12px;font-weight:700;color:var(--text);">4.6</span>
+              </div>
+            </div>
+            <!-- Search -->
+            <div class="search-bar" style="margin:0 16px 8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span class="search-placeholder">Find a stall or dish…</span>
+            </div>
+            <!-- Type filter: text tabs, not pills -->
+            <div class="type-filter-tabs" style="flex-shrink:0;">
+              <div class="type-tab active">All</div>
+              <div class="type-tab">Chinese</div>
+              <div class="type-tab">Malay</div>
+              <div class="type-tab">Indian</div>
+              <div class="type-tab">Drinks</div>
+            </div>
+
+            <div class="scroll-content">
+              <!-- Level G: collapsed -->
+              <div class="level-accordion">
+                <div class="level-header">
+                  <div class="level-header-left">
+                    <div class="level-number">G</div>
+                    <div>
+                      <div class="level-title">Ground Floor</div>
+                      <div class="level-count">6 stalls · 4 open now</div>
+                    </div>
+                  </div>
+                  <div class="level-chevron">›</div>
+                </div>
+              </div>
+
+              <!-- Level L1: expanded -->
+              <div class="level-accordion" style="margin-top:8px;">
+                <div class="level-header" style="border-bottom:1px solid var(--border);">
+                  <div class="level-header-left">
+                    <div class="level-number">L1</div>
+                    <div>
+                      <div class="level-title">Level 1</div>
+                      <div class="level-count">18 stalls · 14 open now</div>
+                    </div>
+                  </div>
+                  <div class="level-chevron" style="transform:rotate(90deg);">›</div>
+                </div>
+                <div class="level-content">
+                  <div class="stall-mini-card">
+                    <div class="stall-mini-img" style="position:relative;">🍜
+                      <div style="position:absolute;top:4px;left:4px;width:7px;height:7px;border-radius:50%;background:#16A34A;"></div>
+                    </div>
+                    <div class="stall-mini-info">
+                      <div class="stall-mini-name">Ah Kow Wanton Mee</div>
+                      <div class="stall-mini-meta">#01-77 · Noodles</div>
+                    </div>
+                  </div>
+                  <div class="stall-mini-card">
+                    <div class="stall-mini-img" style="position:relative;">🍚
+                      <div style="position:absolute;top:4px;left:4px;width:7px;height:7px;border-radius:50%;background:#16A34A;"></div>
+                    </div>
+                    <div class="stall-mini-info">
+                      <div class="stall-mini-name">Tian Tian Chicken Rice</div>
+                      <div class="stall-mini-meta">#01-10 · Rice</div>
+                    </div>
+                  </div>
+                  <div class="stall-mini-card">
+                    <div class="stall-mini-img" style="position:relative;">🍛
+                      <div style="position:absolute;top:4px;left:4px;width:7px;height:7px;border-radius:50%;background:#9C9188;"></div>
+                    </div>
+                    <div class="stall-mini-info">
+                      <div class="stall-mini-name">Zhen Zhen Porridge</div>
+                      <div class="stall-mini-meta">#01-45 · Closed</div>
+                    </div>
+                  </div>
+                  <div class="stall-mini-card">
+                    <div class="stall-mini-img" style="position:relative;">🫖
+                      <div style="position:absolute;top:4px;left:4px;width:7px;height:7px;border-radius:50%;background:#16A34A;"></div>
+                    </div>
+                    <div class="stall-mini-info">
+                      <div class="stall-mini-name">Soon Huat Drinks</div>
+                      <div class="stall-mini-meta">#01-51 · Drinks</div>
+                    </div>
+                  </div>
+                </div>
+                <!-- View all link: not a button -->
+                <div style="padding:8px 12px;text-align:center;font-size:12px;font-weight:700;color:var(--orange);border-top:1px solid var(--border);cursor:pointer;">View all 18 stalls on L1 →</div>
+              </div>
+
+              <!-- Level L2: collapsed -->
+              <div class="level-accordion" style="margin-top:8px;">
+                <div class="level-header">
+                  <div class="level-header-left">
+                    <div class="level-number">L2</div>
+                    <div>
+                      <div class="level-title">Level 2</div>
+                      <div class="level-count">19 stalls · 12 open now</div>
+                    </div>
+                  </div>
+                  <div class="level-chevron">›</div>
+                </div>
+              </div>
+              <div style="height:24px;"></div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div><span class="tab-label" style="color:var(--orange);">Map</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT C: 3D Isometric ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant C</p>
+      <h2>3D Isometric Building Preview</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag">3D visual</span>
+        <h3>Isometric SVG building — tap a floor to highlight it, swipe to stall sheet</h3>
+        <p>The most spatially distinctive approach. An isometric building diagram at the top lets users visually identify floors and tap to select. The active floor is highlighted. A slide-up stall detail sheet appears when tapping a stall node. Works best for mall-style multi-level venues.</p>
+        <ul class="feature-list">
+          <li>Isometric SVG building (3D perspective, no extra lib needed)</li>
+          <li>Tap floor in 3D view → that floor highlights + list updates</li>
+          <li>Stall node tap → bottom sheet slides up with stall info</li>
+          <li>Color legend: orange=hawker, teal=café, navy=restaurant</li>
+          <li>Floor indicator: active floor has solid colour fill in iso view</li>
+          <li>No pill badges anywhere — legend uses colored rectangles</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar" style="position:absolute;top:0;left:0;right:0;z-index:20;color:var(--text);background:var(--bg);">
+              <span>12:22</span>
+              <div class="signal"><span>5G</span><div class="battery"><span></span></div></div>
+            </div>
+            <div style="height:44px;flex-shrink:0;"></div>
+            <!-- Header -->
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;flex-shrink:0;">
+              <div style="cursor:pointer;color:var(--text-muted);font-size:22px;">‹</div>
+              <div style="flex:1;">
+                <div style="font-size:16px;font-weight:900;color:var(--text);">Funan Mall</div>
+                <div style="font-size:11px;color:var(--text-muted);">107 North Bridge Rd · 6 floors · 32 F&B outlets</div>
+              </div>
+            </div>
+
+            <!-- Isometric building SVG -->
+            <div class="iso-building">
+              <div class="iso-svg-wrap">
+                <svg viewBox="0 0 280 170" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Building floors drawn as isometric stack -->
+                  <!-- B1 floor (bottom) -->
+                  <polygon points="20,150 140,120 260,150 140,180" fill="#E8E4DF" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="20,150 20,160 140,190 140,180" fill="#D4CFCA" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="260,150 260,160 140,190 140,180" fill="#C8C3BE" stroke="#C4B5A5" stroke-width="1"/>
+                  <text x="140" y="155" text-anchor="middle" font-size="8" fill="#9C9188" font-family="DM Mono">B1</text>
+
+                  <!-- G floor -->
+                  <polygon points="20,120 140,90 260,120 140,150" fill="#E8E4DF" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="20,120 20,150 140,180 140,150" fill="#D4CFCA" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="260,120 260,150 140,180 140,150" fill="#C8C3BE" stroke="#C4B5A5" stroke-width="1"/>
+                  <text x="140" y="125" text-anchor="middle" font-size="8" fill="#9C9188" font-family="DM Mono">G</text>
+
+                  <!-- L1 floor — ACTIVE (highlighted orange) -->
+                  <polygon points="20,90 140,60 260,90 140,120" fill="#FEF0EB" stroke="#E8531E" stroke-width="1.5"/>
+                  <polygon points="20,90 20,120 140,150 140,120" fill="#FDDDD2" stroke="#E8531E" stroke-width="1.5"/>
+                  <polygon points="260,90 260,120 140,150 140,120" fill="#F9C9B8" stroke="#E8531E" stroke-width="1.5"/>
+                  <text x="140" y="95" text-anchor="middle" font-size="9" fill="#E8531E" font-family="DM Mono" font-weight="700">L1 ●</text>
+                  <!-- Stall dots on L1 -->
+                  <circle cx="100" cy="87" r="5" fill="white" stroke="#E8531E" stroke-width="1.5"/>
+                  <circle cx="140" cy="80" r="5" fill="white" stroke="#E8531E" stroke-width="1.5"/>
+                  <circle cx="180" cy="87" r="5" fill="white" stroke="#0D9488" stroke-width="1.5"/>
+
+                  <!-- L2 floor -->
+                  <polygon points="30,62 140,35 250,62 140,90" fill="#E8E4DF" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="30,62 30,90 140,120 140,90" fill="#D4CFCA" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="250,62 250,90 140,120 140,90" fill="#C8C3BE" stroke="#C4B5A5" stroke-width="1"/>
+                  <text x="140" y="67" text-anchor="middle" font-size="8" fill="#9C9188" font-family="DM Mono">L2</text>
+
+                  <!-- L3 floor (top) -->
+                  <polygon points="40,36 140,12 240,36 140,62" fill="#E8E4DF" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="40,36 40,62 140,90 140,62" fill="#D4CFCA" stroke="#C4B5A5" stroke-width="1"/>
+                  <polygon points="240,36 240,62 140,90 140,62" fill="#C8C3BE" stroke="#C4B5A5" stroke-width="1"/>
+                  <text x="140" y="40" text-anchor="middle" font-size="8" fill="#9C9188" font-family="DM Mono">L3</text>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Legend (coloured rect, not pills) -->
+            <div style="display:flex;gap:12px;justify-content:center;padding:4px 16px 8px;flex-shrink:0;">
+              <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;background:#FEF0EB;border:1px solid #E8531E;border-radius:2px;"></div><span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">Hawker</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;background:#CCFBF1;border:1px solid #0D9488;border-radius:2px;"></div><span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">Café</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;background:#E0E8F4;border:1px solid #1E3A5F;border-radius:2px;"></div><span style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);">Restaurant</span></div>
+            </div>
+
+            <!-- Stall sheet slides up for L1 -->
+            <div class="scroll-content" style="border-top:1px solid var(--border);">
+              <div style="padding:10px 16px 6px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:800;color:var(--text);">L1 · 12 outlets</div>
+                <div style="font-size:12px;font-weight:600;color:var(--orange);cursor:pointer;">Full floor plan</div>
+              </div>
+              <!-- Stall rows -->
+              <div class="stall-row">
+                <div class="stall-thumb" style="border:2px solid var(--orange);">🍜</div>
+                <div class="stall-info">
+                  <div class="stall-name">Tim Ho Wan</div>
+                  <div class="stall-meta"><span class="open-dot"></span> Open · #L1-08 · Dim Sum</div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb" style="border:2px solid var(--teal);">☕</div>
+                <div class="stall-info">
+                  <div class="stall-name">Common Man Coffee</div>
+                  <div class="stall-meta"><span class="open-dot"></span> Open · #L1-22 · Café</div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div class="stall-row">
+                <div class="stall-thumb">🍣</div>
+                <div class="stall-info">
+                  <div class="stall-name">Ichiban Sushi</div>
+                  <div class="stall-meta"><span class="open-dot"></span> Open · #L1-35 · Japanese</div>
+                </div>
+                <div class="hygiene-grade">A</div>
+              </div>
+              <div style="height:16px;"></div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div><span class="tab-label" style="color:var(--orange);">Map</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

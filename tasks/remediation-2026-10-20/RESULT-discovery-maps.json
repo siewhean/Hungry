@@ -1,0 +1,846 @@
+[
+  {
+    "id": "DS-01",
+    "status": "shared",
+    "files": [
+      "src/app/screens/discover/DiscoverHomeScreen.tsx",
+      "src/app/screens/search/SearchResultsScreen.tsx",
+      "src/features/search/dietaryRequirements.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "UI enforces ALL canonical requirements; SQL/repository root supplies consistent provider semantics.",
+    "sharedOwner": "root/database"
+  },
+  {
+    "id": "DS-02",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/search/SearchResultsScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Removed unrestricted zero-match fallback and canonicalized halal matching."
+  },
+  {
+    "id": "DS-03",
+    "status": "shared",
+    "files": [
+      "src/app/screens/search/SearchResultsScreen.tsx",
+      "src/app/screens/discover/QuickBitesScreen.tsx",
+      "src/features/search/search.ts",
+      "src/lib/services/mock/repositories.ts",
+      "src/lib/services/mock/mockService.ts",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/features/search/recommendationPreferences.test.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Hard profile budget + ALL diet pass to legacy/raw/QuickBites before ranking/limits; v2 recommendation RPC soft-ranks canonical cuisine metadata. Mock source lacks canonical cuisine metadata and abstains from inventing it.",
+    "sharedOwner": "root/database"
+  },
+  {
+    "id": "DS-04",
+    "status": "shared",
+    "files": [
+      "src/features/search/search.ts",
+      "src/features/search/searchSort.test.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Best-match preserves provider order; taste parameters/score repository mapping owned by root.",
+    "sharedOwner": "root/database"
+  },
+  {
+    "id": "DS-05",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/DecideForMeResultScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Awaits slate using current location/profile/radius, loading/error/retry, no stale cached selected fallback."
+  },
+  {
+    "id": "DS-06",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/DiscoverHomeScreen.tsx",
+      "src/app/screens/discover/QuickBitesScreen.tsx",
+      "src/features/discover/bites.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Honest Most reviewed/Highly rated labels and review counts; late-night heuristic/rail removed; no manufactured save-count formula."
+  },
+  {
+    "id": "DS-07",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/search/SearchResultsScreen.tsx",
+      "src/app/screens/discover/QuickBitesScreen.tsx",
+      "src/components/discover/CyclingGridImage.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Stable dish identities/images; failure callback retains original index; autoplay defaults off."
+  },
+  {
+    "id": "DS-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/QuickBitesScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Late async responses ignored on dependency changes/unmount."
+  },
+  {
+    "id": "DS-09",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/QuickBitesScreen.tsx",
+      "src/app/screens/search/SearchResultsScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Distinct async loading/error/retry, no synchronous fallback after failure; old QuickBites content retained."
+  },
+  {
+    "id": "DS-10",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/search/SearchResultsScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Raw replacement clears old generation and append failure remains visible with retry."
+  },
+  {
+    "id": "DS-11",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/DiscoverHomeScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Filter full candidate rail before slicing; removed unsupported spicy/value local chips; persisted canonical Halal selection survives SeeAll."
+  },
+  {
+    "id": "DS-12",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/search/TasteFilterScreen.tsx",
+      "src/app/screens/discover/HomeMapScreen.tsx",
+      "src/components/discover/CyclingGridImage.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [
+      "Independent native large text, focus, target-size and reduced motion acceptance."
+    ],
+    "reason": "Slider labels/value and static identity implemented."
+  },
+  {
+    "id": "DS-13",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/CraveScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "PanResponder invokes current render handlers through ref; saves do not unsave existing favourite."
+  },
+  {
+    "id": "DS-14",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/search/DishSearchScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Input begins from persisted query; recent searches available; unsupported radius claim removed; absent suggestion card removed."
+  },
+  {
+    "id": "DS-15",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/search/TasteFilterScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Local taste draft applies once; Back/cancel leaves stored filters intact."
+  },
+  {
+    "id": "DS-16",
+    "status": "external_pending",
+    "files": [],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [
+      "Reproduce old artifact overlap on newly built candidate and resolve/verify layout."
+    ],
+    "reason": "Shared shell/offline layout and new native candidate acceptance owned by root.",
+    "sharedOwner": "root"
+  },
+  {
+    "id": "MD-01",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/HomeMapScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Same legacy venue filters applied to marker building eligibility and visible lists/carousels; unsupported raw TopRated control hidden; actual marker selects canonical building."
+  },
+  {
+    "id": "MD-02",
+    "status": "implemented",
+    "files": [
+      "src/components/map/MapSurface.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Mapbox attribution and logo enabled."
+  },
+  {
+    "id": "MD-03",
+    "status": "removed",
+    "files": [
+      "src/app/screens/discover/HomeMapScreen.tsx",
+      "src/app/screens/discover/MapZoomedInScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Removed fabricated stall offsets; use sourced building aggregate coordinates."
+  },
+  {
+    "id": "MD-04",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/discover/MapZoomedInScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Invalid IDs fail into explicit building unavailable state, no Maxwell fallback."
+  },
+  {
+    "id": "MD-05",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/DishDetailScreenV2.tsx",
+      "src/app/screens/detail/StallDetailScreen.tsx",
+      "src/app/screens/discover/MapZoomedInScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Explicit dish/venue/menu/review/promotions/map load errors with retries; keep usable content; remove artificial delay and false empty failures."
+  },
+  {
+    "id": "MD-06",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/DishDetailScreenV2.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Visited control uses venue state; never mutates reviewedDishIds."
+  },
+  {
+    "id": "MD-07",
+    "status": "shared",
+    "files": [
+      "src/app/screens/detail/DishDetailScreenV2.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Explicit desired setVisited with failure toast; shared store/bar rollback+idempotency root.",
+    "sharedOwner": "root"
+  },
+  {
+    "id": "MD-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/StallDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Menu cards preserve stable own dish identity/image."
+  },
+  {
+    "id": "MD-09",
+    "status": "shared",
+    "files": [
+      "src/app/screens/detail/StallDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Header heart saves venue not first dish; shared list/portfolio action card visible independent of collections gate.",
+    "sharedOwner": "root/saved_tools"
+  },
+  {
+    "id": "MD-10",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/DishDetailScreenV2.tsx",
+      "src/app/screens/detail/StallDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Contextual report/block with canonical authorId and reactive session safety filtering."
+  },
+  {
+    "id": "MD-11",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/DishDetailScreenV2.tsx",
+      "src/app/screens/discover/HomeMapScreen.tsx",
+      "src/lib/services/dataTrustDisclosure.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Truthful recorded/listed labels, removed crowd-minute estimate, preserve two-decimal map price."
+  },
+  {
+    "id": "MD-12",
+    "status": "shared",
+    "files": [
+      "src/app/screens/detail/StallDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Single bounded getReviewsForVenue query replaces menu-wide Promise.all.",
+    "sharedOwner": "root"
+  },
+  {
+    "id": "MD-13",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/NotFoundScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Search query committed before result navigation; dish-focused copy."
+  },
+  {
+    "id": "MD-14",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/discover/HomeMapScreen.tsx",
+      "src/app/screens/discover/MapZoomedInScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [
+      "Native keyboard/large text/screen reader map sheet acceptance."
+    ],
+    "reason": "Gesture limited to handle; explicit expand actions and legend/back labels."
+  },
+  {
+    "id": "MD-15",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/detail/MerchantClaimExplainerScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [
+      "Native modal focus placement/restoration and large-text acceptance."
+    ],
+    "reason": "Scrollable safe-area bounded content and 44pt dismiss target."
+  },
+  {
+    "id": "MD-16",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/catalog/CatalogRawDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Request generations guard results/unmount and authentication error offers Sign in action."
+  },
+  {
+    "id": "MD-17",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/catalog/CatalogRawDetailScreen.tsx",
+      "src/lib/security/catalogSourcePolicy.ts",
+      "src/lib/security/safeLinking.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Trusted provenance source link, 44pt back, correct price typography; blocked unknown publishers truthful."
+  },
+  {
+    "id": "MD-18",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/detail/OfflineStateScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [],
+    "reason": "Guarded retry with busy/error status, successful return and honest cached-content copy."
+  },
+  {
+    "id": "MD-PRIV-01",
+    "status": "shared",
+    "files": [],
+    "checks": [
+      {
+        "command": "focused dietary/search ranking/preferences/discover image/source policy/RPC contracts; discovery-focused-tests.log",
+        "result": "25 passed, 0 failed"
+      },
+      {
+        "command": "assigned discovery/detail/catalog/header source contracts + behavioral gallery-index regressions; discovery-contract-tests.log",
+        "result": "21 passed, 0 failed"
+      },
+      {
+        "command": "scoped ESLint and git diff --check",
+        "result": "passed"
+      }
+    ],
+    "remaining": [
+      "Direct API owner/collaborator/follower/stranger/anonymous location leakage tests + deployment proof."
+    ],
+    "reason": "Residential projection/cache privacy is database and shared repository authority; source-only UI fixes cannot certify deployed policy.",
+    "sharedOwner": "root/database"
+  }
+]

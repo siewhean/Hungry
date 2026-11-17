@@ -1,0 +1,21 @@
+{
+  "scope": "Final independent QA closure: onboarding account-partitioned persistence",
+  "status": "implemented",
+  "files": [
+    "src/features/onboarding/useOnboardingDraftStore.ts",
+    "src/features/onboarding/onboardingDraftStorage.ts",
+    "src/features/onboarding/onboardingDraftStorage.test.ts",
+    "src/features/onboarding/remediation-onboarding.test.ts"
+  ],
+  "checks": [{"command":"focused onboardingDraftStorage + remediation-onboarding tests","result":"11 passed,0 failed; owner partition/late hydration/edit guards/legacy guest migration/adoption retirement regressions included."}],
+  "behavior": [
+    "Owner-keyed storage and in-memory account switching preserve prior drafts.",
+    "Account-clear null snapshots never erase inactive owners; reset and cancel explicitly delete only current owner.",
+    "Guest adoption retires consumed guest snapshot; legacy guest alias normalizes to guest-user.",
+    "Legacy global snapshots migrate to their declared owner's partition before global retirement.",
+    "Read generation and edit guards reject stale hydration; owner writes and removals serialize.",
+    "Existing Zustand persist bootstrap hydration API is preserved; setAccountScope returns Promise for auth integration to await."
+  ],
+  "integration": "Root updated applySignedInProfile to await account scope and reject retired generation before pending save.",
+  "remaining": ["Real device persistence/restart/account switching acceptance remains separate from Node storage regressions."]
+}

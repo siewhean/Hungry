@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Makan Merchant - Action Required</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@600;700;900&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "hungry-orange": "#E8531E",
+                      "surface-container-highest": "#f8ddd5",
+                      "inverse-surface": "#3d2d28",
+                      "error": "#ba1a1a",
+                      "text-muted": "#6B7280",
+                      "on-primary-fixed": "#3a0b00",
+                      "primary": "#a93100",
+                      "on-surface-variant": "#5a4139",
+                      "russian-red": "#CD0302",
+                      "primary-fixed-dim": "#ffb59e",
+                      "on-tertiary": "#ffffff",
+                      "text-secondary": "#374151",
+                      "on-surface": "#261814",
+                      "deep-navy": "#1A2E44",
+                      "secondary-fixed-dim": "#b4c8e4",
+                      "background": "#fff8f6",
+                      "secondary-container": "#cde1fe",
+                      "on-primary-fixed-variant": "#842500",
+                      "surface-container-high": "#fee2db",
+                      "outline-variant": "#e3bfb4",
+                      "inverse-primary": "#ffb59e",
+                      "autumn-green": "#4F7E17",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "surface-white": "#FFFFFF",
+                      "error-container": "#ffdad6",
+                      "surface-dim": "#efd4cd",
+                      "tertiary-fixed-dim": "#9bcbff",
+                      "on-primary-container": "#fffbff",
+                      "on-secondary-fixed-variant": "#35485f",
+                      "on-primary": "#ffffff",
+                      "surface-variant": "#f8ddd5",
+                      "on-secondary-fixed": "#061d32",
+                      "inverse-on-surface": "#ffede8",
+                      "surface-tint": "#ad3200",
+                      "on-tertiary-fixed": "#001d34",
+                      "primary-fixed": "#ffdbd0",
+                      "on-secondary": "#ffffff",
+                      "tertiary-container": "#0079c3",
+                      "outline": "#8e7067",
+                      "on-background": "#261814",
+                      "on-tertiary-fixed-variant": "#004a79",
+                      "tertiary-fixed": "#d0e4ff",
+                      "on-tertiary-container": "#fdfcff",
+                      "line-border": "#E7DED4",
+                      "paper-warm": "#FFF7EE",
+                      "secondary": "#4c6078",
+                      "surface-container": "#ffe9e3",
+                      "surface-container-low": "#fff1ed",
+                      "hawker-amber": "#F5A623",
+                      "tertiary": "#00609b",
+                      "surface-bright": "#fff8f6",
+                      "primary-container": "#d1430b",
+                      "on-secondary-container": "#51647d",
+                      "surface": "#fff8f6",
+                      "text-primary": "#111827",
+                      "secondary-fixed": "#d1e4ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "lg": "20px",
+                      "xxl": "32px",
+                      "sm": "8px",
+                      "huge": "48px",
+                      "xs": "4px",
+                      "screen-edge": "16px",
+                      "md": "12px",
+                      "base": "16px",
+                      "xl": "24px",
+                      "section-gap": "20px",
+                      "region-gap": "24px"
+              },
+              "fontFamily": {
+                      "micro": [
+                              "Be Vietnam Pro"
+                      ],
+                      "mono-price": [
+                              "Space Grotesk"
+                      ],
+                      "body-lg": [
+                              "Be Vietnam Pro"
+                      ],
+                      "h3": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "h1": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "h2": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body": [
+                              "Be Vietnam Pro"
+                      ],
+                      "body-sm": [
+                              "Be Vietnam Pro"
+                      ]
+              },
+              "fontSize": {
+                      "micro": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "mono-price": [
+                              "15px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "17px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h3": [
+                              "17px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display": [
+                              "32px",
+                              {
+                                      "lineHeight": "38px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "h1": [
+                              "24px",
+                              {
+                                      "lineHeight": "30px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "h2": [
+                              "20px",
+                              {
+                                      "lineHeight": "26px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body": [
+                              "15px",
+                              {
+                                      "lineHeight": "22px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-paper-warm text-on-background font-body text-body antialiased selection:bg-hungry-orange selection:text-white flex h-screen overflow-hidden">
+<!-- SideNavBar (WEB) -->
+<nav class="hidden md:flex flex-col bg-white h-screen w-64 border-r border-line-border pt-16 transition-all duration-200 ease-in-out shrink-0 relative z-40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<img alt="Stall Logo" class="w-12 h-12 rounded-full object-cover border border-line-border" data-alt="A close-up, high-quality photograph of a vibrant, appetizing plate of Hainanese Chicken Rice. The lighting is warm and inviting, highlighting the glossy texture of the chicken and the fragrant, oiled rice. The visual style is premium food photography, suitable for a highly-rated local eatery. The setting feels authentic and Singaporean." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBj7eC2Yc-ocNE7xU9rjUmePunhEom-KF38fAShhMXxjwhqXYEDf4K529ufLweNkZSoVPn5-_JcvkRG1UBfzs3ur1OUScYTzUrZwA8JHOrWxOKj7FZSQoJpbugA3ubbYdflE9xkmct2A9tCHdAsVecqfZOM2R90CjmM23IXny6fxL8saU8XAv7ZFObkd9ySZBFy0yOeFq_e0691iHleJQfgwYNB46e6HYpvtJUiU694xXmDO_nV0TnLEwGhaSK052KwXO1-CyzSJrs"/>
+<div>
+<h2 class="font-h2 text-h2 text-hungry-orange font-black leading-tight">Hawker Central</h2>
+<span class="font-micro text-micro text-text-muted">Verified Merchant</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-hungry-orange border-r-4 border-hungry-orange bg-orange-50 font-body-lg text-body-lg transition-colors group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-paper-warm font-body-lg text-body-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-medium">Stall Profile</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-paper-warm font-body-lg text-body-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">restaurant_menu</span>
+<span class="font-medium">Menu</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-paper-warm font-body-lg text-body-lg transition-colors group" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-medium">Opening Hours</span>
+</a>
+</div>
+<div class="px-4 py-6 border-t border-line-border space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-paper-warm font-body-sm text-body-sm transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-paper-warm font-body-sm text-body-sm transition-colors group" href="#">
+<span class="material-symbols-outlined text-[20px]">contact_support</span>
+<span class="font-medium">Support</span>
+</a>
+<div class="mt-4 px-4">
+<button class="w-full h-[40px] rounded-lg border border-deep-navy text-deep-navy font-body text-body font-medium flex justify-center items-center hover:bg-deep-navy/5 transition-colors">
+                    View Public Page
+                </button>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+<!-- TopAppBar -->
+<header class="bg-[#F9F6F2] border-b border-[#E7DED4] docked full-width top-0 z-50 flex justify-between items-center px-6 py-3 w-full h-16 shrink-0">
+<div class="flex items-center gap-3">
+<span class="font-h1 text-h1 text-hungry-orange font-bold tracking-tight md:hidden">Makan Merchant</span>
+<span class="font-h1 text-h1 text-slate-900 font-bold tracking-tight hidden md:block">Action Required</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-600 hover:bg-[#E7DED4] p-2 rounded-full transition-colors active:scale-95 flex items-center justify-center relative">
+<span class="material-symbols-outlined text-[24px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-russian-red rounded-full"></span>
+</button>
+<button class="text-slate-600 hover:bg-[#E7DED4] p-2 rounded-full transition-colors active:scale-95 flex items-center justify-center hidden sm:flex">
+<span class="material-symbols-outlined text-[24px]">help</span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-line-border hover:bg-[#E7DED4] transition-colors active:scale-95 ml-2">
+<img alt="Merchant Profile Avatar" class="w-full h-full object-cover" data-alt="A portrait of a smiling middle-aged Asian man, likely a hawker or chef, wearing a clean white apron over a casual shirt. The background is a slightly blurred, bustling food stall environment, suggesting authenticity and hard work. The lighting is bright and natural, reflecting a modern, optimistic tone." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRnZRsL0F9gexZmotKZuiEI66Y_tflHuELuo0IqZS4prUTU47_BuvwBafCN5Jo16-iXoEuXslnW_GkilXSz67mdvB5p3MWUS_a8S_BWVfhe5__A97OGptmV4YSe-tFHpQh1avQS7xZJVu1OAn_VredgBZUROHphYurmUiaj0X3hrDASw3kj0sMyQtqE-sm5ZTcnvEGWlwNGN17p6ldKshTKFAJsD0-HG58lpEMtmb6pnDppm8DQa2qMClqs71mUN1VOxUV_tYS-0A"/>
+</button>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-screen-edge md:p-xl scroll-smooth">
+<div class="max-w-4xl mx-auto space-y-region-gap pb-32 md:pb-12">
+<!-- Page Header (Mobile Only) -->
+<div class="md:hidden">
+<h1 class="font-display text-display text-on-surface">Needs Attention</h1>
+<p class="font-body text-body text-text-muted mt-1">Complete these tasks to optimize your stall profile.</p>
+</div>
+<!-- Completion Summary Widget -->
+<section class="bg-surface-white rounded-xl border border-line-border p-5 flex flex-col sm:flex-row items-center gap-5">
+<div class="relative w-20 h-20 shrink-0 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90 transform" viewbox="0 0 100 100">
+<circle class="text-surface-variant" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-width="8"></circle>
+<circle class="text-hungry-orange transition-all duration-1000 ease-out" cx="50" cy="50" fill="transparent" r="40" stroke="currentColor" stroke-dasharray="251.2" stroke-dashoffset="62.8" stroke-width="8"></circle> <!-- 75% complete -->
+</svg>
+<div class="absolute inset-0 flex items-center justify-center flex-col">
+<span class="font-h2 text-h2 text-deep-navy">75%</span>
+</div>
+</div>
+<div class="flex-1 text-center sm:text-left">
+<h2 class="font-h3 text-h3 text-on-surface">Profile Completion</h2>
+<p class="font-body text-body text-text-secondary mt-1">Your profile is missing a few key details. Complete them to attract more customers and build trust.</p>
+</div>
+</section>
+<!-- Critical Alerts List -->
+<section class="space-y-md">
+<h3 class="font-h3 text-h3 text-on-surface">Critical Actions</h3>
+<!-- Alert Card 1: Holiday Hours -->
+<div class="bg-surface-white rounded-xl border border-line-border overflow-hidden flex flex-col sm:flex-row group">
+<div class="w-full sm:w-40 h-32 sm:h-auto shrink-0 relative bg-surface-container">
+<!-- Using a solid color block instead of image to represent 'time/calendar' abstractly if no photo fits, but applying a subtle gradient -->
+<div class="absolute inset-0 bg-gradient-to-br from-hawker-amber/20 to-hungry-orange/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[48px] text-hungry-orange opacity-80">event_available</span>
+</div>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-center">
+<div class="flex items-start justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-russian-red shrink-0"></span>
+<h4 class="font-h3 text-h3 text-on-surface">Holiday Hours Required</h4>
+</div>
+<p class="font-body text-body text-text-secondary">Upcoming public holiday (National Day) detected. Please confirm if your operating hours will change to ensure customers have accurate information.</p>
+</div>
+</div>
+<div class="mt-4 flex gap-3">
+<button class="h-[40px] px-4 rounded-lg bg-hungry-orange text-white font-body-sm text-body-sm font-medium hover:bg-primary transition-colors flex items-center justify-center">
+                                    Update Hours
+                                </button>
+<button class="h-[40px] px-4 rounded-lg border border-line-border text-text-secondary font-body-sm text-body-sm font-medium hover:bg-surface-variant transition-colors flex items-center justify-center">
+                                    No Changes
+                                </button>
+</div>
+</div>
+</div>
+<!-- Alert Card 2: Signature Dish Photo -->
+<div class="bg-surface-white rounded-xl border border-line-border overflow-hidden flex flex-col sm:flex-row group">
+<div class="w-full sm:w-40 h-32 sm:h-auto shrink-0 relative">
+<img alt="Missing Dish Photo" class="w-full h-full object-cover grayscale opacity-60" data-alt="A stylized, slightly desaturated overhead shot of a dining table with an empty white plate at the center, surrounded by neatly arranged cutlery and subtle garnishes. The lighting is soft and diffused. The image conveys a sense of something missing or waiting to be filled, maintaining a warm, appetizing context despite the absence of the main dish." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgXgB3y7hTyBSmcNTiEVS6tjjUOS9Uj0zIZlgt6O1ybkM52kwaYkcWpmel1_xTWxkuxC4mQCMneq-m_abdMiwSUSk8BAvuO9JkxT2UFjwE9F5NI0iFi676lcgUcLwi0jDXvWLlgOaWXyI849frDv4od3L5PTjJaadkO2LepUTghG7BIuYV-E-evenykqfB25KN6QbFBomrYMoltBtRSX2i_qfOL_5zWlUfZZt95vDuCQj0Cz02Pn7mBnQYqInyGF7TGMLqdvPMjn4"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-[32px] text-surface-white drop-shadow-md">add_a_photo</span>
+</div>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-center">
+<div class="flex items-start justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="w-2 h-2 rounded-full bg-hawker-amber shrink-0"></span>
+<h4 class="font-h3 text-h3 text-on-surface">Add Photos to Signature Dish</h4>
+</div>
+<p class="font-body text-body text-text-secondary">Your listing for "Signature Laksa" is missing a photo. Dishes with high-quality photos receive up to 30% more interest.</p>
+</div>
+</div>
+<div class="mt-4 flex gap-3">
+<button class="h-[40px] px-4 rounded-lg bg-hungry-orange text-white font-body-sm text-body-sm font-medium hover:bg-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">upload</span>
+                                    Upload Photo
+                                </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Minor Suggestions List -->
+<section class="space-y-md opacity-80">
+<h3 class="font-h3 text-h3 text-on-surface">Suggestions</h3>
+<div class="bg-surface-white rounded-xl border border-line-border p-4 flex items-center justify-between gap-4 hover:border-outline-variant transition-colors cursor-pointer">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-text-muted shrink-0">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface">Expand Stall Description</h4>
+<p class="font-body-sm text-body-sm text-text-muted">Add a few sentences about your stall's history.</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-text-muted">chevron_right</span>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

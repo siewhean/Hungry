@@ -1,0 +1,12 @@
+{
+  "ignore_dirs": [
+    ".expo",
+    ".git",
+    ".turbo",
+    "android/.gradle",
+    "android/app/build",
+    "ios/build",
+    "node_modules/.cache"
+  ],
+  "prefer_split_fsevents_watcher": true
+}

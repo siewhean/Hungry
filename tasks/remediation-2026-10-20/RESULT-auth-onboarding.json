@@ -1,0 +1,611 @@
+{
+  "design": "tasks/remediation-2026-10-20/DESIGN-auth-onboarding.md",
+  "findings": [
+    {
+      "id": "AUTH-001",
+      "status": "implemented",
+      "files": [
+        "src/features/auth/changePasswordValidation.ts",
+        "src/app/screens/auth/ChangePasswordScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-002",
+      "status": "implemented",
+      "files": [
+        "src/features/auth/applySignedInProfile.ts",
+        "src/app/screens/auth/LoginScreen.tsx",
+        "src/app/screens/auth/SignUpScreen.tsx",
+        "src/app/screens/auth/EmailVerificationScreen.tsx",
+        "src/app/screens/onboarding/OnboardingAuthScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-003",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/ForgotPasswordScreen.tsx",
+        "src/app/screens/auth/ResetPasswordSuccessScreen.tsx",
+        "src/features/auth/useAuthFlowStore.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-004",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/ResetPasswordScreen.tsx",
+        "src/features/auth/recoveryCodeExchange.ts",
+        "src/lib/services/supabase/supabaseService.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-005",
+      "status": "implemented",
+      "files": [
+        "src/features/auth/exclusiveOperation.ts",
+        "src/features/auth/useAuthOperation.ts",
+        "src/app/screens/auth/EmailVerificationScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-006",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/AuthScreenShell.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-007",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/LoginScreen.tsx",
+        "src/app/screens/auth/SignUpScreen.tsx",
+        "src/app/screens/auth/ResetPasswordScreen.tsx",
+        "src/app/screens/auth/ChangePasswordScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-008",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/LoginScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-009",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/LoginScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-010",
+      "status": "shared",
+      "files": [
+        "src/lib/services/supabase/supabaseService.ts",
+        "src/lib/services/supabase/authStorage.ts",
+        "src/store/useSessionStore.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ],
+      "sharedOwner": "root",
+      "reason": "Root owns generation-aware session/storage cleanup; this worker preserves captured-session signOut implementation."
+    },
+    {
+      "id": "AUTH-011",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/LoginScreen.tsx",
+        "src/app/screens/auth/SignUpScreen.tsx",
+        "src/app/screens/onboarding/OnboardingAuthScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "AUTH-012",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/auth/EmailVerificationScreen.tsx",
+        "src/app/screens/auth/ResetPasswordScreen.tsx",
+        "src/app/screens/auth/authCopy.ts",
+        "src/app/screens/SplashScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-01",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteQuizScreen.tsx",
+        "src/features/onboarding/useOnboardingDraftStore.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-02",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteProfileResultScreen.tsx",
+        "src/features/onboarding/recommendationPreview.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-03",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteQuizScreen.tsx",
+        "src/features/onboarding/useOnboardingDraftStore.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-04",
+      "status": "shared",
+      "files": [
+        "src/app/screens/onboarding/CuisineSelectionScreen.tsx",
+        "src/app/screens/onboarding/TasteQuizScreen.tsx",
+        "src/features/auth/applySignedInProfile.ts",
+        "src/features/onboarding/useOnboardingDraftStore.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ],
+      "sharedOwner": "root",
+      "reason": "Cuisine draft, domain persistence and merge implemented; root owns actual cuisine ranking consumer."
+    },
+    {
+      "id": "ONB-05",
+      "status": "shared",
+      "files": [
+        "src/app/screens/onboarding/TasteQuizScreen.tsx",
+        "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
+        "src/features/onboarding/useOnboardingDraftStore.ts",
+        "src/app/screens/onboarding/ManualLocationPickerScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        },
+        {
+          "command": "Fresh unsigned iOS26.5 candidate inspected through Device Hub native accessibility and screenshot",
+          "result": "Preflight reproduced manual picker keyboard hiding Continue; KeyboardAvoidingView/Done fix implemented and scoped lint passed. Final re-bundled native regression pending."
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ],
+      "sharedOwner": "root",
+      "reason": "Draft and scroll/keyboard fallback implemented; root owns bootstrap hydration and resumable initial navigation."
+    },
+    {
+      "id": "ONB-06",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteQuizScreen.tsx",
+        "src/features/onboarding/useOnboardingDraftStore.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-07",
+      "status": "implemented",
+      "files": [
+        "src/features/onboarding/fulfillPendingSave.ts",
+        "src/app/screens/onboarding/TasteProfileResultScreen.tsx",
+        "src/features/auth/applySignedInProfile.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-08",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteProfileResultScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-09",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteProfileResultScreen.tsx",
+        "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
+        "src/features/auth/useAuthOperation.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-10",
+      "status": "implemented",
+      "files": [
+        "src/store/useLocationStore.ts",
+        "src/app/screens/onboarding/LocationPermissionScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-11",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/WelcomeScreen.tsx",
+        "src/app/screens/onboarding/CuisineSelectionScreen.tsx",
+        "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
+        "src/app/screens/onboarding/OnboardingIntroTemplate.tsx",
+        "src/app/screens/onboarding/TasteQuizScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-12",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/TasteProfileResultScreen.tsx",
+        "src/features/onboarding/recommendationPreview.ts"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-13",
+      "status": "implemented",
+      "files": [
+        "src/app/screens/onboarding/LocationPermissionScreen.tsx",
+        "src/app/screens/onboarding/TasteProfileResultScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ]
+    },
+    {
+      "id": "ONB-14",
+      "status": "shared",
+      "files": [
+        "src/app/screens/onboarding/OnboardingAuthScreen.tsx",
+        "src/app/screens/auth/EmailVerificationScreen.tsx"
+      ],
+      "checks": [
+        {
+          "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/auth/remediation-auth.test.ts src/features/auth/validation.test.ts src/features/auth/applySignedInProfile.generation.test.ts src/features/onboarding/remediation-onboarding.test.ts src/store/useLocationStore.analytics.test.ts",
+          "result": "22 tests passed; Node module.register deprecation warning only"
+        },
+        {
+          "command": "node scripts/run-eslint.cjs src/app/screens/auth src/app/screens/onboarding src/features/auth src/features/onboarding src/store/useLocationStore.ts src/store/useLocationStore.analytics.test.ts src/app/screens/SplashScreen.tsx --ext .ts,.tsx",
+          "result": "passed (before final formatting; repeat at integration)"
+        }
+      ],
+      "remaining": [
+        "Fresh native artifact verification required; source/unit evidence does not prove device accessibility, auth delivery or staging deployment."
+      ],
+      "sharedOwner": "root",
+      "reason": "Verification carries resumeOnboarding and resets location; root owns auto-auth redirect ordering and restart resume."
+    }
+  ],
+  "additionalSharedFixes": [
+    {
+      "id": "SET-06",
+      "files": [
+        "src/features/auth/useAccountDeletionGracePrompt.ts",
+        "src/features/auth/accountDeletionOutcomes.ts",
+        "src/lib/services/supabase/supabaseService.ts",
+        "src/lib/services/mock/mockService.ts"
+      ],
+      "result": "Deletion v2 RPC, validated status, explicit confirmed Keep, retry on lookup/cancel failure; false and processing never report cancellation."
+    },
+    {
+      "id": "SET-12",
+      "files": [
+        "src/store/useLocationStore.ts"
+      ],
+      "result": "Unknown initial/reset location no longer advertises live GPS."
+    }
+  ],
+  "nativeEvidence": {
+    "report": "tasks/remediation-2026-10-20/QA-native.md",
+    "passed": [
+      "Unsigned ARM64 iOS native Release build",
+      "Isolated RouteQA manual Orchard selection and Continue with keyboard open navigates Home",
+      "Discover search and dish detail then guest Save opens Login; auth Sign in reachable above keyboard"
+    ],
+    "remaining": [
+      "Android APK build failed ENOSPC; no Android device/emulator proof",
+      "Native offline banner, VoiceOver/TalkBack, large text and complete gated/backend acceptance remain open"
+    ]
+  }
+}

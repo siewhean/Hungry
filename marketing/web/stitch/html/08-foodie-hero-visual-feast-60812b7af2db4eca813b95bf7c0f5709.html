@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hungry - The Visual Feast</title>
+<!-- Google Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#8e7067",
+                    "error-container": "#ffdad6",
+                    "surface-container-lowest": "#ffffff",
+                    "text-primary": "#111827",
+                    "surface-tint": "#ad3200",
+                    "on-background": "#261814",
+                    "on-tertiary-fixed-variant": "#004a79",
+                    "surface-bright": "#fff8f6",
+                    "on-tertiary": "#ffffff",
+                    "on-surface": "#261814",
+                    "primary-container": "#d1430b",
+                    "secondary": "#4c6078",
+                    "tertiary-fixed": "#d0e4ff",
+                    "primary-fixed-dim": "#ffb59e",
+                    "tertiary-fixed-dim": "#9bcbff",
+                    "tertiary-container": "#0079c3",
+                    "on-secondary-fixed": "#061d32",
+                    "on-secondary-container": "#51647d",
+                    "surface-white": "#FFFFFF",
+                    "inverse-primary": "#ffb59e",
+                    "autumn-green": "#4F7E17",
+                    "surface": "#fff8f6",
+                    "hawker-amber": "#F5A623",
+                    "secondary-fixed-dim": "#b4c8e4",
+                    "secondary-container": "#cde1fe",
+                    "tertiary": "#00609b",
+                    "surface-container-low": "#fff1ed",
+                    "on-secondary-fixed-variant": "#35485f",
+                    "surface-container-high": "#fee2db",
+                    "inverse-on-surface": "#ffede8",
+                    "surface-container": "#ffe9e3",
+                    "on-error-container": "#93000a",
+                    "inverse-surface": "#3d2d28",
+                    "background": "#fff8f6",
+                    "deep-navy": "#1A2E44",
+                    "hungry-orange": "#E8531E",
+                    "on-primary-fixed": "#3a0b00",
+                    "error": "#ba1a1a",
+                    "on-error": "#ffffff",
+                    "secondary-fixed": "#d1e4ff",
+                    "surface-container-highest": "#f8ddd5",
+                    "primary-fixed": "#ffdbd0",
+                    "on-primary-container": "#fffbff",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#e3bfb4",
+                    "line-border": "#E7DED4",
+                    "surface-dim": "#efd4cd",
+                    "on-surface-variant": "#5a4139",
+                    "on-tertiary-container": "#fdfcff",
+                    "on-primary-fixed-variant": "#842500",
+                    "primary": "#a93100",
+                    "surface-variant": "#f8ddd5",
+                    "on-primary": "#ffffff",
+                    "paper-warm": "#FFF7EE",
+                    "text-muted": "#6B7280",
+                    "text-secondary": "#374151",
+                    "on-tertiary-fixed": "#001d34",
+                    "russian-red": "#CD0302"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "xs": "4px",
+                    "sm": "8px",
+                    "lg": "20px",
+                    "xl": "24px",
+                    "huge": "48px",
+                    "section-gap": "20px",
+                    "screen-edge": "16px",
+                    "xxl": "32px",
+                    "region-gap": "24px",
+                    "md": "12px",
+                    "base": "16px"
+            },
+            "fontFamily": {
+                    "body-lg": [
+                            "Be Vietnam Pro"
+                    ],
+                    "h2": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "micro": [
+                            "Be Vietnam Pro"
+                    ],
+                    "h3": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "display": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "mono-price": [
+                            "Space Grotesk"
+                    ],
+                    "body-sm": [
+                            "Be Vietnam Pro"
+                    ],
+                    "h1": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body": [
+                            "Be Vietnam Pro"
+                    ]
+            },
+            "fontSize": {
+                    "body-lg": [
+                            "17px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "h2": [
+                            "20px",
+                            {
+                                    "lineHeight": "26px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "micro": [
+                            "11px",
+                            {
+                                    "lineHeight": "14px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "h3": [
+                            "17px",
+                            {
+                                    "lineHeight": "22px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "display": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "mono-price": [
+                            "15px",
+                            {
+                                    "lineHeight": "22px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-sm": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "h1": [
+                            "24px",
+                            {
+                                    "lineHeight": "30px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body": [
+                            "15px",
+                            {
+                                    "lineHeight": "22px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+        },
+        },
+      }
+    </script>
+</head>
+<body class="bg-paper-warm text-text-primary font-body flex flex-col min-h-screen antialiased">
+<!-- TopNavBar Shared Component -->
+<header class="sticky top-0 w-full z-50 bg-[#FDFCFB] dark:bg-stone-950 border-b border-[#E7DED4] dark:border-stone-800 flat no shadows font-['Plus_Jakarta_Sans'] antialiased">
+<div class="flex justify-between items-center h-20 px-6 md:px-12 max-w-7xl mx-auto">
+<a class="text-2xl font-extrabold tracking-tight text-[#E8531E] dark:text-[#FF6B35]" href="#">
+                Hungry
+            </a>
+<nav class="hidden md:flex space-x-8">
+<a class="text-[#E8531E] dark:text-[#FF6B35] font-bold border-b-2 border-[#E8531E] pb-1 transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Foodies</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">For Merchants</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">About</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-all duration-200 ease-in-out hover:opacity-80" href="#">Merchant Portal</a>
+</nav>
+<button class="hidden md:inline-flex items-center justify-center bg-[#E8531E] text-surface-white font-h3 text-h3 h-[52px] px-6 rounded-[18px] transition-all duration-200 ease-in-out hover:opacity-80 Active: scale-95 transition-transform">
+                Join Waitlist
+            </button>
+<button class="md:hidden text-stone-600">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+</div>
+</header>
+<main class="flex-grow">
+<!-- Hero Section: The Visual Feast -->
+<section class="relative w-full h-[870px] flex items-center justify-center overflow-hidden">
+<!-- High-Res Background Image with Overlay -->
+<div class="absolute inset-0 z-0">
+<img class="w-full h-full object-cover" data-alt="A high-impact, full-width, ultra-high-resolution photograph of an authentic Singaporean Laksa bowl viewed from slightly above. The rich, fiery orange-red coconut curry broth is glistening, filled with thick rice noodles, fresh vibrant prawns, fish cake slices, and a dusting of green laksa leaves. The lighting is cinematic, warm, and highly appetizing, drawing the eye directly to the center of the dish. The background is softly blurred out, emphasizing the tactile warmth and rich culinary textures characteristic of a premium, modern food guide aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2nJZq1dxJ1aaX-PLSw1QjWkByy6UcJyGb7aFkWzM-jUSVSkBdMWA5XZgupCfIdmFMvZwvRxJZUjW8k5J4btPO2ik8JSC0mGX0r3qJOx7XeZLrsn2c6ep7omIwXZRC9dsF-Jjmam6j0IFprKRAfmPBegK9bl0hFAsAoWlJ_BP1OpnLc257ZvwOiVJ4yhDeRwVqV4Js3poaw4H5W78efTgNFELsIsRIsGQefvrjlzBlK9wKkqj64QSlVJvr9IQZHyGp-vw1--OCf3I"/>
+<!-- Dark gradient overlay for text readability -->
+<div class="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70"></div>
+</div>
+<!-- Centered Content -->
+<div class="relative z-10 flex flex-col items-center justify-center text-center px-screen-edge max-w-4xl mx-auto space-y-xl">
+<h1 class="font-display text-display text-surface-white drop-shadow-lg leading-tight">
+                    Find what to eat before hunger turns into indecision.
+                </h1>
+<p class="font-body-lg text-body-lg text-surface-container-high max-w-2xl drop-shadow-md">
+                    Your trusted, visually-led guide to the local Singaporean makan scene. Discover dishes, not just venues.
+                </p>
+<div class="pt-lg">
+<button class="inline-flex items-center justify-center bg-hungry-orange text-surface-white font-h2 text-h2 h-[56px] px-10 rounded-[18px] shadow-lg hover:bg-surface-tint transition-colors duration-300">
+                        Join Waitlist
+                    </button>
+</div>
+</div>
+</section>
+<!-- Subtle Value Proposition Strip (To ground the hero) -->
+<section class="bg-surface-white py-xl border-b border-line-border">
+<div class="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-around items-center gap-lg">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-hungry-orange text-3xl" style="font-variation-settings: 'FILL' 1;">restaurant</span>
+<span class="font-h3 text-h3 text-deep-navy">Appetite-Led Discovery</span>
+</div>
+<div class="hidden md:block w-px h-8 bg-line-border"></div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-hungry-orange text-3xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+<span class="font-h3 text-h3 text-deep-navy">Local Singaporean Focus</span>
+</div>
+<div class="hidden md:block w-px h-8 bg-line-border"></div>
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-hungry-orange text-3xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span class="font-h3 text-h3 text-deep-navy">Community Trusted</span>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Shared Component -->
+<footer class="w-full py-12 bg-[#FDFCFB] dark:bg-stone-950 border-t border-[#E7DED4] dark:border-stone-800 flat no shadows font-['Plus_Jakarta_Sans'] text-sm">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 px-6 md:px-12 max-w-7xl mx-auto">
+<div class="col-span-1 flex flex-col space-y-4">
+<span class="text-xl font-bold text-[#E8531E] dark:text-[#FF6B35]">Hungry</span>
+<p class="text-stone-500 dark:text-stone-500">© 2024 Hungry Singapore. Your trusted guide to the local makan scene.</p>
+</div>
+<div class="col-span-1 flex flex-col space-y-3">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Hawker Centres</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Nearby Makan</a>
+</div>
+<div class="col-span-1 flex flex-col space-y-3">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Merchant Support</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Contact Us</a>
+</div>
+<div class="col-span-1 flex flex-col space-y-3">
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Terms of Service</a>
+<a class="text-stone-500 dark:text-stone-500 hover:text-[#E8531E] dark:hover:text-[#FF6B35] transition-colors duration-200" href="#">Privacy Policy</a>
+</div>
+</div>
+</footer>
+</body></html>

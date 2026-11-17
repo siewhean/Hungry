@@ -1,0 +1,121 @@
+.navbarWrapper {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.navbar {
+  height: var(--header-height);
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
+  align-items: center;
+  justify-content: stretch;
+  position: relative;
+  column-gap: clamp(var(--space-3), 2.6vw, var(--space-6));
+}
+
+.logo {
+  font-family: var(--font-heading);
+  font-weight: 900;
+  font-size: clamp(1.7rem, 2.4vw, 2.25rem);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  min-width: max-content;
+}
+
+.navLinks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(var(--space-4), 3vw, var(--space-8));
+  justify-self: center;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+}
+
+.navLink {
+  font-family: var(--font-body);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  transition: color var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  color: var(--color-primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: var(--space-4);
+  flex-shrink: 0;
+}
+
+.ctaButton {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-full);
+  font-weight: 800;
+  box-shadow: var(--shadow-md);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+  white-space: nowrap;
+}
+
+.ctaButton:hover {
+  transform: translateY(-2px);
+  background-color: var(--color-primary-dark);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 920px) {
+  .navbar {
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    column-gap: clamp(var(--space-3), 2vw, var(--space-5));
+  }
+
+  .navLinks {
+    padding-bottom: var(--space-1);
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: center;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .navLinks::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .navbar {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    column-gap: var(--space-2);
+  }
+
+  .logo {
+    font-size: 1.45rem;
+  }
+
+  .navLinks {
+    display: none;
+  }
+
+  .ctaButton {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
+  }
+}

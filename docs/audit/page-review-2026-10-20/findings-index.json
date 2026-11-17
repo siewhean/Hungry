@@ -1,0 +1,2508 @@
+{
+  "warning": "187 raw observations include shared causes, beta/dormant issues, UX critiques, and missing proof. They are not 187 unique confirmed production bugs. Independent adjudication controls severity/scope over primary claims.",
+  "source_head": "50b2223e3ee058618bc23db48a97fb9fafac41ee",
+  "files": 113,
+  "raw_observations": 187,
+  "independent_adjudications": 187,
+  "groups": {
+    "auth": {
+      "report": "auth.md",
+      "assigned_files": 11,
+      "findings": [
+        {
+          "id": "AUTH-001",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Registered Change Password screen blocks the app's validation gates",
+          "primary_line": 33,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 24,
+              "adjudication": "Accepted P1; original reachability subclaim rejected"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-002",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 The auth event replaces guest preferences before the merge reads them",
+          "primary_line": 43,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 25,
+              "adjudication": "Accepted P2, source event-order defect"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-003",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Password reset completion shows the earlier email-request stage and fake actions",
+          "primary_line": 51,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 26,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-004",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 A failed password update consumes the recovery code and loses its retry context",
+          "primary_line": 59,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 27,
+              "adjudication": "Accepted P2, recovery transaction defect"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-005",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Most authentication mutations have no busy guard",
+          "primary_line": 67,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 28,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-006",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Login/reset layouts have no usable keyboard or short-height fallback",
+          "primary_line": 75,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 29,
+              "adjudication": "Narrowed P2 source layout gap; occlusion unverified"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-007",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Password-manager semantics are absent, and showing passwords enables correction",
+          "primary_line": 83,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 30,
+              "adjudication": "Accepted P2 source input semantics"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-008",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Login overrides the accessible button foreground with low-contrast white",
+          "primary_line": 91,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 31,
+              "adjudication": "Accepted P2 token-derived contrast concern"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-009",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Unconfirmed sign-in has no direct recovery action",
+          "primary_line": 99,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 32,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-010",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Delayed sign-out can terminate a newly established session",
+          "primary_line": 107,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 33,
+              "adjudication": "Accepted P2 race; original missing-caller claim rejected"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-011",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Production login spends substantial space on unavailable providers",
+          "primary_line": 115,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 34,
+              "adjudication": "Accepted P3 product critique"
+            }
+          ]
+        },
+        {
+          "id": "AUTH-012",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Smaller consistency/accessibility defects need focused cleanup",
+          "primary_line": 121,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 35,
+              "adjudication": "Narrowed P3 bundled cleanup"
+            }
+          ]
+        }
+      ]
+    },
+    "onboarding": {
+      "report": "onboarding.md",
+      "assigned_files": 11,
+      "findings": [
+        {
+          "id": "ONB-01",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Confirmed source defect: completing dietary step overwrites quiz answers with neutral taste",
+          "primary_line": 35,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 43,
+              "adjudication": "Accepted P1"
+            }
+          ]
+        },
+        {
+          "id": "ONB-02",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Confirmed source defect: fallback breaks selected dietary constraints",
+          "primary_line": 43,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 44,
+              "adjudication": "Accepted P1"
+            }
+          ]
+        },
+        {
+          "id": "ONB-03",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: back navigation visually changes the selected answer without changing its value",
+          "primary_line": 51,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 45,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "ONB-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed product/data mismatch: mandatory cuisine selections are discarded unless optional dishes are also selected",
+          "primary_line": 57,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 46,
+              "adjudication": "Narrowed P2 effort/data mismatch"
+            }
+          ]
+        },
+        {
+          "id": "ONB-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Runtime concern backed by source: core onboarding has no robust small-screen, keyboard or restart-draft treatment",
+          "primary_line": 63,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 47,
+              "adjudication": "Narrowed P2; runtime layout concern plus source draft loss"
+            }
+          ]
+        },
+        {
+          "id": "ONB-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: answer browsing commits immediately and records repeated completed-quiz signals",
+          "primary_line": 71,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 48,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "ONB-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: signing in to save loses the original Save action",
+          "primary_line": 79,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 49,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "ONB-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: real recommendation images can depict unrelated food",
+          "primary_line": 85,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 50,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "ONB-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source gap: auth/preview async operations do not expose reliable progress and recovery",
+          "primary_line": 91,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 51,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "ONB-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Reasoned race risk: manual location can be overwritten by an older GPS request",
+          "primary_line": 97,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 52,
+              "adjudication": "Narrowed P2, plausible source race"
+            }
+          ]
+        },
+        {
+          "id": "ONB-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed accessibility gap: onboarding animations bypass the existing reduced-motion preference",
+          "primary_line": 103,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 53,
+              "adjudication": "Accepted P2 source accessibility preference omission"
+            }
+          ]
+        },
+        {
+          "id": "ONB-14",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source transition defect: verification completes onboarding before location",
+          "primary_line": 109,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 56,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "ONB-12",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Reasoned UX critique: preview does not explain or enable acting on the recommendation",
+          "primary_line": 115,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 54,
+              "adjudication": "Accepted P3 product critique"
+            }
+          ]
+        },
+        {
+          "id": "ONB-13",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Confirmed copy/semantics mismatch: location Continue hides the OS-permission action and Back describes the wrong screen",
+          "primary_line": 121,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 55,
+              "adjudication": "Narrowed P3 copy/target check"
+            }
+          ]
+        }
+      ]
+    },
+    "discover-search": {
+      "report": "discover-search.md",
+      "assigned_files": 7,
+      "findings": [
+        {
+          "id": "DS-01",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 \u201cDietary Needs\u201d uses any-match for multiple requirements",
+          "primary_line": 31,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 13,
+              "adjudication": "Accepted P1; production dietary behavior"
+            }
+          ]
+        },
+        {
+          "id": "DS-02",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Zero-result Halal filter restores all legacy browse dishes",
+          "primary_line": 39,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 14,
+              "adjudication": "Accepted P1; production legacy browse branch"
+            }
+          ]
+        },
+        {
+          "id": "DS-03",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Profile constraints and cuisine chips diverge across search entry points",
+          "primary_line": 47,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 15,
+              "adjudication": "Accepted P2; provider/entry-dependent"
+            }
+          ]
+        },
+        {
+          "id": "DS-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Taste sliders do not change successful Supabase search ranking",
+          "primary_line": 55,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 16,
+              "adjudication": "Accepted P2; successful Supabase search/raw-v2"
+            }
+          ]
+        },
+        {
+          "id": "DS-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Decide relies on a partial synchronous cache and stored distances",
+          "primary_line": 62,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 17,
+              "adjudication": "Accepted P2; current cache-backed Decide path"
+            }
+          ]
+        },
+        {
+          "id": "DS-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Discovery labels assert evidence the selection logic does not possess",
+          "primary_line": 69,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 18,
+              "adjudication": "Accepted P2; misleading product/data claims"
+            }
+          ]
+        },
+        {
+          "id": "DS-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Failed cycling images can display one dish and open another",
+          "primary_line": 76,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 19,
+              "adjudication": "Accepted P2; shared cycling-grid defect"
+            }
+          ]
+        },
+        {
+          "id": "DS-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Older Quick Bites requests can overwrite newer needs/location",
+          "primary_line": 84,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 20,
+              "adjudication": "Accepted P2; Quick Bites async lifecycle"
+            }
+          ]
+        },
+        {
+          "id": "DS-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Several screens turn request failure/loading into false empty or silent stale data",
+          "primary_line": 91,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 21,
+              "adjudication": "Narrowed P2; core error-state handling, with suggestion silence lesser polish"
+            }
+          ]
+        },
+        {
+          "id": "DS-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Raw-catalog pagination failures are invisible with existing items",
+          "primary_line": 98,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 22,
+              "adjudication": "Accepted P2; catalog-v2 only"
+            }
+          ]
+        },
+        {
+          "id": "DS-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Discover filters only the first six candidates and can falsely show zero",
+          "primary_line": 105,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 23,
+              "adjudication": "Accepted P2; Discover rail selection"
+            }
+          ]
+        },
+        {
+          "id": "DS-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Accessible control identity and motion behavior need explicit implementation",
+          "primary_line": 112,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 24,
+              "adjudication": "Narrowed P2; explicit semantics/motion gap, device impact unmeasured"
+            }
+          ]
+        },
+        {
+          "id": "DS-13",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Crave's permanent PanResponder retains the first dish/auth snapshot",
+          "primary_line": 119,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 25,
+              "adjudication": "Accepted P2; gated Crave"
+            }
+          ]
+        },
+        {
+          "id": "DS-14",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 SearchHome can show a blank query while submitting an old stored query",
+          "primary_line": 126,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 26,
+              "adjudication": "Accepted P2 for query divergence; related recommendations narrowed"
+            }
+          ]
+        },
+        {
+          "id": "DS-15",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cApply filters\u201d does not define a commit boundary",
+          "primary_line": 133,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 27,
+              "adjudication": "Narrowed P2 interaction contract/design gap; not necessarily a functional filtering bug"
+            }
+          ]
+        },
+        {
+          "id": "DS-16",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Installed Discover's offline banner obscures location context",
+          "primary_line": 140,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 28,
+              "adjudication": "Accepted installed-artifact observation only; current-source severity provisional"
+            }
+          ]
+        }
+      ]
+    },
+    "maps-detail": {
+      "report": "maps-detail.md",
+      "assigned_files": 8,
+      "findings": [
+        {
+          "id": "MD-01",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 The default map's filters and pin selections have no outcome",
+          "primary_line": 30,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 61,
+              "adjudication": "Narrowed: accepted source defect, P1 if shipping/exposing maps; current normal-consumer entry not established"
+            }
+          ]
+        },
+        {
+          "id": "MD-02",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Native Mapbox configuration removes required map credits",
+          "primary_line": 38,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 62,
+              "adjudication": "Narrowed: accepted conditional integration blocker, P1 for token-backed native Mapbox exposure"
+            }
+          ]
+        },
+        {
+          "id": "MD-03",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Pin coordinates fabricate stall precision",
+          "primary_line": 46,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 63,
+              "adjudication": "Accepted P2 data-precision issue in both registered map screens; consumer scope qualified above"
+            }
+          ]
+        },
+        {
+          "id": "MD-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 An unrecognized building silently resolves to Maxwell",
+          "primary_line": 54,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 64,
+              "adjudication": "Accepted P2; registered map detail, entry qualification above"
+            }
+          ]
+        },
+        {
+          "id": "MD-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Network failures masquerade as absent places, menus and reviews",
+          "primary_line": 62,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 65,
+              "adjudication": "Accepted P2; production dish/stall recovery plus conditional map branch"
+            }
+          ]
+        },
+        {
+          "id": "MD-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Dish Tried toggles an entire venue and can undo another dish's visit",
+          "primary_line": 70,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 66,
+              "adjudication": "Accepted P2; production"
+            }
+          ]
+        },
+        {
+          "id": "MD-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Failed Tried writes leave optimistic state without recovery",
+          "primary_line": 78,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 67,
+              "adjudication": "Accepted P2; production mutation recovery"
+            }
+          ]
+        },
+        {
+          "id": "MD-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Menu cards rotate into different dishes while users read or tap them",
+          "primary_line": 86,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 68,
+              "adjudication": "Accepted P2 interaction design issue; production"
+            }
+          ]
+        },
+        {
+          "id": "MD-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Stall save and add-to-list behavior is inconsistent with its label and feature gates",
+          "primary_line": 94,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 69,
+              "adjudication": "Accepted P2; production saved-entity/gate mismatch"
+            }
+          ]
+        },
+        {
+          "id": "MD-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Public detail reviews omit contextual safety controls",
+          "primary_line": 102,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 70,
+              "adjudication": "Accepted P2 contextual safety gap; production UGC"
+            }
+          ]
+        },
+        {
+          "id": "MD-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Live/precision labels exceed the data evidence",
+          "primary_line": 110,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 71,
+              "adjudication": "Accepted P2 honesty/precision issue; production detail with conditional map subcase"
+            }
+          ]
+        },
+        {
+          "id": "MD-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Stall menus fan out a review request for every dish before the user asks",
+          "primary_line": 118,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 72,
+              "adjudication": "Accepted P2 performance risk pattern, production"
+            }
+          ]
+        },
+        {
+          "id": "MD-13",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 NotFound search discards what the user typed",
+          "primary_line": 126,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 73,
+              "adjudication": "Accepted P2; production recovery route"
+            }
+          ]
+        },
+        {
+          "id": "MD-14",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Map controls/sheets lack accessible equivalents for gesture-only behavior",
+          "primary_line": 134,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 74,
+              "adjudication": "Narrowed P2 source semantics, maps scope qualified; interception/clipping unverified"
+            }
+          ]
+        },
+        {
+          "id": "MD-15",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Claim popup has no bounded-scroll or modal focus treatment",
+          "primary_line": 142,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 75,
+              "adjudication": "Narrowed P2 accessibility/layout gap; gated claim popup"
+            }
+          ]
+        },
+        {
+          "id": "MD-16",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Raw catalog requests can overwrite newer route state",
+          "primary_line": 150,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 76,
+              "adjudication": "Accepted P2; opt-in raw catalog route"
+            }
+          ]
+        },
+        {
+          "id": "MD-17",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Catalog source attribution is visible but not inspectable as a link",
+          "primary_line": 158,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 77,
+              "adjudication": "Accepted P3 optional source-inspection polish"
+            }
+          ]
+        },
+        {
+          "id": "MD-18",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Standalone Offline route does not expose a complete recovery interaction",
+          "primary_line": 164,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 78,
+              "adjudication": "Accepted P3; explicitly registered recovery route, automatic offline flow is banner"
+            }
+          ]
+        },
+        {
+          "id": "MD-PRIV-01",
+          "primary_priority": "P1",
+          "title": "P1 beta-enablement verification gap, not a proven deployed leak:** Home-based verification promises a rough 500m area or fully hidden location (`HomeBasedVerificationScreen.tsx:164\u2013203`). `supabaseService.ts:5110` stores `location_privacy` on merchant_outlets while `:5168` still mirrors floor/unit into venues. Consumer `supabaseRepository.ts:195\u2013214` maps unit/floor/address/postal code with no locationPrivacy field/redaction; StallDetail derives/shares full address at `:337\u2013338`, `:629\u2013632`, `:957`. No consumer migration/projection coupling to that privacy selector was found in the reviewed path. This establishes missing end-to-end enforcement in source, not that a real home address is currently deployed/exposed. Owner: merchant/backend/privacy. Closure: seed a synthetic home-business in staging with hidden/approximate/exact modes; query as owner, another user and anonymous through all detail/map/share/direct API paths. Verify server-side redaction of unit/address/coordinates before enabling the feature. Coordinate with merchant report rather than double-counting it.",
+          "primary_line": 172,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 79,
+              "adjudication": "Narrowed/accepted P1 beta-enablement source enforcement gap; shared merchant item, no deployed leak proof"
+            }
+          ]
+        }
+      ]
+    },
+    "home-social": {
+      "report": "home-social.md",
+      "assigned_files": 7,
+      "findings": [
+        {
+          "id": "HS-01",
+          "primary_priority": "P1",
+          "title": "P1, confirmed safety identity defect, production",
+          "primary_line": 29,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 34,
+              "adjudication": "Accepted P1; production source safety defect"
+            }
+          ]
+        },
+        {
+          "id": "HS-14",
+          "primary_priority": "P1",
+          "title": "P1 for enabling public messaging/stories, confirmed missing safety entry points; gated beta",
+          "primary_line": 37,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 47,
+              "adjudication": "Accepted P1 before chat/story enablement, not current production blocker"
+            }
+          ]
+        },
+        {
+          "id": "HS-16",
+          "primary_priority": "P1",
+          "title": "P1 privacy barrier before story enablement, confirmed account-unscoped cache; gated beta",
+          "primary_line": 45,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 49,
+              "adjudication": "Accepted P1 before stories enablement, local account-cache boundary"
+            }
+          ]
+        },
+        {
+          "id": "HS-02",
+          "primary_priority": "P2",
+          "title": "P2, confirmed missing task path, production",
+          "primary_line": 53,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 35,
+              "adjudication": "Accepted P2 product/task-path gap; production consumer social cards"
+            }
+          ]
+        },
+        {
+          "id": "HS-03",
+          "primary_priority": "P2",
+          "title": "P2, confirmed misleading sharing, production",
+          "primary_line": 61,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 36,
+              "adjudication": "Accepted P2; production"
+            }
+          ]
+        },
+        {
+          "id": "HS-04",
+          "primary_priority": "P2",
+          "title": "P2, confirmed save-state inconsistency, production",
+          "primary_line": 69,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 37,
+              "adjudication": "Accepted P2; production"
+            }
+          ]
+        },
+        {
+          "id": "HS-05",
+          "primary_priority": "P2",
+          "title": "P2, confirmed unrecoverable truncated caption, production",
+          "primary_line": 77,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 38,
+              "adjudication": "Accepted P2; production comments-disabled branch"
+            }
+          ]
+        },
+        {
+          "id": "HS-06",
+          "primary_priority": "P2",
+          "title": "P2, confirmed load-state contract gap, production",
+          "primary_line": 85,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 39,
+              "adjudication": "Accepted P2; production load-state gap"
+            }
+          ]
+        },
+        {
+          "id": "HS-07",
+          "primary_priority": "P2",
+          "title": "P2, confirmed misleading local activity, production",
+          "primary_line": 93,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 40,
+              "adjudication": "Accepted P2; production"
+            }
+          ]
+        },
+        {
+          "id": "HS-08",
+          "primary_priority": "P2",
+          "title": "P2, confirmed incomplete activity destinations, production",
+          "primary_line": 101,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 41,
+              "adjudication": "Accepted P2; production"
+            }
+          ]
+        },
+        {
+          "id": "HS-09",
+          "primary_priority": "P2",
+          "title": "P2, confirmed missing inbox error/retry state, production",
+          "primary_line": 109,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 42,
+              "adjudication": "Accepted P2; production"
+            }
+          ]
+        },
+        {
+          "id": "HS-10",
+          "primary_priority": "P2",
+          "title": "P2, confirmed unread-accounting mismatch, production; gated DM adds another stale source",
+          "primary_line": 117,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 43,
+              "adjudication": "Narrowed P2; production shared-selector/freshness gap, account-mismatch trigger chiefly beta"
+            }
+          ]
+        },
+        {
+          "id": "HS-11",
+          "primary_priority": "P2",
+          "title": "P2, confirmed safety feedback does not update detail, production",
+          "primary_line": 125,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 44,
+              "adjudication": "Accepted P2; production detail only"
+            }
+          ]
+        },
+        {
+          "id": "HS-12",
+          "primary_priority": "P2",
+          "title": "P2, confirmed nonfunctional search and stale standalone inbox, gated beta",
+          "primary_line": 133,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 45,
+              "adjudication": "Accepted P2; gated DM page"
+            }
+          ]
+        },
+        {
+          "id": "HS-13",
+          "primary_priority": "P2",
+          "title": "P2, confirmed realtime/history race and recovery gaps, gated beta",
+          "primary_line": 141,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 46,
+              "adjudication": "Accepted P2; gated DM ordering/retry defects"
+            }
+          ]
+        },
+        {
+          "id": "HS-15",
+          "primary_priority": "P2",
+          "title": "P2, confirmed draft loss and uncaught read-ack failures, gated beta",
+          "primary_line": 149,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 48,
+              "adjudication": "Accepted P2; gated DM draft/read recovery"
+            }
+          ]
+        },
+        {
+          "id": "HS-17",
+          "primary_priority": "P2",
+          "title": "P2, confirmed story media/reduce-motion failures, gated beta",
+          "primary_line": 157,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 50,
+              "adjudication": "Accepted P2; gated story playback/accessibility"
+            }
+          ]
+        },
+        {
+          "id": "HS-18",
+          "primary_priority": "P2",
+          "title": "P2, confirmed story publication/gallery semantics, gated beta",
+          "primary_line": 165,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 51,
+              "adjudication": "Accepted P2; gated local/demo story behavior"
+            }
+          ]
+        },
+        {
+          "id": "HS-19",
+          "primary_priority": "P2",
+          "title": "P2, accessibility correctness gaps with runtime measurements outstanding",
+          "primary_line": 173,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 52,
+              "adjudication": "Narrowed P2 semantics; target size/clipping is unverified runtime concern"
+            }
+          ]
+        },
+        {
+          "id": "HS-20",
+          "primary_priority": "P2",
+          "title": "P2, test evidence gaps conceal confirmed defects",
+          "primary_line": 181,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 53,
+              "adjudication": "Narrowed: engineering evidence gap, not a separate app defect"
+            }
+          ]
+        }
+      ]
+    },
+    "merchant": {
+      "report": "merchant.md",
+      "assigned_files": 16,
+      "findings": [
+        {
+          "id": "MER-01",
+          "primary_priority": "P1",
+          "title": "Existing photo URLs make normal dish edits fail.** Class: confirmed source contract defect; gated-beta core editing blocker. `DishEditorScreen.tsx:99`, `:132`, `:278`; `src/lib/services/supabase/supabaseService.ts:2369` and `:442`. Trigger: open a dish whose image is HTTPS, change its price and save, paste a URL, or choose the signature photo. The editor always submits the loaded URL/gallery, but `resolveMerchantDishGalleryUrls` requires every URL to be a local device file. No local photo picker is offered in this screen. Thus the advertised flow throws before the dish update; mock success hides the mismatch. Recommendation: keep previously owned stored URLs without re-uploading, allow new photos through an actual local picker, and enforce ownership/source permission for changes. Owner: mobile + merchant service. Close: live-mode test saving unchanged owned photo, replacement local photo, removal, and rejected arbitrary remote asset; customer read-back.",
+          "primary_line": 44,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 27,
+              "adjudication": "Accepted \u2014 P1 beta core editing"
+            }
+          ]
+        },
+        {
+          "id": "MER-02",
+          "primary_priority": "P1",
+          "title": "\u201cEdit before adding\u201d adds the dish before the editor opens.** Class: confirmed source/publishing-boundary defect; gated-beta. `OCRDraftScreen.tsx:87` and `:251`; Supabase service `:5377`. `handleEditDraft` calls `acceptOCRDraft`, creates a canonical dish, removes the draft, then navigates. Cancel/back does not undo it. A wrong OCR price/name can enter the menu before correction. This proves a catalog write, not that provenance-gated consumer surfaces necessarily display it. Recommendation: edit draft state first and accept atomically on explicit save. Owner: mobile + merchant service. Close: open/edit/back leaves draft pending and creates no dish; final save creates exactly one corrected dish.",
+          "primary_line": 46,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 28,
+              "adjudication": "Narrowed \u2014 P1 beta publication transaction"
+            }
+          ]
+        },
+        {
+          "id": "MER-03",
+          "primary_priority": "P1",
+          "title": "Rejected-verification resubmission contradicts the server immutability guard.** Class: confirmed checked-in client/SQL contract defect; gated-beta. Supabase service `:5085`; `supabase/migrations/0038_app_security_hardening.sql:196`; `VerificationCentreScreen.tsx:169`. Trigger: previously rejected verification with non-null rejection fields \u2192 upload replacement evidence. Upsert sets `rejected_at` and `rejection_reason` to null, while the merchant trigger forbids changing them. Evidence/storage may already have been written before the status update fails. Recommendation: controlled resubmission RPC permitting only the intended transition while preserving an audit trail; coordinate guard and client. Owner: backend + merchant service. Close: authenticated SQL integration test rejected\u2192submitted, unchanged decision history, no self-approval; UI receives successful new status. Mock state-machine test passing does not prove this flow.",
+          "primary_line": 48,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 29,
+              "adjudication": "Accepted \u2014 P1 beta resubmission contract"
+            }
+          ]
+        },
+        {
+          "id": "MER-05",
+          "primary_priority": "P1",
+          "title": "Home-location privacy is stored as a preference with no demonstrated consumer redaction.** Class: confirmed source integration gap; privacy impact requires live cross-check. `HomeBasedVerificationScreen.tsx:187`; `BusinessProfileEditorScreen.tsx:595`; Supabase service `:5110` and `:5160`. Privacy is saved only to `merchant_outlets.location_privacy`; linked `venues` still retain unit/floor and consumer repository/detail paths do not consume `locationPrivacy`. Search of checked-in migrations/services found no redaction bridge. Trigger: linked home outlet chooses Hidden/Approximate, then a consumer reads its venue/location. Consequence: interface promises concealment without an evidenced enforcement path; do not claim a measured production leak. Recommendation: enforce visibility in authoritative public read projection/RPC, never rely on client hiding; define approximate location semantics. Owner: backend privacy + consumer detail/map. Close: different user and anonymous queries for exact/approximate/hidden assert address, unit/floor, coordinates, route/share payloads and cached reads. Root was asked to cross-check this independently.",
+          "primary_line": 50,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 31,
+              "adjudication": "Narrowed \u2014 P1 privacy integration gap"
+            }
+          ]
+        },
+        {
+          "id": "MER-28",
+          "primary_priority": "P1",
+          "title": "UI verification gate is absent from checked-in catalog write authorization.** Class: confirmed source authorization gap; live policy applicability unverified. `src/features/merchant/merchantGuards.ts:20`; `supabase/migrations/0020_merchant_rls_hardening.sql:6`; `0019_merchant_consumer_linkage.sql:93`; `0022_merchant_catalog_column_guards.sql:5`. An owner/manager of an unverified linked outlet is rejected by the mobile route gate but `merchant_can_manage_venue` / outlet-link helper only check ownership/role, without verification state. Later trigger definitions still call those helpers. Direct authenticated requests can therefore pass the checked-in catalog authorization model without the UI's verification requirement. This is scoped to the caller's linked venue, not an assertion of arbitrary cross-tenant access. Recommendation: central server capability predicate including verification/role/revocation, while preserving explicit draft verification writes. Owner: backend security. Close: migration replay and authenticated owner/manager/staff/unverified/rejected/revoked matrix for dish/profile/reply/promotion operations. Backend endpoints need assessment even while merchant UI is production-disabled.",
+          "primary_line": 52,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 54,
+              "adjudication": "Narrowed \u2014 P1 backend verification capability gap"
+            }
+          ]
+        },
+        {
+          "id": "MER-29",
+          "primary_priority": "P1",
+          "title": "Later migration replaces provenance guards with weaker versions.** Class: confirmed source migration regression; deployment proof pending. `supabase/migrations/20260710133000_enrichment_cursor_live_followup.sql:41` and `:91` replace the same functions hardened in `20260627114814_catalog_provenance_write_hardening.sql:28` and `:99`. The July definitions retain identity/aggregate checks but omit media/menu approval, rights-status and verification-field immutability. Trigger names remain bound to the replaced functions. A merchant authorized for its venue has a direct API avenue to alter trust fields once these versions apply. The app editor does not submit these fields, so this is a backend boundary, not an ordinary page button. Recommendation: merge legitimate trusted-role bypass with the complete provenance guard set; inspect other function replacements. Owner: database security. Close: replay all migrations in order; owner/manager cannot change any provenance flag/rights/source/reviewer field, trusted import can; live function-definition/policy read-back. Root notified for independent review.",
+          "primary_line": 54,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 55,
+              "adjudication": "Accepted as migration regression \u2014 P1 backend"
+            }
+          ]
+        },
+        {
+          "id": "MER-04",
+          "primary_priority": "P2",
+          "title": "OCR workflow lacks both upload action and an authenticated database path.** Class: confirmed source wiring/SQL contract defects; gated-beta. `MerchantMenuScreen.tsx:408` labels navigation to `OCRDrafts` as \u201cUse Camera\u201d; `OCRDraftScreen.tsx:141` only adds manually/refreshes. No capture/picker/ingest occurs there. Supabase `getOCRDrafts`/accept/reject (`:5332`, `:5360`, `:5391`) access `dishes_draft` directly. Complete migration search located only the service-role ALL policy (`0013_security_hardening.sql:111`), with RLS enabled. On that schema an ordinary merchant reads no drafts or gets an authorization failure. Recommendation: real capture/upload/ingest journey and scoped authorized draft RPC, keeping ops-only authority distinct. Owner: mobile + OCR/backend. Close: signed-in merchant scans one menu, sees only own pending rows, corrects and accepts; other tenant/anonymous denied. Deployed out-of-band policies have not been inspected.",
+          "primary_line": 58,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 30,
+              "adjudication": "Accepted \u2014 P2 beta end-to-end workflow"
+            }
+          ]
+        },
+        {
+          "id": "MER-06",
+          "primary_priority": "P2",
+          "title": "Business profile save silently drops whole editable sections.** Class: confirmed source persistence defect. `BusinessProfileEditorScreen.tsx:260`; Supabase service `:5099`\u2013`:5181`, `:1998`. UI sends cuisines/gallery/dietary/taste arrays, but live update builds no payload for them and `toMerchantOutlet` reconstructs those arrays as `[]`. \u201cProfile updated successfully\u201d is therefore not proof those fields saved. Recommendation: implement schema/service/read round trip or remove unsupported editable inputs until supported. Owner: backend/domain + mobile. Close: save/reopen every exposed field and public-side read-back under live adapter.",
+          "primary_line": 60,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 32,
+              "adjudication": "Accepted \u2014 P2 beta persistence"
+            }
+          ]
+        },
+        {
+          "id": "MER-07",
+          "primary_priority": "P2",
+          "title": "\u201cRemove\u201d business photos does not clear saved photos.** Class: confirmed source defect. `BusinessProfileEditorScreen.tsx:185`, `:269`. UI clears form value, but conditional spread omits empty URLs; service supports clearing only if a value is explicitly passed. Original gallery is also retained in the outgoing collection. Recommendation: explicit null/empty removal contract plus gallery/reference cleanup policy. Owner: mobile/service. Close: remove profile/cover independently, save/reopen, check merchant and public display, verify previously shared assets follow the intended retention policy.",
+          "primary_line": 62,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 33,
+              "adjudication": "Accepted \u2014 P2 beta persistence"
+            }
+          ]
+        },
+        {
+          "id": "MER-08",
+          "primary_priority": "P2",
+          "title": "Taste-tag suggestion overwrites the ingredient list.** Class: confirmed source data loss/model mismatch. `DishEditorScreen.tsx:98`, `:134`, `:183`. \u201cIngredients\u201d is loaded from and saved into `tasteTags`; \u201cSuggest taste tags\u201d calls `setIngredients`. Merchant-written ingredients become sensory adjectives, and the later ingredient checker consumes them. Recommendation: separate typed ingredient and taste-tag fields; show a proposed diff and require apply/replace intent. Owner: mobile/domain. Close: changing suggestions never overwrites ingredient entries and each field round-trips to the proper domain property.",
+          "primary_line": 64,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 34,
+              "adjudication": "Accepted \u2014 P2 beta data model"
+            }
+          ]
+        },
+        {
+          "id": "MER-09",
+          "primary_priority": "P2",
+          "title": "Ingredient checker returns a reassuring result from a three-keyword stub.** Class: confirmed source behavior + safety-related UX critique. `DishEditorScreen.tsx:198`; Supabase service `:5942`. Checker tests only substrings egg/soy/noodle; for example `peanuts` produces an empty result and the UI says \u201cNo common allergens detected\u201d. It is not a comprehensive ingredient/safety analysis, yet dietary exclusion labels are immediately customer-facing. Recommendation: remove the safety inference, identify limited suggestion coverage, retain explicit merchant confirmation/provenance and separate dietary evidence. Owner: food-data product + service/mobile. Close: known ingredient cases including nuts, dairy, seafood and mixed sauces cannot produce a misleading all-clear; no unsupported exclusion is automatically applied. This audit provides no dietary or medical advice and makes no legal compliance determination.",
+          "primary_line": 66,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 35,
+              "adjudication": "Accepted \u2014 P2 beta truthfulness"
+            }
+          ]
+        },
+        {
+          "id": "MER-10",
+          "primary_priority": "P2",
+          "title": "Home verification can submit an incomplete evidence set and then fail silently.** Class: confirmed source flow defect. `HomeBasedVerificationScreen.tsx:44`, `:118`, `:130`, `:264`. Copy requires two food photos plus one menu photo, but validity requires merely `photoUris.length > 0`. Profile is saved first and each image independently promotes verification to submitted. If image two fails, image one may be submitted and the UI only logs to console; no partial-result/retry guidance. Safety acknowledgement is a local Boolean, not included in evidence payload. Recommendation: typed evidence checklist, explicit declaration record/version, upload draft batch then commit once, retain successful attachments for retry, show readable failure. Owner: mobile + verification backend/ops. Close: 1/2/3 attachments, second-upload failure, declaration persistence, cancellation and retry without duplicates.",
+          "primary_line": 68,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 36,
+              "adjudication": "Accepted \u2014 P2 beta submission/recovery"
+            }
+          ]
+        },
+        {
+          "id": "MER-11",
+          "primary_priority": "P2",
+          "title": "Verification lacks actionable review feedback and refresh.** Class: confirmed source UX/state gap. `VerificationCentreScreen.tsx:169`/`:181` and status switch `:127`; `HomeBasedVerificationScreen.tsx:193`. Rejection displays generic copy instead of available `rejectionReason`; `more_info_needed` falls into generic initial verification, and no status refresh action/polling exists in the screen. Home flow also offers Exact although the main profile validator rejects home-based exact when both fields are supplied. Recommendation: status-specific next step, reason/evidence checklist/history, explicit refresh or bounded foreground refresh, consistent privacy choices. Owner: merchant mobile + ops. Close: every domain verification state and server transition maps to an accurate accessible action without restarting or leaking residential data.",
+          "primary_line": 70,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 37,
+              "adjudication": "Accepted with timing qualification \u2014 P2 beta"
+            }
+          ]
+        },
+        {
+          "id": "MER-12",
+          "primary_priority": "P2",
+          "title": "Customer preview may open another merchant in the same building.** Class: confirmed source fallback defect. `BusinessProfileEditorScreen.tsx:308`; `MerchantMenuScreen.tsx:136`. Without signature dishes/menu venue, fallback selects `listVenuesByBuilding(...)[0]`. In a hawker centre this can be a different stall. Recommendation: expose the authoritative linked venue ID; an unlinked outlet gets an explicit unavailable/link-recovery state. Owner: domain/service + mobile. Close: empty-menu outlet in multi-stall building never previews a neighbour.",
+          "primary_line": 72,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 38,
+              "adjudication": "Accepted \u2014 P2 beta wrong context"
+            }
+          ]
+        },
+        {
+          "id": "MER-13",
+          "primary_priority": "P2",
+          "title": "Long editors have no unsaved-work protection.** Class: confirmed source omission + reasoned recovery critique. `BusinessProfileEditorScreen.tsx:193`; `DishEditorScreen.tsx:74`; `PromotionBuilderScreen.tsx:45`; `HomeBasedVerificationScreen.tsx:38`. Drafts live in component/form state; no navigation removal guard or draft persistence exists in these screens. Back, mode change, account refresh/hydration or component remount can discard entered work. Business hydration effect resets every field when outlet object changes, even during an edit. Recommendation: dirty tracking and discard confirmation; keep recoverable outlet/user-scoped drafts for lengthy media/forms, with logout cleanup. Owner: mobile. Close: back gesture, tab/outlet switch, session refresh and app interruption retain work or require explicit discard; no cross-account draft leakage.",
+          "primary_line": 74,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 39,
+              "adjudication": "Narrowed \u2014 P2 beta draft-loss exposure"
+            }
+          ]
+        },
+        {
+          "id": "MER-14",
+          "primary_priority": "P2",
+          "title": "Requests are not scoped against late results; menu also relies only on future focus.** Class: confirmed source race exposure; timing-dependent runtime impact. `MerchantAnalyticsScreen.tsx:48`; `CustomerInboxScreen.tsx:48`; `MerchantDashboardScreen.tsx:253`; `PromotionBuilderScreen.tsx:65`; `MerchantMenuScreen.tsx:84`. None uses request generation/cancel checks keyed by outlet/filter/range. Slow outlet A or old filter can overwrite outlet B/current filter. Menu registers a focus listener but does not immediately load on mount/dependency change; an outlet switch while mounted need not produce a focus event. Recommendation: key cached state/requests by outlet+range/filter, drop stale responses and load on active scope plus focus; clear stale data when context changes. Owner: mobile/data-fetching. Close: delayed A request resolves after B, filter toggles rapidly, focused menu changes outlet; displayed/action targets always match active scope. No cross-tenant server authorization bypass is inferred.",
+          "primary_line": 76,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 40,
+              "adjudication": "Narrowed \u2014 P2 beta race/reload exposure"
+            }
+          ]
+        },
+        {
+          "id": "MER-15",
+          "primary_priority": "P2",
+          "title": "Dish save replaces data it did not expose for editing.** Class: confirmed source destructive update. `DishEditorScreen.tsx:133`/`:138`. Existing galleries load only the first URL but save as a one-element array; availability saves only sold_out and featured, dropping other flags. Other gallery media/availability semantics are silently removed on a routine text edit (once MER-01 is fixed). Recommendation: preserve untouched fields/unknown supported flags or implement explicit gallery/availability editors. Owner: mobile/service. Close: dish containing multiple images and additional flags retains them after price-only update; intentional removal is explicit.",
+          "primary_line": 78,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 41,
+              "adjudication": "Accepted \u2014 P2 beta latent destructive update"
+            }
+          ]
+        },
+        {
+          "id": "MER-16",
+          "primary_priority": "P2",
+          "title": "\u201cView original\u201d exposes an internal source ID instead of opening context.** Class: confirmed source unfinished behavior. `CustomerInboxScreen.tsx:75`. Button only alerts `Source ID: ...`, so merchant cannot inspect the original review/post before replying/reporting. Live adapter also maps only reviews (`supabaseService.ts:5406`) while UI offers comments and mentions; those tabs can appear as misleading empty results. Recommendation: typed source deep link with source-deleted handling; hide unsupported interaction categories or implement them. Owner: mobile/social service. Close: original action opens correct user-visible context, deleted/private sources are bounded, each advertised filter has truthful data/support state.",
+          "primary_line": 80,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 42,
+              "adjudication": "Accepted \u2014 P2 beta task incompleteness"
+            }
+          ]
+        },
+        {
+          "id": "MER-17",
+          "primary_priority": "P2",
+          "title": "Reply/preference operations need recovery and lifecycle hardening.** Class: confirmed source omission with runtime concerns. `CustomerInboxScreen.tsx:404` presents the reply as an absolute positioned View inside the scrolling `Screen`, not a modal/portal; backdrop/close can discard text while sending, and no keyboard avoidance/focus-isolation contract is visible. `MerchantSettingsScreen.tsx:90` starts a promise chain without catch, so background sync rejection bypasses its surrounding synchronous try/catch. Preference `:133` optimistically submits whole snapshots with no per-key serialization, allowing fast competing writes/rollback to lose a newer toggle. Recommendation: shared accessible keyboard-aware composer with draft handling; catch background failures; serialize/merge preference updates. Owner: mobile. Close: send error/close/reopen preserves draft, modal traps/restores focus with keyboard visible, rejected sync is handled, out-of-order toggles keep latest intent.",
+          "primary_line": 82,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 43,
+              "adjudication": "Narrowed \u2014 P2 beta async recovery; native concerns open"
+            }
+          ]
+        },
+        {
+          "id": "MER-18",
+          "primary_priority": "P2",
+          "title": "AI assistant promises opportunities but live adapter returns only a summary.** Class: confirmed capability/copy mismatch; gated-beta product issue. `AIAssistantScreen.tsx:46`, `:133`; Supabase service `:5970`. Live `getAIInsights` returns only `weekly_summary`, screen filters it out, and `getWeeklySummary` repeats the same analytics request. Menu/photo/demand/promotion opportunities described on screen are therefore never actionable in this adapter. \u201cAll set\u201d suggests completion rather than unsupported capability. Dismissal is only in local state and returns on refresh for supported providers. Recommendation: truthful summary-only product until insights exist, separate unavailable from no-action-needed, dedupe request and persist dismiss only where promised. Owner: merchant product/service. Close: live adapter fixtures for unsupported/no-data/actionable/dismissed states and one bounded analytics request.",
+          "primary_line": 84,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 44,
+              "adjudication": "Accepted \u2014 P2 beta capability"
+            }
+          ]
+        },
+        {
+          "id": "MER-19",
+          "primary_priority": "P2",
+          "title": "Custom controls omit important accessibility roles/states.** Class: confirmed source semantics gap; full accessibility acceptance unverified. `MerchantDashboardScreen.tsx:69` date pills omit role/selected state; `VerificationCentreScreen.tsx:275` method card omits button role/label; `HomeBasedVerificationScreen.tsx:350` privacy choices omit radio/checked state; its safety control `:304` is an IconButton with no checkbox checked state. Analytics repeated \u201cSee More\u201d controls lack distinct accessible context. Shared Input does supply visible-label/placeholder naming and error live region, and shared IconButton adds role/name/hitSlop; these should be kept. Recommendation: semantic radio/checkbox/tab/button primitives with labels and checked/selected/disabled states; avoid duplicated generic names. Owner: mobile/accessibility. Close: VoiceOver/TalkBack announces purpose+state and sensible focus order on all 16 pages; largest supported text sizes, touch targets and measured contrast pass. No visual contrast ratio was measured in this source-only review.",
+          "primary_line": 86,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 45,
+              "adjudication": "Accepted as semantics omission \u2014 P2 beta"
+            }
+          ]
+        },
+        {
+          "id": "MER-20",
+          "primary_priority": "P2",
+          "title": "Price input silently turns invalid/blank values into free dishes.** Class: confirmed source validation weakness. `DishEditorScreen.tsx:125`. `parseFloat(price) || 0` accepts prefixes such as `5abc` as 5 and empty/non-numeric values as 0; name is the only required validation in handler. Recommendation: explicit SGD amount semantics, valid complete decimal parse, nonnegative bounded value and clear free-item intent; share client/service validation. Owner: mobile/domain/backend. Close: blank, pasted malformed, negative, huge and valid cents values get consistent actionable results; no accidental zero-price publication. Database constraints may reject some cases but do not repair the UI's coercion.",
+          "primary_line": 88,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 46,
+              "adjudication": "Accepted \u2014 P2 beta validation"
+            }
+          ]
+        },
+        {
+          "id": "MER-21",
+          "primary_priority": "P2",
+          "title": "Featured visitor operations can race across rows.** Class: source-supported race concern. `FeaturedVisitorsScreen.tsx:52`, `:89`, `:213`. Busy state is one ID and only disables that row; other reorder/pin operations can proceed against stale arrays. Earlier failure rollback can overwrite a later successful reorder; six-cap local count can race. Recommendation: serialize outlet-level changes or use revisioned server transaction and scoped optimistic cache; enforce cap on server. Owner: mobile/backend. Close: overlapping moves/pins plus one failure preserve final confirmed server order and never exceed six. Existing optimistic rollback on a single operation is a strength; no live capacity bypass was demonstrated.",
+          "primary_line": 90,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 47,
+              "adjudication": "Narrowed \u2014 P2 beta concurrency exposure"
+            }
+          ]
+        },
+        {
+          "id": "MER-23",
+          "primary_priority": "P2",
+          "title": "Menu mutations can fail with no merchant-visible error.** Class: confirmed source feedback gap. `MerchantMenuScreen.tsx:158`, `:180`, `:193`. Sold-out, featured and delete catches only console log. A busy owner cannot tell whether the menu changed; feature success does not update/reload local menu. Recommendation: per-dish pending state, explicit resulting state returned from service, visible error/retry, reconcile on focus. Owner: mobile. Close: each mutation denied/offline/slow\u2192success, repeated tap, and consumer read-back; no false confirmation or stale availability.",
+          "primary_line": 92,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 49,
+              "adjudication": "Accepted \u2014 P2 beta error feedback"
+            }
+          ]
+        },
+        {
+          "id": "MER-24",
+          "primary_priority": "P2",
+          "title": "Team/summary messaging claims delivery before delivery evidence.** Class: confirmed source status mismatch; external delivery proof missing. `MerchantSettingsScreen.tsx:220`/`:241`; Supabase service `:6057`\u2013`:6085`. Invite creates a pending role, writes a notification marked sent and enqueues an outbox email, then UI says \u201cInvite sent\u201d; weekly UI says every active team member notified. Enqueue success is not recipient delivery, acceptance or worker execution. Live worker/configuration/delivery receipts were not inspected. Recommendation: distinguish queued, sent/delivered, failed and accepted; do not block truthful account management on unavailable worker, expose retries. Owner: backend delivery + mobile. Close: controlled staging recipient, worker failure and retry, status read-back, role acceptance/revocation. Audit performed no sends.",
+          "primary_line": 94,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 50,
+              "adjudication": "Narrowed \u2014 P2 beta recipient/status accuracy"
+            }
+          ]
+        },
+        {
+          "id": "MER-26",
+          "primary_priority": "P2",
+          "title": "Promotion dates are converted to UTC days while the product is Singapore-local.** Class: confirmed source time-boundary mismatch. `PromotionBuilderScreen.tsx:50`, `:159`, `:169`. Date fields promise calendar dates but append `T00:00:00Z` and `T23:59:59Z`; in Singapore an offer for one date starts at 08:00 and ends at 07:59:59 the following local day. Defaults also use UTC date; editing an existing time-qualified promotion discards its original time/zone with `split(\"T\")[0]`. Recommendation: explicitly model Asia/Singapore day boundaries or display/select timezone+times consistently; label future publish as scheduled. Owner: mobile/domain/backend. Close: tests at Singapore 00:01/07:59/08:00/23:59, existing offset timestamps, scheduled/expired transitions and customer eligibility read-back.",
+          "primary_line": 96,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 52,
+              "adjudication": "Accepted \u2014 P2 beta temporal contract"
+            }
+          ]
+        },
+        {
+          "id": "MER-27",
+          "primary_priority": "P2",
+          "title": "OCR batch completion always reports success after individual failures.** Class: confirmed source outcome defect. `OCRDraftScreen.tsx:75`/`:106`. Each `handleAccept` catches errors internally, so loop continues and unconditionally alerts all drafts added; no per-row/in-flight disabling exists. Service accept is multi-step dish insert then draft update (`supabaseService.ts:5377`/`:5384`), allowing a partial commit to leave a pending draft whose deterministic dish ID then collides on retry. Recommendation: structured per-item results, progress/summary of accepted versus failed, idempotent transactional acceptance, lock pending rows. Owner: mobile + backend. Close: partial batch failure and draft-update failure with retry create no duplicate/conflicting dish and no false all-success message.",
+          "primary_line": 98,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 53,
+              "adjudication": "Narrowed \u2014 P2 beta outcome/idempotence"
+            }
+          ]
+        },
+        {
+          "id": "MER-22",
+          "primary_priority": "P3",
+          "title": "Zero analytics and trends can imply activity that does not exist.** Class: confirmed presentation defects. `MerchantAnalyticsScreen.tsx:259` gives each zero segment flex 1, so zero total traffic renders a complete four-color bar despite 0% legends; `:477` formats midnight as `0 AM`. Dashboard `MerchantDashboardScreen.tsx:134` always paints an up-trend icon and green subtext without actual comparison direction. Recommendation: explicit no-data visualization, correct clock formatting, direction-neutral dashboard until calculated delta. Owner: mobile/analytics design. Close: all-zero, one-source-only, falling trend, midnight and no prior period snapshot checks.",
+          "primary_line": 102,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 48,
+              "adjudication": "Accepted \u2014 P3 beta presentation"
+            }
+          ]
+        },
+        {
+          "id": "MER-25",
+          "primary_priority": "P3",
+          "title": "Ordering illustration resembles a usable merchant QR and checklist is static.** Class: reasoned UX critique grounded in source. `OrdersComingSoonScreen.tsx:12` and `:210` draw deterministic squares, not an encoded QR; large label says \u201cOrder Here\u201d, and setup items remain unchecked despite verified-only access. Disabled pilot/export and unavailable-build copy are honest and should remain. Recommendation: visibly label the graphic \u201cIllustration \u2014 cannot be scanned\u201d or use a neutral illustration; omit static setup checklist until it reflects data. Owner: merchant product/design. Close: usability check no merchant believes this is a printable working QR; assistive reading reflects unavailable functionality.",
+          "primary_line": 104,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 51,
+              "adjudication": "Accepted as UX critique \u2014 P3 beta"
+            }
+          ]
+        }
+      ]
+    },
+    "profile": {
+      "report": "profile.md",
+      "assigned_files": 16,
+      "findings": [
+        {
+          "id": "PROFILE-01",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Follow action is incompatible with the checked-in permission contract",
+          "primary_line": 40,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 83,
+              "adjudication": "Accepted P1 source contract mismatch"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-02",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Editable email changes profile data but leaves authentication identity unchanged",
+          "primary_line": 48,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 84,
+              "adjudication": "Accepted P1 with bounded consequence"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-03",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Followers, following, and public counts do not represent the selected user's social graph",
+          "primary_line": 56,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 85,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Profile ownership and public \u201cReviews\u201d are inferred from names and local comments",
+          "primary_line": 64,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 86,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Untouched optional hours submit a fabricated Monday 10 AM\u201310 PM",
+          "primary_line": 72,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 87,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Long edit/contribution drafts vanish on navigation without a discard boundary",
+          "primary_line": 80,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 88,
+              "adjudication": "Narrowed P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Saved/tried/visited/followed screens discard IDs not already in the synchronous cache",
+          "primary_line": 88,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 89,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Several profile reads conflate failure, missing data and empty results",
+          "primary_line": 96,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 90,
+              "adjudication": "Narrowed P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cCopy link\u201d copies plain taste text, not an openable link",
+          "primary_line": 104,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 91,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Accessibility semantics and target sizes are inconsistent across production profile actions",
+          "primary_line": 112,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 92,
+              "adjudication": "Narrowed P2 source accessibility gaps"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Passport celebration cancels its own completion timer",
+          "primary_line": 120,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 93,
+              "adjudication": "Accepted P2, gated beta"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Weekly missions and passport loads lack freshness and failure feedback",
+          "primary_line": 128,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 94,
+              "adjudication": "Accepted P2, gated beta"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-13",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Gated social collection detail is misleading and does not scale as implemented",
+          "primary_line": 136,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 95,
+              "adjudication": "Accepted P2 source defects, performance unverified; gated beta"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-14",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Contribution promise omits provenance/status and exposes backend recovery language",
+          "primary_line": 144,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 96,
+              "adjudication": "Narrowed P2 UX/provenance/operations critique"
+            }
+          ]
+        },
+        {
+          "id": "PROFILE-15",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Profile save affords success before clear validation and identity-change expectations",
+          "primary_line": 152,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 97,
+              "adjudication": "Accepted P3 critique"
+            }
+          ]
+        }
+      ]
+    },
+    "settings": {
+      "report": "settings.md",
+      "assigned_files": 1,
+      "findings": [
+        {
+          "id": "SET-01",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Public-feed switch is inert; intended privacy semantics need clarification",
+          "primary_line": 31,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 62,
+              "adjudication": "Downgraded original P1 to P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-02",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Search-history opt-out and five other discovery/browser controls have no effects",
+          "primary_line": 39,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 63,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-03",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 A failed privacy save can leave \u201cPrivate\u201d displayed while server stays public",
+          "primary_line": 47,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 64,
+              "adjudication": "Accepted P1 source-supported privacy race"
+            }
+          ]
+        },
+        {
+          "id": "SET-04",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Failed asynchronous sign-out is hidden and can preserve SDK credentials",
+          "primary_line": 55,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 65,
+              "adjudication": "Accepted P1 failure path"
+            }
+          ]
+        },
+        {
+          "id": "SET-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cOn this device\u201d sign-out actually requests global session revocation",
+          "primary_line": 64,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 66,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-06",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Deletion recovery can silently fail while the product promises sign-in keeps the account",
+          "primary_line": 72,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 67,
+              "adjudication": "Accepted P1 lifecycle failure path"
+            }
+          ]
+        },
+        {
+          "id": "SET-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Clear cache removes persisted session/profile/location metadata outside its stated scope",
+          "primary_line": 80,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 68,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Settings switches lack labels/roles and busy states in the accessibility tree",
+          "primary_line": 88,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 69,
+              "adjudication": "Narrowed P2 source semantics gap"
+            }
+          ]
+        },
+        {
+          "id": "SET-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Haptic feedback Off is ignored by common controls",
+          "primary_line": 96,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 70,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Alert preferences display invented defaults when loading fails and allow a load/save race",
+          "primary_line": 104,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 71,
+              "adjudication": "Narrowed P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cDownload my data\u201d shares JSON text and hides partial failure until inside the payload",
+          "primary_line": 112,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 72,
+              "adjudication": "Narrowed P2 export usability/feedback"
+            }
+          ]
+        },
+        {
+          "id": "SET-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Reset location says GPS but uses the hardcoded default coordinate",
+          "primary_line": 120,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 73,
+              "adjudication": "Accepted P2"
+            }
+          ]
+        },
+        {
+          "id": "SET-13",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Deletion request success, local cleanup failure and navigation are conflated",
+          "primary_line": 128,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 74,
+              "adjudication": "Narrowed P2 conditional stage error"
+            }
+          ]
+        },
+        {
+          "id": "SET-14",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Information hierarchy and theme interaction overcomplicate simple settings tasks",
+          "primary_line": 136,
+          "independent_review": [
+            {
+              "report": "crosscheck-accounts.md",
+              "line": 75,
+              "adjudication": "Accepted P3 critique"
+            }
+          ]
+        }
+      ]
+    },
+    "reviews-post": {
+      "report": "reviews-post.md",
+      "assigned_files": 12,
+      "findings": [
+        {
+          "id": "RP-01",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 An unpublished review draft crosses account/session boundaries",
+          "primary_line": 34,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 19,
+              "adjudication": "Accepted P1; production Profile-menu signout and session-boundary paths"
+            }
+          ]
+        },
+        {
+          "id": "RP-02",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 The production Post picker can be permanently empty on a cold Supabase cache",
+          "primary_line": 42,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 20,
+              "adjudication": "Accepted P1 for cold Supabase Post path; review picker P2 component of same cache integration gap"
+            }
+          ]
+        },
+        {
+          "id": "RP-03",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 The production composer silently loses a post on Back or unmount",
+          "primary_line": 50,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 21,
+              "adjudication": "Narrowed P2; actual production pop/unmount/reset/process loss"
+            }
+          ]
+        },
+        {
+          "id": "RP-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 A venue-only Post route guesses the first dish",
+          "primary_line": 56,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 22,
+              "adjudication": "Accepted P2; conditional venue-only route"
+            }
+          ]
+        },
+        {
+          "id": "RP-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Changing a dish destroys the current review without consent",
+          "primary_line": 62,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 23,
+              "adjudication": "Accepted P2; production change-dish draft loss"
+            }
+          ]
+        },
+        {
+          "id": "RP-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cFilter applied\u201d does not change the uploaded review photo",
+          "primary_line": 68,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 24,
+              "adjudication": "Accepted P2; production media preview/output contract"
+            }
+          ]
+        },
+        {
+          "id": "RP-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 A failed photo step can leave a public review despite \u201cCould not publish\u201d",
+          "primary_line": 74,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 25,
+              "adjudication": "Accepted P2; non-atomic review/media sequence, deployed visibility unverified"
+            }
+          ]
+        },
+        {
+          "id": "RP-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Production success claims locally calculated points without an award receipt",
+          "primary_line": 80,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 26,
+              "adjudication": "Accepted P2; production reward-receipt mismatch"
+            }
+          ]
+        },
+        {
+          "id": "RP-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Review Search and Top Rated operate only on the currently loaded recent page",
+          "primary_line": 86,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 27,
+              "adjudication": "Accepted P2; successful service pages only, query scope misleading"
+            }
+          ]
+        },
+        {
+          "id": "RP-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 A timestamp-only review cursor can permanently skip tied records",
+          "primary_line": 92,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 28,
+              "adjudication": "Accepted P2; source pagination boundary"
+            }
+          ]
+        },
+        {
+          "id": "RP-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cShare review\u201d opens a dish and may reference someone else's post",
+          "primary_line": 98,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 29,
+              "adjudication": "Accepted P2; production external dish link, gated in-app post mismatch"
+            }
+          ]
+        },
+        {
+          "id": "RP-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Sharing lacks outcome-aware feedback and duplicate-send protection",
+          "primary_line": 104,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 30,
+              "adjudication": "Narrowed P2; production external outcomes and gated multi-recipient retries"
+            }
+          ]
+        },
+        {
+          "id": "RP-13",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Contribution accessibility remains inconsistent in controls, rating and modal focus",
+          "primary_line": 110,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 31,
+              "adjudication": "Accepted/narrowed P2 semantics; device geometry/focus acceptance open"
+            }
+          ]
+        },
+        {
+          "id": "RP-14",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Dormant Quick Review reports success without submitting a review",
+          "primary_line": 116,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 32,
+              "adjudication": "Accepted P2 dormant support implementation"
+            }
+          ]
+        },
+        {
+          "id": "RP-15",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Prototype \u201cSave Draft\u201d discards the draft it claims to save",
+          "primary_line": 122,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 33,
+              "adjudication": "Accepted P2 gated prototype"
+            }
+          ]
+        },
+        {
+          "id": "RP-16",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Prototype scheduling and metadata imply effects missing from publication",
+          "primary_line": 128,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 34,
+              "adjudication": "Accepted P2 gated prototype; partly honest body copy"
+            }
+          ]
+        },
+        {
+          "id": "RP-17",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Soundtrack playback/selection is a simulation that cannot attach music",
+          "primary_line": 134,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 35,
+              "adjudication": "Accepted P2 latent/prototype UI path"
+            }
+          ]
+        },
+        {
+          "id": "RP-18",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Contribution design drifts from the concise food-first brief",
+          "primary_line": 140,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 36,
+              "adjudication": "Accepted P3 reasoned design/product critique"
+            }
+          ]
+        },
+        {
+          "id": "RP-19",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Review blocking inherits the shared identity flaw and does not filter the current review feed",
+          "primary_line": 146,
+          "independent_review": [
+            {
+              "report": "crosscheck-reviews-post.md",
+              "line": 37,
+              "adjudication": "Accepted P2 local-feed consequence of shared HS-01 P1 source safety cause"
+            }
+          ]
+        }
+      ]
+    },
+    "saved-tools": {
+      "report": "saved-tools.md",
+      "assigned_files": 20,
+      "findings": [
+        {
+          "id": "ST-01",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Overbroad private-note read authorization; successful disclosure unproven",
+          "primary_line": 42,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 63,
+              "adjudication": "Narrowed \u2014 P1 production source privacy boundary"
+            }
+          ]
+        },
+        {
+          "id": "ST-02",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Confirmed source defect + isolated runtime repro: the production solo Wheel cannot resolve a normal spin",
+          "primary_line": 52,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 64,
+              "adjudication": "Accepted \u2014 P1 production core correctness"
+            }
+          ]
+        },
+        {
+          "id": "ST-03",
+          "primary_priority": "P1",
+          "title": "P1 \u2014 Confirmed source defect: private saved-tool cache survives logout and can be shown to another account",
+          "primary_line": 62,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 65,
+              "adjudication": "Accepted as source isolation defect \u2014 P1 production"
+            }
+          ]
+        },
+        {
+          "id": "ST-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: failed reads/writes are often unhandled or misreported as empty/missing",
+          "primary_line": 70,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 66,
+              "adjudication": "Accepted \u2014 P2 production/beta per page"
+            }
+          ]
+        },
+        {
+          "id": "ST-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: \u201cFollowing/Saved\u201d is device-local state with no backend restoration; hub item counts falsely show zero",
+          "primary_line": 78,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 67,
+              "adjudication": "Accepted \u2014 P2 production"
+            }
+          ]
+        },
+        {
+          "id": "ST-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect + UX critique: editor collaboration has no usable editing UI and adding people requires raw user IDs",
+          "primary_line": 86,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 68,
+              "adjudication": "Accepted \u2014 P2 production capability + UX"
+            }
+          ]
+        },
+        {
+          "id": "ST-07",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: portfolio editing promises exceed available actions; descriptions cannot be cleared",
+          "primary_line": 94,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 69,
+              "adjudication": "Accepted \u2014 P2 production correction flow"
+            }
+          ]
+        },
+        {
+          "id": "ST-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect/race: conflict refresh and ordinary reload can overwrite unsaved edits",
+          "primary_line": 102,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 70,
+              "adjudication": "Narrowed \u2014 P2 production draft overwrite/race"
+            }
+          ]
+        },
+        {
+          "id": "ST-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed bounded-catalog defects + performance concern: results are partial and cache readiness is invisible",
+          "primary_line": 110,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 71,
+              "adjudication": "Narrowed \u2014 P2 bounded search/readiness; performance unmeasured"
+            }
+          ]
+        },
+        {
+          "id": "ST-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source/design-contract mismatch: \u201cDraft/Publish\u201d does not control public visibility",
+          "primary_line": 118,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 72,
+              "adjudication": "Narrowed \u2014 P2 production audience clarity"
+            }
+          ]
+        },
+        {
+          "id": "ST-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source defect: portfolio \u201cRemove\u201d resolves a flag without removing/hiding its public content",
+          "primary_line": 126,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 73,
+              "adjudication": "Accepted \u2014 P2 production UGC operational boundary; admin beta"
+            }
+          ]
+        },
+        {
+          "id": "ST-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed source contract mismatch: fractional ranking scores conflict with integer database/RPC types",
+          "primary_line": 134,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 74,
+              "adjudication": "Accepted \u2014 P2 production numeric contract"
+            }
+          ]
+        },
+        {
+          "id": "ST-13",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed accessibility omissions + runtime-only layout risk",
+          "primary_line": 142,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 75,
+              "adjudication": "Narrowed \u2014 P2 production semantics; device layout unverified"
+            }
+          ]
+        },
+        {
+          "id": "ST-14",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed wheel correctness/copy issues beyond ST-02; multiplayer gaps remain beta-only",
+          "primary_line": 150,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 76,
+              "adjudication": "Narrowed \u2014 P2 production nomination/fairness; group issues beta"
+            }
+          ]
+        },
+        {
+          "id": "ST-15",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed gated-beta defect: editorial collection saves are not durable or account-scoped",
+          "primary_line": 158,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 77,
+              "adjudication": "Accepted \u2014 P2 gated beta"
+            }
+          ]
+        },
+        {
+          "id": "ST-16",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Confirmed gated-beta product gaps: checklist reminder promise has no delivery/edit/undo completion path",
+          "primary_line": 166,
+          "independent_review": [
+            {
+              "report": "crosscheck-merchant-tools.md",
+              "line": 78,
+              "adjudication": "Narrowed \u2014 P2 gated beta reminder truthfulness/undo"
+            }
+          ]
+        }
+      ]
+    },
+    "reads-dev": {
+      "report": "reads-dev.md",
+      "assigned_files": 4,
+      "findings": [
+        {
+          "id": "RD-01",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Reads is enabled in name but has no route or entry point",
+          "primary_line": 22,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 87,
+              "adjudication": "Accepted P2 product/docs integration drift; dormant Reads feature"
+            }
+          ]
+        },
+        {
+          "id": "RD-02",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Empty article cache crashes render instead of showing loading or missing content",
+          "primary_line": 26,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 88,
+              "adjudication": "Accepted P2 latent article render defect"
+            }
+          ]
+        },
+        {
+          "id": "RD-03",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Unknown article IDs silently open a different article",
+          "primary_line": 30,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 89,
+              "adjudication": "Accepted P2 latent identity defect"
+            }
+          ]
+        },
+        {
+          "id": "RD-04",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Feed loading/error states do not follow Supabase loading/error state",
+          "primary_line": 34,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 90,
+              "adjudication": "Accepted P2 dormant-feed async contract"
+            }
+          ]
+        },
+        {
+          "id": "RD-05",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Archive and atmosphere promises do not match their effects",
+          "primary_line": 38,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 91,
+              "adjudication": "Accepted P2 dormant-feed action mismatch"
+            }
+          ]
+        },
+        {
+          "id": "RD-06",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Published read times are character counts of snippets",
+          "primary_line": 42,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 92,
+              "adjudication": "Accepted P2 dormant metadata integrity"
+            }
+          ]
+        },
+        {
+          "id": "RD-07",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Editorial hierarchy is repetitive and disconnected from dish discovery",
+          "primary_line": 46,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 93,
+              "adjudication": "Accepted P3 reasoned UX critique, dormant"
+            }
+          ]
+        },
+        {
+          "id": "RD-08",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Failed or cancelled article handoff has no in-screen reopen action; external-source contract is unresolved",
+          "primary_line": 50,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 94,
+              "adjudication": "Narrowed P2 latent recovery gap; external-publisher incompatibility is future integration gap"
+            }
+          ]
+        },
+        {
+          "id": "RD-09",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Developer feature switches and \u201cSlow 3G\u201d do not simulate the stated feature/network behavior",
+          "primary_line": 54,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 95,
+              "adjudication": "Accepted P2 QA tooling, not a customer bug"
+            }
+          ]
+        },
+        {
+          "id": "RD-10",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 \u201cGuest Dish\u201d inspection silently authenticates the test session",
+          "primary_line": 58,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 96,
+              "adjudication": "Accepted P2 QA tooling evidence qualifier"
+            }
+          ]
+        },
+        {
+          "id": "RD-11",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Async presets are neither exclusive nor failure-recoverable, and debug counts can be stale",
+          "primary_line": 62,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 97,
+              "adjudication": "Accepted P2 tooling race/error/evidence gap"
+            }
+          ]
+        },
+        {
+          "id": "RD-12",
+          "primary_priority": "P2",
+          "title": "P2 \u2014 Developer controls lack distinguishable assistive-tech labels",
+          "primary_line": 66,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 98,
+              "adjudication": "Narrowed P2 source semantics/tooling accessibility; runtime size impact unverified"
+            }
+          ]
+        },
+        {
+          "id": "RD-13",
+          "primary_priority": "P3",
+          "title": "P3 \u2014 Gallery layout is a limited preview, and its Back label overpromises",
+          "primary_line": 70,
+          "independent_review": [
+            {
+              "report": "crosscheck-discovery-social.md",
+              "line": 99,
+              "adjudication": "Accepted P3 prototype-tool polish; clipping unverified"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "pending_crosscheck_ids": [],
+  "duplicate_adjudication_ids": []
+}

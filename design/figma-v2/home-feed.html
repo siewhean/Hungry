@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hungry v2 — Home Feed (3 Variants)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+<main class="page">
+
+  <!-- Intro -->
+  <div class="intro-panel">
+    <p class="eyebrow">Hungry v2 / 01 Home Feed</p>
+    <h1>Three home feed directions — social without being creator-first.</h1>
+    <p>The current feed uses unnecessary Badge pill labels ("Video", "Photo", "dish tags") and has no visual differentiation between stalls and users. All three variants below fix those issues while exploring different content rhythms. Key constraint: every post action routes back to a dish or stall decision, not to vanity metrics.</p>
+    <div class="summary-chips">
+      <span class="summary-chip">No "Video" / "Photo" pills</span>
+      <span class="summary-chip">Stall vs User visual differentiation</span>
+      <span class="summary-chip">Dish links in-text, not as badge rows</span>
+      <span class="summary-chip">Story rail at top</span>
+      <span class="summary-chip">Likes count visible</span>
+    </div>
+  </div>
+
+  <!-- Audit critique section -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Current Implementation Audit</p>
+      <h2>What's wrong with HomeFeedScreen.tsx</h2>
+    </div>
+    <div class="critique-grid">
+      <div class="critique-card">
+        <p class="critique-label">Issue · Line 44</p>
+        <h4>Unnecessary "Video" / "Photo" badge pills</h4>
+        <p>A play icon centered on the media already communicates video. The badge chip adds visual noise with no utility. Removed in all v2 variants.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Issue · Lines 82–87</p>
+        <h4>Dish name badges below every caption</h4>
+        <p>Orange pill row for dish names breaks reading flow and feels like metadata tags. In v2, dish names become inline underlined links within the caption text.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>No stall vs user visual differentiation</h4>
+        <p>Stall accounts should have an orange avatar ring + fork icon badge. User accounts have a grey ring. Visually, you can distinguish at a glance who posted.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>No story rail, no like counts, no save</h4>
+        <p>Social signals (story rings, like counts, saves) are what make a feed feel alive. Their absence makes the app look like a static list, not a community.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT A: Appetite Scroll ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant A — Recommended</p>
+      <h2>Appetite Scroll</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag recommended">Recommended</span>
+        <h3>Full-bleed 4:5 cards, story rail, no pill labels</h3>
+        <p>The closest to Instagram in feel but intentionally different in purpose: every element routes to a food decision. Stories at top differentiate stalls (orange gradient ring) vs users (grey ring). Media does all the visual work — no floating type labels.</p>
+        <ul class="feature-list">
+          <li>Story rail: orange ring = verified stall, grey ring = user</li>
+          <li>4:5 image ratio — shows more food, less dead canvas</li>
+          <li>Play icon centered on video (no badge)</li>
+          <li>Heart + count, comment, share, bookmark — minimal action bar</li>
+          <li>Dish names as <u>underlined text links</u> in caption</li>
+          <li>Avatar has fork-icon badge for stall accounts</li>
+          <li>Instagram fix: bookmark moves to far right (not bottom-right of image)</li>
+          <li>Instagram fix: distinct icons — Heart for like, Bookmark for save, never combined</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <!-- Phone A1: Story rail + first post -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:18</span>
+              <div class="signal"><span>5G</span><div class="battery"><span></span></div></div>
+            </div>
+            <!-- App header -->
+            <div class="app-header" style="padding-bottom:4px;">
+              <div>
+                <div class="app-header-title" style="font-size:24px;font-weight:900;color:#E8531E;">Hungry</div>
+                <div class="app-header-sub">Tanjong Pagar · 14 nearby</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div class="header-icon-btn">
+                  <!-- Bell icon -->
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Story rail -->
+            <div class="story-rail">
+              <div class="story-avatar">
+                <div class="story-ring user">
+                  <div class="story-img"><span class="story-emoji">🧑</span></div>
+                </div>
+                <span class="story-name">Your story</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring stall unseen">
+                  <div class="story-img"><span class="story-emoji">🍜</span></div>
+                </div>
+                <span class="story-name">Ah Kow Mee</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring stall unseen">
+                  <div class="story-img"><span class="story-emoji">🍛</span></div>
+                </div>
+                <span class="story-name">Bismillah</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring user">
+                  <div class="story-img"><span class="story-emoji">👩</span></div>
+                </div>
+                <span class="story-name">sarah.eats</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring stall">
+                  <div class="story-img"><span class="story-emoji">🍱</span></div>
+                </div>
+                <span class="story-name">Old Chang Kee</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring user">
+                  <div class="story-img"><span class="story-emoji">👨</span></div>
+                </div>
+                <span class="story-name">ricky_food</span>
+              </div>
+            </div>
+
+            <div style="height:1px;background:var(--border);"></div>
+
+            <!-- Feed card 1 (stall post) -->
+            <div class="scroll-content">
+              <div class="feed-card">
+                <!-- Header: stall with fork badge, no pill label -->
+                <div class="feed-card-header">
+                  <div class="avatar-wrap">
+                    <div class="avatar stall-avatar"><span style="font-size:22px;">🍜</span></div>
+                    <div class="stall-icon">🍴</div>
+                  </div>
+                  <div class="feed-author">
+                    <div class="feed-author-name">Ah Kow Wanton Mee <span style="font-size:11px;color:var(--orange);">✦</span></div>
+                    <div class="feed-author-meta">Maxwell Food Centre · L1 #01-77 · 3m ago</div>
+                  </div>
+                  <div class="feed-more-btn">···</div>
+                </div>
+                <!-- Media: 4:5, no "Photo" badge -->
+                <div class="feed-media">
+                  <div class="media-placeholder" style="aspect-ratio:4/5;">🍜</div>
+                </div>
+                <!-- Actions -->
+                <div class="feed-actions">
+                  <div class="action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span class="action-count">284</span>
+                  </div>
+                  <div class="action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="action-count">18</span>
+                  </div>
+                  <div class="action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </div>
+                  <div class="action-btn save-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                </div>
+                <!-- Caption: dish as inline link, not badge -->
+                <div class="feed-caption">
+                  <span class="caption-text"><span class="author-bold">ah_kow_mee</span> Fresh batch of <span class="dish-link">wanton noodles</span> is ready! Hand-made wantons with our signature chilli — come early, we sell out by 11am 🔥</span>
+                </div>
+                <div class="feed-time">8 minutes ago · View all 18 comments</div>
+              </div>
+
+              <!-- Feed card 2 (user post) -->
+              <div class="feed-card" style="margin-top:8px;">
+                <div class="feed-card-header">
+                  <div class="avatar-wrap">
+                    <!-- User: grey ring, no fork badge -->
+                    <div class="avatar"><span style="font-size:22px;">👩</span></div>
+                  </div>
+                  <div class="feed-author">
+                    <div class="feed-author-name">sarah.eats</div>
+                    <div class="feed-author-meta">Chinatown Complex · just now</div>
+                  </div>
+                  <div class="feed-more-btn">···</div>
+                </div>
+                <div class="feed-media">
+                  <!-- Video: play icon, duration label, no "Video" badge -->
+                  <div class="media-placeholder" style="aspect-ratio:4/5;">🍛</div>
+                  <div class="play-overlay">
+                    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </div>
+                  <div class="video-duration">0:24</div>
+                </div>
+                <div class="feed-actions">
+                  <div class="action-btn liked">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span class="action-count">51</span>
+                  </div>
+                  <div class="action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    <span class="action-count">6</span>
+                  </div>
+                  <div class="action-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </div>
+                  <div class="action-btn save-btn saved">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                </div>
+                <div class="feed-caption">
+                  <span class="caption-text"><span class="author-bold">sarah.eats</span> Tried the legendary <span class="dish-link">nasi lemak bungkus</span> at Chinatown Complex — the sambal is legitimately smoky and not sweet. 10/10 worth the queue.</span>
+                </div>
+                <div class="feed-time">Just now · View 6 comments</div>
+              </div>
+            </div>
+
+            <!-- Tab bar -->
+            <div class="tab-bar">
+              <div class="tab-item active">
+                <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+                <span class="tab-label" style="color:var(--orange);">Feed</span>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                <span class="tab-label">Discover</span>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+                <span class="tab-label">Reads</span>
+              </div>
+              <div class="tab-item">
+                <div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <span class="tab-label">Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT B: Mosaic Grid ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant B</p>
+      <h2>Mosaic Grid</h2>
+    </div>
+    <div class="variant-block reverse">
+      <div class="variant-meta">
+        <span class="variant-tag">Compact discovery</span>
+        <h3>2-column grid with alternating sizes — more content per scroll</h3>
+        <p>Addresses Instagram's single-column monotony critique. Mosaic layout gives more content per screen — good for browse mode. Featured full-width post every 5 cards draws attention. Avatar + name in overlay (not above image) keeps feed clean.</p>
+        <ul class="feature-list">
+          <li>2-col grid, every 5th card is full width (16:9)</li>
+          <li>Avatar + name in overlay at card bottom</li>
+          <li>Like count in corner of each card</li>
+          <li>Stall avatar is orange-tinted; user is neutral</li>
+          <li>Tap card → full post with caption + dish links</li>
+          <li>No pill labels anywhere on the grid</li>
+          <li>Feels more like a food discovery board, less like a social timeline</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:18</span>
+              <div class="signal"><span>5G</span><div class="battery"><span></span></div></div>
+            </div>
+            <div class="app-header" style="padding-bottom:4px;">
+              <div>
+                <div class="app-header-title" style="font-size:24px;font-weight:900;color:#E8531E;">Hungry</div>
+                <div class="app-header-sub">Tanjong Pagar · 14 nearby</div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <div class="header-icon-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+              </div>
+            </div>
+            <!-- Story rail compact -->
+            <div class="story-rail" style="padding:4px 16px 8px;">
+              <div class="story-avatar"><div class="story-ring stall unseen"><div class="story-img"><span class="story-emoji">🍜</span></div></div><span class="story-name">Ah Kow</span></div>
+              <div class="story-avatar"><div class="story-ring stall unseen"><div class="story-img"><span class="story-emoji">🍛</span></div></div><span class="story-name">Bismillah</span></div>
+              <div class="story-avatar"><div class="story-ring user"><div class="story-img"><span class="story-emoji">👩</span></div></div><span class="story-name">sarah.eats</span></div>
+              <div class="story-avatar"><div class="story-ring stall"><div class="story-img"><span class="story-emoji">🍱</span></div></div><span class="story-name">Old CK</span></div>
+              <div class="story-avatar"><div class="story-ring user"><div class="story-img"><span class="story-emoji">👨</span></div></div><span class="story-name">ricky_food</span></div>
+            </div>
+            <div style="height:1px;background:var(--border);"></div>
+            <!-- Mosaic grid -->
+            <div class="scroll-content">
+              <div class="mosaic-grid">
+                <div class="mosaic-cell">
+                  <div class="mosaic-img">🍜</div>
+                  <div class="mosaic-overlay">
+                    <div class="mosaic-avatar" style="background:var(--orange);">🍜</div>
+                    <span class="mosaic-name">Ah Kow Mee</span>
+                    <span class="mosaic-count">♥ 284</span>
+                  </div>
+                </div>
+                <div class="mosaic-cell">
+                  <div class="mosaic-img">🍛</div>
+                  <div class="mosaic-overlay">
+                    <div class="mosaic-avatar">👩</div>
+                    <span class="mosaic-name">sarah.eats</span>
+                    <span class="mosaic-count">♥ 51</span>
+                  </div>
+                </div>
+                <!-- Full-width featured -->
+                <div class="mosaic-cell wide">
+                  <div class="mosaic-img">🍱</div>
+                  <div class="mosaic-overlay">
+                    <div class="mosaic-avatar" style="background:var(--orange);">🍱</div>
+                    <span class="mosaic-name" style="font-size:13px;">Old Chang Kee · New curry puff flavour 🔥</span>
+                    <span class="mosaic-count">♥ 1.2k</span>
+                  </div>
+                  <!-- Video indicator without badge -->
+                  <div style="position:absolute;top:12px;right:12px;width:28px;height:28px;background:rgba(0,0,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                    <svg viewBox="0 0 24 24" fill="white" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  </div>
+                </div>
+                <div class="mosaic-cell">
+                  <div class="mosaic-img">🥘</div>
+                  <div class="mosaic-overlay">
+                    <div class="mosaic-avatar">👨</div>
+                    <span class="mosaic-name">ricky_food</span>
+                    <span class="mosaic-count">♥ 92</span>
+                  </div>
+                </div>
+                <div class="mosaic-cell">
+                  <div class="mosaic-img">🍚</div>
+                  <div class="mosaic-overlay">
+                    <div class="mosaic-avatar" style="background:var(--orange);">🍚</div>
+                    <span class="mosaic-name">Bismillah</span>
+                    <span class="mosaic-count">♥ 178</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label" style="color:var(--orange);">Feed</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT C: Stories-First with Left Border Cards ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant C</p>
+      <h2>Stories-First with Edge Indicator</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag">High contrast differentiation</span>
+        <h3>Large story strip + left-edge color bar to distinguish stalls from users</h3>
+        <p>Addresses Instagram's problem of everything looking the same. The left edge color bar is the most space-efficient differentiation method: orange bar = stall post, warm cream bar = user post. No pill labels needed. Story strip is larger and more prominent.</p>
+        <ul class="feature-list">
+          <li>Large story strip (72px avatars) — more prominent than Instagram stories</li>
+          <li>Left orange bar = stall post (institutional account)</li>
+          <li>Left cream bar = user post (individual)</li>
+          <li>3:2 image ratio — tighter, less scroll needed per post</li>
+          <li>Inline "View dish" CTA at bottom of post — explicit conversion path</li>
+          <li>Blog/Reads cards surfaced inline as a card type (not a separate tab)</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:18</span>
+              <div class="signal"><span>5G</span><div class="battery"><span></span></div></div>
+            </div>
+            <div class="app-header" style="padding-bottom:2px;">
+              <div>
+                <div class="app-header-title" style="font-size:24px;font-weight:900;color:#E8531E;">Hungry</div>
+                <div class="app-header-sub">14 posts nearby</div>
+              </div>
+            </div>
+            <!-- Large story strip -->
+            <div class="story-rail" style="padding:8px 16px 10px;">
+              <div class="story-avatar">
+                <div class="story-ring stall unseen" style="width:70px;height:70px;">
+                  <div class="story-img"><span class="story-emoji" style="font-size:28px;">🍜</span></div>
+                </div>
+                <span class="story-name" style="font-size:10px;max-width:70px;">Ah Kow Mee</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring stall unseen" style="width:70px;height:70px;">
+                  <div class="story-img"><span class="story-emoji" style="font-size:28px;">🍛</span></div>
+                </div>
+                <span class="story-name" style="font-size:10px;max-width:70px;">Bismillah</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring user" style="width:70px;height:70px;">
+                  <div class="story-img"><span class="story-emoji" style="font-size:28px;">👩</span></div>
+                </div>
+                <span class="story-name" style="font-size:10px;max-width:70px;">sarah.eats</span>
+              </div>
+              <div class="story-avatar">
+                <div class="story-ring stall" style="width:70px;height:70px;">
+                  <div class="story-img"><span class="story-emoji" style="font-size:28px;">🍱</span></div>
+                </div>
+                <span class="story-name" style="font-size:10px;max-width:70px;">Old CK</span>
+              </div>
+            </div>
+            <div style="height:1px;background:var(--border);margin-bottom:4px;"></div>
+            <!-- Feed: left-border cards -->
+            <div class="scroll-content">
+              <!-- Stall post: orange left bar -->
+              <div class="left-border-card">
+                <div>
+                  <div class="feed-author-name" style="font-size:14px;">Ah Kow Wanton Mee <span style="font-size:10px;color:var(--orange);">✦ Stall</span></div>
+                  <div class="feed-author-meta">Maxwell · #01-77 · 3m ago</div>
+                  <div style="margin-top:8px;border-radius:10px;overflow:hidden;height:130px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:48px;">🍜</div>
+                  <div style="margin-top:8px;font-size:13px;color:var(--text);line-height:1.5;">Fresh <span class="dish-link">wanton noodles</span> ready — sell out by 11am!</div>
+                  <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                    <span style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> 284</span>
+                    <span style="font-size:12px;color:var(--orange);font-weight:700;cursor:pointer;">View dish →</span>
+                    <span style="margin-left:auto;font-size:12px;color:var(--text-muted);">Save</span>
+                  </div>
+                </div>
+              </div>
+              <!-- User post: cream left bar -->
+              <div class="left-border-card user">
+                <div>
+                  <div class="feed-author-name" style="font-size:14px;">sarah.eats <span style="font-size:10px;color:var(--text-muted);">User</span></div>
+                  <div class="feed-author-meta">Chinatown Complex · just now</div>
+                  <div style="margin-top:8px;border-radius:10px;overflow:hidden;height:130px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:48px;position:relative;">
+                    🍛
+                    <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.55);border-radius:12px;padding:2px 8px;color:white;font-size:11px;font-family:var(--font-mono);">0:24</div>
+                  </div>
+                  <div style="margin-top:8px;font-size:13px;color:var(--text);line-height:1.5;">The <span class="dish-link">nasi lemak bungkus</span> here is unreal. Sambal is smoky, not sweet.</div>
+                  <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                    <span style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="#DC2626" stroke="#DC2626" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> 51</span>
+                    <span style="font-size:12px;color:var(--orange);font-weight:700;cursor:pointer;">View dish →</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Reads card (blog link) -->
+              <div style="margin:0 16px 12px;background:var(--navy-soft);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;gap:12px;align-items:flex-start;">
+                <div style="font-size:28px;flex-shrink:0;">📰</div>
+                <div>
+                  <div style="font-size:10px;font-family:var(--font-mono);color:var(--navy);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">From Reads</div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text);line-height:1.4;">5 Hawker Dishes Disappearing From Singapore — Are You Too Late?</div>
+                  <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">ieatishootipost.sg · 4 min read</div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label" style="color:var(--orange);">Feed</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

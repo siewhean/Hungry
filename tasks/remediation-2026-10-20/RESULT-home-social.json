@@ -1,0 +1,511 @@
+[
+  {
+    "id": "HS-01",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx",
+      "src/app/screens/home/ActivityPostDetailScreen.tsx",
+      "src/app/screens/home/ChatDetailScreen.tsx",
+      "src/app/screens/home/StoryViewerScreen.tsx",
+      "src/features/social/sharedStallPosts.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Canonical author IDs and reactive safety across feed, activity detail, chat, story viewer and story rail.",
+    "remaining": []
+  },
+  {
+    "id": "HS-02",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Explicit dish action and consumer stall action preserve media gestures.",
+    "remaining": [
+      "Identifiable iOS/Android runtime journeys, large text, VoiceOver/TalkBack and native share cancellation/URL opening remain unverified."
+    ]
+  },
+  {
+    "id": "HS-03",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Copy real post URL with acknowledgement; external share includes URL, catches failure, counts confirmed handoff only.",
+    "remaining": [
+      "Identifiable iOS/Android runtime journeys, large text, VoiceOver/TalkBack and native share cancellation/URL opening remain unverified."
+    ]
+  },
+  {
+    "id": "HS-04",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx",
+      "src/store/useSocialStore.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Feed saves only post, matching activity detail and preserving independent dish favourites.",
+    "remaining": []
+  },
+  {
+    "id": "HS-05",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Caption expands and collapses independently of comments gate.",
+    "remaining": [
+      "Identifiable iOS/Android runtime journeys, large text, VoiceOver/TalkBack and native share cancellation/URL opening remain unverified."
+    ]
+  },
+  {
+    "id": "HS-06",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx",
+      "src/features/social/sharedStallPosts.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Shared service failures propagate; refresh preserves content with retry and rejects stale error results.",
+    "remaining": []
+  },
+  {
+    "id": "HS-07",
+    "status": "implemented",
+    "files": [
+      "src/store/useSocialStore.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Removed fabricated self-like activity from toggleLike.",
+    "remaining": []
+  },
+  {
+    "id": "HS-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/ActivityInboxScreen.tsx",
+      "src/app/screens/home/ActivityPostDetailScreen.tsx",
+      "src/store/useActivityStore.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Typed follower targets route canonical profile; uncached post destinations load asynchronously; unsupported targets are explicit.",
+    "remaining": []
+  },
+  {
+    "id": "HS-09",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/ActivityInboxScreen.tsx",
+      "src/store/useActivityStore.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Activity loading/error/retry retains events, invalidates stale/account responses; duplicate mount fetch removed.",
+    "remaining": []
+  },
+  {
+    "id": "HS-10",
+    "status": "implemented",
+    "files": [
+      "src/features/home/activity.ts",
+      "src/app/screens/home/HomeFeedScreen.tsx",
+      "src/app/screens/home/ActivityInboxScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Home and Inbox share recipient-aware deduplicating unread selector.",
+    "remaining": []
+  },
+  {
+    "id": "HS-11",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/ActivityPostDetailScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Activity safety supplies authorId, reacts to safety revision and exits on successful hide/block.",
+    "remaining": []
+  },
+  {
+    "id": "HS-12",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/DirectMessagesScreen.tsx",
+      "src/features/home/socialState.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "DM search filters titles/message previews; focus reload and retry retain stale conversations.",
+    "remaining": []
+  },
+  {
+    "id": "HS-13",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/ChatDetailScreen.tsx",
+      "src/features/home/socialState.ts",
+      "src/store/useChatDraftStore.ts",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "History/realtime merge by ID/nonce; stable composer retry identity; committed send receipt survives optional profile hydration failure; mock dedupe.",
+    "remaining": []
+  },
+  {
+    "id": "HS-14",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/ChatDetailScreen.tsx",
+      "src/app/screens/home/StoryViewerScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Chat and story contextual safety use canonical identity; story reply opens actual conversation.",
+    "remaining": []
+  },
+  {
+    "id": "HS-15",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/ChatDetailScreen.tsx",
+      "src/store/useChatDraftStore.ts",
+      "src/app/screens/home/ActivityInboxScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      },
+      {
+        "command": "focused src/store/useChatDraftStore.test.ts",
+        "result": "2 passed including A logout -> B -> A partition restoration"
+      }
+    ],
+    "reason": "Chat drafts persist in subject partitions, retain retry nonce, clear from memory at logout and restore when the same account resumes; read failures are caught and retried.",
+    "remaining": []
+  },
+  {
+    "id": "HS-16",
+    "status": "implemented",
+    "files": [
+      "src/store/useStoryStore.ts",
+      "src/lib/services/mock/mockService.ts",
+      "src/lib/services/supabase/supabaseService.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Memory-only mock story state generation guards; root cleanup hook plus mock cache reset; live fake cache removed.",
+    "remaining": [
+      "Central mock chat/story reset and legacy story disk purge inspected in root cleanup; fresh native account-switch acceptance remains pending."
+    ]
+  },
+  {
+    "id": "HS-17",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/StoryViewerScreen.tsx",
+      "src/app/screens/home/AddStoryScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Real video rendering, manual story advancement and no rotation with Reduce Motion, explicit unavailable close action.",
+    "remaining": [
+      "Identifiable iOS/Android runtime journeys, large text, VoiceOver/TalkBack and native share cancellation/URL opening remain unverified."
+    ]
+  },
+  {
+    "id": "HS-18",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/home/AddStoryScreen.tsx",
+      "src/app/screens/home/StoryViewerScreen.tsx",
+      "src/store/useStoryStore.ts",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/components/social/CircleStoryCarousel.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Story UI explicitly local demo; live reads empty/mutations fail; filtered gallery selection canonical and author grouping canonical.",
+    "remaining": []
+  },
+  {
+    "id": "HS-19",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/home/HomeFeedScreen.tsx",
+      "src/app/screens/home/ChatDetailScreen.tsx",
+      "src/app/screens/home/StoryViewerScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Added labels, selected/busy state,44point chat back controls, caption and story gesture alternatives; native acceptance unproved.",
+    "remaining": [
+      "Identifiable iOS/Android runtime journeys, large text, VoiceOver/TalkBack and native share cancellation/URL opening remain unverified."
+    ]
+  },
+  {
+    "id": "HS-20",
+    "status": "external_pending",
+    "files": [
+      "src/features/home/socialState.test.ts",
+      "src/features/home/chatDelivery.test.ts",
+      "src/store/useChatDraftStore.test.ts"
+    ],
+    "checks": [
+      {
+        "command": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test src/features/home/socialState.test.ts src/features/home/chatDelivery.test.ts src/store/useChatDraftStore.test.ts",
+        "result": "8 passed, 0 failed. Node DEP0205 warning from existing tsx loader."
+      },
+      {
+        "command": "node scripts/run-eslint.cjs selected home screens, social state, shared posts and stores --ext .ts,.tsx",
+        "result": "pass"
+      },
+      {
+        "command": "git diff --check -- selected owned paths",
+        "result": "pass"
+      }
+    ],
+    "reason": "Added behavioral regressions for chat merge/nonce, recipient selectors, canonical story author grouping, account draft/retry, mock delivery/cache reset.",
+    "remaining": [
+      "Identifiable iOS/Android runtime journeys, large text, VoiceOver/TalkBack and native share cancellation/URL opening remain unverified.",
+      "Full typecheck/tests and stale profile/review source-contract expectations are integrator-owned; staged permission/realtime negative cases not proved by mock tests."
+    ]
+  }
+]

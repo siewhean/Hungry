@@ -1,0 +1,212 @@
+.section {
+  background:
+    radial-gradient(circle at 16% 10%, color-mix(in srgb, var(--color-orange-light) 55%, transparent), transparent 26%),
+    linear-gradient(180deg, var(--color-white) 0%, var(--color-bg) 100%);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-32) 0;
+}
+
+.shell {
+  background-color: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-3xl);
+  box-shadow: var(--shadow-lg);
+  padding-bottom: var(--space-10);
+  padding-top: var(--space-12);
+}
+
+.header {
+  margin: 0 auto var(--space-12);
+  max-width: 760px;
+  text-align: center;
+}
+
+.header h2 {
+  color: var(--color-text-primary);
+  font-size: clamp(2.4rem, 4.8vw, 4.8rem);
+  line-height: 1;
+  margin-bottom: var(--space-4);
+}
+
+.header p {
+  color: var(--color-text-secondary);
+  font-size: clamp(var(--font-size-md), 1.6vw, var(--font-size-xl));
+  line-height: 1.55;
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-6);
+  grid-auto-rows: minmax(300px, auto);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 820px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .map,
+  .open {
+    grid-column: span 2;
+  }
+}
+
+.card {
+  background-color: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  min-height: 300px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cardImage {
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duration-slow) var(--ease-out);
+  width: 100%;
+}
+
+.card:hover .cardImage {
+  transform: scale(1.05);
+}
+
+.overlay {
+  inset: 0;
+  position: absolute;
+}
+
+.cardImage + .overlay {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-white) 0%,
+      rgb(255 255 255 / 0.92) 34%,
+      rgb(255 255 255 / 0.52) 64%,
+      rgb(255 255 255 / 0) 100%
+    ),
+    linear-gradient(180deg, rgb(255 255 255 / 0.08) 0%, rgb(16 37 58 / 0.2) 100%);
+}
+
+.map .overlay {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-white) 0%,
+      rgb(255 255 255 / 0.9) 38%,
+      rgb(255 255 255 / 0.48) 67%,
+      rgb(255 255 255 / 0) 100%
+    ),
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent), transparent 54%);
+}
+
+.plain .overlay {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-white) 0%,
+      rgb(255 255 255 / 0.91) 42%,
+      rgb(255 255 255 / 0.45) 72%,
+      rgb(255 255 255 / 0) 100%
+    ),
+    linear-gradient(180deg, rgb(255 255 255 / 0.08) 0%, rgb(16 37 58 / 0.16) 100%);
+}
+
+.open .overlay {
+  background:
+    linear-gradient(
+      90deg,
+      var(--color-white) 0%,
+      rgb(255 255 255 / 0.91) 40%,
+      rgb(255 255 255 / 0.48) 70%,
+      rgb(255 255 255 / 0) 100%
+    ),
+    linear-gradient(180deg, rgb(16 37 58 / 0.04), rgb(16 37 58 / 0.28));
+}
+
+.content {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  inset: auto var(--space-8) var(--space-8) var(--space-8);
+  max-width: min(34rem, calc(100% - var(--space-16)));
+  position: absolute;
+  z-index: 2;
+}
+
+.map .content,
+.open .content,
+.plain .content {
+  inset: auto auto var(--space-8) var(--space-8);
+}
+
+.card h3 {
+  color: var(--color-text-primary);
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.05;
+  margin-bottom: var(--space-3);
+}
+
+.card p {
+  color: var(--color-text-secondary);
+  font-size: clamp(var(--font-size-md), 1.35vw, var(--font-size-lg));
+  line-height: 1.5;
+  max-width: 440px;
+}
+
+@media (max-width: 819px) {
+  .section {
+    padding: var(--space-12) 0;
+  }
+
+  .shell {
+    border-left: 0;
+    border-radius: var(--radius-2xl);
+    border-right: 0;
+    padding-bottom: var(--space-6);
+    padding-top: var(--space-8);
+  }
+
+  .header {
+    margin-bottom: var(--space-8);
+  }
+
+  .grid {
+    gap: var(--space-4);
+    grid-auto-rows: minmax(240px, auto);
+  }
+
+  .card {
+    min-height: 240px;
+  }
+
+  .map .overlay,
+  .open .overlay {
+    background:
+      linear-gradient(
+        180deg,
+        rgb(255 255 255 / 0.92) 0%,
+        rgb(255 255 255 / 0.78) 48%,
+        rgb(255 255 255 / 0.16) 100%
+      );
+  }
+
+  .content,
+  .map .content,
+  .open .content,
+  .plain .content {
+    inset: auto var(--space-5) var(--space-5) var(--space-5);
+    max-width: calc(100% - var(--space-10));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardImage {
+    transition: none;
+  }
+
+  .card:hover .cardImage {
+    transform: none;
+  }
+}

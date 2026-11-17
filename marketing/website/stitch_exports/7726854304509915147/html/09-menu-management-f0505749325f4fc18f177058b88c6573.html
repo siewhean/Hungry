@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Menu Management - Makan Merchant</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Be+Vietnam+Pro:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "hungry-orange": "#E8531E",
+                    "surface-container-highest": "#f8ddd5",
+                    "inverse-surface": "#3d2d28",
+                    "error": "#ba1a1a",
+                    "text-muted": "#6B7280",
+                    "on-primary-fixed": "#3a0b00",
+                    "primary": "#a93100",
+                    "on-surface-variant": "#5a4139",
+                    "russian-red": "#CD0302",
+                    "primary-fixed-dim": "#ffb59e",
+                    "on-tertiary": "#ffffff",
+                    "text-secondary": "#374151",
+                    "on-surface": "#261814",
+                    "deep-navy": "#1A2E44",
+                    "secondary-fixed-dim": "#b4c8e4",
+                    "background": "#fff8f6",
+                    "secondary-container": "#cde1fe",
+                    "on-primary-fixed-variant": "#842500",
+                    "surface-container-high": "#fee2db",
+                    "outline-variant": "#e3bfb4",
+                    "inverse-primary": "#ffb59e",
+                    "autumn-green": "#4F7E17",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-white": "#FFFFFF",
+                    "error-container": "#ffdad6",
+                    "surface-dim": "#efd4cd",
+                    "tertiary-fixed-dim": "#9bcbff",
+                    "on-primary-container": "#fffbff",
+                    "on-secondary-fixed-variant": "#35485f",
+                    "on-primary": "#ffffff",
+                    "surface-variant": "#f8ddd5",
+                    "on-secondary-fixed": "#061d32",
+                    "inverse-on-surface": "#ffede8",
+                    "surface-tint": "#ad3200",
+                    "on-tertiary-fixed": "#001d34",
+                    "primary-fixed": "#ffdbd0",
+                    "on-secondary": "#ffffff",
+                    "tertiary-container": "#0079c3",
+                    "outline": "#8e7067",
+                    "on-background": "#261814",
+                    "on-tertiary-fixed-variant": "#004a79",
+                    "tertiary-fixed": "#d0e4ff",
+                    "on-tertiary-container": "#fdfcff",
+                    "line-border": "#E7DED4",
+                    "paper-warm": "#FFF7EE",
+                    "secondary": "#4c6078",
+                    "surface-container": "#ffe9e3",
+                    "surface-container-low": "#fff1ed",
+                    "hawker-amber": "#F5A623",
+                    "tertiary": "#00609b",
+                    "surface-bright": "#fff8f6",
+                    "primary-container": "#d1430b",
+                    "on-secondary-container": "#51647d",
+                    "surface": "#fff8f6",
+                    "text-primary": "#111827",
+                    "secondary-fixed": "#d1e4ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "20px",
+                    "xxl": "32px",
+                    "sm": "8px",
+                    "huge": "48px",
+                    "xs": "4px",
+                    "screen-edge": "16px",
+                    "md": "12px",
+                    "base": "16px",
+                    "xl": "24px",
+                    "section-gap": "20px",
+                    "region-gap": "24px"
+            },
+            "fontFamily": {
+                    "micro": ["Be Vietnam Pro"],
+                    "mono-price": ["Space Grotesk"],
+                    "body-lg": ["Be Vietnam Pro"],
+                    "h3": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "h1": ["Plus Jakarta Sans"],
+                    "h2": ["Plus Jakarta Sans"],
+                    "body": ["Be Vietnam Pro"],
+                    "body-sm": ["Be Vietnam Pro"]
+            },
+            "fontSize": {
+                    "micro": ["11px", {"lineHeight": "14px", "fontWeight": "500"}],
+                    "mono-price": ["15px", {"lineHeight": "22px", "fontWeight": "500"}],
+                    "body-lg": ["17px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "h3": ["17px", {"lineHeight": "22px", "fontWeight": "600"}],
+                    "display": ["32px", {"lineHeight": "38px", "fontWeight": "700"}],
+                    "h1": ["24px", {"lineHeight": "30px", "fontWeight": "700"}],
+                    "h2": ["20px", {"lineHeight": "26px", "fontWeight": "600"}],
+                    "body": ["15px", {"lineHeight": "22px", "fontWeight": "400"}],
+                    "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-paper-warm text-on-background min-h-screen flex flex-col md:flex-row">
+<!-- SideNavBar (Desktop/Tablet) -->
+<nav class="hidden md:flex flex-col pt-16 h-screen w-64 border-r border-line-border bg-surface-white dark:bg-slate-950 fixed left-0 top-0 transition-all duration-200 ease-in-out z-40">
+<div class="px-6 pb-6 border-b border-line-border mb-6">
+<h1 class="font-h2 text-h2 text-deep-navy mb-1">Hawker Central</h1>
+<p class="font-body-sm text-body-sm text-text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-hungry-orange" style="font-variation-settings: 'FILL' 1;">verified</span>
+                Verified Merchant
+            </p>
+</div>
+<div class="flex-1 overflow-y-auto px-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-paper-warm hover:text-deep-navy transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-body text-body">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-paper-warm hover:text-deep-navy transition-colors" href="#">
+<span class="material-symbols-outlined">storefront</span>
+<span class="font-body text-body">Stall Profile</span>
+</a>
+<!-- Active Tab: Menu -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-hungry-orange bg-surface-container border-r-4 border-hungry-orange" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant_menu</span>
+<span class="font-body text-body font-medium">Menu</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-paper-warm hover:text-deep-navy transition-colors" href="#">
+<span class="material-symbols-outlined">schedule</span>
+<span class="font-body text-body">Opening Hours</span>
+</a>
+</div>
+<div class="p-4 border-t border-line-border mt-auto flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-paper-warm hover:text-deep-navy transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-body text-body">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-text-secondary hover:bg-paper-warm hover:text-deep-navy transition-colors" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="font-body text-body">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center px-6 py-3 w-full bg-paper-warm border-b border-line-border docked full-width top-0 z-50 sticky h-16">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 text-deep-navy hover:bg-line-border rounded-full transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-h2 text-h2 font-bold text-deep-navy md:hidden">Makan Merchant</span>
+<span class="font-h1 text-h1 font-bold text-deep-navy hidden md:block">Menu Management</span>
+</div>
+<div class="flex items-center gap-4 text-deep-navy">
+<button class="p-2 hover:bg-line-border rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-hungry-orange rounded-full"></span>
+</button>
+<button class="p-2 hover:bg-line-border rounded-full transition-colors hidden sm:block">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-line-border overflow-hidden ml-2 border border-outline-variant">
+<img alt="Merchant Profile Avatar" class="w-full h-full object-cover" data-alt="A close-up portrait of a friendly Singaporean hawker stall owner smiling warmly. The lighting is bright and inviting, highlighting a clean, modern aesthetic suitable for a professional merchant profile avatar. The background is a soft, out-of-focus hint of a bustling food center, keeping the focus entirely on the vendor's approachable expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn2__1a9V_fLveV6PfjcEx6J990CG_qB1WnRgXRG9j7qaySSaqJYuQgJ3Q69brV911AL_T4g4397ywRyhn46rafCLnQhDbuiUcWdAmYXJT_KLruLezi66tZadsU4ZPuC7k8AHKCBLLP1zqCFVkKQMt723-_1_wG-yHZqOraZyO12En8xEqKr-GwkQoEeaB9seMZ2WqGIVnukCBVYPMadCuHTu4ryKN79JD4_Ak9MN1kM8PxKZVGXkVaTJ38NI4xGys2-7atlJpVIc"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-screen-edge md:p-region-gap max-w-7xl mx-auto w-full">
+<!-- Actions Row -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-section-gap mb-region-gap">
+<div class="relative w-full sm:w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">search</span>
+<input class="w-full h-12 pl-10 pr-4 rounded-[18px] border border-line-border bg-surface-white focus:outline-none focus:border-hungry-orange focus:ring-1 focus:ring-hungry-orange font-body text-body transition-shadow shadow-sm" placeholder="Search menu items..." type="text"/>
+</div>
+<button class="w-full sm:w-auto h-[52px] bg-hungry-orange text-surface-white rounded-[18px] px-6 font-body-lg text-body-lg font-medium flex items-center justify-center gap-2 hover:bg-primary transition-colors shadow-sm whitespace-nowrap active:scale-95">
+<span class="material-symbols-outlined">add</span>
+                    Add Menu Item
+                </button>
+</div>
+<!-- Category Filter Chips -->
+<div class="flex overflow-x-auto gap-sm pb-4 mb-section-gap no-scrollbar">
+<button class="h-8 px-4 rounded-full bg-deep-navy text-surface-white font-body-sm text-body-sm whitespace-nowrap">All Items</button>
+<button class="h-8 px-4 rounded-full bg-surface-white border border-line-border text-text-secondary hover:bg-paper-warm font-body-sm text-body-sm whitespace-nowrap transition-colors">Signature Dishes</button>
+<button class="h-8 px-4 rounded-full bg-surface-white border border-line-border text-text-secondary hover:bg-paper-warm font-body-sm text-body-sm whitespace-nowrap transition-colors">Noodles</button>
+<button class="h-8 px-4 rounded-full bg-surface-white border border-line-border text-text-secondary hover:bg-paper-warm font-body-sm text-body-sm whitespace-nowrap transition-colors">Sides</button>
+<button class="h-8 px-4 rounded-full bg-surface-white border border-line-border text-text-secondary hover:bg-paper-warm font-body-sm text-body-sm whitespace-nowrap transition-colors">Beverages</button>
+</div>
+<!-- Menu Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-section-gap">
+<!-- Menu Item Card 1 -->
+<div class="bg-surface-white rounded-xl border border-line-border overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="relative h-48 w-full bg-surface-variant overflow-hidden">
+<img alt="Hainanese Chicken Rice" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A professional, high-resolution close-up of a plate of Hainanese Chicken Rice. The sliced poached chicken looks succulent, resting on fragrant, slightly yellowed rice, garnished with fresh cilantro and cucumber slices. The lighting is warm and appetizing, casting soft shadows that highlight the textures of the food against a clean, white plate. The overall aesthetic is premium, mouth-watering food photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgaTzY6Fu_1LuoOZYdc2WzUrEsVTzXC1ND-NemZbJbCYpmrqw5q0XPfc8Kl-sGzgK0TARkyqOB084WqzJ_GH6iepWG3ijQuQMAjlBvtcKKyIV1fVhdgE9D4ABengRB6ip8979TrZ6GT8XUvThnlveTyCbbgGkHYOVIoJbEkbsrrNIA3JY6yaJCeVQR-zOMXrgZVfAqtE6zh7IeDPHWUH-diHAa6McYFLQQKL_xv2-_iRv7Rn8y1iSGvHzWxhaDpZh_14pqqd_NEqg"/>
+<div class="absolute top-2 left-2 bg-surface-white/90 backdrop-blur-sm px-2 py-1 rounded-md border border-line-border flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-hawker-amber" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="font-micro text-micro text-deep-navy">Signature</span>
+</div>
+</div>
+<div class="p-md flex flex-col flex-1">
+<div class="flex justify-between items-start gap-2 mb-2">
+<h3 class="font-h3 text-h3 text-on-surface line-clamp-2">Hainanese Chicken Rice (Roasted)</h3>
+<span class="font-mono-price text-mono-price text-hungry-orange shrink-0">$5.50</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-4 line-clamp-2">Fragrant rice served with tender roasted chicken, house-made chili sauce, and dark soy.</p>
+<div class="mt-auto pt-3 border-t border-line-border flex justify-between items-center">
+<div class="flex items-center gap-2">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-white after:border-line-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-autumn-green"></div>
+<span class="ml-2 font-body-sm text-body-sm text-text-secondary">Available</span>
+</label>
+</div>
+<button class="p-2 text-text-muted hover:text-deep-navy hover:bg-paper-warm rounded-full transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item Card 2 -->
+<div class="bg-surface-white rounded-xl border border-line-border overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="relative h-48 w-full bg-surface-variant overflow-hidden">
+<img alt="Char Kway Teow" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A steaming plate of Char Kway Teow, a dark, rich noodle dish mixed with egg, bean sprouts, and cockles. The food is captured in sharp focus with a shallow depth of field, emphasizing the glistening, savory texture of the stir-fried noodles. The lighting suggests a warm, inviting environment, leaning into a modern, appetizing culinary aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4gwsiysK3UxqmtVhzxoAxf10WfTK1b3iY4hxDalu7xF25bWE8mxDeynOsKAqrPwEKXO0UuJycy1mhh5LUVMEpRbNKAGepIqW-CuUaOzofcQuMxJCzIxDQYcMCP7byYPvHp5X_erTxJ6oWAK-KIsjTZbKvmkZ-VMzFJX0RG_urTYHmRlr_SaXQ4F9FE3zCgJdjhuGXLRg1jKvEBrRjOvHfcpM0oJrWKuOEPIqVbNnoGOMlpSp53mD_Dmpmnp2VK4HldgpsMjmO6sA"/>
+</div>
+<div class="p-md flex flex-col flex-1">
+<div class="flex justify-between items-start gap-2 mb-2">
+<h3 class="font-h3 text-h3 text-on-surface line-clamp-2">Premium Char Kway Teow</h3>
+<span class="font-mono-price text-mono-price text-hungry-orange shrink-0">$6.00</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-4 line-clamp-2">Wok-hei infused flat noodles with extra cockles, lap cheong, and crispy pork lard.</p>
+<div class="mt-auto pt-3 border-t border-line-border flex justify-between items-center">
+<div class="flex items-center gap-2">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-white after:border-line-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-autumn-green"></div>
+<span class="ml-2 font-body-sm text-body-sm text-text-secondary">Available</span>
+</label>
+</div>
+<button class="p-2 text-text-muted hover:text-deep-navy hover:bg-paper-warm rounded-full transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Menu Item Card 3 (Sold Out State) -->
+<div class="bg-surface-white rounded-xl border border-line-border overflow-hidden flex flex-col group opacity-75 grayscale-[0.3]">
+<div class="relative h-48 w-full bg-surface-variant overflow-hidden">
+<img alt="Laksa" class="w-full h-full object-cover" data-alt="A bowl of spicy, coconut-based Laksa noodle soup, featuring prominent shrimp, tofu puffs, and a vibrant orange broth. The image is styled professionally, with clean lighting that highlights the rich colors of the dish against a neutral background. The presentation is neat, emphasizing the high quality of the ingredients in a modern food photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkniaY8yXz5C9Hd6UnkOgoZ49F3F4GVg0T6l1s0iJsI7_nNzMEOCE8SLaKhRgq6nhdXuWR0O7gXodMxy3KNdXrewPZgZVunHO-I5Ecop9hi8ZocRjwW33-XP6Pg8IvXRtBE_DLR8yw0LOSUKIA_gAPlHOWifSJIRejRYMVX7BkaomBHrCS5k7KU8nyLNXgELLHK-L3zCEil4oMTWzLTSrR3Hp0hIAR0HvvIQBsaR33l4tJPPDNmdfs9v8bvxzjvvUJKHy1htRMnfY"/>
+<div class="absolute inset-0 bg-surface-white/40 backdrop-blur-[2px] flex items-center justify-center">
+<span class="bg-surface-white text-error font-body-sm text-body-sm font-medium px-3 py-1 rounded-full border border-error-container shadow-sm">Sold Out Today</span>
+</div>
+</div>
+<div class="p-md flex flex-col flex-1">
+<div class="flex justify-between items-start gap-2 mb-2">
+<h3 class="font-h3 text-h3 text-text-secondary line-clamp-2">Signature Crayfish Laksa</h3>
+<span class="font-mono-price text-mono-price text-text-secondary shrink-0">$8.50</span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-4 line-clamp-2">Rich coconut curry broth with thick bee hoon, half crayfish, and tau pok.</p>
+<div class="mt-auto pt-3 border-t border-line-border flex justify-between items-center">
+<div class="flex items-center gap-2">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-surface-white after:border-line-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-autumn-green"></div>
+<span class="ml-2 font-body-sm text-body-sm text-text-muted">Sold Out</span>
+</label>
+</div>
+<button class="p-2 text-text-muted hover:text-deep-navy hover:bg-paper-warm rounded-full transition-colors">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

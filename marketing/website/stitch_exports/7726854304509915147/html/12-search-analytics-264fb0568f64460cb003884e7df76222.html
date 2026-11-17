@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Makan Merchant - Search Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;family=Be+Vietnam+Pro:wght@400;500;600&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "hungry-orange": "#E8531E",
+                        "surface-container-highest": "#f8ddd5",
+                        "inverse-surface": "#3d2d28",
+                        "error": "#ba1a1a",
+                        "text-muted": "#6B7280",
+                        "on-primary-fixed": "#3a0b00",
+                        "primary": "#a93100",
+                        "on-surface-variant": "#5a4139",
+                        "russian-red": "#CD0302",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary": "#ffffff",
+                        "text-secondary": "#374151",
+                        "on-surface": "#261814",
+                        "deep-navy": "#1A2E44",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "background": "#fff8f6",
+                        "secondary-container": "#cde1fe",
+                        "on-primary-fixed-variant": "#842500",
+                        "surface-container-high": "#fee2db",
+                        "outline-variant": "#e3bfb4",
+                        "inverse-primary": "#ffb59e",
+                        "autumn-green": "#4F7E17",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-white": "#FFFFFF",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#efd4cd",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "on-primary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#f8ddd5",
+                        "on-secondary-fixed": "#061d32",
+                        "inverse-on-surface": "#ffede8",
+                        "surface-tint": "#ad3200",
+                        "on-tertiary-fixed": "#001d34",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#0079c3",
+                        "outline": "#8e7067",
+                        "on-background": "#261814",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "tertiary-fixed": "#d0e4ff",
+                        "on-tertiary-container": "#fdfcff",
+                        "line-border": "#E7DED4",
+                        "paper-warm": "#FFF7EE",
+                        "secondary": "#4c6078",
+                        "surface-container": "#ffe9e3",
+                        "surface-container-low": "#fff1ed",
+                        "hawker-amber": "#F5A623",
+                        "tertiary": "#00609b",
+                        "surface-bright": "#fff8f6",
+                        "primary-container": "#d1430b",
+                        "on-secondary-container": "#51647d",
+                        "surface": "#fff8f6",
+                        "text-primary": "#111827",
+                        "secondary-fixed": "#d1e4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "20px",
+                        "xxl": "32px",
+                        "sm": "8px",
+                        "huge": "48px",
+                        "xs": "4px",
+                        "screen-edge": "16px",
+                        "md": "12px",
+                        "base": "16px",
+                        "xl": "24px",
+                        "section-gap": "20px",
+                        "region-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "micro": ["Be Vietnam Pro"],
+                        "mono-price": ["Space Grotesk"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "body-sm": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "micro": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "mono-price": ["15px", { "lineHeight": "22px", "fontWeight": "500" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "h3": ["17px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "h1": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "h2": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "body": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-paper-warm min-h-screen text-on-background font-body">
+<!-- TopAppBar -->
+<header class="docked full-width top-0 z-50 bg-[#F9F6F2] dark:bg-slate-900 border-b border-[#E7DED4] dark:border-slate-800 flat no shadows flex justify-between items-center px-6 py-3 w-full sticky">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-slate-900 dark:text-white font-['Plus_Jakarta_Sans']">Makan Merchant</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#E7DED4] dark:hover:bg-slate-800 transition-colors p-2 rounded-full active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[#E8531E] dark:text-[#E8531E]" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-[#E7DED4] dark:hover:bg-slate-800 transition-colors p-2 rounded-full active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[#E8531E] dark:text-[#E8531E]" data-icon="help">help</span>
+</button>
+<img alt="Merchant Profile Avatar" class="w-8 h-8 rounded-full border border-line-border object-cover" data-alt="A close up portrait of an asian male chef in a clean white uniform, smiling warmly in a well-lit modern kitchen. The background is slightly blurred showing stainless steel equipment. Warm, inviting, professional culinary portrait." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx7Vn9pzwjWzd-UJIMUlxUxAdlo5XydYPQFxUMy5SDkoKbErANd8BLJJXjPkgDm0qObBKQXdlhk_Qp9qmL44k7PIDMNrTjoVAqIgP4dfKavGB3U5RUHBpQnoCtZHQ9wQziN-LWF18V0q_ma4HQ5SFgvPcF15wNswc_PLBIC76kCDPabaNq3sMxN8MY0Ba3JBkws0fJJ1cZPnw0FIOmQVNR2Ch2JHPtDylT1mJFtyUYK3kg-AyRsXX3NiT4ZXslPy729MH_3h29iik"/>
+</div>
+</header>
+<div class="flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full flex-col pt-16 h-screen w-64 border-r border-[#E7DED4] dark:border-slate-800 bg-white dark:bg-slate-950 flat no shadows z-40 transition-all duration-200 ease-in-out">
+<div class="p-6 border-b border-line-border">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center overflow-hidden shrink-0">
+<img alt="Stall Logo" class="w-full h-full object-cover" data-alt="A stylized logo for a hawker stall featuring a minimalist graphic of a bowl of noodles in vibrant orange and deep navy colors, set against a warm paper-like textured background. Modern Asian culinary branding." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOyWsGt2JzQz53-qhEXx-hblCwLmrZIvpvAwOPO68favfOhUwrTbk9pK07gHADQrtlbzpoEQ9S60mnWXFXQEkPkFZlUJy4JLLzxo8Xa17v75q8dsYk2LlWtkClmfdruMZ3CAqJwI28bYcyB6rSKrT6t-miSFtYai6EpsxZcYKRYjMbGX4_IEQn-px9VjOKLoO-sWAaPr66mf91DwJl7_w9_btFnDOycjPqQdCTEbh1TvcDyootKKxeaeWXp_0xlTGBxSSQnVxy51E"/>
+</div>
+<div>
+<h2 class="font-h3 text-h3 text-on-background">Hawker Central</h2>
+<p class="font-micro text-micro text-text-muted mt-1">Verified Merchant</p>
+</div>
+</div>
+<button class="w-full py-2 px-4 rounded-lg border border-line-border text-deep-navy font-body-sm text-body-sm font-medium hover:bg-paper-warm transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">visibility</span> View Public Page
+                </button>
+</div>
+<div class="flex-1 overflow-y-auto py-4 font-['Plus_Jakarta_Sans'] text-sm font-medium">
+<a class="flex items-center gap-3 px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="storefront">storefront</span>
+                    Stall Profile
+                </a>
+<a class="flex items-center gap-3 px-6 py-3 text-[#E8531E] border-r-4 border-[#E8531E] bg-orange-50 dark:bg-orange-900/10" href="#">
+<span class="material-symbols-outlined icon-fill" data-icon="bar_chart">bar_chart</span>
+                    Analytics
+                </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+                    Menu
+                </a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+                    Opening Hours
+                </a>
+</div>
+<div class="p-4 border-t border-line-border font-['Plus_Jakarta_Sans'] text-sm font-medium">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Settings
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+                    Support
+                </a>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 md:ml-64 p-screen-edge md:p-xl max-w-7xl mx-auto w-full">
+<!-- Page Header -->
+<div class="mb-region-gap flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-h1 text-h1 text-on-background mb-xs">Search Analytics</h1>
+<p class="font-body text-body text-text-muted">Understand how diners discover your stall.</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="bg-surface-white border border-line-border rounded-lg px-3 py-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted text-[20px]">calendar_today</span>
+<span class="font-body-sm text-body-sm text-deep-navy font-medium">Last 30 Days</span>
+<span class="material-symbols-outlined text-text-muted text-[20px]">expand_more</span>
+</div>
+<button class="bg-surface-white border border-line-border rounded-lg p-2 text-deep-navy hover:bg-paper-warm transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+</div>
+</div>
+<!-- Key Metrics Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-region-gap">
+<!-- Metric 1 -->
+<div class="bg-surface-white p-lg rounded-xl border border-line-border relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-hungry-orange/5 rounded-bl-full -mr-4 -mt-4"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-hungry-orange">
+<span class="material-symbols-outlined icon-fill">search</span>
+</div>
+<span class="inline-flex items-center gap-1 font-micro text-micro text-autumn-green bg-autumn-green/10 px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +12.5%
+                        </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-1 relative z-10">Total Search Impressions</p>
+<h3 class="font-display text-display text-deep-navy relative z-10">24,592</h3>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface-white p-lg rounded-xl border border-line-border relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-hawker-amber/5 rounded-bl-full -mr-4 -mt-4"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-hawker-amber">
+<span class="material-symbols-outlined icon-fill">ads_click</span>
+</div>
+<span class="inline-flex items-center gap-1 font-micro text-micro text-autumn-green bg-autumn-green/10 px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +8.2%
+                        </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-1 relative z-10">Profile Clicks</p>
+<h3 class="font-display text-display text-deep-navy relative z-10">3,418</h3>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface-white p-lg rounded-xl border border-line-border relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-deep-navy/5 rounded-bl-full -mr-4 -mt-4"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-deep-navy">
+<span class="material-symbols-outlined icon-fill">directions_walk</span>
+</div>
+<span class="inline-flex items-center gap-1 font-micro text-micro text-russian-red bg-russian-red/10 px-2 py-1 rounded-full">
+<span class="material-symbols-outlined text-[14px]">trending_down</span> -2.1%
+                        </span>
+</div>
+<p class="font-body-sm text-body-sm text-text-muted mb-1 relative z-10">Directions Requested</p>
+<h3 class="font-display text-display text-deep-navy relative z-10">842</h3>
+</div>
+</div>
+<!-- Bento Grid Layout for Charts -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg mb-region-gap">
+<!-- Main Trend Chart -->
+<div class="bg-surface-white border border-line-border rounded-xl p-lg lg:col-span-2 flex flex-col">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-h3 text-h3 text-deep-navy">Search Impressions Trend</h2>
+<div class="flex items-center gap-2">
+<span class="flex items-center gap-1 font-micro text-micro text-text-muted"><span class="w-2 h-2 rounded-full bg-hawker-amber"></span> This Period</span>
+<span class="flex items-center gap-1 font-micro text-micro text-text-muted"><span class="w-2 h-2 rounded-full bg-line-border"></span> Previous Period</span>
+</div>
+</div>
+<!-- Faux Chart Area -->
+<div class="flex-1 relative min-h-[250px] w-full flex items-end justify-between px-2 pt-8 border-b border-l border-line-border pb-6">
+<!-- Y-Axis Labels -->
+<div class="absolute left-[-24px] top-0 bottom-6 flex flex-col justify-between font-micro text-micro text-text-muted text-right pr-2">
+<span>1k</span>
+<span>750</span>
+<span>500</span>
+<span>250</span>
+<span>0</span>
+</div>
+<!-- Grid Lines -->
+<div class="absolute left-0 right-0 top-0 bottom-6 flex flex-col justify-between z-0">
+<div class="border-t border-line-border/50 w-full"></div>
+<div class="border-t border-line-border/50 w-full"></div>
+<div class="border-t border-line-border/50 w-full"></div>
+<div class="border-t border-line-border/50 w-full"></div>
+</div>
+<!-- Bars -->
+<div class="relative z-10 w-8 flex items-end gap-1 group">
+<div class="w-3 bg-line-border rounded-t-sm h-[40%] transition-all"></div>
+<div class="w-3 bg-hawker-amber rounded-t-sm h-[60%] transition-all group-hover:bg-hungry-orange relative">
+<!-- Tooltip -->
+<div class="absolute -top-10 left-1/2 -translate-x-1/2 bg-deep-navy text-surface-white font-micro text-micro py-1 px-2 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity pointer-events-none">
+                                    600 Views
+                                </div>
+</div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-micro text-micro text-text-muted">W1</span>
+</div>
+<div class="relative z-10 w-8 flex items-end gap-1 group">
+<div class="w-3 bg-line-border rounded-t-sm h-[45%]"></div>
+<div class="w-3 bg-hawker-amber rounded-t-sm h-[50%] group-hover:bg-hungry-orange relative"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-micro text-micro text-text-muted">W2</span>
+</div>
+<div class="relative z-10 w-8 flex items-end gap-1 group">
+<div class="w-3 bg-line-border rounded-t-sm h-[30%]"></div>
+<div class="w-3 bg-hawker-amber rounded-t-sm h-[80%] group-hover:bg-hungry-orange relative"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-micro text-micro text-text-muted">W3</span>
+</div>
+<div class="relative z-10 w-8 flex items-end gap-1 group">
+<div class="w-3 bg-line-border rounded-t-sm h-[60%]"></div>
+<div class="w-3 bg-hawker-amber rounded-t-sm h-[90%] group-hover:bg-hungry-orange relative"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-micro text-micro text-text-muted">W4</span>
+</div>
+<div class="relative z-10 w-8 flex items-end gap-1 group">
+<div class="w-3 bg-line-border rounded-t-sm h-[50%]"></div>
+<div class="w-3 bg-hawker-amber rounded-t-sm h-[75%] group-hover:bg-hungry-orange relative"></div>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-micro text-micro text-text-muted">W5</span>
+</div>
+</div>
+</div>
+<!-- Top Search Terms -->
+<div class="bg-surface-white border border-line-border rounded-xl p-lg flex flex-col">
+<h2 class="font-h3 text-h3 text-deep-navy mb-4">Top Search Terms</h2>
+<p class="font-body-sm text-body-sm text-text-muted mb-6">Keywords leading users to your stall.</p>
+<div class="flex-1 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-6 font-mono-price text-mono-price text-text-muted">01</div>
+<span class="font-body text-body font-medium text-deep-navy">Hainanese Chicken Rice</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-text-muted">1.2k</span>
+<div class="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-hawker-amber w-[80%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-6 font-mono-price text-mono-price text-text-muted">02</div>
+<span class="font-body text-body font-medium text-deep-navy">Roasted Pork</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-text-muted">840</span>
+<div class="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-hawker-amber w-[60%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-6 font-mono-price text-mono-price text-text-muted">03</div>
+<span class="font-body text-body font-medium text-deep-navy">Maxwell Food Centre</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-text-muted">620</span>
+<div class="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-hawker-amber w-[45%]"></div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-6 font-mono-price text-mono-price text-text-muted">04</div>
+<span class="font-body text-body font-medium text-deep-navy">Lunch nearby</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-text-muted">410</span>
+<div class="w-16 h-1.5 bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-hawker-amber w-[30%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Trending Dishes Section -->
+<div class="bg-surface-white border border-line-border rounded-xl p-lg">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h2 class="font-h3 text-h3 text-deep-navy">Trending Menu Items</h2>
+<p class="font-body-sm text-body-sm text-text-muted mt-1">Dishes gaining traction in search results this week.</p>
+</div>
+<button class="text-hungry-orange font-body-sm text-body-sm font-medium hover:underline">View Full Menu</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Dish Card 1 -->
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-paper-warm transition-colors border border-transparent hover:border-line-border group">
+<img alt="Hainanese Chicken Rice" class="w-20 h-20 rounded-lg object-cover shadow-sm" data-alt="A close up, high quality food photograph of Singaporean Hainanese Chicken Rice. Slices of poached chicken lay on fragrant rice, garnished with cucumber and cilantro. Accompanied by small dishes of chili sauce and dark soy sauce. Served on a white plate over a warm wooden table. Soft, natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKRxppidX9kPnXkr4wCPq9nrofqSlQKaykKrVbB_0IGBCbU6XMALQX6W4PLSAWkHWnOf_iL3vfk_gdm9-evc1pswU7ilNcZ27sGO4pRO0Lo_t4kmmrFCYBq0zuinZbbzJsHlqbnqZ1KxjBxuFJ2ga2wVI5kM5fAWQ1udBdJY8Q9czIFri0g-fGrSs5SBOePH70YL1iPyJ6C1mXG1ibMAFLzFZO6-AgfCmp74tGC66kYL38RkpnW5wRgfhT4zv6egfw6vdocCGrYJQ"/>
+<div class="flex-1">
+<h4 class="font-h3 text-body text-deep-navy group-hover:text-hungry-orange transition-colors">Signature Steamed Chicken Rice</h4>
+<div class="flex items-center gap-3 mt-1">
+<span class="font-mono-price text-mono-price text-text-primary">$5.50</span>
+<span class="inline-flex items-center gap-1 font-micro text-micro text-autumn-green bg-autumn-green/10 px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-[12px]">local_fire_department</span> Hot
+                                </span>
+</div>
+</div>
+<div class="text-right">
+<div class="font-body-sm text-body-sm text-deep-navy font-medium">420 views</div>
+<div class="font-micro text-micro text-autumn-green">+15%</div>
+</div>
+</div>
+<!-- Dish Card 2 -->
+<div class="flex items-center gap-4 p-3 rounded-lg hover:bg-paper-warm transition-colors border border-transparent hover:border-line-border group">
+<img alt="Roasted Pork Belly" class="w-20 h-20 rounded-lg object-cover shadow-sm" data-alt="A close up food shot of crispy roasted pork belly (Siu Yuk) chopped into bite sized pieces. The skin is golden and bubbly, showing extreme crispiness, while the meat below is tender and juicy. Served on a simple white ceramic plate with a side of mustard dip. Bright, appetizing lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXuLUwyMpD5l0-5e-tJM-XoXMas81Q-zf0hb5ncm9E8RvU9fyiupte_MoZ2Fw7PwFVNBeRsyyILn9fMKagEA34hqRUPA0WGpEIv7tjfLKN3Y8Oa0Q4n8SXhQBwzWLESr1jRjRrLlnyDzkgIPUmu4k6tevrYMH1yIKSP3bXIK7U2DFA_0GPONFOO679Xi6RIPyfHJg1iAu21o-cVLxj1IPi8RR4bXc2OfNDBF8Hpe8tAMmzplO1fUwr2WwY9yWqKYk7Q3r2HMW_qno"/>
+<div class="flex-1">
+<h4 class="font-h3 text-body text-deep-navy group-hover:text-hungry-orange transition-colors">Crispy Roasted Pork Belly</h4>
+<div class="flex items-center gap-3 mt-1">
+<span class="font-mono-price text-mono-price text-text-primary">$8.00</span>
+<span class="inline-flex items-center gap-1 font-micro text-micro text-text-muted bg-surface-container px-2 py-0.5 rounded-full">
+                                    Steady
+                                </span>
+</div>
+</div>
+<div class="text-right">
+<div class="font-body-sm text-body-sm text-deep-navy font-medium">285 views</div>
+<div class="font-micro text-micro text-text-muted">+2%</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

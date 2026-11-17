@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Hungry - Join Waitlist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "text-primary": "#111827",
+                        "hawker-amber": "#F5A623",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "on-background": "#261814",
+                        "hungry-orange": "#E8531E",
+                        "paper-warm": "#FFF7EE",
+                        "inverse-primary": "#ffb59e",
+                        "primary-fixed": "#ffdbd0",
+                        "surface": "#fff8f6",
+                        "on-secondary-fixed": "#061d32",
+                        "surface-tint": "#ad3200",
+                        "secondary-container": "#cde1fe",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary-fixed": "#001d34",
+                        "line-border": "#E7DED4",
+                        "autumn-green": "#4F7E17",
+                        "inverse-surface": "#3d2d28",
+                        "surface-container-highest": "#f8ddd5",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "outline": "#8e7067",
+                        "russian-red": "#CD0302",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "surface-white": "#FFFFFF",
+                        "outline-variant": "#e3bfb4",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "primary-container": "#d1430b",
+                        "on-surface": "#261814",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#5a4139",
+                        "error-container": "#ffdad6",
+                        "primary": "#a93100",
+                        "secondary-fixed": "#d1e4ff",
+                        "surface-container-high": "#fee2db",
+                        "on-error-container": "#93000a",
+                        "background": "#fff8f6",
+                        "on-primary": "#ffffff",
+                        "secondary": "#4c6078",
+                        "surface-container-low": "#fff1ed",
+                        "on-secondary-container": "#51647d",
+                        "tertiary": "#00609b",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface-bright": "#fff8f6",
+                        "deep-navy": "#1A2E44",
+                        "tertiary-container": "#0079c3",
+                        "on-primary-container": "#fffbff",
+                        "on-primary-fixed": "#3a0b00",
+                        "on-primary-fixed-variant": "#842500",
+                        "tertiary-fixed": "#d0e4ff",
+                        "surface-dim": "#efd4cd",
+                        "surface-variant": "#f8ddd5",
+                        "surface-container": "#ffe9e3",
+                        "inverse-on-surface": "#ffede8",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "surface-container-lowest": "#ffffff",
+                        "text-muted": "#6B7280",
+                        "text-secondary": "#374151"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "screen-edge": "16px",
+                        "lg": "20px",
+                        "xl": "24px",
+                        "xs": "4px",
+                        "md": "12px",
+                        "xxl": "32px",
+                        "section-gap": "20px",
+                        "huge": "48px",
+                        "base": "16px",
+                        "sm": "8px",
+                        "region-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "mono-price": ["Space Grotesk"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "micro": ["Be Vietnam Pro"],
+                        "body-sm": ["Be Vietnam Pro"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "mono-price": ["15px", { "lineHeight": "22px", "fontWeight": "500" }],
+                        "display": ["32px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "body": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "micro": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "h1": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "h2": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "h3": ["17px", { "lineHeight": "22px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-paper-warm text-on-background min-h-screen flex flex-col font-body">
+<!-- TopNavBar (Suppressed for transactional waitlist intent, replacing with a simple minimal header) -->
+<header class="w-full py-lg px-screen-edge flex justify-center items-center">
+<a class="text-hungry-orange font-h1 text-h1 tracking-tight" href="/">Hungry</a>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex items-center justify-center p-screen-edge w-full">
+<div class="w-full max-w-md bg-surface-white rounded-xl border border-line-border p-xxl shadow-sm relative overflow-hidden">
+<!-- Decorative accent -->
+<div class="absolute top-0 left-0 right-0 h-2 bg-hungry-orange"></div>
+<div class="text-center mb-xl">
+<h1 class="font-h1 text-h1 text-text-primary mb-sm">Join the Waitlist</h1>
+<p class="font-body text-body text-text-secondary">Be the first to experience Singapore's newest local makan guide.</p>
+</div>
+<form class="space-y-lg">
+<!-- User Type Selection (Chips/Radio) -->
+<div>
+<label class="block font-h3 text-h3 text-text-primary mb-md">I am a...</label>
+<div class="grid grid-cols-3 gap-sm">
+<label class="cursor-pointer relative">
+<input checked="" class="peer sr-only" name="user_type" type="radio" value="foodie"/>
+<div class="h-[52px] rounded-lg border border-line-border flex flex-col items-center justify-center gap-xs peer-checked:border-hungry-orange peer-checked:bg-surface-container-low peer-checked:text-hungry-orange transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="restaurant">restaurant</span>
+<span class="font-micro text-micro">Foodie</span>
+</div>
+</label>
+<label class="cursor-pointer relative">
+<input class="peer sr-only" name="user_type" type="radio" value="merchant"/>
+<div class="h-[52px] rounded-lg border border-line-border flex flex-col items-center justify-center gap-xs peer-checked:border-hungry-orange peer-checked:bg-surface-container-low peer-checked:text-hungry-orange transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="storefront">storefront</span>
+<span class="font-micro text-micro">Merchant</span>
+</div>
+</label>
+<label class="cursor-pointer relative">
+<input class="peer sr-only" name="user_type" type="radio" value="both"/>
+<div class="h-[52px] rounded-lg border border-line-border flex flex-col items-center justify-center gap-xs peer-checked:border-hungry-orange peer-checked:bg-surface-container-low peer-checked:text-hungry-orange transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="handshake">handshake</span>
+<span class="font-micro text-micro">Both</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Name Input -->
+<div>
+<label class="block font-body-sm text-body-sm text-text-secondary mb-xs" for="name">Full Name</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-muted" data-icon="person">person</span>
+</div>
+<input class="block w-full h-[48px] pl-10 pr-md border-line-border rounded-lg bg-surface-white font-body text-body text-text-primary focus:ring-hungry-orange focus:border-hungry-orange placeholder-text-muted transition-colors" id="name" name="name" placeholder="Ah Beng" type="text"/>
+</div>
+</div>
+<!-- Email Input -->
+<div>
+<label class="block font-body-sm text-body-sm text-text-secondary mb-xs" for="email">Email Address</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-muted" data-icon="mail">mail</span>
+</div>
+<input class="block w-full h-[48px] pl-10 pr-md border-line-border rounded-lg bg-surface-white font-body text-body text-text-primary focus:ring-hungry-orange focus:border-hungry-orange placeholder-text-muted transition-colors" id="email" name="email" placeholder="makan@shiok.sg" type="email"/>
+</div>
+</div>
+<!-- Postal Code (Optional, adds local flavor) -->
+<div>
+<label class="block font-body-sm text-body-sm text-text-secondary mb-xs" for="postal">Postal Code <span class="text-text-muted font-micro text-micro">(Optional)</span></label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-md flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-muted" data-icon="location_on">location_on</span>
+</div>
+<input class="block w-full h-[48px] pl-10 pr-md border-line-border rounded-lg bg-surface-white font-body text-body text-text-primary focus:ring-hungry-orange focus:border-hungry-orange placeholder-text-muted transition-colors" id="postal" name="postal" placeholder="e.g. 520111" type="text"/>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-sm">
+<button class="w-full h-[52px] bg-hungry-orange hover:bg-surface-tint text-surface-white font-h3 text-h3 rounded-[18px] flex items-center justify-center gap-sm transition-colors shadow-sm" type="submit">
+<span>Get Early Access</span>
+<span class="material-symbols-outlined" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<p class="font-micro text-micro text-text-muted text-center pt-md">
+                    By joining, you agree to our <a class="text-hungry-orange hover:underline" href="#">Terms of Service</a> and <a class="text-hungry-orange hover:underline" href="#">Privacy Policy</a>.
+                </p>
+</form>
+</div>
+</main>
+<!-- Footer (Minimal for transactional page) -->
+<footer class="w-full py-xl text-center border-t border-line-border mt-auto">
+<p class="font-micro text-micro text-text-muted">© 2024 Hungry Singapore. Your trusted guide to the local makan scene.</p>
+</footer>
+</body></html>

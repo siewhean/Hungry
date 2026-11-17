@@ -1,0 +1,42 @@
+[
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  },
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  },
+  {
+    "type": "warning",
+    "message": "\"shadow*\" style props are deprecated. Use \"boxShadow\"."
+  },
+  {
+    "type": "warning",
+    "message": "props.pointerEvents is deprecated. Use style.pointerEvents"
+  },
+  {
+    "type": "warning",
+    "message": "expo-file-system is not supported on web"
+  },
+  {
+    "type": "warning",
+    "message": "expo-file-system is not supported on web"
+  },
+  {
+    "type": "warning",
+    "message": "Animated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md"
+  },
+  {
+    "type": "warning",
+    "message": "\"textShadow*\" style props are deprecated. Use \"textShadow\"."
+  }
+]

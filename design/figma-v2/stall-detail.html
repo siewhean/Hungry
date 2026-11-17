@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hungry v2 — Stall Detail (3 Variants)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+<main class="page">
+
+  <div class="intro-panel">
+    <p class="eyebrow">Hungry v2 / 03 Stall Detail</p>
+    <h1>Three stall description directions — from editorial to immersive to menu-first.</h1>
+    <p>The current StallDetailScreen exists but has no hero image, no delivery links as visual buttons, and hygiene grade as a plain text badge. All three variants add visual richness while keeping operational trust signals (hours, grade, unit number) close to the hero moment. The "Open stall menu" button inside every card row is removed — the whole card is pressable.</p>
+    <div class="summary-chips">
+      <span class="summary-chip">Hero image with gradient</span>
+      <span class="summary-chip">Hygiene shield (not badge pill)</span>
+      <span class="summary-chip">Delivery icons, not text buttons</span>
+      <span class="summary-chip">No redundant CTA inside rows</span>
+      <span class="summary-chip">Taste radar chart</span>
+    </div>
+  </div>
+
+  <!-- Audit -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Current Implementation Audit</p>
+      <h2>What's wrong with StallDetailScreen + BuildingDrillDown</h2>
+    </div>
+    <div class="critique-grid">
+      <div class="critique-card">
+        <p class="critique-label">Issue · BuildingDrillDownScreen Line 39</p>
+        <h4>"Open stall menu" button inside every pressable card row</h4>
+        <p>The card wrapper is already a Pressable. A button inside it adds visual clutter and creates nested tap targets. Removed in all variants — the card tap is the action.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>No stall hero image</h4>
+        <p>Stall detail pages open to a plain text block. A 16:9 hero food/stall photo dramatically increases appetite cues and perceived quality of the discovery. All variants add this.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Pill label issue</p>
+        <h4>Hygiene grade as plain Badge chip</h4>
+        <p>The NEA hygiene grade is a trust signal that deserves a more intentional visual treatment. All variants use a shield icon — visually distinct from content labels, never a pill.</p>
+      </div>
+      <div class="critique-card">
+        <p class="critique-label">Missing feature</p>
+        <h4>Delivery links are missing entirely</h4>
+        <p>Users should be able to order delivery via GrabFood or Foodpanda directly from the stall page. Variant A uses icon buttons. Variants B and C use subtle inline links.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT A: Editorial Card ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant A — Recommended</p>
+      <h2>Editorial Card</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag recommended">Recommended</span>
+        <h3>Hero image → stall info → dish carousel → delivery → reviews</h3>
+        <p>The most direct stall-to-order path. Prioritises food imagery, then surfaces the critical trust signals (grade, hours, unit), then gets to dishes and ordering fast. The sticky bottom bar means "Order / Directions" is always reachable.</p>
+        <ul class="feature-list">
+          <li>Full-bleed 16:9 hero with gradient overlay</li>
+          <li>Floating back + share + save icons (no pill labels)</li>
+          <li>Shield icon for hygiene grade — not a badge chip</li>
+          <li>Open/closed status: colour dot + text, no badge</li>
+          <li>Horizontal dish carousel below stall info</li>
+          <li>Delivery icons: Grab, Foodpanda, Deliveroo</li>
+          <li>Taste radar chart (spider chart from reviews)</li>
+          <li>Sticky bottom: "Order delivery" + "Directions"</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <!-- Phone A1: Hero + info -->
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar" style="position:absolute;top:0;left:0;right:0;z-index:20;color:white;text-shadow:0 1px 3px rgba(0,0,0,0.6);">
+              <span>12:20</span>
+              <div class="signal"><span>5G</span><div class="battery"><span style="background:white;"></span></div></div>
+            </div>
+            <!-- Hero image -->
+            <div class="hero-image" style="height:240px;flex-shrink:0;">
+              <div style="font-size:80px;">🍜</div>
+              <div class="hero-gradient"></div>
+              <!-- Back button -->
+              <div class="hero-back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <!-- Action buttons -->
+              <div class="hero-action-btns">
+                <div class="hero-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="hero-action-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </div>
+              </div>
+              <!-- Stall name over gradient -->
+              <div style="position:absolute;bottom:16px;left:16px;right:16px;z-index:5;">
+                <div style="font-size:22px;font-weight:900;color:white;line-height:1.1;text-shadow:0 2px 8px rgba(0,0,0,0.4);">Ah Kow Wanton Mee</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.85);margin-top:3px;">Maxwell Food Centre</div>
+              </div>
+            </div>
+
+            <div class="scroll-content">
+              <!-- Stall info block -->
+              <div class="stall-info-block">
+                <div class="stall-title-row">
+                  <div style="flex:1;">
+                    <div class="stall-location-row">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      #01-77 · Maxwell Food Centre · 80m away
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:6px;flex-wrap:wrap;">
+                      <span class="open-status open">Open until 2:00 pm</span>
+                      <div style="display:flex;align-items:center;gap:4px;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                        <span style="font-size:13px;font-weight:700;color:var(--text);">4.7</span>
+                        <span style="font-size:12px;color:var(--text-muted);">(312)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Shield grade (not badge pill) -->
+                  <div class="shield-grade">
+                    <div class="shield-icon">A</div>
+                    <div class="shield-label">NEA</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="height:1px;background:var(--border);margin:0 16px;"></div>
+
+              <!-- Dish carousel -->
+              <div class="screen-section-heading">
+                <h3>Their dishes</h3>
+                <span class="see-all">See menu</span>
+              </div>
+              <div class="dish-scroll">
+                <div class="dish-card-sm" style="width:140px;">
+                  <div class="dish-img" style="height:95px;font-size:36px;position:relative;">
+                    🍜
+                    <div style="position:absolute;top:6px;left:6px;background:var(--orange);color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;">⭐ Must try</div>
+                  </div>
+                  <div class="dish-info">
+                    <div class="dish-name">Wanton Noodles</div>
+                    <div class="dish-meta">4.8 · 180 reviews</div>
+                    <div class="dish-price">S$4.50</div>
+                  </div>
+                </div>
+                <div class="dish-card-sm" style="width:140px;">
+                  <div class="dish-img" style="height:95px;font-size:36px;">🍚</div>
+                  <div class="dish-info">
+                    <div class="dish-name">Dry Wanton Mee</div>
+                    <div class="dish-meta">4.5 · 90 reviews</div>
+                    <div class="dish-price">S$4.50</div>
+                  </div>
+                </div>
+                <div class="dish-card-sm" style="width:140px;">
+                  <div class="dish-img" style="height:95px;font-size:36px;">🥟</div>
+                  <div class="dish-info">
+                    <div class="dish-name">Steamed Wantons</div>
+                    <div class="dish-meta">4.3 · 45 reviews</div>
+                    <div class="dish-price">S$3.50</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Delivery -->
+              <div style="height:1px;background:var(--border);margin:4px 16px 12px;"></div>
+              <div style="padding:0 16px;margin-bottom:4px;">
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Order delivery via</div>
+              </div>
+              <div class="delivery-row">
+                <div class="delivery-btn"><span class="emoji">🟢</span> GrabFood</div>
+                <div class="delivery-btn"><span class="emoji">🔴</span> Foodpanda</div>
+                <div class="delivery-btn"><span class="emoji">🔵</span> Deliveroo</div>
+              </div>
+
+              <!-- Taste radar placeholder -->
+              <div style="margin:12px 16px;background:var(--bg-soft);border-radius:14px;padding:14px;">
+                <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Taste profile (from 312 reviews)</div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <div style="font-size:11px;color:var(--text-muted);width:60px;text-align:right;">Savoury</div>
+                  <div style="flex:1;height:6px;background:var(--border);border-radius:999px;overflow:hidden;"><div style="width:88%;height:100%;background:var(--orange);border-radius:999px;"></div></div>
+                  <div style="font-size:11px;color:var(--text-muted);width:28px;">88%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                  <div style="font-size:11px;color:var(--text-muted);width:60px;text-align:right;">Spicy</div>
+                  <div style="flex:1;height:6px;background:var(--border);border-radius:999px;overflow:hidden;"><div style="width:62%;height:100%;background:var(--amber);border-radius:999px;"></div></div>
+                  <div style="font-size:11px;color:var(--text-muted);width:28px;">62%</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="font-size:11px;color:var(--text-muted);width:60px;text-align:right;">Umami</div>
+                  <div style="flex:1;height:6px;background:var(--border);border-radius:999px;overflow:hidden;"><div style="width:74%;height:100%;background:var(--teal);border-radius:999px;"></div></div>
+                  <div style="font-size:11px;color:var(--text-muted);width:28px;">74%</div>
+                </div>
+              </div>
+
+              <!-- Reviews preview -->
+              <div class="screen-section-heading">
+                <h3>Recent reviews</h3>
+                <span class="see-all">See all 312</span>
+              </div>
+              <div style="padding:0 16px;display:flex;flex-direction:column;gap:10px;">
+                <div style="background:var(--bg-soft);border-radius:12px;padding:12px;">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:var(--navy-soft);display:flex;align-items:center;justify-content:center;font-size:14px;">👩</div>
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">sarah.eats</div>
+                    <div style="display:flex;gap:1px;margin-left:4px;">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                  </div>
+                  <div style="font-size:12px;color:var(--text);line-height:1.5;">The wantons are silky and the chilli is not too sweet. Exactly how I like it. Came back 3 times this week 😅</div>
+                  <div style="font-size:10px;color:var(--text-muted);margin-top:4px;font-family:var(--font-mono);">2 days ago · Wanton Noodles</div>
+                </div>
+              </div>
+              <div style="height:80px;"></div>
+            </div>
+
+            <!-- Sticky bottom bar -->
+            <div class="sticky-bottom">
+              <div class="btn-secondary" style="flex:0;padding:12px 16px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+                Directions
+              </div>
+              <div class="btn-primary">Order delivery</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT B: Menu Board ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant B</p>
+      <h2>Menu Board</h2>
+    </div>
+    <div class="variant-block reverse">
+      <div class="variant-meta">
+        <span class="variant-tag">Dish-first layout</span>
+        <h3>Compact header, dish grid leads, sticky category tabs</h3>
+        <p>For users who know they want to eat here and just want to see what's available. The dish grid is the primary content — large photos, name, price, rating dot. No hero image taking up screen space. Category tabs let users navigate a long menu without scrolling forever.</p>
+        <ul class="feature-list">
+          <li>Compact stall header (no full hero)</li>
+          <li>Sticky category tabs: Popular / Rice / Noodles / Drinks</li>
+          <li>2-col dish photo grid — image-first browsing</li>
+          <li>Rating: single coloured dot (no star row clutter)</li>
+          <li>Floating "Quick Review" action button</li>
+          <li>Hygiene shield in header, never as pill</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen">
+            <div class="statusbar">
+              <span>12:20</span>
+              <div class="signal"><span>5G</span><div class="battery"><span></span></div></div>
+            </div>
+            <!-- Compact header -->
+            <div style="padding:12px 16px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0;">
+              <div style="width:52px;height:52px;border-radius:12px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:24px;border:2px solid var(--orange);flex-shrink:0;">🍜</div>
+              <div style="flex:1;">
+                <div style="font-size:16px;font-weight:900;color:var(--text);">Ah Kow Wanton Mee</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">#01-77 · Maxwell · 80m · <span class="open-status open" style="font-size:11px;">Open</span></div>
+                <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span style="font-size:12px;font-weight:700;color:var(--text);">4.7</span>
+                    <span style="font-size:11px;color:var(--text-muted);">· 312</span>
+                  </div>
+                  <div class="delivery-btn" style="padding:3px 8px;font-size:10px;">🟢 Grab</div>
+                  <div class="delivery-btn" style="padding:3px 8px;font-size:10px;">🔴 Panda</div>
+                </div>
+              </div>
+              <div class="shield-grade">
+                <div class="shield-icon" style="width:30px;height:34px;font-size:12px;">A</div>
+                <div class="shield-label">NEA</div>
+              </div>
+            </div>
+            <!-- Sticky category tabs -->
+            <div class="type-filter-tabs" style="flex-shrink:0;">
+              <div class="type-tab active">Popular</div>
+              <div class="type-tab">Noodles</div>
+              <div class="type-tab">Dumplings</div>
+              <div class="type-tab">Drinks</div>
+            </div>
+            <!-- Dish grid -->
+            <div class="scroll-content" style="position:relative;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 16px;">
+                <!-- Dish card: rating dot, not star row -->
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);cursor:pointer;">
+                  <div style="height:110px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;">
+                    🍜
+                    <div style="position:absolute;top:8px;left:8px;width:8px;height:8px;border-radius:50%;background:#16A34A;" title="Highly rated"></div>
+                  </div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">Wanton Noodles</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+                      <div style="font-size:11px;font-weight:700;color:var(--orange);">S$4.50</div>
+                      <div style="font-size:10px;color:var(--text-muted);">180 reviews</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);cursor:pointer;">
+                  <div style="height:110px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;">
+                    🥟
+                    <div style="position:absolute;top:8px;left:8px;width:8px;height:8px;border-radius:50%;background:#16A34A;"></div>
+                  </div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">Steamed Wantons</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+                      <div style="font-size:11px;font-weight:700;color:var(--orange);">S$3.50</div>
+                      <div style="font-size:10px;color:var(--text-muted);">45 reviews</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);cursor:pointer;">
+                  <div style="height:110px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;">
+                    🍚
+                    <div style="position:absolute;top:8px;left:8px;width:8px;height:8px;border-radius:50%;background:#D97706;"></div>
+                  </div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">Dry Wanton Mee</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+                      <div style="font-size:11px;font-weight:700;color:var(--orange);">S$4.50</div>
+                      <div style="font-size:10px;color:var(--text-muted);">90 reviews</div>
+                    </div>
+                  </div>
+                </div>
+                <div style="background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-card);border:1px solid var(--border);cursor:pointer;">
+                  <div style="height:110px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:38px;">🫖</div>
+                  <div style="padding:8px 10px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">Hot Tea / Kopi</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">
+                      <div style="font-size:11px;font-weight:700;color:var(--orange);">S$1.20</div>
+                      <div style="font-size:10px;color:var(--text-muted);">—</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Quick Review FAB -->
+              <div style="position:sticky;bottom:16px;right:16px;float:right;margin-right:16px;background:var(--orange);color:white;border-radius:999px;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 4px 20px rgba(232,83,30,0.4);cursor:pointer;">
+                ✍️ Quick Review
+              </div>
+              <div style="height:20px;clear:both;"></div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label" style="color:var(--orange);">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── VARIANT C: Immersive Story Format ─── -->
+  <section>
+    <div class="section-header">
+      <p class="section-label">Variant C</p>
+      <h2>Immersive Story Format</h2>
+    </div>
+    <div class="variant-block">
+      <div class="variant-meta">
+        <span class="variant-tag">Visual-first</span>
+        <h3>Full-screen food image → blur scroll-up panel → photo strip → menu</h3>
+        <p>The most visceral first impression. Users see the food as the entire screen first, then scroll down to reveal the stall information. Creates a "magazine cover" effect — great for the feed-to-stall transition from a food photo. Info panel slides up as user scrolls.</p>
+        <ul class="feature-list">
+          <li>Full-screen food image as screen background</li>
+          <li>Info panel scrolls up from bottom with blur/frosted glass</li>
+          <li>Photo strip: 5 dish thumbnails horizontally</li>
+          <li>Vertical scroll continues to full reviews + menu</li>
+          <li>Best for premium restaurant contexts</li>
+          <li>Back/share float on image without pills</li>
+        </ul>
+      </div>
+      <div class="phones-group">
+        <div class="phone">
+          <div class="screen" style="background:#1A1611;">
+            <div class="statusbar" style="position:absolute;top:0;left:0;right:0;z-index:30;color:white;text-shadow:0 1px 4px rgba(0,0,0,0.7);">
+              <span>12:20</span>
+              <div class="signal"><span>5G</span><div class="battery"><span style="background:white;"></span></div></div>
+            </div>
+            <!-- Full screen background food -->
+            <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:100px;z-index:1;">🍜</div>
+            <!-- Gradient from bottom -->
+            <div style="position:absolute;bottom:0;left:0;right:0;height:70%;background:linear-gradient(transparent, rgba(10,8,5,0.97));z-index:2;"></div>
+            <!-- Back + share -->
+            <div class="hero-back-btn" style="z-index:30;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="hero-action-btns" style="z-index:30;">
+              <div class="hero-action-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="hero-action-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+            </div>
+            <!-- Frosted info panel from bottom -->
+            <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;padding:0 0 16px;">
+              <!-- Stall name + grade -->
+              <div style="padding:20px 20px 12px;">
+                <div style="font-size:24px;font-weight:900;color:white;line-height:1.1;">Ah Kow Wanton Mee</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.75);">#01-77 · Maxwell · 80m</span>
+                  <span class="open-status open" style="font-size:11px;color:#4ADE80;">● Open until 2pm</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+                  <div style="display:flex;align-items:center;gap:3px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span style="font-size:13px;font-weight:700;color:white;">4.7</span>
+                    <span style="font-size:11px;color:rgba(255,255,255,0.6);">(312)</span>
+                  </div>
+                  <!-- NEA grade shield on dark background -->
+                  <div style="display:flex;align-items:center;gap:4px;background:rgba(22,163,74,0.2);border:1px solid rgba(22,163,74,0.4);border-radius:6px;padding:3px 8px;">
+                    <span style="font-size:11px;font-weight:800;color:#4ADE80;">NEA A</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Dish photo strip -->
+              <div style="display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
+                <div style="width:60px;height:60px;border-radius:10px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:2px solid rgba(255,255,255,0.3);">🍜</div>
+                <div style="width:60px;height:60px;border-radius:10px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🥟</div>
+                <div style="width:60px;height:60px;border-radius:10px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🍚</div>
+                <div style="width:60px;height:60px;border-radius:10px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🫖</div>
+                <div style="width:60px;height:60px;border-radius:10px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);flex-shrink:0;">+3</div>
+              </div>
+              <!-- Action buttons -->
+              <div style="display:flex;gap:10px;padding:0 16px;">
+                <div style="flex:1;background:var(--orange);color:white;border-radius:999px;padding:12px;font-size:14px;font-weight:700;text-align:center;cursor:pointer;">Order delivery</div>
+                <div style="width:48px;height:48px;background:rgba(255,255,255,0.15);backdrop-filter:blur(4px);border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(255,255,255,0.25);">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+                </div>
+              </div>
+            </div>
+            <!-- Tab bar overlaid -->
+            <div class="tab-bar" style="position:absolute;bottom:0;left:0;right:0;z-index:20;background:rgba(10,8,5,0.9);backdrop-filter:blur(8px);border-top-color:rgba(255,255,255,0.08);">
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div><span class="tab-label" style="color:rgba(255,255,255,0.3);">Feed</span></div>
+              <div class="tab-item active"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><span class="tab-label" style="color:var(--orange);">Discover</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><span class="tab-label" style="color:rgba(255,255,255,0.3);">Reads</span></div>
+              <div class="tab-item"><div class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="tab-label" style="color:rgba(255,255,255,0.3);">Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

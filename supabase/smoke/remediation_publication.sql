@@ -1,0 +1,55 @@
+\set ON_ERROR_STOP on
+begin;
+do $$begin if current_database() not like 'hungry_remediation_%' then raise exception 'Isolated database required';end if;end$$;
+set local role postgres;
+create function pg_temp.assert_true(value boolean,label text) returns void language plpgsql as $$begin if value is distinct from true then raise exception 'FAILED: %',label;end if;end$$;
+insert into public.user_profiles(id,display_name) values('10000000-0000-4000-8000-000000000001','Owner'),('10000000-0000-4000-8000-000000000002','Other');
+insert into public.buildings(id,name,latitude,longitude) values('b1','Centre',1.3,103.8);
+insert into public.venues(id,building_id,name) values('v1','b1','Venue'),('v2','b1','Other venue');
+insert into public.dishes(id,venue_id,building_id,name,menu_approved_for_display) values('d1','v1','b1','Dish',true),('d2','v2','b1','Other dish',true);
+insert into storage.objects(bucket_id,name,metadata) values('review-media-v2','10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version01/photo.jpg','{"size":100,"mimetype":"image/jpeg"}'),('review-media-v2','10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version02/photo.jpg','{"size":100,"mimetype":"image/jpeg"}');
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v1',4.5,'Review',array['good'],true,'version01','[{"bucket":"review-media-v2","path":"10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version01/photo.jpg","sortOrder":0}]') as receipt \gset
+select pg_temp.assert_true(public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v1',4.5,'Review',array['good'],true,'version01','[{"bucket":"review-media-v2","path":"10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version01/photo.jpg","sortOrder":0}]')=:'receipt'::jsonb,'idempotent receipt');
+do $$begin begin perform public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v1',4.5,'Changed',array['good'],true,'version01','[]');raise exception 'FAILED reused nonce';exception when serialization_failure then null;end;end$$;
+do $$begin begin perform public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v2',4.5,'Review','{}',true,'version02','[]');raise exception 'FAILED target mismatch';exception when invalid_parameter_value then null;end;end$$;
+do $$begin begin perform public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v1',4.5,'Review','{}',true,'version03','[{"bucket":"review-media-v2","path":"10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version03/missing.jpg","sortOrder":0}]');raise exception 'FAILED missing upload';exception when invalid_parameter_value then null;end;end$$;
+select pg_temp.assert_true((select publication_attempt_version='version01' from public.reviews),'failed publish retains previous manifest');
+select pg_temp.assert_true((select count(*)=1 from public.list_review_attempt_media_v2('50000000-0000-4000-8000-000000000001','version02')),'owner unpublished metadata retry');
+select public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v1',4.8,'Edited',array['good'],true,'version02','[{"bucket":"review-media-v2","path":"10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version02/photo.jpg","sortOrder":0}]');
+select pg_temp.assert_true((select count(*)=1 from public.review_photos where storage_path like '%version02%'),'new version complete manifest');
+select pg_temp.assert_true(app_private.review_media_referenced_v2('10000000-0000-4000-8000-000000000001/50000000-0000-4000-8000-000000000001/version01/photo.jpg'),'previous published version retained');
+do $$begin begin update public.reviews set text='Bypassed' where id='50000000-0000-4000-8000-000000000001';raise exception 'FAILED direct review update';exception when insufficient_privilege then null;end;end$$;
+do $$begin begin insert into public.review_photos(review_id,url,sort_order) values('50000000-0000-4000-8000-000000000001','https://legacy.invalid',1);raise exception 'FAILED legacy manifest injection';exception when insufficient_privilege then null;end;end$$;
+do $$begin begin delete from public.review_photos where review_id='50000000-0000-4000-8000-000000000001';raise exception 'FAILED direct manifest delete';exception when insufficient_privilege then null;end;end$$;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000002',true);
+do $$begin begin perform public.publish_review_v2('50000000-0000-4000-8000-000000000001','d1','v1',5,'Stolen','{}',true,'version04','[]');raise exception 'FAILED author spoof';exception when insufficient_privilege then null;end;end$$;
+set local role postgres;
+insert into public.merchant_accounts(id,user_id) values('30000000-0000-4000-8000-000000000001','10000000-0000-4000-8000-000000000001');
+insert into public.merchant_outlets(id,merchant_account_id,venue_id,building_id,business_type,location_privacy) values('40000000-0000-4000-8000-000000000001','30000000-0000-4000-8000-000000000001','v1','b1','restaurant','exact');
+insert into public.merchant_verifications(outlet_id,status) values('40000000-0000-4000-8000-000000000001','verified');
+insert into public.dishes_draft(id,venue_id,building_id,name,price_cents) values('60000000-0000-4000-8000-000000000001','v1','b1','OCR',300);
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000001',true);set local role authenticated;
+select pg_temp.assert_true(public.merchant_accept_ocr_draft_v2('60000000-0000-4000-8000-000000000001','{"name":"Corrected","price":3.25}')->>'name'='Corrected','corrected OCR transaction');
+select pg_temp.assert_true(public.merchant_accept_ocr_draft_v2('60000000-0000-4000-8000-000000000001','{}')->>'name'='Corrected','OCR replay preserves correction');
+do $$begin begin perform public.merchant_reject_ocr_draft_v2('60000000-0000-4000-8000-000000000001');raise exception 'FAILED accepted rejection';exception when serialization_failure then null;end;end$$;
+-- Rejected verification retains decision history on controlled resubmission.
+set local role postgres;
+update public.merchant_verifications set status='rejected',rejected_at='2026-10-01T00:00:00Z',rejection_reason='Original decision' where outlet_id='40000000-0000-4000-8000-000000000001';
+insert into storage.objects(bucket_id,name,metadata) values('merchant-verification-evidence','owner/evidence.jpg','{"size":100,"mimetype":"image/jpeg"}');
+insert into public.merchant_verification_evidence(verification_id,method,uploaded_by,storage_bucket,storage_path) select id,'licence_upload','10000000-0000-4000-8000-000000000001','merchant-verification-evidence','owner/evidence.jpg' from public.merchant_verifications where outlet_id='40000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select pg_temp.assert_true(public.merchant_submit_verification_v2('40000000-0000-4000-8000-000000000001','licence_upload')->>'status'='submitted','rejected resubmission');
+select pg_temp.assert_true((select rejection_reason='Original decision' from public.merchant_verifications where outlet_id='40000000-0000-4000-8000-000000000001'),'decision history fields preserved');
+-- Tied timestamp/rating pages use canonical UUID as a strict tiebreaker.
+set local role postgres;
+insert into public.reviews(id,user_id,dish_id,venue_id,rating,text,created_at) values('50000000-0000-4000-8000-000000000002','10000000-0000-4000-8000-000000000001','d1','v1',5,'Tied review','2026-10-20T00:00:00Z'),('50000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000001','d1','v1',5,'Tied review','2026-10-20T00:00:00Z');
+set local role authenticated;
+select pg_temp.assert_true((select id='50000000-0000-4000-8000-000000000002' from public.list_recent_reviews_v2(p_limit=>1,p_query=>'Tied',p_sort=>'top_rated',p_cursor_created_at=>'2026-10-20T00:00:00Z',p_cursor_id=>'50000000-0000-4000-8000-000000000003',p_cursor_rating=>5)),'composite tied top-rated cursor');
+select pg_temp.assert_true((select count(*)=3 from public.list_recent_reviews_v2(p_query=>'Venue')),'query searches venue before limiting');
+select pg_temp.assert_true((select count(*)=0 from public.list_recent_reviews_v2(p_query=>'%')),'literal review query percent');
+do $$begin begin perform public.list_recent_reviews_v2(p_cursor_id=>'50000000-0000-4000-8000-000000000003');raise exception 'FAILED incomplete cursor';exception when invalid_parameter_value then null;end;end$$;
+select set_config('request.jwt.claim.sub','10000000-0000-4000-8000-000000000002',true);
+do $$begin begin perform public.list_review_attempt_media_v2('50000000-0000-4000-8000-000000000001','version02');raise exception 'FAILED stranger attempt metadata';exception when insufficient_privilege then null;end;end$$;
+rollback;

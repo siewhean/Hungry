@@ -1,0 +1,1062 @@
+.deviceWrapper {
+  container-type: inline-size;
+  position: relative;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 393 / 852;
+  margin: 0 auto;
+}
+
+.device {
+  --bezel-width: 1.6cqw;
+  --screen-radius: calc(12.5cqw - var(--bezel-width));
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 393 / 852;
+  border-radius: 12.5cqw;
+  background: #111112; /* Matte space grey chassis */
+  color: var(--color-text-primary);
+  box-shadow:
+    0 0 0 0.45cqw #2d2d30, /* Titanium outer frame rim */
+    0 0 0 0.9cqw #09090b, /* Deep black chassis border */
+    0 1.5cqw 4.5cqw -1cqw rgb(0 0 0 / 0.35); /* Premium drop shadow */
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.device::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06) inset;
+  z-index: 10;
+}
+
+.sideButtonTop,
+.sideButtonMid,
+.sideButtonLow {
+  position: absolute;
+  left: -0.8cqw;
+  width: 0.8cqw;
+  border-radius: 999px 0 0 999px;
+  background: #2c2c2c;
+  box-shadow: -0.2cqw 0 0 rgb(255 255 255 / 0.22) inset;
+}
+
+.sideButtonRight {
+  position: absolute;
+  right: -0.8cqw;
+  width: 0.8cqw;
+  border-radius: 0 999px 999px 0;
+  background: #2c2c2c;
+  box-shadow: 0.2cqw 0 0 rgb(255 255 255 / 0.22) inset;
+}
+
+.sideButtonRightLow {
+  position: absolute;
+  right: -0.3cqw;
+  width: 0.3cqw;
+  border-radius: 0 999px 999px 0;
+  background: #1e1e1e;
+  box-shadow: 0.1cqw 0 0 rgb(255 255 255 / 0.15) inset;
+}
+
+.sideButtonTop {
+  top: 36cqw;
+  height: 8cqw;
+}
+
+.sideButtonMid {
+  top: 52cqw;
+  height: 14cqw;
+}
+
+.sideButtonLow {
+  top: 70cqw;
+  height: 14cqw;
+}
+
+.sideButtonRight {
+  top: 48cqw;
+  height: 18cqw;
+}
+
+.sideButtonRightLow {
+  top: 72cqw;
+  height: 15cqw;
+}
+
+.screen {
+  --phone-unit: clamp(0.58rem, 3.62cqw, 0.99rem);
+
+  position: absolute;
+  inset: var(--bezel-width);
+  overflow: hidden;
+  border-radius: var(--screen-radius);
+  background: var(--color-white);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.05) inset;
+  font-size: var(--phone-unit);
+
+  /* Force GPU stacking context to fix browser corner bleed bugs */
+  isolation: isolate;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+/* Always-on overlays for screen */
+.dynamicIsland {
+  position: absolute;
+  top: 1.1cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28cqw;
+  height: 7.5cqw;
+  border-radius: 999px;
+  background: #000000;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.homeIndicator {
+  position: absolute;
+  bottom: 2cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36cqw;
+  height: 1.2cqw;
+  background: #000000;
+  border-radius: 999px;
+  z-index: 12;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* Full-bleed real app screenshot: covers the entire phone screen */
+.screenshotWrapper {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow: hidden;
+  border-radius: inherit;
+  isolation: isolate;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.statusBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 4.15em;
+  padding: 0 1.82em;
+  background: linear-gradient(180deg, var(--color-white) 74%, rgb(255 255 255 / 0.82));
+}
+
+.time {
+  font-size: 1em;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.islandPlaceholder {
+  width: 6.9em;
+  height: 2.04em;
+  visibility: hidden;
+}
+
+.statusIcons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65em;
+}
+
+.signalDots {
+  color: rgb(16 24 39 / 0.28);
+  font-size: 1em;
+  letter-spacing: 0.05em;
+  transform: translateY(-1px);
+}
+
+.wifi {
+  width: 1.05em;
+  height: 0.75em;
+  border: 3px solid #111;
+  border-bottom: 0;
+  border-radius: 1em 1em 0 0;
+  transform: rotate(45deg) translateY(2px);
+}
+
+.battery {
+  position: relative;
+  width: 1.55em;
+  height: 0.82em;
+  border: 2px solid #222;
+  border-radius: 0.24em;
+  box-shadow: 0 0 0 2px rgb(0 0 0 / 0.1);
+}
+
+.battery::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: 0.12em;
+  background: #111;
+}
+
+.battery::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  width: 3px;
+  height: 7px;
+  border-radius: 0 2px 2px 0;
+  background: #111;
+  transform: translateY(-50%);
+}
+
+.content {
+  height: 100%;
+  overflow: hidden;
+  padding: 4.52em 1.3em 5.55em;
+  pointer-events: none;
+}
+
+.discoveryContent {
+  background: var(--color-white);
+}
+
+.productContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.72em;
+  padding: 4.34em 1.15em 5.78em;
+  background: var(--color-white);
+}
+
+.screenshotContent {
+  position: relative;
+  padding: 0;
+  background: var(--color-white);
+}
+
+.screenCaptureImage {
+  object-fit: cover;
+  object-position: top center;
+}
+
+.detailPreview,
+.dishPreview,
+.menuPreview,
+.reviewPreview {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 0.72em;
+}
+
+.appTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.36em;
+}
+
+.appTopBar > span {
+  display: inline-grid;
+  place-items: center;
+  width: 2.34em;
+  height: 2.34em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.appTopBar svg {
+  width: 1.08em;
+  height: 1.08em;
+}
+
+.openStatus {
+  width: auto !important;
+  padding: 0 0.86em;
+  color: var(--color-success) !important;
+  font-size: 0.78em;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.stallHeroImage {
+  position: relative;
+  height: 8.6em;
+  overflow: hidden;
+  border-radius: 1.28em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.dishHeroImage {
+  position: relative;
+  height: 10.1em;
+  overflow: hidden;
+  border-radius: 1.28em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.stallHeroImage::after,
+.dishHeroImage::after,
+.signatureCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 38%, rgb(14 24 38 / 0.58));
+}
+
+.stallHeroImage img,
+.dishHeroImage img,
+.signatureCard img,
+.menuDishImage img,
+.dishPlaceCard img,
+.reviewPhoto img {
+  object-fit: cover;
+}
+
+.stallIntro,
+.dishIntro,
+.menuHeader,
+.reviewHeader {
+  display: grid;
+  gap: 0.18em;
+}
+
+.stallIntro h2,
+.dishIntro h2,
+.menuHeader h2,
+.reviewHeader h2 {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 1.68em;
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.stallIntro p,
+.dishIntro p,
+.menuHeader p,
+.reviewHeader p,
+.infoCard p,
+.menuDishCard p,
+.dishPlaceCard p,
+.reviewBody p {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.stallIntro p:not(.locationEyebrow),
+.dishIntro p:not(.locationEyebrow),
+.menuHeader p:not(.locationEyebrow),
+.reviewHeader p:not(.locationEyebrow) {
+  font-size: 0.82em;
+  font-weight: 700;
+  line-height: 1.32;
+}
+
+.infoPillRow,
+.menuTabs,
+.reviewFilterRow {
+  display: flex;
+  gap: 0.42em;
+  overflow: hidden;
+  padding-top: 0.16em;
+}
+
+.infoPillRow span,
+.menuTabs span,
+.reviewFilterRow span {
+  display: inline-flex;
+  align-items: center;
+  min-width: max-content;
+  min-height: 2.16em;
+  padding: 0 0.72em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  font-size: 0.74em;
+  font-weight: 900;
+}
+
+.tabActive {
+  border-color: transparent !important;
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+}
+
+.infoCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.52em;
+  align-items: start;
+  padding: 0.68em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1.02em;
+  background: color-mix(in srgb, var(--color-bg-soft) 58%, var(--color-white));
+}
+
+.infoCard svg {
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--color-primary);
+}
+
+.infoCard strong {
+  display: block;
+  margin-bottom: 0.12em;
+  font-size: 0.82em;
+}
+
+.infoCard p {
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+.signatureStrip,
+.menuList,
+.reviewList {
+  display: grid;
+  gap: 0.54em;
+}
+
+.sectionHeaderCompact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6em;
+}
+
+.sectionHeaderCompact h3 {
+  margin: 0;
+  font-size: 1.05em;
+}
+
+.sectionHeaderCompact span {
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.68em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.signatureGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.52em;
+}
+
+.dishPlaceList {
+  display: grid;
+  gap: 0.5em;
+}
+
+.dishPlaceCard {
+  display: grid;
+  grid-template-columns: 3.5em minmax(0, 1fr);
+  gap: 0.58em;
+  align-items: center;
+  padding: 0.56em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1em;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.dishPlaceCard > span {
+  position: relative;
+  display: block;
+  width: 3.5em;
+  height: 3.5em;
+  overflow: hidden;
+  border-radius: 0.86em;
+  background: var(--color-bg-soft);
+}
+
+.dishPlaceCard strong {
+  display: block;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 0.76em;
+  line-height: 1.16;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dishPlaceCard p {
+  margin-top: 0.16em;
+  overflow: hidden;
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1.22;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signatureCard {
+  position: relative;
+  display: flex;
+  min-height: 5.95em;
+  align-items: end;
+  overflow: hidden;
+  border-radius: 1em;
+  background: var(--color-bg-soft);
+}
+
+.signatureCard span {
+  position: relative;
+  z-index: 1;
+  padding: 0.7em;
+  color: var(--color-white);
+  font-size: 0.72em;
+  font-weight: 900;
+  line-height: 1.12;
+}
+
+.menuList {
+  gap: 0.48em;
+}
+
+.menuDishCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: 4em minmax(0, 1fr);
+  gap: 0.56em;
+  min-height: 4.88em;
+  padding: 0.55em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1em;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.menuDishImage {
+  position: relative;
+  height: 4em;
+  overflow: hidden;
+  border-radius: 0.78em;
+  background: var(--color-bg-soft);
+}
+
+.menuDishCard strong {
+  display: block;
+  padding-right: 3.8em;
+  font-size: 0.78em;
+  line-height: 1.14;
+}
+
+.menuDishCard p {
+  margin-top: 0.14em;
+  font-size: 0.65em;
+  font-weight: 700;
+  line-height: 1.22;
+}
+
+.menuDishCard div:last-of-type span {
+  display: block;
+  margin-top: 0.16em;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.72em;
+  font-weight: 500;
+}
+
+.menuDishCard small {
+  position: absolute;
+  right: 0.58em;
+  bottom: 0.52em;
+  color: var(--color-success);
+  font-size: 0.62em;
+  font-weight: 900;
+}
+
+.reviewFilterRow {
+  padding-top: 0;
+}
+
+.reviewList {
+  gap: 0.56em;
+}
+
+.reviewCard {
+  display: grid;
+  grid-template-columns: 4.8em minmax(0, 1fr);
+  gap: 0.58em;
+  padding: 0.58em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 82%, transparent);
+  border-radius: 1em;
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.reviewPhoto {
+  position: relative;
+  height: 6.05em;
+  overflow: hidden;
+  border-radius: 0.84em;
+  background: var(--color-bg-soft);
+}
+
+.reviewBody {
+  min-width: 0;
+}
+
+.reviewMeta {
+  display: grid;
+  grid-template-columns: 1.92em minmax(0, 1fr) auto;
+  gap: 0.34em;
+  align-items: start;
+}
+
+.reviewMeta > span:first-child {
+  display: grid;
+  width: 1.92em;
+  height: 1.92em;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-white));
+  color: var(--color-primary);
+  font-weight: 900;
+}
+
+.reviewMeta strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.72em;
+  line-height: 1.12;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewMeta p {
+  overflow: hidden;
+  font-size: 0.6em;
+  font-weight: 700;
+  line-height: 1.16;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.starRating {
+  display: inline-flex;
+  gap: 0.02em;
+  color: var(--color-accent);
+}
+
+.starRating svg {
+  width: 0.58em;
+  height: 0.58em;
+}
+
+.reviewDishTag {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.3em 0 0.18em;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  padding: 0.24em 0.54em;
+  background: color-mix(in srgb, var(--color-primary) 9%, var(--color-white));
+  color: var(--color-primary);
+  font-size: 0.58em;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewBody > p {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.67em;
+  font-weight: 700;
+  line-height: 1.26;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.reviewActions {
+  display: flex;
+  gap: 0.6em;
+  margin-top: 0.28em;
+  color: var(--color-text-muted);
+  font-size: 0.64em;
+  font-weight: 900;
+}
+
+.reviewActions span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18em;
+}
+
+.reviewActions svg {
+  width: 1em;
+  height: 1em;
+}
+
+.locationBlock {
+  margin-bottom: 0.92em;
+}
+
+.locationEyebrow {
+  margin: 0;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.83em;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.locationBlock h2 {
+  margin: 0;
+  font-size: 2.18em;
+  line-height: 0.98;
+}
+
+.locationBlock p:last-child {
+  margin: 0.32em 0 0;
+  color: var(--color-text-secondary);
+  font-size: 1.13em;
+  font-weight: 800;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 3.62em;
+  margin-bottom: 0.68em;
+  padding: 0 1.22em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 80%, transparent);
+  border-radius: 1.7em;
+  color: var(--color-text-secondary);
+  font-size: 1.04em;
+  font-weight: 700;
+  box-shadow: 0 1px 6px rgb(26 46 68 / 0.05) inset;
+}
+
+.searchBox span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchBox svg,
+.filterChip svg {
+  flex: 0 0 auto;
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.filterRow {
+  display: flex;
+  gap: 0.5em;
+  margin-bottom: 0.9em;
+  overflow: hidden;
+  padding-bottom: 0.05em;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: max-content;
+  min-height: 2.78em;
+  padding: 0 0.86em;
+  border: 1px solid color-mix(in srgb, var(--color-border) 84%, transparent);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  font-size: 1em;
+  font-weight: 800;
+  background: var(--color-white);
+}
+
+.popularSection h3,
+.quickBites h3 {
+  margin: 0;
+  font-size: 1.72em;
+  line-height: 1.05;
+}
+
+.popularGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5em;
+  margin-top: 0.68em;
+}
+
+.dishItem {
+  display: grid;
+  justify-items: center;
+  gap: 0.45em;
+  color: var(--color-text-primary);
+  font-size: 0.98em;
+  font-weight: 900;
+  line-height: 1.08;
+  text-align: center;
+}
+
+.dishImage {
+  position: relative;
+  width: 4.08em;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 3px solid color-mix(in srgb, var(--color-border) 75%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.dishImage img {
+  object-fit: cover;
+}
+
+.activeDish {
+  border-color: var(--color-primary);
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.58em;
+  margin-top: 0.82em;
+}
+
+.decideButton,
+.wheelButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55em;
+  min-height: 4.1em;
+  border: 0;
+  border-radius: 1.35em;
+  color: var(--color-white);
+  font-size: 1.04em;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.decideButton {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+}
+
+.wheelButton {
+  background: var(--color-ink-deep);
+}
+
+.actionIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.15em;
+  height: 2.15em;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 0.2);
+}
+
+.actionIcon svg {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.58em;
+  margin-top: 0.62em;
+}
+
+.categoryTile {
+  position: relative;
+  display: flex;
+  align-items: end;
+  min-width: 0;
+  min-height: 5.95em;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-radius: 1.15em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.categoryTile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 24%, rgb(14 24 38 / 0.58));
+}
+
+.categoryTile img {
+  object-fit: cover;
+}
+
+.categoryTile span {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  padding: 0.84em 0.9em;
+  color: var(--color-white);
+  font-size: 0.98em;
+  font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.quickBites {
+  margin-top: 0.86em;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.44em;
+}
+
+.sectionHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  border-radius: var(--radius-full);
+  padding: 0.32em 0.66em;
+  background: var(--color-success);
+  color: var(--color-white);
+  font-family: var(--font-mono);
+  font-size: 0.78em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.seeAll {
+  margin-left: auto;
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.sectionHeader svg {
+  width: 1em;
+  height: 1em;
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.58em;
+  margin-top: 0.55em;
+  height: 7.2em;
+}
+
+.quickCard {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-border) 88%, transparent);
+  border-radius: 1em;
+  background: var(--color-bg-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.quickCard img {
+  object-fit: cover;
+}
+
+.bottomNav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  min-height: 5.42em;
+  padding: 0.62em 0.92em 0.88em;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.88), var(--color-white) 32%);
+  box-shadow: 0 -10px 24px rgb(26 46 68 / 0.08);
+}
+
+.bottomNav span {
+  display: grid;
+  justify-items: center;
+  gap: 0.28em;
+  color: var(--color-text-muted);
+  font-size: 0.75em;
+  font-weight: 800;
+}
+
+.bottomNav svg {
+  width: 1.65em;
+  height: 1.65em;
+  stroke-width: 2.4;
+}
+
+.activeNav {
+  color: var(--color-primary) !important;
+}
+
+.addButton {
+  align-self: center;
+  justify-self: center;
+  width: 3.85em;
+  height: 3.85em;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-white) !important;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-0.22em);
+}
+
+.addButton svg {
+  width: 2.2em;
+  height: 2.2em;
+}
+
+@media (max-width: 420px) {
+  .screen {
+    --phone-unit: clamp(0.5rem, 3.15cqw, 0.82rem);
+  }
+
+  .statusBar {
+    padding-inline: 1.55em;
+  }
+
+  .island {
+    width: 6em;
+  }
+
+  .popularGrid {
+    gap: 0.55em;
+  }
+
+  .bottomNav {
+    padding-inline: 0.75em;
+  }
+}

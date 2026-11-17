@@ -1,0 +1,19 @@
+{
+  "scope": "Separate mobile TypeScript and real Edge Function compilation; signed email webhook regressions",
+  "status": "implemented",
+  "files": [
+    "supabase/functions/send-email/index.ts",
+    "supabase/functions/send-email/index.test.ts",
+    "scripts/check-edge-types.mjs",
+    "package.json",
+    "tsconfig.json",
+    "deno.lock"
+  ],
+  "checks": [
+    {"command": "npm run check:edge-types", "result": "Deno2.9.6 frozen-lock compilation passed all8 Edge entrypoints and imported shared modules."},
+    {"command": "npm run test:edge-webhooks", "result": "4 Deno tests passed. Provider fetch fully stubbed; no emails or real network calls sent."},
+    {"command": "npm run check:edge-functions", "result": "Existing Edge static security checks passed."}
+  ],
+  "fixed": "Deno exposed unknown email recipient assigned to string; handler now validates recipient type before constructing send manifest. Exported handler can be tested without starting a server.",
+  "remaining": ["No hosted deployment, provider delivery, webhook secret/configuration, or staging invocation proof."]
+}

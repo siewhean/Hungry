@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="passportBg" cx="50%" cy="50%" r="70%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#fff5f5" />
+      <stop offset="50%" stop-color="#e3f2fd" />
+      <stop offset="100%" stop-color="#bbdefb" />
+    </radialGradient>
+
+    <!-- Guilloche Pattern (simplified for SVG) -->
+    <pattern id="guilloche" width="100" height="100" patternUnits="userSpaceOnUse">
+      <path d="M 0 50 Q 25 0, 50 50 T 100 50" fill="none" stroke="#90caf9" stroke-width="0.5" opacity="0.6"/>
+      <path d="M 0 50 Q 25 100, 50 50 T 100 50" fill="none" stroke="#f48fb1" stroke-width="0.5" opacity="0.6"/>
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#ce93d8" stroke-width="0.5" opacity="0.4"/>
+      <circle cx="50" cy="50" r="20" fill="none" stroke="#90caf9" stroke-width="0.5" opacity="0.4"/>
+    </pattern>
+
+    <!-- Page Fold Shadow -->
+    <linearGradient id="pageFold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.1" />
+      <stop offset="2%" stop-color="#000000" stop-opacity="0.0" />
+      <stop offset="48%" stop-color="#000000" stop-opacity="0.0" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0.2" />
+      <stop offset="52%" stop-color="#000000" stop-opacity="0.0" />
+      <stop offset="98%" stop-color="#000000" stop-opacity="0.0" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.1" />
+    </linearGradient>
+
+    <!-- Drop Shadow for UI Card -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-opacity="0.1" />
+    </filter>
+  </defs>
+
+  <!-- Passport Pages Background -->
+  <rect width="800" height="1000" fill="url(#passportBg)" />
+  <rect width="800" height="1000" fill="url(#guilloche)" />
+  <rect width="800" height="1000" fill="url(#pageFold)" />
+
+  <!-- UI Card Header (Glassmorphism look) -->
+  <g filter="url(#shadow)">
+    <rect x="50" y="50" width="700" height="220" rx="30" fill="#ffffff" fill-opacity="0.8" stroke="#ffffff" stroke-width="2" />
+    <circle cx="120" cy="160" r="50" fill="#e0e0e0" />
+    <!-- User Avatar Placeholder -->
+    <path d="M120 135 A 20 20 0 1 0 120 175 A 20 20 0 1 0 120 135 M 90 200 C 90 180, 150 180, 150 200" fill="#9e9e9e" stroke="none" />
+
+    <text x="200" y="110" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#757575" letter-spacing="2">DIGITAL PASSPORT</text>
+    <text x="200" y="150" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="32" font-weight="bold" fill="#212121">Alex Traveler</text>
+    <text x="200" y="180" font-family="'Courier New', Courier, monospace" font-size="18" fill="#616161">ID: P-982-451-XX</text>
+
+    <!-- Global Stats -->
+    <rect x="580" y="90" width="120" height="100" rx="15" fill="#f5f5f5" />
+    <text x="640" y="130" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="#1976d2">24</text>
+    <text x="640" y="160" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#757575">STAMPS</text>
+  </g>
+
+  <!-- Stamp Previews (Using the SVGs scaled down / rotated) -->
+  <!-- NRT Japan Stamp -->
+  <g transform="translate(100, 350) rotate(-15) scale(0.8)">
+    <circle cx="150" cy="150" r="140" fill="none" stroke="#d32f2f" stroke-width="6" opacity="0.8" />
+    <circle cx="150" cy="150" r="132" fill="none" stroke="#d32f2f" stroke-width="2" opacity="0.8" />
+    <path d="M150 70 L158 90 L200 100 L160 115 L165 140 L150 130 L135 140 L140 115 L100 100 L142 90 Z" fill="#d32f2f" opacity="0.8" />
+    <text x="150" y="55" font-family="'Courier New'" font-size="28" font-weight="bold" text-anchor="middle" fill="#d32f2f" opacity="0.8">NARITA INTL</text>
+    <text x="150" y="170" font-family="'Courier New'" font-size="44" font-weight="bold" text-anchor="middle" fill="#d32f2f" opacity="0.8">N R T</text>
+    <rect x="70" y="190" width="160" height="40" fill="none" stroke="#d32f2f" stroke-width="3" opacity="0.8" />
+    <text x="150" y="220" font-family="'Courier New'" font-size="26" font-weight="bold" text-anchor="middle" fill="#d32f2f" opacity="0.8">16.MAY.2026</text>
+    <text x="150" y="260" font-family="Arial" font-size="18" font-weight="bold" text-anchor="middle" letter-spacing="2" fill="#d32f2f" opacity="0.8">TEMPORARY VISITOR</text>
+  </g>
+
+  <!-- JFK USA Stamp -->
+  <g transform="translate(450, 480) rotate(10) scale(0.9)">
+    <ellipse cx="175" cy="125" rx="160" ry="110" fill="none" stroke="#1976d2" stroke-width="5" opacity="0.8" />
+    <ellipse cx="175" cy="125" rx="150" ry="100" fill="none" stroke="#1976d2" stroke-width="1.5" opacity="0.8" />
+    <text x="175" y="60" font-family="'Arial Black'" font-size="22" font-weight="bold" text-anchor="middle" fill="#1976d2" opacity="0.8">U.S. CUSTOMS &amp; BORDER</text>
+    <text x="175" y="85" font-family="'Arial Black'" font-size="20" font-weight="bold" text-anchor="middle" fill="#1976d2" opacity="0.8">PROTECTION</text>
+    <text x="175" y="130" font-family="'Times New Roman'" font-size="34" font-weight="bold" text-anchor="middle" letter-spacing="4" fill="#1976d2" opacity="0.8">ADMITTED</text>
+    <text x="175" y="170" font-family="'Courier New'" font-size="28" font-weight="bold" text-anchor="middle" fill="#1976d2" opacity="0.8">JFK AIRPORT</text>
+    <text x="175" y="210" font-family="Arial" font-size="22" font-weight="bold" text-anchor="middle" fill="#1976d2" opacity="0.8">MAY 16 2026</text>
+  </g>
+
+  <!-- LHR UK Stamp -->
+  <g transform="translate(150, 680) rotate(-5) scale(0.85)">
+    <rect x="15" y="15" width="290" height="190" rx="20" fill="none" stroke="#4a148c" stroke-width="6" opacity="0.85" />
+    <rect x="25" y="25" width="270" height="170" rx="12" fill="none" stroke="#4a148c" stroke-width="2" opacity="0.85" />
+    <text x="160" y="65" font-family="'Times New Roman'" font-size="24" font-weight="bold" text-anchor="middle" fill="#4a148c" opacity="0.85">UNITED KINGDOM</text>
+    <line x1="40" y1="80" x2="280" y2="80" stroke="#4a148c" stroke-width="2" opacity="0.85" />
+    <text x="160" y="115" font-family="Arial" font-size="32" font-weight="bold" text-anchor="middle" letter-spacing="2" fill="#4a148c" opacity="0.85">HEATHROW</text>
+    <circle cx="60" cy="160" r="18" fill="none" stroke="#4a148c" stroke-width="3" opacity="0.85" />
+    <path d="M50 160 L60 150 L70 160 M60 150 L60 170" fill="none" stroke="#4a148c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
+    <text x="180" y="170" font-family="'Courier New'" font-size="28" font-weight="bold" text-anchor="middle" fill="#4a148c" opacity="0.85">16 MAY 2026</text>
+  </g>
+
+  <!-- Page Numbers -->
+  <text x="50" y="950" font-family="'Courier New', Courier, monospace" font-size="16" fill="#9e9e9e">PAGE 10</text>
+  <text x="750" y="950" font-family="'Courier New', Courier, monospace" font-size="16" fill="#9e9e9e" text-anchor="end">PAGE 11</text>
+</svg>

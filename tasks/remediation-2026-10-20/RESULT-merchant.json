@@ -1,0 +1,546 @@
+[
+  {
+    "id": "MER-01",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/DishEditorScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Owned existing remote dish photos validated from dish row/gallery; new local uploads only. Arbitrary URLs removed from editor.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-02",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/OCRDraftScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Inline corrections passed into locked idempotent v2 acceptance; no canonical write on Edit.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-03",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/VerificationCentreScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "v2 resubmission preserves rejection decision history; helper and focused regression preserve fields.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-04",
+    "status": "shared",
+    "files": [
+      "src/app/screens/merchant/MerchantMenuScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Real picker/upload to existing ingestion and v2 draft RPC wired; staging worker extraction proof remains open.",
+    "remaining": [
+      "Real picker/upload to existing ingestion and v2 draft RPC wired; staging worker extraction proof remains open."
+    ],
+    "sharedOwner": "root/database"
+  },
+  {
+    "id": "MER-05",
+    "status": "external_pending",
+    "files": [
+      "src/app/screens/merchant/HomeBasedVerificationScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Removed concealment promises and exact home option; server projection negative tests required before publication.",
+    "remaining": [
+      "Removed concealment promises and exact home option; server projection negative tests required before publication."
+    ]
+  },
+  {
+    "id": "MER-06",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/BusinessProfileEditorScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Typed arrays/social/delivery/gallery columns persisted and read back; migration added by database agent.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-07",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/BusinessProfileEditorScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Explicit empty primary/cover/gallery clearing preserved through shared provider.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-08",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/DishEditorScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Taste tags accurately labelled; synthetic suggestions removed.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-09",
+    "status": "removed",
+    "files": [
+      "src/app/screens/merchant/DishEditorScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Removed synthetic allergen checker.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-10",
+    "status": "shared",
+    "files": [
+      "src/app/screens/merchant/HomeBasedVerificationScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "At least three photos/declaration submitted as one batch then single v2 transition; partial uploads report saved count. Retry reuploads retained files, backend/native proof pending.",
+    "remaining": [
+      "At least three photos/declaration submitted as one batch then single v2 transition; partial uploads report saved count. Retry reuploads retained files, backend/native proof pending."
+    ],
+    "sharedOwner": "root/database"
+  },
+  {
+    "id": "MER-11",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/VerificationCentreScreen.tsx",
+      "src/app/screens/merchant/HomeBasedVerificationScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Focus refresh, more-info reason, actual rejection reason, no exact home verification choice.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-12",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/MerchantMenuScreen.tsx",
+      "src/app/screens/merchant/BusinessProfileEditorScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Removed unrelated building fallback; no-linked venue gives unavailable outcome.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-13",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/DishEditorScreen.tsx",
+      "src/app/screens/merchant/BusinessProfileEditorScreen.tsx",
+      "src/app/screens/merchant/PromotionBuilderScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Actual route removal protected through usePreventRemove; saving allows confirmed completion.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-14",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/MerchantMenuScreen.tsx",
+      "src/app/screens/merchant/MerchantAnalyticsScreen.tsx",
+      "src/app/screens/merchant/MerchantDashboardScreen.tsx",
+      "src/app/screens/merchant/CustomerInboxScreen.tsx",
+      "src/app/screens/merchant/PromotionListScreen.tsx",
+      "src/app/screens/merchant/PromotionBuilderScreen.tsx",
+      "src/app/screens/merchant/OCRDraftScreen.tsx",
+      "src/app/screens/merchant/FeaturedVisitorsScreen.tsx",
+      "src/app/screens/merchant/AIAssistantScreen.tsx",
+      "src/features/merchant/operationScope.ts",
+      "src/features/merchant/useMerchantOperationScope.ts"
+    ],
+    "checks": [
+      {
+        "command": "merchant source/behavioral focused batch",
+        "result": "43tests passed,0failed, including account/outlet scope and persistent reply ownership regressions."
+      },
+      {
+        "command": "independent crosscheck fix_saved_tools",
+        "result": "No new bounded source blocker in inspected scopes/OCR/editor/reply paths; QA-social-merchant.md."
+      }
+    ],
+    "reason": "Every merchant asynchronous screen handler captures account+outlet generation; stale closures/await settlements/error/finally are rejected. OCR batches stop further writes on switch. Roundtrip switch/unmount regression verified.",
+    "remaining": [
+      "Native/staging network, storage, keyboard and screenreader acceptance remains unverified."
+    ]
+  },
+  {
+    "id": "MER-15",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/DishEditorScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Preserves complete gallery and unrelated availability flags.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-16",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/CustomerInboxScreen.tsx",
+      "src/features/merchant/operationScope.ts",
+      "src/features/merchant/useMerchantOperationScope.ts"
+    ],
+    "checks": [
+      {
+        "command": "merchant source/behavioral focused batch",
+        "result": "43tests passed,0failed, including account/outlet scope and persistent reply ownership regressions."
+      },
+      {
+        "command": "independent crosscheck fix_saved_tools",
+        "result": "No new bounded source blocker in inspected scopes/OCR/editor/reply paths; QA-social-merchant.md."
+      }
+    ],
+    "reason": "Original review shows exact author/text; canonical sourceDishId populated from row.dish_id provides Open dish link. No ReviewList route exists; no neighboring-dish inference.",
+    "remaining": [
+      "Native/staging network, storage, keyboard and screenreader acceptance remains unverified."
+    ]
+  },
+  {
+    "id": "MER-17",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/MerchantSettingsScreen.tsx",
+      "src/app/screens/merchant/CustomerInboxScreen.tsx",
+      "src/features/merchant/operationScope.ts",
+      "src/features/merchant/useMerchantOperationScope.ts",
+      "src/features/merchant/replyDraftModel.ts",
+      "src/features/merchant/replyDraftStore.ts",
+      "src/features/merchant/replyDraftModel.test.ts"
+    ],
+    "checks": [
+      {
+        "command": "merchant source/behavioral focused batch",
+        "result": "43tests passed,0failed, including account/outlet scope and persistent reply ownership regressions."
+      },
+      {
+        "command": "independent crosscheck fix_saved_tools",
+        "result": "No new bounded source blocker in inspected scopes/OCR/editor/reply paths; QA-social-merchant.md."
+      }
+    ],
+    "reason": "Merchant sync awaited and preference mutations serialized; keyboard/modal labels and reply close/actual route removal protected. Replies persist via accountDraftPersistence and captured owner writes; late other-account completion cannot erase drafts.",
+    "remaining": [
+      "Native/staging network, storage, keyboard and screenreader acceptance remains unverified."
+    ]
+  },
+  {
+    "id": "MER-18",
+    "status": "removed",
+    "files": [
+      "src/app/screens/merchant/AIAssistantScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Only recorded weekly summary retained; unsupported opportunities removed and duplicate summary request removed.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-19",
+    "status": "external_pending",
+    "files": [],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Existing semantics retained; full a11y selected/busy/focus/native review not completed.",
+    "remaining": [
+      "Existing semantics retained; full a11y selected/busy/focus/native review not completed."
+    ]
+  },
+  {
+    "id": "MER-20",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/DishEditorScreen.tsx",
+      "src/app/screens/merchant/PromotionBuilderScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Strict SGD parser rejects malformed/negative/excess precision prices; explicit zero allowed.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-21",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/FeaturedVisitorsScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Visitor mutations serialize across rows and reorder controls disabled while busy.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-22",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/MerchantAnalyticsScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Zero chart weights, midnight12AM, and false always-positive dashboard arrow corrected.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-23",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/MerchantMenuScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Visible failure alerts and authoritative reload after feature mutation.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-24",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/MerchantSettingsScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Weekly/invite copy says queued; both providers filter accepted members with authoritative user IDs.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-25",
+    "status": "removed",
+    "files": [
+      "src/app/screens/merchant/OrdersComingSoonScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Removed fake order QR and PDF mockup promises; unavailable ordering explained.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-26",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/PromotionBuilderScreen.tsx"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Singapore calendar boundaries and existing unchanged instants preserved.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-27",
+    "status": "implemented",
+    "files": [
+      "src/app/screens/merchant/OCRDraftScreen.tsx",
+      "src/lib/services/supabase/supabaseService.ts",
+      "src/lib/services/mock/mockService.ts"
+    ],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Batch outcomes retain failures; v2 server lock and idempotent accepted return prevent duplicate publication.",
+    "remaining": [
+      "Native/staging acceptance is not established by source and unit evidence."
+    ]
+  },
+  {
+    "id": "MER-28",
+    "status": "shared",
+    "files": [],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Server verified capabilities owned by database agent and root service integration.",
+    "remaining": [
+      "Server verified capabilities owned by database agent and root service integration."
+    ],
+    "sharedOwner": "root/database"
+  },
+  {
+    "id": "MER-29",
+    "status": "shared",
+    "files": [],
+    "checks": [
+      {
+        "command": "focused merchant workflowSafety/profileValidation/promotionValidation/verificationStateMachine tests",
+        "result": "14 merchant behavioral tests passed; 2 OCR service contract tests passed. Focused eslint has0errors; shared mock has22 pre-existing import-first warnings. Node module.register deprecation warning."
+      }
+    ],
+    "reason": "Forward provenance protections owned by database agent.",
+    "remaining": [
+      "Forward provenance protections owned by database agent."
+    ],
+    "sharedOwner": "root/database"
+  }
+]

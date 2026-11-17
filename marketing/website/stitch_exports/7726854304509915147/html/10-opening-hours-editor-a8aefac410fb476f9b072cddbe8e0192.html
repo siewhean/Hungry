@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Opening Hours - Makan Merchant</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Be+Vietnam+Pro:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "hungry-orange": "#E8531E",
+                        "surface-container-highest": "#f8ddd5",
+                        "inverse-surface": "#3d2d28",
+                        "error": "#ba1a1a",
+                        "text-muted": "#6B7280",
+                        "on-primary-fixed": "#3a0b00",
+                        "primary": "#a93100",
+                        "on-surface-variant": "#5a4139",
+                        "russian-red": "#CD0302",
+                        "primary-fixed-dim": "#ffb59e",
+                        "on-tertiary": "#ffffff",
+                        "text-secondary": "#374151",
+                        "on-surface": "#261814",
+                        "deep-navy": "#1A2E44",
+                        "secondary-fixed-dim": "#b4c8e4",
+                        "background": "#fff8f6",
+                        "secondary-container": "#cde1fe",
+                        "on-primary-fixed-variant": "#842500",
+                        "surface-container-high": "#fee2db",
+                        "outline-variant": "#e3bfb4",
+                        "inverse-primary": "#ffb59e",
+                        "autumn-green": "#4F7E17",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-white": "#FFFFFF",
+                        "error-container": "#ffdad6",
+                        "surface-dim": "#efd4cd",
+                        "tertiary-fixed-dim": "#9bcbff",
+                        "on-primary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#35485f",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#f8ddd5",
+                        "on-secondary-fixed": "#061d32",
+                        "inverse-on-surface": "#ffede8",
+                        "surface-tint": "#ad3200",
+                        "on-tertiary-fixed": "#001d34",
+                        "primary-fixed": "#ffdbd0",
+                        "on-secondary": "#ffffff",
+                        "tertiary-container": "#0079c3",
+                        "outline": "#8e7067",
+                        "on-background": "#261814",
+                        "on-tertiary-fixed-variant": "#004a79",
+                        "tertiary-fixed": "#d0e4ff",
+                        "on-tertiary-container": "#fdfcff",
+                        "line-border": "#E7DED4",
+                        "paper-warm": "#FFF7EE",
+                        "secondary": "#4c6078",
+                        "surface-container": "#ffe9e3",
+                        "surface-container-low": "#fff1ed",
+                        "hawker-amber": "#F5A623",
+                        "tertiary": "#00609b",
+                        "surface-bright": "#fff8f6",
+                        "primary-container": "#d1430b",
+                        "on-secondary-container": "#51647d",
+                        "surface": "#fff8f6",
+                        "text-primary": "#111827",
+                        "secondary-fixed": "#d1e4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "lg": "20px",
+                        "xxl": "32px",
+                        "sm": "8px",
+                        "huge": "48px",
+                        "xs": "4px",
+                        "screen-edge": "16px",
+                        "md": "12px",
+                        "base": "16px",
+                        "xl": "24px",
+                        "section-gap": "20px",
+                        "region-gap": "24px"
+                    },
+                    "fontFamily": {
+                        "micro": ["Be Vietnam Pro"],
+                        "mono-price": ["Space Grotesk"],
+                        "body-lg": ["Be Vietnam Pro"],
+                        "h3": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "h1": ["Plus Jakarta Sans"],
+                        "h2": ["Plus Jakarta Sans"],
+                        "body": ["Be Vietnam Pro"],
+                        "body-sm": ["Be Vietnam Pro"]
+                    },
+                    "fontSize": {
+                        "micro": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "mono-price": ["15px", { "lineHeight": "22px", "fontWeight": "500" }],
+                        "body-lg": ["17px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "h3": ["17px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "display": ["32px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "h1": ["24px", { "lineHeight": "30px", "fontWeight": "700" }],
+                        "h2": ["20px", { "lineHeight": "26px", "fontWeight": "600" }],
+                        "body": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #E8531E;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #E8531E;
+        }
+        .toggle-checkbox:checked + .toggle-label:after {
+            transform: translateX(100%);
+            border-color: white;
+        }
+    </style>
+</head>
+<body class="bg-paper-warm text-on-surface font-body min-h-screen">
+<!-- TopAppBar (Web & Mobile) -->
+<header class="docked full-width top-0 z-50 border-b border-[#E7DED4] dark:border-slate-800 bg-[#F9F6F2] dark:bg-slate-900 md:pl-64 flex justify-between items-center px-6 py-3 w-full flat no shadows">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-slate-600">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-['Plus_Jakarta_Sans'] text-xl font-bold text-slate-900 dark:text-white text-[#E8531E] dark:text-[#E8531E]">Makan Merchant</span>
+</div>
+<div class="flex items-center gap-4 hidden">
+<!-- search bar hidden as per json -->
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-600 dark:text-slate-400 hover:bg-[#E7DED4] dark:hover:bg-slate-800 transition-colors active:scale-95 transition-transform p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-slate-600 dark:text-slate-400 hover:bg-[#E7DED4] dark:hover:bg-slate-800 transition-colors active:scale-95 transition-transform p-2 rounded-full">
+<span class="material-symbols-outlined">help</span>
+</button>
+<img alt="Merchant Profile Avatar" class="w-8 h-8 rounded-full border border-line-border object-cover" data-alt="A close up portrait of a cheerful chef or hawker stall owner in a clean white uniform. They are standing in a softly lit, modern commercial kitchen or food stall environment. The lighting is warm and natural, casting a welcoming glow. The overall aesthetic is professional, clean, and optimistic, typical of a reliable food merchant profile picture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE_y3xv1c6ySDa9A7UHl2wKredCYWrsvON6mkn8-i8mDz460XlP5jJ5HRlnPgRvs54-RQRkse8XhHnKQpVMlkMTguz_ku_TzKhoxXbBlMb-sbxvFsmudUvzHIU5fI2jeAr1q1BEMBeLC0ye5QV1jvBVGWZWoNG2BaCM6p9PtYROKEJOZ4dpIatyVzPHNNQnQMlzz231f76fxdAJ3UH6FSiyepOGshnjA-otcq5JApsdjtefODoVlwrnufDAno8Y6QIJ1jsc8DDLSE"/>
+</div>
+</header>
+<!-- SideNavBar (Web Only) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full flex-col pt-16 h-screen w-64 border-r border-[#E7DED4] dark:border-slate-800 bg-white dark:bg-slate-950 flat no shadows font-['Plus_Jakarta_Sans'] text-sm font-medium z-40">
+<div class="p-6 border-b border-line-border">
+<div class="flex items-center gap-4">
+<img alt="Stall Logo" class="w-12 h-12 rounded-lg object-cover" data-alt="A stylized, appetizing logo or emblem for a modern hawker stall, perhaps featuring a steaming bowl of noodles or a stylized plate. The design should be clean, warm, and inviting, utilizing hues of hungry orange and paper warm. It is displayed on a crisp white background, giving it a premium, curated feel consistent with a quality food brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ_BDMfjK0EN92852hd0ycRzEwoOG5a5-WXbhpWpdwp4l4Sn82wllHLMZRv3_I3ayNif_AUIp0NtsEvjBIWHqLjzWQZsyfb3H-ml0Uzi_V65dm5DFnZPUHsnu4RSgChxuA0QHmuGyfPrezzI4i-BctSqIlhWOjPWNjoHGZsN6lwXMJ98w6OjrL-2mzBx5HuVyf_swKW-0TI0U-mDuP_l_8X_7B6ZzVPstyevb7mcZwMos2zOMvJOHw_nJfGmb03ZylJt-9YT13QwQ"/>
+<div>
+<h2 class="text-lg font-black text-[#E8531E]">Hawker Central</h2>
+<p class="text-xs text-text-muted">Verified Merchant</p>
+</div>
+</div>
+<button class="mt-4 w-full py-2 px-4 bg-white border border-line-border rounded-lg text-sm text-text-primary hover:bg-surface-container transition-colors">View Public Page</button>
+</div>
+<ul class="flex-1 px-4 py-6 space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">storefront</span>
+                    Stall Profile
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">restaurant_menu</span>
+                    Menu
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#E8531E] border-r-4 border-[#E8531E] bg-orange-50 dark:bg-orange-900/10 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">schedule</span>
+                    Opening Hours
+                </a>
+</li>
+</ul>
+<div class="p-4 border-t border-line-border">
+<ul class="space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-[#F9F6F2] dark:hover:bg-slate-900 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                        Support
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="pt-16 md:pl-64 min-h-screen">
+<div class="max-w-4xl mx-auto p-screen-edge md:p-xl space-y-region-gap">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-h1 text-h1 text-text-primary">Operating Hours</h1>
+<p class="font-body text-body text-text-muted mt-2 max-w-2xl">Set your regular opening hours. These will be displayed on your public profile. Ensure they are accurate to avoid customer disappointment.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 min-h-[52px] bg-surface-white border border-line-border text-deep-navy font-h3 text-h3 rounded-[18px] hover:bg-surface-container transition-colors">Discard</button>
+<button class="px-6 py-3 min-h-[52px] bg-hungry-orange text-surface-white font-h3 text-h3 rounded-[18px] hover:bg-primary transition-colors">Save Changes</button>
+</div>
+</div>
+<!-- Bento Grid Layout for Hours -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Daily Hours Container (Takes up 2 columns on lg) -->
+<div class="lg:col-span-2 space-y-6">
+<div class="bg-surface-white rounded-xl border border-line-border p-6 shadow-sm">
+<h2 class="font-h2 text-h2 text-text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-hungry-orange">calendar_month</span>
+                            Regular Weekly Hours
+                        </h2>
+<div class="space-y-4">
+<!-- Monday -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-paper-warm border border-line-border gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer checked:bg-hungry-orange z-10 opacity-0" id="toggle-monday" name="toggle-monday" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-hungry-orange cursor-pointer relative before:absolute before:content-[''] before:h-5 before:w-5 before:bg-white before:rounded-full before:top-[2px] before:left-[2px] before:transition-transform before:duration-300" for="toggle-monday"></label>
+</div>
+<span class="font-h3 text-h3 text-text-primary">Monday</span>
+</div>
+<div class="flex items-center gap-3 flex-1">
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="09:00"/>
+<span class="text-text-muted">to</span>
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="21:00"/>
+</div>
+</div>
+<!-- Tuesday -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-paper-warm border border-line-border gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 opacity-0" id="toggle-tuesday" name="toggle-tuesday" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-hungry-orange cursor-pointer relative before:absolute before:content-[''] before:h-5 before:w-5 before:bg-white before:rounded-full before:top-[2px] before:left-[2px] before:transition-transform before:duration-300" for="toggle-tuesday"></label>
+</div>
+<span class="font-h3 text-h3 text-text-primary">Tuesday</span>
+</div>
+<div class="flex items-center gap-3 flex-1">
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="09:00"/>
+<span class="text-text-muted">to</span>
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="21:00"/>
+</div>
+</div>
+<!-- Wednesday (Closed Example) -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-surface-container border border-line-border gap-4 opacity-75">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 opacity-0" id="toggle-wednesday" name="toggle-wednesday" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-line-border cursor-pointer relative before:absolute before:content-[''] before:h-5 before:w-5 before:bg-white before:rounded-full before:top-[2px] before:left-[2px] before:transition-transform before:duration-300" for="toggle-wednesday"></label>
+</div>
+<span class="font-h3 text-h3 text-text-primary">Wednesday</span>
+</div>
+<div class="flex items-center gap-3 flex-1">
+<div class="w-full text-center py-3 text-text-muted font-body-sm text-body-sm bg-surface-white/50 rounded-[18px] border border-dashed border-line-border">Closed</div>
+</div>
+</div>
+<!-- Thursday -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-paper-warm border border-line-border gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 opacity-0" id="toggle-thursday" name="toggle-thursday" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-hungry-orange cursor-pointer relative before:absolute before:content-[''] before:h-5 before:w-5 before:bg-white before:rounded-full before:top-[2px] before:left-[2px] before:transition-transform before:duration-300" for="toggle-thursday"></label>
+</div>
+<span class="font-h3 text-h3 text-text-primary">Thursday</span>
+</div>
+<div class="flex items-center gap-3 flex-1">
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="09:00"/>
+<span class="text-text-muted">to</span>
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="21:00"/>
+</div>
+</div>
+<!-- Friday -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg bg-paper-warm border border-line-border gap-4">
+<div class="flex items-center gap-4 w-full sm:w-1/3">
+<div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10 opacity-0" id="toggle-friday" name="toggle-friday" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-hungry-orange cursor-pointer relative before:absolute before:content-[''] before:h-5 before:w-5 before:bg-white before:rounded-full before:top-[2px] before:left-[2px] before:transition-transform before:duration-300" for="toggle-friday"></label>
+</div>
+<span class="font-h3 text-h3 text-text-primary">Friday</span>
+</div>
+<div class="flex items-center gap-3 flex-1">
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="09:00"/>
+<span class="text-text-muted">to</span>
+<input class="w-full h-12 rounded-[18px] border-line-border bg-surface-white text-text-primary font-body text-body px-4 focus:ring-hungry-orange focus:border-hungry-orange" type="time" value="22:00"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Auxiliary Sections Container -->
+<div class="space-y-6">
+<!-- Public Holiday Alerts Widget -->
+<div class="bg-surface-white rounded-xl border border-line-border p-6 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-surface-container-high rounded-bl-full -mr-4 -mt-4 opacity-50 pointer-events-none"></div>
+<h3 class="font-h2 text-h2 text-text-primary mb-2 flex items-center gap-2 relative z-10">
+<span class="material-symbols-outlined text-hawker-amber">event_available</span>
+                            Public Holiday Hours
+                        </h3>
+<p class="font-body-sm text-body-sm text-text-muted mb-4 relative z-10">Upcoming public holidays require your attention to ensure accurate listing times.</p>
+<div class="space-y-3 relative z-10">
+<div class="p-3 bg-paper-warm border border-line-border rounded-lg">
+<div class="flex justify-between items-start mb-2">
+<div>
+<p class="font-h3 text-h3 text-text-primary text-sm">Chinese New Year (Day 1)</p>
+<p class="font-micro text-micro text-hungry-orange mt-1">Action Required</p>
+</div>
+<span class="text-xs text-text-muted">10 Feb</span>
+</div>
+<button class="w-full py-2 bg-surface-white border border-hungry-orange text-hungry-orange font-body-sm text-body-sm rounded-lg hover:bg-surface-container transition-colors">Set Special Hours</button>
+</div>
+</div>
+<button class="mt-4 w-full text-center text-sm font-medium text-text-muted hover:text-hungry-orange transition-colors">View All Special Dates</button>
+</div>
+<!-- Break Times (Optional feature hint) -->
+<div class="bg-surface-white rounded-xl border border-line-border p-6 shadow-sm">
+<h3 class="font-h2 text-h2 text-text-primary mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-text-muted">coffee</span>
+                            Break Times
+                        </h3>
+<p class="font-body-sm text-body-sm text-text-muted mb-4">Do you close during the afternoon to prep for dinner service?</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 bg-paper-warm border border-line-border text-deep-navy font-h3 text-sm rounded-[18px] hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined">add</span>
+                            Add Split Shift
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
