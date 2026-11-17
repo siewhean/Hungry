@@ -59,7 +59,11 @@ where k.table_name = 'menu_photo_submissions' and k.row_id = t.id::text and t.bu
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.buildings b
-set name = k.old_name, building_type = k.old_type, venue_count = k.old_venue_count
+set name = k.old_name, building_type = k.old_type,
+    -- the saved count, plus the stalls that were added to the row since the up ran
+    venue_count = case when k.old_venue_count is null then null
+      else k.old_venue_count
+        + (select count(*)::integer from public.venues v where v.building_id = b.id) - k.old_stall_count end
 from app_private.launch_zone_building_backup k
 where k.building_id = b.id;
 

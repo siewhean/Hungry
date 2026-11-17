@@ -7,14 +7,17 @@ import test, { before, beforeEach } from "node:test";
 
 import { installFakeSupabase } from "@/test/supabase/appClient";
 
-const { fake } = installFakeSupabase();
+const { fake, auth } = installFakeSupabase();
 
 let service: typeof import("./index").catalogRawService;
+let CatalogAuthenticationRequiredError: typeof import("./index").CatalogAuthenticationRequiredError;
 
 before(async () => {
   const { setConfiguredDataSource } = await import("@/lib/services/supabase/client");
   setConfiguredDataSource("supabase");
-  service = (await import("./index")).catalogRawService;
+  const catalog = await import("./index");
+  service = catalog.catalogRawService;
+  CatalogAuthenticationRequiredError = catalog.CatalogAuthenticationRequiredError;
 });
 
 beforeEach(() => {
@@ -81,4 +84,19 @@ test("rows without an id or a name are dropped and a non-list answer is an empty
   service.clearCache();
   fake.rpc.get_launch_zone_places = () => ({ data: null, error: null });
   assert.deepEqual(await service.listLaunchZonePlaces(), []);
+});
+
+test("a copy cached before sign-out is not served to a signed-out caller", async () => {
+  fake.rpc.get_launch_zone_places = () => ({ data: ROWS, error: null });
+  await service.listLaunchZonePlaces();
+  const signedInAs = auth.userId;
+  auth.userId = null;
+  try {
+    await assert.rejects(
+      () => service.listLaunchZonePlaces(),
+      (error: unknown) => error instanceof CatalogAuthenticationRequiredError,
+    );
+  } finally {
+    auth.userId = signedInAs;
+  }
 });

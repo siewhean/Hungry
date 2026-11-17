@@ -903,6 +903,8 @@ export const catalogRawService = {
    * works as `buildingId` on the page reads.
    */
   async listLaunchZonePlaces(): Promise<CatalogPlace[]> {
+    // The session is checked first so a copy cached before sign-out is not served to a signed-out caller.
+    await requireAuthenticatedClient();
     const key = catalogRequestKey("launch-zone-places", {});
     return readPage(key, PLACES_TTL_MS, null, async () => {
       const rows = await callRawRpc<unknown>("get_launch_zone_places", {});

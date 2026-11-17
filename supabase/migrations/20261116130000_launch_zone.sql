@@ -35,6 +35,7 @@ create table if not exists app_private.launch_zone_building_backup (
   old_name text not null,
   old_type text not null,
   old_venue_count integer,
+  old_stall_count integer,
   saved_at timestamptz not null default now()
 );
 alter table app_private.launch_zone_building_backup enable row level security;
@@ -171,8 +172,9 @@ begin
   set constraints all immediate;
 
   -- The first copy of a building's name, type and stall count is the original; a re-run never overwrites it.
-  insert into app_private.launch_zone_building_backup (building_id, old_name, old_type, old_venue_count)
-  select b.id, b.name, b.building_type, b.venue_count
+  insert into app_private.launch_zone_building_backup (building_id, old_name, old_type, old_venue_count, old_stall_count)
+  select b.id, b.name, b.building_type, b.venue_count,
+         (select count(*)::integer from public.venues v where v.building_id = b.id)
   from public.buildings b
   where b.id in (select m.building_id from app_private.launch_zone_members() m)
   on conflict (building_id) do nothing;

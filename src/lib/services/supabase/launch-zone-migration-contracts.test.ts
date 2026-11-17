@@ -96,10 +96,7 @@ test("the down migration puts rows back and drops everything the up created", ()
     rollback,
     /^-- expect-row-loss: public\.launch_zone_places, app_private\.launch_zone_building_backup, app_private\.launch_zone_move_backup/m,
   );
-  assert.match(
-    rollback,
-    /set name = k\.old_name, building_type = k\.old_type, venue_count = k\.old_venue_count/,
-  );
+  assert.match(rollback, /set name = k\.old_name, building_type = k\.old_type,/);
   for (const object of [
     "function if exists public.get_launch_zone_places()",
     "function if exists app_private.launch_zone_report()",
@@ -123,6 +120,11 @@ test("the down migration puts rows back and drops everything the up created", ()
       new RegExp(`create table rollback_archive\\.${table}_20261116130000 as`),
     );
   }
+  // Stalls added since the up are kept in the restored stall count.
+  assert.match(
+    rollback,
+    /old_venue_count\s*\+\s*\(select count\(\*\)::integer from public\.venues[^)]*\)\s*-\s*k\.old_stall_count/,
+  );
   // The cards are refreshed from the restored rows before the backups they need are dropped.
   const syncAt = rollback.indexOf("launch_zone_sync_cards();");
   const dropAt = rollback.indexOf("drop table if exists public.launch_zone_places");
