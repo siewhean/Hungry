@@ -76,7 +76,7 @@ begin
   end if;
 
   select b.name into v_name from venues v join buildings b on b.id = v.building_id where v.id = 'smoke-lz-v-651';
-  if v_name <> 'Block 651' then
+  if v_name <> 'Kimly Coffeeshop (Blk 651)' then
     raise exception 'block 651 is named "%"', v_name;
   end if;
 

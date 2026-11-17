@@ -18,8 +18,8 @@
 -- 3. app_private.launch_zone_report(): the scoreboard for the phase (stalls, stalls with dishes,
 --    priced dishes, photos, hours), run from scripts/db/launch-zone-report.sh. Not callable by the app.
 --
--- Block 651's name is a placeholder ("Block 651") until sh says what people call it: change the one
--- line in launch_zone_definition() and run apply_launch_zone() again.
+-- Block 651 is named "Kimly Coffeeshop (Blk 651)", as sh confirmed on 2026-11-17. To rename a zone
+-- place later, change its line in launch_zone_definition() and run apply_launch_zone() again.
 --
 -- updated_at is left alone (the updated_at triggers on buildings, venues and dishes are switched off
 -- for the moves and the rename, as 20261114170000 did) because moving a stall between two rows of
@@ -72,8 +72,8 @@ as $$
       array['50 Jurong West Street 61'], 1),
     ('pioneer-mall', 'Pioneer Mall', 'mall'::text,
       array['638A Jurong West Street 61', '638 Jurong West Street 61'], 2),
-    -- Placeholder name: sh to confirm what people call block 651. The type stays as loaded.
-    ('block-651', 'Block 651', null::text,
+    -- The name people use for block 651, confirmed by sh. The type stays as loaded.
+    ('block-651', 'Kimly Coffeeshop (Blk 651)', null::text,
       array['651 Jurong West Street 61'], 3)
   ) as z(slug, display_name, building_type, aliases, sort_order);
 $$;

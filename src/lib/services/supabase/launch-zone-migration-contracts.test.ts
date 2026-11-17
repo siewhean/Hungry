@@ -27,7 +27,7 @@ test("the zone is the three places sh named, with the block 651 name still a pla
   );
   assert.match(migration, /'pioneer-mall', 'Pioneer Mall', 'mall'/);
   assert.match(migration, /array\['638A Jurong West Street 61', '638 Jurong West Street 61'\]/);
-  assert.match(migration, /'block-651', 'Block 651'/);
+  assert.match(migration, /'block-651', 'Kimly Coffeeshop \(Blk 651\)'/);
   assert.match(migration, /array\['50 Jurong West Street 61'\]/);
   assert.match(migration, /array\['651 Jurong West Street 61'\]/);
 });

@@ -1,4 +1,4 @@
-// The launch zone list (Jurong West Hawker Centre, Pioneer Mall, Block 651): the service asks the
+// The launch zone list (Jurong West Hawker Centre, Pioneer Mall, Kimly Coffeeshop (Blk 651)): the service asks the
 // get_launch_zone_places RPC, maps its rows to places in the server's order, keeps one copy for
 // ten minutes, and an empty or malformed answer is an empty list.
 
@@ -45,7 +45,7 @@ const ROWS = [
     latitude: 1.342,
     longitude: 103.6976,
   },
-  { id: "bld-651", slug: "block-651", name: "Block 651", venue_count: 16 },
+  { id: "bld-651", slug: "block-651", name: "Kimly Coffeeshop (Blk 651)", venue_count: 16 },
 ];
 
 test("the zone list maps the server's rows to places, in order", async () => {
@@ -56,7 +56,7 @@ test("the zone list maps the server's rows to places, in order", async () => {
     [
       ["bld-hawker", "Jurong West Hawker Centre", 45],
       ["bld-pioneer", "Pioneer Mall", 25],
-      ["bld-651", "Block 651", 16],
+      ["bld-651", "Kimly Coffeeshop (Blk 651)", 16],
     ],
   );
   assert.equal(places[0].buildingType, "hawker_centre");

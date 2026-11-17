@@ -899,7 +899,7 @@ export const catalogRawService = {
 
   /**
    * The launch zone's places in the order Home, Search and the onboarding picks show them
-   * (Jurong West Hawker Centre, Pioneer Mall, Block 651), with their stall counts. The `id` of each
+   * (Jurong West Hawker Centre, Pioneer Mall, Kimly Coffeeshop (Blk 651)), with their stall counts. The `id` of each
    * works as `buildingId` on the page reads.
    */
   async listLaunchZonePlaces(): Promise<CatalogPlace[]> {
