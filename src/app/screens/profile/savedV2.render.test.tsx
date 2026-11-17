@@ -680,14 +680,9 @@ test("Saved > Stalls has Visited: stalls marked visited show there, read from th
   );
 });
 
-test("Follow stall is off: nothing on Saved or Profile offers Followed stalls", async () => {
+test("Follow stall is off by default", async () => {
   const { FEATURE_FLAGS } = await import("@/constants/featureFlags");
   assert.equal(FEATURE_FLAGS.stallFollowEnabled, false);
-  const { FollowStallButton } = await import("@/components/stall/FollowStallButton");
-  const view = await render(
-    createElement(FollowStallButton, { stallId: "s1", stallName: "Nam Sing" }),
-  );
-  assert.equal(view.findByLabel("Follow Nam Sing"), null);
 });
 
 test("Visited with nothing visited says how to add one", async () => {

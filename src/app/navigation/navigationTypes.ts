@@ -102,7 +102,6 @@ export type ProfileStackParamList = {
   Followers: { userId?: string; userDisplayName?: string } | undefined;
   Following: { userId?: string; userDisplayName?: string } | undefined;
   VisitedStalls: undefined;
-  FollowedStalls: undefined;
   Settings: undefined;
   /** Hidden: opened by tapping Version in Settings seven times. */
   DeveloperTools: undefined;

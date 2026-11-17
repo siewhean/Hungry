@@ -650,12 +650,6 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /People here/,
   },
   {
-    name: "FollowedStallsScreen",
-    file: "src/app/screens/profile/FollowedStallsScreen.tsx",
-    scenario: "user",
-    expect: /Followed stalls/,
-  },
-  {
     name: "ListsHomeScreen",
     file: "src/app/screens/profile/ListsHomeScreen.tsx",
     scenario: "user",

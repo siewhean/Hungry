@@ -123,15 +123,12 @@ test("detail-M11: 'Something wrong?' sends a catalog correction from both pages"
   );
 });
 
-test("detail-M12/M13/L16: delivery button text contrast, honest Follow label, non-interactive chips", () => {
+test("detail-M12/L16: delivery button text contrast, non-interactive chips", () => {
   const brand = readRepoFile("src/constants/brandColors.ts");
-  const follow = readRepoFile("src/components/stall/FollowStallButton.tsx");
   const chip = readRepoFile("src/components/ui/Chip.tsx");
 
   assert.match(brand, /BRAND_BUTTON_TEXT_COLORS/);
   assert.match(readRepoFile("src/components/dish/DeliveryPlatformButton.tsx"), /textColor/);
-  assert.match(follow, /STALL_ALERTS_CAN_FIRE =/);
-  assert.match(follow, /"Follow for menu updates" : "Follow"/);
   assert.match(chip, /onPress/);
 });
 
