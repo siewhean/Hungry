@@ -3,7 +3,9 @@
 -- building row it came from, every building row gets its old name, type and stall count back, the
 -- catalog cards take the old building fields from those rows, and the zone list, the backups and
 -- the functions are dropped. Rows moved or created since the up (a stall added to the surviving
--- row, for example) are not touched. updated_at triggers are off for the restore, as in the up.
+-- row, or a stall an operator moved on to another building, for example) are not touched: a row goes
+-- back only while it is still in the building the up put it in, and a building keeps a name or type
+-- that was changed after the up. updated_at triggers are off for the restore, as in the up.
 -- Runs in one transaction: SET CONSTRAINTS ALL IMMEDIATE fires the deferred catalog refresh
 -- triggers before the tables are altered, which otherwise fails with "pending trigger events".
 
@@ -15,51 +17,52 @@ alter table public.dishes disable trigger trg_dishes_updated_at;
 
 update public.venues t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'venues' and k.row_id = t.id::text and t.building_id <> k.old_building_id
+where k.table_name = 'venues' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.dishes t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'dishes' and k.row_id = t.id::text and t.building_id <> k.old_building_id
+where k.table_name = 'dishes' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.dishes_draft t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'dishes_draft' and k.row_id = t.id::text and t.building_id <> k.old_building_id
+where k.table_name = 'dishes_draft' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.posts t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'posts' and k.row_id = t.id::text and t.building_id is distinct from k.old_building_id
+where k.table_name = 'posts' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.stall_posts t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'stall_posts' and k.row_id = t.id::text and t.building_id is distinct from k.old_building_id
+where k.table_name = 'stall_posts' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.bites t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'bites' and k.row_id = t.id::text and t.building_id is distinct from k.old_building_id
+where k.table_name = 'bites' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.merchant_outlets t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'merchant_outlets' and k.row_id = t.id::text and t.building_id is distinct from k.old_building_id
+where k.table_name = 'merchant_outlets' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.merchant_claim_interests t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'merchant_claim_interests' and k.row_id = t.id::text and t.building_id <> k.old_building_id
+where k.table_name = 'merchant_claim_interests' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.menu_photo_submissions t set building_id = k.old_building_id
 from app_private.launch_zone_move_backup k
-where k.table_name = 'menu_photo_submissions' and k.row_id = t.id::text and t.building_id <> k.old_building_id
+where k.table_name = 'menu_photo_submissions' and k.row_id = t.id::text and t.building_id = k.new_building_id
   and exists (select 1 from public.buildings b where b.id = k.old_building_id);
 
 update public.buildings b
-set name = k.old_name, building_type = k.old_type,
+set name = case when (b.name, b.building_type) is not distinct from (k.new_name, k.new_type) then k.old_name else b.name end,
+    building_type = case when (b.name, b.building_type) is not distinct from (k.new_name, k.new_type) then k.old_type else b.building_type end,
     -- the saved count, plus the stalls that were added to the row since the up ran
     venue_count = case when k.old_venue_count is null then null
       else k.old_venue_count

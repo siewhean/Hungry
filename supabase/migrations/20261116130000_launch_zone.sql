@@ -36,6 +36,8 @@ create table if not exists app_private.launch_zone_building_backup (
   old_type text not null,
   old_venue_count integer,
   old_stall_count integer,
+  new_name text,
+  new_type text,
   saved_at timestamptz not null default now()
 );
 alter table app_private.launch_zone_building_backup enable row level security;
@@ -45,6 +47,7 @@ create table if not exists app_private.launch_zone_move_backup (
   table_name text not null,
   row_id text not null,
   old_building_id text not null,
+  new_building_id text,
   saved_at timestamptz not null default now(),
   primary key (table_name, row_id)
 );
@@ -188,11 +191,11 @@ begin
   moved as (
     update public.venues t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'venues', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'venues', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -202,11 +205,11 @@ begin
   moved as (
     update public.dishes t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'dishes', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'dishes', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -217,11 +220,11 @@ begin
   moved as (
     update public.dishes_draft t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'dishes_draft', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'dishes_draft', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -231,11 +234,11 @@ begin
   moved as (
     update public.posts t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'posts', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'posts', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -245,11 +248,11 @@ begin
   moved as (
     update public.stall_posts t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'stall_posts', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'stall_posts', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -259,11 +262,11 @@ begin
   moved as (
     update public.bites t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'bites', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'bites', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -273,11 +276,11 @@ begin
   moved as (
     update public.merchant_outlets t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'merchant_outlets', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'merchant_outlets', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -287,11 +290,11 @@ begin
   moved as (
     update public.merchant_claim_interests t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'merchant_claim_interests', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'merchant_claim_interests', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -301,11 +304,11 @@ begin
   moved as (
     update public.menu_photo_submissions t set building_id = m.survivor_id
     from m where t.building_id = m.building_id
-    returning t.id::text as row_id, m.building_id as old_building_id
+    returning t.id::text as row_id, m.building_id as old_building_id, m.survivor_id as new_building_id
   ), saved as (
-    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id)
-    select 'menu_photo_submissions', row_id, old_building_id from moved
-    on conflict (table_name, row_id) do nothing
+    insert into app_private.launch_zone_move_backup (table_name, row_id, old_building_id, new_building_id)
+    select 'menu_photo_submissions', row_id, old_building_id, new_building_id from moved
+    on conflict (table_name, row_id) do update set new_building_id = excluded.new_building_id
     returning 1
   )
   select count(*) into v_step from moved;
@@ -319,6 +322,12 @@ begin
     and m.building_id = m.survivor_id
     and (b.name, b.building_type) is distinct from (m.display_name, coalesce(m.building_type, b.building_type));
   get diagnostics v_renamed = row_count;
+
+  -- What the up left on each row, so the down only undoes a name or type that is still the one set here.
+  update app_private.launch_zone_building_backup k
+  set new_name = b.name, new_type = b.building_type
+  from public.buildings b
+  where b.id = k.building_id;
 
   update public.buildings b
   set venue_count = (select count(*)::integer from public.venues v where v.building_id = b.id)

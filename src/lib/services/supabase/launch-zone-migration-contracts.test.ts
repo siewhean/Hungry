@@ -96,7 +96,9 @@ test("the down migration puts rows back and drops everything the up created", ()
     rollback,
     /^-- expect-row-loss: public\.launch_zone_places, app_private\.launch_zone_building_backup, app_private\.launch_zone_move_backup/m,
   );
-  assert.match(rollback, /set name = k\.old_name, building_type = k\.old_type,/);
+  // A name or type changed after the up is kept; the old ones come back only while the up's are still there.
+  assert.match(rollback, /then k\.old_name else b\.name end/);
+  assert.match(rollback, /then k\.old_type else b\.building_type end/);
   for (const object of [
     "function if exists public.get_launch_zone_places()",
     "function if exists app_private.launch_zone_report()",
@@ -120,6 +122,9 @@ test("the down migration puts rows back and drops everything the up created", ()
       new RegExp(`create table rollback_archive\\.${table}_20261116130000 as`),
     );
   }
+  // A row goes back only while it is still where the up put it; a later move is left alone.
+  assert.equal((rollback.match(/t\.building_id = k\.new_building_id/g) ?? []).length, 9);
+  assert.doesNotMatch(rollback, /t\.building_id (<>|is distinct from) k\.old_building_id/);
   // Stalls added since the up are kept in the restored stall count.
   assert.match(
     rollback,
