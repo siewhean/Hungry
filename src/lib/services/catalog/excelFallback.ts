@@ -458,4 +458,9 @@ export const excelCatalogFallbackService = {
   async listPlaces(_request: CatalogPlacesRequest): Promise<CatalogPlace[]> {
     return [];
   },
+
+  // The launch zone list lives in the live catalog; offline there is none.
+  async listLaunchZonePlaces(): Promise<CatalogPlace[]> {
+    return [];
+  },
 } satisfies CatalogReadService;
