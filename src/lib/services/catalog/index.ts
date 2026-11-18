@@ -897,6 +897,21 @@ export const catalogRawService = {
     });
   },
 
+  /**
+   * The launch zone's places in the order Home, Search and the onboarding picks show them
+   * (Jurong West Hawker Centre, Pioneer Mall, Kimly Coffeeshop (Blk 651)), with their stall counts. The `id` of each
+   * works as `buildingId` on the page reads.
+   */
+  async listLaunchZonePlaces(): Promise<CatalogPlace[]> {
+    // The session is checked first so a copy cached before sign-out is not served to a signed-out caller.
+    await requireAuthenticatedClient();
+    const key = catalogRequestKey("launch-zone-places", {});
+    return readPage(key, PLACES_TTL_MS, null, async () => {
+      const rows = await callRawRpc<unknown>("get_launch_zone_places", {});
+      return Array.isArray(rows) ? rows.flatMap(mapPlace) : [];
+    });
+  },
+
   async getDish(id: string, releaseId?: string): Promise<CatalogRawDishDetail> {
     const key = `dish:${releaseId ?? "active"}:${id}`;
     const cached = readCache<CatalogRawDishDetail>(detailCache, key);
