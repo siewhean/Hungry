@@ -32,6 +32,8 @@ export const siteConfig = {
   language: "en-SG",
   contactEmail: "usehungrysingapore@gmail.com",
   openGraphImage: "/images/food/stalls-restaurants-wide.png",
+  /** The App Store listing. Empty until the app is listed; shared-link pages then offer early access. */
+  appStoreUrl: (process.env.NEXT_PUBLIC_APP_STORE_URL ?? "").trim(),
   keywords: [
     "Hungry",
     "Singapore food discovery app",

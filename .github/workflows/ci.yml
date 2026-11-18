@@ -83,6 +83,13 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
+      - name: Shared-link page browser test
+        run: |
+          if [ -f marketing/website/web-v2/package.json ]; then
+            npm ci --prefix marketing/website/web-v2
+            npm --prefix marketing/website/web-v2 run share:e2e
+          fi
+
       - name: Mock/local Playwright suite
         run: npm run test:e2e
 
