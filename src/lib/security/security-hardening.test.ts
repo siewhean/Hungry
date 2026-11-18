@@ -547,7 +547,6 @@ test("password reset uses redirect URL and supports recovery code exchange", () 
 
 test("UGC surfaces expose report, hide, and block safety actions", () => {
   const helper = readRepoFile("src/lib/security/communitySafety.ts");
-  const home = readRepoFile("src/app/screens/home/HomeFeedScreen.tsx");
   const activity = readRepoFile("src/app/screens/home/ActivityPostDetailScreen.tsx");
   const socialPost = readRepoFile("src/app/screens/profile/SocialPostDetailScreen.tsx");
   const comments = readRepoFile("src/components/social/ReviewCommentsSheet.tsx");
@@ -562,8 +561,6 @@ test("UGC surfaces expose report, hide, and block safety actions", () => {
   assert.match(helper, /communitySafety\.hidePost/);
   assert.match(helper, /blockedAuthorIds\.add\(blockedAuthorId\)/);
   assert.match(helper, /hiddenPostIds\.add\(postId\)/);
-  assert.match(home, /promptPostSafetyActions/);
-  assert.match(home, /promptCommentSafetyActions/);
   assert.match(
     readRepoFile("src/components/social/FeedPostCard.tsx"),
     /accessibilityLabel=\{`Comment on \$\{actionTargetName\}`\}/,

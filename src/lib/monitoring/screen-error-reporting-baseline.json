@@ -7,7 +7,6 @@
     "src/app/screens/home/AddStoryScreen.tsx",
     "src/app/screens/home/ChatDetailScreen.tsx",
     "src/app/screens/home/DirectMessagesScreen.tsx",
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/home/StoryViewerScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/profile/SocialGridScreen.tsx"

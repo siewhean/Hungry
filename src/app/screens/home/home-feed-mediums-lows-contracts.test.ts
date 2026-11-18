@@ -88,13 +88,6 @@ test("M7: the inbox shows an error banner, skeleton, mark-all and paging; the st
   assert.doesNotMatch(store, /set\(\{ dbActivityEvents: \[\] \}\)/);
 });
 
-test("M7: Home refreshes the bell count on focus and when the app returns to the foreground", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /AppState\.addEventListener\("change"/);
-  assert.match(home, /nextState === "active"\) void fetchActivityEvents\(\)/);
-  assert.match(home, /Activity, \$\{activityUnreadCount\} unread/);
-});
-
 // ---------------------------------------------------------------------------
 // L11: the persisted social store is bounded
 // ---------------------------------------------------------------------------
@@ -178,17 +171,6 @@ test("M1: stored picks resolve to dishes, or to null when a dish left the catalo
   );
 });
 
-test("M1 and L3 and M11: the rail reads saved picks, says Popular on Hungry, and holds a compact Decide button", () => {
-  const rail = read("src/components/dish/WeeklyPicksRail.tsx");
-  assert.match(rail, /useWeeklyPicksStore/);
-  assert.match(rail, /resolveStoredWeeklyPicks\(/);
-  assert.match(rail, /savePicks\(/);
-  assert.doesNotMatch(rail, /Popular near you/);
-  assert.match(rail, /<Button label="Decide for me" size="sm" onPress=\{onDecideForMe\} \/>/);
-  const store = read("src/store/useWeeklyPicksStore.ts");
-  assert.match(store, /name: "hungry-weekly-picks-v1"/);
-});
-
 // ---------------------------------------------------------------------------
 // M3: no hidden taste ranking in the feed
 // ---------------------------------------------------------------------------
@@ -217,10 +199,6 @@ test("M2: the feed pages on the oldest post, and ends with a caught-up footer", 
   assert.match(service, /p_cursor_feed_created_at: cursorCreatedAt/);
   assert.match(service, /p_cursor_post_id: cursorPostId/);
   assert.match(service, /page\.cursor\?\.createdAt/);
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /onEndReached=\{\(\) => void loadMoreFeed\(\)\}/);
-  assert.match(home, /getHomeFeedNextPage\(/);
-  assert.match(home, /You&apos;re all caught up/);
 });
 
 // ---------------------------------------------------------------------------
@@ -263,9 +241,7 @@ test("M5: Settings lists blocked people and hidden posts with Unblock and Unhide
 });
 
 test("L17: the Home post menu asks guests to sign in instead of failing", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const safety = read("src/lib/security/communitySafety.ts");
-  assert.match(home, /requireAuthForPostAction\("Sign in to report or block\."\)/);
   assert.match(safety, /Sign in to report or block/);
 });
 
@@ -362,17 +338,11 @@ test("M8: the deep links the pushes use open the inbox and the follow requests s
 
 test("M10: each card is memoised, owns its own state and reads its counts from the store", () => {
   const card = read("src/components/social/FeedPostCard.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(card, /export const FeedPostCard = memo\(FeedPostCardImpl\)/);
   assert.match(card, /useSocialStore\(\(state\) => state\.interactions\[item\.id\]\)/);
   assert.match(card, /const \[carouselIndex, setCarouselIndex\]/);
   assert.match(card, /const \[isCaptionExpanded, setIsCaptionExpanded\]/);
   assert.match(card, /const \[heartBurst, setHeartBurst\]/);
-  // The screen no longer holds per-card state or subscribes to the whole interactions map.
-  assert.doesNotMatch(home, /useSocialStore\(\(state\) => state\.interactions\)/);
-  assert.doesNotMatch(home, /carouselIndexByPostId|expandedCaptionByPostId|heartBurst/);
-  assert.match(home, /renderItem=\{renderFeedItem\}/);
-  assert.match(home, /const feedCardActions = useMemo<FeedPostCardActions>/);
 });
 
 test("M9: the post detail screen reuses the feed card and drops the extra play overlay", () => {
@@ -387,20 +357,6 @@ test("M9: the post detail screen reuses the feed card and drops the extra play o
 // ---------------------------------------------------------------------------
 // M11, M12, L3: header, errors, copy
 // ---------------------------------------------------------------------------
-
-test("M12: a feed error keeps the header, and a failed refresh toasts", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /feedState === "error" \? \(/);
-  assert.match(home, /Could not refresh your feed/);
-  // The old full-screen error early return is gone.
-  assert.doesNotMatch(home, /if \(feedState === "error"\) \{\s*return \(/);
-});
-
-test("L3: empty-feed copy says near you only when a location is known", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /coordinate \? "Top rated near you" : "Top rated on Hungry"/);
-  assert.doesNotMatch(home, /top-rated dishes near you\."\s*\n?\s*\)/);
-});
 
 // ---------------------------------------------------------------------------
 // L2, L5, L6: data and card copy
@@ -474,17 +430,8 @@ test("L6: the venue line joins floor and unit only when present, and shows once 
 
 test("L7: photo hints describe what a tap does, and comment avatars are labelled", () => {
   const card = read("src/components/social/FeedPostCard.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(card, /Tap the left or right side to change photo\. Double tap to like\./);
   assert.doesNotMatch(card, /Opens this (image|media)/);
-  assert.match(home, /accessibilityLabel=\{`Open \$\{comment\.authorName\} profile`\}/);
-  assert.doesNotMatch(home, /Shows messages, comments, likes, and shares/);
-});
-
-test("L8: re-pressing the Home tab scrolls the feed to the top", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /navigation\.addListener\("tabPress"/);
-  assert.match(home, /scrollToOffset\(\{ offset: 0, animated: true \}\)/);
 });
 
 test("L9: a failed like or save rolls back with a toast", () => {
@@ -493,16 +440,8 @@ test("L9: a failed like or save rolls back with a toast", () => {
   assert.match(store, /showSocialToast\([^)]*save/i);
 });
 
-test("L10: saving a post says the dish was saved too", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /Saved \$\{primaryDish\.name\} to your dishes/);
-});
-
 test("L12: posts report an impression after a short dwell, and videos report a play", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const card = read("src/components/social/FeedPostCard.tsx");
-  assert.match(home, /trackAnalyticsEvent\("post_impression"/);
-  assert.match(home, /POST_IMPRESSION_DWELL_MS/);
   assert.match(card, /trackAnalyticsEvent\("video_play"/);
 });
 
@@ -520,32 +459,9 @@ test("L14: only a drag from a screen edge pages the tabs, so the photo carousel 
   assert.doesNotMatch(tabs, /swipeEnabled: true/);
 });
 
-test("L15: the empty comments copy says comment, not review", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /Be the first to comment\./);
-  assert.doesNotMatch(home, /share your review/);
-});
-
 // ---------------------------------------------------------------------------
 // L4, M13: dead code and image cache
 // ---------------------------------------------------------------------------
-
-test("L4: review mode and its helpers are gone from Home", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  for (const dead of [
-    /HomeFeedMode/,
-    /mode === "review"/,
-    /function FeedSkeleton/,
-    /VerticalActionMetric/,
-    /reviewFeedScrollRef/,
-    /\?\? 4\.5/,
-    /overlayContent|playButtonBackdrop|quickPostButton/,
-  ]) {
-    assert.doesNotMatch(home, dead);
-  }
-  assert.doesNotMatch(tabs, /HomeFeedScreen mode=/);
-});
 
 test("M13: signed storage URLs get a cache key that survives re-signing", () => {
   const signed =

@@ -184,7 +184,6 @@ test("profile home contract: customer surfaces read the merchant mode flag, not 
   for (const file of [
     "src/hooks/useAppBootstrap.ts",
     "src/app/navigation/RootNavigator.tsx",
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/discover/DiscoverHomeScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/post/PostComposerScreenV2.tsx",

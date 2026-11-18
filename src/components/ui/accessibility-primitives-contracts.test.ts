@@ -98,7 +98,6 @@ test("Dialog and BottomSheet expose native modal semantics and labelled dismiss 
 
 test("production bottom sheet surfaces expose contextual modal labels", () => {
   const directBottomSheetFiles = [
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/app/screens/review/ReviewShareSheet.tsx",
     "src/components/social/ReviewCommentsSheet.tsx",
@@ -167,8 +166,6 @@ test("bottom sheet nested controls expose roles, labels, and selected state wher
   const collaborators = read("src/features/post/components/CollaboratorModal.tsx");
   const locations = read("src/features/post/components/LocationSearchModal.tsx");
   const outletSwitcher = read("src/components/merchant/OutletSwitcher.tsx");
-  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
-
   assert.match(
     music,
     /accessibilityLabel=\{\`\$\{isSelected \? "Selected music" : "Select music"\}/,
@@ -198,9 +195,6 @@ test("bottom sheet nested controls expose roles, labels, and selected state wher
     /accessibilityLabel=\{\`\$\{isActive \? "Current outlet" : "Switch to outlet"\}/,
   );
   assert.match(outletSwitcher, /accessibilityState=\{\{ selected: isActive \}\}/);
-
-  assert.match(homeFeed, /accessibilityLabel="Cancel reply"/);
-  assert.match(homeFeed, /accessibilityHint="Stops replying to the selected comment"/);
 });
 
 test("Avatar and Card avoid duplicate or unsupported announcements", () => {

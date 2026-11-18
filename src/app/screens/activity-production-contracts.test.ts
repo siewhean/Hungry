@@ -11,7 +11,6 @@ function read(relativePath: string): string {
 
 test("activity inbox hides message surfaces when direct messages are disabled", () => {
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const reviewShare = read("src/app/screens/review/ReviewShareSheet.tsx");
   const profile = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
@@ -25,7 +24,7 @@ test("activity inbox hides message surfaces when direct messages are disabled", 
   assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
   assert.match(rootNavigator, /name="ChatDetail"/);
   assert.match(rootNavigator, /name="DirectMessages"/);
-  for (const source of [home, reviewShare, profile]) {
+  for (const source of [reviewShare, profile]) {
     assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
     assert.match(source, /directMessagesEnabled \? shareRecipients : \[\]/);
     assert.match(source, /footerComponent=\{\s*directMessagesEnabled/);

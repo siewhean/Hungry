@@ -235,10 +235,7 @@ test("Sprint 9 screen contract: Search cards expose actionable semantics", () =>
 
 test("Sprint 9 screen contract: Home feed interactions are wired for like/save/comment/share", () => {
   // The post card lives in its own component: read the screen and the card together.
-  const source = [
-    read("src/app/screens/home/HomeFeedScreen.tsx"),
-    read("src/components/social/FeedPostCard.tsx"),
-  ].join("\n");
+  const source = [read("src/components/social/FeedPostCard.tsx")].join("\n");
   const feedSource = read("src/features/home/feed.ts");
   const mapSource = read("src/app/screens/discover/HomeMapScreen.tsx");
 
@@ -249,26 +246,9 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.match(source, /useSocialStore/);
   assert.doesNotMatch(source, /MissionBanner/);
   assert.doesNotMatch(source, /navigation\.navigate\("MissionsScreen"\)/);
-  assert.match(source, /togglePostLike/);
-  assert.match(source, /togglePostSave/);
-  assert.match(source, /addPostComment/);
-  assert.match(source, /addPostReply/);
-  assert.match(source, /const bundle = await getHomeFeedBundle\(profileRef\.current,\s*\{/);
-  assert.match(source, /followedAuthors,/);
-  assert.match(source, /followedUserIds,/);
-  assert.match(source, /refreshSeed: feedRefreshSeedRef\.current/);
-  assert.match(source, /initializeInteractions\(bundle\.socialFeed, now\)/);
   assert.doesNotMatch(source, /bundle\.sections/);
   assert.doesNotMatch(source, /mode === "social"/);
-  assert.match(source, /const \[activeShareItem, setActiveShareItem\]/);
-  assert.match(source, /const shareSheetRef = useRef<BottomSheetModal>\(null\)/);
-  assert.match(source, /share: openShareSheet/);
   assert.match(source, /actions\.share\(item\)/);
-  assert.match(source, /sendPostToHungryUsers/);
-  assert.match(source, /sharePostToChat\(chatId,/);
-  assert.match(source, /incrementPostShare\(activeShareItem\.id, "in_app"\)/);
-  assert.match(source, /incrementPostShare\(activeShareItem\.id, "copy_link"\)/);
-  assert.match(source, /incrementPostShare\(activeShareItem\.id, "system_share"\)/);
   assert.match(source, /const actionTargetName = item\.dishes\[0\]\?\.name \?\? item\.venue\.name/);
   assert.match(source, /accessibilityLabel=\{`Share \$\{actionTargetName\} in Hungry`\}/);
   assert.match(source, /accessibilityHint="Opens sharing options for this post"/);
@@ -284,82 +264,17 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
     /accessibilityLabel=\{`\$\{isLiked \? "Unlike" : "Like"\} \$\{actionTargetName\}`\}/,
   );
   assert.match(source, /isLiked\s*\?\s*"Removes your like from this post"/);
-  assert.match(source, /accessibilityLabel="Home food feed"/);
-  assert.match(
-    source,
-    /accessibilityHint="Swipe vertically to browse food posts and pull down to refresh"/,
-  );
-  assert.match(source, /directMessagesEnabled \? "Share in Hungry" : "Share post"/);
-  assert.match(source, /FloatingShareSendButton/);
-  assert.match(source, /selectedCount=\{selectedShareChatIds\.length\}/);
-  assert.match(source, /accessibilityLabel="Send shared post"/);
   assert.doesNotMatch(source, /showSendAction/);
-  assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
-  assert.match(source, /toChatShareRecipient/);
   assert.doesNotMatch(source, /ACTIVITY_MESSAGES/);
-  assert.match(source, /recipientAccessibilityLabelPrefix="Share post to"/);
-  assert.match(source, /Clipboard\.setStringAsync/);
-  assert.match(source, /Share\.share\(/);
-  assert.match(source, /const openCommentSheet = useCallback/);
-  assert.match(source, /const commentSheet = commentsSheetRef\.current/);
-  assert.match(source, /openCommentSheet\(\)/);
-  assert.match(
-    source,
-    /const loadCommentsForPost = useSocialStore\(\(state\) => state\.loadCommentsForPost\)/,
-  );
-  assert.match(source, /void loadCommentsForPost\(activeCommentItem\.id\)/);
-  assert.match(source, /<BottomSheetModal/);
-  assert.match(source, /commentsByPostId\[activeCommentItem\.id\] \?\? \[\]/);
-  assert.match(source, /addPostComment\(activeCommentItem\.id, newComment\)/);
-  assert.match(source, /addPostReply\(activeCommentItem\.id, newReply\)/);
-  assert.match(source, /repliesByCommentId\[commentId\] \?\? \[\]/);
-  assert.match(source, /visibleRepliesFor\(comment\.id\)\.map\(\(reply\)/);
-  assert.match(source, /style=\{styles\.commentText\}/);
-  assert.match(source, /style=\{styles\.replyText\}/);
   assert.match(source, /const styles = useMemo\(\(\) => createStyles\(theme\), \[theme\]\)/);
-  assert.match(source, /const listHeader = useMemo\(\(\) => renderHeader\(\), \[renderHeader\]\)/);
-  assert.match(source, /ListHeaderComponent=\{listHeader\}/);
-  assert.match(source, /useDiscoveryStore/);
-  assert.match(source, /const MAP_BUILDING_ID_ALIASES/);
-  assert.match(source, /const openVenueOnMap = useCallback/);
-  assert.match(source, /setSelectedBuilding\(toSummary\(mapBuilding\)\)/);
-  assert.match(source, /setSelectedFloor\(item\.venue\.floor\)/);
-  assert.match(source, /setHighlightedStallVenueId\(item\.venueId\)/);
-  assert.match(source, /navigation\.navigate\("DiscoverMap"\)/);
   assert.match(source, /`Show \$\{item\.venue\.name\} on map`/);
   assert.match(source, /accessibilityLabel=\{`Open \$\{item\.authorName\} profile`\}/);
   assert.match(source, /accessibilityLabel=\{`Open \$\{item\.authorName\} profile photo`\}/);
-  assert.match(
-    source,
-    /openUserProfile\([\s\S]*item\.authorName,[\s\S]*item\.authorAvatarUrl,[\s\S]*item\.authorLocation/,
-  );
   assert.match(source, /onPress=\{\(\) => actions\.openVenue\(item\)\}/);
-  assert.match(
-    source,
-    /const followedAuthors = useSocialStore\(\(state\) => state\.followedAuthors\)/,
-  );
-  assert.match(
-    source,
-    /const followedUserIds = useSocialStore\(\(state\) => state\.followedUserIds\)/,
-  );
-  assert.match(
-    source,
-    /const toggleAuthorFollow = useSocialStore\(\(state\) => state\.toggleAuthorFollow\)/,
-  );
-  assert.match(source, /const toggleFollow = useSocialStore\(\(state\) => state\.toggleFollow\)/);
   assert.match(source, /const followTargetId = item\.authorId/);
-  assert.match(source, /const canUseAuthorFallbackFollow =/);
-  assert.match(
-    source,
-    /canShowFollow=\{Boolean\(item\.authorId\) \|\| canUseAuthorFallbackFollow\}/,
-  );
   assert.match(
     source,
     /followTargetId\s*\? Boolean\(state\.followedUserIds\[followTargetId\]\)\s*: Boolean\(state\.followedAuthors\[item\.authorName\]\)/,
-  );
-  assert.match(
-    source,
-    /followTargetId[\s\S]*\? toggleFollow\(followTargetId\)[\s\S]*: toggleAuthorFollow\(item\.authorName\)/,
   );
   assert.match(
     source,
@@ -404,7 +319,6 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   assert.doesNotMatch(source, /Read more comments for/);
   assert.match(source, /styles\.postTag/);
   assert.match(source, /feedItemWrap:[\s\S]*marginBottom: spacing\[6\]/);
-  assert.match(source, /activeCommentItem\.caption/);
   const profileFollowRowIndex = source.indexOf("{/* Row 1: Profile & Follow */}");
   const imageContainerIndex = source.indexOf("{/* Image Container */}");
   const iconRowIndex = source.indexOf("{/* Row 1: Icons */}");
@@ -477,20 +391,6 @@ test("Sprint 9 screen contract: Home feed double tap likes with heart animation"
   );
 });
 
-test("Sprint 9 screen contract: Home feed supports pull-to-refresh without hiding ready content", () => {
-  const source = read("src/app/screens/home/HomeFeedScreen.tsx");
-
-  assert.match(source, /RefreshControl/);
-  assert.match(source, /const \[isRefreshing, setIsRefreshing\] = useState\(false\)/);
-  assert.match(source, /const feedRefreshSeedRef = useRef\(0\)/);
-  assert.match(source, /const refreshHomeFeed = useCallback\(async \(\) =>/);
-  assert.match(source, /setIsRefreshing\(true\)/);
-  assert.match(source, /feedRefreshSeedRef\.current \+= 1/);
-  assert.match(source, /await loadFeed\(\{ force: true, showLoading: false \}\)/);
-  assert.match(source, /refreshing=\{isRefreshing\}/);
-  assert.match(source, /onRefresh=\{refreshHomeFeed\}/);
-});
-
 test("Sprint 9 screen contract: feed videos pause on tap and fast-forward only from edge holds", () => {
   const source = read("src/components/social/ZoomableVideo.tsx");
 
@@ -513,24 +413,11 @@ test("Sprint 9 screen contract: feed videos pause on tap and fast-forward only f
   );
 });
 
-test("Sprint 9 screen contract: Home feed header follows app header scale", () => {
-  const source = read("src/app/screens/home/HomeFeedScreen.tsx");
-
-  assert.match(source, /<AppHeader[\s\S]*title="Home"/);
-  assert.match(source, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
-  assert.doesNotMatch(source, /<View style=\{\{ flex: 1, paddingTop: spacing\[3\] \}\}>/);
-  assert.doesNotMatch(
-    source,
-    /variant="displayBold" style=\{\{ color: palette\.orange, fontSize: 32 \}\}/,
-  );
-});
-
 test("Taste recommendation contract: core surfaces use shared ranking and explicit signals", () => {
   const homeFeedSource = read("src/features/home/feed.ts");
   const searchSource = read("src/features/search/search.ts");
   const mockRepositorySource = read("src/lib/services/mock/repositories.ts");
   const supabaseRepositorySource = read("src/lib/services/supabase/supabaseRepository.ts");
-  const homeScreenSource = read("src/app/screens/home/HomeFeedScreen.tsx");
   const discoverSource = read("src/app/screens/discover/DiscoverHomeScreen.tsx");
   const searchScreenSource = read("src/app/screens/search/SearchResultsScreen.tsx");
   const decideSource = read("src/app/screens/discover/DecideForMeResultScreen.tsx");
@@ -541,8 +428,6 @@ test("Taste recommendation contract: core surfaces use shared ranking and explic
   assert.match(mockRepositorySource, /runRecommendationPipeline\(results/);
   assert.match(supabaseRepositorySource, /runRecommendationPipeline\(matched/);
   assert.match(searchSource, /discovery\.searchDishes\(/);
-  assert.match(homeScreenSource, /recordTasteInteraction/);
-  assert.match(homeScreenSource, /type: "dish_like"/);
   assert.match(profileStoreSource, /recommendations\.recordExplicitFeedback/);
   assert.match(discoverSource, /type: "search_query"/);
   assert.match(discoverSource, /type: "dish_result_click"/);

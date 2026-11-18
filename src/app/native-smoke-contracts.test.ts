@@ -78,8 +78,6 @@ test("native interaction smoke covers discovery search, chips, and browse search
 test("native activity smoke exposes the audited direct-message tab", () => {
   const flow = read(".maestro/ios-chat-smoke.yaml");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-
   assert.match(flow, /appId: \$\{APP_ID\}/);
   assert.match(flow, /text: "Hungry, http:\/\/\.\*:8081"/);
   assert.match(flow, /text: "Hungry"\n\s+optional: true/);
@@ -97,7 +95,6 @@ test("native activity smoke exposes the audited direct-message tab", () => {
     flow,
     /extendedWaitUntil:\n\s+visible:\n\s+id: "activity-tab-messages"\n\s+timeout: 30000/,
   );
-  assert.match(home, /testID="home-activity-inbox-button"/);
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
   assert.match(developerLauncher, /label="Activity"[\s\S]*onPress=\{openActivityInboxSmoke\}/);
   assert.match(
@@ -178,7 +175,6 @@ test("native media and interaction flows remain available as explicit authentica
 test("native source-smoke coverage still includes gestures and keyboard-aware sheets", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const homeMap = read("src/app/screens/discover/HomeMapScreen.tsx");
-  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
   const reviewComments = read("src/components/social/ReviewCommentsSheet.tsx");
 
   assert.match(
@@ -186,8 +182,6 @@ test("native source-smoke coverage still includes gestures and keyboard-aware sh
     /getComponent=\{loadHomeMapScreen\}[\s\S]*name="DiscoverMap"[\s\S]*gestureEnabled: false/,
   );
   assert.doesNotMatch(homeMap, /PanResponder/);
-  assert.match(homeFeed, /<BottomSheetModal/);
-  assert.match(homeFeed, /<BottomSheetFooter/);
   assert.match(reviewComments, /<BottomSheetModal/);
   assert.match(reviewComments, /keyboardBehavior="extend"/);
 });

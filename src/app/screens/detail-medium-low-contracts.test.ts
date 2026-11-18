@@ -26,19 +26,12 @@ test("detail-M1/M15/L12: stall interaction bar loads first, rolls back and repor
 });
 
 test("detail-M3/M17/L17/L24: sold-out dishes and prices read the same everywhere", () => {
-  const card = readRepoFile("src/components/dish/DishCard.tsx");
-
   assert.match(dish, /Sold out today/);
   assert.match(dish, /isSoldOut\(item\.availabilityFlags\)\s*\? "sold out today"/);
   assert.match(
     readRepoFile("src/components/stall/StallMenuDish.tsx"),
     /export function menuDishAccessibilityLabel/,
   );
-  assert.match(card, /formatPriceWithBasis|PriceWithBasis/);
-  assert.match(card, /No ratings yet/);
-  assert.match(card, /reviewCount > 0 && /);
-  assert.doesNotMatch(card, /distanceMeters/);
-  assert.match(readRepoFile("src/app/screens/home/HomeFeedScreen.tsx"), /distanceLabel=\{/);
   // One static photo on a menu tile, not a cycling grid.
   assert.doesNotMatch(stall, /CyclingGridImage/);
 });

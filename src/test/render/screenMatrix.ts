@@ -276,12 +276,6 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     expect: /Messages/,
   },
   {
-    name: "HomeFeedScreen",
-    file: "src/app/screens/home/HomeFeedScreen.tsx",
-    scenario: "user",
-    expect: /Decide for me|Share in Hungry|Share post/,
-  },
-  {
     name: "StoryViewerScreen",
     file: "src/app/screens/home/StoryViewerScreen.tsx",
     scenario: "user",

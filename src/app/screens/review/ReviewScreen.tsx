@@ -124,7 +124,6 @@ function FoldChevron({ open, color }: { open: boolean; color: string }) {
 type Props = NativeStackScreenProps<ReviewStackParamList, "ReviewMain">;
 
 const POST_TAB_ORDER = mainTabOrder({
-  socialFeedEnabled: FEATURE_FLAGS.socialFeedEnabled,
   reviewCreationEnabled: FEATURE_FLAGS.reviewCreationEnabled,
 });
 

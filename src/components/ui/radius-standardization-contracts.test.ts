@@ -56,7 +56,6 @@ test("UI radius contract: shared cards, buttons, inputs, chips, and search use c
 test("UI radius contract: high-traffic app surfaces consume componentRadii", () => {
   const surfaces = [
     "src/app/screens/discover/DiscoverHomeScreen.tsx",
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/profile/ProfileHomeScreen.tsx",
     "src/features/post/components/PostTab.tsx",
     "src/features/post/components/MediaManager.tsx",

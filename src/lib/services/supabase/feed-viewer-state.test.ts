@@ -69,10 +69,7 @@ test("services expose getPostById and an idempotent reactToBite in mock and Supa
 
 test("a feed read that started before a like/save write settled does not overwrite it", () => {
   const store = read("src/store/useSocialStore.ts");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   assert.match(store, /lastReactionSettledAt\.set\(postId, Date\.now\(\)\)/);
   assert.match(store, /settledAt >= readStartedAt/);
   assert.match(store, /!pendingReactionCounts\.has\(item\.id\) &&\s*!readPredatesWrite/);
-  // The feed passes the time its read started.
-  assert.match(home, /initializeInteractions\(bundle\.socialFeed, now\)/);
 });
