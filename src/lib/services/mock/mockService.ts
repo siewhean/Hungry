@@ -31,8 +31,6 @@ import { STORY_GALLERY_ASSETS } from "@/lib/services/storyGalleryAssets";
 import {
   blogPosts,
   buildings,
-  chatConversations,
-  chatMessages,
   dishes,
   guestProfile,
   merchantAccount,
@@ -66,10 +64,6 @@ import type {
   LeaderboardSummary,
   PortfolioPointsEntry,
   BuildingDetail,
-  ChatConversation,
-  ChatMessage,
-  ChatParticipant,
-  ChatSubscriptionHandlers,
   ChecklistItemCreateInput,
   ExplicitFeedbackInput,
   ExtendedRecommendationContext,
@@ -406,9 +400,6 @@ const MODERATION_REMOVED_LIST_MESSAGE = "This list was removed by moderators and
 let _passportStamps: PassportStamp[] = [];
 let _passportEvents: PassportProgressEvent[] = [];
 let _userStallSubmissions: UserStallSubmission[] = [];
-let _chatConversations: ChatConversation[] = clone(chatConversations);
-let _chatMessages: Record<string, ChatMessage[]> = clone(chatMessages);
-const _chatSubscribers = new Map<string, Set<(message: ChatMessage) => void>>();
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 
 let _mockStories: Story[] = [
@@ -526,43 +517,6 @@ function pruneMockStories() {
     _mockStories = nextStories;
     void saveMockState("stories", _mockStories);
   }
-}
-
-function getCurrentChatParticipant(): ChatParticipant {
-  return {
-    kind: "user",
-    userId: _profile.id,
-    displayName: _profile.displayName || "You",
-    avatarUrl: _profile.avatarUrl,
-    isCurrentUser: true,
-  };
-}
-
-function sortMockConversations(conversations: ChatConversation[]): ChatConversation[] {
-  return [...conversations].sort(
-    (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-  );
-}
-
-function updateMockConversationPreview(conversationId: string, message: ChatMessage) {
-  _chatConversations = _chatConversations.map((conversation) =>
-    conversation.id === conversationId
-      ? {
-          ...conversation,
-          lastMessage: message.body,
-          lastMessageAt: message.createdAt,
-          unreadCount: message.sentByCurrentUser
-            ? conversation.unreadCount
-            : conversation.unreadCount + 1,
-          updatedAt: message.createdAt,
-        }
-      : conversation,
-  );
-}
-
-function emitMockChatMessage(message: ChatMessage) {
-  const listeners = _chatSubscribers.get(message.conversationId);
-  listeners?.forEach((listener) => listener(clone(message)));
 }
 
 let _isSocialHydrated = false;
@@ -3348,105 +3302,6 @@ export const hungryService: HungryService = {
             }),
           ),
       );
-    },
-  },
-
-  chat: {
-    async listConversations() {
-      return resolve(sortMockConversations(_chatConversations).map(clone));
-    },
-
-    async openConversation(input) {
-      const target = input.target;
-      const currentParticipant = getCurrentChatParticipant();
-      const existing = _chatConversations.find((conversation) =>
-        conversation.participants.some((participant) =>
-          target.kind === "merchant"
-            ? participant.merchantAccountId === target.merchantAccountId
-            : participant.userId === target.userId,
-        ),
-      );
-      if (existing) return resolve(clone(existing));
-
-      const now = new Date().toISOString();
-      const conversation: ChatConversation = {
-        id: `chat-${Date.now()}`,
-        type: input.type ?? (target.kind === "merchant" ? "merchant" : "user"),
-        title: target.displayName,
-        avatarUrl: target.avatarUrl,
-        participants: [currentParticipant, { ...target, isCurrentUser: false }],
-        unreadCount: 0,
-        updatedAt: now,
-      };
-      _chatConversations = [conversation, ..._chatConversations];
-      _chatMessages[conversation.id] = [];
-      return resolve(clone(conversation));
-    },
-
-    async listMessages(conversationId) {
-      const messages = _chatMessages[conversationId] ?? [];
-      return resolve(messages.map(clone));
-    },
-
-    async sendMessage(input) {
-      const body = input.body.trim();
-      if (!body) throw new Error("Message cannot be empty.");
-      const conversation = _chatConversations.find((item) => item.id === input.conversationId);
-      if (!conversation) throw new Error("Conversation not found.");
-
-      const createdAt = new Date().toISOString();
-      const message: ChatMessage = {
-        id: `message-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        conversationId: input.conversationId,
-        body,
-        sender: getCurrentChatParticipant(),
-        sentByCurrentUser: true,
-        clientNonce: input.clientNonce,
-        deliveredAt: createdAt,
-        createdAt,
-      };
-      _chatMessages[input.conversationId] = [
-        ...(_chatMessages[input.conversationId] ?? []),
-        message,
-      ];
-      updateMockConversationPreview(input.conversationId, message);
-      emitMockChatMessage(message);
-      return resolve(clone(message));
-    },
-
-    async markConversationRead(conversationId) {
-      const now = new Date().toISOString();
-      _chatConversations = _chatConversations.map((conversation) =>
-        conversation.id === conversationId
-          ? {
-              ...conversation,
-              unreadCount: 0,
-              participants: conversation.participants.map((participant) =>
-                participant.isCurrentUser ? { ...participant } : participant,
-              ),
-              updatedAt: conversation.updatedAt,
-            }
-          : conversation,
-      );
-      _chatMessages[conversationId] = (_chatMessages[conversationId] ?? []).map((message) =>
-        message.sentByCurrentUser || message.readAt ? message : { ...message, readAt: now },
-      );
-      return resolve(undefined);
-    },
-
-    subscribeToConversation(conversationId, handlers: ChatSubscriptionHandlers) {
-      const listener = (message: ChatMessage) => {
-        handlers.onMessage?.(message);
-      };
-      const listeners = _chatSubscribers.get(conversationId) ?? new Set();
-      listeners.add(listener);
-      _chatSubscribers.set(conversationId, listeners);
-      return {
-        unsubscribe() {
-          const current = _chatSubscribers.get(conversationId);
-          current?.delete(listener);
-        },
-      };
     },
   },
 

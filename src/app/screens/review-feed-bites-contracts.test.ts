@@ -52,12 +52,6 @@ test("Review feed cards do not render bottom bites sections", () => {
     /placeholder=\{activeReplyCommentId \? "Write a reply\.\.\." : "Add a comment\.\.\."\}/,
   );
 
-  assert.match(reviewShareSheet, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
-  assert.match(reviewShareSheet, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
-  assert.match(reviewShareSheet, /toChatShareRecipient/);
-  assert.doesNotMatch(reviewShareSheet, /ACTIVITY_MESSAGES/);
-  assert.match(reviewShareSheet, /selectedChatIds/);
-  assert.match(reviewShareSheet, /sharePostToChat\(chatId,/);
   assert.match(
     reviewShareSheet,
     /Clipboard\.setStringAsync\(withShareSource\(activeReview\.link, "copy_link"\)\)/,
@@ -68,10 +62,6 @@ test("Review feed cards do not render bottom bites sections", () => {
     reviewShareSheet,
     /Platform\.OS === "ios"\s*\? \{ message: activeReview\.message, url: link \}/,
   );
-  assert.match(reviewShareSheet, /recipientAccessibilityLabelPrefix="Select"/);
-  assert.match(reviewShareSheet, /FloatingShareSendButton/);
-  assert.match(reviewShareSheet, /selectedCount=\{selectedChatIds\.length\}/);
-  assert.match(reviewShareSheet, /accessibilityLabel=\{`Send shared \$\{kindNoun\}`\}/);
   assert.doesNotMatch(reviewShareSheet, /showSendAction/);
 
   // The unused Bite* cards and the bites strip were deleted (they were never mounted).

@@ -232,7 +232,7 @@ export type RootStackParamList = {
   MapZoomedIn: { buildingId: string };
   ReviewStack: NavigatorScreenParams<ReviewStackParamList>;
   WheelStack: NavigatorScreenParams<WheelStackParamList>;
-  ActivityInbox: { initialTab?: "messages" | "updates" } | undefined;
+  ActivityInbox: undefined;
   ActivityPostDetail: { postId: string; updateId?: string };
   /** One review on its own page; opened by review/:reviewId share links. */
   ReviewDetail: { reviewId: string };
@@ -252,8 +252,6 @@ export type RootStackParamList = {
   /** Another user's follower/following lists, opened from their profile. */
   UserFollowers: { userId: string; userDisplayName?: string };
   UserFollowing: { userId: string; userDisplayName?: string };
-  DirectMessages: undefined;
-  ChatDetail: { chatId: string; name: string; avatar: string; isOnline?: boolean };
   Crave: undefined;
   MusicSelection: undefined;
   UserProfile: {

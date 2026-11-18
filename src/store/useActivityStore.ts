@@ -8,11 +8,8 @@ import {
   selectActivitySourceUpdates,
   type ActivityUpdate,
   type ActivityItemType,
-  type ActivityChatMessage,
-  type SharedPostPayload,
 } from "@/features/home/activity";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
-import { webShareUrl } from "@/constants/links";
 
 import { hungryPersistStorage } from "./persistStorage";
 import { reportError } from "@/lib/monitoring/reportError";
@@ -30,7 +27,6 @@ function showActivityToast(message: string) {
 
 interface ActivityState {
   readActivityIds: string[];
-  sharedPostMessages: Record<string, ActivityChatMessage[]>;
   activityUpdates: ActivityUpdate[];
   dbActivityEvents: ActivityUpdate[];
   /** True once a server read has finished (ok or not): the inbox can stop its first-load state. */
@@ -45,7 +41,6 @@ interface ActivityState {
   fetchMoreActivityEvents: () => Promise<void>;
   isActivityUnread: (type: ActivityItemType, id: string, initialUnread?: boolean) => boolean;
   getUnreadCount: () => number;
-  sharePostToChat: (chatId: string, post: SharedPostPayload) => Promise<void>;
   addActivityUpdate: (update: Omit<ActivityUpdate, "id">) => void;
   fetchActivityEvents: () => Promise<void>;
   clearAccountScopedState: () => void;
@@ -55,7 +50,6 @@ export const useActivityStore = create<ActivityState>()(
   persist(
     (set, get) => ({
       readActivityIds: [],
-      sharedPostMessages: {},
       activityUpdates: [],
       dbActivityEvents: [],
       hasLoadedActivity: false,
@@ -65,7 +59,6 @@ export const useActivityStore = create<ActivityState>()(
       clearAccountScopedState: () =>
         set({
           readActivityIds: [],
-          sharedPostMessages: {},
           activityUpdates: [],
           dbActivityEvents: [],
           hasLoadedActivity: false,
@@ -194,38 +187,12 @@ export const useActivityStore = create<ActivityState>()(
           showActivityToast("Couldn't load older updates. Please try again.");
         }
       },
-      sharePostToChat: async (chatId, post) => {
-        // The link lets the recipient open the post; the rich card is local to the sender.
-        const shareLink = post.postId ? `\n${webShareUrl("post", post.postId)}` : "";
-        const shareBody = `Shared ${post.title}\n${post.subtitle}${shareLink}`;
-        await getHungryService().chat.sendMessage({
-          conversationId: chatId,
-          body: shareBody,
-          clientNonce: `share-${post.postId}-${Date.now()}`,
-        });
-
-        const message: ActivityChatMessage = {
-          id: `shared-${post.postId}-${Date.now()}`,
-          text: shareBody,
-          sent: true,
-          createdAt: "now",
-          sharedPost: post,
-        };
-
-        set((state) => ({
-          sharedPostMessages: {
-            ...state.sharedPostMessages,
-            [chatId]: [...(state.sharedPostMessages[chatId] ?? []), message],
-          },
-        }));
-      },
     }),
     {
       name: "hungry-activity-v1",
       storage: hungryPersistStorage,
       partialize: (state) => ({
         readActivityIds: state.readActivityIds,
-        sharedPostMessages: state.sharedPostMessages,
       }),
     },
   ),

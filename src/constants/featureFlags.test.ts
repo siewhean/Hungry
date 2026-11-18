@@ -20,11 +20,7 @@ const SHIPPED_SURFACE_FLAGS = [
 ] as const;
 
 // Archived surfaces (owner decision 2026-10-24): off everywhere unless a build opts in.
-const ARCHIVED_FLAGS = [
-  "socialFeedEnabled",
-  "directMessagesEnabled",
-  "stallFollowEnabled",
-] as const;
+const ARCHIVED_FLAGS = ["socialFeedEnabled", "stallFollowEnabled"] as const;
 // Archived until the Food Portfolio brought them back (2026-11-07); `=0` on it still closes them.
 const PORTFOLIO_LED_FLAGS = ["activityEnabled", "followConnectionsEnabled"] as const;
 
@@ -67,7 +63,6 @@ test("the archived social feed, Activity, Messages and Follow stall are off unti
   const optedIn = resolveFeatureFlags("development", "development", {
     EXPO_PUBLIC_ENABLE_SOCIAL_FEED: "1",
     EXPO_PUBLIC_ENABLE_ACTIVITY: "1",
-    EXPO_PUBLIC_ENABLE_MESSAGES: "1",
     EXPO_PUBLIC_ENABLE_FOLLOW_CONNECTIONS: "1",
     EXPO_PUBLIC_ENABLE_STALL_FOLLOW: "1",
   });

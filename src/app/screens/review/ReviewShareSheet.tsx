@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type RefObject } from "react";
+import { useCallback, useMemo, useState, type RefObject } from "react";
 import { Platform, Share } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import {
   BottomSheetBackdrop,
-  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetView,
@@ -11,16 +10,11 @@ import {
 import { Copy, Image as ImageIcon, MessageCircle, Send, Share2 } from "lucide-react-native";
 
 import { ReviewShareStudioModal } from "@/components/share/ReviewShareStudio";
-import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
+import { ShareLinkCard } from "@/components/social";
 import { buildTelegramShareUrl, buildWhatsAppShareUrl } from "@/features/share/messagingShare";
 import { withShareSource } from "@/features/share/shareAttribution";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { reportError } from "@/lib/monitoring/reportError";
 import { openTrustedMessagingShareUrl } from "@/lib/security/safeLinking";
-import { getHungryService } from "@/lib/services/serviceProvider";
-import { useActivityStore } from "@/store/useActivityStore";
 import type { ShareChannel } from "@/store/useSocialStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
@@ -64,8 +58,6 @@ type ReviewShareSheetProps = {
   onShared: (postId: string, channel: ShareChannel) => void;
   /** Called after every completed share, on any channel (copy, apps, system, in-app). */
   onShareCompleted?: (channel: ShareChannel) => void;
-  /** False for signed-out viewers: only link/system shares, no in-app sends. */
-  inAppSharingEnabled?: boolean;
 };
 
 const EMPTY_TARGET: ReviewShareTarget = {
@@ -86,74 +78,34 @@ export function ReviewShareSheet({
   onDismiss,
   onShared,
   onShareCompleted,
-  inAppSharingEnabled = true,
 }: ReviewShareSheetProps) {
   const { palette, spacing } = useHungryTheme();
-  const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const showToast = useUIStore((state) => state.showToast);
-  const [selectedChatIds, setSelectedChatIds] = useState<string[]>([]);
-  const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
   // Kept apart from activeReview: the sheet closes (and clears it) before the studio opens.
   const [pictureTarget, setPictureTarget] = useState<ReviewShareTarget | null>(null);
   const kind = activeReview?.kind ?? "review";
   const kindNoun = kind === "stall" ? "stall" : kind === "dish" ? "dish" : "review";
-  // A chat share sends a post card, so it needs a real post id.
-  const directMessagesEnabled =
-    FEATURE_FLAGS.directMessagesEnabled && inAppSharingEnabled && Boolean(activeReview?.postId);
-  // Without in-app recipients the sheet holds only the four link actions: keep it short.
-  // The link-only sheet is as tall as its content (about 150) plus the home-indicator inset,
-  // so there is no empty band under the four actions.
-  const snapPoints = useMemo(
-    () => [directMessagesEnabled ? "62%" : 150 + bottomInset + 24],
-    [directMessagesEnabled, bottomInset],
-  );
-
-  const loadChatConversations = useCallback(async () => {
-    if (!FEATURE_FLAGS.directMessagesEnabled) {
-      setShareRecipients([]);
-      return;
-    }
-    if (!inAppSharingEnabled) {
-      setShareRecipients([]);
-      return;
-    }
-
-    try {
-      const conversations = await getHungryService().chat.listConversations();
-      setShareRecipients(conversations.map(toChatShareRecipient));
-    } catch (error) {
-      reportError(error, { screen: "ReviewShareSheet", action: "list_conversations" });
-      setShareRecipients([]);
-    }
-  }, [inAppSharingEnabled]);
-
-  useEffect(() => {
-    if (activeReview) {
-      void loadChatConversations();
-    }
-  }, [activeReview, loadChatConversations]);
+  // The sheet holds only the link actions, so it is as tall as its content (about 150) plus the
+  // home-indicator inset, with no empty band under the actions.
+  const snapPoints = useMemo(() => [150 + bottomInset + 24], [bottomInset]);
 
   const trackShare = useCallback(
-    (target: ReviewShareTarget, channel: ShareChannel, recipientCount?: number) => {
+    (target: ReviewShareTarget, channel: ShareChannel) => {
       const targetKind = target.kind ?? "review";
-      const recipients = recipientCount === undefined ? {} : { recipient_count: recipientCount };
       if (targetKind === "stall") {
         trackAnalyticsEvent("stall_shared", {
           stall_id: target.reviewId.replace(/^stall-/, ""),
           channel,
-          ...recipients,
         });
       } else if (targetKind === "dish") {
         trackAnalyticsEvent("dish_shared", {
           dish_id: target.reviewId.replace(/^dish-/, ""),
           channel,
-          ...recipients,
         });
       } else {
         trackAnalyticsEvent("review_shared", {
           review_id: target.reviewId,
           channel,
-          ...recipients,
         });
       }
       if (target.postId) {
@@ -163,73 +115,6 @@ export function ReviewShareSheet({
     },
     [onShareCompleted, onShared],
   );
-
-  const toggleChat = useCallback((chatId: string) => {
-    setSelectedChatIds((current) =>
-      current.includes(chatId)
-        ? current.filter((candidate) => candidate !== chatId)
-        : [...current, chatId],
-    );
-  }, []);
-
-  const resetAndDismiss = useCallback(() => {
-    setSelectedChatIds([]);
-    onDismiss();
-  }, [onDismiss]);
-
-  const sendToHungryUsers = useCallback(async () => {
-    if (!directMessagesEnabled) return;
-    if (!activeReview || selectedChatIds.length === 0) return;
-
-    const results = await Promise.allSettled(
-      selectedChatIds.map((chatId) =>
-        // n-plus-one-ok: one message per chat; each send stands alone so a failed chat can be retried by itself
-        sharePostToChat(chatId, {
-          postId: activeReview.postId,
-          title: activeReview.title,
-          subtitle: activeReview.subtitle,
-          imageUrl: activeReview.imageUrl,
-          authorName: activeReview.authorName,
-        }),
-      ),
-    );
-    const failedChatIds = selectedChatIds.filter(
-      (_chatId, index) => results[index]?.status === "rejected",
-    );
-    if (failedChatIds.length > 0) {
-      const firstFailure = results.find(
-        (result): result is PromiseRejectedResult => result.status === "rejected",
-      );
-      reportError(firstFailure?.reason, { screen: "ReviewShareSheet", action: "share_to_chat" });
-      // Keep only the chats that failed selected, so a retry does not resend to the others.
-      setSelectedChatIds(failedChatIds);
-      showToast({
-        message:
-          failedChatIds.length === selectedChatIds.length
-            ? "Could not share review. Please try again."
-            : `Could not send to ${failedChatIds.length} chat${failedChatIds.length === 1 ? "" : "s"}. Try again for those.`,
-        tone: "error",
-      });
-      return;
-    }
-    trackShare(activeReview, "in_app", selectedChatIds.length);
-    showToast({
-      message: `${kindNoun === "review" ? "Review" : kindNoun === "dish" ? "Dish" : "Stall"} shared with ${selectedChatIds.length} ${
-        selectedChatIds.length === 1 ? "person" : "people"
-      }.`,
-      tone: "success",
-    });
-    innerRef.current?.dismiss();
-  }, [
-    activeReview,
-    directMessagesEnabled,
-    innerRef,
-    kindNoun,
-    selectedChatIds,
-    sharePostToChat,
-    showToast,
-    trackShare,
-  ]);
 
   const copyLink = useCallback(async () => {
     if (!activeReview) return;
@@ -297,7 +182,7 @@ export function ReviewShareSheet({
         enablePanDownToClose
         accessibilityLabel={`Share ${kindNoun}`}
         accessibilityViewIsModal
-        onDismiss={resetAndDismiss}
+        onDismiss={onDismiss}
         backdropComponent={(props) => (
           <BottomSheetBackdrop
             {...props}
@@ -312,21 +197,6 @@ export function ReviewShareSheet({
         )}
         backgroundStyle={{ backgroundColor: palette.surface }}
         handleIndicatorStyle={{ backgroundColor: palette.border }}
-        footerComponent={
-          directMessagesEnabled
-            ? (props) => (
-                <BottomSheetFooter {...props}>
-                  <FloatingShareSendButton
-                    selectedCount={selectedChatIds.length}
-                    onPress={sendToHungryUsers}
-                    bottomInset={bottomInset}
-                    accessibilityLabel={`Send shared ${kindNoun}`}
-                    placement="inline"
-                  />
-                </BottomSheetFooter>
-              )
-            : undefined
-        }
       >
         <BottomSheetView style={{ flex: 1 }}>
           <BottomSheetScrollView
@@ -334,11 +204,11 @@ export function ReviewShareSheet({
             contentContainerStyle={{
               gap: spacing[3],
               padding: spacing[4],
-              paddingBottom: directMessagesEnabled ? bottomInset + spacing[12] : bottomInset,
+              paddingBottom: bottomInset,
             }}
           >
-            <InAppShareCard
-              title={directMessagesEnabled ? `Share ${kindNoun}` : `Share ${kindNoun} link`}
+            <ShareLinkCard
+              title={`Share ${kindNoun} link`}
               quickActions={[
                 {
                   key: "copy",
@@ -388,11 +258,6 @@ export function ReviewShareSheet({
                 },
                 ...pictureActions,
               ]}
-              recipients={directMessagesEnabled ? shareRecipients : []}
-              selectedRecipientIds={selectedChatIds}
-              onToggleRecipient={toggleChat}
-              onSend={sendToHungryUsers}
-              recipientAccessibilityLabelPrefix="Select"
             />
           </BottomSheetScrollView>
         </BottomSheetView>

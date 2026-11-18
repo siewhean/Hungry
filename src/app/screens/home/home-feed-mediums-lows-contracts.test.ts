@@ -74,10 +74,7 @@ test("M7: the inbox shows an error banner, skeleton, mark-all and paging; the st
   const store = read("src/store/useActivityStore.ts");
   assert.match(inbox, /groupActivityUpdates\(/);
   // Mark all read is the header's trailing action (Apple design pass), not a button in the list.
-  assert.match(
-    inbox,
-    /right=\{\s*activeTab === "updates" && updatesHaveUnread \? \(\s*<Button\s*label="Mark all read"/,
-  );
+  assert.match(inbox, /right=\{\s*updatesHaveUnread \? \(\s*<Button\s*label="Mark all read"/);
   assert.match(inbox, /Show older updates/);
   assert.match(inbox, /<Skeleton/);
   assert.match(inbox, /`Unread\. /);
@@ -448,7 +445,6 @@ test("L12: posts report an impression after a short dwell, and videos report a p
 test("L13: stories and direct messages stay behind their flags in production", () => {
   const flags = read("src/constants/featureFlags.ts");
   assert.match(flags, /storiesEnabled/);
-  assert.match(flags, /directMessagesEnabled/);
 });
 
 test("L14: only a drag from a screen edge pages the tabs, so the photo carousel keeps its swipes", () => {

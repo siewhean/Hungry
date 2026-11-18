@@ -36,7 +36,7 @@ import { MissionCard } from "@/components/gamification/MissionCard";
 import { PassportCard } from "@/components/gamification/PassportCard";
 import { ReportListSheet } from "@/components/portfolio/ReportListSheet";
 import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
-import { InAppShareCard, ShareQuickActionGroup } from "@/components/social/ShareSettings";
+import { ShareLinkCard, ShareQuickActionGroup } from "@/components/social/ShareSettings";
 import { FeedStateView } from "@/components/ui/FeedStateView";
 import { FloatingToast } from "@/components/ui/FloatingToast";
 import { AppBottomTabItem } from "@/components/ui/AppBottomTabItem";
@@ -401,27 +401,27 @@ test("ShareQuickActionGroup renders each action and presses the right one", asyn
   assert.deepEqual(pressed, ["whatsapp"]);
 });
 
-test("InAppShareCard lists recipients and reports which one was toggled", async () => {
-  const toggled: string[] = [];
+test("ShareLinkCard shows its title and presses the chosen link action", async () => {
+  const pressed: string[] = [];
   const view = await render(
-    createElement(InAppShareCard, {
-      title: "Share Laksa",
-      subtitle: "Send to a friend",
-      recipients: [
-        { id: "r1", avatar: "", name: "Ahmad", lastMessage: "see you" },
-        { id: "r2", avatar: "", name: "Mei" },
+    createElement(ShareLinkCard, {
+      title: "Share Laksa link",
+      subtitle: "Send it anywhere",
+      quickActions: [
+        {
+          key: "copy",
+          label: "Copy link",
+          accessibilityLabel: "Copy Laksa link",
+          icon: () => null,
+          onPress: () => pressed.push("copy"),
+        },
       ],
-      selectedRecipientIds: ["r2"],
-      onToggleRecipient: (id: string) => toggled.push(id),
-      onSend: () => undefined,
-      recipientAccessibilityLabelPrefix: "Send to",
-    } as never),
+    }),
   );
-  assert.match(view.text(), /Share Laksa/);
-  assert.match(view.text(), /Ahmad/);
-  assert.match(view.text(), /Mei/);
-  await view.press(view.findByLabel(/Send to Ahmad/));
-  assert.deepEqual(toggled, ["r1"]);
+  assert.match(view.text(), /Share Laksa link/);
+  assert.match(view.text(), /Send it anywhere/);
+  await view.press(view.findByLabel("Copy Laksa link"));
+  assert.deepEqual(pressed, ["copy"]);
 });
 
 beforeEach(() => useComposerStore.setState({ activeTab: "post" }));

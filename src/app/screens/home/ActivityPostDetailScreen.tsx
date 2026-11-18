@@ -454,7 +454,6 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         onDismiss={() => setActiveShareReview(null)}
         // Signed-out visitors can copy or system-share the link; recording a
         // share (and in-app sends) needs an account.
-        inAppSharingEnabled={isAuthenticated}
         onShared={(postId, channel) => {
           if (isAuthenticated) incrementShare(postId, channel);
         }}

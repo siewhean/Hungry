@@ -24,7 +24,6 @@ export const KNOWN_RENDER_ERRORS: Record<KnownRenderError, { pattern: RegExp; wh
 export type ParamKey =
   | "postRoute"
   | "catalogDish"
-  | "chat"
   | "checklist"
   | "checklistPicker"
   | "dish"
@@ -261,19 +260,6 @@ export const SCREEN_MATRIX: readonly ScreenRow[] = [
     file: "src/app/screens/home/AddStoryScreen.tsx",
     scenario: "user",
     expect: /Gallery/,
-  },
-  {
-    name: "ChatDetailScreen",
-    file: "src/app/screens/home/ChatDetailScreen.tsx",
-    scenario: "user",
-    expect: /Ahmad/,
-    params: "chat",
-  },
-  {
-    name: "DirectMessagesScreen",
-    file: "src/app/screens/home/DirectMessagesScreen.tsx",
-    scenario: "user",
-    expect: /Messages/,
   },
   {
     name: "StoryViewerScreen",

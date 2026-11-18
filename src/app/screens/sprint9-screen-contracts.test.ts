@@ -265,7 +265,6 @@ test("Sprint 9 screen contract: Home feed interactions are wired for like/save/c
   );
   assert.match(source, /isLiked\s*\?\s*"Removes your like from this post"/);
   assert.doesNotMatch(source, /showSendAction/);
-  assert.doesNotMatch(source, /ACTIVITY_MESSAGES/);
   assert.match(source, /const styles = useMemo\(\(\) => createStyles\(theme\), \[theme\]\)/);
   assert.match(source, /`Show \$\{item\.venue\.name\} on map`/);
   assert.match(source, /accessibilityLabel=\{`Open \$\{item\.authorName\} profile`\}/);
