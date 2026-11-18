@@ -65,9 +65,8 @@ export function adjacentTabKey<T extends string>(
 export type MainTabKey = "Discover" | "Create" | "Review" | "Profile";
 
 export function mainTabOrder(flags: { reviewCreationEnabled: boolean }): MainTabKey[] {
-  return [
-    "Discover",
-    ...(flags.reviewCreationEnabled ? (["Create", "Review"] as const) : []),
-    "Profile",
-  ];
+  const order: MainTabKey[] = ["Discover"];
+  if (flags.reviewCreationEnabled) order.push("Create", "Review");
+  order.push("Profile");
+  return order;
 }
