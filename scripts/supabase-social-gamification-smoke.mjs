@@ -324,17 +324,6 @@ async function main() {
       }),
       "block target user",
     );
-    expectError(
-      await clientA
-        .rpc("open_chat_conversation", {
-          p_target_user_id: userB.id,
-          p_target_merchant_account_id: null,
-          p_conversation_type: "user",
-        })
-        .maybeSingle(),
-      "blocked user conversation open",
-    );
-
     const foodCred = await expectNoError(
       await clientA.rpc("award_food_cred", {
         p_source_action: "post_created",

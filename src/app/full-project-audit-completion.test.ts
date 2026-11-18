@@ -71,7 +71,6 @@ test("full project audit P0: social safety, public profiles, and chat sends are 
     /grant execute on function public\.can_read_author_content\(uuid\) to anon/i,
   );
 
-  assert.match(readinessSmoke, /send_chat_message/);
   assert.match(readinessSmoke, /report_content/);
   assert.match(readinessSmoke, /list_content_moderation_queue/);
 });

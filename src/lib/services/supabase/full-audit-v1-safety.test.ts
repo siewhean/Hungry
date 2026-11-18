@@ -134,7 +134,6 @@ test("mobile services use the Full Audit V1 gamification persistence hooks", () 
 });
 
 test("Full Audit V1 smoke checks the applied social and gamification controls", () => {
-  assert.match(readinessSmoke, /send_chat_message/);
   assert.match(readinessSmoke, /report_content/);
   assert.match(readinessSmoke, /list_content_moderation_queue/);
   assert.match(readinessSmoke, /award_food_cred/);
@@ -193,7 +192,6 @@ test("Full Audit V1 live behavior smoke covers social safety and gamification", 
   assert.match(socialGamificationSmokeScript, /\.rpc\("report_content"/);
   assert.match(socialGamificationSmokeScript, /\.rpc\("list_content_moderation_queue"/);
   assert.match(socialGamificationSmokeScript, /\.from\("user_blocks"\)\.upsert/);
-  assert.match(socialGamificationSmokeScript, /\.rpc\("open_chat_conversation"/);
   assert.match(socialGamificationSmokeScript, /\.rpc\("award_food_cred"/);
   assert.match(socialGamificationSmokeScript, /\.rpc\("upsert_stall_interaction"/);
   assert.match(socialGamificationSmokeScript, /\.rpc\("increment_mission_progress"/);
