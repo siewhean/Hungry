@@ -46,7 +46,7 @@ Actions, Nightly backup, Run workflow. Both jobs should be green and the run pag
 
 ### 5. Turn on failure emails
 
-GitHub emails a failed scheduled run to the person who last edited the `schedule` line of `nightly-backup.yml` (after the merge, that is whoever merged it). Check GitHub Settings, Notifications, Actions: email on for failed workflows. To test, run the workflow by hand with `BACKUP_AGE_PUBLIC_KEY` temporarily blank and confirm a failure email arrives (manual runs email the person who started them).
+GitHub emails a failed **scheduled** run to the person who created the workflow or last changed its `schedule` line, which is the author of that commit, not necessarily whoever merges the PR. To make sure that person is you, after the merge open `nightly-backup.yml` in the GitHub web editor, change the cron minute (for example `40` to `41`), and commit. Then check GitHub Settings, Notifications, Actions: email on for failed workflows. A manual run only emails the person who starts it, so it proves your email setting works but not that scheduled failures reach you. Confirm the real path once: the first scheduled run after the 400 MB line fires (the size-check job fails while the database is over it) should email you; if no email arrives by the next morning, check the two settings above. If you blank `BACKUP_AGE_PUBLIC_KEY` for a manual test, set it back to the `age1...` public key afterwards, whether or not an email arrived, and run the workflow again to confirm it passes.
 
 Optional repository variables to change the warning lines: `HUNGRY_DB_WARN_MB`, `HUNGRY_STORAGE_WARN_MB`.
 
