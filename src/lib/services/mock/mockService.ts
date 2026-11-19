@@ -154,7 +154,10 @@ import {
   findPublishedStallPost,
   hydratePublishedStallPosts,
   listMockStallPosts,
+  listPrivatePublishedStallPostIds,
   removePublishedStallPost,
+  setPublishedStallPostVisibility,
+  updatePublishedStallPostCaption,
 } from "./stallPostState";
 
 type MerchantActionEventInput = Parameters<
@@ -524,6 +527,8 @@ let _isSocialHydrated = false;
 async function hydrateSocial() {
   if (_isSocialHydrated) return;
   await hydratePublishedStallPosts();
+  // The private state is stored with each post: bring the in-memory set back in line after a reload.
+  for (const postId of listPrivatePublishedStallPostIds()) _mockPrivatePostIds.add(postId);
   const s = await loadMockState<Story[]>("stories");
   if (s) _mockStories = s;
   pruneMockStories();
@@ -2201,7 +2206,10 @@ export const hungryService: HungryService = {
           rating: draft.rating,
           author: draft.portfolio.author,
         });
-        if (draft.portfolio.visibility === "private") _mockPrivatePostIds.add(bite.id);
+        if (draft.portfolio.visibility === "private") {
+          _mockPrivatePostIds.add(bite.id);
+          await setPublishedStallPostVisibility(bite.id, "private");
+        }
         portfolioPostId = bite.id;
         if (draft.clientReviewId) _mockReviewEntryIds.set(draft.clientReviewId, bite.id);
       }
@@ -2565,6 +2573,7 @@ export const hungryService: HungryService = {
         !persisted ||
         (persisted.publishedStatus && persisted.publishedStatus !== "published") ||
         persisted.visibility === "private" ||
+        _mockPrivatePostIds.has(persisted.id) ||
         (persisted.authorId && _blockedUsers.has(persisted.authorId))
       ) {
         return resolve(null);
@@ -2583,8 +2592,14 @@ export const hungryService: HungryService = {
       const bite = MOCK_BITES_FEED.find(
         (candidate) => candidate.id === postId && candidate.authorId === _profile.id,
       );
-      if (!bite) throw new Error("This post can no longer be edited.");
-      bite.caption = sanitizeFreeText(patch.caption, POST_CAPTION_MAX_LENGTH);
+      // After a reload the feed is empty: the post is still the viewer's own if it was persisted.
+      const persisted = findPublishedStallPost(postId);
+      if (!bite && !(persisted && persisted.authorId === _profile.id)) {
+        throw new Error("This post can no longer be edited.");
+      }
+      const caption = sanitizeFreeText(patch.caption, POST_CAPTION_MAX_LENGTH);
+      if (bite) bite.caption = caption;
+      await updatePublishedStallPostCaption(postId, caption);
     },
 
     async deletePost(postId: string) {
@@ -2592,8 +2607,11 @@ export const hungryService: HungryService = {
       const index = MOCK_BITES_FEED.findIndex(
         (candidate) => candidate.id === postId && candidate.authorId === _profile.id,
       );
-      if (index < 0) throw new Error("This post was already deleted.");
-      MOCK_BITES_FEED.splice(index, 1);
+      const persisted = findPublishedStallPost(postId);
+      if (index < 0 && !(persisted && persisted.authorId === _profile.id)) {
+        throw new Error("This post was already deleted.");
+      }
+      if (index >= 0) MOCK_BITES_FEED.splice(index, 1);
       await removePublishedStallPost(postId);
     },
 
@@ -3127,6 +3145,7 @@ export const hungryService: HungryService = {
         (bite) => bite.id === postId && bite.authorId === _profile.id,
       );
       if (!owned) throw new Error("Only your own dishes can be changed.");
+      await setPublishedStallPostVisibility(postId, visibility);
       if (visibility === "private") {
         _mockPrivatePostIds.add(postId);
         _mockPortfolioPicks[_profile.id] = (_mockPortfolioPicks[_profile.id] ?? []).filter(

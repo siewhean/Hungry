@@ -5,7 +5,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { hungryService } from "@/lib/services/mock/mockService";
-import { appendPublishedStallPost } from "@/lib/services/mock/stallPostState";
+import {
+  appendPublishedStallPost,
+  findPublishedStallPost,
+  listMockStallPosts,
+} from "@/lib/services/mock/stallPostState";
 import { dishes } from "@/lib/services/mock/data";
 import type { StallPost } from "@/types/domain";
 
@@ -87,4 +91,97 @@ test("getPostById does not return a persisted post by a blocked author", async (
     await hungryService.communitySafety.unblockUser(post.authorId!);
   }
   assert.ok(await hungryService.social.getPostById(post.id), "visible again after the unblock");
+});
+
+test("a persisted post the viewer owns can be edited and deleted after a reload", async () => {
+  const me = (await hungryService.profile.getProfile()).id;
+  const post = persistedPost("persisted-owned", { authorId: me });
+  await appendPublishedStallPost(post);
+  assert.ok(await hungryService.social.getPostById(post.id), "found after the reload");
+
+  await hungryService.social.updatePost(post.id, { caption: "Edited after a reload" });
+  assert.equal(findPublishedStallPost(post.id)?.caption, "Edited after a reload");
+  assert.equal((await hungryService.social.getPostById(post.id))?.caption, "Edited after a reload");
+
+  await hungryService.social.deletePost(post.id);
+  assert.equal(findPublishedStallPost(post.id), undefined, "the stored record is gone");
+  assert.equal(await hungryService.social.getPostById(post.id), null);
+  await assert.rejects(() => hungryService.social.deletePost(post.id), /already deleted/);
+});
+
+test("a persisted post by someone else cannot be edited or deleted", async () => {
+  const post = persistedPost("persisted-not-mine");
+  await appendPublishedStallPost(post);
+
+  await assert.rejects(
+    () => hungryService.social.updatePost(post.id, { caption: "Not yours" }),
+    /can no longer be edited/,
+  );
+  await assert.rejects(() => hungryService.social.deletePost(post.id), /already deleted/);
+  assert.equal(findPublishedStallPost(post.id)?.caption, post.caption, "left untouched");
+});
+
+// A reload keeps what was persisted and drops what lived only in memory. A second copy of the
+// mock service module stands in for the reloaded app: its feed and private-post set start empty
+// while the stored posts (stallPostState) carry over.
+function reloadedService(): typeof hungryService {
+  const modulePath = require.resolve("@/lib/services/mock/mockService");
+  delete require.cache[modulePath];
+  return (require(modulePath) as { hungryService: typeof hungryService }).hungryService;
+}
+
+test("a review published as private is not returned by getPostById after a reload", async () => {
+  const dish = dishes[0]!;
+  const venueId = "venue-tian-tian";
+  const { portfolioPostId } = await hungryService.reviews.submitReview({
+    dishId: dish.id,
+    venueId,
+    rating: 4,
+    text: "Private portfolio review for the reload test",
+    tags: [],
+    photos: ["https://example.test/private.jpg"],
+    portfolio: {
+      caption: "Only me",
+      tasteStamp: { sweet: 1, spicy: 1, sour: 1, salty: 1, rich: 1, aromatic: 1 },
+      visibility: "private",
+    },
+  });
+  assert.ok(portfolioPostId, "the review made a portfolio entry");
+
+  // The stored record carries the private state, not only the in-memory set.
+  assert.equal(findPublishedStallPost(portfolioPostId)?.visibility, "private");
+  assert.ok(
+    !listMockStallPosts().some((post) => post.id === portfolioPostId),
+    "stall post listings leave it out",
+  );
+
+  const reloaded = reloadedService();
+  assert.equal(await reloaded.social.getPostById(portfolioPostId), null);
+  assert.ok(
+    !(await reloaded.social.getBitesFeed()).some((bite) => bite.id === portfolioPostId),
+    "the feed leaves it out",
+  );
+});
+
+test("making an entry public again stores that with the post and getPostById returns it", async () => {
+  const dish = dishes[0]!;
+  const { portfolioPostId } = await hungryService.reviews.submitReview({
+    dishId: dish.id,
+    venueId: "venue-tian-tian",
+    rating: 5,
+    text: "Review that goes public again",
+    tags: [],
+    photos: ["https://example.test/public-again.jpg"],
+    portfolio: {
+      caption: "Public later",
+      tasteStamp: { sweet: 1, spicy: 1, sour: 1, salty: 1, rich: 1, aromatic: 1 },
+      visibility: "private",
+    },
+  });
+  assert.ok(portfolioPostId);
+  await hungryService.foodPortfolio.setEntryVisibility(portfolioPostId, "public");
+  assert.equal(findPublishedStallPost(portfolioPostId)?.visibility, "public");
+
+  const reloaded = reloadedService();
+  assert.equal((await reloaded.social.getPostById(portfolioPostId))?.id, portfolioPostId);
 });

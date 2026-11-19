@@ -267,8 +267,19 @@ export async function getPublishedPostIdByCaption(page: Page, caption: string) {
 }
 
 /**
+ * Reloads the page and waits until the app is mounted again (the Developer Launcher is on screen).
+ * React Navigation listens for history changes from an effect after it has read the first URL, so
+ * a path pushed with openPathInApp before the app is back up can be lost: wait here first.
+ */
+export async function reloadApp(page: Page) {
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await authenticateMockDeveloperSession(page);
+}
+
+/**
  * Moves the running app to a path through the browser history, the way a link inside the app does,
  * without reloading: in-memory state (the signed-in mock user and their posts) stays as it is.
+ * After a reload, call reloadApp first so the app is listening.
  */
 export async function openPathInApp(page: Page, path: string) {
   await page.evaluate((target) => {
