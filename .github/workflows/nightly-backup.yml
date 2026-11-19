@@ -84,7 +84,7 @@ jobs:
     timeout-minutes: 10
     env:
       BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
-      SIZE_DB_WARN_MB: ${{ vars.HUNGRY_DB_WARN_MB || '400' }}
+      SIZE_DB_WARN_MB: ${{ vars.HUNGRY_DB_WARN_MB || '700' }}
       SIZE_STORAGE_WARN_MB: ${{ vars.HUNGRY_STORAGE_WARN_MB || '800' }}
     steps:
       - name: Checkout

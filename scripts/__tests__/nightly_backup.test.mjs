@@ -42,9 +42,9 @@ test("workflow keeps 14 nightly and 8 weekly copies and uploads only the encrypt
   assert.ok(workflow.includes("[ \"$(date -u +%u)\" = 7 ]"), "weekly copy is taken on Sunday");
 });
 
-test("size check is its own job with the 400 MB and 800 MB defaults", () => {
+test("size check is its own job with the 700 MB and 800 MB workflow defaults", () => {
   assert.match(workflow, /size-check:/);
-  assert.ok(workflow.includes("vars.HUNGRY_DB_WARN_MB || '400'"));
+  assert.ok(workflow.includes("vars.HUNGRY_DB_WARN_MB || '700'"));
   assert.ok(workflow.includes("vars.HUNGRY_STORAGE_WARN_MB || '800'"));
 });
 
