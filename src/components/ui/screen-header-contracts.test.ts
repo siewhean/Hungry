@@ -76,7 +76,6 @@ test("Screen header contract: shared app headers use one fixed title treatment",
 test("Screen header contract: live Discover, Review, and New Post headers use AppHeader", () => {
   const discover = readHomeSource();
   const tabs = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const reviews = read("src/app/screens/review/ReviewFeedScreen.tsx");
   const profileShell = read("src/app/screens/profile/ProfileScreenShell.tsx");
   const composerHeader = read("src/features/post/components/ComposerHeader.tsx");
@@ -98,10 +97,6 @@ test("Screen header contract: live Discover, Review, and New Post headers use Ap
   assert.match(tabs, /<Tab\.Screen\s+name="Discover"\s+component=\{DiscoverWrapper\}/);
   assert.match(tabs, /require\("@\/app\/screens\/discover\/DiscoverEntryScreen"\)/);
   assert.doesNotMatch(tabs, /DiscoverHomeScreenV2/);
-  assert.match(home, /<AppHeader[\s\S]*title="Home"/);
-  assert.match(home, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
-  assert.doesNotMatch(home, /homeHeaderTopOffset/);
-  assert.doesNotMatch(home, /homeHeaderTitle/);
   assert.match(reviews, /const reviewHeaderTitle = "Reviews"/);
   // The header names no place; useLocationStore is only read for the "Near you" chip.
   assert.doesNotMatch(reviews, /getNearestSingaporeArea|locationLabel/);

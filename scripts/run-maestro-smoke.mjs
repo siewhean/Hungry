@@ -16,7 +16,6 @@ const FLOW_MAP = {
   "ios-authenticated-fallback": [".maestro/ios-authenticated-fallback-smoke.yaml"],
   "ios-location-denied": [".maestro/ios-location-denied-smoke.yaml"],
   "ios-review-post": [".maestro/ios-review-post-smoke.yaml"],
-  "ios-chat": [".maestro/ios-chat-smoke.yaml"],
   "ios-media": [".maestro/ios-media-picker-permission.yaml"],
   "ios-interactions": [".maestro/ios-discovery-search-smoke.yaml"],
   ios: [

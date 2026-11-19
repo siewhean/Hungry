@@ -2,12 +2,8 @@
   "screens": [
     "src/app/screens/checklist/ChecklistsHomeScreen.tsx",
     "src/app/screens/dev/DeveloperLauncherScreen.tsx",
-    "src/app/screens/home/ActivityInboxScreen.tsx",
     "src/app/screens/home/ActivityPostDetailScreen.tsx",
     "src/app/screens/home/AddStoryScreen.tsx",
-    "src/app/screens/home/ChatDetailScreen.tsx",
-    "src/app/screens/home/DirectMessagesScreen.tsx",
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/home/StoryViewerScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/profile/SocialGridScreen.tsx"

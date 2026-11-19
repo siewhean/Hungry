@@ -30,22 +30,18 @@ test("a swipe from the right edge moves to the next page, only moving left", () 
   assert.equal(classifySwipe({ ...base, startX: 384, translationX: 110 }), null);
 });
 
-test("the tab bar order follows the flags and Create sits between Home and Reviews", () => {
-  assert.deepEqual(mainTabOrder({ socialFeedEnabled: false, reviewCreationEnabled: true }), [
+test("the tab bar order follows the flags and Create sits before Reviews", () => {
+  assert.deepEqual(mainTabOrder({ reviewCreationEnabled: true }), [
     "Discover",
     "Create",
     "Review",
     "Profile",
   ]);
-  assert.deepEqual(mainTabOrder({ socialFeedEnabled: true, reviewCreationEnabled: false }), [
-    "Discover",
-    "Home",
-    "Profile",
-  ]);
+  assert.deepEqual(mainTabOrder({ reviewCreationEnabled: false }), ["Discover", "Profile"]);
 });
 
 test("the neighbour tab is the next or previous in the bar, and none past the ends", () => {
-  const order = mainTabOrder({ socialFeedEnabled: false, reviewCreationEnabled: true });
+  const order = mainTabOrder({ reviewCreationEnabled: true });
   assert.equal(adjacentTabKey(order, "Discover", "next"), "Create");
   assert.equal(adjacentTabKey(order, "Review", "previous"), "Create");
   assert.equal(adjacentTabKey(order, "Review", "next"), "Profile");

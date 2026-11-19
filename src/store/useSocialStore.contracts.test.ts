@@ -25,10 +25,7 @@ test("social store contract: post interactions persist locally", () => {
 
 test("social store contract: UUID follows sync to service while local-name fallback is dev/mock only", () => {
   const source = read("src/store/useSocialStore.ts");
-  const homeSource = [
-    read("src/app/screens/home/HomeFeedScreen.tsx"),
-    read("src/components/social/FeedPostCard.tsx"),
-  ].join("\n");
+  const homeSource = [read("src/components/social/FeedPostCard.tsx")].join("\n");
   const profileSource = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const profileContentSource = read("src/app/screens/profile/UserProfileContent.tsx");
   const connectionsSource = read("src/app/screens/profile/ProfileConnectionsScreen.tsx");
@@ -53,18 +50,9 @@ test("social store contract: UUID follows sync to service while local-name fallb
   assert.match(homeSource, /state\.followedAuthors/);
   assert.match(homeSource, /state\.followedUserIds/);
   assert.match(homeSource, /const followTargetId = item\.authorId/);
-  assert.match(homeSource, /const canUseAuthorFallbackFollow =/);
-  assert.match(
-    homeSource,
-    /canShowFollow=\{Boolean\(item\.authorId\) \|\| canUseAuthorFallbackFollow\}/,
-  );
   assert.match(
     homeSource,
     /followTargetId\s*\? Boolean\(state\.followedUserIds\[followTargetId\]\)\s*: Boolean\(state\.followedAuthors\[item\.authorName\]\)/,
-  );
-  assert.match(
-    homeSource,
-    /followTargetId[\s\S]*\? toggleFollow\(followTargetId\)[\s\S]*: toggleAuthorFollow\(item\.authorName\)/,
   );
   // Own counts are server-only; local follow maps must not be added on top.
   assert.doesNotMatch(profileSource, /Object\.values\(followedUserIds\)\.filter/);
@@ -156,18 +144,11 @@ test("social store contract: real post shares sync to Supabase and unsupported i
   assert.match(source, /rolled back optimistic state/);
   // Every channel goes through one tracker; only real posts count toward post shares.
   assert.match(reviewShareSheet, /if \(target\.postId\) \{\s*onShared\(target\.postId, channel\)/);
-  // In-app shares also report how many chats received the item.
-  assert.match(reviewShareSheet, /trackShare\(activeReview, "in_app", selectedChatIds\.length\)/);
-  assert.match(reviewShareSheet, /recipient_count: recipientCount/);
   assert.match(reviewShareSheet, /trackShare\(activeReview, "copy_link"\)/);
   assert.match(reviewShareSheet, /trackShare\(activeReview, "system_share"\)/);
   // Cancelled system shares are not counted; messaging apps keep their channel.
   assert.match(reviewShareSheet, /result\.action !== Share\.sharedAction/);
   assert.match(reviewShareSheet, /trackShare\(activeReview, channel\)/);
-  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(homeFeed, /webShareUrl\("post", activeShareItem\.id\)/);
-  assert.match(homeFeed, /if \(result\.action === Share\.sharedAction\) \{/);
-  assert.match(homeFeed, /message: "Link copied"/);
   // Reviews never borrow a linked post id for share counting (the grid has no share button).
   assert.doesNotMatch(reviewFeed, /linkedPost|incrementShare/);
   assert.doesNotMatch(reviewFeed, /postId: linkedPost\?\.id \?\? item\.review\.id/);
@@ -175,16 +156,8 @@ test("social store contract: real post shares sync to Supabase and unsupported i
 });
 
 test("profile grid contract: liked and saved posts read from the persisted social store", () => {
-  const homeSource = read("src/app/screens/home/HomeFeedScreen.tsx");
   const gridSource = read("src/app/screens/profile/SocialGridScreen.tsx");
 
-  assert.match(homeSource, /useSocialStore/);
-  assert.match(homeSource, /getHomeFeedBundle\(profileRef\.current,\s*\{/);
-  assert.match(homeSource, /followedAuthors,/);
-  assert.match(homeSource, /followedUserIds,/);
-  assert.match(homeSource, /initializeInteractions\(bundle\.socialFeed, now\)/);
-  assert.match(homeSource, /togglePostLike/);
-  assert.match(homeSource, /togglePostSave/);
   assert.match(gridSource, /useSocialStore/);
   assert.match(gridSource, /type === "liked" \? interaction\.liked : interaction\.saved/);
 });
@@ -220,8 +193,6 @@ test("public profile does not expose the current user's saved card", () => {
 
 test("social store contract: comments and replies update visible post counters", () => {
   const source = read("src/store/useSocialStore.ts");
-  const homeSource = read("src/app/screens/home/HomeFeedScreen.tsx");
-
   assert.match(source, /addComment: \(postId: string, comment: SocialComment\) => void/);
   assert.match(source, /addReply: \(postId: string, reply: SocialReply\) => void/);
   assert.match(source, /loadCommentsForPost: \(postId: string\) => Promise<void>/);
@@ -240,5 +211,4 @@ test("social store contract: comments and replies update visible post counters",
   assert.match(source, /social\.createComment\(postId, comment\.text\)/);
   assert.match(source, /social\.createComment\(postId, reply\.text, reply\.parentCommentId\)/);
   assert.doesNotMatch(source, /social\.createComment\(reply\.parentCommentId, reply\.text\)/);
-  assert.match(homeSource, /void loadCommentsForPost\(activeCommentItem\.id\)/);
 });

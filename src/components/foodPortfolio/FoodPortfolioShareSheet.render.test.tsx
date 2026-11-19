@@ -240,10 +240,7 @@ test("own Profile shows the Activity bell with the Food Portfolio on, and it ope
   await view.press(view.findByTestId("profile-activity-bell"));
   assert.ok(
     view.navigation.calls.some(
-      (call) =>
-        call.method === "navigate" &&
-        call.args[0] === "ActivityInbox" &&
-        (call.args[1] as { initialTab?: string })?.initialTab === "updates",
+      (call) => call.method === "navigate" && call.args[0] === "ActivityInbox",
     ),
   );
   await view.unmount();

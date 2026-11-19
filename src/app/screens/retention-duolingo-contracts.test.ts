@@ -60,8 +60,6 @@ test("welcome back: only after more than a week away, behind welcome_back_v2", (
     discover,
     /onPickArea=\{\(area\) => setManualSelection\(area\.name, area\.coordinate\)\}/,
   );
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /<WelcomeBackCard[\s\S]*?<WeeklyPicksRail/);
   const service = read("src/lib/services/supabase/supabaseService.ts");
   assert.match(
     service,

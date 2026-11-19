@@ -41,7 +41,7 @@ Hungry is a dish-first food discovery app for Singapore hawker centres and food 
 | Platform                  | iOS + Android (Expo SDK 55 / React Native 0.83.6)                                                                                                                                                                        |
 | Phase                     | Consumer mobile app, mock-first locally with Supabase-backed MVP integrations                                                                                                                                            |
 | Production posture        | MVP production defaults keep DMs, comments, stories, collections, gamification, merchant centre, merchant claim CTA, prototype routes, and floorplans disabled until separate launch gates pass                         |
-| Still production-disabled | OAuth providers, merchant centre, merchant claim CTA, direct messages, comments, stories, collections, gamification/passport, prototype routes, and indoor floorplans                                                    |
+| Still production-disabled | OAuth providers, merchant centre, merchant claim CTA, comments, stories, collections, gamification/passport, prototype routes, and indoor floorplans                                                    |
 | Core idea                 | Find the dish you want, then see which stall serves it — not the other way around                                                                                                                                        |
 | Taste model               | 6-axis vector: sweet · spicy · sour · salty · rich · aromatic                                                                                                                                                            |
 
@@ -87,7 +87,6 @@ The application uses feature flags to toggle functionality for development and r
 | Flag                                   | Description                                                                      | Default                                              |
 | -------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `HUNGRY_DATA_SOURCE`                   | Toggle between `mock` and `supabase` data layers.                                | `mock`                                               |
-| `FEATURE_FLAGS.directMessagesEnabled`  | Enable the Direct Messages tab and chat functionality.                           | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.prototypeRoutesEnabled` | Register V2/prototype routes outside production release builds.                  | `true` in development/staging, `false` in production |
 | `FEATURE_FLAGS.merchantCentreEnabled`  | Register merchant centre beta routes behind auth, role, and verification guards. | `true` outside production, `false` in production     |
 | `FEATURE_FLAGS.merchantClaimCtaEnabled` | Enable the consumer stall claim CTA.                                             | `true` outside production, `false` in production     |
@@ -146,7 +145,6 @@ focused contracts pass 30/30. PR CI and native visual acceptance remain pending.
 - Protected actions route to auth and keep a return route: create post, review, save/favourite, messages/chat, profile-private pages, merchant tools, claim/order/cart
 - V2/prototype routes are registered only when `FEATURE_FLAGS.prototypeRoutesEnabled` is true; production builds keep unfinished prototype/design routes off the root navigator
 - `MerchantTabs` is registered only when `FEATURE_FLAGS.merchantCentreEnabled` is true
-- Direct messages and chat entry points are hidden or disabled when `FEATURE_FLAGS.directMessagesEnabled` is false
 - Indoor floorplan routes and layout entry points are registered only when `FEATURE_FLAGS.floorplansEnabled` is true
 - Map mock mode: set `FEATURE_FLAGS.mockMapboxEnabled = true` for test environments
 - Real map runtime: set `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` locally to enable the live Mapbox surface; without it, the map falls back to a static coordinate preview so the repo screens stay inspectable.

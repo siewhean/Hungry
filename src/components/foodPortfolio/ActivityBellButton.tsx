@@ -56,14 +56,14 @@ export function ActivityBellButton({ viewerId, size }: { viewerId: string; size:
       accessibilityRole="button"
       accessibilityLabel={unread > 0 ? `Activity, ${unread} unread` : "Activity"}
       accessibilityHint="Opens who followed, liked or commented on your posts"
-      onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "updates" })}
+      onPressIn={() => preloadRoute(navigation, "ActivityInbox")}
       onPress={() => {
         trackAnalyticsEvent("profile_item_opened", {
           kind: "activity_bell",
           source: "profile_header",
           unread_count: unread,
         });
-        navigation.navigate("ActivityInbox", { initialTab: "updates" });
+        navigation.navigate("ActivityInbox");
       }}
       hitSlop={2}
       style={{ alignItems: "center", height: size, justifyContent: "center", width: size }}

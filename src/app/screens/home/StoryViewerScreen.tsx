@@ -520,23 +520,8 @@ export function StoryViewerScreen() {
     }
   };
 
-  const handleStoryMessage = () => {
-    if (!currentStory) {
-      return;
-    }
-
-    if (currentStory.isOwn) {
-      navigation.navigate("AddStory");
-      return;
-    }
-
-    const chatId = `story-${currentStory.displayName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-    navigation.navigate("ChatDetail", {
-      chatId,
-      name: currentStory.displayName,
-      avatar: currentStory.avatarUrl || currentStory.content.url,
-      isOnline: false,
-    });
+  const handleAddStory = () => {
+    navigation.navigate("AddStory");
   };
 
   if (!currentStory) {
@@ -661,18 +646,18 @@ export function StoryViewerScreen() {
         style={[styles.footerOverlay, { paddingBottom: Math.max(insets.bottom, spacing[4]) }]}
         pointerEvents="box-none"
       >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={
-            currentStory.isOwn ? "Add another story" : `Message ${currentStory.displayName}`
-          }
-          style={[styles.inputSimulator, { borderColor: palette.storyControlBorder }]}
-          onPress={handleStoryMessage}
-        >
-          <AppText style={{ color: palette.white, width: "100%", textAlign: "left" }}>
-            {currentStory.isOwn ? "Add story" : "Send message"}
-          </AppText>
-        </Pressable>
+        {currentStory.isOwn ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Add another story"
+            style={[styles.inputSimulator, { borderColor: palette.storyControlBorder }]}
+            onPress={handleAddStory}
+          >
+            <AppText style={{ color: palette.white, width: "100%", textAlign: "left" }}>
+              Add story
+            </AppText>
+          </Pressable>
+        ) : null}
         <View style={styles.actionsRow}>
           <View style={styles.actionButtonStack}>
             <IconButton

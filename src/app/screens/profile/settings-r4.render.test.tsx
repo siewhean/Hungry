@@ -591,7 +591,7 @@ test("R5: turning an alert on while the phone blocks notifications explains it i
   }));
   const { StallAlertsSettings } =
     require("@/components/settings/StallAlertsSettings") as typeof import("@/components/settings/StallAlertsSettings");
-  const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+  const view = await render(createElement(StallAlertsSettings));
   assert.doesNotMatch(view.text(), /Notifications are off for Hungry/);
 
   await view.press(view.findByLabel("Weekly picks"));

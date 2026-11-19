@@ -2,7 +2,6 @@ import type { MessageKey } from "./en";
 
 export const zh: Record<MessageKey, string> = {
   "tab.home": "首页",
-  "tab.feed": "动态",
   "tab.post": "发布",
   "tab.reviews": "评价",
   "tab.profile": "我的",

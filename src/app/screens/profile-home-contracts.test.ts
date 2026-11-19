@@ -20,10 +20,6 @@ test("profile home contract: the header holds a settings icon, not a menu", () =
   assert.match(source, /<AppSymbol name="settings"/);
   assert.match(source, /`Open settings, \$\{followRequestLabel\}`/);
   assert.match(source, /: "Open settings"/);
-  assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
-  assert.match(source, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
-  assert.match(source, /toChatShareRecipient/);
-  assert.doesNotMatch(source, /ACTIVITY_MESSAGES/);
   assert.doesNotMatch(source, /Your established list-based profile/);
   assert.doesNotMatch(source, /label="Saved Content"/);
 });
@@ -184,7 +180,6 @@ test("profile home contract: customer surfaces read the merchant mode flag, not 
   for (const file of [
     "src/hooks/useAppBootstrap.ts",
     "src/app/navigation/RootNavigator.tsx",
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/discover/DiscoverHomeScreen.tsx",
     "src/app/screens/post/PostComposerScreen.tsx",
     "src/app/screens/post/PostComposerScreenV2.tsx",

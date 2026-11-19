@@ -179,12 +179,7 @@ test("G8 follow analytics fire after the service call resolves, not before", () 
 });
 
 test("G8 lists and detail screens: loading, error and retry states", () => {
-  for (const file of [
-    "ReviewHistoryScreen",
-    "VisitedStallsScreen",
-    "FollowedStallsScreen",
-    "StallSubmissionsScreen",
-  ]) {
+  for (const file of ["ReviewHistoryScreen", "VisitedStallsScreen", "StallSubmissionsScreen"]) {
     const source = read(`src/app/screens/profile/${file}.tsx`);
     assert.match(source, /Retry/, `${file} offers Retry`);
   }

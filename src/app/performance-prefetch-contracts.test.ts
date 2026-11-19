@@ -90,7 +90,6 @@ test("startup defers profile, mock data, and native analytics module loading", (
 
 test("home, discover, and quick bites avoid duplicate render-time data work", () => {
   const homeFeed = read("src/features/home/feed.ts");
-  const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
   const discover = readHomeSource();
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
 
@@ -100,19 +99,6 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
   assert.match(homeFeed, /const homeFeedBundleCache = new Map/);
   assert.match(homeFeed, /export function getHomeFeedBundleCacheKey/);
   assert.match(homeFeed, /export function clearHomeFeedBundleCache/);
-  assert.match(homeScreen, /getHomeFeedBundle\(profileRef\.current,\s*\{/);
-  assert.match(homeScreen, /followedAuthors,/);
-  assert.match(homeScreen, /followedUserIds,/);
-  assert.match(homeScreen, /refreshSeed: feedRefreshSeedRef\.current/);
-  assert.doesNotMatch(homeScreen, /getHomeFeed\(profile\)/);
-  assert.doesNotMatch(homeScreen, /getHomeSocialFeed\(profile\)/);
-  assert.doesNotMatch(homeScreen, /useEffect\(\(\) => \{\s*void loadFeed\(\);/);
-  assert.match(homeScreen, /setTimeout/);
-  assert.match(homeScreen, /FEED_LOAD_DEDUPE_MS = 1500/);
-  assert.match(homeScreen, /lastLoadedFeedKeyRef/);
-  assert.match(homeScreen, /lastLoadedFeedAtRef/);
-  assert.match(homeScreen, /activeFeedLoadIdRef/);
-  assert.doesNotMatch(homeScreen, /const publishedPosts = usePublishedPostStore/);
   assert.match(discover, /getDiscoverBites\(repository\)/);
   // Live builds pass the feed-backed lookup; mock builds the repository (HOME-X5).
   assert.match(discover, /getDiscoverBiteCollections\(\s*discoverBaseBites,\s*biteDishLookup,/);
@@ -140,7 +126,6 @@ test("home, discover, and quick bites avoid duplicate render-time data work", ()
 
 test("prefetch layer warms images, data, and route modules without blocking navigation", () => {
   const prefetch = read("src/features/navigation/prefetch.ts");
-  const homeScreen = read("src/app/screens/home/HomeFeedScreen.tsx");
   const discover = readHomeSource();
   const search = read("src/app/screens/search/SearchResultsScreen.tsx");
   const quickBites = read("src/app/screens/discover/QuickBitesScreen.tsx");
@@ -175,7 +160,6 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(prefetch, /schedulePrefetchWork\(\(\) => \{[\s\S]*"preload" in navigation/);
   assert.match(prefetch, /"preload" in navigation/);
   assert.match(prefetch, /export function prefetchMerchantTab/);
-  assert.match(homeScreen, /prefetchDish: prefetchFeedCardRoute/);
   assert.match(
     read("src/components/social/FeedPostCard.tsx"),
     /onPressIn=\{\(\) => actions\.prefetchDish\(item\)\}/,
@@ -196,10 +180,6 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(
     discover,
     /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId, source: "home" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
-  );
-  assert.match(
-    homeScreen,
-    /navigation\.navigate\("DishDetail", \{ dishId: primaryDish\.id, source: "feed" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     quickBites,

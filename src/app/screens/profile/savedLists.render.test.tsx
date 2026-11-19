@@ -9,7 +9,6 @@ import { CatalogRawDetailScreen } from "@/app/screens/catalog/CatalogRawDetailSc
 import { PortfolioPublicViewScreen } from "@/app/screens/portfolio/PortfolioPublicViewScreen";
 import { CollectionsScreen } from "@/app/screens/profile/CollectionsScreen";
 import { FavouritesScreen } from "@/app/screens/profile/FavouritesScreen";
-import { FollowedStallsScreen } from "@/app/screens/profile/FollowedStallsScreen";
 import { PortfolioItemEditSheet, PortfolioItemRow } from "@/components/portfolio";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import {
@@ -21,7 +20,6 @@ import { getDataRepository, getHungryService } from "@/lib/services/serviceProvi
 import { useSavedViewStore } from "@/store/useSavedViewStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { usePortfolioStore } from "@/store/usePortfolioStore";
-import { useStallFollowStore } from "@/store/useStallFollowStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { cleanup, render, renderScreen } from "@/test/render";
 import { enterScenario } from "@/test/render/sessions";
@@ -125,34 +123,6 @@ test("SAVED-X6: the catalog dish page records dish_viewed once, with its source"
   assert.equal(views.length, 1);
   assert.equal(views[0].properties.dish_id, dish.id);
   assert.equal(views[0].properties.source, "catalog_detail");
-});
-
-// ─── SAVED-2 ─────────────────────────────────────────────────────────────────────────────────
-
-test("Followed stalls lists a stall the local catalog cache does not have", async () => {
-  const profile = getHungryService().profile;
-  const discovery = getHungryService().discovery;
-  stub(profile, "getFollowedStallIds", async () => ["far-away-stall"]);
-  const asked: string[][] = [];
-  stub(discovery, "getVenuesByIds", async (ids: string[]) => {
-    asked.push(ids);
-    return [
-      {
-        id: "far-away-stall",
-        name: "Far Away Laksa",
-        unitNumber: "#02-11",
-        floor: "2",
-        buildingName: "Bedok Interchange",
-      } as VenueSummary,
-    ];
-  });
-  useStallFollowStore.setState({ followedStallIds: [], isLoaded: false });
-  assert.equal(getDataRepository().getVenueById("far-away-stall"), undefined);
-
-  const view = await renderScreen(FollowedStallsScreen as never, { name: "FollowedStalls" });
-  assert.ok(view.findByText("Far Away Laksa"));
-  assert.match(view.text(), /#02-11 · Bedok Interchange/);
-  assert.deepEqual(asked, [["far-away-stall"]]);
 });
 
 // ─── SAVED-4, SAVED-16, SAVED-18 ─────────────────────────────────────────────────────────────
@@ -356,29 +326,6 @@ test("Saved > Stalls says some stalls are gone when lookups miss, even when all 
   const none = await openSavedStalls();
   assert.match(none.text(), /2 stalls couldn't be loaded/);
   assert.doesNotMatch(none.text(), /No saved stalls yet/);
-});
-
-test("Followed stalls offline shows Retry, not 'may have closed' (SAVED-V1)", async () => {
-  stub(getHungryService().profile, "getFollowedStallIds", async () => ["s-1", "s-2"]);
-  stub(getHungryService().discovery, "getVenuesByIds", async () => {
-    throw new Error("Couldn't load these stalls.");
-  });
-  useStallFollowStore.setState({ followedStallIds: [], isLoaded: false });
-  const reports = captureReports();
-  const view = await renderScreen(FollowedStallsScreen as never, { name: "FollowedStalls" });
-  assert.ok(view.findByText("Couldn't load followed stalls"));
-  assert.doesNotMatch(view.text(), /may have closed|No followed stalls yet/);
-  assert.ok(reports.some((report) => report.screen === "FollowedStalls"));
-});
-
-test("Followed stalls whose lookups all miss say so, not 'No followed stalls yet' (SAVED-V3)", async () => {
-  stub(getHungryService().profile, "getFollowedStallIds", async () => ["s-1", "s-2"]);
-  stub(getHungryService().discovery, "getVenuesByIds", async () => []);
-  useStallFollowStore.setState({ followedStallIds: [], isLoaded: false });
-  const view = await renderScreen(FollowedStallsScreen as never, { name: "FollowedStalls" });
-  assert.match(view.text(), /2 stalls couldn't be loaded/);
-  assert.doesNotMatch(view.text(), /No followed stalls yet/);
-  assert.ok(view.findByText("Retry"));
 });
 
 test("Saved > Collections shows an error with Retry and reports when lists fail (SAVED-V4)", async () => {

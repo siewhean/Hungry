@@ -15,12 +15,11 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   const tabItem = read("src/components/ui/AppBottomTabItem.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
-  assert.match(tabs, /import \{ BookOpenText, House, Newspaper, PenLine, User \}/);
-  // Discover is the home page (labelled Home), the social posts feed is the Feed tab, and
-  // the round middle button writes a review.
+  assert.match(tabs, /import \{ BookOpenText, House, PenLine, User \}/);
+  // Discover is the home page (labelled Home) and the round middle button writes a review.
   assert.match(
     tabs,
-    /key: "Discover",\s*route: routeByName\.get\("Discover"\),\s*icon: House,[\s\S]*?label: "Home"[\s\S]*FEATURE_FLAGS\.socialFeedEnabled[\s\S]*key: "Home",\s*route: routeByName\.get\("Home"\),\s*icon: Newspaper,[\s\S]*?label: "Feed"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create",\s*isCreateAction: true,\s*icon: PenLine,[\s\S]*?label: "Post"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
+    /key: "Discover",\s*route: routeByName\.get\("Discover"\),\s*icon: House,[\s\S]*?label: "Home"[\s\S]*FEATURE_FLAGS\.reviewCreationEnabled[\s\S]*key: "Create",\s*isCreateAction: true,\s*icon: PenLine,[\s\S]*?label: "Post"[\s\S]*key: "Review"[\s\S]*key: "Profile"/,
   );
   // iOS draws SF Symbols in the tab bar, outline at rest and filled while selected.
   assert.match(tabs, /symbol: "house",\s*focusedSymbol: "house\.fill"/);
@@ -73,47 +72,14 @@ test("Release 0.1 bottom navigation gates social, post, and review actions", () 
   assert.match(types, /^\s+Create: undefined;/m);
 });
 
-test("activity routes remain feature-gated with direct messages separately gated", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
+test("activity routes remain feature-gated and the inbox has no messages tab", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
   const activityData = read("src/features/home/activity.ts");
   const activityStore = read("src/store/useActivityStore.ts");
   const supabaseService = read("src/lib/services/supabase/supabaseService.ts");
 
-  assert.match(home, /<Bell color=\{palette\.text\} size=\{22\}/);
-  assert.match(home, /const activityInitialTab = directMessagesEnabled \? "messages" : "updates"/);
-  assert.match(
-    home,
-    /navigation\.navigate\("ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
-  );
-  assert.match(
-    home,
-    /preloadRoute\(navigation, "ActivityInbox", \{ initialTab: activityInitialTab \}\)/,
-  );
-  assert.match(
-    home,
-    /import \{ getActivityUnreadCount, selectActivitySourceUpdates \} from "@\/features\/home\/activity"/,
-  );
-  // The bell and the inbox count the same updates for the same viewer.
-  assert.match(
-    home,
-    /selectActivitySourceUpdates\(serviceProviderMode, dbActivityEvents, activityUpdates\)/,
-  );
   assert.match(activity, /isActivityUpdateForViewer\(update, userId\)/);
-  assert.match(
-    home,
-    /const dbActivityEvents = useActivityStore\(\(state\) => state\.dbActivityEvents\)/,
-  );
-  assert.match(
-    home,
-    /const fetchActivityEvents = useActivityStore\(\(state\) => state\.fetchActivityEvents\)/,
-  );
-  assert.match(home, /void fetchActivityEvents\(\)/);
-  assert.match(home, /getHungryService\(\)[\s\S]*\.chat\.listConversations\(\)/);
-  assert.match(home, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
-  assert.match(home, /recipients=\{directMessagesEnabled \? shareRecipients : \[\]\}/);
-  assert.doesNotMatch(home, /ACTIVITY_MESSAGES/);
   assert.match(
     rootNavigator,
     /FEATURE_FLAGS\.activityEnabled \? \([\s\S]*getComponent=\{loadActivityInboxScreen\} name="ActivityInbox"/,
@@ -122,9 +88,6 @@ test("activity routes remain feature-gated with direct messages separately gated
     rootNavigator,
     /getComponent=\{loadActivityPostDetailScreen\}\s*name="ActivityPostDetail"/,
   );
-  assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
-  assert.match(rootNavigator, /getComponent=\{loadChatDetailScreen\} name="ChatDetail"/);
-  assert.match(rootNavigator, /getComponent=\{loadDirectMessagesScreen\} name="DirectMessages"/);
   assert.match(activity, /navigation\.navigate\("ActivityPostDetail"/);
   assert.match(activity, /postId: update\.postId/);
   assert.match(
@@ -145,23 +108,7 @@ test("activity routes remain feature-gated with direct messages separately gated
   );
   assert.match(activity, /visibleUpdates/);
   assert.match(activity, /stylesInline\.kindBadge/);
-  assert.match(activity, /type ActivityTab = "messages" \| "updates"/);
-  assert.match(
-    activity,
-    /FEATURE_FLAGS\.directMessagesEnabled\s+\? \["messages", "updates"\]\s+: \["updates"\]/,
-  );
-  assert.match(activity, /route\.params\?\.initialTab \?\? "messages"/);
-  assert.match(activity, /getHungryService\(\)[\s\S]*\.chat[\s\S]*\.listConversations\(\)/);
-  assert.match(activity, /type \{ ChatConversation \}/);
-  assert.match(activity, /conversation\.unreadCount/);
-  // A failed mark-read is caught, never an unhandled rejection.
-  assert.match(
-    activity,
-    /void getHungryService\(\)\s*\.chat\.markConversationRead\(chatId\)\s*\.catch\(/,
-  );
-  assert.match(activity, /<UnreadCountBadge/);
-  assert.match(activity, /accessibilityLabel=\{`\$\{unreadCount\} unread messages`\}/);
-  assert.match(activity, /stylesInline\.unreadCountBadge/);
+  assert.doesNotMatch(activity, /\.chat\b|ChatDetail|MessagesTab|directMessagesEnabled/);
   assert.match(activity, /markActivityRead\("update", memberId\)/);
   assert.match(activity, /stylesInline\.updateMediaSlot/);
   assert.match(activity, /stylesInline\.updateUnreadSlot/);
@@ -186,12 +133,6 @@ test("activity routes remain feature-gated with direct messages separately gated
   assert.match(supabaseService, /function isMissingActivityEventsSchemaError/);
   assert.match(supabaseService, /if \(isMissingActivityEventsSchemaError\(error\)\) return \[\]/);
   assert.match(supabaseService, /if \(isMissingMarkActivityReadRpcError\(error\)\) return/);
-  assert.match(activityData, /export type SharedPostPayload/);
-  assert.match(activityData, /sharedPost\?: SharedPostPayload/);
-  assert.match(activityData, /unreadCount\?: number/);
-  assert.match(activityData, /export function getActivityMessageUnreadCount/);
-  assert.match(activityData, /message\.unreadCount \?\? 1/);
-  assert.match(activityData, /ACTIVITY_MESSAGES/);
   assert.match(activityData, /ACTIVITY_UPDATES/);
   assert.match(activityData, /postId: "post-/);
   assert.match(activityData, /kind: "comment"/);
@@ -199,26 +140,11 @@ test("activity routes remain feature-gated with direct messages separately gated
   assert.match(activityData, /ActivityUpdateKind[\s\S]*share/);
 });
 
-test("activity messages and update posts are functional routes, not static mockups", () => {
-  const chat = read("src/app/screens/home/ChatDetailScreen.tsx");
+test("activity update posts are functional routes, not static mockups", () => {
   const detail = read("src/app/screens/home/ActivityPostDetailScreen.tsx");
   const types = read("src/app/navigation/navigationTypes.ts");
 
   assert.match(types, /ActivityPostDetail: \{ postId: string; updateId\?: string \}/);
-  assert.match(chat, /getHungryService\(\)\.chat/);
-  assert.match(chat, /\.listMessages\(chatId\)/);
-  assert.match(chat, /\.markConversationRead\(chatId\)/);
-  assert.match(chat, /\.subscribeToConversation\(chatId/);
-  assert.match(chat, /\.sendMessage\(\{/);
-  assert.match(chat, /Text messages only for now/);
-  assert.doesNotMatch(chat, /ACTIVITY_CHAT_MESSAGES/);
-  assert.doesNotMatch(chat, /sharedPostMessages/);
-  assert.doesNotMatch(chat, /setTimeout\(\(\) =>/);
-  assert.doesNotMatch(chat, /ImagePicker/);
-  assert.doesNotMatch(chat, /Paperclip/);
-  assert.doesNotMatch(chat, /Phone/);
-  assert.doesNotMatch(chat, /Start voice call/);
-  assert.doesNotMatch(chat, /Start video call/);
   assert.match(
     detail,
     /type Props = NativeStackScreenProps<RootStackParamList, "ActivityPostDetail">/,
@@ -232,7 +158,6 @@ test("activity messages and update posts are functional routes, not static mocku
   // Visitors: comments and the safety menu need sign-in; share is link-only.
   assert.match(detail, /if \(!requireSignIn\(\)\) return;\s*setActiveCommentReview/);
   assert.match(detail, /requireSignIn\(\) &&\s*promptPostSafetyActions/);
-  assert.match(detail, /inAppSharingEnabled=\{isAuthenticated\}/);
   assert.match(detail, /if \(isAuthenticated\) incrementShare\(postId, channel\)/);
   assert.match(
     read("src/lib/services/supabase/supabaseService.ts"),

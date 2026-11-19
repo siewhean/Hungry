@@ -21,8 +21,10 @@ test.describe("buttons and interactions", () => {
     await openDevSection(page, "Post Composer V2 Settings");
     await expect(page.getByRole("button", { name: "Launch V2 Composer" })).toBeVisible();
 
+    // Developer mode opens the main tabs on Discover, the app's home page.
     await clickDevButton(page, "Developer");
-    await expect(page.getByLabel("Add to your story")).toBeVisible();
+    await expect(page.getByLabel("Search dishes, stalls, or hawker centres").first()).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Profile" }).first()).toBeVisible();
   });
 
   test("composer draft controls produce a real draft state", async ({ page }) => {

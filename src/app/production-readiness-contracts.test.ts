@@ -44,7 +44,6 @@ test("public-launch readiness report bundle exists and keeps a no-go verdict unt
 test("production feature flags keep public-launch P0 experimental surfaces disabled", () => {
   const flags = resolveFeatureFlags("production", "production");
 
-  assert.equal(flags.directMessagesEnabled, false);
   assert.equal(flags.commentsEnabled, false);
   assert.equal(flags.oauthProvidersEnabled, false);
   assert.equal(flags.floorplansEnabled, false);
@@ -63,7 +62,6 @@ test("root navigation keeps production-disabled routes behind feature flags", ()
     rootNavigator,
     [
       /FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/,
-      /FEATURE_FLAGS\.directMessagesEnabled \? \(/,
       /FEATURE_FLAGS\.prototypeRoutesEnabled \? \(/,
       /FEATURE_FLAGS\.merchantCentreEnabled \? \(/,
       /FEATURE_FLAGS\.storiesEnabled \? \(/,
