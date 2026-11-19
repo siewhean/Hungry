@@ -19,6 +19,8 @@ import { parseMoodIntent } from "@/lib/ai/moodSearch";
 import { NEUTRAL_TASTE_VECTOR, TASTE_DIMENSIONS } from "@/constants/taste";
 import { AUTH_REDIRECTS } from "@/constants/links";
 import { getAuthErrorCode } from "@/features/auth/authErrors";
+import { captureAccountOperation } from "@/features/auth/accountOperation";
+import { createPushTokenOrder, type PushTokenBinding } from "@/lib/notifications/pushTokenOrder";
 import {
   countVenuesInAreaViaRpc,
   getDishByIdViaRpc,
@@ -60,6 +62,8 @@ import {
   uploadPostMediaFromUri,
 } from "@/lib/services/supabase/mediaUpload";
 import { suggestAllergensFromIngredients } from "@/features/merchant/allergenKeywords";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
+import { isVerificationCurrent } from "@/features/merchant/merchantGuards";
 import { validateMerchantProfileUpdates } from "@/features/merchant/profileValidation";
 import { NO_ACCOUNT_EMAIL_MESSAGE } from "@/features/auth/accountDeletionErrors";
 import { PROFILE_DISPLAY_NAME_MAX_LENGTH, isCheckViolation } from "@/features/profile/profileName";
@@ -647,29 +651,42 @@ function requireSupabaseClient(): SupabaseClient {
 // The Expo push token this device last registered, so sign-out can unbind it
 // from the account (otherwise the next person on the phone gets the alerts).
 const REGISTERED_PUSH_TOKEN_KEY = "hungry-push-token-v1";
+const PUSH_TOKEN_ORDER_KEY = "hungry-push-token-order-v2";
 
-async function rememberRegisteredPushToken(token: string | null): Promise<void> {
-  try {
-    if (token) {
-      await hungryPersistStorage?.setItem(REGISTERED_PUSH_TOKEN_KEY, {
-        state: { token },
-        version: 0,
-      });
-    } else {
-      await hungryPersistStorage?.removeItem(REGISTERED_PUSH_TOKEN_KEY);
-    }
-  } catch {
-    // Storage is best effort; the server re-binds the token on next registration.
-  }
-}
+const reservePushTokenBinding = createPushTokenOrder({
+  createInstallationId: () => {
+    const { randomUUID } = require("expo-crypto") as typeof import("expo-crypto");
+    return randomUUID();
+  },
+  read: async () => {
+    const secureStore = require("expo-secure-store") as typeof import("expo-secure-store");
+    const ordering = await secureStore.getItemAsync(PUSH_TOKEN_ORDER_KEY);
+    if (ordering) return JSON.parse(ordering) as PushTokenBinding;
+    const stored = await hungryPersistStorage?.getItem(REGISTERED_PUSH_TOKEN_KEY);
+    return stored?.state as Partial<PushTokenBinding> | undefined;
+  },
+  write: async (binding) => {
+    const secureStore = require("expo-secure-store") as typeof import("expo-secure-store");
+    await secureStore.setItemAsync(PUSH_TOKEN_ORDER_KEY, JSON.stringify(binding));
+  },
+});
 
 async function unregisterStoredPushToken(client: SupabaseClient): Promise<void> {
-  const stored = await hungryPersistStorage?.getItem(REGISTERED_PUSH_TOKEN_KEY);
-  const token = (stored?.state as { token?: unknown } | undefined)?.token;
-  if (typeof token !== "string" || !token) return;
-  const { error } = await client.rpc("unregister_push_token", { p_token: token });
+  const isCurrent = captureAccountOperation();
+  const session = client.auth.getSession();
+  const [binding, auth] = await Promise.all([
+    reservePushTokenBinding(undefined, isCurrent),
+    session,
+  ]);
+  if (!binding || !auth.data.session || !isCurrent()) return;
+  const { error } = await client
+    .rpc("unregister_push_token_v2", {
+      p_token: binding.token,
+      p_installation_id: binding.installationId,
+      p_generation: binding.generation,
+    })
+    .setHeader("Authorization", `Bearer ${auth.data.session.access_token}`);
   if (error) throw error;
-  await rememberRegisteredPushToken(null);
 }
 
 function portfolioEditConflictError(): Error {
@@ -868,12 +885,18 @@ async function getSessionEmailForUser(
 }
 
 async function fetchUserProfile(client: SupabaseClient, userId: string, email?: string) {
-  const { data } = await client.from("user_profiles").select("*").eq("id", userId).maybeSingle();
-  const { data: privacyData } = await client
+  const { data, error: profileError } = await client
+    .from("user_profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) throw profileError;
+  const { data: privacyData, error: privacyError } = await client
     .from("privacy_settings")
     .select("account_visibility")
     .eq("user_id", userId)
     .maybeSingle();
+  if (privacyError) throw privacyError;
   const row = (data ?? {}) as Row;
   const privacyRow = (privacyData ?? {}) as Row;
   // The sign-in (auth) address is the source of truth; user_profiles.email is only a fallback
@@ -2223,7 +2246,9 @@ async function fetchPublishedPostBites(
         dishId,
         dishName: asString(dishRow?.name) ?? asString(dishMeta.name) ?? "Unknown dish",
         venueId,
-        venueName: asString(venueRow?.name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        venueName: toDisplayName(
+          asString(venueRow?.name) ?? asString(venueMeta.name) ?? "Unknown venue",
+        ),
         unitNumber: asString(venueRow?.unit_number) ?? asString(venueMeta.unitNumber) ?? "",
         buildingId,
         buildingName: asString(buildingRow?.name) ?? asString(venueMeta.buildingName) ?? "",
@@ -2271,7 +2296,9 @@ async function mapFeedRpcRowToBite(client: SupabaseClient, row: Row): Promise<Bi
     dishId: asString(row.dish_id) ?? asString(dishMeta.id) ?? "",
     dishName: asString(row.dish_name) ?? asString(dishMeta.name) ?? "Unknown dish",
     venueId: asString(row.venue_id) ?? asString(venueMeta.id) ?? "",
-    venueName: asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+    venueName: toDisplayName(
+      asString(row.venue_name) ?? asString(venueMeta.name) ?? "Unknown venue",
+    ),
     unitNumber: asString(row.venue_unit_number) ?? asString(venueMeta.unitNumber) ?? "",
     buildingId:
       asString(row.building_id) ??
@@ -3327,7 +3354,7 @@ function mapSupabaseDish(row: Row, venue?: Row, presentation?: DishPresentation)
     id: asString(row.id) ?? "",
     venueId: asString(row.venue_id) ?? asString(venue?.id) ?? "",
     buildingId: asString(row.building_id) ?? asString(venue?.building_id) ?? "",
-    venueName: asString(venue?.name) ?? "",
+    venueName: toDisplayName(asString(venue?.name) ?? ""),
     unitNumber: asString(venue?.unit_number) ?? "",
     floor: asString(venue?.floor) ?? "",
     name: asString(row.name) ?? "",
@@ -5272,20 +5299,24 @@ export const supabaseService: HungryService = {
       };
     },
 
-    async updateDietaryPreferences(flags: DietaryFlag[]) {
+    async updateDietaryPreferences(flags: DietaryFlag[], expectedUserId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to update dietary preferences.");
+      if (expectedUserId && expectedUserId !== userId)
+        throw new Error("Account changed before saving dietary preferences.");
       const { error } = await client
         .from("user_profiles")
         .upsert({ id: userId, dietary_preferences: flags }, { onConflict: "id" });
       if (error) throw error;
     },
 
-    async updateMaxDishBudget(maxDishBudget: number | null) {
+    async updateMaxDishBudget(maxDishBudget: number | null, expectedUserId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to update your budget.");
+      if (expectedUserId && expectedUserId !== userId)
+        throw new Error("Account changed before saving budget.");
       const { error } = await client
         .from("user_profiles")
         .upsert({ id: userId, max_dish_budget: maxDishBudget }, { onConflict: "id" });
@@ -5421,10 +5452,12 @@ export const supabaseService: HungryService = {
       return (data ?? []).map((row: { stall_id: string }) => row.stall_id);
     },
 
-    async updateTasteVector(vector: TasteVector) {
+    async updateTasteVector(vector: TasteVector, expectedUserId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to update taste vector.");
+      if (expectedUserId && expectedUserId !== userId)
+        throw new Error("Account changed before saving taste vector.");
 
       const { error: vectorError } = await client.from("user_taste_vectors").upsert(
         {
@@ -5463,11 +5496,13 @@ export const supabaseService: HungryService = {
       if (profileError) throw profileError;
     },
 
-    async updateTasteProfile(profile: TasteProfile) {
+    async updateTasteProfile(profile: TasteProfile, expectedUserId?: string) {
       const client = requireSupabaseClient();
       const userId = await getCurrentSupabaseUserId();
       if (!userId) throw new Error("You must be signed in to update taste profile.");
-      await this.updateTasteVector(profile.vector);
+      if (expectedUserId && expectedUserId !== userId)
+        throw new Error("Account changed before saving taste profile.");
+      await this.updateTasteVector(profile.vector, userId);
       const { error } = await client
         .from("user_profiles")
         .upsert({ id: userId, taste_profile: profile }, { onConflict: "id" });
@@ -5567,12 +5602,22 @@ export const supabaseService: HungryService = {
 
     async registerPushToken(token: string, platform: "ios" | "android") {
       const client = requireSupabaseClient();
-      const { error } = await client.rpc("register_push_token", {
-        p_token: token,
-        p_platform: platform,
-      });
+      const isCurrent = captureAccountOperation();
+      const [binding, auth] = await Promise.all([
+        reservePushTokenBinding(token, isCurrent),
+        client.auth.getSession(),
+      ]);
+      if (!binding || !auth.data.session || !isCurrent()) return;
+      if (!captureAccountOperation(auth.data.session.user.id)()) return;
+      const { error } = await client
+        .rpc("register_push_token_v2", {
+          p_token: binding.token,
+          p_platform: platform,
+          p_installation_id: binding.installationId,
+          p_generation: binding.generation,
+        })
+        .setHeader("Authorization", `Bearer ${auth.data.session.access_token}`);
       if (error) throw error;
-      await rememberRegisteredPushToken(token);
     },
 
     async unregisterPushToken() {
@@ -5740,7 +5785,7 @@ export const supabaseService: HungryService = {
         dishId: draft.dishId,
         dishName: dish?.name ?? "Unknown dish",
         venueId: draft.venueId,
-        venueName: venue?.name ?? "Unknown venue",
+        venueName: toDisplayName(venue?.name ?? "Unknown venue"),
         unitNumber: venue?.unitNumber ?? "",
         buildingId: venue?.buildingId ?? dish?.buildingId ?? "",
         buildingName: building?.name ?? "",
@@ -6527,7 +6572,7 @@ export const supabaseService: HungryService = {
         return [
           {
             venueId,
-            venueName: asString(row.venue_name) ?? "Stall",
+            venueName: toDisplayName(asString(row.venue_name) ?? "Stall"),
             buildingId: asString(row.building_id),
             buildingName: asString(row.building_name),
             dishCount: asNumber(row.dish_count) ?? 0,
@@ -6925,7 +6970,7 @@ export const supabaseService: HungryService = {
         authorId: asString(row.author_id),
         authorName: asString(row.author_display_name),
         dishName: asString(row.dish_name),
-        venueName: asString(row.venue_name),
+        venueName: toDisplayName(asString(row.venue_name) ?? ""),
         hiddenAt: asString(row.hidden_at) ?? new Date().toISOString(),
       }));
     },
@@ -7586,7 +7631,7 @@ export const supabaseService: HungryService = {
         return {
           claimId: asString(row.id) ?? "",
           venueId,
-          venueName: names.get(venueId) || "Your stall",
+          venueName: toDisplayName(names.get(venueId) || "Your stall"),
           status: status === "none" ? ("submitted" as const) : status,
           submittedAt: asString(row.created_at) ?? new Date().toISOString(),
         };
@@ -7595,16 +7640,30 @@ export const supabaseService: HungryService = {
 
     async listDraftDishesQueue(venueId) {
       const client = requireSupabaseClient();
-      const { data, error } = await client.functions.invoke("ops-dishes-draft", {
-        body: {
-          action: "list",
-          venueId: venueId ?? null,
-        },
-      });
-      if (error) throw error;
-      const rows = Array.isArray((data as Row | undefined)?.rows)
-        ? (((data as Row).rows as unknown[]) ?? [])
-        : [];
+      const rows: unknown[] = [];
+      const seenCursors = new Set<string>();
+      let cursor: { createdAt: string; id: string } | null = null;
+      for (let page = 0; ; page += 1) {
+        if (page >= 1000) throw new Error("Draft queue pagination exceeded its page limit");
+        const { data, error } = await client.functions.invoke("ops-dishes-draft", {
+          body: { action: "list", venueId: venueId ?? null, cursor },
+        });
+        if (error) throw error;
+        const result = data as Row | null;
+        if (!result || !Array.isArray(result.rows)) {
+          throw new Error("Invalid draft queue response");
+        }
+        rows.push(...result.rows);
+        if (result.nextCursor === null || result.nextCursor === undefined) break;
+        const next = result.nextCursor as Row;
+        const createdAt = asString(next.createdAt);
+        const id = asString(next.id);
+        if (!createdAt || !id) throw new Error("Invalid draft queue cursor");
+        const key = JSON.stringify([createdAt, id]);
+        if (seenCursors.has(key)) throw new Error("Draft queue pagination repeated a cursor");
+        seenCursors.add(key);
+        cursor = { createdAt, id };
+      }
       return rows
         .map((row) => row as Row)
         .map((row) => ({
@@ -7685,10 +7744,19 @@ export const supabaseService: HungryService = {
 
       const { data: existingVerification, error: existingError } = await client
         .from("merchant_verifications")
-        .select("id")
+        .select("id,status,expires_at")
         .eq("outlet_id", resolvedOutletId)
         .maybeSingle();
       if (existingError) throw existingError;
+      if (
+        existingVerification?.status === "verified" &&
+        isVerificationCurrent({
+          status: "verified",
+          expiresAt: asString(existingVerification.expires_at) ?? undefined,
+        })
+      ) {
+        throw new Error("This outlet is already verified.");
+      }
 
       let verificationId = asString((existingVerification as Row | null)?.id);
       if (!verificationId) {

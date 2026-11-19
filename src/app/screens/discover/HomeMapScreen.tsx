@@ -219,10 +219,11 @@ function SheetModeToggle({
 /** A stall's photo, its dish photo, or its designed no-photo tile, filling its parent. */
 function MapVenueImage({ venue }: { venue: CatalogRawVenueCard }) {
   const imageUrl = venue.imageUrl ?? venue.representativeDish?.imageUrl;
+  const displayName = toDisplayName(venue.name);
   const fallback = (
     <NoDishPhoto
       designed
-      dishName={venue.name}
+      dishName={displayName}
       logoUrl={venue.logoUrl}
       style={StyleSheet.absoluteFill}
     />
@@ -232,7 +233,7 @@ function MapVenueImage({ venue }: { venue: CatalogRawVenueCard }) {
       source={{ uri: imageUrl }}
       style={StyleSheet.absoluteFill}
       contentFit="cover"
-      accessibilityLabel={`${venue.name} image`}
+      accessibilityLabel={`${displayName} image`}
       fallback={fallback}
     />
   ) : (
@@ -1415,7 +1416,7 @@ export function HomeMapScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <MapCardLines
-                    name={venue.name}
+                    name={toDisplayName(venue.name)}
                     rating={cardText(venue).rating}
                     hours={cardText(venue).hours}
                     distance={cardText(venue).distance}
@@ -1492,7 +1493,7 @@ export function HomeMapScreen() {
                   </View>
                   <View style={{ padding: CARD_TEXT_PADDING }}>
                     <MapCardLines
-                      name={venue.name}
+                      name={toDisplayName(venue.name)}
                       rating={cardText(venue).rating}
                       hours={cardText(venue).hours}
                       distance={cardText(venue).distance}

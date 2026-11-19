@@ -1,3 +1,4 @@
+import { isPlaceholderStall, toDisplayName } from "@/features/detail/stallDisplayName";
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import {
   excelRepository,
@@ -140,7 +141,7 @@ function toDishCard(
     venueId: dish.venueId,
     buildingId: dish.buildingId,
     name: dish.name || "Unnamed dish",
-    venueName: dish.venueName || venue?.name || "Unknown venue",
+    venueName: toDisplayName(dish.venueName || venue?.name || "Unknown venue"),
     buildingName: venue?.buildingName ?? building?.name,
     buildingType: building?.type,
     description: dish.description,
@@ -173,7 +174,7 @@ function toVenueCard(
   return {
     id: venue.id,
     buildingId: venue.buildingId,
-    name: venue.name || "Unnamed venue",
+    name: toDisplayName(venue.name || "Unnamed venue"),
     buildingName: venue.buildingName ?? buildingById.get(venue.buildingId)?.name,
     buildingType: buildingById.get(venue.buildingId)?.type,
     address: venue.address || undefined,
@@ -218,6 +219,8 @@ function filterDishes(request: CatalogPageRequest): CatalogRawDishCard[] {
     .filter((dish) => {
       if (request.buildingId && dish.buildingId !== request.buildingId) return false;
       const venue = venueById.get(dish.venueId);
+      if (venue && isPlaceholderStall(venue.name)) return false;
+      if (isPlaceholderStall(dish.venueName)) return false;
       const text = dishSearchText(dish, venue);
       if (!queryMatches(text, request.query)) return false;
       if (!matchesAnyKeyword(normalizedText([dish.name]), request.foodKeywords)) return false;
@@ -280,6 +283,7 @@ function filterVenues(request: CatalogPageRequest): CatalogRawVenueCard[] {
 
   return allVenues
     .filter((venue) => {
+      if (isPlaceholderStall(venue.name)) return false;
       if (request.buildingId && venue.buildingId !== request.buildingId) return false;
       const text = venueSearchText(venue);
       if (!queryMatches(text, request.query)) return false;

@@ -349,7 +349,7 @@ function mapRpcDish(row: Row): DishDetail {
   const venue: VenueSummary = {
     id: toString(row.venue_id),
     buildingId: toString(row.building_id),
-    name: toString(row.venue_name),
+    name: toDisplayName(toString(row.venue_name)),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
     isOpen: toBool(row.is_open, false),
@@ -429,7 +429,7 @@ function mapRpcVenue(row: Row): VenueSummary {
   return {
     id: toString(row.venue_id),
     buildingId: toString(row.building_id),
-    name: toString(row.name),
+    name: toDisplayName(toString(row.name)),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
     isOpen: toBool(row.is_open, false),
@@ -1498,7 +1498,7 @@ export async function getSavedDishCardsViaRpc(
         id,
         name: toString(detail.name),
         venueId,
-        venueName: toString(detail.stall_name) || venue?.name,
+        venueName: toDisplayName(toString(detail.stall_name) || venue?.name || ""),
         buildingName: venue?.buildingName,
         unitNumber: venue?.unitNumber || undefined,
         address: venue?.address,

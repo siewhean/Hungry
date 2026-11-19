@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/Button";
 import { PressableScale } from "@/components/ui/PressableScale";
 import { useReduceMotion } from "@/hooks/useReduceMotion";
 import { EASE_OUT } from "@/lib/motion/uiMotion";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { savedDishPlaceLine } from "@/features/saved/savedDishes";
 import type { SavedDishCard as SavedDish } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -139,10 +140,11 @@ export function SavedDishCard({
   onReview,
 }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
+  const venueName = dish.venueName ? toDisplayName(dish.venueName) : "";
   const place = savedDishPlaceLine(dish);
-  const stallLine = [dish.venueName, place].filter(Boolean).join(" · ");
+  const stallLine = [venueName, place].filter(Boolean).join(" · ");
   const hasRating = dish.rating !== undefined && (dish.reviewCount ?? 0) > 0;
-  const openLabel = `Open ${dish.name}${dish.venueName ? ` at ${dish.venueName}` : ""}`;
+  const openLabel = `Open ${dish.name}${venueName ? ` at ${venueName}` : ""}`;
 
   const removeButton = canRemove ? (
     <Pressable
@@ -245,7 +247,7 @@ export function SavedDishCard({
             {onDirections ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Get directions to ${dish.venueName}`}
+                accessibilityLabel={`Get directions to ${venueName || dish.venueName}`}
                 hitSlop={6}
                 onPress={onDirections}
                 style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}

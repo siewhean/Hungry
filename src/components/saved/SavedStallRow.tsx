@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { useHungryTheme } from "@/theme";
 import type { VenueSummary } from "@/types/domain";
 
@@ -58,6 +59,7 @@ export function SavedStallRow({
   onRemove,
 }: Props) {
   const { componentRadii, palette, spacing } = useHungryTheme();
+  const displayName = toDisplayName(venue.name);
   const place = [venue.unitNumber?.trim(), venue.buildingName].filter(Boolean).join(" · ");
   return (
     <View
@@ -74,7 +76,7 @@ export function SavedStallRow({
     >
       <PressableScale
         accessibilityRole="button"
-        accessibilityLabel={`Open ${venue.name}`}
+        accessibilityLabel={`Open ${displayName}`}
         onPress={onOpen}
         onPressIn={onPressIn}
         style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: spacing[3] }}
@@ -82,7 +84,7 @@ export function SavedStallRow({
         <StallLogo uri={venue.logoUrl} />
         <View style={{ flex: 1, gap: spacing[1] }}>
           <AppText variant="bodyBold" numberOfLines={2}>
-            {venue.name}
+            {displayName}
           </AppText>
           {place ? (
             <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
