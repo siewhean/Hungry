@@ -110,6 +110,7 @@ jobs:
       - name: Migration safety (down file and staging rehearsal for every new migration)
         run: |
           npm run test:migration-safety
+          npm run test:nightly-backup
           npm run audit:supabase:migration-safety
 
       - name: Edge Function static check
