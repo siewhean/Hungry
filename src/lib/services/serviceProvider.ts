@@ -107,7 +107,12 @@ async function bestEffortCatalogFallback<T>(
     // Reporting must never break the read.
   }
   if (!isCatalogFallbackEligibleError(error) || !hasValidAuthenticatedSession()) return [];
-  return fallback().catch(() => []);
+  try {
+    return await fallback();
+  } catch {
+    // The fallback can throw while it is resolved (no Excel catalog in a release bundle).
+    return [];
+  }
 }
 
 export async function runAuthenticatedDiscoveryFallback<T>(
@@ -503,6 +508,16 @@ export function createResilientCatalogReadService(
         .catch((error: unknown) =>
           bestEffortCatalogFallback(error, "catalog_list_places", () =>
             fallback.listPlaces(request),
+          ),
+        );
+    },
+    // The launch zone list is best effort too: without the live catalog it is empty.
+    async listLaunchZonePlaces() {
+      return primary
+        .listLaunchZonePlaces()
+        .catch((error: unknown) =>
+          bestEffortCatalogFallback(error, "catalog_launch_zone_places", () =>
+            fallback.listLaunchZonePlaces(),
           ),
         );
     },

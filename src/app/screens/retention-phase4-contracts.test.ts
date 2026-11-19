@@ -27,7 +27,7 @@ test("web share pages show the dish photo in previews, map links and pass the sh
   const web = "marketing/website/web-v2/src";
   const preview = read(`${web}/components/share/SharePreview.tsx`);
   assert.match(preview, /images: \[imageUrl \?\? siteConfig\.openGraphImage\]/);
-  assert.match(preview, /href=\{appDeepLink\(appPath, shareSource\)\}/);
+  assert.match(preview, /<OpenInHungry href=\{appDeepLink\(appPath, shareSource\)\} \/>/);
   assert.match(preview, /Get directions/);
   assert.match(read(`${web}/lib/share/sharedLinks.ts`), /export function readShareSource/);
   for (const page of ["dish", "stall", "portfolio"]) {

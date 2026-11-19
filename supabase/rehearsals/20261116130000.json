@@ -1,0 +1,14 @@
+{
+  "version": "20261116130000",
+  "name": "20261116130000_launch_zone",
+  "result": "pass",
+  "rehearsed_at": "2026-11-17T02:30:19Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "8eb52b8a2c7c12335c1adb8f9c4213a737c441cc",
+  "up_sha256": "160a61813c64baf534d2fa55a4608b6af9826e81b590d5c4325a4072cea3a92a",
+  "down_sha256": "c6ac0998038a5fd3b39fbdc2f13ac38f23a320a587c9364e21dd2e3b1139e292",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/launch_zone.sql"]
+}
