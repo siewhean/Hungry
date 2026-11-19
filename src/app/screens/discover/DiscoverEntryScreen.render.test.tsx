@@ -227,7 +227,17 @@ test("dish cards open the redesigned dish page and stall rows the stall page, wi
   await view.press(dishCards[0]);
   assert.deepEqual(view.navigation.calls.at(-1)?.args, [
     "DishDetail",
-    { dishId: "dish-2", source: "home" },
+    {
+      dishId: "dish-2",
+      source: "home",
+      prefill: {
+        imageUrl: "https://cdn.example.sg/dish-2.jpg",
+        name: "Chicken Rice",
+        price: 7,
+        venueId: "venue-2",
+        venueName: "Tian Tian",
+      },
+    },
   ]);
 
   await view.press(view.findByLabel("Open Zhen Zhen details"));

@@ -559,14 +559,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
     venue?.unitNumber,
   ]);
 
-  menuVenueIdRef.current = venue?.id;
+  const targetVenueId = venue?.id || venueId;
+  menuVenueIdRef.current = targetVenueId;
   useEffect(() => {
     let active = true;
     setHydratedDishes(undefined);
     setMenuLoadFailed(false);
     setMenuNextCursor(undefined);
     setMenuPageStatus("idle");
-    if (!venue?.id) {
+    if (!targetVenueId) {
       return () => {
         active = false;
       };
@@ -580,11 +581,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
 
     const discovery = getHungryService().discovery;
     const firstPage = discovery.listDishesByVenuePage
-      ? discovery.listDishesByVenuePage(venue.id).then((page) => {
+      ? discovery.listDishesByVenuePage(targetVenueId).then((page) => {
           if (active) setMenuNextCursor(page.nextCursor);
           return page.dishes;
         })
-      : discovery.listDishesByVenue(venue.id);
+      : discovery.listDishesByVenue(targetVenueId);
     void firstPage
       .then((nextDishes) => {
         if (active) setHydratedDishes(nextDishes);
@@ -597,7 +598,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedDishes.length, menuReloadKey, serviceProviderMode, venue?.id]);
+  }, [cachedDishes.length, menuReloadKey, serviceProviderMode, targetVenueId]);
 
   useEffect(() => {
     const pendingLocally = hasPendingClaimForVenue(profile.id, venueId);
@@ -1072,11 +1073,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
     .join(", ");
   const hoursRows = openInfo.weekRows;
   // A single listed "Hours" line that today's row already repeats has nothing more to expand.
-  const hoursExpandable =
-    hoursRows.length > 1 &&
-    hoursRows.some(
-      (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
-    );
+  const hoursExpandable = hoursRows.some(
+    (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
+  );
   const hoursHeader = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
       <HoursSymbol color={palette.orange} size={18} />

@@ -968,7 +968,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const isLiveFeedUnavailable =
     isSupabaseDataSource &&
     (discoverLoadError ||
-      Boolean(supabaseDiscoveryFeed?.isFallback) ||
+      isFeedFallbackEmpty ||
       (isDeviceOffline && supabaseDiscoveryFeed === null));
   useEffect(() => {
     if (isLiveFeedUnavailable) onLiveFeedUnavailable?.();
@@ -1444,13 +1444,25 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   const openBiteDish = useCallback(
     (bite: Bite, buttonId: string) => {
-      navigation.navigate("DishDetail", { dishId: bite.dishId, source: "home" });
+      const biteDish = getBiteDish(bite);
+      navigation.navigate("DishDetail", {
+        dishId: bite.dishId,
+        source: "home",
+        prefill: dishPrefillFrom(
+          biteDish ?? {
+            name: bite.dishName,
+            imageUrl: bite.photoUrl,
+            venueId: bite.venueId,
+            venueName: bite.venueName,
+          },
+        ),
+      });
       scheduleIdleWork(
         () => {
           recordTasteInteraction({
             type: "dish_result_click",
             surface: "discover",
-            dish: getBiteDish(bite),
+            dish: biteDish,
             dishId: bite.dishId,
             buttonId,
           });
@@ -1800,7 +1812,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         testID="home-worth-the-trip"
         onOpen={(dish, position) => {
           trackAnalyticsEvent("worth_the_trip_opened", { dish_id: dish.id, position });
-          navigation.navigate("DishDetail", { dishId: dish.id, source: "worth_the_trip" });
+          navigation.navigate("DishDetail", {
+            dishId: dish.id,
+            source: "worth_the_trip",
+            prefill: dishPrefillFrom(dish),
+          });
         }}
       />
     ) : null;
