@@ -49,6 +49,7 @@
     "check:edge-functions": "node scripts/check-edge-functions.mjs",
     "check:staging-functions": "node --test scripts/staging-functions/staging-functions.test.mjs",
     "smoke:staging-functions": "scripts/staging-functions.sh smoke",
+    "check:staging-test-activity": "node --test scripts/seed/staging-test-activity.test.mjs",
     "check:rate-limits": "node --test scripts/check-rate-limits.test.mjs && node scripts/check-rate-limits.mjs",
     "scaling:validate": "node scripts/validate-scaling-readiness.mjs",
     "load:public-web": "k6 run scripts/load/public-web.k6.js",
