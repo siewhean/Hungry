@@ -1590,7 +1590,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       {hoursHeader}
                     </View>
                   )}
-                  {openInfo.todayRows.length > 0 ? (
+                  {openInfo.todayRows.length > 0 && !hoursExpanded ? (
                     <AppText
                       variant="bodySmall"
                       tone="secondary"
@@ -1610,8 +1610,6 @@ export function StallDetailScreen({ navigation, route }: Props) {
                             accessible
                             accessibilityLabel={`${row.label}, ${row.text}`}
                             style={{
-                              flexDirection: "row",
-                              justifyContent: "space-between",
                               paddingLeft: spacing[6],
                             }}
                           >
@@ -1619,13 +1617,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                               variant={isToday ? "bodySmallBold" : "bodySmall"}
                               tone={isToday ? "default" : "secondary"}
                             >
-                              {row.label}
-                            </AppText>
-                            <AppText
-                              variant={isToday ? "bodySmallBold" : "bodySmall"}
-                              tone={isToday ? "default" : "secondary"}
-                            >
-                              {row.text}
+                              {row.label}: {row.text}
                             </AppText>
                           </View>
                         );

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { OpeningSchedule } from "@/types/domain";
 import { resolveStallOpenInfo } from "./stallOpenState";
 
 // 2026-10-19 is a Monday; noon in Singapore.
@@ -180,4 +181,38 @@ test("weekly hours rows are listed in sequential day order starting from current
   ]);
   assert.equal(info.weekRows[0].label, "Thursday");
   assert.equal(info.weekRows[0].text, "8 am-11 pm");
+
+  // Structured OpeningSchedule also lists all 7 days starting from today with full names
+  const weeklySchedule: OpeningSchedule = {
+    weekly: {
+      mon: [{ open: "08:00", close: "20:00" }],
+      tue: [{ open: "08:00", close: "20:00" }],
+      wed: [{ open: "08:00", close: "20:00" }],
+      thu: [{ open: "08:00", close: "22:00" }],
+      fri: [{ open: "08:00", close: "23:00" }],
+      sat: [{ open: "09:00", close: "23:00" }],
+      sun: [{ open: "09:00", close: "20:00" }],
+    },
+  };
+  const scheduleInfo = resolveStallOpenInfo({
+    venue: { isOpen: true, operatingHours: "" },
+    schedule: weeklySchedule,
+    now: thursdayNoon,
+  });
+  assert.deepEqual(
+    scheduleInfo.weekRows.map((r) => r.label),
+    ["Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"],
+  );
+  assert.equal(scheduleInfo.weekRows[0].text, "8am-10pm");
+
+  // General daily hours also output 7 days starting from today with full day names
+  const dailyInfo = resolveStallOpenInfo({
+    venue: { isOpen: true, operatingHours: "8:00 AM – 6:00 PM" },
+    now: thursdayNoon,
+  });
+  assert.deepEqual(
+    dailyInfo.weekRows.map((r) => r.label),
+    ["Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"],
+  );
+  assert.equal(dailyInfo.weekRows[0].text, "8:00 AM - 6:00 PM");
 });

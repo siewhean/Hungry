@@ -208,7 +208,7 @@ export function formatScheduleRows(
       const dIndex = (dayIndex + i) % 7;
       const key = OPENING_DAY_KEYS[dIndex];
       const dayName = FULL_DAY_NAMES[DAY_ORDER[dIndex]];
-      const text = formatRanges(schedule.weekly[key] ?? []);
+      const text = formatRanges(schedule.weekly[key] ?? []) || "Closed";
       result.push({ label: dayName, text });
     }
     return result;

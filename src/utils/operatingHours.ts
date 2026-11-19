@@ -331,18 +331,12 @@ function formatDayList(days: DayName[]): string {
     .join(", ");
 }
 
-/** Display rows: ordered sequentially from today when days are specified, or as listed for general hours. */
-export function formatHoursRows(
-  rows: HoursRow[],
-  now: Date = new Date(),
-): { label: string; text: string }[] {
+/** Display rows: ordered sequentially from today with full day names when now is provided, or as listed for general hours. */
+export function formatHoursRows(rows: HoursRow[], now?: Date): { label: string; text: string }[] {
   if (rows.length === 0) return [];
 
-  // When rows specify days, output all 7 days sequentially starting from today
-  const hasSpecificDays = rows.some(
-    (row) => row.days && row.days.length > 0 && row.days.length < 7,
-  );
-  if (hasSpecificDays) {
+  // When now is provided, output all 7 days sequentially starting from today with full day names
+  if (now) {
     const today = getSingaporeDay(now);
     const todayIndex = DAY_ORDER.indexOf(today);
     const result: { label: string; text: string }[] = [];

@@ -47,7 +47,8 @@ export function resolveStallOpenInfo(input: {
   temporaryClosure?: string;
   now?: Date;
 }): StallOpenInfo {
-  const { temporaryClosure, now } = input;
+  const { temporaryClosure } = input;
+  const now = input.now ?? new Date();
   // A false flag only means "closed" when the stall also says why (a closure notice). On its own
   // it is a stale default, and the hours decide (R5-STALL-13).
   const venue = {
