@@ -72,7 +72,6 @@ test("H23/H24/H28: other profiles render directly and open connection lists on t
 test("H21/H24: every navigate to UserProfile passes an account id", () => {
   for (const file of [
     "src/components/stall/PopularVisitorsSection.tsx",
-    "src/app/screens/home/HomeFeedScreen.tsx",
     "src/app/screens/profile/ProfileConnectionsScreen.tsx",
     "src/app/screens/profile/FollowRequestsScreen.tsx",
   ]) {

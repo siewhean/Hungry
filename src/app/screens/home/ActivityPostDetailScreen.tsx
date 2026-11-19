@@ -56,14 +56,16 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
   // Bumped after Hide or Block so the post list re-reads the session safety filters.
   const [safetyFilterVersion, setSafetyFilterVersion] = useState(0);
   const onSafetyHidden = useCallback(() => setSafetyFilterVersion((version) => version + 1), []);
-  const posts = useMemo(
-    () => listSharedStallPostsSync(repository),
-    [publishedPosts, repository, safetyFilterVersion],
-  );
   // Shared links can open a post this device never loaded: fetch it by id
   // (works signed out for public posts) instead of trusting local caches.
   const [fetchedBite, setFetchedBite] = useState<Bite | null>(null);
   const [fetchState, setFetchState] = useState<"loading" | "done" | "error">("loading");
+  // The read settles after the service has loaded its saved posts, so `fetchState` refreshes this
+  // list once they are in; without it a cold open keeps the empty list it first rendered.
+  const posts = useMemo(
+    () => listSharedStallPostsSync(repository),
+    [publishedPosts, repository, safetyFilterVersion, fetchState],
+  );
   const [fetchAttempt, setFetchAttempt] = useState(0);
   useEffect(() => {
     let cancelled = false;
@@ -454,7 +456,6 @@ export function ActivityPostDetailScreen({ navigation, route }: Props) {
         onDismiss={() => setActiveShareReview(null)}
         // Signed-out visitors can copy or system-share the link; recording a
         // share (and in-app sends) needs an account.
-        inAppSharingEnabled={isAuthenticated}
         onShared={(postId, channel) => {
           if (isAuthenticated) incrementShare(postId, channel);
         }}

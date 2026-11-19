@@ -2,7 +2,6 @@ import type { MessageKey } from "./en";
 
 export const hi: Record<MessageKey, string> = {
   "tab.home": "होम",
-  "tab.feed": "फ़ीड",
   "tab.post": "पोस्ट",
   "tab.reviews": "समीक्षाएँ",
   "tab.profile": "प्रोफ़ाइल",

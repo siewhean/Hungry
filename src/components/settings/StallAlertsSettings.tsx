@@ -27,17 +27,13 @@ const PREFERENCE_EVENT_KEYS = {
 
 type PreferenceKey = keyof typeof PREFERENCE_EVENT_KEYS;
 
-interface StallAlertsSettingsProps {
-  onOpenFollowedStalls: () => void;
-}
-
 /**
  * Push alerts: opt-in menu changes at followed stalls and lunch and dinner
  * suggestions (both off until turned on), and the weekly picks and follow-request
  * pushes (the follow-request one on unless the user opts out). While the phone blocks notifications the
  * switches still show what is saved, dimmed, so a saved alert can be turned off.
  */
-export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSettingsProps) {
+export function StallAlertsSettings() {
   const { palette } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const [preferences, setPreferences] = useState<PushPreferences>(DEFAULT_PUSH_PREFERENCES);
@@ -186,7 +182,7 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
         dimmed={permissionDenied}
         busy={isBusy}
         onToggle={(value) => void handleToggle("mealtimeSuggestions", value)}
-        isLast={!FEATURE_FLAGS.followConnectionsEnabled && !FEATURE_FLAGS.stallFollowEnabled}
+        isLast={!FEATURE_FLAGS.followConnectionsEnabled}
       />
       {/* Followers are archived (owner decision 2026-10-31): no requests to be told about. */}
       {FEATURE_FLAGS.followConnectionsEnabled ? (
@@ -201,17 +197,6 @@ export function StallAlertsSettings({ onOpenFollowedStalls }: StallAlertsSetting
           dimmed={permissionDenied}
           busy={isBusy}
           onToggle={(value) => void handleToggle("socialActivity", value)}
-          isLast={!FEATURE_FLAGS.stallFollowEnabled}
-        />
-      ) : null}
-      {FEATURE_FLAGS.stallFollowEnabled ? (
-        <SettingsRow
-          editorial
-          iconTone="neutral"
-          label="Followed stalls"
-          icon={<AppSymbol name="followedStalls" size={20} color={palette.textSecondary} />}
-          type="navigation"
-          onPress={onOpenFollowedStalls}
           isLast
         />
       ) : null}

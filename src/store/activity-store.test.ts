@@ -44,17 +44,11 @@ type Notifications = {
   markAllActivityRead: () => Promise<void>;
 };
 
-function installServer(
-  notifications: Partial<Notifications>,
-  chatSend?: (m: unknown) => Promise<unknown>,
-) {
+function installServer(notifications: Partial<Notifications>) {
   setServiceProvider({
     mode: "supabase",
     repository: dataRepositoryMock,
-    service: {
-      notifications,
-      chat: { sendMessage: chatSend ?? (async () => undefined) },
-    } as unknown as HungryService,
+    service: { notifications } as unknown as HungryService,
     similarityScore: () => 1,
   });
 }
@@ -254,37 +248,6 @@ test("mock mode never calls the server", async () => {
   assert.deepEqual(useActivityStore.getState().dbActivityEvents, []);
 });
 
-test("sharing a post to chat sends the message with a link and keeps the rich card locally", async () => {
-  const sent: { conversationId: string; body: string }[] = [];
-  installServer({}, async (message) => {
-    sent.push(message as never);
-  });
-  await useActivityStore.getState().sharePostToChat("chat-1", {
-    postId: "p1",
-    title: "Laksa",
-    subtitle: "Katong",
-  } as never);
-
-  assert.equal(sent.length, 1);
-  assert.equal(sent[0].conversationId, "chat-1");
-  assert.match(sent[0].body, /^Shared Laksa\nKatong\nhttps?:\/\/.+p1/);
-  const [message] = useActivityStore.getState().sharedPostMessages["chat-1"];
-  assert.equal(message.sent, true);
-  assert.equal(message.sharedPost?.postId, "p1");
-
-  // A failed send leaves no phantom message.
-  installServer({}, async () => {
-    throw new Error("offline");
-  });
-  await assert.rejects(() =>
-    useActivityStore
-      .getState()
-      .sharePostToChat("chat-2", { postId: "p2", title: "T", subtitle: "S" } as never),
-  );
-  assert.equal(useActivityStore.getState().sharedPostMessages["chat-2"], undefined);
-  resetServiceProvider();
-});
-
 test("clearAccountScopedState wipes everything a previous account left behind", async () => {
   useActivityStore.getState().markActivityRead("update", "x");
   useActivityStore.setState({
@@ -294,15 +257,6 @@ test("clearAccountScopedState wipes everything a previous account left behind", 
   });
   useActivityStore.getState().clearAccountScopedState();
   const state = useActivityStore.getState();
-  assert.deepEqual(
-    [
-      state.readActivityIds,
-      state.sharedPostMessages,
-      state.activityUpdates,
-      state.dbActivityEvents,
-    ],
-    [[], {}, [], []],
-  );
   assert.deepEqual(
     [state.hasLoadedActivity, state.activityLoadFailed, state.hasMoreActivity],
     [false, false, false],

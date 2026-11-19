@@ -316,7 +316,7 @@ test("Notifications has no Follow requests switch while followers are archived",
   const saved = flagValues.followConnectionsEnabled;
   flagValues.followConnectionsEnabled = false;
   try {
-    const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+    const view = await render(createElement(StallAlertsSettings));
     assert.equal(view.findByLabel("Follow requests"), null);
     assert.ok(view.findByLabel("Lunch and dinner ideas"));
   } finally {
@@ -336,7 +336,7 @@ test("Notifications has a Follow requests switch that saves social_activity when
       updates.push(next);
       return { ...DEFAULT_PUSH_PREFERENCES, ...next };
     });
-    const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+    const view = await render(createElement(StallAlertsSettings));
     const row = view.findByLabel("Follow requests");
     await view.press(row);
     await view.settle();
@@ -359,7 +359,7 @@ test("while the phone blocks notifications, a saved alert still shows on and can
     updates.push(next);
     return { ...DEFAULT_PUSH_PREFERENCES, ...next };
   });
-  const view = await render(createElement(StallAlertsSettings, { onOpenFollowedStalls() {} }));
+  const view = await render(createElement(StallAlertsSettings));
   assert.match(view.text(), /Notifications are off for Hungry/);
   const weekly = view.findByLabel("Weekly picks");
   await view.press(weekly);

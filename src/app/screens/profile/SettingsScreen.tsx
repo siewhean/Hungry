@@ -160,7 +160,7 @@ export function SettingsScreen() {
   // Neutral grey icons on grey discs; colour is kept for state (error red, accent actions).
   const iconColor = palette.textSecondary;
   const neutralRow = { editorial: true, iconTone: "neutral" } as const;
-  // SocialGrid and FollowedStalls live in the profile stack, which this screen sits in.
+  // SocialGrid lives in the profile stack, which this screen sits in.
   const navigateLoose = (name: string, params?: object) =>
     (navigation as unknown as { navigate: (name: string, params?: object) => void }).navigate(
       name,
@@ -199,14 +199,6 @@ export function SettingsScreen() {
           label: "Follow requests",
           symbol: "followRequests" as const,
           onPress: () => rootNavigation.navigate("FollowRequests"),
-        }
-      : null,
-    FEATURE_FLAGS.stallFollowEnabled
-      ? {
-          id: "followed-stalls",
-          label: "Followed stalls",
-          symbol: "stall" as const,
-          onPress: () => navigateLoose("FollowedStalls"),
         }
       : null,
   ].filter((shortcut): shortcut is NonNullable<typeof shortcut> => shortcut !== null);
@@ -788,17 +780,7 @@ export function SettingsScreen() {
         ) : null}
       </SettingsSection>
 
-      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? (
-        <StallAlertsSettings
-          onOpenFollowedStalls={() =>
-            // Settings is also a root route, where FollowedStalls is not a sibling.
-            rootNavigation.navigate("MainTabs", {
-              screen: "Profile",
-              params: { screen: "FollowedStalls" },
-            })
-          }
-        />
-      ) : null}
+      {FEATURE_FLAGS.stallAlertsEnabled && isAuthenticated ? <StallAlertsSettings /> : null}
 
       <SettingsSection editorial title={t("settings.section.privacy")}>
         {/* Archived with followers and following: back when a build opts in to follow connections. */}

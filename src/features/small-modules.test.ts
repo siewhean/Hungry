@@ -15,7 +15,6 @@ import {
   CURRENT_PLACE_LEAVE_RADIUS_METERS,
   isStillInPlace,
 } from "@/features/discover/currentPlace";
-import { toChatShareRecipient } from "@/features/home/chatShare";
 import {
   listComposerCollaboratorOptions,
   listComposerLocationOptions,
@@ -24,7 +23,6 @@ import { TRENDING_MUSIC } from "@/features/review/musicData";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { toRecommendationGeoCell } from "@/lib/geo/recommendationGeoCell";
 import { getDataRepository } from "@/lib/services/serviceProvider";
-import type { ChatConversation } from "@/lib/services/types";
 
 test("only the exact no-email error is recognised as such", () => {
   assert.equal(isNoAccountEmailError(new Error(NO_ACCOUNT_EMAIL_MESSAGE)), true);
@@ -75,38 +73,6 @@ test("auth funnel events carry the screen, flow, method and a safe failure reaso
       "never log raw error text",
     );
   }
-});
-
-test("a chat share picks the other person's name and avatar unless the chat has its own", () => {
-  const base = {
-    id: "c1",
-    title: "",
-    lastMessage: "see you",
-    participants: [
-      { id: "me", displayName: "Me", avatarUrl: "me.png", isCurrentUser: true },
-      { id: "u2", displayName: "Mei", avatarUrl: "mei.png", isCurrentUser: false },
-    ],
-  } as unknown as ChatConversation;
-
-  assert.deepEqual(toChatShareRecipient(base), {
-    id: "c1",
-    avatar: "mei.png",
-    name: "Mei",
-    lastMessage: "see you",
-  });
-  const group = toChatShareRecipient({
-    ...base,
-    title: "Makan crew",
-    avatarUrl: "group.png",
-  } as ChatConversation);
-  assert.equal(group.name, "Makan crew");
-  assert.equal(group.avatar, "group.png");
-  const lonely = toChatShareRecipient({
-    ...base,
-    title: "",
-    participants: [],
-  } as unknown as ChatConversation);
-  assert.deepEqual([lonely.name, lonely.avatar], ["Hungry chat", ""]);
 });
 
 test("composer options come from real buildings and de-duplicated post authors", () => {

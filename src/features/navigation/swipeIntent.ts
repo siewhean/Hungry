@@ -62,16 +62,11 @@ export function adjacentTabKey<T extends string>(
  * The main tab bar from left to right. `Create` is the Post button: it opens the review card
  * from the bottom instead of a tab page.
  */
-export type MainTabKey = "Discover" | "Home" | "Create" | "Review" | "Profile";
+export type MainTabKey = "Discover" | "Create" | "Review" | "Profile";
 
-export function mainTabOrder(flags: {
-  socialFeedEnabled: boolean;
-  reviewCreationEnabled: boolean;
-}): MainTabKey[] {
-  return [
-    "Discover",
-    ...(flags.socialFeedEnabled ? (["Home"] as const) : []),
-    ...(flags.reviewCreationEnabled ? (["Create", "Review"] as const) : []),
-    "Profile",
-  ];
+export function mainTabOrder(flags: { reviewCreationEnabled: boolean }): MainTabKey[] {
+  const order: MainTabKey[] = ["Discover"];
+  if (flags.reviewCreationEnabled) order.push("Create", "Review");
+  order.push("Profile");
+  return order;
 }

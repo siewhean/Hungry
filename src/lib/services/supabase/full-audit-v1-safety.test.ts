@@ -57,7 +57,7 @@ test("Full Audit V1 social safety adds checked report and moderation surfaces", 
   );
 });
 
-test("Full Audit V1 chat sends are RPC-gated by participants, blocks, and rate limits", () => {
+test("Full Audit V1 chat sends stay RPC-gated by participants, blocks, and rate limits in the backend", () => {
   assert.match(socialSafetySql, /create or replace function public\.app_user_block_exists/i);
   assert.match(socialSafetySql, /create or replace function public\.send_chat_message/i);
   assert.match(socialSafetySql, /public\.can_access_conversation\(p_conversation_id\)/i);
@@ -71,8 +71,6 @@ test("Full Audit V1 chat sends are RPC-gated by participants, blocks, and rate l
     socialSafetySql,
     /revoke insert, update, delete on table messages from anon, authenticated/i,
   );
-  assert.match(supabaseService, /\.rpc\("send_chat_message"/);
-  assert.doesNotMatch(supabaseService, /\.from\("messages"\)\s*\.insert\(\{/);
 });
 
 test("Full Audit V1 gamification persists Food Cred, stall interactions, and missions", () => {

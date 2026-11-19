@@ -1,9 +1,9 @@
 import { test, expect } from "./fixtures";
 import {
-  clickDevButton,
-  expectPostCaptionVisible,
   gotoLauncher,
+  openPublishedPost,
   publishPostFromComposer,
+  reloadApp,
   startOnboardedMockSession,
   uniqueCaption,
 } from "./helpers/app";
@@ -23,13 +23,16 @@ test.describe("cross-user visibility", () => {
 
     await publishPostFromComposer(page, caption, { account: "User A" });
     await page.getByRole("button", { name: "View Post" }).first().click();
-    await expectPostCaptionVisible(page, caption, "home-social-feed");
+    await openPublishedPost(page, caption);
 
     await gotoLauncher(page);
     await startOnboardedMockSession(page, "User B");
-    await clickDevButton(page, "Home", "Core app flow");
-
-    await expectPostCaptionVisible(page, caption, "home-social-feed");
+    // A reload drops the in-memory feed: the post must still open from what the app persisted,
+    // and the reload must keep the session signed in. (The mock service keeps the account name
+    // in memory only, so a reload does not restore "User B" by name: the session is the signal.)
+    await reloadApp(page);
+    await expect(page.getByText("Authenticated", { exact: true }).first()).toBeVisible();
+    await openPublishedPost(page, caption);
     await expect(page.getByRole("button", { name: "Follow User A" }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Follow User B" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /delete/i })).toHaveCount(0);

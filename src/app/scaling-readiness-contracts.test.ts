@@ -76,8 +76,6 @@ test("production feature flags remain MVP-safe and documented in the release mat
   // Advanced surfaces stay out of production (main's nonProductionSurfaceEnabled).
   assert.match(flags, /const prototypeRoutesEnabled = appEnv !== "production"/);
   assert.match(flags, /release01CoreOnly: enabled\(env, "EXPO_PUBLIC_RELEASE_01_CORE_ONLY"\)/);
-  // Messages is archived: off everywhere unless a build opts in.
-  assert.match(flags, /directMessagesEnabled: surface\("EXPO_PUBLIC_ENABLE_MESSAGES", false\)/);
   for (const flag of [
     "commentsEnabled",
     "oauthProvidersEnabled",
@@ -110,7 +108,6 @@ test("root navigation and linking do not expose advanced production routes witho
 
   for (const gate of [
     "FEATURE_FLAGS.merchantCentreEnabled",
-    "FEATURE_FLAGS.directMessagesEnabled",
     "FEATURE_FLAGS.storiesEnabled",
     "FEATURE_FLAGS.gamificationEnabled",
     "FEATURE_FLAGS.prototypeRoutesEnabled",
@@ -120,8 +117,6 @@ test("root navigation and linking do not expose advanced production routes witho
 
   for (const route of [
     "MerchantTabs",
-    "DirectMessages",
-    "ChatDetail",
     "StoryViewer",
     "AddStory",
     "PassportScreen",
@@ -133,7 +128,6 @@ test("root navigation and linking do not expose advanced production routes witho
 
   assert.match(linking, /FEATURE_FLAGS\.merchantCentreEnabled/);
   assert.match(linking, /FEATURE_FLAGS\.portfoliosEnabled/);
-  assert.doesNotMatch(linking, /DirectMessages:/);
 });
 
 test("Supabase source of truth and bounded service read paths are covered by reports and code", () => {

@@ -19,7 +19,7 @@ test("Settings has a Language row, shown only when more than English is offered,
 
 test("the tab bars read their labels from the translation catalog", () => {
   const customer = read("src/app/navigation/SwipeableTabNavigator.tsx");
-  for (const key of ["tab.home", "tab.feed", "tab.post", "tab.reviews", "tab.profile"]) {
+  for (const key of ["tab.home", "tab.post", "tab.reviews", "tab.profile"]) {
     assert.ok(customer.includes(`t("${key}")`), key);
   }
   const merchant = read("src/app/navigation/MerchantTabs.tsx");

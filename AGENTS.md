@@ -99,7 +99,6 @@ Level 4 — Current Sprint Goal
 
 | Flag | Full Audit V1 production default | Meaning |
 | --- | --- | --- |
-| `directMessagesEnabled` | `true` | Direct Messages tab and chat surfaces |
 | `commentsEnabled` | `true` | Community comments on posts/reviews |
 | `storiesEnabled` | `true` | Story viewer and story creation |
 | `collectionsEnabled` | `true` | Collection list/detail routes |

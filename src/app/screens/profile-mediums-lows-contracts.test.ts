@@ -152,7 +152,6 @@ test("profile sub-screens do not nest a vertical ScrollView in the shell", () =>
   for (const file of [
     "src/app/screens/profile/ProfileConnectionsScreen.tsx",
     "src/app/screens/profile/VisitedStallsScreen.tsx",
-    "src/app/screens/profile/FollowedStallsScreen.tsx",
     "src/app/screens/profile/PassportScreen.tsx",
   ]) {
     assert.doesNotMatch(read(file), /<ScrollView/, file);

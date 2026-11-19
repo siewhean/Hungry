@@ -35,10 +35,6 @@ test("H9: guests get a public Home feed and a sign-in empty state", () => {
     service,
     /if \(!\(await getCurrentSupabaseUserId\(\)\)\) \{\s*const publicBites = await fetchPublicHomeFeedBites\(client, page\);/,
   );
-
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /title="Sign in to see your feed"/);
-  assert.match(home, /onCtaPress=\{openSignInFromEmptyFeed\}/);
 });
 
 test("H10: visitors can sign the photo of a public post, nothing else", () => {
@@ -59,25 +55,7 @@ test("H10: visitors can sign the photo of a public post, nothing else", () => {
   assert.match(helper, /app_private\.can_read_author_content\(p\.author_id\)/);
 });
 
-test("H11: a like, save, comment or share tap does not reload the feed", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  const keyBlock = /const profileFeedKey = useMemo\([\s\S]*?\]\);/.exec(home)?.[0];
-  assert.ok(keyBlock);
-  assert.doesNotMatch(keyBlock, /tasteVector/);
-  assert.match(home, /getHomeFeedBundle\(profileRef\.current,/);
-  assert.match(
-    home,
-    /\[followedAuthors, followedUserIds, initializeInteractions, profileFeedKey\],/,
-  );
-  // home_feed_viewed once per focus.
-  assert.match(home, /if \(!feedViewTrackedRef\.current\) \{/);
-  assert.match(home, /feedViewTrackedRef\.current = false;\s*const cancelIdle = scheduleIdleWork/);
-});
-
 test("H12: feed and post videos pause off screen and in the background", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(home, /const isFocused = useIsFocused\(\);/);
-  assert.match(home, /isVideoActive=\{isFocused && activeVideoPostId === item\.id\}/);
   assert.match(read("src/components/social/FeedPostCard.tsx"), /isActive=\{isVideoActive\}/);
 
   const detail = read("src/app/screens/home/ActivityPostDetailScreen.tsx");

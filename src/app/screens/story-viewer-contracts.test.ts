@@ -71,8 +71,6 @@ test("Story viewer contract: progress bar is a smooth linear UI-thread animation
 
 test("Story viewer contract: story seen state is deferred until the viewer is open", () => {
   const source = read("src/app/screens/home/StoryViewerScreen.tsx");
-  const homeSource = read("src/app/screens/home/HomeFeedScreen.tsx");
-
   assert.match(source, /const STORY_OPEN_READY_FALLBACK_MS = 850/);
   assert.match(source, /const STORY_SEEN_OPEN_FALLBACK_MS = 1400/);
   assert.match(source, /const STORY_MEDIA_READY_FALLBACK_MS = 1200/);
@@ -112,15 +110,7 @@ test("Story viewer contract: story seen state is deferred until the viewer is op
   assert.match(source, /const handleCloseStory = useCallback/);
   assert.match(source, /unsubscribeTransitionEnd\(\)/);
   assert.match(source, /cancelAnimationFrame\(animationFrame\)/);
-  assert.match(homeSource, /const STORY_OPENING_RING_HOLD_MS = 2200/);
-  assert.match(homeSource, /openingUnseenStoryId/);
-  assert.match(homeSource, /openingUnseenStoryDisplayName/);
-  assert.match(homeSource, /holdOpeningStoryRing\(story\)/);
-  assert.match(homeSource, /story\.hasUnseen/);
-  assert.match(homeSource, /openingUnseenStoryId=\{openingUnseenStoryId\}/);
-  assert.match(homeSource, /openingUnseenStoryDisplayName=\{openingUnseenStoryDisplayName\}/);
   assert.doesNotMatch(source, /hasViewerOpenedRef/);
-  assert.doesNotMatch(homeSource, /markSeenForDisplayName/);
   assert.doesNotMatch(
     source,
     /currentStory\?\.hasUnseen \|\| currentStory\.isOwn \|\| !canCommitSeen/,
@@ -135,13 +125,10 @@ test("Story viewer contract: cross-user transitions and footer actions are stand
   assert.doesNotMatch(source, /userTransitionBadge/);
   assert.match(source, /loadStories/);
   assert.match(source, /ActivityIndicator/);
-  assert.match(source, /const handleStoryMessage = \(\) => \{/);
-  assert.match(source, /navigation\.navigate\("ChatDetail", \{/);
+  assert.match(source, /const handleAddStory = \(\) => \{/);
+  assert.doesNotMatch(source, /ChatDetail|Send message/);
   assert.match(source, /navigation\.navigate\("AddStory"\)/);
-  assert.match(
-    source,
-    /accessibilityLabel=\{\s*currentStory\.isOwn \? "Add another story" : `Message \$\{currentStory\.displayName\}`\s*\}/,
-  );
+  assert.match(source, /currentStory\.isOwn \? \([\s\S]*accessibilityLabel="Add another story"/);
   assert.match(source, /accessibilityLabel="Like story"/);
   assert.match(source, /accessibilityLabel="Share story"/);
   assert.doesNotMatch(source, /Share feature coming soon/);
@@ -226,24 +213,9 @@ test("Story viewer contract: cross-user transition is a visible rotating block",
 });
 
 test("Home feed contract: story carousel opens existing own story and separates create", () => {
-  const source = read("src/app/screens/home/HomeFeedScreen.tsx");
   const carouselSource = read("src/components/social/CircleStoryCarousel.tsx");
   const addStorySource = read("src/app/screens/home/AddStoryScreen.tsx");
 
-  assert.match(source, /useStoryStore/);
-  assert.match(source, /loadStories/);
-  assert.match(source, /const storiesEnabled = FEATURE_FLAGS\.storiesEnabled/);
-  assert.match(source, /storyCarouselItems/);
-  assert.match(source, /if \(!storiesEnabled\) \{\s*return \[\];\s*\}/);
-  assert.match(source, /const styles = useMemo\(\(\) => createStyles\(theme\), \[theme\]\)/);
-  assert.match(source, /const listHeader = useMemo\(\(\) => renderHeader\(\), \[renderHeader\]\)/);
-  assert.match(source, /ListHeaderComponent=\{listHeader\}/);
-  assert.match(source, /const ownStory = stories\.find\(\(candidate\) => candidate\.isOwn\)/);
-  assert.match(source, /navigation\.navigate\("StoryViewer", \{ initialStoryId: story\.id \}\)/);
-  assert.match(source, /navigation\.navigate\("StoryViewer", \{ initialStoryId: ownStory\.id \}\)/);
-  assert.match(source, /navigation\.navigate\("AddStory"\)/);
-  assert.match(source, /storiesEnabled \? \([\s\S]*<CircleStoryCarousel/);
-  assert.match(source, /onAddStoryPress=\{handleAddStoryPress\}/);
   assert.match(carouselSource, /onAddStoryPress/);
   assert.match(carouselSource, /openingUnseenStoryId/);
   assert.match(carouselSource, /openingUnseenStoryDisplayName/);
