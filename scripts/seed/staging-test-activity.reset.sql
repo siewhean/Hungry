@@ -18,6 +18,13 @@ from auth.users u
 cross join lateral jsonb_each(coalesce(u.raw_user_meta_data -> 'dish_ratings_before', '{}'::jsonb)) e
 where u.id in (select id from seed_ids);
 
+do $$
+begin
+  if exists (select 1 from seed_ids) and not exists (select 1 from seed_dish_restore) then
+    raise notice 'no dish rating snapshot found (diner 01 is gone): dish ratings are not restored';
+  end if;
+end $$;
+
 -- Rows with no foreign key to the profile. The rest go with the profile (on delete cascade).
 delete from reviews where user_id in (select id from seed_ids);
 delete from user_favourite_dishes where user_id in (select id from seed_ids);

@@ -120,6 +120,11 @@ test("the wrapper refuses a staging user name on any other host, and a host over
     `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com.attacker.example:6543/postgres`,
     `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?host=attacker.example`,
     `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?hostaddr=203.0.113.9`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?%68ost=attacker.example`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?%68ostaddr=203.0.113.9`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543,attacker.example:5432/postgres`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&host=attacker.example`,
+    `postgresql://%70ostgres.${STAGING_REF}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres`,
   ]) {
     const result = runWrapper("reset", { STAGING_DB_URL: url });
     assert.notEqual(result.status, 0, url);
@@ -127,6 +132,8 @@ test("the wrapper refuses a staging user name on any other host, and a host over
   }
   const direct = `postgresql://postgres@db.${STAGING_REF}.supabase.co:5432/postgres`;
   assert.equal(runWrapper("reset", { STAGING_DB_URL: direct }).status, 0);
+  const pooled = `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require`;
+  assert.equal(runWrapper("reset", { STAGING_DB_URL: pooled }).status, 0);
 });
 
 test("the wrapper replaces test activity in one psql call on staging, and only resets for reset", () => {
