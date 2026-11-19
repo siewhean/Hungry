@@ -186,6 +186,22 @@ Not wired on staging: the `send-email` auth hook (staging auth mail uses the def
 
 Release checklist: after any change under `supabase/functions/`, run `deploy` then `smoke` on staging before the production deploy.
 
+## Staging test activity (package 3.2)
+
+Staging has dishes but almost no diners, so Home's Fresh reviews, the Reviews page, the boards, Saved and Passport cannot be judged. `scripts/seed/staging-test-activity.sh` adds 20 labelled test diners ("Test Diner 01" to "Test Diner 20") with saves, quick logs (Tried), taste ratings, a few written reviews and follows, all on dishes and stalls already in the catalog (the launch zone first). It writes no dish, stall, price, photo or menu, and it never takes a production URL (the staging ref is hard-coded; any other project is refused).
+
+Run on the Mac with `STAGING_DB_URL` and `STAGING_PGPASSWORD` set, as for `scripts/db/*.sh`:
+
+```
+scripts/seed/staging-test-activity.sh seed     # clears any old test activity, then adds it (same picture every time)
+scripts/seed/staging-test-activity.sh status   # counts the test diners, their reviews, saves and board rows
+scripts/seed/staging-test-activity.sh reset    # removes all of it; dish ratings and boards go back as they were
+```
+
+**The marker.** Test diners are the accounts whose email ends `@internal.hungry.test` (auth metadata `{"internal": true}`). Any count of real diners, reviews, saves or posts must leave them out: `email not like '%@internal.hungry.test'` on `auth.users` or `user_profiles`. They are not taken off the leaderboards, because the boards are one of the screens this is for; the Trending board and Passport fill, the Active board stays empty until real photos exist (it pays only for posts with a photo, and none is made up). Staging only: never run any of this against production.
+
+`scripts/seed/test-staging-test-activity.sh` proves the round trip on the local Postgres stand-in (seed, checks, repeat, reset, every table back as it was); `npm run check:staging-test-activity` keeps the scripts staging-only and marker-only in CI.
+
 ## Self-Hosted Supabase Targets
 
 Hungry's Supabase runs self-hosted (docker compose); there is no linked Supabase Cloud project or Management API. Set values locally or as CI secrets only, never in the repo.
