@@ -12,13 +12,11 @@ function read(relativePath: string): string {
 test("Screen edge padding contract: app-level surfaces use the shared screenEdge token", () => {
   const tokens = read("src/theme/tokens.ts");
   const screen = read("src/components/ui/Screen.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
 
   assert.match(tokens, /screenEdge: 16/);
   assert.match(screen, /semanticSpacing\.screenEdge/);
   assert.doesNotMatch(screen, /paddingHorizontal: spacing\[3\]/);
-  assert.match(home, /paddingHorizontal: semanticSpacing\.screenEdge/);
   assert.match(activity, /horizontalPadding=\{semanticSpacing\.screenEdge\}/);
   assert.match(activity, /paddingHorizontal: semanticSpacing\.screenEdge/);
 });

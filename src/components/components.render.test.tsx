@@ -8,7 +8,6 @@ import { makeMutable } from "react-native-reanimated";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { cleanup, render } from "@/test/render";
-import { DiscoverModeTabs } from "@/components/discover/DiscoverModeTabs";
 import { ForYouCard } from "@/components/discover/ForYouCard";
 import { MenuLessStallGroup } from "@/components/discover/MenuLessStallGroup";
 import { TrendingList } from "@/components/discover/TrendingList";
@@ -34,11 +33,10 @@ import { TasteRadarChart } from "@/components/taste/TasteRadarChart";
 import { AnimatedSwitch } from "@/components/ui/AnimatedSwitch";
 import { AchievementsSection } from "@/components/gamification/AchievementsSection";
 import { MissionCard } from "@/components/gamification/MissionCard";
-import { PassportBook } from "@/components/gamification/PassportBook";
 import { PassportCard } from "@/components/gamification/PassportCard";
 import { ReportListSheet } from "@/components/portfolio/ReportListSheet";
 import { OwnContentEditDialog } from "@/components/social/OwnContentEditDialog";
-import { InAppShareCard, ShareQuickActionGroup } from "@/components/social/ShareSettings";
+import { ShareLinkCard, ShareQuickActionGroup } from "@/components/social/ShareSettings";
 import { FeedStateView } from "@/components/ui/FeedStateView";
 import { FloatingToast } from "@/components/ui/FloatingToast";
 import { AppBottomTabItem } from "@/components/ui/AppBottomTabItem";
@@ -51,13 +49,7 @@ import { SwipeSections } from "@/components/ui/SwipeSections";
 import { MemberAvatarRow } from "@/components/wheel/MemberAvatarRow";
 import { TabSwitcher } from "@/features/post/components/TabSwitcher";
 import { useComposerStore } from "@/features/post/useComposerStore";
-import {
-  ALL_PASSPORT_CATEGORIES,
-  computePassportProgress,
-  getEarnedPassportStamps,
-  getNextPassportStamp,
-  PASSPORT_BADGE_DEFINITIONS,
-} from "@/constants/passportConfig";
+import { ALL_PASSPORT_CATEGORIES, computePassportProgress } from "@/constants/passportConfig";
 import { computeAchievements } from "@/features/achievements/achievements";
 import type { HereStall } from "@/features/discover/mallMode";
 import type { Bite } from "@/lib/services/types";
@@ -263,31 +255,6 @@ test("PassportCard invites a first stamp when empty and lists categories once st
   usePassportStore.setState({ progressMap: {} });
 });
 
-test("PassportBook renders the cover, the earned stamps and the next target", async () => {
-  const hawker = ALL_PASSPORT_CATEGORIES.find((category) => category.id === "cuisine-hawker")!;
-  const progressMap = { [hawker.id]: computePassportProgress(hawker, 3) };
-  const earnedStamps = getEarnedPassportStamps(progressMap);
-  assert.equal(earnedStamps.length, 2);
-  const view = await render(
-    createElement(PassportBook, {
-      earnedStamps,
-      badges: PASSPORT_BADGE_DEFINITIONS,
-      nextStamp: getNextPassportStamp(progressMap),
-    }),
-  );
-  assert.match(view.text(), /Food Discovery Passport/);
-  assert.match(view.text(), /REPUBLIC OF HUNGRY/);
-
-  await view.rerender(
-    createElement(PassportBook, {
-      earnedStamps: [],
-      badges: PASSPORT_BADGE_DEFINITIONS,
-      nextStamp: null,
-    }),
-  );
-  assert.match(view.text(), /Food Discovery Passport/);
-});
-
 test("ReportListSheet submits the chosen reason and trimmed details, and resets when reopened", async () => {
   const submitted: [string, string | undefined][] = [];
   let closed = 0;
@@ -434,27 +401,27 @@ test("ShareQuickActionGroup renders each action and presses the right one", asyn
   assert.deepEqual(pressed, ["whatsapp"]);
 });
 
-test("InAppShareCard lists recipients and reports which one was toggled", async () => {
-  const toggled: string[] = [];
+test("ShareLinkCard shows its title and presses the chosen link action", async () => {
+  const pressed: string[] = [];
   const view = await render(
-    createElement(InAppShareCard, {
-      title: "Share Laksa",
-      subtitle: "Send to a friend",
-      recipients: [
-        { id: "r1", avatar: "", name: "Ahmad", lastMessage: "see you" },
-        { id: "r2", avatar: "", name: "Mei" },
+    createElement(ShareLinkCard, {
+      title: "Share Laksa link",
+      subtitle: "Send it anywhere",
+      quickActions: [
+        {
+          key: "copy",
+          label: "Copy link",
+          accessibilityLabel: "Copy Laksa link",
+          icon: () => null,
+          onPress: () => pressed.push("copy"),
+        },
       ],
-      selectedRecipientIds: ["r2"],
-      onToggleRecipient: (id: string) => toggled.push(id),
-      onSend: () => undefined,
-      recipientAccessibilityLabelPrefix: "Send to",
-    } as never),
+    }),
   );
-  assert.match(view.text(), /Share Laksa/);
-  assert.match(view.text(), /Ahmad/);
-  assert.match(view.text(), /Mei/);
-  await view.press(view.findByLabel(/Send to Ahmad/));
-  assert.deepEqual(toggled, ["r1"]);
+  assert.match(view.text(), /Share Laksa link/);
+  assert.match(view.text(), /Send it anywhere/);
+  await view.press(view.findByLabel("Copy Laksa link"));
+  assert.deepEqual(pressed, ["copy"]);
 });
 
 beforeEach(() => useComposerStore.setState({ activeTab: "post" }));
@@ -797,23 +764,6 @@ test("MenuFilterDropdown summarises the filters and clears them", async () => {
     }),
   );
   assert.ok(view.findByLabel("Filter menu, All dishes"));
-});
-
-test("DiscoverModeTabs switches between What's here and For you", async () => {
-  const chosen: string[] = [];
-  const view = await render(
-    createElement(DiscoverModeTabs, {
-      value: "forYou",
-      onChange: (mode: string) => chosen.push(mode),
-    }),
-  );
-  assert.match(view.text(), /What's here/);
-  assert.match(view.text(), /For you/);
-  // Pressing the tab that is already selected does nothing.
-  await view.press(view.findByLabel("For you"));
-  assert.deepEqual(chosen, []);
-  await view.press(view.findByLabel("What's here"));
-  assert.deepEqual(chosen, ["here"]);
 });
 
 test("ForYouCard shows the match, the reason and a review, and opens the dish", async () => {

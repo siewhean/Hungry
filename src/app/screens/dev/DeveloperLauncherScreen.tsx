@@ -563,7 +563,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
     completeOnboarding(false);
     setReturnRoute(undefined);
     hideReviewSuccess();
-    navigation.navigate("ActivityInbox", { initialTab: "messages" });
+    navigation.navigate("ActivityInbox");
   };
 
   const openProtected = (returnRoute: string | PendingRoute, navigate: () => void) => {
@@ -622,7 +622,7 @@ export function DeveloperLauncherScreen({ navigation }: Props) {
         />
         <DevButton
           label="Activity"
-          onPressIn={() => preloadRoute(navigation, "ActivityInbox", { initialTab: "messages" })}
+          onPressIn={() => preloadRoute(navigation, "ActivityInbox")}
           onPress={openActivityInboxSmoke}
         />
 

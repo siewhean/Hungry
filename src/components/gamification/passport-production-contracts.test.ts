@@ -7,20 +7,11 @@ function read(pathFromRepoRoot: string): string {
   return readFileSync(resolve(process.cwd(), pathFromRepoRoot), "utf8");
 }
 
-test("passport visuals use orange Hungry theme and cached image assets", () => {
-  const cover = read("src/components/gamification/PassportCover.tsx");
-  const badge = read("src/components/gamification/PassportBadgeImage.tsx");
+test("passport stamps use vector art drawn per category", () => {
   const stamp = read("src/components/gamification/PassportStampBadge.tsx");
-  const assets = read("src/components/gamification/passportAssets.ts");
 
-  assert.match(cover, /backgroundColor: palette\.orange/);
-  assert.match(cover, /borderColor: palette\.orangeDark/);
-  assert.match(cover, /PASSPORT_TEXTURE_ASSETS\.cover/);
-  assert.match(badge, /cachePolicy="memory-disk"/);
   // Stamps are drawn per category in vector art (PassportStampArt), not one shared bitmap.
   assert.match(stamp, /<PassportStampArt/);
-  assert.match(assets, /passport-cover-orange\.png/);
-  assert.match(assets, /passport-paper-spread\.png/);
 });
 
 test("passport generated image files exist in the project asset folder", () => {

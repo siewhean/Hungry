@@ -79,8 +79,6 @@ const ROOT_ROUTE_NAMES = new Set<RootRouteName>([
   "UserFollowers",
   "PlacePeople",
   "UserFollowing",
-  "ChatDetail",
-  "DirectMessages",
   "Crave",
   "MusicSelection",
   "QuickBites",
@@ -115,8 +113,6 @@ const PROTECTED_ROOT_ROUTES = new Set<RootRouteName>([
   "UserFollowers",
   "PlacePeople",
   "UserFollowing",
-  "ChatDetail",
-  "DirectMessages",
   "EditProfile",
   "ChangePassword",
   "Favourites",
@@ -157,9 +153,6 @@ function isReleaseRouteAvailable(routeName: RootRouteName | MainTabRouteName): b
     case "ActivityInbox":
     case "ActivityPostDetail":
       return FEATURE_FLAGS.activityEnabled;
-    case "ChatDetail":
-    case "DirectMessages":
-      return FEATURE_FLAGS.directMessagesEnabled;
     case "Crave":
       return FEATURE_FLAGS.craveEnabled;
     default:
@@ -352,14 +345,6 @@ const loadUserFollowingScreen = () =>
   (
     require("@/app/screens/profile/ProfileConnectionsScreen") as typeof import("@/app/screens/profile/ProfileConnectionsScreen")
   ).FollowingScreen;
-const loadChatDetailScreen = () =>
-  (
-    require("@/app/screens/home/ChatDetailScreen") as typeof import("@/app/screens/home/ChatDetailScreen")
-  ).ChatDetailScreen;
-const loadDirectMessagesScreen = () =>
-  (
-    require("@/app/screens/home/DirectMessagesScreen") as typeof import("@/app/screens/home/DirectMessagesScreen")
-  ).DirectMessagesScreen;
 const loadCraveScreen = () =>
   (
     require("@/app/screens/discover/CraveScreen") as typeof import("@/app/screens/discover/CraveScreen")
@@ -915,12 +900,6 @@ export function RootNavigator({ theme }: { theme: Theme }) {
           ) : null}
           <RootStack.Screen getComponent={loadUserFollowersScreen} name="UserFollowers" />
           <RootStack.Screen getComponent={loadUserFollowingScreen} name="UserFollowing" />
-          {FEATURE_FLAGS.directMessagesEnabled ? (
-            <>
-              <RootStack.Screen getComponent={loadChatDetailScreen} name="ChatDetail" />
-              <RootStack.Screen getComponent={loadDirectMessagesScreen} name="DirectMessages" />
-            </>
-          ) : null}
           {FEATURE_FLAGS.craveEnabled ? (
             <RootStack.Screen getComponent={loadCraveScreen} name="Crave" />
           ) : null}

@@ -48,17 +48,6 @@ test("one sign-in sheet opens the shared Login and finishes the guest's action o
 });
 
 test("guest-reachable follow, like and comment taps prompt sign-in first", () => {
-  const homeFeed = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.match(
-    homeFeed,
-    /!requireAuthForFollow\([\s\S]*?followUserAfterSignIn\(followTargetId\)[\s\S]*?toggleFollow\(followTargetId\)/,
-  );
-  // The comment sheet closes before sign-in opens, so it is not left on top.
-  assert.match(
-    homeFeed,
-    /handlePostCommentOrReply = useCallback\(\(\) => \{[\s\S]*?commentsSheetRef\.current\?\.dismiss\(\);\s*requireAccount\("Sign in to comment\."/,
-  );
-
   const reviewFeed = read("src/app/screens/review/ReviewFeedScreen.tsx");
   // Round 6: the Reviews grid has no like button; only reporting needs a sign-in there.
   assert.doesNotMatch(reviewFeed, /toggleLike|likePostAfterSignIn/);

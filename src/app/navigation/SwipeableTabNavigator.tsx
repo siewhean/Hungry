@@ -10,7 +10,7 @@ import {
   useRoute,
   type NavigationProp,
 } from "@react-navigation/native";
-import { BookOpenText, House, Newspaper, PenLine, User } from "lucide-react-native";
+import { BookOpenText, House, PenLine, User } from "lucide-react-native";
 import type { SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -53,12 +53,6 @@ function createTabScreenLoader(loadModule: () => TabScreenComponent): TabScreenL
   };
 }
 
-const homeScreenLoader = createTabScreenLoader(() => {
-  const { HomeFeedScreen } =
-    require("@/app/screens/home/HomeFeedScreen") as typeof import("@/app/screens/home/HomeFeedScreen");
-  return HomeFeedScreen as TabScreenComponent;
-});
-
 const discoverScreenLoader = createTabScreenLoader(() => {
   const { DiscoverEntryScreen } =
     require("@/app/screens/discover/DiscoverEntryScreen") as typeof import("@/app/screens/discover/DiscoverEntryScreen");
@@ -85,12 +79,11 @@ const profileScreenLoader = createTabScreenLoader(() => {
 const mainTabScreenLoaders = [
   discoverScreenLoader,
   profileScreenLoader,
-  ...(FEATURE_FLAGS.socialFeedEnabled ? [homeScreenLoader] : []),
   ...(FEATURE_FLAGS.reviewCreationEnabled ? [reviewScreenLoader] : []),
 ];
 
 const mainTabScreenLoaderByRouteName: Partial<Record<keyof MainTabParamList, TabScreenLoader>> = {
-  Home: FEATURE_FLAGS.socialFeedEnabled ? homeScreenLoader : discoverScreenLoader,
+  Home: discoverScreenLoader,
   Discover: discoverScreenLoader,
   Review: FEATURE_FLAGS.reviewCreationEnabled ? reviewScreenLoader : discoverScreenLoader,
   Profile: profileScreenLoader,
@@ -142,7 +135,6 @@ function TabScreenLoadingPlaceholder() {
 }
 
 const MAIN_TAB_ORDER = mainTabOrder({
-  socialFeedEnabled: FEATURE_FLAGS.socialFeedEnabled,
   reviewCreationEnabled: FEATURE_FLAGS.reviewCreationEnabled,
 });
 
@@ -225,7 +217,6 @@ function scheduleMainTabScreensWarmup(onComplete: () => void) {
   };
 }
 
-const HomeWrapper = createDeferredTabScreen(homeScreenLoader);
 const DiscoverWrapper = createDeferredTabScreen(discoverScreenLoader);
 const ReviewWrapper = createDeferredTabScreen(reviewScreenLoader);
 const ProfileWrapper = createDeferredTabScreen(profileScreenLoader);
@@ -241,8 +232,8 @@ function CreateWrapper() {
 }
 
 /**
- * Release builds keep the Home/Review routes registered (many flows reset to
- * `MainTabs > Home`) but hide them from the tab bar. The redirect must stay
+ * The Home route (many flows reset to `MainTabs > Home`) and, without review creation, the
+ * Review route stay registered but are hidden from the tab bar. The redirect must stay
  * inert: it renders no Discover instance (that would mount extra
  * Home trees and duplicate feed requests) and only redirects
  * while focused, so tab preloading can never bounce the user off Profile.
@@ -286,8 +277,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   const nextStamp = useNextStamp();
   const profileRing = loopEnabled && isAuthenticated ? nextStamp?.fraction : undefined;
   const routeByName = new Map(state.routes.map((route) => [route.name, route]));
-  // Discover is the home page; the social posts feed (the "Home" route) is the Feed tab.
-  // The middle button writes a review; it looks like any other tab.
+  // Discover is the home page. The middle button writes a review; it looks like any other tab.
   const tabItems = [
     {
       key: "Discover",
@@ -297,18 +287,6 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
       focusedSymbol: "house.fill",
       label: t("tab.home"),
     },
-    ...(FEATURE_FLAGS.socialFeedEnabled
-      ? [
-          {
-            key: "Home",
-            route: routeByName.get("Home"),
-            icon: Newspaper,
-            symbol: "newspaper",
-            focusedSymbol: "newspaper.fill",
-            label: t("tab.feed"),
-          },
-        ]
-      : []),
     ...(FEATURE_FLAGS.reviewCreationEnabled
       ? [
           {
@@ -447,8 +425,6 @@ export function SwipeableTabNavigator() {
       reduceMotion={reduceMotion}
     >
       <Tab.Screen name="Discover" component={DiscoverWrapper} />
-      {/* The social posts feed. Its photo carousels own horizontal swipes, so only the edges page. */}
-      {FEATURE_FLAGS.socialFeedEnabled ? <Tab.Screen name="Home" component={HomeWrapper} /> : null}
       {FEATURE_FLAGS.reviewCreationEnabled ? (
         <Tab.Screen name="Create" component={CreateWrapper} />
       ) : null}
@@ -456,9 +432,7 @@ export function SwipeableTabNavigator() {
         <Tab.Screen name="Review" component={ReviewWrapper} />
       ) : null}
       <Tab.Screen name="Profile" component={ProfileWrapper} />
-      {FEATURE_FLAGS.socialFeedEnabled ? null : (
-        <Tab.Screen name="Home" component={ReleaseLandingRedirect} />
-      )}
+      <Tab.Screen name="Home" component={ReleaseLandingRedirect} />
       {FEATURE_FLAGS.reviewCreationEnabled ? null : (
         <Tab.Screen name="Review" component={ReleaseLandingRedirect} />
       )}

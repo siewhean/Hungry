@@ -249,7 +249,6 @@ test("manual signOut clears account-scoped optimistic caches", () => {
         unread: true,
       } satisfies ActivityUpdate,
     ],
-    sharedPostMessages: {},
     dbActivityEvents: [],
   });
   usePublishedPostStore.setState({

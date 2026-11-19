@@ -63,7 +63,7 @@ test("Supabase auth responses hydrate the app profile store", () => {
   );
   const oauthHandler = supabaseService.slice(
     supabaseService.indexOf("async function signInWithOAuthProvider"),
-    supabaseService.indexOf("function participantKey"),
+    supabaseService.indexOf("export const supabaseService"),
   );
   assert.doesNotMatch(oauthHandler, /await toAppSession\(client\)/);
   assert.match(

@@ -25,8 +25,6 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(flags, /prototypeRoutesEnabled/);
   // Advanced surfaces follow main: available outside production only.
   assert.match(flags, /const nonProductionSurfaceEnabled = prototypeRoutesEnabled/);
-  // Messages is archived: off everywhere unless a build opts in.
-  assert.match(flags, /directMessagesEnabled: surface\("EXPO_PUBLIC_ENABLE_MESSAGES", false\)/);
   for (const flag of [
     "gamificationEnabled",
     "collectionsEnabled",
@@ -64,9 +62,6 @@ test("production route gates keep advanced surfaces behind MVP-safe flags", () =
   assert.match(rootNavigator, /name="MerchantTabs"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.merchantClaimCtaEnabled \? \(/);
   assert.match(rootNavigator, /name="MerchantClaimExplainer"/);
-  assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
-  assert.match(rootNavigator, /name="ChatDetail"/);
-  assert.match(rootNavigator, /name="DirectMessages"/);
   assert.match(rootNavigator, /FEATURE_FLAGS\.storiesEnabled \? \(/);
   assert.match(rootNavigator, /name="StoryViewer"/);
   assert.match(rootNavigator, /name="AddStory"/);
@@ -200,8 +195,6 @@ test("protected actions preserve return routes before auth", () => {
     "Post",
     "PostComposerV2",
     "ActivityInbox",
-    "ChatDetail",
-    "DirectMessages",
     "EditProfile",
     "Favourites",
     "ReviewHistory",

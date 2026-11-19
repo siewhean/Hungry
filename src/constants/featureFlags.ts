@@ -38,8 +38,8 @@ export function resolveFeatureFlags(
     return defaultValue;
   };
 
-  // Archived (owner decision 2026-10-24): the social posts feed, Activity and Messages are
-  // off by default; their code stays so a build can opt back in with `=1`.
+  // Archived (owner decision 2026-10-24): the social posts feed is off by default (its screen
+  // is gone; Messages were removed entirely).
   const socialFeedEnabled = surface("EXPO_PUBLIC_ENABLE_SOCIAL_FEED", false);
   const postCreationEnabled = surface("EXPO_PUBLIC_ENABLE_POSTS", true);
   const reviewCreationEnabled = surface("EXPO_PUBLIC_ENABLE_REVIEWS", true);
@@ -95,7 +95,6 @@ export function resolveFeatureFlags(
     notificationsEnabled: false,
     catalogDiagnosticsEnabled: appEnv !== "production",
     mockMapboxEnabled: enabled(env, "EXPO_PUBLIC_MOCK_MAPBOX_ENABLED"),
-    directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false),
     commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
     // Google sign-in on Android and web. Production opts in with EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN=1

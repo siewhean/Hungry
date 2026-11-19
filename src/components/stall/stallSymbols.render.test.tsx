@@ -29,7 +29,6 @@ test("R5-STALL-2: every stall symbol renders an icon of the size it is given", a
 const STALL_PAGE_FILES = [
   "src/app/screens/detail/StallDetailScreen.tsx",
   "src/app/screens/detail/StallVisitedScreen.tsx",
-  "src/components/stall/FollowStallButton.tsx",
   "src/components/stall/MenuFilterDropdown.tsx",
   "src/components/stall/PopularVisitorsSection.tsx",
   "src/components/stall/StallHelpFillCard.tsx",

@@ -75,8 +75,6 @@
     "smoke:native:ios:location-denied": "node scripts/run-maestro-smoke.mjs ios-location-denied",
     "smoke:native:ios:review-post": "node scripts/run-maestro-smoke.mjs ios-review-post",
     "smoke:native:ios:prepared": "node scripts/prepare-maestro-smoke.mjs ios",
-    "smoke:native:ios:chat": "node scripts/run-maestro-smoke.mjs ios-chat",
-    "smoke:native:ios:chat:prepared": "node scripts/prepare-maestro-smoke.mjs ios-chat",
     "smoke:native:ios:media": "node scripts/run-maestro-smoke.mjs ios-media",
     "smoke:native:ios:media:prepared": "node scripts/prepare-maestro-smoke.mjs ios-media",
     "smoke:native:ios:interactions": "node scripts/run-maestro-smoke.mjs ios-interactions",

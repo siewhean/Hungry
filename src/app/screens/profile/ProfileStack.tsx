@@ -14,7 +14,6 @@ import { ReviewHistoryScreen } from "./ReviewHistoryScreen";
 import { SettingsScreen } from "./SettingsScreen";
 import { DeveloperToolsScreen } from "./DeveloperToolsScreen";
 import { VisitedStallsScreen } from "./VisitedStallsScreen";
-import { FollowedStallsScreen } from "./FollowedStallsScreen";
 import { ReviewStack } from "@/app/screens/review/ReviewStack";
 import { FeedErrorBoundary } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -84,7 +83,6 @@ export function ProfileStack() {
         <Stack.Screen name="Followers" component={FollowersScreen} />
         <Stack.Screen name="Following" component={FollowingScreen} />
         <Stack.Screen name="VisitedStalls" component={VisitedStallsScreen} />
-        <Stack.Screen name="FollowedStalls" component={FollowedStallsScreen} />
         <Stack.Screen name="Favourites" component={FavouritesScreen} />
         <Stack.Screen name="ListsHome" component={ListsHomeScreen} />
         <Stack.Screen name="Collections" component={CollectionsScreen} />

@@ -25,15 +25,12 @@ test.describe("production route gating", () => {
     expect(flags).toContain("collectionsEnabled");
     expect(flags).toContain("storiesEnabled");
     expect(flags).toContain("commentsEnabled: nonProductionSurfaceEnabled");
-    // Messages is archived: off everywhere unless a build opts in.
-    expect(flags).toContain('directMessagesEnabled: surface("EXPO_PUBLIC_ENABLE_MESSAGES", false)');
     expect(flags).toContain("merchantCentreEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain("merchantClaimCtaEnabled: nonProductionSurfaceEnabled");
     expect(flags).toContain('appEnv !== "production"');
     expect(rootNavigator).toContain("FEATURE_FLAGS.prototypeRoutesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantCentreEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.merchantClaimCtaEnabled ? (");
-    expect(rootNavigator).toContain("FEATURE_FLAGS.directMessagesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.storiesEnabled ? (");
     expect(rootNavigator).toContain("FEATURE_FLAGS.gamificationEnabled ? (");
 
@@ -41,8 +38,6 @@ test.describe("production route gating", () => {
       "DesignGallery",
       "PostComposerV2",
       "MerchantTabs",
-      "ChatDetail",
-      "DirectMessages",
       "StoryViewer",
       "AddStory",
       "PassportScreen",

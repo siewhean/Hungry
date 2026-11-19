@@ -1,7 +1,6 @@
 /** English is the source of truth: every other language is checked against these keys. */
 export const en = {
   "tab.home": "Home",
-  "tab.feed": "Feed",
   "tab.post": "Post",
   "tab.reviews": "Reviews",
   "tab.profile": "Profile",

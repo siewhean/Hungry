@@ -6,7 +6,6 @@ import test, { afterEach, beforeEach } from "node:test";
 
 import { DetailActionBar } from "@/components/detail/DetailActionBar";
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
-import { DishCard } from "@/components/dish/DishCard";
 import { DishHeroPlaceholder } from "@/components/dish/DishHeroPlaceholder";
 import { DishReviewCard } from "@/components/dish/DishReviewCard";
 import {
@@ -168,21 +167,6 @@ test("ReviewStars draws five symbols and keeps its one spoken label", async () =
   const view = await render(createElement(ReviewStars, { rating: 3 }));
   assert.ok(view.findByLabel("Rated 3 out of 5"));
   assert.equal(view.container.querySelectorAll('[aria-hidden="true"]').length, 5);
-});
-
-test("a rating badge on a dish card is a star symbol and the score, with no ★ glyph", async () => {
-  const dish = {
-    id: "d1",
-    name: "Laksa",
-    price: 5.5,
-    rating: 4.6,
-    reviewCount: 9,
-    tasteTags: [],
-  } as unknown as DishDetail;
-  const view = await render(createElement(DishCard, { dish }));
-  assert.equal(view.text().includes("★"), false);
-  assert.ok(view.findByLabel("Rated 4.6 out of 5"));
-  assert.ok(view.findByText("4.6"));
 });
 
 test("Badge draws an optional icon in its own text colour", async () => {

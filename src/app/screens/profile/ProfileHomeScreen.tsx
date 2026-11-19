@@ -18,11 +18,10 @@ import { ProfileReviewCard } from "@/components/profile/ProfileReviewCard";
 import { ProfileStatRow, STAT_UNAVAILABLE } from "@/components/profile/ProfileStatRow";
 import { TasteRadar } from "@/components/profile/TasteRadar";
 import { AccessibleImage, AppSymbol, AppText, Button, EmptyState } from "@/components/ui";
-import { FloatingShareSendButton, InAppShareCard } from "@/components/social";
+import { ShareLinkCard } from "@/components/social";
 import { MissionBanner } from "@/components/gamification/MissionBanner";
 import { PassportCard } from "@/components/gamification/PassportCard";
 import { FoodCredBadge } from "@/components/gamification/FoodCredBadge";
-import { toChatShareRecipient, type ChatShareRecipient } from "@/features/home/chatShare";
 import { preloadRoute } from "@/features/navigation/prefetch";
 import { listSharedStallPosts, mergeStallPosts } from "@/features/social/sharedStallPosts";
 import {
@@ -53,7 +52,6 @@ import { ProfileScreenShell } from "./ProfileScreenShell";
 import { useMerchantStore } from "@/store/useMerchantStore";
 import { palateSummary } from "@/features/detail/perceivedTaste";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
-import { useActivityStore } from "@/store/useActivityStore";
 import { useFoodCredStore } from "@/store/useFoodCredStore";
 import { usePassportStore } from "@/store/usePassportStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
@@ -62,7 +60,6 @@ import { useStallSubmissionStore } from "@/store/useStallSubmissionStore";
 import { useUIStore } from "@/store/useUIStore";
 import {
   BottomSheetBackdrop,
-  BottomSheetFooter,
   BottomSheetModal,
   BottomSheetScrollView,
   BottomSheetView,
@@ -122,7 +119,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     !FEATURE_FLAGS.socialFeedEnabled;
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const setMerchantAccount = useMerchantStore((state) => state.setAccount);
-  const sharePostToChat = useActivityStore((state) => state.sharePostToChat);
   const { loadStories } = useStoryStore();
   const loadCredProfile = useFoodCredStore((s) => s.loadCredProfile);
   const loadMissions = useMissionStore((s) => s.loadMissions);
@@ -145,7 +141,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     | null
   >(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
-  const shareSnapPoints = useMemo(() => ["45%"], []);
   /** Incoming pending follow requests; null until loaded. */
   const [followRequestCount, setFollowRequestCount] = useState<number | null>(null);
   const triedStallIds = useMemo(
@@ -156,11 +151,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     [stallInteractions],
   );
 
-  const [selectedShareChatIds, setSelectedShareChatIds] = useState<string[]>([]);
-  const [shareRecipients, setShareRecipients] = useState<ChatShareRecipient[]>([]);
-  const directMessagesEnabled = FEATURE_FLAGS.directMessagesEnabled;
-  // Link-only share sheet: as tall as its four actions plus the home-indicator inset.
-  const linkOnlyShareSnapPoints = useMemo(() => [150 + insets.bottom + 24], [insets.bottom]);
+  // The share sheet holds only link actions: as tall as they are plus the home-indicator inset.
+  const shareSnapPoints = useMemo(() => [150 + insets.bottom + 24], [insets.bottom]);
   const gamificationEnabled = FEATURE_FLAGS.gamificationEnabled;
   const passportEnabled = FEATURE_FLAGS.passportEnabled;
   const storiesEnabled = FEATURE_FLAGS.storiesEnabled;
@@ -230,20 +222,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
         .join("") || "HU",
     [isAuthenticated, profile.displayName],
   );
-
-  const loadChatConversations = useCallback(async () => {
-    if (!FEATURE_FLAGS.directMessagesEnabled) {
-      setShareRecipients([]);
-      return;
-    }
-
-    try {
-      const conversations = await getHungryService().chat.listConversations();
-      setShareRecipients(conversations.map(toChatShareRecipient));
-    } catch {
-      setShareRecipients([]);
-    }
-  }, []);
 
   const isFocused = useIsFocused();
   // One event per visit to the tab, not per re-render.
@@ -526,9 +504,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
   const handleShareTaste = useCallback(async () => {
     if (!isAuthenticated || !hasTasteFingerprint) return;
     setIsTasteShareSheetOpen(true);
-    await loadChatConversations();
     shareSheetRef.current?.present();
-  }, [hasTasteFingerprint, isAuthenticated, loadChatConversations]);
+  }, [hasTasteFingerprint, isAuthenticated]);
 
   const tasteShareMessage = useMemo(
     () => buildTasteShareMessage(profile.tasteVector),
@@ -582,61 +559,8 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
     }
   }, [profile.id, showToast, tasteShareMessage]);
 
-  const sendTasteProfileToHungryUsers = useCallback(async () => {
-    if (!FEATURE_FLAGS.directMessagesEnabled) return;
-    if (selectedShareChatIds.length === 0) return;
-
-    const results = await Promise.allSettled(
-      selectedShareChatIds.map((chatId) =>
-        // n-plus-one-ok: one message per chat; each send stands alone so a failed chat can be retried by itself
-        sharePostToChat(chatId, {
-          postId: `taste-fingerprint-${profile.id}`,
-          title: "Taste fingerprint",
-          subtitle: `${profile.displayName} · Taste profile`,
-          imageUrl: profile.avatarUrl ?? "",
-          authorName: profile.displayName,
-        }),
-      ),
-    );
-    const failedChatIds = selectedShareChatIds.filter(
-      (_chatId, index) => results[index]?.status === "rejected",
-    );
-    if (failedChatIds.length > 0) {
-      const firstFailure = results.find(
-        (result): result is PromiseRejectedResult => result.status === "rejected",
-      );
-      reportError(firstFailure?.reason, {
-        screen: "ProfileHome",
-        action: "send_taste_fingerprint",
-      });
-      // Keep only the chats that failed selected, so a retry does not resend to the others.
-      setSelectedShareChatIds(failedChatIds);
-      showToast({ message: "Couldn't share your taste profile. Please try again.", tone: "error" });
-      return;
-    }
-
-    setSelectedShareChatIds([]);
-    shareSheetRef.current?.dismiss();
-  }, [
-    profile.avatarUrl,
-    profile.displayName,
-    profile.id,
-    selectedShareChatIds,
-    sharePostToChat,
-    showToast,
-  ]);
-
   const resetShareSheet = useCallback(() => {
     setIsTasteShareSheetOpen(false);
-    setSelectedShareChatIds([]);
-  }, []);
-
-  const toggleShareChat = useCallback((chatId: string) => {
-    setSelectedShareChatIds((current) =>
-      current.includes(chatId)
-        ? current.filter((candidate) => candidate !== chatId)
-        : [...current, chatId],
-    );
   }, []);
 
   if (!isAuthenticated) {
@@ -1351,7 +1275,7 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
 
         <BottomSheetModal
           ref={shareSheetRef}
-          snapPoints={directMessagesEnabled ? shareSnapPoints : linkOnlyShareSnapPoints}
+          snapPoints={shareSnapPoints}
           index={0}
           enablePanDownToClose
           accessibilityLabel="Share taste fingerprint"
@@ -1371,21 +1295,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
           )}
           backgroundStyle={{ backgroundColor: palette.surface }}
           handleIndicatorStyle={{ backgroundColor: palette.border }}
-          footerComponent={
-            directMessagesEnabled
-              ? (props) => (
-                  <BottomSheetFooter {...props}>
-                    <FloatingShareSendButton
-                      selectedCount={selectedShareChatIds.length}
-                      onPress={sendTasteProfileToHungryUsers}
-                      bottomInset={insets.bottom}
-                      accessibilityLabel="Send shared taste profile"
-                      placement="inline"
-                    />
-                  </BottomSheetFooter>
-                )
-              : undefined
-          }
         >
           <BottomSheetView style={{ flex: 1 }}>
             <BottomSheetScrollView
@@ -1393,13 +1302,11 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
               contentContainerStyle={{
                 gap: spacing[3],
                 padding: spacing[4],
-                paddingBottom: directMessagesEnabled ? insets.bottom + spacing[12] : insets.bottom,
+                paddingBottom: insets.bottom,
               }}
             >
-              <InAppShareCard
-                title={
-                  directMessagesEnabled ? "Share taste fingerprint" : "Share taste fingerprint link"
-                }
+              <ShareLinkCard
+                title="Share taste fingerprint link"
                 quickActions={[
                   {
                     key: "copy",
@@ -1416,16 +1323,6 @@ export function ProfileHomeScreen({ navigation }: ProfileHomeProps) {
                     onPress: () => void shareTasteProfileOutsideApp(),
                   },
                 ]}
-                recipients={directMessagesEnabled ? shareRecipients : []}
-                selectedRecipientIds={selectedShareChatIds}
-                onToggleRecipient={toggleShareChat}
-                onSend={sendTasteProfileToHungryUsers}
-                lastRecipientId={
-                  directMessagesEnabled
-                    ? shareRecipients[shareRecipients.length - 1]?.id
-                    : undefined
-                }
-                recipientAccessibilityLabelPrefix="Share taste profile to"
               />
             </BottomSheetScrollView>
           </BottomSheetView>

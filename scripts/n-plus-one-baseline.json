@@ -1,5 +1,3 @@
 {
-  "src/app/screens/detail/StallDetailScreen.tsx :: void getHungryService().discovery.recordMerchantActionEvent({": 2,
-  "src/app/screens/home/ActivityInboxScreen.tsx :: void getHungryService()": 1,
-  "src/app/screens/home/DirectMessagesScreen.tsx :: void getHungryService().chat.markConversationRead(chatId);": 1
+  "src/app/screens/detail/StallDetailScreen.tsx :: void getHungryService().discovery.recordMerchantActionEvent({": 2
 }

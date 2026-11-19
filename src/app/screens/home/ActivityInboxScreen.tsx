@@ -24,21 +24,14 @@ import {
   Skeleton,
 } from "@/components/ui";
 import {
-  getActivityReadKey,
   groupActivityUpdates,
   isActivityUpdateForViewer,
   selectActivitySourceUpdates,
   type ActivityUpdate,
 } from "@/features/home/activity";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { listSharedStallPostsSync } from "@/features/social/sharedStallPosts";
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
-import type { ChatConversation } from "@/lib/services/types";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import type { StallPost } from "@/types/domain";
 import { useActivityStore } from "@/store/useActivityStore";
 import { usePublishedPostStore } from "@/store/usePublishedPostStore";
@@ -48,30 +41,8 @@ import { AppSymbol } from "@/components/ui/AppSymbol";
 import { FeedEmptyIllustration } from "@/components/icons/food/SocialIllustrations";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ActivityInbox">;
-type ActivityTab = "messages" | "updates";
 
-function formatActivityChatTime(value: string): string {
-  const timestamp = new Date(value).getTime();
-  if (!Number.isFinite(timestamp)) return value;
-  const diffMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60_000));
-  if (diffMinutes < 1) return "now";
-  if (diffMinutes < 60) return `${diffMinutes}m`;
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h`;
-  return `${Math.floor(diffHours / 24)}d`;
-}
-
-export function ActivityInboxScreen({ navigation, route }: Props) {
-  const tabs: ActivityTab[] = FEATURE_FLAGS.directMessagesEnabled
-    ? ["messages", "updates"]
-    : ["updates"];
-  const initialTab: ActivityTab = FEATURE_FLAGS.directMessagesEnabled
-    ? (route.params?.initialTab ?? "messages")
-    : "updates";
-  const [activeTab, setActiveTab] = useState<ActivityTab>(initialTab);
-  const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [isMessagesLoading, setIsMessagesLoading] = useState(true);
-  const [messagesError, setMessagesError] = useState<string | null>(null);
+export function ActivityInboxScreen({ navigation }: Props) {
   const readActivityIds = useActivityStore((state) => state.readActivityIds);
   const activityUpdates = useActivityStore((state) => state.activityUpdates);
   const dbActivityEvents = useActivityStore((state) => state.dbActivityEvents);
@@ -144,37 +115,12 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
     [spacing, semanticSpacing, radii],
   );
 
-  const loadConversations = useCallback(async () => {
-    if (!FEATURE_FLAGS.directMessagesEnabled) {
-      setConversations([]);
-      setMessagesError(null);
-      setIsMessagesLoading(false);
-      return;
-    }
-
-    setIsMessagesLoading(true);
-    setMessagesError(null);
-    return getHungryService()
-      .chat.listConversations()
-      .then((loadedConversations) => {
-        setConversations(loadedConversations);
-      })
-      .catch((error: unknown) => {
-        setMessagesError(error instanceof Error ? error.message : "Messages could not be loaded.");
-        setConversations([]);
-      })
-      .finally(() => {
-        setIsMessagesLoading(false);
-      });
-  }, []);
-
   // Focus also covers the first mount: no separate mount effect (it double-fetched).
   useFocusEffect(
     useCallback(() => {
-      void loadConversations();
       void fetchActivityEvents();
       return undefined;
-    }, [fetchActivityEvents, loadConversations]),
+    }, [fetchActivityEvents]),
   );
 
   const markAllActivityRead = useActivityStore((state) => state.markAllActivityRead);
@@ -190,7 +136,7 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
           title="Activity"
           // An action on the current view lives in the header (HIG, Toolbars), not in the list.
           right={
-            activeTab === "updates" && updatesHaveUnread ? (
+            updatesHaveUnread ? (
               <Button
                 label="Mark all read"
                 variant="ghost"
@@ -220,208 +166,14 @@ export function ActivityInboxScreen({ navigation, route }: Props) {
           }
         />
 
-        {/* One tab (DMs off): no segmented control with a single pill. */}
-        {tabs.length > 1 ? (
-          <View style={[styles.segmentedControl, { backgroundColor: palette.bgSoft }]}>
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab;
-              const unreadCount =
-                tab === "messages"
-                  ? conversations.reduce(
-                      (total, conversation) => total + conversation.unreadCount,
-                      0,
-                    )
-                  : visibleUpdates.filter(
-                      (update) =>
-                        update.unread &&
-                        !readActivityIds.includes(getActivityReadKey("update", update.id)),
-                    ).length;
-
-              return (
-                <Pressable
-                  key={tab}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: isActive }}
-                  onPress={() => setActiveTab(tab)}
-                  testID={`activity-tab-${tab}`}
-                  style={[
-                    styles.segment,
-                    {
-                      backgroundColor: isActive ? palette.surface : "transparent",
-                      borderColor: isActive ? palette.border : "transparent",
-                    },
-                  ]}
-                >
-                  <AppText variant="bodySmallBold" style={{ color: palette.text }}>
-                    {tab === "messages" ? "Messages" : "Updates"}
-                  </AppText>
-                  {unreadCount > 0 ? (
-                    <View style={[styles.segmentBadge, { backgroundColor: palette.orangeControl }]}>
-                      <AppText variant="micro" style={{ color: palette.white, fontWeight: "800" }}>
-                        {unreadCount}
-                      </AppText>
-                    </View>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : null}
-
-        {activeTab === "messages" ? (
-          <MessagesTab
-            conversations={conversations}
-            isLoading={isMessagesLoading}
-            loadError={messagesError}
-            navigation={navigation}
-            onConversationRead={(conversationId) => {
-              setConversations((current) =>
-                current.map((conversation) =>
-                  conversation.id === conversationId
-                    ? { ...conversation, unreadCount: 0 }
-                    : conversation,
-                ),
-              );
-            }}
-          />
-        ) : (
-          <UpdatesTab
-            navigation={navigation}
-            updates={visibleUpdates}
-            postById={postById}
-            onRefresh={fetchActivityEvents}
-          />
-        )}
+        <UpdatesTab
+          navigation={navigation}
+          updates={visibleUpdates}
+          postById={postById}
+          onRefresh={fetchActivityEvents}
+        />
       </View>
     </SafeAreaView>
-  );
-}
-
-function MessagesTab({
-  conversations,
-  isLoading,
-  loadError,
-  navigation,
-  onConversationRead,
-}: Pick<Props, "navigation"> & {
-  conversations: ChatConversation[];
-  isLoading: boolean;
-  loadError: string | null;
-  onConversationRead: (conversationId: string) => void;
-}) {
-  const { palette, spacing, semanticSpacing, radii } = useHungryTheme();
-
-  return (
-    <View style={{ flex: 1 }}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          gap: spacing[4],
-          paddingHorizontal: semanticSpacing.screenEdge,
-          paddingTop: semanticSpacing.screenEdge,
-          paddingBottom: spacing[12],
-        }}
-      >
-        {isLoading ? (
-          <EmptyState title="Loading messages" body="Fetching conversations..." />
-        ) : null}
-        {!isLoading && loadError ? (
-          <EmptyState
-            title="Messages unavailable"
-            body="Unable to load your messages."
-            errorMessage={loadError}
-            sendErrorContext="Activity inbox"
-          />
-        ) : null}
-        {!isLoading &&
-          !loadError &&
-          conversations.map((chat) => {
-            const chatId = chat.id.trim();
-            const normalizedName = chat.title.trim();
-            const normalizedAvatar = chat.avatarUrl?.trim() ?? "";
-            const isOnline = chat.isOnline;
-
-            if (!chatId || !normalizedName) {
-              return null;
-            }
-
-            const unreadCount = chat.unreadCount;
-            const lastMessage = chat.lastMessage ?? "No messages yet";
-            const time = chat.lastMessageAt ? formatActivityChatTime(chat.lastMessageAt) : "";
-
-            return (
-              <Pressable
-                key={chatId}
-                accessibilityRole="button"
-                accessibilityLabel={`Open chat with ${normalizedName}`}
-                testID={`activity-chat-row-${chatId}`}
-                onPress={() => {
-                  if (!chatId || !normalizedName) {
-                    return;
-                  }
-
-                  onConversationRead(chatId);
-                  void getHungryService()
-                    .chat.markConversationRead(chatId)
-                    .catch((error: unknown) => {
-                      console.warn("Failed to mark conversation read", error);
-                    });
-                  navigation.navigate("ChatDetail", {
-                    chatId,
-                    name: normalizedName,
-                    avatar: normalizedAvatar,
-                    isOnline,
-                  });
-                }}
-                style={[stylesInline.messageRow, { gap: spacing[3] }]}
-              >
-                <View style={stylesInline.messageAvatarSlot}>
-                  {normalizedAvatar ? (
-                    <AccessibleImage
-                      source={{ uri: normalizedAvatar }}
-                      style={{ width: 56, height: 56, borderRadius: radii.pill }}
-                      accessibilityLabel={`Avatar for ${normalizedName}`}
-                    />
-                  ) : (
-                    <View
-                      style={[
-                        stylesInline.avatarFallback,
-                        { backgroundColor: palette.bgSoft, borderRadius: radii.pill },
-                      ]}
-                    >
-                      <AppText variant="bodySmallBold">{normalizedName.slice(0, 1)}</AppText>
-                    </View>
-                  )}
-                  {unreadCount > 0 ? (
-                    <UnreadCountBadge
-                      accessibilityLabel={`${unreadCount} unread messages`}
-                      backgroundColor={palette.orangeControl}
-                      borderColor={palette.bg}
-                      count={unreadCount}
-                      textColor={palette.white}
-                    />
-                  ) : null}
-                </View>
-                <View style={{ flex: 1, gap: spacing[1] }}>
-                  <View style={stylesInline.rowBetween}>
-                    <AppText variant="bodyBold">{normalizedName}</AppText>
-                    <AppText variant="micro" tone="secondary">
-                      {time}
-                    </AppText>
-                  </View>
-                  <AppText variant="bodySmall" tone="secondary" numberOfLines={1}>
-                    {lastMessage}
-                  </AppText>
-                </View>
-              </Pressable>
-            );
-          })}
-
-        {!isLoading && !loadError && conversations.length === 0 ? (
-          <EmptyState title="No messages yet" body="Chats from food friends will appear here." />
-        ) : null}
-      </ScrollView>
-    </View>
   );
 }
 
@@ -677,53 +429,7 @@ function UnreadDot({
   );
 }
 
-function UnreadCountBadge({
-  accessibilityLabel,
-  backgroundColor,
-  borderColor,
-  count,
-  textColor,
-}: {
-  accessibilityLabel: string;
-  backgroundColor: string;
-  borderColor: string;
-  count: number;
-  textColor: string;
-}) {
-  return (
-    <View
-      accessibilityLabel={accessibilityLabel}
-      style={[
-        stylesInline.unreadCountBadge,
-        {
-          backgroundColor,
-          borderColor,
-        },
-      ]}
-    >
-      <AppText variant="micro" style={[stylesInline.unreadCountText, { color: textColor }]}>
-        {count > 99 ? "99+" : count}
-      </AppText>
-    </View>
-  );
-}
-
 const stylesInline = StyleSheet.create({
-  messageRow: {
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  messageAvatarSlot: {
-    height: 56,
-    position: "relative",
-    width: 56,
-  },
-  avatarFallback: {
-    alignItems: "center",
-    height: 56,
-    justifyContent: "center",
-    width: 56,
-  },
   rowBetween: {
     alignItems: "center",
     flexDirection: "row",
@@ -757,21 +463,6 @@ const stylesInline = StyleSheet.create({
     height: 14,
     width: 14,
   },
-  unreadCountBadge: {
-    alignItems: "center",
-    borderRadius: 999,
-    borderWidth: 2,
-    minWidth: 22,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    position: "absolute",
-    right: -4,
-    top: -4,
-  },
-  unreadCountText: {
-    fontWeight: "900",
-    lineHeight: 13,
-  },
   kindBadge: {
     alignItems: "center",
     borderRadius: 999,
@@ -793,30 +484,5 @@ const createStyles = ({
     },
     container: {
       flex: 1,
-    },
-    segmentedControl: {
-      borderRadius: radii.pill,
-      flexDirection: "row",
-      gap: spacing[1],
-      marginHorizontal: semanticSpacing.screenEdge,
-      marginTop: spacing[3],
-      padding: spacing[1],
-    },
-    segment: {
-      alignItems: "center",
-      borderRadius: radii.pill,
-      borderWidth: 1,
-      flex: 1,
-      flexDirection: "row",
-      gap: spacing[2],
-      justifyContent: "center",
-      minHeight: 42,
-    },
-    segmentBadge: {
-      alignItems: "center",
-      borderRadius: radii.pill,
-      minWidth: 20,
-      paddingHorizontal: spacing[1],
-      paddingVertical: 2,
     },
   });

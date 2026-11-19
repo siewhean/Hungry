@@ -56,7 +56,6 @@ test("dishes show when they were last updated and never a stock photo", () => {
     /updatedAt: toString\(row\.updated_at\) \|\| undefined/,
   );
   for (const path of [
-    "src/components/dish/DishCard.tsx",
     "src/app/screens/discover/DecideForMeResultScreen.tsx",
     "src/app/screens/detail/DishDetailScreenV2.tsx",
   ]) {

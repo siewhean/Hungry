@@ -6,7 +6,6 @@ import assert from "node:assert/strict";
 import { createElement, type ComponentType } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
-import { FollowedStallsScreen } from "@/app/screens/profile/FollowedStallsScreen";
 import { StallSubmissionsScreen } from "@/app/screens/profile/StallSubmissionsScreen";
 import {
   CameraPlateIllustration,
@@ -51,14 +50,8 @@ for (const preference of ["light", "dark"] as const) {
   });
 }
 
-test("empty followed stalls and submissions show their illustration", async () => {
+test("empty stall submissions show their illustration", async () => {
   const cases: [ComponentType<never>, string, string, string][] = [
-    [
-      FollowedStallsScreen as never,
-      "FollowedStalls",
-      "No followed stalls yet",
-      "followed-stalls-empty-art",
-    ],
     [
       StallSubmissionsScreen as never,
       "StallSubmissions",
