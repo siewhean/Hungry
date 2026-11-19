@@ -88,7 +88,7 @@ function runWrapper(command, env) {
   const bin = mkdtempSync(path.join(tmpdir(), "staging-test-activity-"));
   const log = path.join(bin, "psql.log");
   for (const name of ["psql", "pg_dump", "shasum", "sha256sum"]) {
-    writeFileSync(path.join(bin, name), `#!/bin/sh\necho "${name} $*" >> "${log}"\nexit 0\n`);
+    writeFileSync(path.join(bin, name), `#!/bin/sh\necho "${name} $* ENV[hostaddr=$PGHOSTADDR host=$PGHOST service=$PGSERVICE sslmode=$PGSSLMODE]" >> "${log}"\nexit 0\n`);
     chmodSync(path.join(bin, name), 0o755);
   }
   const result = spawnSync("bash", [path.join(dir, "staging-test-activity.sh"), command], {
@@ -139,6 +139,24 @@ test("the wrapper refuses a staging user name on any other host, and a host over
   const weakEnv = runWrapper("reset", { STAGING_DB_URL: direct, PGSSLMODE: "prefer" });
   assert.notEqual(weakEnv.status, 0);
   assert.equal(weakEnv.calls, "", "no database call with a weak PGSSLMODE");
+});
+
+test("the environment cannot redirect the connection or weaken TLS, and the URL always carries sslmode", () => {
+  const direct = `postgresql://postgres@db.${STAGING_REF}.supabase.co:5432/postgres`;
+  const result = runWrapper("reset", {
+    STAGING_DB_URL: direct,
+    PGHOSTADDR: "203.0.113.9",
+    PGHOST: "attacker.example",
+    PGSERVICE: "evil",
+    PGSERVICEFILE: "/tmp/evil.conf",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.calls, /ENV\[hostaddr= host= service= sslmode=require\]/, "redirecting variables are unset");
+  assert.ok(result.calls.includes(`${direct}?sslmode=require`), "sslmode=require is written into the URL");
+  const strong = runWrapper("reset", { STAGING_DB_URL: direct, PGSSLMODE: "verify-full" });
+  assert.ok(strong.calls.includes(`${direct}?sslmode=verify-full`), "a stronger PGSSLMODE is kept");
+  const inUrl = `${direct}?sslmode=verify-ca`;
+  assert.ok(runWrapper("reset", { STAGING_DB_URL: inUrl }).calls.includes(inUrl), "a mode in the URL is not appended twice");
 });
 
 test("the wrapper replaces test activity in one psql call on staging, and only resets for reset", () => {

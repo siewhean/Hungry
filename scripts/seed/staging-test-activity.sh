@@ -24,11 +24,17 @@ load_env staging
 url_re='^postgres(ql)?://[A-Za-z0-9._-]+@(aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com|db\.'"$STAGING_REF"'\.supabase\.co)(:[0-9]+)?/[A-Za-z0-9_]+(\?sslmode=(require|verify-ca|verify-full))?$'
 [[ "$DB_URL" =~ $url_re ]] || die "STAGING_DB_URL must look like postgresql://USER@HOST:PORT/DB where HOST is a Supabase pooler or the staging direct host (one host, no other options)"
 
-# TLS is always on: without an sslmode in the URL libpq would fall back to plain text, so default to
-# require, and refuse a weaker mode from the environment. (Require encrypts but does not check the
+# Nothing in the environment may redirect or weaken the connection: a pinned address, a service file
+# or a default host would win over (or fill in behind) the URL checked above.
+unset PGHOST PGHOSTADDR PGSERVICE PGSERVICEFILE PGSYSCONFDIR PGPORT
+
+# TLS is always on: libpq would fall back to plain text without an sslmode, and a service file or
+# PGSSLMODE can change it, so the mode is written into the URL itself (the URL always wins). It is
+# require unless the URL or PGSSLMODE asks for more. (Require encrypts but does not check the
 # certificate; verify-full needs the Supabase root CA, so it stays optional.)
 export PGSSLMODE="${PGSSLMODE:-require}"
 case "$PGSSLMODE" in require|verify-ca|verify-full) ;; *) die "PGSSLMODE '$PGSSLMODE' is weaker than require" ;; esac
+case "$DB_URL" in *sslmode=*) ;; *) DB_URL="${DB_URL}?sslmode=${PGSSLMODE}" ;; esac
 
 case "$1" in
   seed)

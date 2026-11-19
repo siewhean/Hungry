@@ -1055,3 +1055,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-11-19 PKG-0.3 review fixes (PR #286): backup_ro now needs bypassrls (pg_dump fails on RLS tables without it, reproduced locally), anchored ref_of pattern, partial .age removed on failure, size query failure reported, persist-credentials off, runbook corrects who gets failure emails, not-production test skips visibly without age.
 - PKG-0.3 review round 3: confirm-guard test, e2e scratch name from URL pathname, runbook cron-minute note also updates the schedule test.
 - PKG-0.3: workflow DB warning default raised to 700 MB (prod measured 612 MB); merged main into branch.
+- 2026-11-19 staging test activity: wrapper unsets PGHOST/PGHOSTADDR/PGSERVICE* and writes sslmode into the URL (CodeRabbit findings); main merged again (#286).
