@@ -11,9 +11,9 @@ select id from auth.users where email like '%@internal.hungry.test'
 union
 select id from user_profiles where email like '%@internal.hungry.test';
 
--- What the reviewed dishes held before the seed (kept by the seed with the first diner).
+-- What the reviewed dishes held before the seed (kept by the seed with every test diner).
 create temporary table seed_dish_restore on commit drop as
-select e.key as dish_id, (e.value ->> 'rating_avg')::numeric as rating_avg, (e.value ->> 'review_count')::integer as review_count
+select distinct on (e.key) e.key as dish_id, (e.value ->> 'rating_avg')::numeric as rating_avg, (e.value ->> 'review_count')::integer as review_count
 from auth.users u
 cross join lateral jsonb_each(coalesce(u.raw_user_meta_data -> 'dish_ratings_before', '{}'::jsonb)) e
 where u.id in (select id from seed_ids);
@@ -21,7 +21,7 @@ where u.id in (select id from seed_ids);
 do $$
 begin
   if exists (select 1 from seed_ids) and not exists (select 1 from seed_dish_restore) then
-    raise notice 'no dish rating snapshot found (diner 01 is gone): dish ratings are not restored';
+    raise exception 'no dish rating snapshot found on any test diner: stopping before deleting anything, so dish ratings are not lost';
   end if;
 end $$;
 

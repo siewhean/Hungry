@@ -75,4 +75,10 @@ left="$(psql_at "$DB" -At -c "select (select count(*) from auth.users where emai
 # And a reset with nothing to remove is a no-op.
 psql_at "$DB" -1 -f "$HERE/staging-test-activity.reset.sql" >/dev/null
 [ "$(snapshot)" = "$before" ] || { echo "FAIL: an empty reset changed something"; exit 1; }
-echo "PASS staging test activity: seed, checks, rerun, failed seed, reset round trip"
+# With the rating snapshot gone from every test diner, a reset stops before deleting anything.
+psql_at "$DB" -1 -f "$HERE/staging-test-activity.seed.sql" >/dev/null
+psql_at "$DB" -c "update auth.users set raw_user_meta_data = raw_user_meta_data - 'dish_ratings_before' where email like '%@internal.hungry.test'"
+withoutsnap="$(snapshot)"
+if psql_at "$DB" -1 -f "$HERE/staging-test-activity.reset.sql" >/dev/null 2>&1; then echo "FAIL: reset ran without a rating snapshot"; exit 1; fi
+[ "$(snapshot)" = "$withoutsnap" ] || { echo "FAIL: a refused reset deleted something"; exit 1; }
+echo "PASS staging test activity: seed, checks, rerun, failed seed, reset round trip, reset refused without snapshot"

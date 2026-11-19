@@ -193,13 +193,13 @@ join lateral (
 where d.n <= 12;
 
 -- A review recomputes its dish's rating_avg and review_count from the reviews. Keep what the reviewed
--- dishes held before, with the first diner, so the reset can put them back (see the reset file).
+-- dishes held before, with every test diner (so losing one account cannot lose it), so the reset can put them back (see the reset file).
 update auth.users u
 set raw_user_meta_data = u.raw_user_meta_data || jsonb_build_object('dish_ratings_before', coalesce((
   select jsonb_object_agg(d.id, jsonb_build_object('rating_avg', d.rating_avg, 'review_count', d.review_count))
   from dishes d where d.id in (select p.dish_id from seed_plan p where p.kind = 'review')
 ), '{}'::jsonb))
-where u.id = '00000000-0000-1119-d000-000000000001';
+where u.email like '%@internal.hungry.test';
 
 grant select on seed_plan to authenticated;
 
