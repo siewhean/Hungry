@@ -268,34 +268,88 @@ export function cleanStallName(rawName: string): string {
     }
   }
 
-  // 5. Chain brand followed by address/block without parentheses:
+  // 5. Chain brand followed by address, block or location without parentheses:
   const chainPrefixes = [
     "Starbucks",
     "McDonald's",
     "KFC",
     "Subway",
+    "Saizeriya",
+    "Sushi Tei",
+    "Sushi-Tei",
+    "Genki Sushi",
+    "Sushiro",
+    "Ichiban Boshi",
+    "Ichiban Sushi",
     "Toast Box",
+    "Ya Kun Kaya Toast",
     "Ya Kun",
     "BreadTalk",
+    "Four Leaves",
+    "Swee Heng Bakery",
+    "Swee Heng",
+    "Happy Bites By Swee Heng",
+    "San.wich by Swee Heng",
+    "LiHO TEA",
     "LiHO",
+    "KOI Thé",
     "KOI",
     "Gong Cha",
+    "CHICHA San Chen",
+    "Heytea",
+    "Playmade",
     "Old Chang Kee",
     "Pizza Hut",
+    "Domino's Pizza",
+    "Pezzo",
     "Burger King",
+    "Carl's Jr.",
+    "MOS Burger",
+    "Shake Shack",
+    "Five Guys",
+    "Popeyes",
+    "A&W",
+    "Texas Chicken",
+    "4Fingers Crispy Chicken",
+    "4Fingers",
+    "Wingstop",
+    "Jollibee",
     "Crave",
     "Encik Tan",
     "PastaMania",
     "Mr Bean",
+    "Jollibean",
+    "Boost Juice Bars",
+    "Boost Juice",
     "Kimly",
+    "Koufu",
+    "Food Republic",
+    "Kopitiam",
+    "Cantine",
+    "Food Junction",
+    "Tim Ho Wan",
+    "Din Tai Fung",
+    "A-One Claypot House",
+    "Collin's",
+    "Astons Specialities",
+    "Astons",
     "ChopSteak",
     "Chops & Sear",
     "Chocolate Origin",
     "Chuan Wei Mala Hot Pot",
-    "Happy Bites By Swee Heng",
-    "San.wich by Swee Heng",
     "Bengawan Solo",
-  ];
+    "Polar Puffs & Cakes",
+    "Cedele",
+    "Stuff'd",
+    "Wok Hey",
+    "Qi Ji",
+    "Swensen's",
+    "Fish & Co.",
+    "Ajisen Ramen",
+    "Ippudo",
+    "Menya Musashi",
+    "Ramen Keisuke",
+  ].sort((a, b) => b.length - a.length);
 
   for (const prefix of chainPrefixes) {
     if (name.toLowerCase().startsWith(prefix.toLowerCase())) {
@@ -304,16 +358,16 @@ export function cleanStallName(rawName: string): string {
         .trim()
         .replace(/^[-–\s|]+/, "");
       if (rest) {
-        const hasAddress =
-          /^(?:blk|block|\d+|#)/i.test(rest) ||
-          new RegExp(`\\b${STREET_TYPE_PATTERN}\\b`, "i").test(rest);
-        if (hasAddress) {
-          const cleaned = cleanLocationQualifier(rest);
-          if (cleaned) {
-            return `${prefix} (${cleaned})`;
-          }
-          return prefix;
+        if (/^\(.*\)$/.test(rest)) {
+          const inner = rest.slice(1, -1).trim();
+          const cleaned = cleanLocationQualifier(inner);
+          return cleaned ? `${prefix} (${cleaned})` : prefix;
         }
+        const cleaned = cleanLocationQualifier(rest);
+        if (cleaned) {
+          return `${prefix} (${cleaned})`;
+        }
+        return prefix;
       }
     }
   }

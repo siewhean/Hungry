@@ -962,25 +962,53 @@ function ensureHydrated(): void {
   }
 }
 
-async function rpcRows(functionName: string, args: Row): Promise<Row[] | undefined> {
+async function rpcRows(
+  functionName: string,
+  args: Row,
+  timeoutMs = 8000,
+): Promise<Row[] | undefined> {
   if (!isSupabaseConfigured()) return undefined;
   const client = getSupabaseClient();
   if (!client) return undefined;
-  const { data, error } = await client.rpc(functionName, args);
-  if (error || !Array.isArray(data)) {
-    if (error && !isExpectedDiscoveryRpcError(error)) {
-      console.warn(`Supabase discovery RPC ${functionName} failed`, error.message);
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const builder = client.rpc(functionName, args);
+    const { data, error } = await (controller && typeof builder?.abortSignal === "function"
+      ? builder.abortSignal(controller.signal)
+      : builder);
+    if (error || !Array.isArray(data)) {
+      if (error && !isExpectedDiscoveryRpcError(error)) {
+        console.warn(`Supabase discovery RPC ${functionName} failed`, error.message);
+      }
+      return undefined;
+    }
+    return data as unknown as Row[];
+  } catch (caughtError: unknown) {
+    if (!isExpectedDiscoveryRpcError(caughtError as { code?: unknown; message?: unknown })) {
+      console.warn(`Supabase discovery RPC ${functionName} error/timeout`, caughtError);
     }
     return undefined;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
-  return data as unknown as Row[];
 }
 
-function isExpectedDiscoveryRpcError(error: { code?: unknown; message?: unknown }): boolean {
+function isExpectedDiscoveryRpcError(error: {
+  code?: unknown;
+  message?: unknown;
+  name?: unknown;
+}): boolean {
+  if (!error) return false;
+  const name = String(error.name ?? "");
+  if (name === "AbortError") return true;
   const message = String(error.message ?? "").toLowerCase();
   const code = String(error.code ?? "");
   return (
     code === "42883" ||
+    code === "57014" ||
+    message.includes("abort") ||
+    message.includes("timeout") ||
     message.includes("does not exist") ||
     message.includes('type "geography" does not exist')
   );

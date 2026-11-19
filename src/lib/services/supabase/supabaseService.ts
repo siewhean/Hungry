@@ -4761,7 +4761,7 @@ export const supabaseService: HungryService = {
 
     async listDiscoveryFeedByLocation(request) {
       const rpcFeed = await listDiscoveryFeedByLocationViaRpc(request);
-      if (rpcFeed) return rpcFeed;
+      if (rpcFeed && rpcFeed.venues.length > 0) return rpcFeed;
       return getFallbackDiscoveryFeed(request);
     },
 

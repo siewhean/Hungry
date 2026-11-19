@@ -21,7 +21,11 @@ import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore
 import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 import { type DiscoverRepositoryLookup } from "@/features/discover/stallShowcase";
-import { readCachedDiscoverFeed, writeCachedDiscoverFeed } from "@/features/discover/feedCache";
+import {
+  readCachedDiscoverFeed,
+  readLastCachedDiscoverFeed,
+  writeCachedDiscoverFeed,
+} from "@/features/discover/feedCache";
 import { mergeDiscoverFeeds } from "@/features/discover/feedMerge";
 
 /** Stable empties so memos keyed on the feed do not rerun every render. */
@@ -318,11 +322,11 @@ export function useDiscoverFeed() {
       if (isActive && isFeedSettled && isCountSettled) setIsSupabaseDiscoveryFeedLoading(false);
     };
     // The nearest few stalls draw as soon as the small read lands, if the full feed has not. A
-    // fallback (offline copy) or empty answer waits for the full read instead.
+    // feed with venues draws immediately even if marked as fallback.
     void reads.firstPage.then(
       (firstPage) => {
         if (!isActive || liveFeedLanded || !firstPage) return;
-        if (firstPage.isFallback || firstPage.venues.length === 0) return;
+        if (firstPage.venues.length === 0) return;
         shownFirstPage = firstPage;
         setSupabaseDiscoveryFeed(firstPage);
         setIsDiscoverFeedPartial(true);
@@ -338,7 +342,8 @@ export function useDiscoverFeed() {
       (feed) => {
         liveFeedLanded = true;
         const complete = feed && shownFirstPage ? mergeDiscoverFeeds(shownFirstPage, feed) : feed;
-        if (complete) void writeCachedDiscoverFeed(discoverFeedKey, complete);
+        if (complete && !complete.isFallback)
+          void writeCachedDiscoverFeed(discoverFeedKey, complete);
         if (!isActive) return;
         setSupabaseDiscoveryFeed(complete ?? null);
         setIsDiscoverFeedPartial(false);
@@ -352,8 +357,13 @@ export function useDiscoverFeed() {
         liveFeedLanded = true;
         if (!isActive) return;
         reportError(reason, { surface: "discover_home_feed" });
-        // The stalls already on screen stay; the error state is for a Home with nothing to show.
-        if (!shownFirstPage) setDiscoverLoadError(true);
+        // The stalls already on screen stay; the error state is only for when we have nothing to show.
+        if (
+          !shownFirstPage &&
+          (!supabaseDiscoveryFeed || supabaseDiscoveryFeed.venues.length === 0)
+        ) {
+          setDiscoverLoadError(true);
+        }
         setIsDiscoverFeedPartial(false);
         setIsDiscoverRefreshing(false);
         isFeedSettled = true;

@@ -967,6 +967,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const isDeviceOffline = useUIStore((state) => state.isOffline);
   const isLiveFeedUnavailable =
     isSupabaseDataSource &&
+    supabaseFeedVenues.length === 0 &&
     (discoverLoadError ||
       isFeedFallbackEmpty ||
       (isDeviceOffline && supabaseDiscoveryFeed === null));
