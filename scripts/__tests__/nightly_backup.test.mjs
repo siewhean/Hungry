@@ -115,6 +115,24 @@ test("restore drill refuses Supabase hosts and an unconfirmed target", () => {
   assert.match(prod.stderr, /must not be staging or production/);
 });
 
+test("restore drill refuses an unset or wrong RESTORE_DRILL_CONFIRM before restoring", () => {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), "rd-bin-"));
+  const marker = path.join(bin, "restored");
+  fs.writeFileSync(path.join(bin, "psql"), "#!/bin/sh\necho scratchdb\n", { mode: 0o755 });
+  fs.writeFileSync(path.join(bin, "pg_restore"), `#!/bin/sh\ntouch ${marker}\n`, { mode: 0o755 });
+  const run = (env = {}) =>
+    spawnSync("bash", ["scripts/db/restore-drill.sh", os.tmpdir(), "postgresql://u@localhost:5432/scratchdb"], {
+      env: { PATH: `${bin}:${process.env.PATH}`, HOME: os.homedir(), ...env },
+      encoding: "utf8",
+    });
+  for (const env of [{}, { RESTORE_DRILL_CONFIRM: "otherdb" }]) {
+    const r = run(env);
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /RESTORE_DRILL_CONFIRM=scratchdb/);
+    assert.equal(fs.existsSync(marker), false);
+  }
+});
+
 test("end to end: encrypt, decrypt, restore and compare", { skip: !process.env.HUNGRY_TEST_PG_URL }, () => {
   const url = process.env.HUNGRY_TEST_PG_URL; // postgresql://user:pw@host:5432/<db>
   const scratch = process.env.HUNGRY_TEST_PG_SCRATCH_URL; // empty database to restore into
@@ -130,7 +148,7 @@ test("end to end: encrypt, decrypt, restore and compare", { skip: !process.env.H
   assert.ok(fs.readFileSync(file).subarray(0, 22).toString().startsWith("age-encryption.org"));
   assert.deepEqual(fs.readdirSync(out).filter((f) => f.endsWith(".age")).length, 1);
   const drill = spawnSync("bash", ["scripts/db/restore-drill.sh", file, scratch], {
-    env: { ...process.env, AGE_KEY_FILE: keyFile, RESTORE_DRILL_CONFIRM: scratch.split("/").pop() },
+    env: { ...process.env, AGE_KEY_FILE: keyFile, RESTORE_DRILL_CONFIRM: decodeURIComponent(new URL(scratch).pathname.slice(1)) },
     encoding: "utf8",
   });
   assert.equal(drill.status, 0, drill.stderr);
