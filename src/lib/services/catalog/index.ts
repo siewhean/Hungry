@@ -111,6 +111,7 @@ export interface CatalogRawVenueCard {
   name: string;
   buildingName?: string;
   buildingType?: string;
+  address?: string;
   unitNumber?: string;
   floor?: string;
   imageUrl?: string;
@@ -593,6 +594,7 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
     name: asString(row.name) ?? "Unnamed venue",
     buildingName: asString(row.building_name),
     buildingType: asString(row.building_type),
+    address: asString(row.address),
     unitNumber: asString(row.unit_number),
     floor: asString(row.floor),
     imageUrl: sanitizeCatalogCardImageUrl(asString(row.image_url), sourceRpc, {

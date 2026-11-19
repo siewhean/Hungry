@@ -77,13 +77,13 @@ export function resolveStallOpenInfo(input: {
 
   const parsedRows: StallHoursRow[] = hasWeeklyHours(schedule)
     ? [
-        ...formatScheduleRows(schedule),
+        ...formatScheduleRows(schedule, now),
         ...getUpcomingSpecialHours(schedule, now).map((row) => ({
           label: `${row.label} (special)`,
           text: row.text,
         })),
       ]
-    : formatHoursRows(textRows);
+    : formatHoursRows(textRows, now);
   const weekRows: StallHoursRow[] =
     parsedRows.length > 0 ? parsedRows : listedHours ? [{ label: "Hours", text: listedHours }] : [];
 

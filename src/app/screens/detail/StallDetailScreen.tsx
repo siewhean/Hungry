@@ -110,6 +110,7 @@ import {
 import {
   buildStallMapsUrl,
   formatDistanceFromUser,
+  formatFoodCentreLocation,
   formatStallPriceBand,
   getStallPin,
   summarizeStallRating,
@@ -525,7 +526,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   });
   const buildingLocation = {
     // Last resort when the building is not in the catalogue: the area, not a bare "#01-10".
-    name: venue?.buildingName ?? building?.name ?? venue?.planningArea,
+    name:
+      formatFoodCentreLocation({
+        name: venue?.buildingName ?? building?.name,
+        address: venue?.address ?? (building as { address?: string } | undefined)?.address,
+      }) || venue?.planningArea,
     address: venue?.address ?? (building as { address?: string } | undefined)?.address,
     postalCode: venue?.postalCode ?? (building as { postalCode?: string } | undefined)?.postalCode,
   };
@@ -1052,17 +1057,26 @@ export function StallDetailScreen({ navigation, route }: Props) {
     .filter(Boolean)
     .join(" · ");
   // The street and postcode are the only address facts the subtitle lacks (R5-STALL-6).
-  const streetAddress = [
-    buildingLocation.address?.trim(),
-    buildingLocation.postalCode ? `Singapore ${buildingLocation.postalCode}` : undefined,
-  ]
-    .filter(Boolean)
+  const rawAddress = buildingLocation.address?.trim() ?? "";
+  const postalCode = buildingLocation.postalCode?.trim();
+  const hasPostal = postalCode
+    ? rawAddress.includes(postalCode)
+    : /Singapore\s+\d{6}/i.test(rawAddress);
+  const postalPart = !hasPostal && postalCode ? `Singapore ${postalCode}` : undefined;
+  const rawCombined = [rawAddress, postalPart].filter(Boolean).join(", ");
+  const streetAddress = rawCombined
+    .replace(/(Singapore\s+\d{6})(?:,\s*\1)+/gi, "$1")
+    .split(", ")
+    .filter((part, idx, arr) => arr.indexOf(part) === idx)
+    .map(toDisplayName)
     .join(", ");
   const hoursRows = openInfo.weekRows;
   // A single listed "Hours" line that today's row already repeats has nothing more to expand.
-  const hoursExpandable = hoursRows.some(
-    (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
-  );
+  const hoursExpandable =
+    hoursRows.length > 1 &&
+    hoursRows.some(
+      (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
+    );
   const hoursHeader = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
       <HoursSymbol color={palette.orange} size={18} />
@@ -1587,13 +1601,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </AppText>
                   ) : null}
                   {hoursExpanded
-                    ? hoursRows.map((row) => {
-                        const isToday = openInfo.todayRows.some(
-                          (today) => today.label === row.label,
-                        );
+                    ? hoursRows.map((row, index) => {
+                        const isToday =
+                          index === 0 ||
+                          openInfo.todayRows.some((today) => today.label === row.label);
                         return (
                           <View
-                            key={`${row.label}-${row.text}`}
+                            key={`${row.label}-${row.text}-${index}`}
                             accessible
                             accessibilityLabel={`${row.label}, ${row.text}`}
                             style={{

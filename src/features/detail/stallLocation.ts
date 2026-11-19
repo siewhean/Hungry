@@ -12,15 +12,37 @@ export function formatFullStallAddress(
   venue: Pick<VenueSummary, "name" | "unitNumber">,
   building?: BuildingLocation,
 ) {
-  return [
-    venue.name,
-    venue.unitNumber,
-    building?.name,
-    building?.address,
-    building?.postalCode ? `Singapore ${building.postalCode}` : undefined,
-  ]
-    .filter(Boolean)
-    .join(", ");
+  const address = building?.address?.trim() ?? "";
+  const unit = venue.unitNumber?.trim();
+  const name = venue.name?.trim();
+  const bldgName = building?.name?.trim();
+  const postal = building?.postalCode?.trim();
+  const postalLabel = building?.postalCode ? `Singapore ${building.postalCode}` : undefined;
+
+  const parts: (string | undefined)[] = [];
+
+  if (name && (!address || !address.toLowerCase().includes(name.toLowerCase()))) {
+    parts.push(name);
+  }
+
+  if (unit && (!address || !address.toLowerCase().includes(unit.toLowerCase()))) {
+    parts.push(unit);
+  }
+
+  if (bldgName && (!address || !address.toLowerCase().includes(bldgName.toLowerCase()))) {
+    parts.push(bldgName);
+  }
+
+  if (address) {
+    parts.push(address);
+  }
+
+  const addressHasPostal = Boolean(postal && address.includes(postal));
+  if (postalLabel && !addressHasPostal) {
+    parts.push(postalLabel);
+  }
+
+  return parts.filter(Boolean).join(", ");
 }
 
 /**
@@ -54,6 +76,18 @@ export function stallBuildingLabel(
   );
 }
 
+export function formatFoodCentreLocation(building?: BuildingLocation): string {
+  const name = cleanPlaceName(building?.name);
+  if (name) return name;
+  if (building?.address?.trim()) {
+    const rawStreet = building.address.split(",")[0].trim();
+    const cleanedStreet = cleanPlaceName(rawStreet);
+    if (cleanedStreet) return cleanedStreet;
+    return rawStreet;
+  }
+  return "Food Centre";
+}
+
 /** Google Maps search by address text, or by "lat,lng" when the stall has its own map pin. */
 export function buildMapsSearchUrl(address: string, pin?: Coordinate) {
   const query = pin ? `${pin.latitude},${pin.longitude}` : address;
@@ -70,11 +104,18 @@ export function buildStallMapsUrl(
   pin?: Coordinate,
 ) {
   const hasPlace = Boolean(stall.buildingName || stall.address || stall.postalCode);
+  const postalLabel = stall.postalCode ? `Singapore ${stall.postalCode}` : undefined;
+  const addressHasPostal = Boolean(
+    stall.address && stall.postalCode && stall.address.includes(stall.postalCode),
+  );
+
   const query = [
     stall.name,
-    stall.buildingName,
+    stall.buildingName && (!stall.address || !stall.address.includes(stall.buildingName))
+      ? stall.buildingName
+      : undefined,
     stall.address,
-    stall.postalCode ? `Singapore ${stall.postalCode}` : undefined,
+    addressHasPostal ? undefined : postalLabel,
   ]
     .filter(Boolean)
     .join(", ");

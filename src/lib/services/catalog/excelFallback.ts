@@ -176,6 +176,7 @@ function toVenueCard(
     name: venue.name || "Unnamed venue",
     buildingName: venue.buildingName ?? buildingById.get(venue.buildingId)?.name,
     buildingType: buildingById.get(venue.buildingId)?.type,
+    address: venue.address || undefined,
     unitNumber: venue.unitNumber || undefined,
     floor: venue.floor || undefined,
     imageUrl: venueImage,

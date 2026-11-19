@@ -6,6 +6,7 @@
 import type { OpeningDayKey, OpeningSchedule, OpeningTimeRange } from "@/types/domain";
 import {
   DAY_ORDER,
+  FULL_DAY_NAMES,
   formatClockMinutes,
   formatNextOpening,
   getHoursForDay,
@@ -195,8 +196,23 @@ function formatRanges(ranges: OpeningTimeRange[]): string {
     .join(", ");
 }
 
-/** Consecutive days with the same hours, e.g. [{ label: "Mon-Fri", text: "10am-8pm" }]. */
-export function formatScheduleRows(schedule: OpeningSchedule): { label: string; text: string }[] {
+/** When now is provided, returns all 7 days in order from today. Otherwise consecutive days with same hours. */
+export function formatScheduleRows(
+  schedule: OpeningSchedule,
+  now?: Date,
+): { label: string; text: string }[] {
+  if (now) {
+    const { dayIndex } = getSingaporeClock(now);
+    const result: { label: string; text: string }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const dIndex = (dayIndex + i) % 7;
+      const key = OPENING_DAY_KEYS[dIndex];
+      const dayName = FULL_DAY_NAMES[DAY_ORDER[dIndex]];
+      const text = formatRanges(schedule.weekly[key] ?? []);
+      result.push({ label: dayName, text });
+    }
+    return result;
+  }
   const rows: { start: number; end: number; text: string }[] = [];
   OPENING_DAY_KEYS.forEach((key, index) => {
     const text = formatRanges(schedule.weekly[key] ?? []);

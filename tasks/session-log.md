@@ -1048,3 +1048,61 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - 2026-11-14 PKG-1.4 price + halal labels: migration 20261114130000_price_basis_halal_status (dishes.price_checked_at + trigger; get_dish_detail price_basis/price_checked_at/halal_status; search_dishes + Home feed + catalog_raw_dish_cards price_basis). PriceWithBasis/PriceBasisTag on dish page, DishCard, stall menu, Search results, Home bites; HalalStatusTag (HalalMark) on the dish page only (sh rule). Search Halal chip stays confirmed-only. Waiting on sh rehearsal + ship.sh.
 - 2026-11-16 PKG-0.2 reviews survive dish removal: migration 20261116120000_reviews_survive_dish_removal (reviews.dish_id ON DELETE CASCADE -> RESTRICT; archive via dishes.archived_at instead), down file, smoke reviews_survive_dish_removal.sql, contract test, load_workbook_catalog_snapshot.py --replace refusal now says to archive reviewed dishes. Profile review cards already read the dish name through get_item_details (no archived filter). | Verification: contract + loader tests pass; migration/down/re-apply checked on a scratch Postgres 16; full stand-in could not run here (no pgvector); staging rehearsal still needed (sh).
 - 2026-11-16 PKG-0.5 server functions on staging (no database): scripts/staging-functions.sh (secrets, deploy, check, smoke; staging ref hard-coded, prod refused), scripts/staging-functions/manifest.mjs (11 functions, secret names, guards), scripts/smoke-staging-functions.mjs (anonymous call must be refused; worker functions run once with limit 1; guest-sessions makes one smoke session), npm run check:staging-functions in CI + release checklist, tasks/environment.md section. Fixed a gap: report-digest had no verify_jwt=false in config.toml, so a CLI deploy would have made the gateway reject its cron's worker token. Staging confirmed to have 0 functions (Supabase list, 2026-11-16). 11 new node tests pass; check:edge-functions and check:rate-limits pass. sh runs the deploy on the Mac.
+
+
+## 2026-11-17 — CR-FIX-MAIN-20261117 closeout
+
+Current-main baseline `6671e14b115c4ec4c01a40106e281fcf46b5fe39`, branch `codex/coderabbit-current-main-fixes`, checkout `/Users/Siew Hean/Documents/GitHub/Hungry-main`. All 34 original findings reassessed: 23 applicable fixes implemented, eight already fixed, three conditions absent. Full suite3,275 total:3,273 passed, two intentional skips, zero failures; TypeScript, Expo Doctor20/20, focused lint, race/N+1/Edge audits, independent143 focused regressions and normal simulator navigation pass. Native bundle path quoting verified by four shell regressions. Real PostgreSQL17 migration roundtrip/concurrency tests pass.
+
+All three real staging rehearsals (`20261117200000`, `20261117201000`, `20261117202000`) pass including backups, forward/down exact schema and data comparison, reapply, smoke and final restoration. Canonical JSON hashes match current migrations/rollbacks; migration-safety gate passes. Production connections forced read-only. Final remote metadata: staging and production both282 migrations, latest20261116120000, none of the three new versions installed. No merge, production migration or Edge deployment performed.
+
+Signed physical Release0.1.0(2) built and installed successfully, fresh embedded production JS, local artifact OTA disabled; source release config unchanged. Physical launch remains unverified: device unavailable. Simulator runtime/navigation passes. Full local backup33115b5e5 retained; source-only remote backup111280f2125750d1a961e88d8355d2de583f5bb8 verified. Chat moved to Hungry-main; old folder retained as shared Git common directory.
+
+Evidence: `outputs/current-main-remediation-20261117/README.md`, `closure-ledger.json`, `qa.md`, logs, `device/install.json`, and canonical `supabase/rehearsals/*.json`. Code remains on the local remediation branch.
+
+
+### 2026-11-17 — CR-DEVICE-20261117 reconnect
+
+Phone available and unlocked; installed app confirmed0.1.0(2), DeveloperMode enabled. Remote launch rejected with CoreDevice10002/FBS Security: invalid signature, inadequate entitlements or developer not explicitly trusted. Local codesign deep/strict verifies; current provision includes phone and exact app/team, expiry2026-11-24. User asked to verify/trust the Developer App entry and open Hungry. Physical launch remains unverified; no app crash inferred. Evidence: `outputs/current-main-remediation-20261117/device/launch-reconnected.json`, `reconnected-details.json`, `reconnected-apps.json`.
+
+
+### 2026-11-17 — CR-DEVICE-20261117 trust resolved; startup verified
+
+User trusted/verified the Developer App and reports Hungry opens. Remote `devicectl --console` launch succeeded; `processes-trusted.json` confirms physical Hungry PID60021. Bounded console capture has no observed fatal/JavaScript exception; UIApplication background fetch/remote-notification capability warnings and React Native dropped-event notices remain recorded. No push capabilities enabled to suppress warnings. This startup evidence does not certify every physical UI flow or backend delivery. Evidence: `outputs/current-main-remediation-20261117/device/console-trusted.log`, `processes-trusted.json`; independent QA appended in `qa.md`.
+
+Final device evidence checked directly by coordinator; independent device follow-up QA was attempted but blocked by agent usage limit. Prior source/staging independent QA remains valid. No code changed in this follow-up.
+
+
+## 2026-11-17 — CR-RECHECK-20261117
+
+Fresh authenticated CodeRabbit review completed successfully across57remediation diff paths on baseline6671e14b1. Raised12issues:3major9minor. Source validation confirms9code defects,1documentation issue and2optional observability improvements (shared5xxSentry wrapper already reports handled500s). Evidence and priorities: `outputs/coderabbit-recheck-20261117/README.md`, `validated-findings.json`, rawNDJSON and independentQA. RealGitindex preserved; private outputs excluded. Secure-fallback stale-value and OCRmulti-price behavior reproduced against actual source. Other race defects checked by bounded source traces, not newly executed concurrency tests. No source fix/deployment/build/fullsuite rerun. Whole-repository coverage remains incomplete.
+
+
+### 2026-11-17 — R2 implementation verification before full review
+
+All12 CodeRabbit comments addressed:9code defects,1doc correction,2optional reporting-context improvements. Deferred secure/profile/social/Wheel regressions, OCRambiguity check, provider-outage dispatch and real concurrentPGsettlement checks pass. Fullsuite3290total/3288pass/2intentional skips/0fail; TypeScript, scopedlint and independent131focused checks + actualPG17guarded rollback/concurrency pass. One stale two-assertion sourcecontract was updated after firstfullrun; historicalfailure retained. Existing simulator normalHome loaded without error overlay; Metro60914 unchanged, userlocation sheet left untouched.
+
+Fresh notification staging rehearsal passed with current SQLSHAed3ffdfcac6a300beefe7ac3e0f63e562692a1159394448907e8a1a336c74b30 and canonicaldownhash, exact schema/data restoration,reapply,smoke,finalrestoration. CanonicalJSON updated genuinely; migration-safety gatepasses. Final readonly stage/prod ledgers282/max20261116120000/newversions0. No production rollout. Evidence: `outputs/coderabbit-fixes-r2-20261117/README.md`, `qa.md`, `closure-ledger.json`; `supabase/rehearsals/20261117202000.json`. Fullrepository review uses frozen safecontext and manifest afterward.
+
+### 2026-11-18 — CR-FULL-20261117
+
+CodeRabbit completed 14 successful scopes against the frozen Hungry-main source and local R2 fixes: 3,089/3,089 eligible text paths, 88 provider issues, and one separately unverified item. Independent QA matched the terminal events, aggregate counts, and frozen hashes. Oversized, timed-out, and disconnected attempts were excluded. Source triage and the remediation sequence are in `outputs/coderabbit-full-20261117/REPOSITORY-REVIEW.md`; excluded paths are in `coverage.csv`. No new product changes or deployments were made during review.
+
+### 2026-11-19 — Clean Building Names/Addresses & Chronological Operating Hours
+- **Production Database**:
+  - Executed migration `supabase/migrations/20261119160000_clean_polluted_building_names_and_addresses.sql`:
+    - Remapped 1,422 venues and 4,911 dishes from polluted subunit building rows to canonical clean buildings (`Harbourfront Centre`, `Causeway Point`, `Northpoint City`, `Compass One`, `Ion Orchard`).
+    - Cleaned 1,962 remaining polluted building names in `buildings` table.
+    - Updated 9,620 cards in `catalog_raw_venue_cards` across releases so search cards read clean building names and types.
+    - Cleaned 235 repeated postal codes and 825 duplicate street + unit prefixes in `venues.address`.
+    - Synchronized 27,387 card addresses in `catalog_raw_venue_cards`.
+    - Explicitly cleaned Starbucks Harbourfront Centre (`ven-C03001E000`): building `Harbourfront Centre`, address `1 Maritime Square, #01-75/76 Harbourfront Centre, Singapore 099253`.
+- **Frontend App**:
+  - Operating hours day ordering: Updated `src/utils/operatingHours.ts` and `src/utils/openingSchedule.ts` so that 7 days cycle chronologically starting from current Singapore day (`today` -> `+1` -> `+2` ... -> `+6`), resolving jumbled/alphabetical Google Maps scrape hours.
+  - Search card subtitles: Updated `cardSubtitle` in `src/features/search/browseGrid.ts` to sanitize building name via `cleanPlaceName` and fall back to clean street address.
+  - Detail address formatting: Sanitized address lines in `StallDetailScreen.tsx` to deduplicate postal codes and redundant street prefixes.
+- **Verification**:
+  - 55/55 focused unit and contract tests passed (`placeNames.test.ts`, `stallLocation.test.ts`, `stallOpenState.test.ts`, `browseGrid.test.ts`, `detail-location-actions-contracts.test.ts`).
+  - `npm run typecheck` passed with 0 errors.
+  - Live production RPC queries (`get_venue_detail`, `catalog_raw_venues_page`) verified clean.
+

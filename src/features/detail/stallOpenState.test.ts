@@ -32,6 +32,9 @@ test("STALL-14: a stored notice the status does not say still shows under the he
 // 2026-10-25 is a Sunday; noon in Singapore.
 const sundayNoon = new Date(Date.UTC(2026, 9, 25, 4, 0));
 
+// 2026-10-22 is a Thursday; noon in Singapore.
+const thursdayNoon = new Date(Date.UTC(2026, 9, 22, 4, 0));
+
 test("the status line says open or closed with the next change, from the listed hours", () => {
   const open = resolveStallOpenInfo({
     venue: { isOpen: true, operatingHours: "Mon-Sun 10am - 8pm" },
@@ -114,7 +117,6 @@ test("R4-STALL-7: on a closed day the status names the next day it opens", () =>
   assert.equal(weekend.statusLabel, "Closed now · Opens 10am Mon");
 
   // Open on Wednesdays only, looked at on a Thursday: next Wednesday, six days ahead.
-  const thursdayNoon = new Date(Date.UTC(2026, 9, 22, 4, 0));
   const wednesdaysOnly = resolveStallOpenInfo({
     venue: { isOpen: true, operatingHours: "Wed 10am - 8pm" },
     now: thursdayNoon,
@@ -154,4 +156,28 @@ test("R5-STALL-13: a false is_open flag with a closure notice stays closed", () 
   });
   assert.equal(info.isOpen, false);
   assert.equal(info.statusLabel, "Renovating");
+});
+
+test("weekly hours rows are listed in sequential day order starting from current day", () => {
+  // Jumbled / alphabetical day string from Google Maps scrape (e.g. KFC)
+  const jumbledHours =
+    "Friday: 8 am–11 pm; Monday: 8 am–11 pm; Saturday: 8 am–11 pm; Sunday: 8 am–11 pm; Thursday: 8 am–11 pm; Tuesday: 8 am–11 pm; Wednesday: 8 am–11 pm";
+
+  const info = resolveStallOpenInfo({
+    venue: { isOpen: true, operatingHours: jumbledHours },
+    now: thursdayNoon,
+  });
+
+  const dayLabels = info.weekRows.map((r) => r.label);
+  assert.deepEqual(dayLabels, [
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+  ]);
+  assert.equal(info.weekRows[0].label, "Thursday");
+  assert.equal(info.weekRows[0].text, "8 am-11 pm");
 });

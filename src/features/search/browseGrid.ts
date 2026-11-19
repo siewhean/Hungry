@@ -1,4 +1,5 @@
 import { WEB_BASE_URL } from "@/constants/links";
+import { cleanPlaceName } from "@/features/detail/placeNames";
 import {
   BROWSE_ALL_FILTER,
   CUISINE_FILTERS,
@@ -266,10 +267,18 @@ export function stallCardImage(stall: CatalogRawVenueCard): string | undefined {
 export function cardSubtitle(mode: BrowseMode, item: BrowseItem): string {
   if (mode === "dishes") {
     const dish = item as CatalogRawDishCard;
-    return dish.buildingName ? `${dish.venueName} · ${dish.buildingName}` : dish.venueName;
+    const cleanBuilding = cleanPlaceName(dish.buildingName);
+    return cleanBuilding ? `${dish.venueName} · ${cleanBuilding}` : dish.venueName;
   }
   const stall = item as CatalogRawVenueCard;
-  return stall.buildingName ?? stall.representativeDish?.name ?? "";
+  const cleanBuilding = cleanPlaceName(stall.buildingName);
+  if (cleanBuilding) return cleanBuilding;
+  if (stall.address) {
+    const rawStreet = stall.address.split(",")[0].trim();
+    const cleanStreet = cleanPlaceName(rawStreet);
+    if (cleanStreet) return cleanStreet;
+  }
+  return stall.representativeDish?.name ?? "";
 }
 
 /** The rating pill: "4.5 (120)", only when there is a rating and at least one review. */
