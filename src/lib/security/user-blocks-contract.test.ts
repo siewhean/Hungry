@@ -116,7 +116,7 @@ test("comment sheet and activity post react to blocks; sign-out clears local fil
     activityPost,
     /onHidden: \(\) => \{\s*onSafetyHidden\(\);[\s\S]*?onBlocked: onSafetyHidden/,
   );
-  assert.match(activityPost, /\[publishedPosts, repository, safetyFilterVersion\]/);
+  assert.match(activityPost, /\[publishedPosts, repository, safetyFilterVersion, fetchState\]/);
 
   assert.match(helper, /export function clearCommunitySafetySessionState\(\)/);
   assert.match(

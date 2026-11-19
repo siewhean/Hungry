@@ -25,6 +25,11 @@ export async function hydratePublishedStallPosts() {
   isHydrated = true;
 }
 
+/** A post this device published and persisted, by id. Sample posts are not included. */
+export function findPublishedStallPost(postId: string): StallPost | undefined {
+  return publishedStallPosts.find((post) => post.id === postId);
+}
+
 export function listMockStallPosts(): StallPost[] {
   return mergePosts(publishedStallPosts, stallPosts);
 }

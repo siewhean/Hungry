@@ -26,6 +26,8 @@ test.describe("cross-user visibility", () => {
 
     await gotoLauncher(page);
     await startOnboardedMockSession(page, "User B");
+    // A reload drops the in-memory feed: the post must still open from what the app persisted.
+    await page.reload({ waitUntil: "domcontentloaded" });
     await openPublishedPost(page, caption);
     await expect(page.getByRole("button", { name: "Follow User A" }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Follow User B" })).toHaveCount(0);

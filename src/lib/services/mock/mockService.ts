@@ -148,9 +148,10 @@ import { filterCustomerVisiblePromotions } from "@/features/merchant/customerPro
 import { validateMerchantPromotionInput } from "@/features/merchant/promotionValidation";
 import { loadMockState, saveMockState } from "./persistence";
 import { POST_CAPTION_MAX_LENGTH, sanitizeFreeText } from "@/lib/security/inputSanitization";
-import { biteToStallPost } from "@/lib/services/postTransforms";
+import { biteToStallPost, stallPostToBite } from "@/lib/services/postTransforms";
 import {
   appendPublishedStallPost,
+  findPublishedStallPost,
   hydratePublishedStallPosts,
   listMockStallPosts,
   removePublishedStallPost,
@@ -2556,7 +2557,25 @@ export const hungryService: HungryService = {
       const bite = MOCK_BITES_FEED.find(
         (candidate) => candidate.id === postId && !_blockedUsers.has(candidate.authorId),
       );
-      return resolve(bite ? withMockViewerReactions(bite) : null);
+      if (bite) return resolve(withMockViewerReactions(bite));
+      // A reload empties the in-memory feed: read the post back from the posts this device
+      // published and persisted, under the same public and not-blocked rules.
+      const persisted = findPublishedStallPost(postId);
+      if (
+        !persisted ||
+        (persisted.publishedStatus && persisted.publishedStatus !== "published") ||
+        persisted.visibility === "private" ||
+        (persisted.authorId && _blockedUsers.has(persisted.authorId))
+      ) {
+        return resolve(null);
+      }
+      return resolve(
+        withMockViewerReactions(
+          stallPostToBite(persisted, {
+            dishName: dishes.find((dish) => dish.id === persisted.dishIds[0])?.name,
+          }),
+        ),
+      );
     },
 
     async updatePost(postId: string, patch: { caption: string }) {
