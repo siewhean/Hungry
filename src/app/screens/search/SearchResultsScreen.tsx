@@ -47,6 +47,7 @@ import { SearchEmptyState } from "@/features/search/SearchEmptyState";
 import { parseSearchQuery, type ParsedQueryPart } from "@/features/search/queryParser";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import {
   BROWSE_ALL_FILTER,
   BROWSE_FILTER_IDS,
@@ -204,8 +205,8 @@ const RawCatalogCard = memo(function RawCatalogCard({
   const dish = isDish ? (item as CatalogRawDishCard) : undefined;
   const stall = isDish ? undefined : (item as StallRow);
   const imageUrl = stall ? stallCardImage(stall) : item.imageUrl;
-  const title = item.name;
-  const stallName = dish ? dish.venueName || title : title;
+  const title = isDish ? item.name : toDisplayName(item.name);
+  const stallName = dish ? toDisplayName(dish.venueName || title) : title;
   const stallRating = ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
   // On a stall card the rating is its top dish's (the line above names that dish).
   const rating = dish ? ratingPillText(dish.rating, dish.reviewCount) : stallRating;

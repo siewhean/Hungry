@@ -62,6 +62,7 @@ import {
 } from "@/lib/geo/singaporeBuildings";
 import { calculateDistanceMeters } from "@/lib/geo/distance";
 import { getCatalogRawService, getHungryService } from "@/lib/services/serviceProvider";
+import { isPlaceholderStall, toDisplayName } from "@/features/detail/stallDisplayName";
 import type { CatalogMapItem, CatalogRawVenueCard } from "@/lib/services/catalog";
 import { SavedViewSwitch } from "@/components/saved/SavedViewSwitch";
 import { LocationGate } from "@/components/discover/LocationGate";
@@ -112,6 +113,7 @@ const MAX_RENDERED_MARKERS = 150;
 const LOADING_PILL_DELAY_MS = 400;
 /** Stalls whose hours are read for the "Open" label: one batched read (cards are capped at 24). */
 const CARD_HOURS_BATCH = 24;
+const OPEN_NOW_PIN_QUERY_MIN_ZOOM = 16;
 const BACK_BUTTON_SIZE = 44;
 /** Within this distance of the diner the map counts as centred on them. */
 const CENTERED_METERS = 50;
@@ -521,7 +523,9 @@ export function HomeMapScreen() {
           minLongitude: mapCenter.longitude - span,
           maxLatitude: mapCenter.latitude + span,
           maxLongitude: mapCenter.longitude + span,
-          zoom: currentZoom,
+          zoom: mapFilters.openNow
+            ? Math.max(currentZoom, OPEN_NOW_PIN_QUERY_MIN_ZOOM)
+            : currentZoom,
           coordinate: nearCoordinate,
           radiusMeters: nearCoordinate ? NEAR_ME_RADIUS_METERS : undefined,
           buildingTypes,
@@ -550,7 +554,7 @@ export function HomeMapScreen() {
         .then(([mapPage, venuePage, dishPage]) => {
           if (!active) return;
           setRawMapItems(mapPage.items);
-          setRawVenueCards(venuePage.items);
+          setRawVenueCards(venuePage.items.filter((card) => !isPlaceholderStall(card.name)));
           const matched = new Map<string, MapCardMatchedDish>();
           for (const dish of dishPage?.items ?? []) {
             if (!matched.has(dish.venueId)) {
@@ -647,7 +651,7 @@ export function HomeMapScreen() {
   const venueCards = useMemo(() => {
     const pinIds = new Set(rawMapItems.flatMap((item) => (item.kind === "venue" ? [item.id] : [])));
     const narrowedByPins =
-      currentZoom < 14 || !(mapFilters.topRated || mapQuery)
+      (currentZoom < 14 && !openNowActive) || !(mapFilters.topRated || mapQuery)
         ? rawVenueCards
         : rawVenueCards.filter((card) => pinIds.has(card.id));
     // Stalls with dishes lead the cards; stalls without a menu follow (never hidden).
@@ -1506,19 +1510,24 @@ export function HomeMapScreen() {
         visible={clusterSheetOpen && clusterPick !== null}
         totalCount={clusterPick?.count ?? 0}
         loading={clusterPick?.loading ?? false}
-        stalls={(clusterPick?.venues ?? []).map<ClusterStallRow>((venue) => {
-          const hours = clusterPick?.hoursById.get(venue.id);
-          const distance = formatDistanceLabel(distanceFromDiner(venue, dinerLocation));
-          const location = formatMapCardLocation(venue);
-          const detail = [hours, distance].filter(Boolean).join(" · ");
-          return {
-            id: venue.id,
-            name: venue.name,
-            detail: detail || undefined,
-            location: location || undefined,
-            accessibilityLabel: [`Open ${venue.name}`, detail, location].filter(Boolean).join(". "),
-          };
-        })}
+        stalls={(clusterPick?.venues ?? [])
+          .filter((v) => !isPlaceholderStall(v.name))
+          .map<ClusterStallRow>((venue) => {
+            const hours = clusterPick?.hoursById.get(venue.id);
+            const distance = formatDistanceLabel(distanceFromDiner(venue, dinerLocation));
+            const location = formatMapCardLocation(venue);
+            const detail = [hours, distance].filter(Boolean).join(" · ");
+            const displayName = toDisplayName(venue.name);
+            return {
+              id: venue.id,
+              name: displayName,
+              detail: detail || undefined,
+              location: location || undefined,
+              accessibilityLabel: [`Open ${displayName}`, detail, location]
+                .filter(Boolean)
+                .join(". "),
+            };
+          })}
         onClose={() => {
           const run = ++clusterPickRun.current;
           returnToClusterRef.current = false;

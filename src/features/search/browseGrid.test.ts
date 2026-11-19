@@ -237,6 +237,15 @@ test("a row repeated across pages merges into one card; a shared logo counts out
     ]).map((row) => [row.id, row.extraOutlets]),
     [["v1", 1]],
   );
+  // SFA licensed stall placeholders are excluded from stall rows
+  assert.deepEqual(
+    mergeStallOutlets([
+      stall("v1", "Ya Kun", "b1"),
+      stall("v2", "SFA Licensed Stall #01-01 (TP00101001)", "b1"),
+      stall("v3", "SFA Licensed Food Establishment (E82092C020)", "b2"),
+    ]).map((row) => row.id),
+    ["v1"],
+  );
 });
 
 test("dish cards read out stall, hawker centre, price, rating and distance (search-M5, M6)", () => {

@@ -1,5 +1,6 @@
 import { WEB_BASE_URL } from "@/constants/links";
 import { cleanPlaceName } from "@/features/detail/placeNames";
+import { isPlaceholderStall, toDisplayName } from "@/features/detail/stallDisplayName";
 import {
   BROWSE_ALL_FILTER,
   CUISINE_FILTERS,
@@ -182,6 +183,7 @@ export function mergeStallOutlets(
   const groups = new Map<string, { row: StallRow; buildings: Set<string> }>();
   const order: string[] = [];
   for (const stall of stalls) {
+    if (isPlaceholderStall(stall.name)) continue;
     const key = getVenueBrandKey({ id: stall.id, logoUrl: stall.logoUrl });
     const group = groups.get(key);
     if (!group) {
@@ -215,9 +217,10 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
     item.distanceMeters !== undefined ? formatBrowseDistance(item.distanceMeters) : undefined;
   if (mode === "dishes") {
     const dish = item as CatalogRawDishCard;
+    const venueName = toDisplayName(dish.venueName);
     return [
       dish.name,
-      dish.venueName,
+      venueName,
       dish.buildingName,
       priceLabel(dish.price),
       ratingLabel(dish.rating, dish.reviewCount),
@@ -227,9 +230,10 @@ export function cardAccessibilityLabel(mode: BrowseMode, item: BrowseItem): stri
       .join(", ");
   }
   const stall = item as StallRow;
+  const stallName = toDisplayName(stall.name);
   const topDishRating = ratingLabel(stall.qualityRating, stall.qualityReviewCount);
   return [
-    stall.name,
+    stallName,
     stall.buildingName,
     topDishRating ? `top dish ${topDishRating}` : undefined,
     stallCardDetail(stall),
@@ -268,7 +272,8 @@ export function cardSubtitle(mode: BrowseMode, item: BrowseItem): string {
   if (mode === "dishes") {
     const dish = item as CatalogRawDishCard;
     const cleanBuilding = cleanPlaceName(dish.buildingName);
-    return cleanBuilding ? `${dish.venueName} · ${cleanBuilding}` : dish.venueName;
+    const venueName = toDisplayName(dish.venueName);
+    return cleanBuilding ? `${venueName} · ${cleanBuilding}` : venueName;
   }
   const stall = item as CatalogRawVenueCard;
   const cleanBuilding = cleanPlaceName(stall.buildingName);

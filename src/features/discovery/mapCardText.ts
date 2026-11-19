@@ -1,4 +1,6 @@
 import { formatDishPrice } from "@/features/detail/dishPrice";
+import { cleanPlaceName } from "@/features/detail/placeNames";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { formatDistanceLabel } from "@/features/discovery/distanceLabel";
 import type { CatalogRawVenueCard } from "@/lib/services/catalog";
 import type { OpenState } from "@/utils/operatingHours";
@@ -24,8 +26,9 @@ export function formatMapCardHours(state: OpenState | undefined): string | undef
 
 /** "JW50 Hawker Centre · #01-23": where the stall is, building first. */
 export function formatMapCardLocation(venue: CatalogRawVenueCard): string {
+  const building = cleanPlaceName(venue.buildingName) || venue.buildingName?.trim();
   const unit = [venue.floor, venue.unitNumber].filter(Boolean).join(" ");
-  return [venue.buildingName, unit].filter(Boolean).join(" · ");
+  return [building, unit].filter(Boolean).join(" · ");
 }
 
 /**
@@ -60,7 +63,8 @@ export function formatMapCardRating(
 
 /** "Open · 450 m · Maxwell Food Centre": the rest of the detail line, after the rating. */
 export function formatMapCardDetail(venue: CatalogRawVenueCard, openLabel?: string): string {
-  return [openLabel, formatDistanceLabel(venue.distanceMeters), venue.buildingName]
+  const building = cleanPlaceName(venue.buildingName) || venue.buildingName?.trim();
+  return [openLabel, formatDistanceLabel(venue.distanceMeters), building]
     .filter(Boolean)
     .join(" · ");
 }
@@ -72,5 +76,6 @@ export function mapCardAccessibilityLabel(
   detail: string,
   ratingSpoken?: string,
 ): string {
-  return [`Open ${venue.name}`, dishLine, ratingSpoken, detail].filter(Boolean).join(". ");
+  const name = toDisplayName(venue.name);
+  return [`Open ${name}`, dishLine, ratingSpoken, detail].filter(Boolean).join(". ");
 }
