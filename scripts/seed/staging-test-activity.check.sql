@@ -42,8 +42,9 @@ begin
   where u.email like '%@internal.hungry.test';
   if v_n < 5 then raise exception 'reviews cover % days, expected them spread over the last 12', v_n; end if;
   if exists (select 1 from reviews r join auth.users u on u.id = r.user_id
-             where u.email like '%@internal.hungry.test' and r.created_at > now() - interval '5 minutes' and false) then
-    raise exception 'unreachable';
+             where u.email like '%@internal.hungry.test'
+               and (r.created_at < now() - interval '12 days' or r.created_at > now() + interval '1 minute')) then
+    raise exception 'a test review is dated outside the last 12 days';
   end if;
 
   -- The dish's own numbers moved with the reviews, as for a real review.

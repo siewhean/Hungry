@@ -17,17 +17,23 @@ STAGING_REF="uuylnktiipkmcweyqnpd"
 
 load_env staging
 [ "$DB_REF" = "$STAGING_REF" ] || die "STAGING_DB_URL points at '$DB_REF', not the staging project '$STAGING_REF'"
+# The ref in the user name is not enough: the host psql connects to must be a Supabase pooler or
+# staging's own direct host, and the URL may not override it.
+case "$DB_URL" in *host=*|*hostaddr=*) die "STAGING_DB_URL must not set host or hostaddr" ;; esac
+db_host="${DB_URL#*@}"; db_host="${db_host%%[:/?]*}"
+if ! [[ "$db_host" =~ ^aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com$ || "$db_host" = "db.$STAGING_REF.supabase.co" ]]; then
+  die "STAGING_DB_URL host '$db_host' is not a Supabase pooler or the staging direct host"
+fi
 
 case "$1" in
   seed)
-    say "clearing old test activity on staging ($DB_REF)"
-    psql_db -q -f "$HERE/staging-test-activity.reset.sql"
-    say "adding test activity on staging ($DB_REF)"
-    psql_db -q -f "$HERE/staging-test-activity.seed.sql"
+    # One transaction (-1): if the seed fails, the old test activity is still there.
+    say "replacing test activity on staging ($DB_REF)"
+    psql_db -q -1 -f "$HERE/staging-test-activity.reset.sql" -f "$HERE/staging-test-activity.seed.sql"
     ;;
   reset)
     say "removing test activity from staging ($DB_REF)"
-    psql_db -q -f "$HERE/staging-test-activity.reset.sql"
+    psql_db -q -1 -f "$HERE/staging-test-activity.reset.sql"
     ;;
   status)
     psql_db -q <<'SQL'

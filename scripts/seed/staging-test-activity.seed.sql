@@ -22,7 +22,7 @@
 -- The Trending board, the Passport and Home's Fresh reviews fill from what is here.
 
 \set ON_ERROR_STOP on
-begin;
+-- No begin/commit here: run it with `psql -1` (the wrapper does), so a reset and this seed are one unit.
 
 do $$
 begin
@@ -137,7 +137,7 @@ select d.id, 'tried', p.dish_id, p.venue_id
 from seed_diners d
 join lateral (
   select p.* from seed_dish_pool p
-  order by hashtextextended(d.id::text || p.dish_id, 21) + case when p.rank <= 30 then 0 else 4611686018427387904 end
+  order by (p.rank > 30), hashtextextended(d.id::text || p.dish_id, 21)
   limit 6 + (d.n % 7)
 ) p on true;
 
@@ -191,6 +191,15 @@ join lateral (
   limit 2 + (d.n % 3)
 ) p on true
 where d.n <= 12;
+
+-- A review recomputes its dish's rating_avg and review_count from the reviews. Keep what the reviewed
+-- dishes held before, with the first diner, so the reset can put them back (see the reset file).
+update auth.users u
+set raw_user_meta_data = u.raw_user_meta_data || jsonb_build_object('dish_ratings_before', coalesce((
+  select jsonb_object_agg(d.id, jsonb_build_object('rating_avg', d.rating_avg, 'review_count', d.review_count))
+  from dishes d where d.id in (select p.dish_id from seed_plan p where p.kind = 'review')
+), '{}'::jsonb))
+where u.id = '00000000-0000-1119-d000-000000000001';
 
 grant select on seed_plan to authenticated;
 
@@ -254,14 +263,14 @@ join seed_diners b on b.id <> a.id
 where (abs(hashtextextended(a.id::text || b.id::text, 51)) % 100) < 25;
 
 insert into post_likes (post_id, user_id, created_at)
-select po.id, d.id, now() - interval '3 days'
+select po.id, d.id, greatest(now() - interval '3 days', po.published_at)
 from posts po
 join seed_diners d on d.id <> po.author_id
 where po.author_id in (select id from seed_diners) and po.status = 'published' and po.visibility = 'public'
   and (abs(hashtextextended(po.id::text || d.id::text, 61)) % 100) < 35;
 
 insert into post_saves (post_id, user_id, created_at)
-select po.id, d.id, now() - interval '3 days'
+select po.id, d.id, greatest(now() - interval '3 days', po.published_at)
 from posts po
 join seed_diners d on d.id <> po.author_id
 where po.author_id in (select id from seed_diners) and po.status = 'published' and po.visibility = 'public'
@@ -280,5 +289,3 @@ union all select 'reviews', count(*) from reviews where user_id in (select id fr
 union all select 'text entries', count(*) from posts where author_id in (select id from seed_diners) and status = 'published'
 union all select 'follows', count(*) from follows where follower_id in (select id from seed_diners)
 union all select 'board rows', count(*) from leaderboard_standings where user_id in (select id from seed_diners);
-
-commit;

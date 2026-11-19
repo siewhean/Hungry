@@ -4,12 +4,13 @@ import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 // Contract for the staging test activity (build plan package 3.2). The data itself is checked by
 // scripts/seed/test-staging-test-activity.sh on the local Postgres stand-in; these tests keep the
 // scripts staging-only, marker-only and free of invented catalog data without needing a database.
 
-const dir = new URL(".", import.meta.url).pathname;
+const dir = fileURLToPath(new URL(".", import.meta.url));
 const repoRoot = path.resolve(dir, "../..");
 const read = (name) => readFileSync(path.join(dir, name), "utf8");
 const seed = read("staging-test-activity.seed.sql");
@@ -32,7 +33,8 @@ test("the same marker identifies the test diners in every file and in the docs",
 test("the seed writes no catalog, price, photo or menu row", () => {
   const forbidden = /\b(insert\s+into|update|delete\s+from)\s+(public\.)?(dishes|venues|buildings|dish_images|menu_[a-z_]+|storage\.objects|review_photos|post_media|catalog_[a-z_]+|launch_zone_places)\b/i;
   assert.doesNotMatch(seed, forbidden);
-  assert.doesNotMatch(reset, forbidden);
+  // The reset puts a reviewed dish's own rating values back; that is the one write to a catalog table.
+  assert.doesNotMatch(reset.replace(/update dishes d\s+set rating_avg = r\.rating_avg, review_count = r\.review_count/, ""), forbidden);
 });
 
 test("the seed goes through the app's own functions for reviews, ratings, Tried and entries", () => {
@@ -49,13 +51,15 @@ test("the seed is repeatable: no random() and no generated ids", () => {
   assert.doesNotMatch(code, /gen_random_uuid\s*\(/);
 });
 
-test("the seed refuses to double up and the review guard is paused and restored inside one transaction", () => {
+test("the seed refuses to double up, and the files run as one transaction under the wrapper's -1", () => {
   assert.match(seed, /test diners already exist/);
-  const begin = seed.indexOf("\nbegin;");
-  const commit = seed.lastIndexOf("\ncommit;");
+  for (const [name, text] of [["seed", seed], ["reset", reset]]) {
+    assert.doesNotMatch(text.replace(/--.*$/gm, ""), /^\s*(begin|commit);/im, `${name} must not open or close its own transaction`);
+  }
+  assert.match(wrapper, /psql_db -q -1 -f "\$HERE\/staging-test-activity\.reset\.sql" -f "\$HERE\/staging-test-activity\.seed\.sql"/);
   const off = seed.indexOf("disable trigger trg_enforce_merchant_review_reply_update");
   const on = seed.indexOf("enable trigger trg_enforce_merchant_review_reply_update");
-  assert.ok(begin >= 0 && commit > on && on > off && off > begin, "disable and enable sit between begin and commit");
+  assert.ok(off >= 0 && on > off, "the review guard is paused and restored, in that order");
 });
 
 test("the reset deletes only the marked diners", () => {
@@ -109,13 +113,30 @@ test("the wrapper refuses production, other projects, a missing URL and an unkno
   assert.notEqual(runWrapper("explode", { STAGING_DB_URL: stagingUrl }).status, 0);
 });
 
-test("the wrapper runs reset then seed on staging, and only reset for reset", () => {
+test("the wrapper refuses a staging user name on any other host, and a host override", () => {
+  const user = `postgres.${STAGING_REF}`;
+  for (const url of [
+    `postgresql://${user}@db.attacker.example:5432/postgres`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com.attacker.example:6543/postgres`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?host=attacker.example`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?hostaddr=203.0.113.9`,
+  ]) {
+    const result = runWrapper("reset", { STAGING_DB_URL: url });
+    assert.notEqual(result.status, 0, url);
+    assert.equal(result.calls, "", `no database call for ${url}`);
+  }
+  const direct = `postgresql://postgres@db.${STAGING_REF}.supabase.co:5432/postgres`;
+  assert.equal(runWrapper("reset", { STAGING_DB_URL: direct }).status, 0);
+});
+
+test("the wrapper replaces test activity in one psql call on staging, and only resets for reset", () => {
   const stagingUrl = `postgresql://postgres.${STAGING_REF}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres`;
+  const files = (calls) => calls.split("\n").filter((line) => line.startsWith("psql"))
+    .map((line) => [line.includes(" -1 "), [...line.matchAll(/staging-test-activity\.(\w+)\.sql/g)].map((m) => m[1])]);
   const seeded = runWrapper("seed", { STAGING_DB_URL: stagingUrl });
   assert.equal(seeded.status, 0, seeded.stderr);
-  const files = seeded.calls.split("\n").filter((line) => line.startsWith("psql")).map((line) => line.match(/staging-test-activity\.(\w+)\.sql/)?.[1]);
-  assert.deepEqual(files, ["reset", "seed"]);
+  assert.deepEqual(files(seeded.calls), [[true, ["reset", "seed"]]]);
   const cleared = runWrapper("reset", { STAGING_DB_URL: stagingUrl });
   assert.equal(cleared.status, 0, cleared.stderr);
-  assert.deepEqual(cleared.calls.split("\n").filter((line) => line.startsWith("psql")).map((line) => line.match(/staging-test-activity\.(\w+)\.sql/)?.[1]), ["reset"]);
+  assert.deepEqual(files(cleared.calls), [[true, ["reset"]]]);
 });
