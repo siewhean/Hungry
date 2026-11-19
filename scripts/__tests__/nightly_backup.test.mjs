@@ -102,6 +102,19 @@ test("nightly backup refuses a database that is not production", { skip: !hasAge
   assert.match(r.stderr, /not the production project/);
 });
 
+test("restore drill refuses Supabase hosts and an unconfirmed target", () => {
+  const run = (url, env = {}) =>
+    spawnSync("bash", ["scripts/db/restore-drill.sh", os.tmpdir(), url], {
+      env: { PATH: process.env.PATH, HOME: os.homedir(), ...env },
+      encoding: "utf8",
+    });
+  const hosted = run("postgresql://postgres.aaaaaaaaaaaaaaaaaaaa@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres");
+  assert.notEqual(hosted.status, 0);
+  assert.match(hosted.stderr, /must not be a Supabase project/);
+  const prod = run("postgresql://postgres.frluxwpqqyomiqmjzavd@localhost:5432/postgres");
+  assert.match(prod.stderr, /must not be staging or production/);
+});
+
 test("end to end: encrypt, decrypt, restore and compare", { skip: !process.env.HUNGRY_TEST_PG_URL }, () => {
   const url = process.env.HUNGRY_TEST_PG_URL; // postgresql://user:pw@host:5432/<db>
   const scratch = process.env.HUNGRY_TEST_PG_SCRATCH_URL; // empty database to restore into
@@ -117,7 +130,7 @@ test("end to end: encrypt, decrypt, restore and compare", { skip: !process.env.H
   assert.ok(fs.readFileSync(file).subarray(0, 22).toString().startsWith("age-encryption.org"));
   assert.deepEqual(fs.readdirSync(out).filter((f) => f.endsWith(".age")).length, 1);
   const drill = spawnSync("bash", ["scripts/db/restore-drill.sh", file, scratch], {
-    env: { ...process.env, AGE_KEY_FILE: keyFile },
+    env: { ...process.env, AGE_KEY_FILE: keyFile, RESTORE_DRILL_CONFIRM: scratch.split("/").pop() },
     encoding: "utf8",
   });
   assert.equal(drill.status, 0, drill.stderr);

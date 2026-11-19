@@ -68,7 +68,7 @@ Needs a scratch Postgres with the same extensions (PostGIS etc.), never staging 
 AGE_KEY_FILE=hungry-backup-key.txt scripts/db/restore-drill.sh prod-<time>.tar.age "<scratch db url>"
 ```
 
-It checks the checksums, restores `data.dump`, recounts every table and compares with `rowstats.tsv`. It prints how long the restore took and `drill ok`, or lists the differences and fails.
+Set `RESTORE_DRILL_CONFIRM=<scratch database name>` too: the drill refuses Supabase hosts and any target you have not named. It checks the checksums, restores `data.dump`, recounts every table and compares with `rowstats.tsv`. It prints how long the restore took and `drill ok`, or lists the differences and fails.
 
 | Date | Copy | Database size | Restore took | Result |
 | --- | --- | --- | --- | --- |

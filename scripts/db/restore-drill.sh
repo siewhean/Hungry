@@ -2,6 +2,7 @@
 # Restore drill: prove a nightly copy restores and time it.
 #   scripts/db/restore-drill.sh <encrypted .tar.age | unpacked backup folder> <scratch db url>
 #   AGE_KEY_FILE=<path to your age private key>   needed when the first argument is a .tar.age
+#   RESTORE_DRILL_CONFIRM=<scratch database name>  required: restore overwrites that database's tables
 # The scratch database must be an empty Postgres with the same extensions (never staging or prod).
 # Restores data.dump, recounts every table with scripts/db/sql/rowstats.sql and compares with the
 # backup's rowstats.tsv. Prints the elapsed seconds and "drill ok" or exits 1 listing the differences.
@@ -13,6 +14,12 @@ case "$(ref_of "$DB_URL")" in
   "$PROD_REF"|uuylnktiipkmcweyqnpd) die "the scratch database must not be staging or production" ;;
 esac
 command -v pg_restore >/dev/null || die "pg_restore not found"
+# pg_restore --clean drops and recreates every table it restores, so the target must be one you name on purpose.
+case "$DB_URL" in
+  *supabase.co*|*supabase.com*) die "the scratch database must not be a Supabase project (staging or production)" ;;
+esac
+SCRATCH_NAME="$(psql "$DB_URL" -X -At -c 'select current_database()' 2>/dev/null)" || die "cannot connect to the scratch database"
+[ "${RESTORE_DRILL_CONFIRM:-}" = "$SCRATCH_NAME" ] || die "this will overwrite tables in database '$SCRATCH_NAME'. Re-run with RESTORE_DRILL_CONFIRM=$SCRATCH_NAME to confirm it is a scratch database."
 
 WORK=""
 trap '[ -z "$WORK" ] || rm -rf "$WORK"' EXIT
