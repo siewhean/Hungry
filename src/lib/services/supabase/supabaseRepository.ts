@@ -1,3 +1,4 @@
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { toHalalStatus, toPriceBasis } from "@/features/detail/priceBasis";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
@@ -267,7 +268,7 @@ function mapVenue(row: Row): VenueSummary {
   return {
     id: toString(row.id),
     buildingId: toString(row.building_id),
-    name: toString(row.name),
+    name: toDisplayName(toString(row.name)),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
     isOpen: toBool(row.is_open, false),
@@ -292,7 +293,7 @@ function mapDish(row: Row, venue?: VenueSummary, presentation?: DishPresentation
     id: toString(row.id),
     venueId: toString(row.venue_id),
     buildingId: toString(row.building_id, venue?.buildingId ?? ""),
-    venueName: venue?.name ?? "",
+    venueName: toDisplayName(venue?.name ?? toString(row.venue_name)),
     unitNumber: venue?.unitNumber ?? "",
     floor: venue?.floor ?? "",
     name: toString(row.name),
@@ -469,7 +470,7 @@ function mapDiscoveryFeedVenue(row: Row): VenueSummary {
   return {
     id: toString(row.venue_id),
     buildingId: toString(row.building_id),
-    name: toString(row.venue_name, toString(row.name)),
+    name: toDisplayName(toString(row.venue_name, toString(row.name))),
     unitNumber: toString(row.unit_number),
     floor: toString(row.floor),
     isOpen: toBool(row.is_open, false),

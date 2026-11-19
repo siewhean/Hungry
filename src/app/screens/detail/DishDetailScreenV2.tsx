@@ -37,6 +37,7 @@ import {
   buildReviewSummary,
   ratingsHeadline,
 } from "@/features/detail/dishReviewSummary";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
 import { useDishReviewActions } from "@/features/detail/useDishReviewActions";
@@ -669,7 +670,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   const isSaved = profile.favouriteDishIds.includes(dish.id);
   // The venue read can fail on its own: keep the dish page and drop venue-only sections.
-  const venueName = venue?.name ?? dish.venueName ?? "This stall";
+  const rawVenueName = venue?.name ?? dish.venueName ?? "This stall";
+  const venueName = toDisplayName(rawVenueName);
   const venueUnit = venue?.unitNumber?.trim();
   const openState = openInfo?.openState ?? { status: "unknown" as const };
   const openStatusLabel = openInfo?.statusLabel ?? "Hours not listed";

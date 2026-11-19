@@ -24,6 +24,7 @@ import { AppText, Avatar } from "@/components/ui";
 import { ZoomableMedia } from "@/components/social/ZoomableMedia";
 import { formatTimeAgo } from "@/lib/date/formatTimeAgo";
 import { formatVenueLine, type HomeFeedItem } from "@/features/home/feed";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useSocialStore } from "@/store/useSocialStore";
 import { useHungryTheme } from "@/theme";
@@ -186,13 +187,14 @@ function FeedPostCardImpl({
   const postTags = (item.tags?.length ? item.tags : item.dishes[0]?.tasteTags)?.slice(0, 4) ?? [];
   // onTextLayout may not report lines on Android: length is the fallback signal.
   const captionOverflows = captionOverflow || item.caption.length > COLLAPSED_CAPTION_MAX_CHARS;
-  const actionTargetName = item.dishes[0]?.name ?? item.venue.name;
+  const venueDisplayName = toDisplayName(item.venue.name);
+  const actionTargetName = item.dishes[0]?.name ?? venueDisplayName;
   const shouldShowFoodContextOverlay = item.showFoodContextOverlay !== false;
   const isOwnAuthor = Boolean(followTargetId && followTargetId === viewerId);
   const isFollowMuted = isFollowingAuthor || isFollowRequested;
   const postAgeLabel = formatPostAge(item.createdAt);
-  const venueLine = formatVenueLine(item.venue);
-  const venueLabel = canAccessMap ? `Show ${item.venue.name} on map` : `Open ${item.venue.name}`;
+  const venueLine = formatVenueLine({ ...item.venue, name: venueDisplayName });
+  const venueLabel = canAccessMap ? `Show ${venueDisplayName} on map` : `Open ${venueDisplayName}`;
   const mediaHint = isCarousel
     ? "Tap the left or right side to change photo. Double tap to like."
     : "Double tap to like.";
@@ -336,7 +338,7 @@ function FeedPostCardImpl({
                   onPress={() => actions.openVenue(item)}
                 >
                   <AppText variant="micro" tone="secondary" numberOfLines={1}>
-                    {item.venue.name}
+                    {venueDisplayName}
                   </AppText>
                 </Pressable>
                 <AppText variant="micro" tone="secondary">
@@ -480,14 +482,14 @@ function FeedPostCardImpl({
                 accessibilityLabel={
                   item.dishes[0]?.id
                     ? `Open ${item.dishes[0]?.name ?? "dish"}`
-                    : `Open ${item.venue.name}`
+                    : `Open ${venueDisplayName}`
                 }
                 hitSlop={8}
                 onPressIn={() => actions.prefetchDish(item)}
                 onPress={() => actions.openDish(item)}
               >
                 <AppText variant="h3" style={{ color: palette.white }}>
-                  {item.dishes[0]?.name ?? item.venue.name}
+                  {item.dishes[0]?.name ?? venueDisplayName}
                 </AppText>
               </Pressable>
               <Pressable

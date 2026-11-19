@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { FloatingBackButton } from "@/components/detail/FloatingBackButton";
 import { AccessibleImage, AppText } from "@/components/ui";
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { formatDishPrice } from "@/features/detail/dishPrice";
 import type { DishPrefill } from "@/features/detail/dishPrefill";
 import { useHungryTheme } from "@/theme";
@@ -58,7 +59,7 @@ export function DishLoadingPreview({ prefill, onBack }: Props) {
         </View>
         {prefill.venueName ? (
           <AppText variant="bodyBold" tone="secondary" numberOfLines={1}>
-            {prefill.venueName}
+            {toDisplayName(prefill.venueName)}
           </AppText>
         ) : null}
         <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>

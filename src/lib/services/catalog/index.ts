@@ -1,3 +1,4 @@
+import { toDisplayName } from "@/features/detail/stallDisplayName";
 import { toPriceBasis } from "@/features/detail/priceBasis";
 import type { PriceBasis } from "@/types/domain";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
@@ -555,7 +556,7 @@ function mapDishCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Cat
     venueId: asString(row.venue_id) ?? "",
     buildingId: asString(row.building_id) ?? "",
     name: asString(row.name) ?? "Unnamed dish",
-    venueName: asString(row.venue_name) ?? "Unknown venue",
+    venueName: toDisplayName(asString(row.venue_name) ?? "Unknown venue"),
     buildingName: asString(row.building_name),
     buildingType: asString(row.building_type),
     description: asString(row.description),
@@ -591,7 +592,7 @@ function mapVenueCard(value: unknown, sourceRpc: ServerFilteredCardImageRpc): Ca
   return {
     id: asString(row.id) ?? "",
     buildingId: asString(row.building_id) ?? "",
-    name: asString(row.name) ?? "Unnamed venue",
+    name: toDisplayName(asString(row.name) ?? "Unnamed venue"),
     buildingName: asString(row.building_name),
     buildingType: asString(row.building_type),
     address: asString(row.address),
