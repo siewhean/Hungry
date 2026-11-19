@@ -1106,3 +1106,17 @@ CodeRabbit completed 14 successful scopes against the frozen Hungry-main source 
   - `npm run typecheck` passed with 0 errors.
   - Live production RPC queries (`get_venue_detail`, `catalog_raw_venues_page`) verified clean.
 
+
+### 2026-11-19 — Operating Hours Layout, Full Day Names, and Chronological Day Sequence
+- **Issue**: Operating hours displayed short form ("Mon", "Tue"), Monday to Sunday static sequence when opened via schedule/general hours, and wide space-between gap on expanded card.
+- **Resolution**:
+  - `src/utils/operatingHours.ts`: `formatHoursRows` always formats all 7 days with full day names (`Thursday`, `Friday`, `Saturday`, `Sunday`, `Monday`, `Tuesday`, `Wednesday`) starting from current day when `now` is provided.
+  - `src/utils/openingSchedule.ts`: `formatScheduleRows` provides full day names starting from current day when `now` is provided, with "Closed" fallback for empty days.
+  - `src/features/detail/stallOpenState.ts`: Defaulted `now = input.now ?? new Date()` in `resolveStallOpenInfo`, ensuring chronological 7-day week rows always receive current time.
+  - `src/app/screens/detail/StallDetailScreen.tsx`: Removed `justifyContent: "space-between"` and multi-column flex container; replaced with standard single-line `<AppText>{row.label}: {row.text}</AppText>` layout with `paddingLeft: spacing[6]` matching collapsed `Today` row with zero abnormal gap. When collapsed, renders `Today: 8:00 AM - 6:00 PM`; when expanded, reveals full 7-day chronological sequence starting from today.
+- **Verification**:
+  - 57/57 tests passed (`stallDetail.render.test.tsx`, `stallOpenState.test.ts`, `operatingHours.test.ts`, `merchant-medium-low-decisions.test.ts`, `detail-location-actions-contracts.test.ts`, `detail-v2-data-contracts.test.ts`).
+  - `npm run typecheck` passed (0 errors).
+  - Deployed OTA production update to EAS:
+    - iOS Update ID: `01a1f398-83f0-7ec8-8912-5696bfc21ba8` (Group: `4567650d-d9a0-4105-bbee-0e05aa80e163`)
+    - Android Update ID: `01a1f398-83f0-76a6-ab7f-3683648c6df1` (Group: `edbb55cb-c5ad-499b-b30c-f0a7211b9bb5`)
