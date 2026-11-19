@@ -19,10 +19,16 @@ load_env staging
 [ "$DB_REF" = "$STAGING_REF" ] || die "STAGING_DB_URL points at '$DB_REF', not the staging project '$STAGING_REF'"
 # The ref in the user name is not enough: psql must connect to a Supabase pooler or staging's own
 # direct host. So the whole URL has to match one strict shape: plain user name (no encoding), one host
-# (no fallback list), an optional port, a database name and at most one sslmode option. Anything else
+# (no fallback list), an optional port, a database name and at most one sslmode option that is require or stronger. Anything else
 # (host/hostaddr in any spelling, percent-encoded keys, a second host) is refused before psql runs.
-url_re='^postgres(ql)?://[A-Za-z0-9._-]+@(aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com|db\.'"$STAGING_REF"'\.supabase\.co)(:[0-9]+)?/[A-Za-z0-9_]+(\?sslmode=[a-z-]+)?$'
+url_re='^postgres(ql)?://[A-Za-z0-9._-]+@(aws-[0-9]+-[a-z0-9-]+\.pooler\.supabase\.com|db\.'"$STAGING_REF"'\.supabase\.co)(:[0-9]+)?/[A-Za-z0-9_]+(\?sslmode=(require|verify-ca|verify-full))?$'
 [[ "$DB_URL" =~ $url_re ]] || die "STAGING_DB_URL must look like postgresql://USER@HOST:PORT/DB where HOST is a Supabase pooler or the staging direct host (one host, no other options)"
+
+# TLS is always on: without an sslmode in the URL libpq would fall back to plain text, so default to
+# require, and refuse a weaker mode from the environment. (Require encrypts but does not check the
+# certificate; verify-full needs the Supabase root CA, so it stays optional.)
+export PGSSLMODE="${PGSSLMODE:-require}"
+case "$PGSSLMODE" in require|verify-ca|verify-full) ;; *) die "PGSSLMODE '$PGSSLMODE' is weaker than require" ;; esac
 
 case "$1" in
   seed)

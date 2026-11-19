@@ -125,6 +125,8 @@ test("the wrapper refuses a staging user name on any other host, and a host over
     `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543,attacker.example:5432/postgres`,
     `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require&host=attacker.example`,
     `postgresql://%70ostgres.${STAGING_REF}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=disable`,
+    `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=prefer`,
   ]) {
     const result = runWrapper("reset", { STAGING_DB_URL: url });
     assert.notEqual(result.status, 0, url);
@@ -134,6 +136,9 @@ test("the wrapper refuses a staging user name on any other host, and a host over
   assert.equal(runWrapper("reset", { STAGING_DB_URL: direct }).status, 0);
   const pooled = `postgresql://${user}@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?sslmode=require`;
   assert.equal(runWrapper("reset", { STAGING_DB_URL: pooled }).status, 0);
+  const weakEnv = runWrapper("reset", { STAGING_DB_URL: direct, PGSSLMODE: "prefer" });
+  assert.notEqual(weakEnv.status, 0);
+  assert.equal(weakEnv.calls, "", "no database call with a weak PGSSLMODE");
 });
 
 test("the wrapper replaces test activity in one psql call on staging, and only resets for reset", () => {
