@@ -25,7 +25,7 @@ else
   fi
   load_env prod
   # One cheap read. A database login also counts as activity, so the project is not paused for being idle.
-  IFS='|' read -r DB_BYTES STORAGE_BYTES < <(psql_db -At -F '|' -c "select pg_database_size(current_database()), coalesce((select sum((metadata->>'size')::bigint) from storage.objects), 0)")
+  IFS='|' read -r DB_BYTES STORAGE_BYTES < <(psql_db -At -F '|' -c "select pg_database_size(current_database()), coalesce((select sum((metadata->>'size')::bigint) from storage.objects), 0)") || die "could not query database sizes"
 fi
 [[ "$DB_BYTES" =~ ^[0-9]+$ && "$STORAGE_BYTES" =~ ^[0-9]+$ ]] || die "could not read sizes (got '$DB_BYTES' '$STORAGE_BYTES')"
 

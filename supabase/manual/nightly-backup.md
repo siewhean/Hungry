@@ -4,7 +4,7 @@ The Free plan keeps no backups, so `.github/workflows/nightly-backup.yml` takes 
 It does two separate jobs:
 
 - **backup**: dumps production (same dump as `scripts/db/backup.sh prod`), checks it, encrypts it with a key only the owner holds, and keeps it as a GitHub artifact: **14 nights** plus **one Sunday copy for 8 weeks**.
-- **size-check**: reads the database size and the photo storage size. It fails, and GitHub emails the owner, when the database is at **400 MB** or storage at **800 MB** or more. Its login also counts as activity, so the project is not paused for being idle.
+- **size-check**: reads the database size and the photo storage size. It fails when the database is at **400 MB** or storage at **800 MB** or more. Its login also counts as activity, so the project is not paused for being idle. GitHub emails a failed scheduled run only to the user who created the workflow or last changed its `schedule` cron line (or re-enabled it), and only if that user has Actions email notifications on (step 5 below).
 
 Runs at 02:40 Singapore time (18:40 UTC). Schedules only run from `main`.
 
@@ -15,12 +15,12 @@ Runs at 02:40 Singapore time (18:40 UTC). Schedules only run from `main`.
 Pick a password of letters and digits only (no `@ : / ? #`), and keep it for step 3.
 
 ```sql
-create role backup_ro login password '<new password>';
+create role backup_ro login bypassrls password '<new password>';
 grant pg_read_all_data to backup_ro;
 alter role backup_ro set statement_timeout = 0;
 ```
 
-This login can read everything and change nothing. To remove it later: `drop owned by backup_ro; drop role backup_ro;`.
+This login can read everything (`bypassrls` lets `pg_dump` read tables that have row-level security) and change nothing. To remove it later: `drop owned by backup_ro; drop role backup_ro;`.
 
 ### 2. Make the key (on your Mac)
 
@@ -43,6 +43,10 @@ The URL uses the **session** pooler (port 5432): GitHub's runners are IPv4 only,
 ### 4. Run it once
 
 Actions, Nightly backup, Run workflow. Both jobs should be green and the run page lists the artifact `prod-nightly-<date>`.
+
+### 5. Turn on failure emails
+
+GitHub emails a failed scheduled run to the person who last edited the `schedule` line of `nightly-backup.yml` (after the merge, that is whoever merged it). Check GitHub Settings, Notifications, Actions: email on for failed workflows. To test, run the workflow by hand with `BACKUP_AGE_PUBLIC_KEY` temporarily blank and confirm a failure email arrives (manual runs email the person who started them).
 
 Optional repository variables to change the warning lines: `HUNGRY_DB_WARN_MB`, `HUNGRY_STORAGE_WARN_MB`.
 

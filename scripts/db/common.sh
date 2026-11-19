@@ -21,7 +21,7 @@ say() { echo "==> $*"; }
 # Project ref from a Supabase pooler/direct URL, else the database name (local tests).
 ref_of() {
   local url="$1"
-  if [[ "$url" =~ [a-z_]+\.([a-z0-9]{20})@ ]]; then echo "${BASH_REMATCH[1]}"
+  if [[ "$url" =~ ://[a-z_]+\.([a-z0-9]{20})(:[^@]*)?@ ]]; then echo "${BASH_REMATCH[1]}"
   elif [[ "$url" =~ @db\.([a-z0-9]{20})\.supabase\.co ]]; then echo "${BASH_REMATCH[1]}"
   else local tail="${url%%\?*}"; echo "${tail##*/}"; fi
 }

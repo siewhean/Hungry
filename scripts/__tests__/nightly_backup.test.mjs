@@ -89,10 +89,10 @@ test("nightly backup refuses missing settings and a private age key", () => {
   assert.match(priv.stderr, /public key starting with age1/);
 });
 
-test("nightly backup refuses a database that is not production", () => {
-  const key = spawnSync("age-keygen", { encoding: "utf8" });
-  if (key.error) return; // age not installed here; CI installs it
-  const pub = key.stderr.match(/age1[a-z0-9]+/)?.[0];
+const hasAge = !spawnSync("age", ["--version"]).error;
+
+test("nightly backup refuses a database that is not production", { skip: !hasAge && "age is not installed" }, () => {
+  const pub = "age1" + "q".repeat(58);
   const r = sh("scripts/db/nightly-backup.sh", {
     BACKUP_DB_URL: "postgresql://backup_ro.aaaaaaaaaaaaaaaaaaaa:x@localhost:5432/db",
     BACKUP_AGE_PUBLIC_KEY: pub,

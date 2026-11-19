@@ -18,7 +18,8 @@ OUT_DIR="${NIGHTLY_OUT_DIR:-./nightly-out}"
 mkdir -p "$OUT_DIR"
 OUT_DIR="$(cd "$OUT_DIR" && pwd)"
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+ENC=""
+trap 'status=$?; rm -rf "$WORK"; if [ "$status" -ne 0 ] && [ -n "$ENC" ]; then rm -f "$ENC"; fi' EXIT
 
 # Split "user:password@" out of the URL so backup.sh sees a password-free URL, as it expects.
 if [[ "$BACKUP_DB_URL" =~ ^([a-z]+://[^:/@]+):([^@]+)@(.*)$ ]]; then
