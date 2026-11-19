@@ -1,0 +1,92 @@
+name: Nightly backup
+
+# Takes an encrypted copy of production every night and checks how full the free plan is.
+# Setup (two secrets, a read-only database login, the age key): supabase/manual/nightly-backup.md
+# Schedules only run from the default branch, so nothing happens until this is merged.
+
+on:
+  schedule:
+    - cron: "40 18 * * *" # 02:40 Singapore time
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    concurrency:
+      group: nightly-backup
+      cancel-in-progress: false
+    env:
+      BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+      BACKUP_AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Check secrets are set
+        run: |
+          [ -n "$BACKUP_DB_URL" ] || { echo "::error::Secret BACKUP_DB_URL is not set"; exit 1; }
+          [ -n "$BACKUP_AGE_PUBLIC_KEY" ] || { echo "::error::Secret BACKUP_AGE_PUBLIC_KEY is not set"; exit 1; }
+
+      - name: Install age and a pg_dump as new as the server
+        run: |
+          set -euo pipefail
+          # Fail the step if the server cannot be reached; the major version picks the client.
+          export PGPASSWORD="$(printf '%s' "$BACKUP_DB_URL" | sed -E 's#^[a-z]+://[^:/@]+:([^@]+)@.*#\1#')"
+          URL_NO_PW="$(printf '%s' "$BACKUP_DB_URL" | sed -E 's#^([a-z]+://[^:/@]+):[^@]+@#\1@#')"
+          MAJOR="$(psql "$URL_NO_PW" -X -At -c 'show server_version_num' | cut -c1-2)"
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq "postgresql-client-${MAJOR}"
+          echo "/usr/lib/postgresql/${MAJOR}/bin" >>"$GITHUB_PATH"
+
+      - name: Take, check and encrypt the copy
+        id: backup
+        run: scripts/db/nightly-backup.sh
+
+      - name: Name the copy
+        id: name
+        run: |
+          echo "day=$(date -u +%Y%m%d)" >>"$GITHUB_OUTPUT"
+          echo "weekly=$([ "$(date -u +%u)" = 7 ] && echo true || echo false)" >>"$GITHUB_OUTPUT"
+
+      - name: Keep nightly copy (14 nights)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: prod-nightly-${{ steps.name.outputs.day }}
+          path: ${{ steps.backup.outputs.file }}
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+      - name: Keep weekly copy (Sundays, 8 weeks)
+        if: steps.name.outputs.weekly == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: prod-weekly-${{ steps.name.outputs.day }}
+          path: ${{ steps.backup.outputs.file }}
+          if-no-files-found: error
+          retention-days: 56
+          compression-level: 0
+
+  size-check:
+    # Separate job so a full database is reported even if the copy fails, and the other way round.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      BACKUP_DB_URL: ${{ secrets.BACKUP_DB_URL }}
+      SIZE_DB_WARN_MB: ${{ vars.HUNGRY_DB_WARN_MB || '400' }}
+      SIZE_STORAGE_WARN_MB: ${{ vars.HUNGRY_STORAGE_WARN_MB || '800' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Check database and photo storage size
+        run: scripts/db/size-check.sh

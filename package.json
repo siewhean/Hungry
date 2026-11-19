@@ -41,6 +41,7 @@
     "test:n-plus-one": "node --test scripts/__tests__/check_n_plus_one.test.mjs",
     "audit:supabase:migration-safety": "node scripts/check-migration-safety.mjs",
     "test:migration-safety": "node --test scripts/__tests__/check_migration_safety.test.mjs",
+    "test:nightly-backup": "node --test scripts/__tests__/nightly_backup.test.mjs",
     "audit:supabase:advisor-security": "node scripts/supabase-advisor-security-classifier.mjs",
     "audit:supabase:advisor-security:non-password": "node scripts/supabase-advisor-security-classifier.mjs --fail-on-external --ignore-leaked-password",
     "audit:supabase:advisor-support-snapshot": "node scripts/supabase-advisor-support-snapshot.mjs",
