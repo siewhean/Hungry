@@ -1,5 +1,5 @@
-import { test, expect } from "./fixtures";
-import { expectPostCaptionVisible, publishPostFromComposer, uniqueCaption } from "./helpers/app";
+import { test } from "./fixtures";
+import { openPublishedPost, publishPostFromComposer, uniqueCaption } from "./helpers/app";
 
 test.describe("post generation and publishing", () => {
   test.beforeEach(async ({}, testInfo) => {
@@ -9,12 +9,12 @@ test.describe("post generation and publishing", () => {
     );
   });
 
-  test("publishes a generated post and shows it in the home feed", async ({ page }, testInfo) => {
+  test("publishes a generated post and shows it on its post page", async ({ page }, testInfo) => {
     const caption = uniqueCaption(testInfo);
 
     await publishPostFromComposer(page, caption);
     await page.getByRole("button", { name: "View Post" }).first().click();
 
-    await expectPostCaptionVisible(page, caption, "home-social-feed");
+    await openPublishedPost(page, caption);
   });
 });

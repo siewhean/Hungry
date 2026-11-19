@@ -69,15 +69,3 @@ test("every review card uses the one Helpful vote, and stall cards put the stars
   const footer = stallCard.slice(stallCard.indexOf("<ReviewReaderActions"));
   assert.doesNotMatch(footer, /rating=\{review\.rating\}/, "no second row of stars in the footer");
 });
-
-test("the review share sheet reports what it catches", () => {
-  const sheet = read("src/app/screens/review/ReviewShareSheet.tsx");
-  assert.match(
-    sheet,
-    /reportError\(error, \{ screen: "ReviewShareSheet", action: "list_conversations" \}\)/,
-  );
-  assert.match(
-    sheet,
-    /reportError\(firstFailure\?\.reason, \{\s*screen: "ReviewShareSheet",\s*action: "share_to_chat",?\s*\}\)/,
-  );
-});

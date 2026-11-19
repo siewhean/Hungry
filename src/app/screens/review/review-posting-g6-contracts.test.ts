@@ -191,9 +191,9 @@ test("L11: dead review code is gone", () => {
   assert.doesNotMatch(store, /failedPhotoUris|markPhotoFailed|clearFailedPhoto/);
 });
 
-test("L13: the share sheet is short without in-app recipients and the link is sent once", () => {
+test("L13: the share sheet is link-only and short, and the link is sent once", () => {
   const sheet = read("src/app/screens/review/ReviewShareSheet.tsx");
-  assert.match(sheet, /directMessagesEnabled \? "62%" : 150 \+ bottomInset \+ 24/);
+  assert.match(sheet, /\[150 \+ bottomInset \+ 24\]/);
   assert.match(
     sheet,
     /Platform\.OS === "ios"\s*\? \{ message: activeReview\.message, url: link \}/,

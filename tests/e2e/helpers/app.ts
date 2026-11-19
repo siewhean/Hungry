@@ -164,7 +164,10 @@ export async function createEmailAccountFromScratch(page: Page, prefix: string) 
   await page.getByRole("button", { name: "Sign in to existing account" }).click();
   await page.getByRole("button", { name: "Create account" }).click();
   // Create account leads with an emailed code; these tests use the password form.
-  await page.getByRole("button", { name: "Use a password instead" }).filter({ visible: true }).click();
+  await page
+    .getByRole("button", { name: "Use a password instead" })
+    .filter({ visible: true })
+    .click();
   // Login stays mounted (hidden) under SignUp, so pick the visible fields.
   await page.getByLabel("Name shown on your reviews").filter({ visible: true }).fill(user.name);
   await page
@@ -219,6 +222,83 @@ export async function publishPostFromComposer(
 export async function expectPostCaptionVisible(page: Page, caption: string, testId?: string) {
   const scope = testId ? page.getByTestId(testId) : page;
   await expect(scope.getByText(caption).first()).toBeVisible();
+}
+
+/**
+ * The id the mock service gave a published post, read from the same local storage the app
+ * persists posts in. Null until the post has been published in this browser.
+ */
+export async function getPublishedPostIdByCaption(page: Page, caption: string) {
+  return page.evaluate((expectedCaption) => {
+    const candidates: unknown[] = [];
+    const publishedStore = window.localStorage.getItem("hungry-published-posts-v1");
+    const mockStore = window.localStorage.getItem("@mock_published_stall_posts");
+
+    if (publishedStore) {
+      try {
+        const parsed = JSON.parse(publishedStore) as { state?: { posts?: unknown[] } };
+        candidates.push(...(parsed.state?.posts ?? []));
+      } catch {
+        // Ignore malformed test storage and fall back to mock service state.
+      }
+    }
+
+    if (mockStore) {
+      try {
+        const parsed = JSON.parse(mockStore) as unknown[];
+        candidates.push(...parsed);
+      } catch {
+        // Ignore malformed test storage.
+      }
+    }
+
+    const match = candidates.find(
+      (post): post is { id: string; caption: string } =>
+        Boolean(post) &&
+        post !== null &&
+        typeof post === "object" &&
+        "id" in post &&
+        "caption" in post &&
+        (post as { caption?: unknown }).caption === expectedCaption,
+    );
+
+    return match?.id ?? null;
+  }, caption);
+}
+
+/**
+ * Reloads the page and waits until the app is mounted again (the Developer Launcher is on screen).
+ * React Navigation listens for history changes from an effect after it has read the first URL, so
+ * a path pushed with openPathInApp before the app is back up can be lost: wait here first.
+ */
+export async function reloadApp(page: Page) {
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await authenticateMockDeveloperSession(page);
+}
+
+/**
+ * Moves the running app to a path through the browser history, the way a link inside the app does,
+ * without reloading: in-memory state (the signed-in mock user and their posts) stays as it is.
+ * After a reload, call reloadApp first so the app is listening.
+ */
+export async function openPathInApp(page: Page, path: string) {
+  await page.evaluate((target) => {
+    window.history.pushState({}, "", target);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, path);
+}
+
+/**
+ * Opens a published post's own page (`/post/:postId`, the page a shared link or an Activity update
+ * opens) for the signed-in mock user, without reloading the app. The Home tab is no longer a posts feed, so this page, the
+ * author's profile and the Review feed are where a post shows up.
+ */
+export async function openPublishedPost(page: Page, caption: string) {
+  const postId = await getPublishedPostIdByCaption(page, caption);
+  expect(postId, `no published post with the caption "${caption}" in storage`).toBeTruthy();
+  await openPathInApp(page, `/post/${postId}`);
+  await expectPostCaptionVisible(page, caption);
+  return postId as string;
 }
 
 export function uniqueCaption(testInfo: TestInfo) {

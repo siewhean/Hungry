@@ -106,22 +106,12 @@ test("share attribution is cleared once a signup is credited to it", async () =>
   );
 });
 
-test("GPS refreshes on foreground and first follow asks for push inline", () => {
+test("GPS refreshes on foreground and the first activation is tracked", () => {
   const bootstrap = read("src/hooks/useAppBootstrap.ts");
   assert.match(bootstrap, /AppState\.addEventListener\("change"/);
   assert.match(bootstrap, /useLocationStore\.getState\(\)\.refreshLocation\(\)/);
   // A cold launch always re-reads GPS so a user who moved isn't stuck on the old area.
   assert.match(bootstrap, /onFinishHydration\(refreshLocationOnLaunch\)/);
   assert.match(bootstrap, /refreshLocation\(\{ force: true \}\)/);
-
-  const follow = read("src/components/stall/FollowStallButton.tsx");
-  assert.match(follow, /registerForStallAlerts\(\)/);
-  // The prompt only appears when stall alerts can actually fire (detail-M13).
-  assert.match(follow, /STALL_ALERTS_CAN_FIRE && isFirstFollow/);
-
-  assert.match(
-    read("src/app/screens/profile/SettingsScreen.tsx"),
-    /rootNavigation\.navigate\("MainTabs", \{\s*screen: "Profile",\s*params: \{ screen: "FollowedStalls" \},/,
-  );
   assert.match(read("src/store/useProfileStore.ts"), /trackAnalyticsEvent\("activated"/);
 });

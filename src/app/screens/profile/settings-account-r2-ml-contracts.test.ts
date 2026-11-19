@@ -329,9 +329,6 @@ test("notification switches show the saved value, dimmed, while the OS blocks no
 // --- Copy, labels, touch targets, links (L1, L2, L7, L8, L9, L11, L17) -------------------
 
 test("left-handed mode no longer right-aligns post text (L1)", () => {
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
-  assert.doesNotMatch(home, /textAlign: leftHandedMode/);
-  assert.doesNotMatch(home, /alignSelf: leftHandedMode/);
   // Posts are archived; the row now names the only floating button it moves.
   assert.doesNotMatch(settings(), /like and save buttons on posts/);
   assert.match(settings(), /Moves the add button on your merchant menu to the left side\./);

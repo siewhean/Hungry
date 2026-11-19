@@ -17,7 +17,6 @@ test("full project audit P0: production feature flags and floorplan gating match
   const mapZoom = read("src/app/screens/discover/MapZoomedInScreen.tsx");
   const developerLauncher = read("src/app/screens/dev/DeveloperLauncherScreen.tsx");
 
-  assert.equal(flags.directMessagesEnabled, false);
   assert.equal(flags.gamificationEnabled, false);
   assert.equal(flags.collectionsEnabled, false);
   assert.equal(flags.storiesEnabled, false);
@@ -59,8 +58,6 @@ test("full project audit P0: social safety, public profiles, and chat sends are 
     socialSafety,
     /revoke insert, update, delete on table content_reports from anon, authenticated/i,
   );
-  assert.match(service, /\.rpc\("send_chat_message"/);
-  assert.doesNotMatch(service, /\.from\("messages"\)\s*\.insert\(\{/);
 
   assert.match(publicProfiles, /create table if not exists public\.public_profiles/i);
   assert.match(publicProfiles, /alter table public\.public_profiles enable row level security/i);

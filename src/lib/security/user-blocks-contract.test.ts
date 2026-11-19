@@ -42,14 +42,9 @@ test("blocks are keyed by the author's user id, never the display name", () => {
 });
 
 test("feeds filter blocked authors by id and drop reported reviews", () => {
-  const home = readRepoFile("src/app/screens/home/HomeFeedScreen.tsx");
   const reviewFeed = readRepoFile("src/app/screens/review/ReviewFeedScreen.tsx");
   const socialPost = readRepoFile("src/app/screens/profile/SocialPostDetailScreen.tsx");
 
-  assert.doesNotMatch(home, /targetAuthorKey/);
-  assert.match(home, /item\.authorId\?\.trim\(\) !== blockedAuthorId/);
-  assert.match(home, /authorId: item\.authorId,/);
-  assert.match(home, /authorId: comment\.userId,/);
   assert.doesNotMatch(socialPost, /targetAuthorKey/);
   assert.match(socialPost, /authorId: feedPost\.authorId,/);
 
@@ -121,7 +116,7 @@ test("comment sheet and activity post react to blocks; sign-out clears local fil
     activityPost,
     /onHidden: \(\) => \{\s*onSafetyHidden\(\);[\s\S]*?onBlocked: onSafetyHidden/,
   );
-  assert.match(activityPost, /\[publishedPosts, repository, safetyFilterVersion\]/);
+  assert.match(activityPost, /\[publishedPosts, repository, safetyFilterVersion, fetchState\]/);
 
   assert.match(helper, /export function clearCommunitySafetySessionState\(\)/);
   assert.match(

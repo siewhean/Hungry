@@ -9,26 +9,16 @@ function read(relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
-test("activity inbox hides message surfaces when direct messages are disabled", () => {
+test("direct messages are gone from the inbox, the share sheets and the navigator", () => {
   const activity = read("src/app/screens/home/ActivityInboxScreen.tsx");
-  const home = read("src/app/screens/home/HomeFeedScreen.tsx");
   const reviewShare = read("src/app/screens/review/ReviewShareSheet.tsx");
   const profile = read("src/app/screens/profile/ProfileHomeScreen.tsx");
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
-  assert.match(
-    activity,
-    /FEATURE_FLAGS\.directMessagesEnabled\s+\?\s+\["messages", "updates"\]\s+:\s+\["updates"\]/,
-  );
-  assert.match(activity, /route\.params\?\.initialTab \?\? "messages"/);
-  assert.match(activity, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
-  assert.match(rootNavigator, /FEATURE_FLAGS\.directMessagesEnabled \? \(/);
-  assert.match(rootNavigator, /name="ChatDetail"/);
-  assert.match(rootNavigator, /name="DirectMessages"/);
-  for (const source of [home, reviewShare, profile]) {
-    assert.match(source, /if \(!FEATURE_FLAGS\.directMessagesEnabled\)/);
-    assert.match(source, /directMessagesEnabled \? shareRecipients : \[\]/);
-    assert.match(source, /footerComponent=\{\s*directMessagesEnabled/);
+  assert.doesNotMatch(activity, /\.chat\b|ChatDetail|MessagesTab|activity-tab-messages/);
+  assert.doesNotMatch(rootNavigator, /ChatDetail|DirectMessages/);
+  for (const source of [reviewShare, profile]) {
+    assert.doesNotMatch(source, /sharePostToChat|shareRecipients|FloatingShareSendButton/);
   }
 });
 
@@ -39,5 +29,4 @@ test("activity updates avoid per-row repository scans and token leaks", () => {
   assert.match(activity, /postById\.get\(update\.postId\)/);
   assert.doesNotMatch(activity, /posts\.find/);
   assert.doesNotMatch(activity, /#FFFFFF/);
-  assert.match(activity, /textColor=\{palette\.white\}/);
 });

@@ -38,7 +38,6 @@ before(async () => {
   const post = repo.listStallPosts()[0];
   const reviews = await service.reviews.getReviewsForDish(dish.id);
   const stories = await service.social.getStories();
-  const conversations = await service.chat.listConversations();
   const checklist = await service.checklist.createChecklist("Render test list");
   const portfolio = await service.portfolio.createPortfolio({
     name: "Render test list",
@@ -48,7 +47,6 @@ before(async () => {
   params = {
     postRoute: { postId: post.id, updateId: "u1" },
     catalogDish: { kind: "dish", id: dish.id, releaseId: "r1" },
-    chat: { chatId: conversations[0].id, name: conversations[0].title, avatar: "", isOnline: true },
     checklist: { checklistId: checklist.id },
     checklistPicker: { checklistId: checklist.id, mode: "dish" },
     dish: { id: dish.id },
