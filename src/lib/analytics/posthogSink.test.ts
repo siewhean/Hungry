@@ -251,3 +251,15 @@ test("switching the phone off clears a person trait it set, but a team account s
   assert.deepEqual(PostHogStub.personProperties, [], "signed out again: no person to mark");
   sink.setPostHogInternalDevice(false);
 });
+
+test("switching directly from a team account to an ordinary diner resets the previous account mark", () => {
+  sink.resetPostHogUser();
+  sink.setPostHogInternalDevice(false);
+  sink.identifyPostHogUser("team-user", { is_internal: true });
+  sink.identifyPostHogUser("real-diner", { plan: "free" });
+  PostHogStub.personProperties = [];
+
+  sink.setPostHogInternalDevice(false);
+  assert.deepEqual(PostHogStub.personProperties.at(-1), { is_internal: isInternalBuild() });
+  sink.resetPostHogUser();
+});

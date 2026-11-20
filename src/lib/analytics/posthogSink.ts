@@ -147,6 +147,10 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
     return;
   }
 
+  if (identifiedUserId && identifiedUserId !== userId && accountMarkedInternal) {
+    client.reset();
+    registerTrafficProperties(client);
+  }
   identifiedUserId = userId;
   accountMarkedInternal = properties.is_internal === true;
   // Internal traffic also marks the person, so a PostHog person filter works after sign-in.

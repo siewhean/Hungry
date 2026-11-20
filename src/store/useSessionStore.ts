@@ -458,6 +458,7 @@ export const useSessionStore = create<SessionState>()(
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
           clearAccountScopedStores();
           clearAccountLocalHistory();
+          resetPostHogUser();
         }
         set((state) => ({
           isAuthReady: true,
@@ -646,6 +647,7 @@ export const useSessionStore = create<SessionState>()(
           if (previousUserId && nextUserId && previousUserId !== nextUserId) {
             clearAccountScopedStores();
             clearAccountLocalHistory();
+            resetPostHogUser();
           }
           set((state) => ({
             isAuthenticated: true,
