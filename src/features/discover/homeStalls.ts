@@ -11,15 +11,26 @@ import {
 } from "@/features/discover/rankingBalance";
 import { DISTANCE_DECAY_FLOOR, distanceDecayFactor } from "@/lib/ai/tasteEngine";
 import { getVenueOpenState } from "@/utils/operatingHours";
+import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 
-type OpenStateVenue = Pick<VenueSummary, "operatingHours" | "isOpen" | "closedUntil">;
+type OpenStateVenue = Pick<
+  VenueSummary,
+  "operatingHours" | "isOpen" | "closedUntil" | "openingSchedule" | "closureNotice"
+>;
 
 /** The stall page's rule on Home too: a merchant's "Closed today" / "Reopens 3 Nov" comes first. */
 export function openStateOf(venue: OpenStateVenue) {
   if (isClosureActive(venue.closedUntil)) {
     return { status: "closed" as const, detail: getClosureLabel(venue.closedUntil) };
   }
-  return getVenueOpenState(venue.operatingHours, venue.isOpen);
+  // The structured schedule (a merchant's, or the one read from the hours board) wins over the
+  // listed text, as on the stall page.
+  // A false flag only means "closed" when the stall also says why; on its own it is a stale
+  // default and the hours decide, as on the stall page (R5-STALL-13).
+  const isOpen = venue.isOpen || !venue.closureNotice?.trim();
+  return hasWeeklyHours(venue.openingSchedule)
+    ? getScheduleOpenState(venue.openingSchedule, isOpen)
+    : getVenueOpenState(venue.operatingHours, isOpen);
 }
 
 export type HomeStallCard = { venue: VenueSummary; topDish?: DishDetail };

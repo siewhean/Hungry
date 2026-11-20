@@ -282,6 +282,7 @@ function mapVenue(row: Row): VenueSummary {
     buildingName: toString(row.building_name) || undefined,
     address: toString(row.address) || undefined,
     postalCode: toString(row.postal_code) || undefined,
+    openingSchedule: toVenueOpeningSchedule(row.opening_schedule),
   };
 }
 
