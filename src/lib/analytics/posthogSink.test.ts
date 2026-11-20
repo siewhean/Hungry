@@ -227,7 +227,43 @@ test("an account's team mark that arrives after sign-in marks the person and lat
 
   sink.setPostHogInternalDevice(false);
   assert.deepEqual(PostHogStub.personProperties.at(-1), { is_internal: true });
+  assert.equal(
+    sink.resetPostHogUser(),
+    true,
+    "sign-out reports a team account so its event is marked",
+  );
+  assert.equal(sink.resetPostHogUser(), false, "nobody is signed in now");
+});
+
+test("the account mark is registered before the identify and person-trait calls", () => {
   sink.resetPostHogUser();
+  const order: string[] = [];
+  const { identify, register, setPersonProperties } = prototype;
+  prototype.identify = function () {
+    order.push("identify");
+  };
+  prototype.register = function (properties) {
+    if ((properties as { is_internal?: boolean }).is_internal) order.push("register");
+    return Promise.resolve();
+  };
+  prototype.setPersonProperties = function () {
+    order.push("setPersonProperties");
+  };
+  try {
+    sink.identifyPostHogUser("order-user", { is_internal: true });
+    assert.deepEqual(order, ["register", "identify"]);
+    sink.resetPostHogUser();
+    order.length = 0;
+    sink.identifyPostHogUser("order-user-2", {});
+    order.length = 0;
+    sink.markPostHogAccountInternal("order-user-2");
+    assert.deepEqual(order, ["register", "setPersonProperties"]);
+  } finally {
+    prototype.identify = identify;
+    prototype.register = register;
+    prototype.setPersonProperties = setPersonProperties;
+    sink.resetPostHogUser();
+  }
 });
 
 test("switching the phone off clears a person trait it set, but a team account stays internal", () => {

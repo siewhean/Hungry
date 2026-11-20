@@ -153,6 +153,8 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
   }
   identifiedUserId = userId;
   accountMarkedInternal = properties.is_internal === true;
+  // Registered first, so the identify event itself carries the mark too.
+  if (accountMarkedInternal) registerAccountMark(client);
   // Internal traffic also marks the person, so a PostHog person filter works after sign-in.
   const internal = isInternalBuild() || deviceMarkedInternal === true || accountMarkedInternal;
   client.identify(
@@ -161,7 +163,6 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
       sanitizeAnalyticsProperties({ ...properties, ...(internal ? { is_internal: true } : {}) }),
     ),
   );
-  if (accountMarkedInternal) registerAccountMark(client);
 }
 
 function registerAccountMark(client: PostHog): void {
@@ -181,8 +182,8 @@ export function markPostHogAccountInternal(userId: string): void {
   }
 
   accountMarkedInternal = true;
-  client.setPersonProperties({ is_internal: true });
   registerAccountMark(client);
+  client.setPersonProperties({ is_internal: true });
 }
 
 /** Stops PostHog capturing (or resumes it); PostHog remembers the choice across launches. */
@@ -197,17 +198,20 @@ export function setPostHogOptOut(optedOut: boolean): void {
   );
 }
 
-export function resetPostHogUser(): void {
+/** Returns whether the account being signed out was the team's, for the event that follows. */
+export function resetPostHogUser(): boolean {
   const client = getPostHogClient();
   if (!client) {
-    return;
+    return false;
   }
 
+  const wasInternalAccount = accountMarkedInternal;
   client.reset();
   identifiedUserId = null;
   accountMarkedInternal = false;
   // reset() drops super properties, and the next sign-in is on the same phone.
   registerTrafficProperties(client);
+  return wasInternalAccount;
 }
 
 /** Adds properties to every later event (for example lifecycle_state). */

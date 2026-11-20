@@ -286,12 +286,13 @@ export function markInternalAccountFromProfile(
   markPostHogAccountInternal(profileId);
 }
 
-function resetPostHogUser(): void {
+/** Resets the PostHog user; true when the account signing out was the team's. */
+function resetPostHogUser(): boolean {
   resetExperimentSession();
-  if (!shouldEnablePostHogIdentity()) return;
+  if (!shouldEnablePostHogIdentity()) return false;
   const { resetPostHogUser: reset } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
-  reset();
+  return reset();
 }
 
 /**
@@ -555,9 +556,13 @@ export const useSessionStore = create<SessionState>()(
         });
         clearAccountScopedStores();
         clearAuthenticatedProfile();
-        resetPostHogUser();
+        const wasInternalAccount = resetPostHogUser();
         resetSignInTracking();
-        trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "session_expired", ...(wasInternalAccount ? { is_internal: true } : {}) },
+          { userId: profileId },
+        );
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
@@ -594,9 +599,13 @@ export const useSessionStore = create<SessionState>()(
         clearAccountScopedStores();
         clearAccountLocalHistory();
         clearAuthenticatedProfile();
-        resetPostHogUser();
+        const wasInternalAccount = resetPostHogUser();
         resetSignInTracking();
-        trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "manual", ...(wasInternalAccount ? { is_internal: true } : {}) },
+          { userId: profileId },
+        );
       },
       finishPendingSignOut: (): Promise<void> =>
         useSessionStore.getState().signOutPending && getConfiguredDataSource() === "supabase"
@@ -613,9 +622,13 @@ export const useSessionStore = create<SessionState>()(
         });
         clearAccountScopedStores();
         clearAuthenticatedProfile();
-        resetPostHogUser();
+        const wasInternalAccount = resetPostHogUser();
         resetSignInTracking();
-        trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "clear_session", ...(wasInternalAccount ? { is_internal: true } : {}) },
+          { userId: profileId },
+        );
       },
       markHydrated: () => set({ hasHydrated: true }),
       markAuthReady: () => set({ isAuthReady: true }),
