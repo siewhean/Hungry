@@ -136,7 +136,7 @@ test("Open now keeps loading pages while every loaded stall is closed", () => {
   assert.match(screen, /!openNowActive \|\| rows\.length > 0 \|\| items\.length === 0/);
   assert.match(
     screen,
-    /void loadPage\(nextCursor, true\);\s*\}\s*\}, \[openNowActive, rows\.length/,
+    /void loadPage\(nextCursor, true\);\s*\}\s*\}, \[\s*openNowActive,\s*rows\.length/,
   );
   assert.match(screen, /openNowActive && items\.length > 0 && rows\.length === 0 && !nextCursor/);
 });
