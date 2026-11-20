@@ -2,7 +2,9 @@
 -- migrations left it (0023, 0038, 0041, 20260522*, 20260524*, 20260527, 20261022150000, 20261111130000)
 -- and puts chat back into the data export and account deletion.
 -- SCHEMA ONLY: the dropped rows are not in the database any more. Restore them from the backup taken
--- before the up migration (supabase/manual/chat-db-drop-runbook.md), data only, after this file.
+-- before the up migration with scripts/db/restore-chat-tables.sh, after this file. It skips archive
+-- rows whose user or merchant account was deleted in the meantime, imports the rest with foreign keys
+-- enforced, and validates the post_shares foreign key (supabase/manual/chat-db-drop-runbook.md).
 -- The three rate rules the up migration removed are inserted back at the end.
 -- down-loses-data: schema only; the dropped chat rows come back from the pre-drop backup, not from this file.
 
@@ -91,7 +93,9 @@ create unique index if not exists idx_read_receipts_merchant_once
 do $$
 begin
   if not exists (
-    select 1 from pg_constraint where conname = 'read_receipts_message_conversation_fkey'
+    select 1 from pg_constraint
+    where conname = 'read_receipts_message_conversation_fkey'
+      and conrelid = 'public.read_receipts'::regclass
   ) then
     alter table public.read_receipts
       add constraint read_receipts_message_conversation_fkey
@@ -101,15 +105,38 @@ begin
 end
 $$;
 
--- post_shares kept its target_conversation_id column; its foreign key comes back.
+-- post_shares kept its target_conversation_id column, and the up migration left its values in place;
+-- its foreign key comes back. A value that points at a conversation that does not exist (the table is
+-- empty after the up migration) would make a validated foreign key fail and abort the whole rollback,
+-- so in that case the constraint is added NOT VALID: it still guards new rows, and the restore script
+-- nulls the unmatched targets (what ON DELETE SET NULL would have done) and runs VALIDATE CONSTRAINT.
+-- With no such value the constraint is added validated, exactly as it was before the up migration.
 do $$
+declare
+  v_has_dangling_targets boolean;
 begin
   if not exists (
-    select 1 from pg_constraint where conname = 'post_shares_target_conversation_id_fkey'
+    select 1 from pg_constraint
+    where conname = 'post_shares_target_conversation_id_fkey'
+      and conrelid = 'public.post_shares'::regclass
   ) then
-    alter table public.post_shares
-      add constraint post_shares_target_conversation_id_fkey
-      foreign key (target_conversation_id) references public.conversations(id) on delete set null;
+    select exists (
+      select 1
+      from public.post_shares ps
+      where ps.target_conversation_id is not null
+        and not exists (select 1 from public.conversations c where c.id = ps.target_conversation_id)
+    ) into v_has_dangling_targets;
+
+    if v_has_dangling_targets then
+      alter table public.post_shares
+        add constraint post_shares_target_conversation_id_fkey
+        foreign key (target_conversation_id) references public.conversations(id) on delete set null
+        not valid;
+    else
+      alter table public.post_shares
+        add constraint post_shares_target_conversation_id_fkey
+        foreign key (target_conversation_id) references public.conversations(id) on delete set null;
+    end if;
   end if;
 end
 $$;

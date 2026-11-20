@@ -190,6 +190,29 @@ test("the down file recreates every table, function, trigger and policy that was
   assert.match(code(down), /read_receipts replica identity full/);
   assert.match(code(down), /alter publication supabase_realtime add table/);
   assert.match(code(down), /post_shares_target_conversation_id_fkey/);
+  // A constraint name is only unique per table: every "does it exist" guard must be scoped to the
+  // table, or a same-named foreign key on another table makes the guard skip the real one.
+  const guards = [...code(down).matchAll(/from pg_constraint\s+where([^)]*)\)/g)].map((m) => m[1]);
+  assert.equal(guards.length, 2, "expected one pg_constraint guard per recreated foreign key");
+  assert.match(guards[0], /conname = 'read_receipts_message_conversation_fkey'/);
+  assert.match(guards[0], /conrelid = 'public\.read_receipts'::regclass/);
+  assert.match(guards[1], /conname = 'post_shares_target_conversation_id_fkey'/);
+  assert.match(guards[1], /conrelid = 'public\.post_shares'::regclass/);
+  // The up migration keeps post_shares.target_conversation_id values, so a surviving value points at
+  // a conversation that is gone: that case adds the key NOT VALID (the restore script validates it);
+  // otherwise it is added validated so the rehearsal fingerprint equals the pre-migration schema.
+  const shareBlock = code(down).slice(code(down).indexOf("v_has_dangling_targets boolean"));
+  assert.match(
+    shareBlock,
+    /target_conversation_id is not null\s+and not exists \(select 1 from public\.conversations c where c\.id = ps\.target_conversation_id\)/,
+  );
+  assert.match(shareBlock, /on delete set null\s+not valid;/);
+  assert.match(
+    shareBlock,
+    /else\s+alter table public\.post_shares\s+add constraint post_shares_target_conversation_id_fkey\s+foreign key \(target_conversation_id\) references public\.conversations\(id\) on delete set null;/,
+  );
+  // The header must not promise a plain data-only restore: the restore script is the supported path.
+  assert.match(down, /scripts\/db\/restore-chat-tables\.sh/);
   // Same privileges as production ended with: the phone cannot write messages directly.
   assert.match(
     code(down),
@@ -249,6 +272,14 @@ test("the backup script only reads, and the runbook names the order", () => {
   for (const table of DROPPED_TABLES) assert.match(script, new RegExp(`public\\.${table}\\b`));
   assert.doesNotMatch(script, /-c "\s*(drop|delete|update|insert|truncate|alter)\b/i);
   assert.doesNotMatch(script, /pg_restore(?! --list)/);
+  // Counts and dump share one exported snapshot, held open while pg_dump runs, and it is read-only.
+  assert.match(script, /begin isolation level repeatable read read only/);
+  assert.match(script, /pg_export_snapshot\(\)/);
+  assert.match(script, /pg_dump "\$DB_URL" .*--snapshot="\$SNAPSHOT"/);
+  assert.ok(
+    script.indexOf("--snapshot=") < script.indexOf('echo "rollback;" >&3'),
+    "the snapshot session must stay open until pg_dump has finished",
+  );
   const runbook = readRepoFile("supabase/manual/chat-db-drop-runbook.md");
   for (const step of [
     "backup-chat-tables.sh",
@@ -256,10 +287,43 @@ test("the backup script only reads, and the runbook names the order", () => {
     "ship.sh 20261119090000",
     "Ship the app without direct messages",
     "explicit approval",
-    "pg_restore --data-only",
+    "restore-chat-tables.sh",
+    "pg_export_snapshot",
   ]) {
     assert.ok(runbook.includes(step), `runbook is missing: ${step}`);
   }
+});
+
+test("the restore script reconciles deleted accounts before importing, in one transaction", () => {
+  const script = readRepoFile("scripts/db/restore-chat-tables.sh");
+  // One transaction, so an error leaves the database as it was.
+  assert.match(script, /psql "\$DB_URL" -X -q -1 -v ON_ERROR_STOP=1 -f/);
+  // Archive goes to a scratch schema first, not straight into the constrained tables.
+  assert.match(script, /create schema chat_restore_scratch/);
+  assert.match(script, /sed -E 's\/\^COPY public\\\./);
+  for (const table of DROPPED_TABLES) {
+    assert.match(
+      script,
+      new RegExp(`create table chat_restore_scratch\\.${table} \\(like public\\.${table}\\)`),
+    );
+    assert.match(
+      script,
+      new RegExp(`insert into public\\.${table} select \\* from chat_restore_scratch\\.${table}`),
+    );
+  }
+  // Rows of deleted users and merchants are dropped with the live foreign keys' rules.
+  assert.match(script, /public\.user_profiles/);
+  assert.match(script, /public\.merchant_accounts/);
+  assert.match(script, /set created_by_user_id = null/);
+  assert.match(script, /set subject_merchant_account_id = null/);
+  // post_shares targets that point nowhere become NULL, then the NOT VALID key is validated.
+  assert.match(script, /set target_conversation_id = null/);
+  assert.match(script, /validate constraint post_shares_target_conversation_id_fkey/);
+  // It only restores into empty tables, never prints row data, and prod needs a typed confirmation.
+  assert.match(script, /is not empty; this script only restores into empty tables/);
+  assert.match(script, /Failing row/);
+  assert.match(script, /CONFIRM_RESTORE/);
+  assert.doesNotMatch(script.replace(/^\s*#.*$/gm, ""), /--single-transaction/);
 });
 
 test("nothing outside the migration history still reads or writes the dropped tables", () => {

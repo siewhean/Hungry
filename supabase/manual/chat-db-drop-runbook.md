@@ -27,7 +27,7 @@ messages for good; the down migration restores the schema only.
 | `app_user_block_exists`, `app_can_make_user_request_window`, `is_merchant_member` | used by blocks, other rate limits and the merchant portal |
 | `public.chat_messages` (0008 scaffold) and its account-deletion statement | separate legacy table, not part of this drop |
 | `'message'` as a `content_reports` target type | a report-type value, not a table |
-| `scripts/db/backup-chat-tables.sh`, this page | needed for the procedure below |
+| `scripts/db/backup-chat-tables.sh`, `scripts/db/restore-chat-tables.sh`, this page | needed for the procedure below |
 
 ## Order
 
@@ -49,7 +49,10 @@ messages for good; the down migration restores the schema only.
    ```
 
    It writes `chat-data.dump`, `rowcounts.tsv`, `toc.txt` and `MANIFEST` under `~/hungry-backups/`
-   and only reads the database. Also take the normal full backup (`scripts/db/backup.sh prod`).
+   and only reads the database. The row counts and the dump come from one exported snapshot
+   (`pg_export_snapshot` held open while `pg_dump --snapshot` runs), so they always agree even while
+   old app versions are still writing; rows written after the snapshot are not in the backup, and the
+   script prints a NOTE when the live count has moved on. Also take the normal full backup (`scripts/db/backup.sh prod`).
    The dump holds private messages: keep it on the encrypted Mac disk, never upload it.
    Write the row counts in the PR.
 3. **Rehearse on staging**: `scripts/db/rehearse.sh 20261119090000` (applies up, applies down,
@@ -77,19 +80,40 @@ messages for good; the down migration restores the schema only.
 
 - **Schema only**: `scripts/db/rollback.sh prod 20261119090000` runs the down file. It recreates the
   four tables with their indexes, policies, triggers, grants and realtime entries, the functions,
-  the rate rules, and puts the chat statements back into the export and account deletion.
-- **Rows**: the down file cannot bring rows back. Restore them from the step-2 backup, data only,
-  after the down file has run (tested on a scratch Postgres: counts and content matched):
+  the rate rules, and puts the chat statements back into the export and account deletion. If any
+  `post_shares.target_conversation_id` value survived (the up migration keeps the column's values),
+  `post_shares_target_conversation_id_fkey` is added `NOT VALID` instead of failing the rollback;
+  without such values it is added validated, exactly as before.
+- **Rows**: the down file cannot bring rows back. Restore them from the step-2 backup with:
 
   ```bash
-  pg_restore --data-only --no-owner --single-transaction -d "$DB_URL" <backup dir>/chat-data.dump
+  scripts/db/restore-chat-tables.sh prod <backup dir>     # staging|prod; prod asks you to type chat-restore
   ```
 
-  Compare `select count(*)` per table with `rowcounts.tsv`.
+  Do not use a plain `pg_restore --data-only --single-transaction`. The chat tables reference
+  `user_profiles` and `merchant_accounts`, so one account deleted after the backup makes a row violate
+  a foreign key and rolls the whole import back, including every unrelated chat. The script, in ONE
+  transaction (any error leaves the database as it was):
+  1. checks the backup against its `MANIFEST` and refuses unless the four tables exist and are empty;
+  2. loads the archive into a scratch schema without constraints;
+  3. removes archive rows whose user or merchant no longer exists, with the live foreign keys' rules
+     (`ON DELETE CASCADE` removes the row; `ON DELETE SET NULL` clears `created_by_user_id` /
+     `subject_merchant_account_id`), then rows left without their conversation or message;
+  4. inserts the rest into the real tables with every foreign key enforced;
+  5. sets `post_shares.target_conversation_id` to NULL where the conversation is not there (what
+     `ON DELETE SET NULL` does) and runs `VALIDATE CONSTRAINT` on `post_shares_target_conversation_id_fkey`
+     when the down file had added it `NOT VALID`;
+  6. drops the scratch schema, then prints the backup row counts next to the live counts. A lower live
+     count is expected exactly when accounts were deleted after the backup.
+
+  By hand, if you ever must: the post-restore step for the share foreign key is
+  `update public.post_shares set target_conversation_id = null where target_conversation_id is not null and not exists (select 1 from public.conversations c where c.id = target_conversation_id);`
+  followed by `alter table public.post_shares validate constraint post_shares_target_conversation_id_fkey;`.
 - Messages written after the backup and before the drop are not in the dump.
-- Account deletions that ran after the drop will not have anonymised the restored message rows
-  (the deletion function no longer touched them). Re-run the anonymisation for those accounts, or
-  delete their restored rows, before the app reads them again.
+- Account deletions that ran after the drop did not anonymise the chat rows (the deletion function no
+  longer touched them). A restored row of an account whose profile still exists is restored as it was
+  backed up. Re-run the anonymisation for any such account, or delete its restored rows, before the
+  app reads them again.
 
 ## Why not a forward drop of the other chat leftovers
 
