@@ -16,6 +16,7 @@
     "update:preview": "node ./scripts/publish-eas-update.mjs preview",
     "update:production": "node ./scripts/publish-eas-update.mjs production",
     "typecheck": "node --stack_size=10000 ./node_modules/typescript/bin/tsc --noEmit",
+    "verify:package": "bash scripts/verify-package.sh",
     "test": "HUNGRY_DATA_SOURCE=mock HUNGRY_DISABLE_ASYNC_STORAGE=1 HUNGRY_DISABLE_SECURE_STORE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test $(find src -name '*.test.ts' -print)",
     "test:render": "node scripts/test-render.mjs",
     "test:coverage": "node scripts/test-coverage.mjs",

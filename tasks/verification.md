@@ -1544,12 +1544,15 @@ Use the smallest check that matches the change risk.
 - typecheck clean; onboarding-r4, onboarding and auth render tests pass (61, 22, 24, 12); coverage OK; Playwright onboarding-flow 9/9 (mock web, 390x844); lint 0 errors (45 warnings, unchanged).
 
 ### DISH-R4 dish page fixes (Phase A, no migration), 2026-10-29
+
 - Stacked on #142 (stall page). typecheck clean; npm test 2267 pass; test:render all pass after updating three card-navigation tests for `prefill`; test:coverage OK (baseline global kept at 84.4/85.4/80.4, the lower CI value; per-file entries added); lint 0 errors (warnings unchanged in kind); format:check clean; check:rate-limits, check:n-plus-one, audit:races pass (get_dish_taste_rating_summary is revoked from anon and already shipped in 20261024100000).
 - New tests: dishComponents.render.test.tsx, DishDetailR4.render.test.tsx, dishSources/dishPrefill/dishReviewSummary/dishTasteSummary unit tests, dishTasteRatingSummary.behaviour.test.ts, stall "..." assertion. Playwright tests/e2e/dish-detail.spec.ts on the mock web build (Chromium, 390x844 and 320x640): 4/4 pass across runs (one run saw sandbox-only ERR_TUNNEL_CONNECTION_FAILED image errors). Not run on a device.
 
 ### DISH-R4 re-audit follow-up V1-V7 (PR #154), 2026-10-29
+
 - V1 header says "ratings"; V2 the Food Cred pill waits while the Tried popup is coming and the popup shows the points (useUIStore credHold/credReplay, CredEarnedToast.render.test.tsx); V3 the popup asks the six review-editor taste levels and writes them to the review draft's feltTaste (published through submit_dish_taste_rating by the review screen); V4 report-only safety sheet drops the repeated title (SafetyActionsSheet.render.test.tsx); V5 `prefill` and a dish page's `source` stay out of generated web URLs (RootNavigator.linking.test.ts); V6 stall name allows two lines; V7 allowlist `userRpcs` entry with a reason, checker validates it. V8 not done: distance edits the stall-card lines PR #153 changes; "N tried" and item hours need data.
 - typecheck clean; npm test 2268 pass; test:render 728 pass; check:rate-limits (10 tests), n+1, races, coverage OK; format clean; lint 0 errors.
+
 ### HOME-R4 phase 1, 2026-10-29
 
 - typecheck clean; DiscoverEntryScreen render tests 26/26 (5 audit repros now green), full test:render 654 pass, npm test 2245 pass, test:coverage OK (lines 84.3%); lint 0 errors.
@@ -1624,8 +1627,10 @@ Use the smallest check that matches the change risk.
 - Not changed: photo stays required, taste ratings still collected; no PostHog flag created.
 
 ## 2026-10-31 MAP-DECIDE-R5
+
 - `npm run typecheck` clean; `npm test` (2,499) passes after updating the five contract tests that pinned the old sheet (`displayModeRef`, `snapTo`, stored-flag Open Now); `node scripts/test-render.mjs` (953) passes after the screen matrix expectation moved to "Your pick"; `npm run test:coverage` OK, baseline updated.
 - Not run here: a native iOS build (gorhom sheet feel, SF Symbols, haptics, VoiceOver, largest text size) and the live Mapbox map; both need a device build.
+
 ### SETTINGS-R5, 2026-10-30
 
 - Local Postgres 16 stand-in: migration 20261030130000, its down file (archives consents first) and the smoke `supabase/smoke/consents_and_weekly_picks_off.sql` pass; up, down, up again round-trips.
@@ -1635,80 +1640,102 @@ Use the smallest check that matches the change risk.
 - 2026-10-31 HOME-R5: `npm run typecheck` clean; `npm test` 2492 pass; `npm run test:render` 939 pass; `npm run test:coverage` OK; `tests/e2e/home.spec.ts` 4 of 4 pass (390/320, light/dark, mock data). Lint: 0 errors.
 - 2026-10-31 APPSTORE-1: release-native-profile-contracts.test.ts 9 pass (new: released entitlements, empty committed entitlements, privacy manifest types); marketing legal-readiness-contracts.mjs passes with new Anthropic/Google/Resend/Mapbox/24 hour markers. Not run: native build (needs sh's EAS build to confirm the built ipa entitlements and Info.plist).
 - 2026-10-31 APPSTORE-2: npm test 2583 pass 0 fail; test:render 1050 pass; typecheck clean; test:coverage OK (baseline updated); check:rate-limits, check:edge-functions, check:n-plus-one, audit:races OK. audit:supabase:migration-safety fails ONLY on the missing staging rehearsal file supabase/rehearsals/20261031090000.json (sh runs scripts/db/rehearse.sh 20261031090000). Migration up, smoke (SMOKE_OK) and down then up again verified on a local Postgres 16 stand-in (cron and net stubbed).
+
 ### PROFILE-R5, 2026-10-31
+
 - `npm run typecheck` clean; `npm test` 2554 pass; `node scripts/test-render.mjs` 1036 pass (12 new in `profile-r5.render.test.tsx`, 10 contracts in `profile-r5-contracts.test.ts`); `npm run test:coverage` OK; lint 0 errors.
 - Browser walk (expo web, mock data, Chromium): own profile at 375 and 320 light and 375 dark, quick-access menu, Followers, Following, Follow requests, Review history, Edit profile. Stat labels measure 18 pt tall (one line) at 375 and the row is 2 x 2 at 320; no page errors. The 320 pt Follow requests row swaps Delete for an X.
 - Not run here: `tests/e2e/profile.spec.ts` (the fixture fails on blocked image hosts from this machine; a stat-label case was added), the native `UIMenu`, SF Symbols, haptics, VoiceOver and largest text size (need a device build: `@react-native-menu/menu` is a new native module).
 - PROFILE-R5 follow-ups: `npm run typecheck` clean; render tests and `npm test` re-run after the edits; browser check at 320 and 375 (title 163 pt wide, no ellipsis at 320; radar 256 x 197).
+
 ### HOME-SPEED, 2026-10-31
+
 - `npm run typecheck` clean; `npm test` 2605 pass; `npm run test:render` 0 fail; `npm run test:coverage` OK (baseline updated); `check:n-plus-one` OK; eslint 0 errors on the touched files.
 - New tests: `feedCache.test.ts`, `useDiscoverFeed.live.render.test.tsx` (feed before count, one feed read beside the place lookup, saved feed then live replace), `home-feed-speed.behaviour.test.ts` (closures read beside taste; fails on the old sequential code), `Skeleton.render.test.tsx` (shared sweep, Reduce Motion, text box = line height), skeleton-vs-real parity tests in `homeSections.render.test.tsx` (frame, padding, gaps, line heights; fails when the skeleton body padding is changed), a second-visit case in `DiscoverEntryScreen.render.test.tsx`.
 - Prod read-only (`get_discovery_feed_by_location`): island 2717 ms cold / 466 and 361 ms warm; 3 km 314 ms. Candidate stage 409 ms -> ~105 ms with the KNN pre-filter (inline query, 0-2 of 500 candidates differ at distance ties). Not shipped here.
 - Not run: a device build (shimmer on native, real timings on a phone).
 - Mood search reconnect (search grid): `npm run typecheck`, `npm test` (2602 pass, 2 skipped), `node scripts/test-render.mjs src/app/screens/search/search.render.test.tsx` (62 pass), `npm run test:coverage`, prettier and eslint on the touched files all clean. Not run: a device check against the live Singapore function.
 - HOME-SPEED-DB (2026-11-01): local PG16 stand-in (all migrations pass) with 30,000 synthetic venues and 25 menu venues: old vs new `get_discovery_feed_by_location` return the same venues in the same order for island, 3 km, own-building, named-area and no-position calls; island 190-220 ms to ~69 ms. Down file restores the original function body (md5 equal); re-running the up is a no-op. New smoke `discovery_feed_nearby_prefilter.sql` passes, and fails when the menu-venue clause is removed. `audit:supabase:migration-safety` fails only on the missing `supabase/rehearsals/20261101090000.json` (sh's rehearsal); `check:rate-limits`, `check:n-plus-one`, `audit:races` pass. Not run: staging rehearsal, prod timing after ship.
+
 ### HOME-SPEED-FIRST-PAGE, 2026-11-01
+
 - `npm run typecheck` clean; `npm test` 2617 pass; `npm run test:render` 1115 pass, 0 fail; `npm run test:coverage` OK (baseline updated).
 - New tests: `feedMerge.test.ts` (order, dedupe, fallback, empty full), four hook cases in `useDiscoverFeed.live.render.test.tsx` (first page then merge, late first page ignored, offline or empty first page waits, full-feed failure keeps the first stalls), and a Home screen case in `DiscoverEntryScreen.render.test.tsx`.
 - Local PG16 stand-in smoke `discovery_feed_candidates_follow_limit.sql` passes: limit 10 returns 10 led by the far menu stall; limit 100 returns 100 and keeps it; the full read output is unchanged.
 - Not run: staging rehearsal (sh), prod timing of the limit-10 call (after ship), a device build.
+
 ### PERF-CHECKLIST, 2026-11-01
+
 - `npm run typecheck` clean; `npm test` 2630 pass; `npm run test:render` 1126 pass; `npm run test:coverage` OK (baseline updated); migration safety, n-plus-one, races and rate-limit checks pass.
 - New tests: `shareInFlight.test.ts` (share, no cache, per client, hung request not joined, failure shared), `external-call-timeouts.test.ts` (fails on the old Edge Function code: send-email and report-digest had no signal).
 - Prod read-only: Supabase performance advisor (no missing indexes on hot tables; 74 unindexed FKs, mostly admin/staging/archived-social) and API logs (about 8 bulk table reads at start, near-empty responses).
 - Not run: Edge Functions against the real providers (redeploy by sh), a phone build, a slow-network test.
+
 ### RECS-1, 2026-11-03
+
 - `npm run typecheck` clean; `npm test` 2706 (0 fail); `npm run test:render` 1144 pass; `npm run test:coverage` OK (baseline updated); eslint 0 errors on touched files.
 - New tests: `personalFeedback.test.ts`, `useFeedFeedbackStore.test.ts`, `tasteEngine.distance.test.ts`, `home-personal-feedback-contracts.test.ts`, plus cases in `mallMode.test.ts` and `useProfileStore.feedback.test.ts`.
 - No database change, so no migration, race or rate-limit check applies.
 - Not run: a device build (long press, choice sheet and toast on a phone), PostHog flag for the distance option.
+
 ### ACH-1, 2026-11-03
+
 - `npm run typecheck` clean; `npm test` 2804 (0 fail, 2 skips); `npm run test:render` 1190 pass; `npm run test:coverage` baseline updated (new files 94-100%); eslint 0 errors (3 set-state-in-effect warnings in StampMomentHost, same kind as existing code).
 - New tests: `nextStamp.test.ts`, `unlocks.test.ts`, `useMomentStore.test.ts`, gamification event cases, `achievementsLoop.render.test.tsx` (ring, Home card, moment, host incl. baseline, once-only, kill switch, achievement report), `useNextStamp.render.test.tsx`. Contract test for the weekly goal now reads `useWeeklyGoal.ts`.
 - No database change, so no migration, race or rate-limit check applies. The new startup read is `loadInteractions` (one existing query, once per launch).
 - Not run: a device build. To check on a phone: mark a stall tried that earns a stamp (moment after about 1.2 s, haptics), overlap with the Tried popup and review success modal, ring on the Profile tab, VoiceOver on the moment, Reduce Motion.
+
 ### AUDIT-R6, 2026-11-04
+
 - `npm run typecheck` clean; `npm test`, `npm run test:render` and `npm run test:coverage` pass (counts in the PR); eslint 0 errors on touched files; prettier clean.
 - New tests: `round-six-polish-contracts.test.ts`, `distanceFromDiner` cases in `distanceLabel.test.ts`, the map no-location distance case, the Reviews text-tile and every-review cases, Settings Follow requests hidden/shown, Home feedback-card order.
 - Browser walk (mock data, 390 pt, light and dark): Home header, stall review card and promotion badges, review editor order checked after the change; no page errors.
 - No database change, so no migration, race or rate-limit check applies. Not run: a device build.
-| 2026-10-24 | ONBOARD-SLIDERS-01 slider taste questions | typecheck; full npm test; `test:render`; `eslint src`; `test:coverage` + baseline update; prettier | Pass (npm test 1892/0, test:render 174/0 plus new, eslint 0 errors, tsc, coverage baseline updated) | Native haptics, drag feel and the arc animation need a device check; mascot poses and scene images not in yet. |
-| 2026-10-28 | ONBOARD-SLIDERS-02 new onboarding screens (flagged) | typecheck; full npm test; full `test:render`; `test:coverage` + baseline update; eslint (0 errors); prettier; check:n-plus-one; check:rate-limits; audit:assets | Pass (npm test 2212/0, test:render 510/0, coverage baseline updated) | Native haptics, swipe feel and the loading screen on a device; mascot art is a placeholder; areas, meal times and the personal meal-time push are not saved to the server yet (migration needs sh's staging rehearsal). |
-| 2026-11-04 | SEC-REVIEW-01 security review fixes (PR 1) | migration up, smoke, down, smoke, re-apply, smoke on a local Postgres 16 with stand-in tables (each smoke section fails without the migration); typecheck; `test:coverage`; `test:render`; lint (0 errors); format:check; check:rate-limits; audit:races; check:n-plus-one; check:edge-functions; website tsc, eslint, security-route-contracts | Pass (test:render 1250/0, coverage OK) | Staging rehearsal (`scripts/db/rehearse.sh 20261104120000`) on sh's laptop before merge; prod via ship.sh. |
+  | 2026-10-24 | ONBOARD-SLIDERS-01 slider taste questions | typecheck; full npm test; `test:render`; `eslint src`; `test:coverage` + baseline update; prettier | Pass (npm test 1892/0, test:render 174/0 plus new, eslint 0 errors, tsc, coverage baseline updated) | Native haptics, drag feel and the arc animation need a device check; mascot poses and scene images not in yet. |
+  | 2026-10-28 | ONBOARD-SLIDERS-02 new onboarding screens (flagged) | typecheck; full npm test; full `test:render`; `test:coverage` + baseline update; eslint (0 errors); prettier; check:n-plus-one; check:rate-limits; audit:assets | Pass (npm test 2212/0, test:render 510/0, coverage baseline updated) | Native haptics, swipe feel and the loading screen on a device; mascot art is a placeholder; areas, meal times and the personal meal-time push are not saved to the server yet (migration needs sh's staging rehearsal). |
+  | 2026-11-04 | SEC-REVIEW-01 security review fixes (PR 1) | migration up, smoke, down, smoke, re-apply, smoke on a local Postgres 16 with stand-in tables (each smoke section fails without the migration); typecheck; `test:coverage`; `test:render`; lint (0 errors); format:check; check:rate-limits; audit:races; check:n-plus-one; check:edge-functions; website tsc, eslint, security-route-contracts | Pass (test:render 1250/0, coverage OK) | Staging rehearsal (`scripts/db/rehearse.sh 20261104120000`) on sh's laptop before merge; prod via ship.sh. |
 
 ## 2026-11-04 AUDIT-2026-11-04 batches A-C
+
 - `npm run typecheck` pass; `npm test` 2974 pass; `npm run test:render` 1259 pass; `npm run test:coverage` OK and baseline updated; `npm run lint` 0 errors; `npm run check:n-plus-one` ok.
 - New tests: usualAreas, UsualAreaChips, MealPicksCard, mealPicksNudge, useHomeNudgeStore, ReviewFirstList, menuPalate, meal-times section title, dish picture card, Passport first stamp, Likely a match row, distance decay ranking.
 - No database change, so no migration, race or rate-limit check applies. Not run: a device build.
 
 ## 2026-11-07 FOOD-PORTFOLIO-A
+
 - Migration 20261107090000: up, up again (idempotent), smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables; smoke covers pin order, private account hidden, moderated post excluded, stall counts, approved-only follow feed, keyset paging, anon grants and rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
 - `npm run typecheck` clean; `npm test` pass; new tests: foodPortfolio.behaviour (Supabase), mock foodPortfolio, food-portfolio-migration-contracts, FoodPortfolioSection.render (section, Profile entry, Following feed), featureFlags; screenMatrix row FollowingFeedScreen. `check:rate-limits`, `audit:races`, `check:n-plus-one` pass; eslint 0 errors; prettier clean.
 
 ## 2026-11-07 FOOD-PORTFOLIO-B (leaderboards)
+
 - Migration 20261107120000: up, up again (idempotent), smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables (supabase/race-harness/leaderboard_stubs.sql; the export check in the smoke needs the real schema and runs at staging rehearsal). Smoke covers 10/+5/+5/+3 credit, stall cooldown, no-photo 2 off the board, daily cap of 6, one engagement row per actor per day, self and new-account actions ignored, unfollow and delete and moderation voids, standings (83 week, about 3 trending), Posted tier paid once over two refreshes, 7-day age gate, exclusion, RPCs, anon denied, rate rules, week close written once.
 - `npm run test:races`: all pass, including new T15 (two posts at the daily cap), T16 (two likes from one person), T17 (delete racing a like), T18 (two refreshes), plus down/up for the leaderboard migration.
 - `npm run typecheck` clean; `npm test` 3043/0; `npm run test:render` 1294/0; `npm run test:coverage` OK and baseline updated; eslint 0 errors; prettier; check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety waits on staging rehearsal evidence.
 
 ## 2026-11-07 FOOD-PORTFOLIO-C
+
 - Migration 20261107150000: up, up again, smoke, down, re-apply, smoke on a local Postgres 16 with stand-in tables (bodies "Mei and 1 other posted 3 dishes today." and "Mei posted 2 dishes at <stall> today.", pending/deleted/private/old posts and opted-out/no-device people left out, second run queues 0). Staging rehearsal still to run.
 - `npm run typecheck` clean; `npm test` 3053 pass; `npm run test:render` 1299 pass; test:coverage OK (baseline updated); check:rate-limits, audit:races, check:n-plus-one pass; migration-safety fails only on the missing rehearsal evidence.
 
 ## 2026-11-07 APPLE-DESIGN-01 (whole-app Apple design pass)
+
 - `npx tsc --noEmit` clean; `npm test` 3058 pass then 3060 with the extra own-content tests; `npm run test:render` 1301 pass; `npm run test:coverage` OK (baseline updated); `npm run check:n-plus-one` ok; eslint 0 errors on touched files.
 - All SF Symbol names checked by the strict `SFSymbol` type (sf-symbols-typescript). Browser walk (Expo web, mock data, iPhone 14 viewport) of Home, Reviews, Profile, stall, dish, Search, Decide, Wheel, Settings, Activity, Write a review in light and dark before the change. Web and Android draw the Lucide fallback, so the iOS symbols still need a device build to see.
 - Pre-commit gitleaks unavailable in the cloud sandbox; commit made with the hook off on sh's decision-card approval; CI security workflow runs gitleaks.
+
 ## 2026-11-07 AB-AUDIT-2026-11-07
+
 - Experiment registry: `experiments.test.ts` 23 pass, including a new case that every key resolves a false flag to its fallback; `newSurfaces.render.test.tsx` 4 pass (Leaderboard opening board and pick, Home plain arm, Activity bell count vs dot and its tap event).
 - `npm run typecheck` clean; `npm run test:render` 1303/0; `npm run test:coverage` OK and baseline updated; eslint on touched files 0 errors (3 pre-existing warnings in experiments.ts).
 - PostHog project 373517: 37 draft experiments exist, the 15 flags made today are inactive, active flags still the same 9 (none updated today).
 - 2026-11-07 APPLE-DESIGN-01 r2: tsc clean; npm test 3060 pass; test:render 1303 pass (new activity-inbox.render + Must order chip test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
 
 ## 2026-11-07 CLEANUP-2026-11-07
+
 - No code, test, script or CI reference to any removed path (git grep); typecheck clean; `npm test` 3061/0; `npm run test:render` 1307/0; `npm run test:coverage` OK (baseline unchanged).
 
-
 ## 2026-11-07 SOCIAL-TASTE-01 (followers, taste palette, network picks)
+
 - Migration 20261107180000: up, smoke, down, up, smoke on a local Postgres 16 with stand-in tables; smoke covers follows-you and mutuals, private and blocked people hidden, taste matches capped and null palates left out, suggestions (never yourself, follows, private or blocked), network picks from follows and the taste-twin fallback, moderated reviews excluded, anon grants and the five rate rules. Staging rehearsal still to run (scripts/db/rehearse-pr.sh on sh's laptop).
 - `npm run typecheck` clean; `npm test` 3077/0; `npm run test:render` 1309/0; `npm run test:coverage` OK and baseline updated; eslint 0 errors; prettier clean; check:rate-limits, audit:races, check:n-plus-one pass. audit:supabase:migration-safety waits on the rehearsal evidence.
 - New tests: relationship, tastePalette, networkPicks, socialGraphRows, socialGraph.behaviour (Supabase), mock socialGraph, social-graph-migration-contracts, social-graph.render (hooks, People with your taste, profile header, Following list, Taste Palette, Compare palates, Home rail); screenMatrix rows TastePaletteScreen and TasteCompareScreen. Linking tests now follow activityEnabled.
@@ -1716,16 +1743,24 @@ Use the smallest check that matches the change risk.
 - 2026-11-08 APPLE-DESIGN-01 r3: tsc clean; npm test 3095 pass; test:render 1323 pass (new bell-only badge test); test:coverage OK; check:n-plus-one OK; eslint 0 errors.
 - 2026-11-08 CLEANUP-2026-11-07 backup-table drop (20261108090000): on a throwaway PG16 with the 422 prod rows, up then smoke pass, down restores 422 rows with md5 a29468317dfd2f5a90fbdcb517caeef4 (same as prod), RLS on, anon cannot select; with no buildings the down restores 0 rows (staging case). check:rate-limits, audit:races, check:n-plus-one OK. migration-safety fails only on the missing rehearsal file (sh runs rehearse.sh). Not run: full stand-in (pgvector package unavailable in the cloud machine).
 - 2026-11-16 PKG-1.1 launch zone (20261116130000): on a throwaway PG16 with the staging zone shape (building rows, stalls, dishes, cards in an active and a retired release, updated_at triggers, deferred constraint triggers) the up names and merges the three places, a second run moves nothing, the down restores every buildings/venues/dishes/card row byte for byte (md5 equal before up and after down), and up re-applies after down; smoke supabase/smoke/launch_zone.sql passes there. Contract + behaviour tests pass (launch-zone-migration-contracts, launchZonePlaces.behaviour, bestEffortCatalogFallback, listResilience, catalogMockService); check:rate-limits, audit:races, check:n-plus-one OK. migration-safety fails only on the missing rehearsal file (sh runs rehearse.sh). Not run here: the real staging rehearsal (needs sh's staging DB password), test:render (no screen changed). Review follow-ups (2026-11-17): the down restores each building's saved stall count plus stalls added since the up (old_stall_count; md5 equal with no change, stale saved counts kept, +1 for a new stall, checked on the PG16 harness); listLaunchZonePlaces checks the session before the cache; a registered zone building stays found after a rename. The down only moves a row back while it is still in the building the up put it in (new_building_id in the move backup) and only restores a name or type that is still the one the up set; checked on the PG16 harness (no change: 0 diffs; a stall moved on by an operator and a building renamed after the up both stay as they were).
-| 2026-11-19 | PKG-3.2 staging test activity | `scripts/seed/test-staging-test-activity.sh` (local PG16 stand-in, all migrations + seed, one launch zone building added) | Pass | Seed makes 20 diners with saves, Tried, ratings, 36 reviews, 18 text entries, follows and board rows; checks pass; a second seed over the top is refused; reset then seed gives the identical picture; a failed seed leaves the old activity in place; the final reset puts every table row count, every dish rating value and an unmarked diner's full rows back as before; dishes, venues and buildings unchanged; zone dishes chosen first. Staging itself not run from the cloud (no database access): sh runs `scripts/seed/staging-test-activity.sh seed`. |
-| 2026-11-19 | PKG-3.2 contracts | `npm run check:staging-test-activity`, `npm run audit:races`, `npm run check:n-plus-one`, `npm run check:rate-limits`, `npm run audit:supabase:migration-safety` | Pass | 11 contract tests: same marker in every file, no catalog/media writes, app functions used, repeatable, reset scoped to the marker, wrapper refuses prod, other projects and foreign hosts (stubbed psql). |
+  | 2026-11-19 | PKG-3.2 staging test activity | `scripts/seed/test-staging-test-activity.sh` (local PG16 stand-in, all migrations + seed, one launch zone building added) | Pass | Seed makes 20 diners with saves, Tried, ratings, 36 reviews, 18 text entries, follows and board rows; checks pass; a second seed over the top is refused; reset then seed gives the identical picture; a failed seed leaves the old activity in place; the final reset puts every table row count, every dish rating value and an unmarked diner's full rows back as before; dishes, venues and buildings unchanged; zone dishes chosen first. Staging itself not run from the cloud (no database access): sh runs `scripts/seed/staging-test-activity.sh seed`. |
+  | 2026-11-19 | PKG-3.2 contracts | `npm run check:staging-test-activity`, `npm run audit:races`, `npm run check:n-plus-one`, `npm run check:rate-limits`, `npm run audit:supabase:migration-safety` | Pass | 11 contract tests: same marker in every file, no catalog/media writes, app functions used, repeatable, reset scoped to the marker, wrapper refuses prod, other projects and foreign hosts (stubbed psql). |
 
 ## 2026-11-19 PKG-0.3 nightly backup + size check
+
 - `npm run test:nightly-backup`: 9 pass, 1 skip (end-to-end, needs a Postgres). End-to-end run on a local Postgres 16 with a read-only role: dump, age encrypt, decrypt, `restore-drill.sh` restore, 14 tables match.
 - `npm run test:migration-safety`: 12 pass (after the `ref_of` change in `scripts/db/common.sh`).
 - Not run: the workflow itself (schedules and secrets only exist on GitHub after merge); the pgdg client install step is untested until the first manual run.
 
 ## 2026-11-20 PKG-1.3 real hours + "Open now"
+
 - `npm test`: 3245 pass, 0 fail (new: openingSchedule, openNowFilter, homeStalls schedule, operatingHours shared am/pm). `node scripts/test-render.mjs src/app/screens/search/search.render.test.tsx`: 64 pass (new Open now case). `npm run typecheck` clean; eslint 0 errors on touched files; `npm run check:n-plus-one` ok; `npm run check:zone-hours` 5 pass (added to CI).
 - Real catalog check: every distinct hours line of the 86-stall zone on staging (read-only SELECT, 2026-11-20) was run through the parser; all clear lines gave the expected weekly rows, and the one ambiguous line ("12–11 am, 6 pm–12 am", 1 stall) is left as "Hours not confirmed". 26 stalls have no hours text.
 - `scripts/db/fill-zone-hours.sh` on a throwaway local Postgres 16 (venues + launch_zone_places): dry run writes nothing; --apply fills only clear zone stalls, leaves an existing schedule, an empty line, an unclear line and a stall outside the zone alone; a second run writes 0; --undo clears exactly the ids it wrote.
 - Not run: the script against staging or prod (sh runs it), `npm run test:coverage` locally (this container's Node reports unrelated files as dropped, including on a clean main; CI is the check), a device build.
+
+## 2026-11-21 Wave-0 hygiene + PKG-0.7 waitlist verification
+
+- `./scripts/verify-package.sh src/store/useSessionStore.auth-account-flows.test.ts`: PASS (`9/9` auth tests, `typecheck` clean, `check:rate-limits` `10/10`, `check:n-plus-one` clean, `audit:races` clean, `check:staging-functions` `11/11` after `fileURLToPath` fix, `audit:supabase:migration-safety` clean, `git diff --check` clean).
+- `node --test scripts/__tests__/verify_package.test.mjs scripts/seed/staging-test-activity.test.mjs`: `14/14` pass.
+- `npm --prefix marketing/website/web-v2 run waitlist:e2e`: PASS (foodie + merchant signups stored, welcome email dispatched once, repeat signups idempotent without re-sending email, non-JSON/invalid/missing-business rejected). Website copy left untouched per owner decision.

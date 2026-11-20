@@ -83,11 +83,13 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Shared-link page browser test
+      - name: Shared-link and waitlist browser/API tests
         run: |
           if [ -f marketing/website/web-v2/package.json ]; then
             npm ci --prefix marketing/website/web-v2
             npm --prefix marketing/website/web-v2 run share:e2e
+            npm --prefix marketing/website/web-v2 run waitlist:e2e
+            git checkout -- marketing/website/web-v2/AGENTS.md
           fi
 
       - name: Mock/local Playwright suite
@@ -119,6 +121,7 @@ jobs:
           npm run check:staging-functions
           npm run check:staging-test-activity
           npm run check:zone-hours
+          node --test scripts/__tests__/verify_package.test.mjs
 
       - name: Rate-limit contract
         run: npm run check:rate-limits
