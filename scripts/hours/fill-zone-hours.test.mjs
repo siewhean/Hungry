@@ -43,3 +43,9 @@ test("big lists go to psql by file, never as a command-line argument", () => {
   assert.match(script, /\\set updates `cat :updates_file`/);
   assert.match(script, /\\set undo `cat :undo_file`/);
 });
+
+test("venue ids are compared as text, so a text or uuid id column both work", () => {
+  assert.match(script, /as d\(id text, schedule jsonb\)/);
+  assert.match(script, /v\.id::text = d\.id and v\.opening_schedule is null/);
+  assert.doesNotMatch(script, /as d\(id uuid/);
+});

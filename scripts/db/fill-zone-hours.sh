@@ -35,7 +35,7 @@ if [ -n "$UNDO" ]; then
   [ -f "$UNDO" ] || die "no such file: $UNDO"
   node -e '
     const list = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
-    const ok = Array.isArray(list) && list.every((r) => r && /^[0-9a-f-]{36}$/.test(r.id) && r.schedule && typeof r.schedule === "object");
+    const ok = Array.isArray(list) && list.every((r) => r && typeof r.id === "string" && r.id.length > 0 && r.schedule && typeof r.schedule === "object");
     process.exit(ok ? 0 : 1);
   ' "$UNDO" || die "$UNDO is not a list of {id, schedule} written by --apply"
   # Only a schedule still equal to the one this run wrote is cleared: a merchant's later edit stays.
@@ -45,8 +45,8 @@ if [ -n "$UNDO" ]; then
 begin;
 with cleared as (
   update public.venues v set opening_schedule = null
-    from jsonb_to_recordset(:'undo'::jsonb) as d(id uuid, schedule jsonb)
-   where v.id = d.id and v.opening_schedule = d.schedule
+    from jsonb_to_recordset(:'undo'::jsonb) as d(id text, schedule jsonb)
+   where v.id::text = d.id and v.opening_schedule = d.schedule
   returning v.id)
 select 'schedules cleared: ' || count(*) from cleared;
 commit;
@@ -82,8 +82,8 @@ psql_db -Atq -v updates_file="$WORK/updates.json" > "$WORK/applied.json" <<'SQL'
 begin;
 with changed as (
   update public.venues v set opening_schedule = d.schedule
-    from jsonb_to_recordset(:'updates'::jsonb) as d(id uuid, schedule jsonb)
-   where v.id = d.id and v.opening_schedule is null
+    from jsonb_to_recordset(:'updates'::jsonb) as d(id text, schedule jsonb)
+   where v.id::text = d.id and v.opening_schedule is null
   returning v.id, v.opening_schedule as schedule)
 select coalesce(json_agg(json_build_object('id', id, 'schedule', schedule)), '[]'::json) from changed;
 commit;
