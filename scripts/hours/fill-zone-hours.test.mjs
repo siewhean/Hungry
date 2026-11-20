@@ -16,7 +16,7 @@ test("it is a dry run unless --apply is given", () => {
 
 test("it only fills stalls with no schedule yet, in one statement", () => {
   assert.match(script, /v\.opening_schedule is null and \$SCOPE/);
-  assert.match(script, /where v\.id = d\.id and v\.opening_schedule is null/);
+  assert.match(script, /where v\.id::text = d\.id and v\.opening_schedule is null/);
 });
 
 test("it checks the environment through the shared helper and keeps an undo list", () => {
