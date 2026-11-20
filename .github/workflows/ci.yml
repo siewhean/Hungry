@@ -117,6 +117,7 @@ jobs:
         run: |
           npm run check:edge-functions
           npm run check:staging-functions
+          npm run check:staging-test-activity
 
       - name: Rate-limit contract
         run: npm run check:rate-limits
