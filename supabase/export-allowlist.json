@@ -3,10 +3,8 @@
   "tables": {
     "guest_sessions": "Legacy scaffold from migration 0008; no app code reads or writes it. Holds a device id and expiry only.",
     "orders": "Legacy scaffold from migration 0008; no app code reads or writes it.",
-    "chat_messages": "Legacy scaffold from migration 0008, superseded by messages (exported as messagesSent); no app code writes it.",
+    "chat_messages": "Legacy scaffold from migration 0008; no app code reads or writes it (direct messages and their tables were dropped by 20261119090000).",
     "dishes_draft": "Ops review queue of menu drafts from photo extraction; claimed_by is the reviewer, not content the user created.",
-    "conversations": "Exported through conversation_participants and messagesSent; the conversation row holds no personal content of its own.",
-    "read_receipts": "Delivery markers (message id and time read) rather than content; removed at account deletion. Revisit if a PDPA request asks for them.",
     "moderation_actions": "Security, moderation and legal records; the export's notIncluded list tells users to email support for these.",
     "home_feed_items": "Derived feed cache rebuilt from posts; not data the user provided.",
     "app_ops_admins": "Staff access list, not end-user data.",
