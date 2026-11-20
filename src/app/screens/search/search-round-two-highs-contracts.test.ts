@@ -130,3 +130,13 @@ test("H26: raw cards store only images cleared by catalog_display_image_url", ()
   // Triggers fire in name order; this one must run after the draft trigger.
   assert.ok("trg_catalog_raw_venue_display_images" > "trg_catalog_raw_venue_card_without_drafts");
 });
+
+test("Open now keeps loading pages while every loaded stall is closed", () => {
+  const screen = read("src/app/screens/search/SearchResultsScreen.tsx");
+  assert.match(screen, /!openNowActive \|\| rows\.length > 0 \|\| items\.length === 0/);
+  assert.match(
+    screen,
+    /void loadPage\(nextCursor, true\);\s*\}\s*\}, \[openNowActive, rows\.length/,
+  );
+  assert.match(screen, /openNowActive && items\.length > 0 && rows\.length === 0 && !nextCursor/);
+});

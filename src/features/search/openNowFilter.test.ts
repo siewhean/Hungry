@@ -104,3 +104,15 @@ test("a false stored flag with no closure notice is stale; one with a notice clo
     ["stale"],
   );
 });
+
+test("a dish with no stall behind it is dropped", () => {
+  const venues = new Map<string, VenueSummary>([
+    ["lunch", stall("lunch", { operatingHours: "Daily 10am-9pm" })],
+  ]);
+  assert.deepEqual(
+    filterOpenNow("dishes", [dishCard("d1", "lunch"), dishCard("d2", "")], venues, NOON).map(
+      (item) => item.id,
+    ),
+    ["d1"],
+  );
+});

@@ -29,7 +29,8 @@ test("it checks the environment through the shared helper and keeps an undo list
 });
 
 test("the undo list is replaced by one rename, never a partial copy", () => {
-  assert.match(script, /mv "\$UNDO_FILE\.tmp" "\$UNDO_FILE"/);
+  assert.match(script, /TMP_UNDO="\$\(mktemp "\$UNDO_FILE\.XXXXXX"\)"/);
+  assert.match(script, /mv "\$TMP_UNDO" "\$UNDO_FILE"/);
 });
 
 test("it never invents hours: only the planner's schedules are written", () => {

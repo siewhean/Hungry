@@ -1302,7 +1302,11 @@ function RawCatalogBrowseGrid({
   useEffect(() => {
     if (!openNowActive) return;
     const timer = setInterval(() => setClockTick((tick) => tick + 1), 60_000);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      // Hours and closure notices change: the next time Open now is turned on they are read fresh.
+      openNowVenuesRef.current.clear();
+    };
   }, [openNowActive]);
   // Open now looks at every outlet first, so a chain with one open outlet is not hidden behind a
   // closed first one. openNowReads changes whenever new hours arrive, so the cache is read again.
@@ -1348,6 +1352,23 @@ function RawCatalogBrowseGrid({
       active = false;
     };
   }, [mode, openNowActive, openNowReads, items]);
+  // A page whose stalls are all closed leaves no row to scroll to, so no end-reached call would
+  // ever fetch the next one: keep loading until a stall is open or no pages remain.
+  useEffect(() => {
+    if (!openNowActive || rows.length > 0 || items.length === 0) return;
+    if (nextCursor && !isLoading && !isLoadingMore && !loadMoreFailed) {
+      void loadPage(nextCursor, true);
+    }
+  }, [
+    openNowActive,
+    rows.length,
+    items.length,
+    nextCursor,
+    isLoading,
+    isLoadingMore,
+    loadMoreFailed,
+    loadPage,
+  ]);
   const isRefreshing = isLoading && items.length > 0;
   const summary =
     matchCount !== undefined && !error && loadedKey === requestKey
@@ -1836,8 +1857,8 @@ function RawCatalogBrowseGrid({
                       />
                     </View>
                   </View>
-                ) : openNowActive && items.length > 0 && rows.length === 0 ? (
-                  // Every stall on screen is closed (hours read), which is not "no matches".
+                ) : openNowActive && items.length > 0 && rows.length === 0 && !nextCursor ? (
+                  // Every stall found is closed (hours read), which is not "no matches".
                   <EmptyState
                     title="Nothing open right now"
                     body="The stalls matching this search are closed or have no confirmed hours."

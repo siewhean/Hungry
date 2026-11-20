@@ -86,9 +86,11 @@ select coalesce(json_agg(json_build_object('id', id, 'schedule', schedule)), '[]
 commit;
 SQL
 # Replace the plan with what was really written, in one rename so a cut-off never leaves half a file.
-cp "$WORK/applied.json" "$UNDO_FILE.tmp"
-node -e 'const a = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); if (!Array.isArray(a)) process.exit(1);' "$UNDO_FILE.tmp" \
+TMP_UNDO="$(mktemp "$UNDO_FILE.XXXXXX")"
+trap 'rm -rf "$WORK"; rm -f "$TMP_UNDO"' EXIT
+cp "$WORK/applied.json" "$TMP_UNDO"
+node -e 'const a = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); if (!Array.isArray(a)) process.exit(1);' "$TMP_UNDO" \
   || die "could not finalise $UNDO_FILE (the plan in it is still a valid undo list)"
-mv "$UNDO_FILE.tmp" "$UNDO_FILE"
+mv "$TMP_UNDO" "$UNDO_FILE"
 say "schedules written: $(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).length)' "$WORK/applied.json")"
 say "undo list written to $UNDO_FILE. Undo with: scripts/db/fill-zone-hours.sh $ENV_NAME --undo $UNDO_FILE"

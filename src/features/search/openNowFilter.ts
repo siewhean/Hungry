@@ -37,7 +37,10 @@ export function filterOpenNow(
   now: Date = new Date(),
 ): BrowseItem[] {
   return items.filter((item) => {
-    const venue = venues.get(venueIdOfResult(mode, item));
+    const venueId = venueIdOfResult(mode, item);
+    // A dish with no stall behind it cannot be open.
+    if (!venueId) return false;
+    const venue = venues.get(venueId);
     if (!venue) return true;
     // As on Home and the stall page, a false flag with no closure notice is a stale default.
     const isOpen = venue.isOpen || !venue.closureNotice?.trim();
