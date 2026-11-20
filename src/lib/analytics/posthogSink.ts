@@ -32,8 +32,13 @@ function getPostHogClient(): PostHog | null {
       // Application Installed / Updated / Opened / Backgrounded, for retention.
       captureAppLifecycleEvents: true,
       // Applied inside the SDK, so Application Installed (sent while it starts) carries the tags
-      // too; register() below keeps them after reset() and holds the phone's saved mark.
-      customAppProperties: (properties) => ({ ...properties, ...trafficProperties() }),
+      // too. The SDK evaluates this once and keeps the result, so only what cannot change while
+      // the app runs goes here; the phone and account marks are register()ed and can be switched.
+      customAppProperties: (properties) => ({
+        ...properties,
+        environment: getAnalyticsEnvironment(),
+        ...(isInternalBuild() ? { is_internal: true } : {}),
+      }),
     });
     registerTrafficProperties(posthogClient);
   }
@@ -71,7 +76,7 @@ export function setPostHogInternalDevice(internal: boolean): void {
   // An unmarked phone still on an internal build, or signed in to a team account, stays internal.
   const effective = internal || isInternalBuild() || accountMarkedInternal;
   void client
-    .register({ is_internal: internal || isInternalBuild() })
+    .register({ is_internal: effective })
     .catch((error: unknown) => reportError(error, { area: "posthog_traffic_properties" }));
   // The person's trait is not cleared by the next identify, so it follows the switch too.
   if (identifiedUserId) client.setPersonProperties({ is_internal: effective });
@@ -152,6 +157,28 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
       sanitizeAnalyticsProperties({ ...properties, ...(internal ? { is_internal: true } : {}) }),
     ),
   );
+  if (accountMarkedInternal) registerAccountMark(client);
+}
+
+function registerAccountMark(client: PostHog): void {
+  void client
+    .register({ is_internal: true })
+    .catch((error: unknown) => reportError(error, { area: "posthog_traffic_properties" }));
+}
+
+/**
+ * The account's real email can arrive after sign-in (the profile is loaded from the server), so
+ * the mark may need to be added to the person who is already identified.
+ */
+export function markPostHogAccountInternal(userId: string): void {
+  const client = getPostHogClient();
+  if (!client || !userId || identifiedUserId !== userId || accountMarkedInternal) {
+    return;
+  }
+
+  accountMarkedInternal = true;
+  client.setPersonProperties({ is_internal: true });
+  registerAccountMark(client);
 }
 
 /** Stops PostHog capturing (or resumes it); PostHog remembers the choice across launches. */

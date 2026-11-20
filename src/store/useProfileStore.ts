@@ -577,14 +577,19 @@ export const useProfileStore = create<ProfileState>()(
             set(previousSnapshot);
           });
       },
-      applyProfile: (profile) =>
+      applyProfile: (profile) => {
         set({
           profile: withNeutralTasteProfile(ensureSupabaseCompatibleProfile(profile)),
           tasteProfile: profile.tasteProfile ?? {
             ...NEUTRAL_TASTE_PROFILE,
             vector: profile.tasteVector,
           },
-        }),
+        });
+        // sign-in identifies the person before this email is known; a team account is marked now.
+        const { markInternalAccountFromProfile } =
+          require("./useSessionStore") as typeof import("./useSessionStore");
+        markInternalAccountFromProfile(profile.id, profile.email);
+      },
       applySavedProfileEdits: (savedProfile) =>
         set((state) => {
           // Ignore a late save result for an account that is no longer active.

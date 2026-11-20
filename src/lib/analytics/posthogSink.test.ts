@@ -196,12 +196,43 @@ test("opting out and back in reaches the client, and a failure is reported, not 
 });
 
 test("the SDK's own app properties carry the tags, so Application Installed is tagged too", () => {
+  sink.registerPostHogProperties({});
   const withTags = PostHogStub.lastOptions?.customAppProperties?.({ $app_name: "Hungry" });
   assert.equal(withTags?.$app_name, "Hungry");
   assert.equal(withTags?.environment, getAnalyticsEnvironment());
+  // The SDK caches this result, so it holds only the build mark, never a phone or account mark.
+  sink.setPostHogInternalDevice(true);
+  assert.equal(
+    PostHogStub.lastOptions?.customAppProperties?.({})?.is_internal,
+    isInternalBuild() ? true : undefined,
+  );
+  sink.setPostHogInternalDevice(false);
+});
+
+test("an account's team mark that arrives after sign-in marks the person and later events", () => {
+  sink.resetPostHogUser();
+  PostHogStub.personProperties = [];
+  sink.markPostHogAccountInternal("late-user");
+  assert.deepEqual(PostHogStub.personProperties, [], "nobody is identified yet");
+
+  sink.identifyPostHogUser("late-user", { plan: "free" });
+  PostHogStub.personProperties = [];
+  sink.markPostHogAccountInternal("someone-else");
+  assert.deepEqual(PostHogStub.personProperties, [], "another account's profile is ignored");
+
+  sink.markPostHogAccountInternal("late-user");
+  assert.deepEqual(PostHogStub.personProperties, [{ is_internal: true }]);
+  sink.markPostHogAccountInternal("late-user");
+  assert.equal(PostHogStub.personProperties.length, 1, "marked once");
+
+  sink.setPostHogInternalDevice(false);
+  assert.deepEqual(PostHogStub.personProperties.at(-1), { is_internal: true });
+  sink.resetPostHogUser();
 });
 
 test("switching the phone off clears a person trait it set, but a team account stays internal", () => {
+  sink.resetPostHogUser();
+  sink.setPostHogInternalDevice(false);
   PostHogStub.personProperties = [];
   sink.setPostHogInternalDevice(true);
   assert.deepEqual(PostHogStub.personProperties, [], "nobody signed in: no person to mark");
@@ -218,4 +249,5 @@ test("switching the phone off clears a person trait it set, but a team account s
   PostHogStub.personProperties = [];
   sink.setPostHogInternalDevice(false);
   assert.deepEqual(PostHogStub.personProperties, [], "signed out again: no person to mark");
+  sink.setPostHogInternalDevice(false);
 });

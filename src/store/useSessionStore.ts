@@ -270,6 +270,19 @@ function identifyPostHogUser(userId: string, properties: Record<string, unknown>
   identify(userId, properties);
 }
 
+/**
+ * The profile's real email loads after sign-in; a staging test diner is marked once it is known.
+ */
+export function markInternalAccountFromProfile(
+  profileId: string,
+  email: string | null | undefined,
+) {
+  if (!shouldEnablePostHogIdentity() || !isInternalAccountEmail(email)) return;
+  const { markPostHogAccountInternal } =
+    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+  markPostHogAccountInternal(profileId);
+}
+
 function resetPostHogUser(): void {
   resetExperimentSession();
   if (!shouldEnablePostHogIdentity()) return;
