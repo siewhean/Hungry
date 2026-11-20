@@ -33,10 +33,10 @@ It prints `Public key: age1...`. **Put the whole `hungry-backup-key.txt` file in
 
 ### 3. Add two GitHub secrets (repo Settings, Secrets and variables, Actions, New repository secret)
 
-| Name | Value |
-| --- | --- |
-| `BACKUP_AGE_PUBLIC_KEY` | the `age1...` public key |
-| `BACKUP_DB_URL` | `postgresql://backup_ro.frluxwpqqyomiqmjzavd:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres` |
+| Name                    | Value                                                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `BACKUP_AGE_PUBLIC_KEY` | the `age1...` public key                                                                                        |
+| `BACKUP_DB_URL`         | `postgresql://backup_ro.frluxwpqqyomiqmjzavd:<password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres` |
 
 The URL uses the **session** pooler (port 5432): GitHub's runners are IPv4 only, and the direct host is IPv6. If your pooler host differs, copy it from Supabase, Connect, Session pooler, and replace the user with `backup_ro.<project ref>`.
 
@@ -70,9 +70,9 @@ AGE_KEY_FILE=hungry-backup-key.txt scripts/db/restore-drill.sh prod-<time>.tar.a
 
 Set `RESTORE_DRILL_CONFIRM=<scratch database name>` too: the drill refuses Supabase hosts and any target you have not named. It checks the checksums, restores `data.dump`, recounts every table and compares with `rowstats.tsv`. It prints how long the restore took and `drill ok`, or lists the differences and fails.
 
-| Date | Copy | Database size | Restore took | Result |
-| --- | --- | --- | --- | --- |
-| _not run yet_ | | | | |
+| Date          | Copy | Database size | Restore took | Result |
+| ------------- | ---- | ------------- | ------------ | ------ |
+| _not run yet_ |      |               |              |        |
 
 Restoring production itself stays manual, as in `safe-migration-runbook.md` ("Restoring production").
 
@@ -81,3 +81,23 @@ Restoring production itself stays manual, as in `safe-migration-runbook.md` ("Re
 - Not in the copy: file bytes in Storage buckets (only their metadata rows), Edge Function secrets, Vault values, Auth dashboard settings.
 - GitHub artifacts count against the repository's Actions storage (500 MB on the Free GitHub plan, more on paid plans). Copies of a large database add up: 14 + 8 files of N MB each. Watch the "Artifacts" total under Settings, Billing. If it fills, GitHub stops accepting new uploads and the backup job fails, which emails you.
 - If a run fails (the email says so), the next night's copy still happens; nothing retries automatically.
+
+## Free-tier storage reclamation and launch-zone promotion (package 1.7)
+
+Production measured **612 MB** on 2026-11-19 while still on the Supabase Free plan (500 MB database cap). Reclaim space **before** promoting launch-zone catalog rows:
+
+1. **Dry run (read-only)**:
+   ```bash
+   scripts/db/reclaim-free-tier-budget.sh prod
+   ```
+2. **Back up and reclaim** (prunes failed/expired `catalog_releases` raw card copies, truncates `staging_food_businesses`, and runs `VACUUM (FULL, ANALYZE)`):
+   ```bash
+   scripts/db/reclaim-free-tier-budget.sh prod --apply --all-inactive-releases
+   ```
+   If the active single-release catalog still leaves production above 300 MB, re-run with `--trim-menuless-outside-zone` (keeps 100% of `launch_zone_places`, 100% of stalls with dishes, and 100% of base `public.venues` rows).
+3. **Promote the Jurong West launch zone from staging to prod**:
+   ```bash
+   scripts/db/promote-launch-zone.sh           # dry run: counts + prod size check
+   scripts/db/promote-launch-zone.sh --apply   # backup prod -> atomic zone upsert + apply_launch_zone()
+   ```
+4. **Restore the 400 MB warning line**: once `after_mb < 350`, set GitHub repository variable `HUNGRY_DB_WARN_MB` to `400` so `nightly-backup.yml` alerts well before the 500 MB Free cap.
