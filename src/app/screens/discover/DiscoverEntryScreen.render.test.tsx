@@ -550,7 +550,7 @@ test("H4-6: open stalls come before closed ones even when the closed one is near
     coldRow(1, {
       distance_meters: 50,
       venue_name: "Near Closed Stall",
-      operating_hours: "Mon-Sun 00:00-00:01",
+      operating_hours: "Mon-Sun Closed",
     }),
     coldRow(2, {
       distance_meters: 900,
