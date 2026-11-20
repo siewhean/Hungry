@@ -16,7 +16,7 @@ test("it is a dry run unless --apply is given", () => {
 
 test("it only fills stalls with no schedule yet, in one statement", () => {
   assert.match(script, /v\.opening_schedule is null and \$SCOPE/);
-  assert.match(script, /where v\.id = d\.id and v\.opening_schedule is null/);
+  assert.match(script, /where v\.id::text = d\.id and v\.opening_schedule is null/);
 });
 
 test("it checks the environment through the shared helper and keeps an undo list", () => {
@@ -36,4 +36,16 @@ test("the undo list is replaced by one rename, never a partial copy", () => {
 test("it never invents hours: only the planner's schedules are written", () => {
   assert.match(script, /scripts\/hours\/zone-hours-plan\.ts/);
   assert.doesNotMatch(script, /insert into public\.venues/i);
+});
+
+test("big lists go to psql by file, never as a command-line argument", () => {
+  assert.doesNotMatch(script, /-v (updates|undo)="\$\(cat/);
+  assert.match(script, /\\set updates `cat :'updates_file'`/);
+  assert.match(script, /\\set undo `cat :'undo_file'`/);
+});
+
+test("venue ids are compared as text, so a text or uuid id column both work", () => {
+  assert.match(script, /as d\(id text, schedule jsonb\)/);
+  assert.match(script, /v\.id::text = d\.id and v\.opening_schedule is null/);
+  assert.doesNotMatch(script, /as d\(id uuid/);
 });
