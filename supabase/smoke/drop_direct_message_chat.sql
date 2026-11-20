@@ -47,7 +47,10 @@ begin
     where n.nspname not in ('pg_catalog', 'information_schema')
       and (
         p.prosrc ~* '\m(conversation_participants|read_receipts|conversations)\M'
-        or p.prosrc ~* '\m(from|into|update|join)\s+(public\.)?messages\M'
+        -- `messages` is a common word, so it is only matched after a keyword that takes a table:
+        -- from/into/update/join/using (select, insert, delete, merge), truncate, lock [table], copy,
+        -- references (foreign key), table (alter/drop/lock/comment on table), and `only` after those.
+        or p.prosrc ~* '\m(from|into|update|join|using|truncate|lock|copy|references|table|only)\s+(only\s+)?(public\.)?messages\M'
       )
   ) then
     raise exception 'a function still references a dropped chat table';

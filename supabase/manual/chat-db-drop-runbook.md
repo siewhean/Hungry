@@ -66,6 +66,11 @@ messages for good; the down migration restores the schema only.
    Postgres. Staging will show whether the down migration reproduces production's schema exactly
    (`prod_schema_matched`); a mismatch means fix the down file, not the check.
 
+   Known: the down file leaves five `GRANT ... TO authenticated` lines out on purpose (see "Undoing";
+   the restore script adds them back). `rehearse.sh` compares a schema dump from before the up migration
+   with one after the down file, so until it is taught about that restore step it reports exactly those
+   five grant lines as a schema difference and does not write the evidence.
+
    If the script stops with "production has migration X that this checkout lacks" and X is not on
    `origin/main`, merging main cannot help: X was applied to prod from a branch that never landed on
    main. Get X's file into `supabase/migrations/` of the checkout you rehearse from (untracked, not
@@ -84,6 +89,20 @@ messages for good; the down migration restores the schema only.
   `post_shares.target_conversation_id` value survived (the up migration keeps the column's values),
   `post_shares_target_conversation_id_fkey` is added `NOT VALID` instead of failing the rollback;
   without such values it is added validated, exactly as before.
+  **The chat RPCs come back closed:** `open_chat_conversation`, `send_chat_message` (public wrapper and
+  `app_private` body) and `mark_conversation_read` are executable by `service_role` only, not by
+  `authenticated`. While the tables are empty, any signed-in user who could call them would create a
+  conversation and make the restore script refuse (it only imports into empty tables). The restore
+  script gives `authenticated` its grants back, inside its transaction. If you roll back and do NOT
+  restore rows (chat should simply work again, on empty tables), run these once by hand:
+
+  ```sql
+  grant execute on function public.open_chat_conversation(uuid, uuid, text) to authenticated;
+  grant execute on function app_private.open_chat_conversation(uuid, uuid, text) to authenticated;
+  grant execute on function public.send_chat_message(uuid, text, text, uuid) to authenticated;
+  grant execute on function app_private.send_chat_message(uuid, text, text, uuid) to authenticated;
+  grant execute on function public.mark_conversation_read(uuid) to authenticated;
+  ```
 - **Rows**: the down file cannot bring rows back. Restore them from the step-2 backup with:
 
   ```bash
@@ -94,7 +113,9 @@ messages for good; the down migration restores the schema only.
   `user_profiles` and `merchant_accounts`, so one account deleted after the backup makes a row violate
   a foreign key and rolls the whole import back, including every unrelated chat. The script, in ONE
   transaction (any error leaves the database as it was):
-  1. checks the backup against its `MANIFEST` and refuses unless the four tables exist and are empty;
+  1. checks the backup against its `MANIFEST` and refuses unless the four tables and the five chat RPCs
+     exist; then, inside the transaction, locks the four tables (`ACCESS EXCLUSIVE`, 15 s
+     `lock_timeout`) and refuses unless they are all empty, so the check and the import are atomic;
   2. loads the archive into a scratch schema without constraints;
   3. removes archive rows whose user or merchant no longer exists, with the live foreign keys' rules
      (`ON DELETE CASCADE` removes the row; `ON DELETE SET NULL` clears `created_by_user_id` /
@@ -103,7 +124,9 @@ messages for good; the down migration restores the schema only.
   5. sets `post_shares.target_conversation_id` to NULL where the conversation is not there (what
      `ON DELETE SET NULL` does) and runs `VALIDATE CONSTRAINT` on `post_shares_target_conversation_id_fkey`
      when the down file had added it `NOT VALID`;
-  6. drops the scratch schema, then prints the backup row counts next to the live counts. A lower live
+  6. grants execute on the five chat RPCs back to `authenticated` (the grants they had before the drop),
+     so they only become callable once every row is in place;
+  7. drops the scratch schema, then prints the backup row counts next to the live counts. A lower live
      count is expected exactly when accounts were deleted after the backup.
 
   By hand, if you ever must: the post-restore step for the share foreign key is

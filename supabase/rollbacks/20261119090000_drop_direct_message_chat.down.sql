@@ -6,6 +6,16 @@
 -- rows whose user or merchant account was deleted in the meantime, imports the rest with foreign keys
 -- enforced, and validates the post_shares foreign key (supabase/manual/chat-db-drop-runbook.md).
 -- The three rate rules the up migration removed are inserted back at the end.
+-- RPC GRANTS: send_chat_message, open_chat_conversation and mark_conversation_read come back executable
+-- by service_role ONLY. Their original grant to `authenticated` is put back by
+-- scripts/db/restore-chat-tables.sh inside its restore transaction. Reason: between this file and the
+-- restore the chat tables exist and are empty, and any signed-in user able to call open_chat_conversation
+-- would create a conversation, which makes the restore script refuse (it only imports into empty tables).
+-- If you roll back WITHOUT restoring rows and want chat usable again, grant `authenticated` yourself:
+-- the five statements are listed in supabase/manual/chat-db-drop-runbook.md. can_access_conversation
+-- keeps its `authenticated` grant: row-level security policies call it, it only reads, and it cannot
+-- create a row. No other path lets `authenticated` write these tables (insert/update is revoked below
+-- on conversations, conversation_participants and messages; a read_receipts row needs a message).
 -- down-loses-data: schema only; the dropped chat rows come back from the pre-drop backup, not from this file.
 
 create schema if not exists app_private;
@@ -300,8 +310,8 @@ as 'select * from app_private.send_chat_message(p_conversation_id, p_body, p_cli
 
 revoke all on function public.send_chat_message(uuid, text, text, uuid) from public, anon, authenticated;
 revoke all on function app_private.send_chat_message(uuid, text, text, uuid) from public, anon, authenticated;
-grant execute on function public.send_chat_message(uuid, text, text, uuid) to authenticated, service_role;
-grant execute on function app_private.send_chat_message(uuid, text, text, uuid) to authenticated, service_role;
+grant execute on function public.send_chat_message(uuid, text, text, uuid) to service_role;
+grant execute on function app_private.send_chat_message(uuid, text, text, uuid) to service_role;
 
 comment on function app_private.send_chat_message(uuid, text, text, uuid) is
   'Checked chat message writer with participant, block, merchant, and rate-limit enforcement.';
@@ -471,8 +481,8 @@ $$;
 
 revoke all on function public.open_chat_conversation(uuid, uuid, text) from public, anon, authenticated;
 revoke all on function app_private.open_chat_conversation(uuid, uuid, text) from public, anon, authenticated;
-grant execute on function public.open_chat_conversation(uuid, uuid, text) to authenticated, service_role;
-grant execute on function app_private.open_chat_conversation(uuid, uuid, text) to authenticated, service_role;
+grant execute on function public.open_chat_conversation(uuid, uuid, text) to service_role;
+grant execute on function app_private.open_chat_conversation(uuid, uuid, text) to service_role;
 
 comment on function public.open_chat_conversation(uuid, uuid, text) is
   'Public invoker wrapper for checked conversation creation.';
@@ -509,8 +519,8 @@ begin
 end;
 $$;
 
-revoke all on function public.mark_conversation_read(uuid) from public, anon;
-grant execute on function public.mark_conversation_read(uuid) to authenticated, service_role;
+revoke all on function public.mark_conversation_read(uuid) from public, anon, authenticated;
+grant execute on function public.mark_conversation_read(uuid) to service_role;
 
 -- Immutable-field guards (0038).
 create or replace function public.enforce_conversation_participant_update_guard()
