@@ -1296,21 +1296,28 @@ function RawCatalogBrowseGrid({
     [handleOpen, handleToggleSave, itemWidth, mode, savedDishIds],
   );
 
+  const openNowActive = openNowOnly;
+  // Hours go stale: re-check every minute while Open now is on.
+  const [clockTick, setClockTick] = useState(0);
+  useEffect(() => {
+    if (!openNowActive) return;
+    const timer = setInterval(() => setClockTick((tick) => tick + 1), 60_000);
+    return () => clearInterval(timer);
+  }, [openNowActive]);
+  // Open now looks at every outlet first, so a chain with one open outlet is not hidden behind a
+  // closed first one. openNowReads changes whenever new hours arrive, so the cache is read again.
+  const openItems = useMemo(
+    () => (openNowActive ? filterOpenNow(mode, items, openNowVenuesRef.current) : items),
+    [mode, openNowActive, openNowReads, clockTick, items],
+  );
   // Chain outlets and duplicate records of one stall show as a single card.
   const rows = useMemo<BrowseItem[]>(
-    () => (mode === "stalls" ? mergeStallOutlets(items as CatalogRawVenueCard[]) : items),
-    [items, mode],
-  );
-  const openNowActive = openNowOnly && !openNowFailed;
-  // openNowReads changes whenever new hours arrive, so the filter reads the cache again.
-  const visibleRows = useMemo(
-    () => (openNowActive ? filterOpenNow(mode, rows, openNowVenuesRef.current) : rows),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, openNowActive, openNowReads, rows],
+    () => (mode === "stalls" ? mergeStallOutlets(openItems as CatalogRawVenueCard[]) : openItems),
+    [openItems, mode],
   );
   useEffect(() => {
     if (!openNowActive) return;
-    const unread = venueIdsToRead(mode, rows, openNowVenuesRef.current);
+    const unread = venueIdsToRead(mode, items, openNowVenuesRef.current);
     if (unread.length === 0) return;
     let active = true;
     getHungryService()
@@ -1332,12 +1339,15 @@ function RawCatalogBrowseGrid({
       })
       .catch((hoursError: unknown) => {
         reportError(hoursError, { surface: "catalog_browse", load: "open_now_hours" });
-        if (active) setOpenNowFailed(true);
+        if (!active) return;
+        // Without hours the filter cannot be honest: turn it off and say so.
+        setOpenNowOnly(false);
+        setOpenNowFailed(true);
       });
     return () => {
       active = false;
     };
-  }, [mode, openNowActive, openNowReads, rows]);
+  }, [mode, openNowActive, openNowReads, items]);
   const isRefreshing = isLoading && items.length > 0;
   const summary =
     matchCount !== undefined && !error && loadedKey === requestKey
@@ -1571,6 +1581,11 @@ function RawCatalogBrowseGrid({
         ) : null}
       </ScrollView>
       <ResultsNotes notes={notes} />
+      {openNowFailed ? (
+        <AppText tone="secondary" variant="micro">
+          {"We couldn't check opening hours, so Open now is off."}
+        </AppText>
+      ) : null}
       {locationMoved ? (
         <Pressable
           accessibilityRole="button"
@@ -1771,7 +1786,7 @@ function RawCatalogBrowseGrid({
         >
           <FlashList
             ref={listRef}
-            data={visibleRows}
+            data={rows}
             keyExtractor={(item) => item.id}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
@@ -1820,7 +1835,7 @@ function RawCatalogBrowseGrid({
                       />
                     </View>
                   </View>
-                ) : openNowActive && rows.length > 0 && visibleRows.length === 0 ? (
+                ) : openNowActive && items.length > 0 && rows.length === 0 ? (
                   // Every stall on screen is closed (hours read), which is not "no matches".
                   <EmptyState
                     title="Nothing open right now"

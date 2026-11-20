@@ -69,28 +69,27 @@ export function parseTimeRanges(text: string): MinuteRange[] {
     return [[0, 24 * 60]];
   }
 
-  type Token = { hour: number; minute: number; suffix?: "a" | "p"; clock?: number };
+  type Token = { hour: number; minute: number; suffix?: "a" | "p"; hasMinutes: boolean };
   const tokens = [...trimmed.matchAll(/(\d{1,2})(?:[:.](\d{2}))?\s*([ap])?\.?\s*(m)?\b/gi)]
     .map((match): Token | null => {
       const hour = Number(match[1]);
       const minute = Number(match[2] ?? "0");
       if (minute > 59 || hour > 24) return null;
       const suffix = match[3] && match[4] ? (match[3].toLowerCase() as "a" | "p") : undefined;
-      if (suffix) {
-        if (hour > 12) return null;
-        return { hour, minute, suffix };
-      }
-      // 24-hour clock ("0730", "21:00") only counts when written with minutes. A bare hour is
-      // kept: "5-8 pm" shares its "pm" (the start has no suffix of its own).
-      if (!match[2]) return { hour, minute, clock: undefined };
-      return { hour, minute, clock: (hour % 24) * 60 + minute };
+      if (suffix && hour > 12) return null;
+      return { hour, minute, suffix, hasMinutes: match[2] !== undefined };
     })
     .filter((token): token is Token => token !== null);
 
+  // A token with its own am/pm is read on the 12-hour clock. Without one it is a 24-hour time
+  // ("0730", "21:00") only when written with minutes; a bare hour has no meaning on its own.
   const toMinutes = (token: Token, suffix: "a" | "p" | undefined): number | null => {
-    if (token.clock !== undefined) return token.clock;
-    if (!suffix || token.hour > 12) return null;
-    return ((token.hour % 12) + (suffix === "p" ? 12 : 0)) * 60 + token.minute;
+    if (suffix) {
+      if (token.hour > 12) return null;
+      return ((token.hour % 12) + (suffix === "p" ? 12 : 0)) * 60 + token.minute;
+    }
+    if (!token.hasMinutes) return null;
+    return (token.hour % 24) * 60 + token.minute;
   };
 
   const ranges: MinuteRange[] = [];
@@ -98,21 +97,12 @@ export function parseTimeRanges(text: string): MinuteRange[] {
     const first = tokens[index];
     const second = tokens[index + 1];
     const end = toMinutes(second, second.suffix);
-    // "5-8 pm" and "10:30-2 pm": a start with no am/pm shares the end's.
-    let start = toMinutes(
-      first,
-      first.suffix ?? (first.clock === undefined ? second.suffix : undefined),
-    );
+    // "5-8 pm" and "5:30-8 pm": a 12-hour start with no am/pm of its own shares the end's.
+    const shared = first.suffix === undefined && first.hour >= 1 && first.hour <= 12;
+    const inherited = shared ? second.suffix : undefined;
+    let start = toMinutes(first, first.suffix ?? inherited);
     // "11-2 pm" is 11 am to 2 pm, not 11 pm to 2 pm.
-    if (
-      start !== null &&
-      end !== null &&
-      first.suffix === undefined &&
-      first.clock === undefined &&
-      second.suffix === "p" &&
-      start > end &&
-      first.hour !== 12
-    ) {
+    if (start !== null && end !== null && inherited === "p" && start > end && first.hour !== 12) {
       start = toMinutes(first, "a");
     }
     if (start !== null && end !== null) ranges.push([start, end]);

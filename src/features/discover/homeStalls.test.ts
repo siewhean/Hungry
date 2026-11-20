@@ -35,7 +35,19 @@ test("a closed stall reads just 'Closed', never 'Closed · Closed for today'", (
   const label = getStallRowOpenLabel(venue({ operatingHours: "Mon-Sun 00:00-00:01" }));
   assert.match(label ?? "", /^Closed/);
   assert.doesNotMatch(label ?? "", /Closed · Closed/);
-  assert.equal(getStallRowOpenLabel(venue({ isOpen: false })), "Closed");
+  assert.equal(
+    getStallRowOpenLabel(venue({ isOpen: false, closureNotice: "Closed for renovation" })),
+    "Closed",
+  );
+});
+
+test("a false stored flag with no closure notice is stale: the hours decide, as on the stall page", () => {
+  assert.equal(getStallRowOpenLabel(venue({ isOpen: false })), "Open · Open 24 hours");
+  assert.equal(isStallClosed(venue({ isOpen: false })), false);
+  assert.equal(
+    isStallClosed(venue({ isOpen: false, closureNotice: "Closed for renovation" })),
+    true,
+  );
 });
 
 test("an open stall keeps its detail and unknown hours say nothing", () => {
@@ -44,13 +56,18 @@ test("an open stall keeps its detail and unknown hours say nothing", () => {
 });
 
 test("isStallClosed is true only for a closed stall", () => {
-  assert.equal(isStallClosed(venue({ isOpen: false })), true);
+  assert.equal(
+    isStallClosed(venue({ isOpen: false, closureNotice: "Closed for renovation" })),
+    true,
+  );
   assert.equal(isStallClosed(venue()), false);
   assert.equal(isStallClosed(venue({ operatingHours: "" })), false);
 });
 
 test("stalls sort open first, then with a menu, then nearest, then best rated", () => {
-  const closedNear = { venue: venue({ id: "closedNear", isOpen: false, distanceMeters: 10 }) };
+  const closedNear = {
+    venue: venue({ id: "closedNear", isOpen: false, closureNotice: "Closed", distanceMeters: 10 }),
+  };
   const openFar = { venue: venue({ id: "openFar", distanceMeters: 900 }) };
   const openNear = { venue: venue({ id: "openNear", distanceMeters: 50 }) };
   const openFarWithMenu = {

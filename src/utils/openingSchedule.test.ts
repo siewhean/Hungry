@@ -83,3 +83,22 @@ test("a line that is not clear is not turned into a schedule", () => {
   assert.equal(parseHoursTextToSchedule("Daily 9am-6pm, closed on PH, call to confirm"), null);
   assert.equal(parseHoursTextToSchedule("Daily 9am-9am"), null);
 });
+
+test("text the reader cannot fully place is not turned into a schedule", () => {
+  // The dropped "5-8" would leave the stall looking closed in the evening.
+  assert.equal(parseHoursTextToSchedule("Daily 9am-2pm, 5-8"), null);
+  assert.equal(parseHoursTextToSchedule("Daily 12 to 11 am"), null);
+  // A day that is both closed and open contradicts itself.
+  assert.equal(parseHoursTextToSchedule("Mon closed; Mon 9am-5pm; Tue-Sun 9am-5pm"), null);
+  // An overnight range that runs into the same day's first opening overlaps.
+  assert.equal(parseHoursTextToSchedule("Daily 10pm-2am, 1am-5am"), null);
+});
+
+test("a start with minutes and no am/pm shares the end's: '5:30-8 pm'", () => {
+  assert.deepEqual(parseHoursTextToSchedule("Daily 5:30-8 pm")?.weekly.mon, [
+    { open: "17:30", close: "20:00" },
+  ]);
+  assert.deepEqual(parseHoursTextToSchedule("Daily 10:00-14:00")?.weekly.mon, [
+    { open: "10:00", close: "14:00" },
+  ]);
+});

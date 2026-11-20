@@ -22,7 +22,10 @@ test("it only fills stalls with no schedule yet, in one statement", () => {
 test("it checks the environment through the shared helper and keeps an undo list", () => {
   assert.match(script, /load_env "\$TARGET"/);
   assert.match(script, /--undo FILE/);
-  assert.match(script, /\[ ! -e "\$IDS" \]/);
+  assert.match(script, /\[ ! -e "\$UNDO_FILE" \]/);
+  // The undo list comes from the rows the UPDATE returned, and only unchanged schedules are cleared.
+  assert.match(script, /returning v\.id, v\.opening_schedule as schedule/);
+  assert.match(script, /v\.opening_schedule = d\.schedule/);
 });
 
 test("it never invents hours: only the planner's schedules are written", () => {

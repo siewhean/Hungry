@@ -62,7 +62,7 @@ test("H22: Search's Open now reads each stall's hours, never the is_open flag (p
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
   // It was left out while release cards only carried is_open (closures, not hours). It returns now
   // that the open state is computed from the schedule: stall hours are read for the cards shown.
-  assert.match(grid, /filterOpenNow\(mode, rows, openNowVenuesRef\.current\)/);
+  assert.match(grid, /filterOpenNow\(mode, items, openNowVenuesRef\.current\)/);
   assert.match(grid, /discovery\s*\.getVenuesByIds\(unread\)/);
   assert.doesNotMatch(grid, /openOnly:/);
 });

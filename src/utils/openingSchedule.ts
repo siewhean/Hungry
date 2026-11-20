@@ -252,7 +252,21 @@ export function scheduleFromHoursText(text: string | undefined): OpeningSchedule
 const HOURS_TEXT_WORDS =
   /\b(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|daily|closed|open|hours?|hrs|to|a\.?m\.?|p\.?m\.?)\b/gi;
 /** "12-11 am": a bare 12 could be noon or midnight, so it is never guessed. */
-const AMBIGUOUS_TWELVE = /(?<![\d:])12\s*[-\u2013\u2014]\s*\d{1,2}(?::\d{2})?\s*a\.?m\b/i;
+const AMBIGUOUS_TWELVE = /(?<![\d:])12\s*(?:[-\u2013\u2014]|to)\s*\d{1,2}(?::\d{2})?\s*a\.?m\b/i;
+const TIME_TOKEN = /\d{1,2}(?:[:.]\d{2})?/g;
+const HOLIDAY_NOTE = /\b(?:ph|public\s+holidays?|holidays?|eves?)\b/i;
+
+/** How many times the text writes down, so a time the reader dropped can be spotted. */
+function countTimeMentions(raw: string): number {
+  let count = 0;
+  for (const piece of raw.split(/[;\n|,]/)) {
+    const text = piece.replace(/\([^)]*\)/g, " ");
+    if (HOLIDAY_NOTE.test(text)) continue;
+    const whole = /\b24\s*(?:hours|hrs|h)\b/i.test(text) && !/[ap]\.?m/i.test(text);
+    count += whole ? 2 : (text.match(TIME_TOKEN) ?? []).length;
+  }
+  return count;
+}
 
 /**
  * A weekly schedule from listed hours text, or null when the text is not clear enough to trust.
@@ -270,10 +284,22 @@ export function parseHoursTextToSchedule(text: string | undefined): OpeningSched
   }
   const rows = parseOperatingHours(raw);
   if (rows.length === 0) return null;
+  // "Daily 9am-2pm, 5-8": a time that did not parse into a range means the text is not understood.
+  const rangeCount = rows.reduce((sum, row) => sum + row.ranges.length, 0);
+  if (countTimeMentions(raw) !== rangeCount * 2) return null;
 
   const weekly: OpeningSchedule["weekly"] = {};
   for (const key of OPENING_DAY_KEYS) {
-    const row = getHoursForDay(rows, toDayName(key));
+    const day = toDayName(key);
+    const named = rows.filter((candidate) => candidate.days?.includes(day));
+    // "Mon closed; Mon 9am-5pm" contradicts itself.
+    if (
+      named.some((candidate) => candidate.closed) &&
+      named.some((candidate) => !candidate.closed)
+    ) {
+      return null;
+    }
+    const row = getHoursForDay(rows, day);
     if (!row) return null;
     if (row.closed) {
       weekly[key] = [];
@@ -288,14 +314,19 @@ export function parseHoursTextToSchedule(text: string | undefined): OpeningSched
       if (open >= DAY_MINUTES || (open === closeMinutes && !whole)) return null;
       ranges.push({ open: toClock(open), close: toClock(closeMinutes) });
     }
+    // A range that runs past midnight ends the next day; two ranges on top of each other are not
+    // fine, and neither is an overnight range that runs into the day's first opening.
     const spans = ranges
       .map((range) => toMinuteRange(range))
       .filter((span): span is [number, number] => span !== null)
+      .map(([open, close]): [number, number] => [open, close <= open ? close + DAY_MINUTES : close])
       .sort((left, right) => left[0] - right[0]);
-    // A range that runs past midnight is fine; two ranges on top of each other are not.
     for (let index = 1; index < spans.length; index += 1) {
       if (spans[index][0] < spans[index - 1][1]) return null;
     }
+    const last = spans[spans.length - 1];
+    if (spans.length > 1 && last[1] > DAY_MINUTES && spans[0][0] + DAY_MINUTES < last[1])
+      return null;
     weekly[key] = ranges;
   }
   const schedule: OpeningSchedule = { weekly, special: [] };
