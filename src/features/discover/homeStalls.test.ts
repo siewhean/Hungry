@@ -158,3 +158,18 @@ test("Home reads the structured schedule before the listed hours, as the stall p
   assert.equal(getStallRowOpenLabel(stall), "Open · Open 24 hours");
   assert.equal(isStallClosed(stall), false);
 });
+
+test("stalls with the same score sort by distance, then by rating, and keep a stable pair", () => {
+  // Past the decay floor every distance scores the same, so only the distance tie-break is left.
+  const veryFar = { venue: venue({ id: "veryFar", distanceMeters: 1e15 }) };
+  const unknownDistance = { venue: venue({ id: "unknownDistance" }) };
+  assert.deepEqual(
+    [unknownDistance, veryFar].sort(compareHomeStalls).map((card) => card.venue.id),
+    ["veryFar", "unknownDistance"],
+  );
+  // Same distance and no menu on either: rating is the last tie-break and ties stay equal.
+  const first = { venue: venue({ id: "first", distanceMeters: 200 }) };
+  const second = { venue: venue({ id: "second", distanceMeters: 200 }) };
+  assert.equal(compareHomeStalls(first, second), 0);
+  assert.equal(compareHomeStalls(second, first), 0);
+});
