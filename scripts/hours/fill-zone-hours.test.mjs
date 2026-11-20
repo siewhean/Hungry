@@ -28,6 +28,10 @@ test("it checks the environment through the shared helper and keeps an undo list
   assert.match(script, /v\.opening_schedule = d\.schedule/);
 });
 
+test("the undo list is replaced by one rename, never a partial copy", () => {
+  assert.match(script, /mv "\$UNDO_FILE\.tmp" "\$UNDO_FILE"/);
+});
+
 test("it never invents hours: only the planner's schedules are written", () => {
   assert.match(script, /scripts\/hours\/zone-hours-plan\.ts/);
   assert.doesNotMatch(script, /insert into public\.venues/i);

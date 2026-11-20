@@ -278,12 +278,16 @@ function countTimeMentions(raw: string): number {
 export function parseHoursTextToSchedule(text: string | undefined): OpeningSchedule | null {
   const raw = (text ?? "").trim();
   if (!raw || AMBIGUOUS_TWELVE.test(raw)) return null;
+  // "(Sun closed)": the reader drops brackets, so an exception inside them would be lost.
+  if (/\([^)]*(?:\b(?:mon|tue|wed|thu|fri|sat|sun|closed|open)|\d)[^)]*\)/i.test(raw)) return null;
   // "9am" has no word break before its "am", so the suffix after a digit is removed first.
   if (/[a-z]/i.test(raw.replace(/(?<=\d)\s*[ap]\.?m\b\.?/gi, " ").replace(HOURS_TEXT_WORDS, " "))) {
     return null;
   }
   const rows = parseOperatingHours(raw);
   if (rows.length === 0) return null;
+  // "Daily 9am-2pm; Daily 5pm-8pm": only one row can speak for all days.
+  if (rows.filter((row) => row.days === null).length > 1) return null;
   // "Daily 9am-2pm, 5-8": a time that did not parse into a range means the text is not understood.
   const rangeCount = rows.reduce((sum, row) => sum + row.ranges.length, 0);
   if (countTimeMentions(raw) !== rangeCount * 2) return null;

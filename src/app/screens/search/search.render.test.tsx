@@ -1627,6 +1627,8 @@ test("Open now hides stalls whose hours say closed, once the hours are read (1.3
       unitNumber: "",
       floor: "",
       isOpen,
+      // A false flag only closes a stall that says why.
+      closureNotice: isOpen ? undefined : "Closed for the day",
       topDishId: "",
       operatingHours: "Daily 24 hours",
       deliveryLinks: [],

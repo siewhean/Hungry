@@ -84,3 +84,23 @@ test("only stalls not read yet are asked for, each once, up to the limit", () =>
   assert.deepEqual(venueIdsToRead("dishes", items, known), ["new-a", "new-b", "new-c"]);
   assert.deepEqual(venueIdsToRead("dishes", items, known, 2), ["new-a", "new-b"]);
 });
+
+test("a false stored flag with no closure notice is stale; one with a notice closes the stall", () => {
+  const flagged = new Map<string, VenueSummary>([
+    ["stale", stall("stale", { isOpen: false, operatingHours: "Daily 10am-9pm" })],
+    [
+      "paused",
+      stall("paused", {
+        isOpen: false,
+        closureNotice: "Closed for renovation",
+        operatingHours: "Daily 10am-9pm",
+      }),
+    ],
+  ]);
+  assert.deepEqual(
+    filterOpenNow("stalls", [stallCard("stale"), stallCard("paused")], flagged, NOON).map(
+      (item) => item.id,
+    ),
+    ["stale"],
+  );
+});

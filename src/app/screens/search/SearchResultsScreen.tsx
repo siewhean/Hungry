@@ -1426,7 +1426,8 @@ function RawCatalogBrowseGrid({
   );
   const listHeader = (
     <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}>
-      {tasteSearch.length >= 3 ? (
+      {/* Hidden under Open now: its dishes are not checked against the stalls' hours. */}
+      {tasteSearch.length >= 3 && !openNowActive ? (
         <MoreLikeThisRail
           title="Closest to your taste"
           subtitle={`"${query}" dishes ranked by what you like`}

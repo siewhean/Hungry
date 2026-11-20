@@ -38,6 +38,9 @@ export function filterOpenNow(
 ): BrowseItem[] {
   return items.filter((item) => {
     const venue = venues.get(venueIdOfResult(mode, item));
-    return !venue || getVenueOpenStateNow(venue, now).status === "open";
+    if (!venue) return true;
+    // As on Home and the stall page, a false flag with no closure notice is a stale default.
+    const isOpen = venue.isOpen || !venue.closureNotice?.trim();
+    return getVenueOpenStateNow({ ...venue, isOpen }, now).status === "open";
   });
 }

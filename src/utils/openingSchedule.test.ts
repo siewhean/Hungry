@@ -102,3 +102,11 @@ test("a start with minutes and no am/pm shares the end's: '5:30-8 pm'", () => {
     { open: "10:00", close: "14:00" },
   ]);
 });
+
+test("exceptions the reader would drop make the text unclear", () => {
+  // The bracket would be lost and Sunday would read as open.
+  assert.equal(parseHoursTextToSchedule("Daily 9am-6pm (Sun closed)"), null);
+  // Two "Daily" rows: only one could speak for the week.
+  assert.equal(parseHoursTextToSchedule("Daily 9am-2pm; Daily 5pm-8pm"), null);
+  assert.ok(parseHoursTextToSchedule("Daily 9am-2pm, 5pm-8pm"));
+});
