@@ -20,6 +20,8 @@ test("a disabled sink sends nothing and reports flags as not loaded", () => {
   sink.identifyPostHogUser("user-1", {});
   sink.resetPostHogUser();
   sink.registerPostHogProperties({ lifecycle_state: "active" });
+  sink.setPostHogInternalDevice(true);
+  sink.setPostHogOptOut(true);
   assert.deepEqual(PostHogStub.captured, []);
   assert.equal(sink.getPostHogFeatureFlag("on_flag"), undefined);
   assert.equal(sink.peekPostHogFeatureFlag("on_flag"), undefined);

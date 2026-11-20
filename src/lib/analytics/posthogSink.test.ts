@@ -157,3 +157,40 @@ test("flag reads return booleans, variants, or undefined for an unknown flag", (
     "only the exposed read records exposure",
   );
 });
+
+test("a failing register is reported, not thrown", async () => {
+  const failing = () => Promise.reject(new Error("storage full"));
+  const previous = prototype.register;
+  prototype.register = failing;
+  try {
+    assert.doesNotThrow(() => {
+      sink.setPostHogInternalDevice(true);
+      sink.resetPostHogUser();
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+  } finally {
+    prototype.register = previous;
+  }
+});
+
+test("opting out and back in reaches the client, and a failure is reported, not thrown", async () => {
+  const seen: string[] = [];
+  const { optOut, optIn } = prototype;
+  prototype.optOut = () => {
+    seen.push("out");
+    return Promise.resolve();
+  };
+  prototype.optIn = () => {
+    seen.push("in");
+    return Promise.reject(new Error("storage full"));
+  };
+  try {
+    sink.setPostHogOptOut(true);
+    sink.setPostHogOptOut(false);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(seen, ["out", "in"]);
+  } finally {
+    prototype.optOut = optOut;
+    prototype.optIn = optIn;
+  }
+});

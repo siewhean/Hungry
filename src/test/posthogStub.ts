@@ -27,6 +27,14 @@ export default class PostHogStub {
     return Promise.resolve();
   }
 
+  optOut(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  optIn(): Promise<void> {
+    return Promise.resolve();
+  }
+
   getFeatureFlags(): Record<string, FlagValue> | undefined {
     return PostHogStub.flags;
   }
