@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { isInternalAccountEmail } from "@/lib/analytics/trafficTag";
 import { resetExperimentSession } from "@/lib/experiments/experiments";
 import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import { deleteExportFile } from "@/features/profile/exportFile";
@@ -287,6 +288,8 @@ function buildPostHogIdentityProperties() {
     // currentLocation always holds a value (a default or a manual pick), so
     // only a granted GPS permission means the location is precise.
     has_precise_location: location.permission === "granted",
+    // Staging test diners are not real diners: launch numbers leave them out.
+    ...(isInternalAccountEmail(profile?.email) ? { is_internal: true } : {}),
   };
 }
 

@@ -41,6 +41,9 @@ const run = spawnSync(
       // The Food Portfolio (with follows and Activity) is on in production builds, so screens
       // render with it on, as users see them.
       EXPO_PUBLIC_ENABLE_FOOD_PORTFOLIO: "1",
+      // Screens are tested in each A/B arm; the production freeze on tests would hold them all
+      // on the fallback (src/lib/experiments/experiments.ts).
+      HUNGRY_THAW_EXPERIMENTS: "1",
       HUNGRY_DATA_SOURCE: "mock",
       HUNGRY_DISABLE_ASYNC_STORAGE: "1",
       HUNGRY_DISABLE_SECURE_STORE: "1",

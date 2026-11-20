@@ -4,6 +4,7 @@ import { reportError } from "@/lib/monitoring/reportError";
 
 import type { AnalyticsEventRecord, AnalyticsSink } from "./types";
 import { sanitizeAnalyticsProperties } from "./privacy";
+import { getAnalyticsEnvironment, isInternalBuild } from "./trafficTag";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 const POSTHOG_DISABLED = process.env.EXPO_PUBLIC_DISABLE_POSTHOG === "1";
@@ -11,6 +12,8 @@ const POSTHOG_API_KEY = process.env.EXPO_PUBLIC_POSTHOG_API_KEY?.trim();
 const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() || DEFAULT_POSTHOG_HOST;
 
 let posthogClient: PostHog | null = null;
+/** Set from the Developer tools: this phone belongs to the team, so its traffic is not diners'. */
+let deviceMarkedInternal: boolean | undefined;
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 type PostHogProperties = { [key: string]: JsonValue };
@@ -26,9 +29,43 @@ function getPostHogClient(): PostHog | null {
       // Application Installed / Updated / Opened / Backgrounded, for retention.
       captureAppLifecycleEvents: true,
     });
+    registerTrafficProperties(posthogClient);
   }
 
   return posthogClient;
+}
+
+/**
+ * `environment` goes on every event. `is_internal` is written only when it is true (or when a
+ * device is unmarked), never as false by default: PostHog keeps super properties between
+ * launches, so a false written here would wipe the mark a Developer tools toggle saved earlier.
+ */
+function trafficProperties(): PostHogProperties {
+  const internal = isInternalBuild() || deviceMarkedInternal === true;
+  return {
+    environment: getAnalyticsEnvironment(),
+    ...(internal ? { is_internal: true } : {}),
+  };
+}
+
+function registerTrafficProperties(client: PostHog): void {
+  void client
+    .register(trafficProperties())
+    .catch((error: unknown) => reportError(error, { area: "posthog_traffic_properties" }));
+}
+
+/** Marks (or unmarks) this phone as the team's; every later event carries the answer. */
+export function setPostHogInternalDevice(internal: boolean): void {
+  deviceMarkedInternal = internal;
+  const client = getPostHogClient();
+  if (!client) {
+    return;
+  }
+
+  // An unmarked phone still on an internal build stays internal.
+  void client
+    .register({ is_internal: internal || isInternalBuild() })
+    .catch((error: unknown) => reportError(error, { area: "posthog_traffic_properties" }));
 }
 
 function toJsonValue(value: unknown): JsonValue | undefined {
@@ -96,7 +133,14 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
     return;
   }
 
-  client.identify(userId, toPostHogProperties(sanitizeAnalyticsProperties(properties)));
+  // Internal traffic also marks the person, so a PostHog person filter works after sign-in.
+  const internal = isInternalBuild() || deviceMarkedInternal === true;
+  client.identify(
+    userId,
+    toPostHogProperties(
+      sanitizeAnalyticsProperties({ ...properties, ...(internal ? { is_internal: true } : {}) }),
+    ),
+  );
 }
 
 /** Stops PostHog capturing (or resumes it); PostHog remembers the choice across launches. */
@@ -118,6 +162,8 @@ export function resetPostHogUser(): void {
   }
 
   client.reset();
+  // reset() drops super properties, and the next sign-in is on the same phone.
+  registerTrafficProperties(client);
 }
 
 /** Adds properties to every later event (for example lifecycle_state). */

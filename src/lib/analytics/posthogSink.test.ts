@@ -8,6 +8,11 @@ delete process.env.EXPO_PUBLIC_DISABLE_POSTHOG;
 // Required after the env is set: the sink reads the key when it loads.
 const PostHogStub = (require("@/test/posthogStub") as typeof import("@/test/posthogStub")).default;
 const sink = require("./posthogSink") as typeof import("./posthogSink");
+const { getAnalyticsEnvironment, isInternalBuild } =
+  require("./trafficTag") as typeof import("./trafficTag");
+
+/** What the sink registers beside `environment` on this run's build. */
+const internalTag = () => (isInternalBuild() ? { is_internal: true } : {});
 
 const calls: { method: string; args: unknown[] }[] = [];
 const prototype = PostHogStub.prototype;
@@ -85,12 +90,59 @@ test("identify sends sanitised traits and skips a blank user id", () => {
   ]);
 });
 
-test("reset and register reach the client", () => {
+test("reset and register reach the client, and reset puts the traffic tags back", () => {
   sink.resetPostHogUser();
   sink.registerPostHogProperties({ lifecycle_state: "active", missing: undefined });
   assert.deepEqual(calls, [
     { method: "reset", args: [] },
+    { method: "register", args: [{ environment: getAnalyticsEnvironment(), ...internalTag() }] },
     { method: "register", args: [{ lifecycle_state: "active" }] },
+  ]);
+});
+
+test("a production build tags its events production and leaves is_internal unset", () => {
+  delete process.env.EXPO_PUBLIC_INTERNAL_BUILD;
+  sink.resetPostHogUser();
+  const traffic = calls.find((call) => call.method === "register")?.args[0] as Record<
+    string,
+    unknown
+  >;
+  assert.equal(traffic.environment, getAnalyticsEnvironment());
+  if (getAnalyticsEnvironment() === "production") {
+    // Unset, not false: a false here would wipe a mark that Developer tools saved earlier.
+    assert.equal("is_internal" in traffic, false);
+  }
+});
+
+test("a build made for the team tags its events and its people internal", () => {
+  process.env.EXPO_PUBLIC_INTERNAL_BUILD = "1";
+  try {
+    sink.resetPostHogUser();
+    sink.identifyPostHogUser("user-2", { plan: "free" });
+    assert.deepEqual(calls, [
+      { method: "reset", args: [] },
+      { method: "register", args: [{ environment: getAnalyticsEnvironment(), is_internal: true }] },
+      { method: "identify", args: ["user-2", { plan: "free", is_internal: true }] },
+    ]);
+  } finally {
+    delete process.env.EXPO_PUBLIC_INTERNAL_BUILD;
+  }
+});
+
+test("marking a phone as the team's tags later events and people, and unmarking says false", () => {
+  sink.setPostHogInternalDevice(true);
+  sink.identifyPostHogUser("user-3", { plan: "free" });
+  sink.setPostHogInternalDevice(false);
+  sink.identifyPostHogUser("user-3", { plan: "free" });
+  const expectedOff = isInternalBuild();
+  assert.deepEqual(calls, [
+    { method: "register", args: [{ is_internal: true }] },
+    { method: "identify", args: ["user-3", { plan: "free", is_internal: true }] },
+    { method: "register", args: [{ is_internal: expectedOff }] },
+    {
+      method: "identify",
+      args: ["user-3", { plan: "free", ...(expectedOff ? { is_internal: true } : {}) }],
+    },
   ]);
 });
 

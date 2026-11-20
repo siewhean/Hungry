@@ -1723,3 +1723,9 @@ Use the smallest check that matches the change risk.
 - `npm run test:nightly-backup`: 9 pass, 1 skip (end-to-end, needs a Postgres). End-to-end run on a local Postgres 16 with a read-only role: dump, age encrypt, decrypt, `restore-drill.sh` restore, 14 tables match.
 - `npm run test:migration-safety`: 12 pass (after the `ref_of` change in `scripts/db/common.sh`).
 - Not run: the workflow itself (schedules and secrets only exist on GitHub after merge); the pgdg client install step is untested until the first manual run.
+
+## 2026-11-20 PKG-0.6 clean analytics numbers
+- `npm run typecheck`: clean.
+- Focused: posthogSink, trafficTag, experiments, useDeveloperToolsStore tests; DeveloperToolsScreen render test; 12 render files that read experiments (336 pass with the freeze lifted by `HUNGRY_THAW_EXPERIMENTS=1` in `scripts/test-render.mjs`).
+- Full suites: run by GitHub checks on the PR.
+- Not done: the PostHog dashboard and project settings (owner decision, written in tasks/usage-analytics.md).

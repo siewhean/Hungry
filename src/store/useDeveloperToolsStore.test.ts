@@ -35,3 +35,12 @@ test("taps after unlocking do nothing, and locking closes the tools again", () =
   useDeveloperToolsStore.getState().lock();
   assert.equal(useDeveloperToolsStore.getState().unlocked, false);
 });
+
+test("marking a device as the team's is saved on the device, and Lock does not clear it", () => {
+  useDeveloperToolsStore.getState().setInternalDevice(true);
+  assert.equal(useDeveloperToolsStore.getState().internalDevice, true);
+  useDeveloperToolsStore.getState().lock();
+  assert.equal(useDeveloperToolsStore.getState().internalDevice, true);
+  useDeveloperToolsStore.getState().setInternalDevice(false);
+  assert.equal(useDeveloperToolsStore.getState().internalDevice, false);
+});

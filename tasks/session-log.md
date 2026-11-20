@@ -1056,3 +1056,4 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 - PKG-0.3 review round 3: confirm-guard test, e2e scratch name from URL pathname, runbook cron-minute note also updates the schedule test.
 - PKG-0.3: workflow DB warning default raised to 700 MB (prod measured 612 MB); merged main into branch.
 - 2026-11-19 staging test activity: wrapper unsets PGHOST/PGHOSTADDR/PGSERVICE* and writes sslmode into the URL (CodeRabbit findings); main merged again (#286).
+- 2026-11-20 PKG-0.6 clean analytics numbers: `environment` and `is_internal` on every PostHog event (build, Developer tools phone switch, staging test diner accounts), A/B tests frozen on their fallback until 300 weekly diners (rollouts still follow flags), launch dashboard spec in tasks/usage-analytics.md.

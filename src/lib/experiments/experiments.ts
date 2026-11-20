@@ -48,6 +48,15 @@ export interface ExperimentDefinition {
   rollout?: true;
 }
 
+/**
+ * Weekly diners needed before any test may split people into arms. Below this a test cannot reach
+ * a result (audit ANA-5, package 0.6), and each split only makes the screens differ between the
+ * few people there are. Until then every test serves its fallback and records no exposure; a
+ * `rollout` still follows its PostHog flag, because that is a staged release with a kill switch,
+ * not a test.
+ */
+export const EXPERIMENTS_MIN_WEEKLY_DINERS = 300;
+
 export const EXPERIMENTS = {
   /**
    * Concluded without data: the card was mounted only in the archived social feed and the
@@ -795,6 +804,18 @@ function getFlagSource(): ExperimentFlagSource | null {
   return flagSource;
 }
 
+// HUNGRY_THAW_EXPERIMENTS=1 is set only by the render-test runner, whose screens need live arms.
+let experimentsFrozen = process.env.HUNGRY_THAW_EXPERIMENTS !== "1";
+
+/** Test seam: lifts (or restores) the freeze that holds every non-rollout test on its fallback. */
+export function setExperimentsFrozen(frozen: boolean): void {
+  experimentsFrozen = frozen;
+}
+
+function isHeldOnFallback(definition: ExperimentDefinition): boolean {
+  return definition.status !== "running" || (experimentsFrozen && !definition.rollout);
+}
+
 function experimentsKilled() {
   return process.env.EXPO_PUBLIC_DISABLE_EXPERIMENTS === "1";
 }
@@ -880,7 +901,7 @@ export function getExperimentVariant<K extends ExperimentKey>(
   const override = overridesAllowed() ? overrides.get(key) : undefined;
   if (override) return resolveExperimentVariant(key, override);
 
-  if (definition.status !== "running") return definition.fallback as ExperimentVariant<K>;
+  if (isHeldOnFallback(definition)) return definition.fallback as ExperimentVariant<K>;
 
   const frozen = sessionVariants.get(key);
   if (frozen) return frozen as ExperimentVariant<K>;
@@ -942,7 +963,7 @@ function getFallbackVariant<K extends ExperimentKey>(key: K): ExperimentVariant<
 export function isExperimentAssignmentReady(key: ExperimentKey): boolean {
   if (experimentsKilled()) return true;
   if (overridesAllowed() && overrides.get(key)) return true;
-  if ((EXPERIMENTS[key] as ExperimentDefinition).status !== "running") return true;
+  if (isHeldOnFallback(EXPERIMENTS[key] as ExperimentDefinition)) return true;
   if (sessionVariants.has(key)) return true;
   const source = getFlagSource();
   return !source || source.hasLoaded();
