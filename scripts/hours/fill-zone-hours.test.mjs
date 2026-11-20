@@ -37,3 +37,9 @@ test("it never invents hours: only the planner's schedules are written", () => {
   assert.match(script, /scripts\/hours\/zone-hours-plan\.ts/);
   assert.doesNotMatch(script, /insert into public\.venues/i);
 });
+
+test("big lists go to psql by file, never as a command-line argument", () => {
+  assert.doesNotMatch(script, /-v (updates|undo)="\$\(cat/);
+  assert.match(script, /\\set updates `cat :updates_file`/);
+  assert.match(script, /\\set undo `cat :undo_file`/);
+});

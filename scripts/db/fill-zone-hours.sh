@@ -39,7 +39,9 @@ if [ -n "$UNDO" ]; then
     process.exit(ok ? 0 : 1);
   ' "$UNDO" || die "$UNDO is not a list of {id, schedule} written by --apply"
   # Only a schedule still equal to the one this run wrote is cleared: a merchant's later edit stays.
-  psql_db -Atq -v undo="$(cat "$UNDO")" <<'SQL'
+  # The list goes in by file, not as a command-line argument (a big run is far over the argument limit).
+  psql_db -Atq -v undo_file="$UNDO" <<'SQL'
+\set undo `cat :undo_file`
 begin;
 with cleared as (
   update public.venues v set opening_schedule = null
@@ -75,7 +77,8 @@ node -e 'const p = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"
 # The plan goes down first, so an undo file exists even if the write is cut off; it is replaced by
 # the rows the UPDATE really changed once it returns.
 cp "$WORK/updates.json" "$UNDO_FILE"
-psql_db -Atq -v updates="$(cat "$WORK/updates.json")" > "$WORK/applied.json" <<'SQL'
+psql_db -Atq -v updates_file="$WORK/updates.json" > "$WORK/applied.json" <<'SQL'
+\set updates `cat :updates_file`
 begin;
 with changed as (
   update public.venues v set opening_schedule = d.schedule
