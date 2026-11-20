@@ -70,9 +70,7 @@ export function resolveStallOpenInfo(input: {
     : openState.status === "open"
       ? ["Open now", openState.detail].filter(Boolean).join(" · ")
       : openState.status === "unknown"
-        ? listedHours
-          ? "Check listed hours"
-          : "Hours not listed"
+        ? "Hours not confirmed"
         : (closureNotice ?? ["Closed now", openState.detail].filter(Boolean).join(" · "));
 
   const parsedRows: StallHoursRow[] = hasWeeklyHours(schedule)

@@ -14,9 +14,22 @@ resolve_migration "$1"
 check_pg_dump_version
 
 NO_DOWN=0
+PRE_UP_BACKUP=""
+POST_DOWN_RESTORE=""
 if [ -z "$DOWN" ]; then
   sql_header_has "$UP" "no-down" || die "no down migration at supabase/rollbacks/${MIG_NAME}.down.sql"
   NO_DOWN=1
+else
+  PRE_UP_BACKUP="$(sql_header_all "$DOWN" "pre-up-backup" | head -1)"
+  POST_DOWN_RESTORE="$(sql_header_all "$DOWN" "post-down-restore" | head -1)"
+  if [ -n "$PRE_UP_BACKUP" ] || [ -n "$POST_DOWN_RESTORE" ]; then
+    [ -n "$PRE_UP_BACKUP" ] && [ -n "$POST_DOWN_RESTORE" ] \
+      || die "$DOWN must set both -- pre-up-backup and -- post-down-restore when either is used"
+    for hook in "$PRE_UP_BACKUP" "$POST_DOWN_RESTORE"; do
+      [[ "$hook" =~ ^scripts/db/[A-Za-z0-9_.-]+\.sh$ ]] && [ -x "$REPO_ROOT/$hook" ] \
+        || die "invalid rehearsal hook '$hook' in $DOWN (must be an executable scripts/db/*.sh)"
+    done
+  fi
 fi
 sql_header_all "$UP" smoke | grep -q . || die "$MIG_NAME has no '-- smoke: supabase/smoke/<file>.sql' header (use '-- smoke: none <reason>' if a smoke is truly not possible)"
 
@@ -81,6 +94,11 @@ fi
 
 say "1/6 backing up staging"
 BACKUP_DIR="$("$DB_DIR/backup.sh" staging "pre-$VERSION" | tail -1)"
+RESTORE_ARCHIVE_DIR=""
+if [ -n "$PRE_UP_BACKUP" ]; then
+  say "   taking pre-up data archive ($PRE_UP_BACKUP)"
+  RESTORE_ARCHIVE_DIR="$("$REPO_ROOT/$PRE_UP_BACKUP" staging "rehearse-$VERSION" | tail -1)"
+fi
 dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.before"; stats "$WORK/stats.before"
 
 say "2/6 applying up ($MIG_NAME)"
@@ -89,6 +107,15 @@ apply_guarded "$UP" insert || die "up migration failed; nothing changed (single 
 if [ "$NO_DOWN" = 0 ]; then
   say "3/6 applying down"
   apply_guarded "$DOWN" delete || die "down migration failed. Staging is at the 'up' state; restore from $BACKUP_DIR if needed."
+  if [ -n "$POST_DOWN_RESTORE" ]; then
+    say "   verifying deferred grants and running post-down restore ($POST_DOWN_RESTORE)"
+    dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.after_down"
+    if diff -q "$WORK/schema.before" "$WORK/schema.after_down" >/dev/null; then
+      die "$DOWN declares -- post-down-restore, but schema immediately after down already had full grants unlocked"
+    fi
+    "$REPO_ROOT/$POST_DOWN_RESTORE" staging "$RESTORE_ARCHIVE_DIR" \
+      || die "post-down restore ($POST_DOWN_RESTORE) failed on staging (backup: $BACKUP_DIR)."
+  fi
   dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.after"; stats "$WORK/stats.after"
   say "4/6 comparing against the pre-migration fingerprint"
   if ! diff -u "$WORK/schema.before" "$WORK/schema.after" >"$WORK/schema.diff"; then
@@ -108,6 +135,10 @@ run_smokes "$UP" || die "a smoke failed on staging (backup: $BACKUP_DIR)."
 if [ "$NO_DOWN" = 0 ] && [ -z "${KEEP_APPLIED:-}" ]; then
   say "restoring staging to production's state (down again; KEEP_APPLIED=1 skips this)"
   apply_guarded "$DOWN" delete || die "final down failed. Staging is at the 'up' state (backup: $BACKUP_DIR)."
+  if [ -n "$POST_DOWN_RESTORE" ]; then
+    "$REPO_ROOT/$POST_DOWN_RESTORE" staging "$RESTORE_ARCHIVE_DIR" \
+      || die "final post-down restore ($POST_DOWN_RESTORE) failed on staging (backup: $BACKUP_DIR)."
+  fi
   dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.final"
   diff -q "$WORK/schema.before" "$WORK/schema.final" >/dev/null || die "staging differs from before the rehearsal after the final down (backup: $BACKUP_DIR)."
 fi

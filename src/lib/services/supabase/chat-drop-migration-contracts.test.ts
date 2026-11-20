@@ -524,15 +524,22 @@ test("the restore script locks the four tables and checks they are empty inside 
   assert.match(executable, /has no data section for \$t; refusing to import an incomplete archive/);
 });
 
-test("the smoke's leftover scan names messages after every statement that can take a table", () => {
+test("the smoke's leftover scan names messages after every statement that can take a table, including multi-table lists, while ignoring string literals", () => {
   const smoke = readRepoFile("supabase/smoke/drop_direct_message_chat.sql");
-  const scan = [...smoke.matchAll(/p\.prosrc ~\* '([^']+)'/g)].map((match) => match[1]);
+  assert.match(
+    smoke,
+    /regexp_replace\(p\.prosrc, '''\(\[\^''\]\|''''\)\*''', '''''', 'g'\)\s+as\s+body/,
+  );
+  const scan = [...smoke.matchAll(/stripped\.body ~\* '((?:[^']|'')+)'/g)].map((match) =>
+    match[1].replace(/''/g, "'"),
+  );
   assert.equal(scan.length, 2, "expected the two scan patterns");
   const upScan = [...up.matchAll(/p\.prosrc ~\* '([^']+)'/g)].map((match) => match[1]);
   // Same table-name pattern as the migration's own scan.
   assert.equal(scan[0], upScan[0]);
   // PostgreSQL's \m and \M (word start/end) are \b in JavaScript; \s and the rest are the same.
   const messages = new RegExp(scan[1].replace(/\\[mM]/g, "\\b"), "i");
+  const stripSqlStrings = (sql: string) => sql.replace(/'([^']|'')*'/g, "''");
   for (const body of [
     "select 1 from messages",
     "insert into public.messages (id) values (1)",
@@ -542,9 +549,11 @@ test("the smoke's leftover scan names messages after every statement that can ta
     "delete from x using messages m where true",
     "truncate messages",
     "truncate table public.messages",
+    "truncate table public.other, public.messages",
     "truncate only messages",
     "TRUNCATE TABLE ONLY public.messages",
     "lock table messages in access exclusive mode",
+    "lock table public.other, only public.messages in access exclusive mode",
     "lock public.messages",
     "alter table messages enable row level security",
     "alter table only public.messages add column x int",
@@ -555,7 +564,7 @@ test("the smoke's leftover scan names messages after every statement that can ta
     "copy public.messages from stdin",
     "select 1\n  from\n    public.messages",
   ]) {
-    assert.match(body, messages, `scan misses: ${body}`);
+    assert.match(stripSqlStrings(body), messages, `scan misses: ${body}`);
   }
   for (const body of [
     "select 'messagesSent'",
@@ -565,14 +574,44 @@ test("the smoke's leftover scan names messages after every statement that can ta
     "select 1 from app.messages",
     "insert into realtime.messages (topic) values ('x')",
     "raise exception 'too many messages'",
+    "raise exception 'cannot copy messages'",
+    "raise exception 'truncate table public.messages failed'",
     "select count_messages(1)",
   ]) {
-    assert.doesNotMatch(body, messages, `scan wrongly flags: ${body}`);
+    assert.doesNotMatch(stripSqlStrings(body), messages, `scan wrongly flags: ${body}`);
   }
   // The patterns are valid under standard_conforming_strings = on (their default): `\m`, `\M` and `\s`
   // are regex escapes inside the plain quotes, not string escapes. Do not double the backslashes.
   assert.doesNotMatch(smoke, /E'[^']*\\m/);
   assert.match(scan[1], /\\m\(/);
+});
+
+test("rehearse.sh runs the chat backup before up, verifies deferred grants after down, and runs restore before comparing the schema", () => {
+  assert.match(down, /^-- pre-up-backup: scripts\/db\/backup-chat-tables\.sh$/m);
+  assert.match(down, /^-- post-down-restore: scripts\/db\/restore-chat-tables\.sh$/m);
+  const rehearse = readRepoFile("scripts/db/rehearse.sh");
+  const backupAt = rehearse.indexOf('"$REPO_ROOT/$PRE_UP_BACKUP" staging');
+  const upAt = rehearse.indexOf('apply_guarded "$UP" insert');
+  const downAt = rehearse.indexOf('apply_guarded "$DOWN" delete', upAt);
+  const closedCheckAt = rehearse.indexOf(
+    'diff -q "$WORK/schema.before" "$WORK/schema.after_down"',
+    downAt,
+  );
+  const restoreAt = rehearse.indexOf(
+    '"$REPO_ROOT/$POST_DOWN_RESTORE" staging "$RESTORE_ARCHIVE_DIR"',
+    downAt,
+  );
+  const schemaAfterAt = rehearse.indexOf(
+    'dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.after"',
+    downAt,
+  );
+  assert.ok(backupAt > 0 && backupAt < upAt, "pre-up backup must run before up");
+  assert.ok(upAt < downAt, "up must run before down");
+  assert.ok(
+    downAt < closedCheckAt && closedCheckAt < restoreAt,
+    "closed-RPC check must run between down and restore",
+  );
+  assert.ok(restoreAt < schemaAfterAt, "restore must run before schema.after comparison");
 });
 
 test("nothing outside the migration history still reads or writes the dropped tables", () => {

@@ -63,14 +63,14 @@ test("unreadable or missing hours are shown as written, never guessed", () => {
     venue: { isOpen: true, operatingHours: "Ask the uncle" },
     now: mondayNoon,
   });
-  assert.equal(unreadable.statusLabel, "Check listed hours");
+  assert.equal(unreadable.statusLabel, "Hours not confirmed");
   assert.deepEqual(unreadable.weekRows, [{ label: "Hours", text: "Ask the uncle" }]);
   assert.deepEqual(unreadable.todayRows, unreadable.weekRows);
   const none = resolveStallOpenInfo({
     venue: { isOpen: true, operatingHours: "" },
     now: mondayNoon,
   });
-  assert.equal(none.statusLabel, "Hours not listed");
+  assert.equal(none.statusLabel, "Hours not confirmed");
   assert.deepEqual(none.weekRows, []);
 });
 
@@ -122,12 +122,12 @@ test("R4-STALL-7: on a closed day the status names the next day it opens", () =>
   assert.equal(wednesdaysOnly.statusLabel, "Closed now · Opens 10am Wed");
 });
 
-test("R4-STALL-7: a stall with no readable hours still says 'Hours not listed'", () => {
+test("R4-STALL-7: a stall with no readable hours still says 'Hours not confirmed'", () => {
   const info = resolveStallOpenInfo({
     venue: { isOpen: true, operatingHours: "" },
     now: mondayLate,
   });
-  assert.equal(info.statusLabel, "Hours not listed");
+  assert.equal(info.statusLabel, "Hours not confirmed");
 });
 
 test("R5-STALL-13: a false is_open flag with no closure notice lets the listed hours decide", () => {

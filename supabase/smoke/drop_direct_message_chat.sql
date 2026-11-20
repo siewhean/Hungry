@@ -39,18 +39,21 @@ begin
     raise exception 'a chat rate rule is still present';
   end if;
 
-  -- 2. No dangling references.
+  -- 2. No dangling references (single-quoted string literals stripped first so exception/notice text is ignored).
   if exists (
     select 1
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
+    cross join lateral (
+      select regexp_replace(p.prosrc, '''([^'']|'''')*''', '''''', 'g') as body
+    ) stripped
     where n.nspname not in ('pg_catalog', 'information_schema')
       and (
-        p.prosrc ~* '\m(conversation_participants|read_receipts|conversations)\M'
+        stripped.body ~* '\m(conversation_participants|read_receipts|conversations)\M'
         -- `messages` is a common word, so it is only matched after a keyword that takes a table:
-        -- from/into/update/join/using (select, insert, delete, merge), truncate, lock [table], copy,
-        -- references (foreign key), table (alter/drop/lock/comment on table), and `only` after those.
-        or p.prosrc ~* '\m(from|into|update|join|using|truncate|lock|copy|references|table|only)\s+(only\s+)?(public\.)?messages\M'
+        -- from/into/update/join/using (select, insert, delete, merge), copy, references (foreign key),
+        -- table (alter/drop/lock/comment on table), `only`, or anywhere in a multi-table truncate/lock list.
+        or stripped.body ~* '\m(from|into|update|join|using|copy|references|table|only)\s+(only\s+)?(public\.)?messages\M|\m(truncate|lock)(\s+table)?\s+([^;''$]+,\s*)*(only\s+)?(public\.)?messages\M'
       )
   ) then
     raise exception 'a function still references a dropped chat table';

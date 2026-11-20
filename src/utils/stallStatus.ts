@@ -11,7 +11,7 @@ interface OpeningHours {
  * True when the stall reads as open now in Singapore. Uses the shared per-day
  * parser, so "Closed Sun" only closes Sundays. When the hours are empty or
  * unreadable it falls back to the stored `isOpen` flag; detail pages use
- * getVenueOpenState to show "Hours not listed" instead.
+ * getVenueOpenState to show "Hours not confirmed" instead.
  */
 export function isVenueOpenFromHours(operatingHours: string | undefined, isOpen: boolean): boolean {
   const state = getVenueOpenState(operatingHours, isOpen);

@@ -69,32 +69,50 @@ export function parseTimeRanges(text: string): MinuteRange[] {
     return [[0, 24 * 60]];
   }
 
-  const values = [...trimmed.matchAll(/(\d{1,2})(?:[:.](\d{2}))?\s*([ap])?\.?\s*(m)?\b/gi)]
-    .map((match) => {
+  type Token = { hour: number; minute: number; suffix?: "a" | "p"; hasMinutes: boolean };
+  const tokens = [...trimmed.matchAll(/(\d{1,2})(?:[:.](\d{2}))?\s*([ap])?\.?\s*(m)?\b/gi)]
+    .map((match): Token | null => {
       const hour = Number(match[1]);
       const minute = Number(match[2] ?? "0");
       if (minute > 59 || hour > 24) return null;
-      const suffix = match[3] && match[4] ? match[3].toLowerCase() : undefined;
-      if (suffix) {
-        if (hour > 12) return null;
-        return ((hour % 12) + (suffix === "p" ? 12 : 0)) * 60 + minute;
-      }
-      // 24-hour clock ("0730", "21:00") only counts when written with minutes.
-      if (!match[2]) return null;
-      return (hour % 24) * 60 + minute;
+      const suffix = match[3] && match[4] ? (match[3].toLowerCase() as "a" | "p") : undefined;
+      if (suffix && hour > 12) return null;
+      return { hour, minute, suffix, hasMinutes: match[2] !== undefined };
     })
-    .filter((value): value is number => value !== null);
+    .filter((token): token is Token => token !== null);
+
+  // A token with its own am/pm is read on the 12-hour clock. Without one it is a 24-hour time
+  // ("0730", "21:00") only when written with minutes; a bare hour has no meaning on its own.
+  const toMinutes = (token: Token, suffix: "a" | "p" | undefined): number | null => {
+    if (suffix) {
+      if (token.hour > 12) return null;
+      return ((token.hour % 12) + (suffix === "p" ? 12 : 0)) * 60 + token.minute;
+    }
+    if (!token.hasMinutes) return null;
+    return (token.hour % 24) * 60 + token.minute;
+  };
 
   const ranges: MinuteRange[] = [];
-  for (let index = 0; index + 1 < values.length; index += 2) {
-    ranges.push([values[index], values[index + 1]]);
+  for (let index = 0; index + 1 < tokens.length; index += 2) {
+    const first = tokens[index];
+    const second = tokens[index + 1];
+    const end = toMinutes(second, second.suffix);
+    // "5-8 pm" and "5:30-8 pm": a 12-hour start with no am/pm of its own shares the end's.
+    const shared = first.suffix === undefined && first.hour >= 1 && first.hour <= 12;
+    const inherited = shared ? second.suffix : undefined;
+    let start = toMinutes(first, first.suffix ?? inherited);
+    // "11-2 pm" is 11 am to 2 pm, not 11 pm to 2 pm.
+    if (start !== null && end !== null && inherited === "p" && start > end && first.hour !== 12) {
+      start = toMinutes(first, "a");
+    }
+    if (start !== null && end !== null) ranges.push([start, end]);
   }
   return ranges;
 }
 
 /**
  * Parses listed hours into rows. Returns [] when nothing in the text reads as
- * days or times, so callers can show "Hours not listed" instead of guessing.
+ * days or times, so callers can show "Hours not confirmed" instead of guessing.
  */
 export function parseOperatingHours(raw: string | undefined): HoursRow[] {
   const cleaned = (raw ?? "")

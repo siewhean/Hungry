@@ -17,6 +17,8 @@
 -- create a row. No other path lets `authenticated` write these tables (insert/update is revoked below
 -- on conversations, conversation_participants and messages; a read_receipts row needs a message).
 -- down-loses-data: schema only; the dropped chat rows come back from the pre-drop backup, not from this file.
+-- pre-up-backup: scripts/db/backup-chat-tables.sh
+-- post-down-restore: scripts/db/restore-chat-tables.sh
 
 create schema if not exists app_private;
 

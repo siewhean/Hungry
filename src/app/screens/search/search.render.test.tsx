@@ -1610,3 +1610,51 @@ test("SR5-3: cards press down 0.97 over 120 ms (PressableScale) and list rows hi
   assert.match(pressable, /PRESS_SCALE = 0\.97/);
   assert.match(pressable, /PRESS_DURATION_MS = 120/);
 });
+
+test("Open now hides stalls whose hours say closed, once the hours are read (1.3)", async () => {
+  stubCatalog({
+    listDishes: async () => page([dishCard("1"), dishCard("2")]),
+    listPlaces: async () => [],
+  });
+  const discovery = getHungryService().discovery;
+  const originalRead = discovery.getVenuesByIds;
+  const asked: string[][] = [];
+  const stall = (id: string, isOpen: boolean) =>
+    ({
+      id,
+      buildingId: "maxwell",
+      name: `Stall ${id}`,
+      unitNumber: "",
+      floor: "",
+      isOpen,
+      // A false flag only closes a stall that says why.
+      closureNotice: isOpen ? undefined : "Closed for the day",
+      topDishId: "",
+      operatingHours: "Daily 24 hours",
+      deliveryLinks: [],
+    }) as unknown as Awaited<ReturnType<typeof originalRead>>[number];
+  discovery.getVenuesByIds = async (ids: string[]) => {
+    asked.push(ids);
+    // A closed flag reads as closed at any hour of the day, so the test does not depend on the clock.
+    return [stall("venue-1", true), stall("venue-2", false)];
+  };
+  try {
+    const view = await renderResults({ browseMode: "dishes" });
+    await wait(400);
+    assert.ok(view.findByLabel(/^Dish 2,/), "both dishes show before the filter");
+    assert.equal(asked.length, 0, "hours are not read until Open now is on");
+    await view.press(view.findByLabel("Filters and sort"));
+    await view.press(view.findByText("Open now"));
+    await wait(400);
+    assert.ok(view.findByLabel("Filters and sort, 1 on"));
+    assert.ok(view.findByLabel("Remove Open now filter"));
+    assert.deepEqual(asked, [["venue-1", "venue-2"]], "one batched read for the shown stalls");
+    assert.ok(view.findByLabel(/^Dish 1,/), "the open stall's dish stays");
+    assert.equal(view.findByLabel(/^Dish 2,/), null, "the closed stall's dish is hidden");
+    await view.press(view.findByLabel("Remove Open now filter"));
+    await wait(200);
+    assert.ok(view.findByLabel(/^Dish 2,/), "turning it off brings the dish back");
+  } finally {
+    discovery.getVenuesByIds = originalRead;
+  }
+});

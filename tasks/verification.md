@@ -1723,3 +1723,9 @@ Use the smallest check that matches the change risk.
 - `npm run test:nightly-backup`: 9 pass, 1 skip (end-to-end, needs a Postgres). End-to-end run on a local Postgres 16 with a read-only role: dump, age encrypt, decrypt, `restore-drill.sh` restore, 14 tables match.
 - `npm run test:migration-safety`: 12 pass (after the `ref_of` change in `scripts/db/common.sh`).
 - Not run: the workflow itself (schedules and secrets only exist on GitHub after merge); the pgdg client install step is untested until the first manual run.
+
+## 2026-11-20 PKG-1.3 real hours + "Open now"
+- `npm test`: 3245 pass, 0 fail (new: openingSchedule, openNowFilter, homeStalls schedule, operatingHours shared am/pm). `node scripts/test-render.mjs src/app/screens/search/search.render.test.tsx`: 64 pass (new Open now case). `npm run typecheck` clean; eslint 0 errors on touched files; `npm run check:n-plus-one` ok; `npm run check:zone-hours` 5 pass (added to CI).
+- Real catalog check: every distinct hours line of the 86-stall zone on staging (read-only SELECT, 2026-11-20) was run through the parser; all clear lines gave the expected weekly rows, and the one ambiguous line ("12–11 am, 6 pm–12 am", 1 stall) is left as "Hours not confirmed". 26 stalls have no hours text.
+- `scripts/db/fill-zone-hours.sh` on a throwaway local Postgres 16 (venues + launch_zone_places): dry run writes nothing; --apply fills only clear zone stalls, leaves an existing schedule, an empty line, an unclear line and a stall outside the zone alone; a second run writes 0; --undo clears exactly the ids it wrote.
+- Not run: the script against staging or prod (sh runs it), `npm run test:coverage` locally (this container's Node reports unrelated files as dropped, including on a clean main; CI is the check), a device build.
