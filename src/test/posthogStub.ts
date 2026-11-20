@@ -24,6 +24,7 @@ export default class PostHogStub {
 
   static lastOptions: StubOptions | undefined;
   static personProperties: Record<string, unknown>[] = [];
+  static identified: { userId: string; properties?: Record<string, unknown> }[] = [];
 
   constructor(_apiKey?: string, options?: StubOptions) {
     PostHogStub.lastOptions = options;
@@ -33,7 +34,9 @@ export default class PostHogStub {
     PostHogStub.personProperties.push(properties);
   }
 
-  identify(_userId: string, _properties?: Record<string, unknown>): void {}
+  identify(userId: string, properties?: Record<string, unknown>): void {
+    PostHogStub.identified.push({ userId, properties });
+  }
 
   reset(): void {}
 

@@ -1,10 +1,9 @@
 // Filter chips for the search results and browse grids, kept free of service imports so the
 // deep-link parser can share the same allowlist.
 
-// The price cap maps onto p_max_price in the catalog RPCs. There is no Open now chip:
-// release cards only carry venues.is_open, which tracks temporary closures, not opening
-// hours, so it would list every stall at 3 am. It returns once open status is computed
-// from the weekly schedule at query time (decision 25).
+// The price cap maps onto p_max_price in the catalog RPCs. "Open now" is not a catalog filter:
+// release cards only carry venues.is_open (temporary closures, not opening hours). The results
+// screen reads each shown stall's hours instead (features/search/openNowFilter.ts).
 export const BUDGET_FILTER = "Under S$6";
 export const BUDGET_MAX_PRICE = 6;
 export const BROWSE_ALL_FILTER = "All";

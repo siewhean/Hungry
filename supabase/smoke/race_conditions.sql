@@ -58,11 +58,6 @@ begin
     raise exception 'trg_popular_visitor_pin_limit is missing';
   end if;
 
-  if not has_function_privilege('authenticated', 'public.mark_conversation_read(uuid)', 'execute')
-     or has_function_privilege('anon', 'public.mark_conversation_read(uuid)', 'execute') then
-    raise exception 'mark_conversation_read grants are wrong';
-  end if;
-
   if not has_function_privilege('service_role', 'public.bump_dish_draft_confidence(uuid, numeric)', 'execute')
      or has_function_privilege('authenticated', 'public.bump_dish_draft_confidence(uuid, numeric)', 'execute')
      or has_function_privilege('anon', 'public.bump_dish_draft_confidence(uuid, numeric)', 'execute') then

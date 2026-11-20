@@ -71,6 +71,8 @@ interface SessionState {
     trackSignInEvent?: boolean;
     /** The account was just created; logs sign_up_completed instead of sign_in_completed. */
     isNewUser?: boolean;
+    /** Authoritative session email when already known before profile hydration finishes. */
+    email?: string | null;
   }) => void;
   /**
    * Marks first-run onboarding done. Signed out, onboarding_completed waits for auth.
@@ -95,6 +97,7 @@ interface SessionState {
   applyAuthStateFromSession: (session: {
     isAuthenticated: boolean;
     userId?: string | null;
+    email?: string | null;
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
     authProvider?: string;
@@ -476,12 +479,27 @@ export const useSessionStore = create<SessionState>()(
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         if (options?.isNewUser) signUpReportedForUserId = profileId;
-        const internalAccountTrait = internalAccountTraitFor(syncedProfile?.email);
+        const snapshotEmail = options?.email || syncedProfile?.email;
+        const snapshotProperties = buildPostHogIdentityProperties();
         scheduleIdleWork(
           () => {
+            const active = useSessionStore.getState();
+            if (
+              !active.isAuthenticated ||
+              (nextUserId && active.authenticatedUserId !== nextUserId)
+            ) {
+              return;
+            }
+            const currentProfile = getProfileStoreState().profile;
+            const authoritativeEmail =
+              currentProfile?.id === profileId && currentProfile.email
+                ? currentProfile.email
+                : snapshotEmail;
             identifyPostHogUser(profileId, {
-              ...buildPostHogIdentityProperties(),
-              ...internalAccountTrait,
+              ...(currentProfile?.id === profileId
+                ? buildPostHogIdentityProperties()
+                : snapshotProperties),
+              ...internalAccountTraitFor(authoritativeEmail),
             });
             syncFollowStateFromServer(nextUserId);
             if (options?.isNewUser) {
@@ -648,12 +666,27 @@ export const useSessionStore = create<SessionState>()(
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "authenticated-user";
           if (session.isNewUser && !currentlyAuthenticated) signUpReportedForUserId = profileId;
-          const internalAccountTrait = internalAccountTraitFor(profile?.email);
+          const snapshotEmail = session.email || profile?.email;
+          const snapshotProperties = buildPostHogIdentityProperties();
           scheduleIdleWork(
             () => {
+              const active = useSessionStore.getState();
+              if (
+                !active.isAuthenticated ||
+                (nextUserId && active.authenticatedUserId !== nextUserId)
+              ) {
+                return;
+              }
+              const currentProfile = getProfileStoreState().profile;
+              const authoritativeEmail =
+                currentProfile?.id === profileId && currentProfile.email
+                  ? currentProfile.email
+                  : snapshotEmail;
               identifyPostHogUser(profileId, {
-                ...buildPostHogIdentityProperties(),
-                ...internalAccountTrait,
+                ...(currentProfile?.id === profileId
+                  ? buildPostHogIdentityProperties()
+                  : snapshotProperties),
+                ...internalAccountTraitFor(authoritativeEmail),
               });
               syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
               // Only a sign-in that starts a session counts: a SIGNED_IN replayed

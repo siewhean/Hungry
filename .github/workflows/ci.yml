@@ -118,6 +118,7 @@ jobs:
           npm run check:edge-functions
           npm run check:staging-functions
           npm run check:staging-test-activity
+          npm run check:zone-hours
 
       - name: Rate-limit contract
         run: npm run check:rate-limits

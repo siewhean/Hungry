@@ -47,6 +47,8 @@ import { SearchEmptyState } from "@/features/search/SearchEmptyState";
 import { parseSearchQuery, type ParsedQueryPart } from "@/features/search/queryParser";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { filterOpenNow, venueIdsToRead } from "@/features/search/openNowFilter";
+import type { VenueSummary } from "@/types/domain";
 import {
   BROWSE_ALL_FILTER,
   BROWSE_FILTER_IDS,
@@ -435,6 +437,13 @@ function RawCatalogBrowseGrid({
   const [foodTypes, setFoodTypes] = useState<readonly string[]>([]);
   const [foodTypeOptions, setFoodTypeOptions] = useState<readonly string[]>([]);
   const filterCount = filters.length + foodTypes.length;
+  // "Open now" is read from each stall's hours (the stall page's rule), not sent to the catalog, so
+  // it hides stalls after the page loads and never changes which page comes next.
+  const [openNowOnly, setOpenNowOnly] = useState(false);
+  const openNowVenuesRef = useRef(new Map<string, VenueSummary>());
+  const [openNowReads, setOpenNowReads] = useState(0);
+  const [openNowFailed, setOpenNowFailed] = useState(false);
+  const shownFilterCount = filterCount + (openNowOnly ? 1 : 0);
   const [sort, setSort] = useState<BrowseSortId>("relevance");
   // "Search all Singapore" applies only to the query, filters and place it was tapped for.
   const [widenedScope, setWidenedScope] = useState<string | null>(null);
@@ -1119,6 +1128,16 @@ function RawCatalogBrowseGrid({
     setFoodTypes([]);
   }, []);
 
+  const handleToggleOpenNow = useCallback(() => {
+    trackAnalyticsEvent("search_filter_changed", {
+      mode,
+      filter: "open_now",
+      selected: !openNowOnly,
+    });
+    setOpenNowOnly(!openNowOnly);
+    setOpenNowFailed(false);
+  }, [mode, openNowOnly]);
+
   const handleSelectFoodType = useCallback(
     (label: string) => {
       const selected = !foodTypes.includes(label);
@@ -1277,11 +1296,79 @@ function RawCatalogBrowseGrid({
     [handleOpen, handleToggleSave, itemWidth, mode, savedDishIds],
   );
 
+  const openNowActive = openNowOnly;
+  // Hours go stale: re-check every minute while Open now is on.
+  const [clockTick, setClockTick] = useState(0);
+  useEffect(() => {
+    if (!openNowActive) return;
+    const timer = setInterval(() => setClockTick((tick) => tick + 1), 60_000);
+    return () => {
+      clearInterval(timer);
+      // Hours and closure notices change: the next time Open now is turned on they are read fresh.
+      openNowVenuesRef.current.clear();
+    };
+  }, [openNowActive]);
+  // Open now looks at every outlet first, so a chain with one open outlet is not hidden behind a
+  // closed first one. openNowReads changes whenever new hours arrive, so the cache is read again.
+  const openItems = useMemo(
+    () => (openNowActive ? filterOpenNow(mode, items, openNowVenuesRef.current) : items),
+    [mode, openNowActive, openNowReads, clockTick, items],
+  );
   // Chain outlets and duplicate records of one stall show as a single card.
   const rows = useMemo<BrowseItem[]>(
-    () => (mode === "stalls" ? mergeStallOutlets(items as CatalogRawVenueCard[]) : items),
-    [items, mode],
+    () => (mode === "stalls" ? mergeStallOutlets(openItems as CatalogRawVenueCard[]) : openItems),
+    [openItems, mode],
   );
+  useEffect(() => {
+    if (!openNowActive) return;
+    const unread = venueIdsToRead(mode, items, openNowVenuesRef.current);
+    if (unread.length === 0) return;
+    let active = true;
+    getHungryService()
+      .discovery.getVenuesByIds(unread)
+      .then((venues) => {
+        if (!active) return;
+        for (const venue of venues) openNowVenuesRef.current.set(venue.id, venue);
+        // A stall the read could not return would be asked for again forever: count it as read.
+        for (const id of unread) {
+          if (!openNowVenuesRef.current.has(id)) {
+            openNowVenuesRef.current.set(id, {
+              id,
+              operatingHours: "",
+              isOpen: true,
+            } as VenueSummary);
+          }
+        }
+        setOpenNowReads((count) => count + 1);
+      })
+      .catch((hoursError: unknown) => {
+        reportError(hoursError, { surface: "catalog_browse", load: "open_now_hours" });
+        if (!active) return;
+        // Without hours the filter cannot be honest: turn it off and say so.
+        setOpenNowOnly(false);
+        setOpenNowFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [mode, openNowActive, openNowReads, items]);
+  // A page whose stalls are all closed leaves no row to scroll to, so no end-reached call would
+  // ever fetch the next one: keep loading until a stall is open or no pages remain.
+  useEffect(() => {
+    if (!openNowActive || rows.length > 0 || items.length === 0) return;
+    if (nextCursor && !isLoading && !isLoadingMore && !loadMoreFailed) {
+      void loadPage(nextCursor, true);
+    }
+  }, [
+    openNowActive,
+    rows.length,
+    items.length,
+    nextCursor,
+    isLoading,
+    isLoadingMore,
+    loadMoreFailed,
+    loadPage,
+  ]);
   const isRefreshing = isLoading && items.length > 0;
   const summary =
     matchCount !== undefined && !error && loadedKey === requestKey
@@ -1360,7 +1447,8 @@ function RawCatalogBrowseGrid({
   );
   const listHeader = (
     <View style={{ gap: spacing[3], paddingHorizontal: spacing[4], paddingBottom: spacing[2] }}>
-      {tasteSearch.length >= 3 ? (
+      {/* Hidden under Open now: its dishes are not checked against the stalls' hours. */}
+      {tasteSearch.length >= 3 && !openNowActive ? (
         <MoreLikeThisRail
           title="Closest to your taste"
           subtitle={`"${query}" dishes ranked by what you like`}
@@ -1470,6 +1558,15 @@ function RawCatalogBrowseGrid({
             onPress={() => handleSelectFilter(filter)}
           />
         ))}
+        {openNowOnly ? (
+          <Chip
+            label="Open now"
+            accessibilityLabel="Remove Open now filter"
+            rightIcon={<AppSymbol name="close" color={palette.orangeText} size={14} />}
+            selected
+            onPress={handleToggleOpenNow}
+          />
+        ) : null}
         {foodTypes.map((label) => (
           <Chip
             key={`food:${label}`}
@@ -1506,6 +1603,11 @@ function RawCatalogBrowseGrid({
         ) : null}
       </ScrollView>
       <ResultsNotes notes={notes} />
+      {openNowFailed ? (
+        <AppText tone="secondary" variant="micro">
+          {"We couldn't check opening hours, so Open now is off."}
+        </AppText>
+      ) : null}
       {locationMoved ? (
         <Pressable
           accessibilityRole="button"
@@ -1634,12 +1736,14 @@ function RawCatalogBrowseGrid({
               <IconButton
                 variant="ghost"
                 accessibilityLabel={
-                  filterCount > 0 ? `Filters and sort, ${filterCount} on` : "Filters and sort"
+                  shownFilterCount > 0
+                    ? `Filters and sort, ${shownFilterCount} on`
+                    : "Filters and sort"
                 }
                 onPress={() => filterSheetRef.current?.present()}
                 icon={<AppSymbol name="filters" color={palette.text} size={22} />}
               />
-              {filterCount > 0 ? (
+              {shownFilterCount > 0 ? (
                 <View
                   pointerEvents="none"
                   testID="search-filters-badge"
@@ -1656,7 +1760,7 @@ function RawCatalogBrowseGrid({
                   }}
                 >
                   <AppText variant="micro" style={{ color: palette.surface }}>
-                    {filterCount}
+                    {shownFilterCount}
                   </AppText>
                 </View>
               ) : null}
@@ -1753,6 +1857,14 @@ function RawCatalogBrowseGrid({
                       />
                     </View>
                   </View>
+                ) : openNowActive && items.length > 0 && rows.length === 0 && !nextCursor ? (
+                  // Every stall found is closed (hours read), which is not "no matches".
+                  <EmptyState
+                    title="Nothing open right now"
+                    body="The stalls matching this search are closed or have no confirmed hours."
+                    ctaLabel="Show closed stalls too"
+                    onPress={handleToggleOpenNow}
+                  />
                 ) : error ? (
                   <EmptyState
                     title="Catalog unavailable"
@@ -1847,6 +1959,12 @@ function RawCatalogBrowseGrid({
               />
             </>
           ) : null}
+          <AppText variant="h2">Hours</AppText>
+          <ChipGroup
+            options={[{ id: "open_now", label: "Open now" }]}
+            selectedIds={openNowOnly ? ["open_now"] : []}
+            onSelect={handleToggleOpenNow}
+          />
           <AppText variant="h2">Sort by</AppText>
           <View>
             {BROWSE_SORT_OPTIONS.map((option) => {

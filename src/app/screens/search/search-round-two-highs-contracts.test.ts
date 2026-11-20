@@ -58,9 +58,12 @@ test("H21: map and Quick Bites keep raw text locally and open results with the q
   assert.doesNotMatch(read("src/app/screens/discover/DiscoverHomeScreen.tsx"), /updateQuery/);
 });
 
-test("H22: Search has no Open now chip while is_open only tracks closures", () => {
+test("H22: Search's Open now reads each stall's hours, never the is_open flag (package 1.3)", () => {
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
-  assert.doesNotMatch(grid, /"Open now"/);
+  // It was left out while release cards only carried is_open (closures, not hours). It returns now
+  // that the open state is computed from the schedule: stall hours are read for the cards shown.
+  assert.match(grid, /filterOpenNow\(mode, items, openNowVenuesRef\.current\)/);
+  assert.match(grid, /discovery\s*\.getVenuesByIds\(unread\)/);
   assert.doesNotMatch(grid, /openOnly:/);
 });
 
@@ -126,4 +129,14 @@ test("H26: raw cards store only images cleared by catalog_display_image_url", ()
   assert.match(sql, /update public\.catalog_raw_dish_cards c\s+set image_url/);
   // Triggers fire in name order; this one must run after the draft trigger.
   assert.ok("trg_catalog_raw_venue_display_images" > "trg_catalog_raw_venue_card_without_drafts");
+});
+
+test("Open now keeps loading pages while every loaded stall is closed", () => {
+  const screen = read("src/app/screens/search/SearchResultsScreen.tsx");
+  assert.match(screen, /!openNowActive \|\| rows\.length > 0 \|\| items\.length === 0/);
+  assert.match(
+    screen,
+    /void loadPage\(nextCursor, true\);\s*\}\s*\}, \[\s*openNowActive,\s*rows\.length/,
+  );
+  assert.match(screen, /openNowActive && items\.length > 0 && rows\.length === 0 && !nextCursor/);
 });

@@ -12,8 +12,6 @@ with required_tables(table_name) as (
 ),
 required_wrapped_rpc_functions(function_name) as (
   values
-    ('open_chat_conversation'),
-    ('send_chat_message'),
     ('report_content'),
     ('list_content_moderation_queue'),
     ('award_food_cred'),
@@ -100,10 +98,6 @@ findings as (
     privilege as detail
   from (
     values
-      ('authenticated can insert messages', has_table_privilege('authenticated', 'public.messages', 'INSERT')),
-      ('authenticated can update messages', has_table_privilege('authenticated', 'public.messages', 'UPDATE')),
-      ('authenticated can delete messages', has_table_privilege('authenticated', 'public.messages', 'DELETE')),
-      ('anon can insert messages', has_table_privilege('anon', 'public.messages', 'INSERT')),
       ('authenticated can insert content_reports', has_table_privilege('authenticated', 'public.content_reports', 'INSERT')),
       ('anon can insert content_reports', has_table_privilege('anon', 'public.content_reports', 'INSERT'))
   ) as checks(privilege, allowed)

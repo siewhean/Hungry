@@ -131,7 +131,7 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.doesNotMatch(grid, /accessibilityLabel=\{`Open \$\{title\}`\}/);
   assert.doesNotMatch(grid, /Menu details available/);
   // M7: chain outlets merge for stalls.
-  assert.match(grid, /mergeStallOutlets\(items as CatalogRawVenueCard\[\]\)/);
+  assert.match(grid, /mergeStallOutlets\(\s*openItems as CatalogRawVenueCard\[\]/);
   assert.match(grid, /\+\$\{outlets\} \$\{outlets === 1 \? "outlet" : "outlets"\}/);
   // M10: ways forward from an empty result.
   const emptyState = read("src/features/search/SearchEmptyState.tsx");

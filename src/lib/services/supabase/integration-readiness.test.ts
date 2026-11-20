@@ -123,21 +123,18 @@ test("integration migration adds media buckets for posts and merchant images", (
   assert.match(sql, /storage\.foldername\(name\)\)\[1\] = auth\.uid\(\)::text/i);
 });
 
-test("integration readiness smoke SQL checks schema, policies, buckets, and realtime", () => {
+test("integration readiness smoke SQL checks schema, policies, triggers, and buckets", () => {
   const smoke = readRepoFile("supabase/smoke/integration_readiness.sql");
 
   assert.match(smoke, /expected_tables/i);
   assert.match(smoke, /privacy_settings/i);
   assert.match(smoke, /posts/i);
-  assert.match(smoke, /messages/i);
   assert.match(smoke, /expected_policies/i);
-  assert.match(smoke, /messages_insert_sender_participant/i);
+  assert.doesNotMatch(smoke, /conversation|messages|read_receipts|supabase_realtime/i);
   assert.match(smoke, /expected_storage_policies/i);
   assert.match(smoke, /post_media_select_visible_post_objects/i);
   assert.match(smoke, /expected_triggers/i);
   assert.match(smoke, /trg_post_likes_sync_counts/i);
   assert.match(smoke, /expected_buckets/i);
   assert.match(smoke, /merchant-dish-images/i);
-  assert.match(smoke, /pg_publication/i);
-  assert.match(smoke, /supabase_realtime/i);
 });

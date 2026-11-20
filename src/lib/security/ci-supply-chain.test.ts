@@ -177,7 +177,7 @@ test("release checklist includes the Supabase Advisor regression guard", () => {
 });
 
 test("service-role smoke scripts require explicit opt-in and smoke env names", () => {
-  for (const helper of ["scripts/supabase-chat-smoke.mjs", "scripts/supabase-ocr-smoke.mjs"]) {
+  for (const helper of ["scripts/supabase-ocr-smoke.mjs"]) {
     const source = read(helper);
     assert.match(source, /HUNGRY_ALLOW_SERVICE_ROLE_SMOKE/);
     assert.match(source, /HUNGRY_SUPABASE_SMOKE_SERVICE_ROLE_KEY/);
