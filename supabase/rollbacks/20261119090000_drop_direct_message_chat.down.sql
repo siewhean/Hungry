@@ -561,10 +561,14 @@ execute function public.enforce_read_receipt_update_guard();
 
 -- Row-level security policies, in their final form: 0023 policies with auth.uid() wrapped as a
 -- scalar sub-select (20260527145534), and read_receipts_upsert_reader split per command there.
+-- Function references are app_private.can_access_conversation / app_private.is_merchant_member:
+-- 20260522142004 moved those functions with ALTER FUNCTION ... SET SCHEMA, and a policy follows the
+-- function by OID, so the live policies are written with the app_private names (confirmed against a
+-- pg_dump of staging taken before the up migration). Writing public.* here changes the definition.
 drop policy if exists "conversations_select_participant" on public.conversations;
 create policy "conversations_select_participant"
 on public.conversations for select to authenticated
-using (public.can_access_conversation(id));
+using (app_private.can_access_conversation(id));
 
 drop policy if exists "conversations_insert_creator" on public.conversations;
 create policy "conversations_insert_creator"
@@ -574,13 +578,13 @@ with check ((select auth.uid()) = created_by_user_id);
 drop policy if exists "conversations_update_participant" on public.conversations;
 create policy "conversations_update_participant"
 on public.conversations for update to authenticated
-using (public.can_access_conversation(id))
-with check (public.can_access_conversation(id));
+using (app_private.can_access_conversation(id))
+with check (app_private.can_access_conversation(id));
 
 drop policy if exists "conversation_participants_select_participant" on public.conversation_participants;
 create policy "conversation_participants_select_participant"
 on public.conversation_participants for select to authenticated
-using (public.can_access_conversation(conversation_id));
+using (app_private.can_access_conversation(conversation_id));
 
 drop policy if exists "conversation_participants_insert_creator_or_self" on public.conversation_participants;
 create policy "conversation_participants_insert_creator_or_self"
@@ -593,7 +597,7 @@ with check (
   )
   or (
     participant_merchant_account_id is not null
-    and public.is_merchant_member(participant_merchant_account_id)
+    and app_private.is_merchant_member(participant_merchant_account_id)
     and exists (
       select 1 from public.conversations c
       where c.id = conversation_participants.conversation_id
@@ -609,32 +613,32 @@ using (
   participant_user_id = (select auth.uid())
   or (
     participant_merchant_account_id is not null
-    and public.is_merchant_member(participant_merchant_account_id)
+    and app_private.is_merchant_member(participant_merchant_account_id)
   )
 )
 with check (
   participant_user_id = (select auth.uid())
   or (
     participant_merchant_account_id is not null
-    and public.is_merchant_member(participant_merchant_account_id)
+    and app_private.is_merchant_member(participant_merchant_account_id)
   )
 );
 
 drop policy if exists "messages_select_participant" on public.messages;
 create policy "messages_select_participant"
 on public.messages for select to authenticated
-using (public.can_access_conversation(conversation_id) and deleted_at is null);
+using (app_private.can_access_conversation(conversation_id) and deleted_at is null);
 
 drop policy if exists "messages_insert_sender_participant" on public.messages;
 create policy "messages_insert_sender_participant"
 on public.messages for insert to authenticated
 with check (
-  public.can_access_conversation(conversation_id)
+  app_private.can_access_conversation(conversation_id)
   and (
     sender_user_id = (select auth.uid())
     or (
       sender_merchant_account_id is not null
-      and public.is_merchant_member(sender_merchant_account_id)
+      and app_private.is_merchant_member(sender_merchant_account_id)
     )
   )
 );
@@ -646,33 +650,33 @@ using (
   sender_user_id = (select auth.uid())
   or (
     sender_merchant_account_id is not null
-    and public.is_merchant_member(sender_merchant_account_id)
+    and app_private.is_merchant_member(sender_merchant_account_id)
   )
 )
 with check (
   sender_user_id = (select auth.uid())
   or (
     sender_merchant_account_id is not null
-    and public.is_merchant_member(sender_merchant_account_id)
+    and app_private.is_merchant_member(sender_merchant_account_id)
   )
 );
 
 drop policy if exists "read_receipts_select_participant" on public.read_receipts;
 create policy "read_receipts_select_participant"
 on public.read_receipts for select to authenticated
-using (public.can_access_conversation(conversation_id));
+using (app_private.can_access_conversation(conversation_id));
 
 drop policy if exists "read_receipts_upsert_reader" on public.read_receipts;
 drop policy if exists "read_receipts_upsert_reader_insert" on public.read_receipts;
 create policy "read_receipts_upsert_reader_insert"
 on public.read_receipts for insert to authenticated
 with check (
-  public.can_access_conversation(conversation_id)
+  app_private.can_access_conversation(conversation_id)
   and (
     reader_user_id = (select auth.uid())
     or (
       reader_merchant_account_id is not null
-      and public.is_merchant_member(reader_merchant_account_id)
+      and app_private.is_merchant_member(reader_merchant_account_id)
     )
   )
 );
@@ -684,16 +688,16 @@ using (
   reader_user_id = (select auth.uid())
   or (
     reader_merchant_account_id is not null
-    and public.is_merchant_member(reader_merchant_account_id)
+    and app_private.is_merchant_member(reader_merchant_account_id)
   )
 )
 with check (
-  public.can_access_conversation(conversation_id)
+  app_private.can_access_conversation(conversation_id)
   and (
     reader_user_id = (select auth.uid())
     or (
       reader_merchant_account_id is not null
-      and public.is_merchant_member(reader_merchant_account_id)
+      and app_private.is_merchant_member(reader_merchant_account_id)
     )
   )
 );
@@ -705,7 +709,7 @@ using (
   reader_user_id = (select auth.uid())
   or (
     reader_merchant_account_id is not null
-    and public.is_merchant_member(reader_merchant_account_id)
+    and app_private.is_merchant_member(reader_merchant_account_id)
   )
 );
 

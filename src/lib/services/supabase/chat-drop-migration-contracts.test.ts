@@ -171,6 +171,22 @@ test("the down file recreates every table, function, trigger and policy that was
     "read_receipts_upsert_reader_insert",
     "read_receipts_upsert_reader_update",
   ]);
+  // The live policies call app_private.can_access_conversation / app_private.is_merchant_member:
+  // 20260522142004 moved those functions with ALTER FUNCTION ... SET SCHEMA, and a policy follows
+  // its function by OID. A public.* call inside a policy makes the schema after the down file differ
+  // from the schema before the up migration (it failed the staging rehearsal on 12 policies).
+  const downCode = code(down);
+  const policyStart = downCode.indexOf("drop policy if exists");
+  const policyEnd = downCode.indexOf("grant all on table public.conversations");
+  assert.ok(
+    policyStart >= 0 && policyEnd > policyStart,
+    "policy section not found in the down file",
+  );
+  const policySql = downCode.slice(policyStart, policyEnd);
+  assert.match(policySql, /app_private\.can_access_conversation\(/);
+  assert.match(policySql, /app_private\.is_merchant_member\(/);
+  assert.doesNotMatch(policySql, /public\.can_access_conversation\(/);
+  assert.doesNotMatch(policySql, /public\.is_merchant_member\(/);
   assert.match(code(down), /read_receipts replica identity full/);
   assert.match(code(down), /alter publication supabase_realtime add table/);
   assert.match(code(down), /post_shares_target_conversation_id_fkey/);
