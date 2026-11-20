@@ -19,6 +19,11 @@
 -- down-loses-data: schema only; the dropped chat rows come back from the pre-drop backup, not from this file.
 -- pre-up-backup: scripts/db/backup-chat-tables.sh
 -- post-down-restore: scripts/db/restore-chat-tables.sh
+-- closed-after-down: public.open_chat_conversation(uuid, uuid, text)
+-- closed-after-down: app_private.open_chat_conversation(uuid, uuid, text)
+-- closed-after-down: public.send_chat_message(uuid, text, text, uuid)
+-- closed-after-down: app_private.send_chat_message(uuid, text, text, uuid)
+-- closed-after-down: public.mark_conversation_read(uuid)
 
 create schema if not exists app_private;
 

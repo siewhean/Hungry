@@ -109,10 +109,11 @@ if [ "$NO_DOWN" = 0 ]; then
   apply_guarded "$DOWN" delete || die "down migration failed. Staging is at the 'up' state; restore from $BACKUP_DIR if needed."
   if [ -n "$POST_DOWN_RESTORE" ]; then
     say "   verifying deferred grants and running post-down restore ($POST_DOWN_RESTORE)"
-    dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.after_down"
-    if diff -q "$WORK/schema.before" "$WORK/schema.after_down" >/dev/null; then
-      die "$DOWN declares -- post-down-restore, but schema immediately after down already had full grants unlocked"
-    fi
+    while IFS= read -r fn; do
+      [ -n "$fn" ] || continue
+      [ "$(psql_db -At -c "select has_function_privilege('authenticated', '$fn', 'execute')")" = f ] \
+        || die "$fn is already executable by authenticated immediately after down (expected closed until restore)"
+    done < <(sql_header_all "$DOWN" "closed-after-down")
     "$REPO_ROOT/$POST_DOWN_RESTORE" staging "$RESTORE_ARCHIVE_DIR" \
       || die "post-down restore ($POST_DOWN_RESTORE) failed on staging (backup: $BACKUP_DIR)."
   fi
