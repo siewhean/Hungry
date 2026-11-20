@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { isInternalAccountEmail } from "@/lib/analytics/trafficTag";
 import { resetExperimentSession } from "@/lib/experiments/experiments";
 import { clearShareAttribution, getShareAttribution } from "@/features/share/shareAttribution";
 import { deleteExportFile } from "@/features/profile/exportFile";
@@ -70,6 +71,8 @@ interface SessionState {
     trackSignInEvent?: boolean;
     /** The account was just created; logs sign_up_completed instead of sign_in_completed. */
     isNewUser?: boolean;
+    /** Authoritative session email when already known before profile hydration finishes. */
+    email?: string | null;
   }) => void;
   /**
    * Marks first-run onboarding done. Signed out, onboarding_completed waits for auth.
@@ -94,6 +97,7 @@ interface SessionState {
   applyAuthStateFromSession: (session: {
     isAuthenticated: boolean;
     userId?: string | null;
+    email?: string | null;
     completedOnboarding?: boolean;
     skippedTasteQuiz?: boolean;
     authProvider?: string;
@@ -269,12 +273,35 @@ function identifyPostHogUser(userId: string, properties: Record<string, unknown>
   identify(userId, properties);
 }
 
-function resetPostHogUser(): void {
+/**
+ * The profile's real email loads after sign-in; a staging test diner is marked once it is known.
+ */
+export function markInternalAccountFromProfile(
+  profileId: string,
+  email: string | null | undefined,
+) {
+  if (!shouldEnablePostHogIdentity() || !isInternalAccountEmail(email)) return;
+  const { markPostHogAccountInternal } =
+    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
+  markPostHogAccountInternal(profileId);
+}
+
+/** Resets the PostHog user; true when the account signing out was the team's. */
+function resetPostHogUser(): boolean {
   resetExperimentSession();
-  if (!shouldEnablePostHogIdentity()) return;
+  if (!shouldEnablePostHogIdentity()) return false;
   const { resetPostHogUser: reset } =
     require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
-  reset();
+  return reset();
+}
+
+/**
+ * Staging test diners are not real diners: launch numbers leave them out. Read with the profile
+ * id when the sign-in happens, so a callback that runs after an account switch cannot give one
+ * account the other's mark.
+ */
+function internalAccountTraitFor(email: string | null | undefined): { is_internal?: true } {
+  return isInternalAccountEmail(email) ? { is_internal: true } : {};
 }
 
 function buildPostHogIdentityProperties() {
@@ -432,6 +459,7 @@ export const useSessionStore = create<SessionState>()(
         if (previousUserId && nextUserId && previousUserId !== nextUserId) {
           clearAccountScopedStores();
           clearAccountLocalHistory();
+          resetPostHogUser();
         }
         set((state) => ({
           isAuthReady: true,
@@ -453,9 +481,28 @@ export const useSessionStore = create<SessionState>()(
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         if (options?.isNewUser) signUpReportedForUserId = profileId;
+        const snapshotEmail = options?.email || syncedProfile?.email;
+        const snapshotProperties = buildPostHogIdentityProperties();
         scheduleIdleWork(
           () => {
-            identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+            const active = useSessionStore.getState();
+            if (
+              !active.isAuthenticated ||
+              (nextUserId && active.authenticatedUserId !== nextUserId)
+            ) {
+              return;
+            }
+            const currentProfile = getProfileStoreState().profile;
+            const authoritativeEmail =
+              currentProfile?.id === profileId && currentProfile.email
+                ? currentProfile.email
+                : snapshotEmail;
+            identifyPostHogUser(profileId, {
+              ...(currentProfile?.id === profileId
+                ? buildPostHogIdentityProperties()
+                : snapshotProperties),
+              ...internalAccountTraitFor(authoritativeEmail),
+            });
             syncFollowStateFromServer(nextUserId);
             if (options?.isNewUser) {
               trackSignUpCompletedOnce(profileId, options.authProvider ?? "email");
@@ -509,9 +556,13 @@ export const useSessionStore = create<SessionState>()(
         });
         clearAccountScopedStores();
         clearAuthenticatedProfile();
-        resetPostHogUser();
+        const wasInternalAccount = resetPostHogUser();
         resetSignInTracking();
-        trackAnalyticsEvent("sign_out", { reason: "session_expired" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "session_expired", ...(wasInternalAccount ? { is_internal: true } : {}) },
+          { userId: profileId },
+        );
       },
       dismissSessionExpiry: () => set({ sessionExpired: false }),
       setReturnRoute: (returnRoute) => set({ returnRoute }),
@@ -548,9 +599,13 @@ export const useSessionStore = create<SessionState>()(
         clearAccountScopedStores();
         clearAccountLocalHistory();
         clearAuthenticatedProfile();
-        resetPostHogUser();
+        const wasInternalAccount = resetPostHogUser();
         resetSignInTracking();
-        trackAnalyticsEvent("sign_out", { reason: "manual" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "manual", ...(wasInternalAccount ? { is_internal: true } : {}) },
+          { userId: profileId },
+        );
       },
       finishPendingSignOut: (): Promise<void> =>
         useSessionStore.getState().signOutPending && getConfiguredDataSource() === "supabase"
@@ -567,9 +622,13 @@ export const useSessionStore = create<SessionState>()(
         });
         clearAccountScopedStores();
         clearAuthenticatedProfile();
-        resetPostHogUser();
+        const wasInternalAccount = resetPostHogUser();
         resetSignInTracking();
-        trackAnalyticsEvent("sign_out", { reason: "clear_session" }, { userId: profileId });
+        trackAnalyticsEvent(
+          "sign_out",
+          { reason: "clear_session", ...(wasInternalAccount ? { is_internal: true } : {}) },
+          { userId: profileId },
+        );
       },
       markHydrated: () => set({ hasHydrated: true }),
       markAuthReady: () => set({ isAuthReady: true }),
@@ -601,6 +660,7 @@ export const useSessionStore = create<SessionState>()(
           if (previousUserId && nextUserId && previousUserId !== nextUserId) {
             clearAccountScopedStores();
             clearAccountLocalHistory();
+            resetPostHogUser();
           }
           set((state) => ({
             isAuthenticated: true,
@@ -621,9 +681,28 @@ export const useSessionStore = create<SessionState>()(
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "authenticated-user";
           if (session.isNewUser && !currentlyAuthenticated) signUpReportedForUserId = profileId;
+          const snapshotEmail = session.email || profile?.email;
+          const snapshotProperties = buildPostHogIdentityProperties();
           scheduleIdleWork(
             () => {
-              identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+              const active = useSessionStore.getState();
+              if (
+                !active.isAuthenticated ||
+                (nextUserId && active.authenticatedUserId !== nextUserId)
+              ) {
+                return;
+              }
+              const currentProfile = getProfileStoreState().profile;
+              const authoritativeEmail =
+                currentProfile?.id === profileId && currentProfile.email
+                  ? currentProfile.email
+                  : snapshotEmail;
+              identifyPostHogUser(profileId, {
+                ...(currentProfile?.id === profileId
+                  ? buildPostHogIdentityProperties()
+                  : snapshotProperties),
+                ...internalAccountTraitFor(authoritativeEmail),
+              });
               syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
               // Only a sign-in that starts a session counts: a SIGNED_IN replayed
               // for a session restored from storage is never a new sign-up.

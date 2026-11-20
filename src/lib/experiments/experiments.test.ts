@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import test, { afterEach } from "node:test";
+import test, { afterEach, beforeEach } from "node:test";
 
 import {
   EXPERIMENTS,
@@ -9,8 +9,11 @@ import {
   getExperimentVariant,
   resetExperimentSession,
   resolveExperimentVariant,
+  EXPERIMENTS_MIN_WEEKLY_DINERS,
+  isExperimentAssignmentReady,
   setExperimentFlagSource,
   setExperimentOverride,
+  setExperimentsFrozen,
   setReleaseExperimentOverrides,
   getExperimentOverride,
   type ExperimentDefinition,
@@ -44,7 +47,13 @@ function fakeSource(initial: Record<string, boolean | string> | undefined) {
   };
 }
 
+// These tests are about how a live test behaves, so they lift the freeze; the freeze has its own.
+beforeEach(() => {
+  setExperimentsFrozen(false);
+});
+
 afterEach(() => {
+  setExperimentsFrozen(true);
   setExperimentFlagSource(undefined);
   clearExperimentOverrides();
   resetExperimentSession();
@@ -332,4 +341,49 @@ test("the email-code release serves the code form unless a flag says control", (
   setExperimentFlagSource(fake.source);
   assert.equal(getExperimentVariant("auth_email_code_first_v1", { expose: true }), "control");
   assert.deepEqual(fake.state.exposures, ["auth_email_code_first_v1"]);
+});
+
+test("until there are enough weekly diners every test serves its fallback and records no exposure", () => {
+  setExperimentsFrozen(true);
+  assert.equal(EXPERIMENTS_MIN_WEEKLY_DINERS, 300);
+  // A 50/50 split that is live in PostHog today.
+  const fake = fakeSource({ stall_bar_cta_v1: "directions_cta", welcome_back_v2: "test" });
+  setExperimentFlagSource(fake.source);
+  assert.equal(getExperimentVariant("stall_bar_cta_v1", { expose: true }), "control");
+  assert.equal(getExperimentVariant("welcome_back_v2", { expose: true }), "control");
+  assert.deepEqual(fake.state.exposures, []);
+  assert.equal(isExperimentAssignmentReady("stall_bar_cta_v1"), true, "no flag load to wait for");
+});
+
+test("the freeze holds every running test but not a staged rollout or a QA override", () => {
+  setExperimentsFrozen(true);
+  const fake = fakeSource({
+    auth_email_code_first_v1: "control",
+    saved_default_sort_v1: "nearest",
+  });
+  setExperimentFlagSource(fake.source);
+  const nonRollouts = KEYS.filter((key) => {
+    const definition = EXPERIMENTS[key] as ExperimentDefinition;
+    return definition.status === "running" && !definition.rollout;
+  });
+  assert.ok(nonRollouts.length >= 9);
+  for (const key of nonRollouts) {
+    assert.equal(
+      getExperimentVariant(key, { expose: true }),
+      (EXPERIMENTS[key] as ExperimentDefinition).fallback,
+      `${key} is held on its fallback`,
+    );
+  }
+  // A rollout is a release with a kill switch: it still follows its flag.
+  assert.equal(getExperimentVariant("auth_email_code_first_v1", { expose: true }), "control");
+  // QA can still preview an arm in a dev or preview build.
+  setExperimentOverride("saved_default_sort_v1", "nearest");
+  assert.equal(getExperimentVariant("saved_default_sort_v1"), "nearest");
+});
+
+test("a frozen test is ready before flags load, a rollout still waits for them", () => {
+  setExperimentsFrozen(true);
+  setExperimentFlagSource(fakeSource(undefined).source);
+  assert.equal(isExperimentAssignmentReady("stall_bar_cta_v1"), true);
+  assert.equal(isExperimentAssignmentReady("auth_email_code_first_v1"), false);
 });
