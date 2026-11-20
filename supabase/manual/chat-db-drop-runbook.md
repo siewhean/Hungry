@@ -54,10 +54,20 @@ messages for good; the down migration restores the schema only.
    Write the row counts in the PR.
 3. **Rehearse on staging**: `scripts/db/rehearse.sh 20261119090000` (applies up, applies down,
    compares schema and data, re-applies up, runs the smokes) and commit
-   `supabase/rehearsals/20261119090000.json`. CI refuses the migration without it. Staging holds
-   seed data only, so also insert a few chat rows by hand before the rehearsal if you want them in
-   the before/after comparison. Staging will show whether the down migration reproduces production's
-   schema exactly (`prod_schema_matched`); a mismatch means fix the down file, not the check.
+   `supabase/rehearsals/20261119090000.json`. CI refuses the migration without it. The four staging
+   chat tables must be EMPTY for the rehearsal. Do not insert chat rows by hand: the down file only
+   recreates the tables, never their rows, so any staging row makes the row-content comparison after
+   the down step fail and the script aborts (check with `select count(*) from public.messages`, and
+   likewise `conversations`, `conversation_participants`, `read_receipts`). Row restore is covered by
+   the backup and `pg_restore` path under "Undoing", which was tested separately on a scratch
+   Postgres. Staging will show whether the down migration reproduces production's schema exactly
+   (`prod_schema_matched`); a mismatch means fix the down file, not the check.
+
+   If the script stops with "production has migration X that this checkout lacks" and X is not on
+   `origin/main`, merging main cannot help: X was applied to prod from a branch that never landed on
+   main. Get X's file into `supabase/migrations/` of the checkout you rehearse from (untracked, not
+   committed to this PR) and re-run. A file that contains its own `begin;`/`commit;` must have those
+   two lines removed first, because the runner already wraps each file in one transaction.
 4. **Prod, only with the owner's explicit approval**: after the PR is merged,
    `scripts/db/ship.sh 20261119090000`. It declares the four tables (and `request_rate_rules`) in
    `-- expect-row-loss:`, so the row-loss guard lets those drops through; nothing else may lose rows.
