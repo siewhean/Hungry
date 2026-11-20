@@ -24,7 +24,6 @@
     "test:e2e:merchant-catalog": "playwright test tests/e2e/merchant-catalog.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "smoke:supabase-chat": "node scripts/supabase-chat-smoke.mjs",
     "smoke:supabase-social-gamification": "node scripts/supabase-social-gamification-smoke.mjs",
     "smoke:supabase-full-audit-v1": "node scripts/supabase-full-audit-v1-smoke.mjs",
     "smoke:supabase-canonical-food-business-staging": "node scripts/supabase-canonical-food-business-staging-smoke.mjs",
