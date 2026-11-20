@@ -248,6 +248,60 @@ export function scheduleFromHoursText(text: string | undefined): OpeningSchedule
   return { weekly, special: [] };
 }
 
+/** Words a plain weekly-hours line may use; anything else (a note, a name) is not a schedule. */
+const HOURS_TEXT_WORDS =
+  /\b(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?|daily|closed|open|hours?|hrs|to|a\.?m\.?|p\.?m\.?)\b/gi;
+/** "12-11 am": a bare 12 could be noon or midnight, so it is never guessed. */
+const AMBIGUOUS_TWELVE = /(?<![\d:])12\s*[-\u2013\u2014]\s*\d{1,2}(?::\d{2})?\s*a\.?m\b/i;
+
+/**
+ * A weekly schedule from listed hours text, or null when the text is not clear enough to trust.
+ * Stricter than scheduleFromHoursText (which seeds an editor): every one of the seven days must
+ * be named (or the line is "Daily ..."), every open day needs readable, non-overlapping ranges,
+ * and nothing but days, times and "closed" / "open 24 hours" may appear. A caller stores the
+ * result as the stall's schedule, so a wrong guess would say "Open now" for a closed stall.
+ */
+export function parseHoursTextToSchedule(text: string | undefined): OpeningSchedule | null {
+  const raw = (text ?? "").trim();
+  if (!raw || AMBIGUOUS_TWELVE.test(raw)) return null;
+  // "9am" has no word break before its "am", so the suffix after a digit is removed first.
+  if (/[a-z]/i.test(raw.replace(/(?<=\d)\s*[ap]\.?m\b\.?/gi, " ").replace(HOURS_TEXT_WORDS, " "))) {
+    return null;
+  }
+  const rows = parseOperatingHours(raw);
+  if (rows.length === 0) return null;
+
+  const weekly: OpeningSchedule["weekly"] = {};
+  for (const key of OPENING_DAY_KEYS) {
+    const row = getHoursForDay(rows, toDayName(key));
+    if (!row) return null;
+    if (row.closed) {
+      weekly[key] = [];
+      continue;
+    }
+    if (row.ranges.length === 0 || row.ranges.length > MAX_RANGES_PER_DAY) return null;
+    const ranges: OpeningTimeRange[] = [];
+    for (const [open, close] of row.ranges) {
+      const whole = open === 0 && close === DAY_MINUTES;
+      // 12 am as a closing time means the end of the day, not a zero-length range.
+      const closeMinutes = close === 0 && open > 0 ? DAY_MINUTES : close;
+      if (open >= DAY_MINUTES || (open === closeMinutes && !whole)) return null;
+      ranges.push({ open: toClock(open), close: toClock(closeMinutes) });
+    }
+    const spans = ranges
+      .map((range) => toMinuteRange(range))
+      .filter((span): span is [number, number] => span !== null)
+      .sort((left, right) => left[0] - right[0]);
+    // A range that runs past midnight is fine; two ranges on top of each other are not.
+    for (let index = 1; index < spans.length; index += 1) {
+      if (spans[index][0] < spans[index - 1][1]) return null;
+    }
+    weekly[key] = ranges;
+  }
+  const schedule: OpeningSchedule = { weekly, special: [] };
+  return validateOpeningSchedule(schedule) ? null : schedule;
+}
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** Special hours from today (Singapore) for the next `days` days, e.g. "Thu 25 Dec: Closed". */

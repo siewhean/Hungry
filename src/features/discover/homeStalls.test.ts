@@ -138,3 +138,23 @@ test("a stall with few reviews is new, and one without a menu is not", () => {
   assert.equal(isUnprovenStall({ venue: venue(), topDish: dish(4, 30) }), false);
   assert.equal(isUnprovenStall({ venue: venue() }), false);
 });
+
+test("Home reads the structured schedule before the listed hours, as the stall page does", () => {
+  // The listed hours are a one-minute window (closed at nearly any time); the schedule is open all
+  // day every day, so the stall reads open whatever the clock says.
+  const allDay = [{ open: "00:00", close: "24:00" }];
+  const openEveryDay = {
+    weekly: {
+      mon: allDay,
+      tue: allDay,
+      wed: allDay,
+      thu: allDay,
+      fri: allDay,
+      sat: allDay,
+      sun: allDay,
+    },
+  };
+  const stall = venue({ operatingHours: "Mon-Sun 00:00-00:01", openingSchedule: openEveryDay });
+  assert.equal(getStallRowOpenLabel(stall), "Open · Open 24 hours");
+  assert.equal(isStallClosed(stall), false);
+});

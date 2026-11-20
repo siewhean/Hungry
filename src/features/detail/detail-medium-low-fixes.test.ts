@@ -79,7 +79,7 @@ test("detail-M2: unreadable listed hours are shown as written, never as open", (
     venue: { isOpen: true, operatingHours: "" },
     now: mondayAt(12),
   });
-  assert.equal(none.statusLabel, "Hours not listed");
+  assert.equal(none.statusLabel, "Hours not confirmed");
   assert.deepEqual(none.weekRows, []);
 });
 

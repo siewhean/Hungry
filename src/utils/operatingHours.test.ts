@@ -95,3 +95,20 @@ test("isVenueOpenFromHours keeps the stored flag only when hours are unknown", (
   assert.equal(isVenueOpenFromHours("", true), true);
   assert.equal(isVenueOpenFromHours("", false), false);
 });
+
+test("a start with no am/pm shares the end's: '5-8 pm' is 5pm-8pm", () => {
+  const rows = parseOperatingHours("Mon: 11 am–2 pm, 5–8 pm");
+  assert.deepEqual(rows[0]?.ranges, [
+    [11 * 60, 14 * 60],
+    [17 * 60, 20 * 60],
+  ]);
+  assert.deepEqual(parseOperatingHours("Mon: 12–11:15 pm")[0]?.ranges, [[12 * 60, 23 * 60 + 15]]);
+  assert.deepEqual(parseOperatingHours("Mon: 7:30–11:30 am")[0]?.ranges, [
+    [7 * 60 + 30, 11 * 60 + 30],
+  ]);
+  // "11-2 pm" starts in the morning, never at 11 pm.
+  assert.deepEqual(parseOperatingHours("Mon: 11–2 pm")[0]?.ranges, [[11 * 60, 14 * 60]]);
+  const hours = "Mon: 11 am–2 pm, 5–8 pm";
+  assert.equal(getVenueOpenState(hours, true, mondayAt(18)).status, "open");
+  assert.equal(getVenueOpenState(hours, true, mondayAt(15)).status, "closed");
+});

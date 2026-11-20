@@ -672,7 +672,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const venueName = venue?.name ?? dish.venueName ?? "This stall";
   const venueUnit = venue?.unitNumber?.trim();
   const openState = openInfo?.openState ?? { status: "unknown" as const };
-  const openStatusLabel = openInfo?.statusLabel ?? "Hours not listed";
+  const openStatusLabel = openInfo?.statusLabel ?? "Hours not confirmed";
   const deliveryLinks = venue?.deliveryLinks ?? [];
   const isDishSoldOut = isSoldOut(dish.availabilityFlags);
   const building = venue ? getBuildingById(venue.buildingId) : undefined;

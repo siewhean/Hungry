@@ -58,9 +58,12 @@ test("H21: map and Quick Bites keep raw text locally and open results with the q
   assert.doesNotMatch(read("src/app/screens/discover/DiscoverHomeScreen.tsx"), /updateQuery/);
 });
 
-test("H22: Search has no Open now chip while is_open only tracks closures", () => {
+test("H22: Search's Open now reads each stall's hours, never the is_open flag (package 1.3)", () => {
   const grid = read("src/app/screens/search/SearchResultsScreen.tsx");
-  assert.doesNotMatch(grid, /"Open now"/);
+  // It was left out while release cards only carried is_open (closures, not hours). It returns now
+  // that the open state is computed from the schedule: stall hours are read for the cards shown.
+  assert.match(grid, /filterOpenNow\(mode, rows, openNowVenuesRef\.current\)/);
+  assert.match(grid, /discovery\s*\.getVenuesByIds\(unread\)/);
   assert.doesNotMatch(grid, /openOnly:/);
 });
 
