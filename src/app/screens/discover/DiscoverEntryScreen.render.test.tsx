@@ -546,7 +546,12 @@ test("R4-B4: stalls nearby are ordered nearest first when nobody has rated them"
 
 test("H4-6: open stalls come before closed ones even when the closed one is nearer, and closed rows are dimmed", async () => {
   serveLiveFeed([
-    coldRow(1, { distance_meters: 50, venue_name: "Near Closed Stall", is_open: false }),
+    // A false flag alone is stale (as on the stall page); the listed hours say it is closed.
+    coldRow(1, {
+      distance_meters: 50,
+      venue_name: "Near Closed Stall",
+      operating_hours: "Mon-Sun 00:00-00:01",
+    }),
     coldRow(2, {
       distance_meters: 900,
       venue_name: "Far Open Stall",
