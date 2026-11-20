@@ -316,6 +316,21 @@ test("the restore script reconciles deleted accounts before importing, in one tr
   assert.match(script, /public\.merchant_accounts/);
   assert.match(script, /set created_by_user_id = null/);
   assert.match(script, /set subject_merchant_account_id = null/);
+  // SQL generation must fail loudly: pg_restore writes to a file with an explicit status check (no
+  // `{ ...; } || die` group, where errexit is off and a failed `pg_restore | sed` would be masked),
+  // every table must have a COPY section, and all of it happens before psql starts.
+  const executable = script.replace(/^\s*#.*$/gm, "");
+  assert.match(
+    executable,
+    /pg_restore --data-only --no-owner -f "\$WORK\/data\.raw\.sql" "\$BACKUP\/chat-data\.dump"[^\n]*\n\s*\|\| die/,
+  );
+  assert.doesNotMatch(executable, /pg_restore[^\n]*\|\s*sed/);
+  assert.doesNotMatch(executable, /^\}\s*>"\$WORK\/restore\.sql"/m);
+  assert.match(executable, /has no data section for \$t; refusing to import an incomplete archive/);
+  assert.ok(
+    executable.indexOf("has no data section") < executable.indexOf('psql "$DB_URL" -X -q -1'),
+    "the dump must be validated before psql starts",
+  );
   // post_shares targets that point nowhere become NULL, then the NOT VALID key is validated.
   assert.match(script, /set target_conversation_id = null/);
   assert.match(script, /validate constraint post_shares_target_conversation_id_fkey/);

@@ -52,9 +52,10 @@ fi
 
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 
-say "restoring into $ENV_NAME ($DB_REF) in one transaction"
-{
-  cat <<'SQL'
+# Build the SQL in separate steps with explicit status checks. A `{ ...; } || die` group would run with
+# errexit off, so a failed `pg_restore | sed` could be hidden by the `cat` after it and an empty
+# scratch import would still "succeed". psql is not started until every piece is known to be good.
+cat >"$WORK/head.sql" <<'SQL'
 set statement_timeout = 0;
 create schema chat_restore_scratch;
 create table chat_restore_scratch.conversations (like public.conversations);
@@ -62,10 +63,17 @@ create table chat_restore_scratch.conversation_participants (like public.convers
 create table chat_restore_scratch.messages (like public.messages);
 create table chat_restore_scratch.read_receipts (like public.read_receipts);
 SQL
-  # The COPY header of each table is the only line that names the target. Row lines start with a uuid.
-  pg_restore --data-only --no-owner -f - "$BACKUP/chat-data.dump" \
-    | sed -E 's/^COPY public\.(conversations|conversation_participants|messages|read_receipts) /COPY chat_restore_scratch.\1 /'
-  cat <<'SQL'
+pg_restore --data-only --no-owner -f "$WORK/data.raw.sql" "$BACKUP/chat-data.dump" 2>"$WORK/gen.err" \
+  || die "pg_restore could not read the backup dump: $(head -c 300 "$WORK/gen.err")"
+# The COPY header of each table is the only line that names the target. Row lines start with a uuid.
+sed -E 's/^COPY public\.(conversations|conversation_participants|messages|read_receipts) /COPY chat_restore_scratch.\1 /' \
+  "$WORK/data.raw.sql" >"$WORK/data.sql" || die "could not rewrite the dump's COPY headers"
+for t in "${TABLES[@]}"; do
+  [ "$(grep -c "^COPY chat_restore_scratch\.$t " "$WORK/data.sql")" = 1 ] \
+    || die "the backup dump has no data section for $t; refusing to import an incomplete archive"
+done
+! grep -q '^COPY public\.' "$WORK/data.sql" || die "the backup dump holds data for tables this script does not restore"
+cat >"$WORK/tail.sql" <<'SQL'
 select pg_catalog.set_config('search_path', 'pg_catalog', false);
 set client_min_messages = notice;
 
@@ -143,8 +151,10 @@ $$;
 
 drop schema chat_restore_scratch cascade;
 SQL
-} >"$WORK/restore.sql" 2>"$WORK/gen.err" || die "could not read the backup dump: $(head -c 300 "$WORK/gen.err")"
+cat "$WORK/head.sql" "$WORK/data.sql" "$WORK/tail.sql" >"$WORK/restore.sql"
+rm -f "$WORK/data.raw.sql" "$WORK/data.sql"
 
+say "restoring into $ENV_NAME ($DB_REF) in one transaction"
 if ! psql "$DB_URL" -X -q -1 -v ON_ERROR_STOP=1 -f "$WORK/restore.sql" >"$WORK/out" 2>"$WORK/err"; then
   # psql errors can quote a row (CONTEXT, "Failing row"): show only the error headline.
   grep -E '(^|: )ERROR:' "$WORK/err" | cut -c1-240 | head -5 >&2 || true
