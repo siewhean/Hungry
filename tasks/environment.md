@@ -6,20 +6,20 @@
 
 ## Stack Versions
 
-| Package                | Version            | Notes                                             |
-| ---------------------- | ------------------ | ------------------------------------------------- |
-| Expo SDK               | 55                 | Use `expo` CLI, not bare React Native CLI         |
-| React Native           | 0.83.6             |                                                   |
-| TypeScript             | strict mode        | `tsconfig.json` — no relaxations                  |
-| React Navigation       | v7                 | Native stack + bottom tabs                        |
-| Zustand                | latest             | Only state management library in use              |
-| React Hook Form        | latest             | Forms only — no Formik                            |
-| Reanimated             | 3.x                | For animated gestures and transitions             |
-| `@gorhom/bottom-sheet` | latest             | All bottom sheet UI                               |
-| `@rnmapbox/maps`       | latest             | Map — mock surface available via `MapSurface.tsx` |
-| `lucide-react-native`  | latest             | All icons — no other icon library                 |
-| Nunito                 | Google Font (Expo) | All UI text                                       |
-| DM Mono                | Google Font (Expo) | Prices and monospace values                       |
+| Package                      | Version            | Notes                                                                           |
+| ---------------------------- | ------------------ | ------------------------------------------------------------------------------- |
+| Expo SDK                     | 55                 | Use `expo` CLI, not bare React Native CLI                                       |
+| React Native                 | 0.83.6             |                                                                                 |
+| TypeScript                   | strict mode        | `tsconfig.json` — no relaxations                                                |
+| React Navigation             | v7                 | Native stack + bottom tabs                                                      |
+| Zustand                      | latest             | Only state management library in use                                            |
+| React Hook Form              | latest             | Forms only — no Formik                                                          |
+| Reanimated                   | 3.x                | For animated gestures and transitions                                           |
+| `@gorhom/bottom-sheet`       | latest             | All bottom sheet UI                                                             |
+| `@rnmapbox/maps`             | latest             | Map — mock surface available via `MapSurface.tsx`                               |
+| `AppSymbol` (`expo-symbols`) | latest             | SF Symbols on iOS w/ `lucide-react-native` fallback inside `AppSymbol.tsx` only |
+| Nunito                       | Google Font (Expo) | All UI text                                                                     |
+| DM Mono                      | Google Font (Expo) | Prices and monospace values                                                     |
 
 ---
 
