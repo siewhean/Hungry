@@ -40,8 +40,8 @@ test("it never invents hours: only the planner's schedules are written", () => {
 
 test("big lists go to psql by file, never as a command-line argument", () => {
   assert.doesNotMatch(script, /-v (updates|undo)="\$\(cat/);
-  assert.match(script, /\\set updates `cat :updates_file`/);
-  assert.match(script, /\\set undo `cat :undo_file`/);
+  assert.match(script, /\\set updates `cat :'updates_file'`/);
+  assert.match(script, /\\set undo `cat :'undo_file'`/);
 });
 
 test("venue ids are compared as text, so a text or uuid id column both work", () => {

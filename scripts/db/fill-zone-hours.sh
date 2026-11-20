@@ -41,7 +41,7 @@ if [ -n "$UNDO" ]; then
   # Only a schedule still equal to the one this run wrote is cleared: a merchant's later edit stays.
   # The list goes in by file, not as a command-line argument (a big run is far over the argument limit).
   psql_db -Atq -v undo_file="$UNDO" <<'SQL'
-\set undo `cat :undo_file`
+\set undo `cat :'undo_file'`
 begin;
 with cleared as (
   update public.venues v set opening_schedule = null
@@ -78,7 +78,7 @@ node -e 'const p = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"
 # the rows the UPDATE really changed once it returns.
 cp "$WORK/updates.json" "$UNDO_FILE"
 psql_db -Atq -v updates_file="$WORK/updates.json" > "$WORK/applied.json" <<'SQL'
-\set updates `cat :updates_file`
+\set updates `cat :'updates_file'`
 begin;
 with changed as (
   update public.venues v set opening_schedule = d.schedule
