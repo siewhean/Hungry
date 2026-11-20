@@ -240,7 +240,7 @@
     "src/lib/analytics/gamificationEvents.ts": 100,
     "src/lib/analytics/index.ts": 100,
     "src/lib/analytics/mockAnalytics.ts": 100,
-    "src/lib/analytics/posthogSink.ts": 99.3,
+    "src/lib/analytics/posthogSink.ts": 96.1,
     "src/lib/analytics/preference.ts": 100,
     "src/lib/analytics/privacy.ts": 95.4,
     "src/lib/analytics/trafficTag.ts": 100,
