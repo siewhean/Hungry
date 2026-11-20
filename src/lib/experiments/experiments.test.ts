@@ -380,3 +380,10 @@ test("the freeze holds every running test but not a staged rollout or a QA overr
   setExperimentOverride("saved_default_sort_v1", "nearest");
   assert.equal(getExperimentVariant("saved_default_sort_v1"), "nearest");
 });
+
+test("a frozen test is ready before flags load, a rollout still waits for them", () => {
+  setExperimentsFrozen(true);
+  setExperimentFlagSource(fakeSource(undefined).source);
+  assert.equal(isExperimentAssignmentReady("stall_bar_cta_v1"), true);
+  assert.equal(isExperimentAssignmentReady("auth_email_code_first_v1"), false);
+});

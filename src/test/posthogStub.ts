@@ -1,4 +1,7 @@
 type FlagValue = boolean | string;
+type StubOptions = {
+  customAppProperties?: (properties: Record<string, unknown>) => Record<string, unknown>;
+};
 
 /**
  * Stand-in for posthog-react-native in node tests. Tests can set
@@ -17,6 +20,17 @@ export default class PostHogStub {
 
   capture(event: string, properties?: Record<string, unknown>): void {
     PostHogStub.captured.push({ event, properties });
+  }
+
+  static lastOptions: StubOptions | undefined;
+  static personProperties: Record<string, unknown>[] = [];
+
+  constructor(_apiKey?: string, options?: StubOptions) {
+    PostHogStub.lastOptions = options;
+  }
+
+  setPersonProperties(properties: Record<string, unknown>): void {
+    PostHogStub.personProperties.push(properties);
   }
 
   identify(_userId: string, _properties?: Record<string, unknown>): void {}

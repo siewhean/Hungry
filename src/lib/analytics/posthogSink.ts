@@ -14,6 +14,9 @@ const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST?.trim() || DEFAULT_POS
 let posthogClient: PostHog | null = null;
 /** Set from the Developer tools: this phone belongs to the team, so its traffic is not diners'. */
 let deviceMarkedInternal: boolean | undefined;
+/** Who is signed in now, and whether the account itself is the team's (a staging test diner). */
+let identifiedUserId: string | null = null;
+let accountMarkedInternal = false;
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 type PostHogProperties = { [key: string]: JsonValue };
@@ -28,6 +31,9 @@ function getPostHogClient(): PostHog | null {
       host: POSTHOG_HOST,
       // Application Installed / Updated / Opened / Backgrounded, for retention.
       captureAppLifecycleEvents: true,
+      // Applied inside the SDK, so Application Installed (sent while it starts) carries the tags
+      // too; register() below keeps them after reset() and holds the phone's saved mark.
+      customAppProperties: (properties) => ({ ...properties, ...trafficProperties() }),
     });
     registerTrafficProperties(posthogClient);
   }
@@ -62,10 +68,13 @@ export function setPostHogInternalDevice(internal: boolean): void {
     return;
   }
 
-  // An unmarked phone still on an internal build stays internal.
+  // An unmarked phone still on an internal build, or signed in to a team account, stays internal.
+  const effective = internal || isInternalBuild() || accountMarkedInternal;
   void client
     .register({ is_internal: internal || isInternalBuild() })
     .catch((error: unknown) => reportError(error, { area: "posthog_traffic_properties" }));
+  // The person's trait is not cleared by the next identify, so it follows the switch too.
+  if (identifiedUserId) client.setPersonProperties({ is_internal: effective });
 }
 
 function toJsonValue(value: unknown): JsonValue | undefined {
@@ -133,8 +142,10 @@ export function identifyPostHogUser(userId: string, properties: Record<string, u
     return;
   }
 
+  identifiedUserId = userId;
+  accountMarkedInternal = properties.is_internal === true;
   // Internal traffic also marks the person, so a PostHog person filter works after sign-in.
-  const internal = isInternalBuild() || deviceMarkedInternal === true;
+  const internal = isInternalBuild() || deviceMarkedInternal === true || accountMarkedInternal;
   client.identify(
     userId,
     toPostHogProperties(
@@ -162,6 +173,8 @@ export function resetPostHogUser(): void {
   }
 
   client.reset();
+  identifiedUserId = null;
+  accountMarkedInternal = false;
   // reset() drops super properties, and the next sign-in is on the same phone.
   registerTrafficProperties(client);
 }

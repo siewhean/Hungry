@@ -194,3 +194,28 @@ test("opting out and back in reaches the client, and a failure is reported, not 
     prototype.optIn = optIn;
   }
 });
+
+test("the SDK's own app properties carry the tags, so Application Installed is tagged too", () => {
+  const withTags = PostHogStub.lastOptions?.customAppProperties?.({ $app_name: "Hungry" });
+  assert.equal(withTags?.$app_name, "Hungry");
+  assert.equal(withTags?.environment, getAnalyticsEnvironment());
+});
+
+test("switching the phone off clears a person trait it set, but a team account stays internal", () => {
+  PostHogStub.personProperties = [];
+  sink.setPostHogInternalDevice(true);
+  assert.deepEqual(PostHogStub.personProperties, [], "nobody signed in: no person to mark");
+
+  sink.identifyPostHogUser("user-4", { plan: "free" });
+  sink.setPostHogInternalDevice(false);
+  assert.deepEqual(PostHogStub.personProperties.at(-1), { is_internal: isInternalBuild() });
+
+  sink.identifyPostHogUser("user-5", { plan: "free", is_internal: true });
+  sink.setPostHogInternalDevice(false);
+  assert.deepEqual(PostHogStub.personProperties.at(-1), { is_internal: true });
+
+  sink.resetPostHogUser();
+  PostHogStub.personProperties = [];
+  sink.setPostHogInternalDevice(false);
+  assert.deepEqual(PostHogStub.personProperties, [], "signed out again: no person to mark");
+});

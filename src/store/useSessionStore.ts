@@ -278,6 +278,15 @@ function resetPostHogUser(): void {
   reset();
 }
 
+/**
+ * Staging test diners are not real diners: launch numbers leave them out. Read with the profile
+ * id when the sign-in happens, so a callback that runs after an account switch cannot give one
+ * account the other's mark.
+ */
+function internalAccountTraitFor(email: string | null | undefined): { is_internal?: true } {
+  return isInternalAccountEmail(email) ? { is_internal: true } : {};
+}
+
 function buildPostHogIdentityProperties() {
   const profile = getProfileStoreState().profile;
   const location = useLocationStore.getState();
@@ -288,8 +297,6 @@ function buildPostHogIdentityProperties() {
     // currentLocation always holds a value (a default or a manual pick), so
     // only a granted GPS permission means the location is precise.
     has_precise_location: location.permission === "granted",
-    // Staging test diners are not real diners: launch numbers leave them out.
-    ...(isInternalAccountEmail(profile?.email) ? { is_internal: true } : {}),
   };
 }
 
@@ -456,9 +463,13 @@ export const useSessionStore = create<SessionState>()(
         const syncedProfile = getProfileStoreState().profile;
         const profileId = syncedProfile?.id ?? nextUserId ?? "authenticated-user";
         if (options?.isNewUser) signUpReportedForUserId = profileId;
+        const internalAccountTrait = internalAccountTraitFor(syncedProfile?.email);
         scheduleIdleWork(
           () => {
-            identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+            identifyPostHogUser(profileId, {
+              ...buildPostHogIdentityProperties(),
+              ...internalAccountTrait,
+            });
             syncFollowStateFromServer(nextUserId);
             if (options?.isNewUser) {
               trackSignUpCompletedOnce(profileId, options.authProvider ?? "email");
@@ -624,9 +635,13 @@ export const useSessionStore = create<SessionState>()(
           const profile = getProfileStoreState().profile;
           const profileId = session.userId ?? profile?.id ?? "authenticated-user";
           if (session.isNewUser && !currentlyAuthenticated) signUpReportedForUserId = profileId;
+          const internalAccountTrait = internalAccountTraitFor(profile?.email);
           scheduleIdleWork(
             () => {
-              identifyPostHogUser(profileId, buildPostHogIdentityProperties());
+              identifyPostHogUser(profileId, {
+                ...buildPostHogIdentityProperties(),
+                ...internalAccountTrait,
+              });
               syncFollowStateFromServer(nextUserId, { oncePerLaunch: true });
               // Only a sign-in that starts a session counts: a SIGNED_IN replayed
               // for a session restored from storage is never a new sign-up.
