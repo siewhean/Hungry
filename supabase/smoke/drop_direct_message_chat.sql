@@ -39,7 +39,9 @@ begin
     raise exception 'a chat rate rule is still present';
   end if;
 
-  -- 2. No dangling references (diagnostic RAISE statements stripped first; dynamic EXECUTE strings kept).
+  -- 2. No dangling references. Only the message text of a RAISE (its format-string literal) is blanked
+  --    first, so `raise exception 'cannot copy messages'` is not a table reference. Argument expressions
+  --    (`raise notice '%', (select count(*) from public.messages)`) and dynamic EXECUTE strings are kept.
   if exists (
     select 1
     from pg_proc p
@@ -47,8 +49,8 @@ begin
     cross join lateral (
       select regexp_replace(
         p.prosrc,
-        '\mraise\s+(debug|log|info|notice|warning|exception)\M[^;]*;',
-        ';',
+        '\mraise\s+((debug|log|info|notice|warning|exception)\s+)?''(?:[^'']|'''')*''',
+        ' ',
         'gi'
       ) as body
     ) stripped

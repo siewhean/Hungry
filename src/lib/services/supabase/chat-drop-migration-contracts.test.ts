@@ -526,10 +526,11 @@ test("the restore script locks the four tables and checks they are empty inside 
 
 test("the smoke's leftover scan names messages after every statement that can take a table, including multi-table lists and dynamic SQL, while ignoring RAISE diagnostics", () => {
   const smoke = readRepoFile("supabase/smoke/drop_direct_message_chat.sql");
-  assert.match(
-    smoke,
-    /regexp_replace\(\s*p\.prosrc,\s*'\\mraise\\s\+\(debug\|log\|info\|notice\|warning\|exception\)\\M\[\^;\]\*;',\s*';',\s*'gi'\s*\)\s+as\s+body/,
+  // Only a RAISE's message literal is blanked; the rest of the statement (argument expressions) stays.
+  const stripPattern = smoke.match(
+    /regexp_replace\(\s*p\.prosrc,\s*'((?:[^']|'')+)',\s*' ',\s*'gi'\s*\)\s+as\s+body/,
   );
+  assert.ok(stripPattern, "expected the RAISE message-literal strip in the smoke");
   const scan = [...smoke.matchAll(/stripped\.body ~\* '((?:[^']|'')+)'/g)].map((match) =>
     match[1].replace(/''/g, "'"),
   );
@@ -539,8 +540,8 @@ test("the smoke's leftover scan names messages after every statement that can ta
   assert.equal(scan[0], upScan[0]);
   // PostgreSQL's \m and \M (word start/end) are \b in JavaScript; \s and the rest are the same.
   const messages = new RegExp(scan[1].replace(/\\[mM]/g, "\\b"), "i");
-  const stripRaiseDiagnostics = (sql: string) =>
-    sql.replace(/\braise\s+(debug|log|info|notice|warning|exception)\b[^;]*;/gi, ";");
+  const stripRaiseText = new RegExp(stripPattern[1].replace(/''/g, "'").replace(/\\[mM]/g, "\\b"), "gi");
+  const stripRaiseDiagnostics = (sql: string) => sql.replace(stripRaiseText, " ");
   for (const body of [
     "select 1 from messages;",
     "insert into public.messages (id) values (1);",
@@ -564,6 +565,9 @@ test("the smoke's leftover scan names messages after every statement that can ta
     "create table t (m uuid references public.messages (id));",
     "copy public.messages from stdin;",
     "execute 'select count(*) from public.messages';",
+    "raise notice 'count: %', (select count(*) from public.messages);",
+    "raise exception 'boom: %', (select count(*) from messages);",
+    "execute 'select 1; raise exception ''boom''; delete from public.messages';",
     "select 1\n  from\n    public.messages;",
   ]) {
     assert.match(stripRaiseDiagnostics(body), messages, `scan misses: ${body}`);
@@ -578,6 +582,8 @@ test("the smoke's leftover scan names messages after every statement that can ta
     "raise exception 'too many messages';",
     "raise exception 'cannot copy messages';",
     "raise exception 'truncate table public.messages failed';",
+    "raise warning 'it''s from messages' using errcode = 'P0001';",
+    "raise 'cannot copy messages';",
     "select count_messages(1);",
   ]) {
     assert.doesNotMatch(stripRaiseDiagnostics(body), messages, `scan wrongly flags: ${body}`);
