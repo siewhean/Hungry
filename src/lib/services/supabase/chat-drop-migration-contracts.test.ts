@@ -540,7 +540,10 @@ test("the smoke's leftover scan names messages after every statement that can ta
   assert.equal(scan[0], upScan[0]);
   // PostgreSQL's \m and \M (word start/end) are \b in JavaScript; \s and the rest are the same.
   const messages = new RegExp(scan[1].replace(/\\[mM]/g, "\\b"), "i");
-  const stripRaiseText = new RegExp(stripPattern[1].replace(/''/g, "'").replace(/\\[mM]/g, "\\b"), "gi");
+  const stripRaiseText = new RegExp(
+    stripPattern[1].replace(/''/g, "'").replace(/\\[mM]/g, "\\b"),
+    "gi",
+  );
   const stripRaiseDiagnostics = (sql: string) => sql.replace(stripRaiseText, " ");
   for (const body of [
     "select 1 from messages;",
