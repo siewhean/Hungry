@@ -13,9 +13,13 @@
 #   4. post_shares.target_conversation_id values that point at a conversation that is not in the archive
 #      are set to NULL (what ON DELETE SET NULL does) and post_shares_target_conversation_id_fkey is
 #      validated if the down file had to add it NOT VALID,
-#   5. the scratch schema is dropped.
-# All of it is ONE transaction: any error leaves the database exactly as it was. Nothing is printed
-# from message rows, only counts. Refuses unless the four tables exist and are empty.
+#   5. execute on the chat RPCs goes back to `authenticated` (the down file leaves them service_role
+#      only, so nobody can create a conversation between the down file and this restore),
+#   6. the scratch schema is dropped.
+# All of it is ONE transaction: any error leaves the database exactly as it was. The transaction
+# starts by locking the four tables (ACCESS EXCLUSIVE) and checking that they are empty, so the
+# emptiness check and the import are atomic: nothing can slip a row in between them. Nothing is
+# printed from message rows, only counts. Refuses unless the four tables and the chat RPCs exist.
 # Full procedure: supabase/manual/chat-db-drop-runbook.md.
 set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
@@ -35,8 +39,13 @@ TABLES=(conversations conversation_participants messages read_receipts)
 for t in "${TABLES[@]}"; do
   [ "$(psql_db -At -c "select to_regclass('public.$t') is not null")" = t ] \
     || die "public.$t does not exist on $ENV_NAME; apply the down file first"
-  [ "$(psql_db -At -c "select count(*) from public.$t")" = 0 ] \
-    || die "public.$t is not empty; this script only restores into empty tables"
+done
+# Emptiness is checked inside the restore transaction (after the tables are locked), not here.
+for fn in 'public.open_chat_conversation(uuid, uuid, text)' 'app_private.open_chat_conversation(uuid, uuid, text)' \
+  'public.send_chat_message(uuid, text, text, uuid)' 'app_private.send_chat_message(uuid, text, text, uuid)' \
+  'public.mark_conversation_read(uuid)'; do
+  [ "$(psql_db -At -c "select to_regprocedure('$fn') is not null")" = t ] \
+    || die "$fn does not exist on $ENV_NAME; apply the down file first"
 done
 [ "$(psql_db -At -c "select to_regclass('chat_restore_scratch.conversations') is null")" = t ] \
   || die "schema chat_restore_scratch already exists; a previous attempt left it behind. Inspect and drop it first."
@@ -57,6 +66,22 @@ WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 # scratch import would still "succeed". psql is not started until every piece is known to be good.
 cat >"$WORK/head.sql" <<'SQL'
 set statement_timeout = 0;
+-- Fail instead of queueing forever behind a long transaction (a queued ACCESS EXCLUSIVE lock blocks
+-- every later reader too). An error here rolls everything back: nothing has changed yet.
+set lock_timeout = '15s';
+lock table public.conversations, public.conversation_participants, public.messages, public.read_receipts
+  in access exclusive mode;
+do $$
+declare v_table text; v_has_rows boolean;
+begin
+  foreach v_table in array array['conversations', 'conversation_participants', 'messages', 'read_receipts'] loop
+    execute format('select exists (select 1 from public.%I)', v_table) into v_has_rows;
+    if v_has_rows then
+      raise exception 'public.% is not empty; this script only restores into empty tables', v_table;
+    end if;
+  end loop;
+end
+$$;
 create schema chat_restore_scratch;
 create table chat_restore_scratch.conversations (like public.conversations);
 create table chat_restore_scratch.conversation_participants (like public.conversation_participants);
@@ -148,6 +173,15 @@ begin
   end if;
 end
 $$;
+
+-- The down file left the chat RPCs executable by service_role only. Give `authenticated` its original
+-- grants back in the same transaction as the data: the tables are still locked, so the first call that
+-- can run sees the fully restored state. These are exactly the grants the migrations had before the drop.
+grant execute on function public.open_chat_conversation(uuid, uuid, text) to authenticated;
+grant execute on function app_private.open_chat_conversation(uuid, uuid, text) to authenticated;
+grant execute on function public.send_chat_message(uuid, text, text, uuid) to authenticated;
+grant execute on function app_private.send_chat_message(uuid, text, text, uuid) to authenticated;
+grant execute on function public.mark_conversation_read(uuid) to authenticated;
 
 drop schema chat_restore_scratch cascade;
 SQL
