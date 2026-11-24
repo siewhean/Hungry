@@ -1,25 +1,19 @@
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
 
-/**
- * Home draws the first few stalls as soon as a small read lands, then the full read replaces the
- * list. The cards already on screen keep their places and the rest follow them, so nothing jumps.
- * The full read decides everything else (fallback state, the stalls it holds that the first read
- * did not).
- */
+/** Keep the position of retained cards, using only the rows the latest live read authorizes. */
 export function mergeDiscoverFeeds(
   firstPage: DiscoveryLocationFeed,
   full: DiscoveryLocationFeed,
 ): DiscoveryLocationFeed {
-  // A fallback (offline copy) is not a real answer: it never sits behind live stalls.
   if (full.isFallback) return full;
-  const firstVenueIds = new Set(firstPage.venues.map((venue) => venue.id));
-  const venues = [
-    ...firstPage.venues,
-    ...full.venues.filter((venue) => !firstVenueIds.has(venue.id)),
-  ];
-  const results = [
-    ...firstPage.results,
-    ...full.results.filter((result) => !firstVenueIds.has(result.dish.venueId)),
-  ];
-  return { ...full, venues, results };
+  const firstPositions = new Map(firstPage.venues.map(({ id }, index) => [id, index]));
+  const position = (venueId: string) => firstPositions.get(venueId) ?? Infinity;
+  const compare = (left: string, right: string) => position(left) - position(right);
+  return {
+    ...full,
+    venues: [...full.venues].sort((left, right) => compare(left.id, right.id)),
+    results: [...full.results].sort((left, right) =>
+      compare(left.dish.venueId, right.dish.venueId),
+    ),
+  };
 }

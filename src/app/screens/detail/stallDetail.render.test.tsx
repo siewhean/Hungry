@@ -1,7 +1,7 @@
 // Stall page fixes from the round-three audit (STALL-*). Run with `npm run test:render`.
 
 import assert from "node:assert/strict";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { Linking } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 import type * as ClipboardModule from "expo-clipboard";
@@ -16,7 +16,12 @@ import {
   setExperimentFlagSource,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+  setServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -188,6 +193,61 @@ test("STALL-7: a failed later menu page says so, with Retry, and the count shows
   const before = pageCalls.length;
   await view.press(view.findByText("Retry"));
   assert.ok(pageCalls.length > before, "Retry reads the page again");
+});
+
+test("live stall shows the header before its independently retryable menu", async () => {
+  const base = getServiceProvider();
+  const venue = getDataRepository().getVenueById(STALL);
+  const dishes = getDataRepository().listDishesByVenue(STALL);
+  assert.ok(venue);
+  assert.ok(dishes.length > 0);
+  let resolveHeader!: (value: NonNullable<typeof venue>) => void;
+  let rejectMenu!: (error: Error) => void;
+  const header = new Promise<typeof venue>((resolve) => {
+    resolveHeader = resolve;
+  });
+  const firstMenu = new Promise<never>((_resolve, reject) => {
+    rejectMenu = reject;
+  });
+  const menuCursors: (string | undefined)[] = [];
+  setServiceProvider({
+    ...base,
+    mode: "supabase",
+    service: {
+      ...base.service,
+      discovery: {
+        ...base.service.discovery,
+        getStallHeader: (_id, options) => {
+          assert.equal(options?.legacy, false);
+          return header;
+        },
+        getVenue: async () => assert.fail("the legacy stall detail read must not run"),
+        listStallMenuPage: (_id, cursor) => {
+          menuCursors.push(cursor);
+          return menuCursors.length === 1
+            ? firstMenu
+            : Promise.resolve({ dishes: dishes.slice(0, 1), nextCursor: "page-2" });
+        },
+      },
+    },
+  });
+  restores.push(() => setServiceProvider(base));
+
+  const view = await openStall();
+  assert.match(view.text(), /Loading stall/);
+  assert.deepEqual(menuCursors, []);
+  getHungryService().discovery.listStallMenuPage = undefined;
+  await act(async () => resolveHeader(venue));
+  assert.ok(view.findByLabel(`${venue.name}, copy stall name`));
+  assert.ok(view.findByLabel("Loading menu"));
+  assert.deepEqual(menuCursors, [undefined]);
+
+  await act(async () => rejectMenu(new Error("network request failed")));
+  assert.ok(view.findByLabel(`${venue.name}, copy stall name`));
+  assert.match(view.text(), /Couldn't load this stall's menu/);
+  await view.press(view.findByText("Retry"));
+  assert.match(view.text(), /1\+ items/);
+  assert.deepEqual(menuCursors, [undefined, undefined], "continuation waits for scroll or filters");
 });
 
 test("STALL-X4: the opening schedule is read on its own only when the venue has none", async () => {

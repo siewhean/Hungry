@@ -7,11 +7,14 @@ import { HungryThemeProvider, useHungryTheme } from "@/theme";
 import { AppBody } from "@/app/AppBody";
 import { isAnalyticsEnabled } from "@/lib/analytics";
 import { installOfflineErrorGuard } from "@/lib/monitoring/offlineErrorGuard";
+import { markCatalogAppStart } from "@/lib/monitoring/catalogPerformance";
 import {
   isUsageBreadcrumb,
   sanitizeSentryBreadcrumb,
   sanitizeSentryEvent,
 } from "@/lib/analytics/privacy";
+
+markCatalogAppStart();
 
 const appEnv =
   process.env.EXPO_PUBLIC_APP_ENV ??

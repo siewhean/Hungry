@@ -2,7 +2,14 @@ import { toHalalStatus, toPriceBasis } from "@/features/detail/priceBasis";
 import { runRecommendationPipeline } from "@/lib/ai/tasteEngine";
 import { getDistanceMetersFromBuildingId } from "@/lib/geo/distance";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/services/supabase/client";
+import {
+  CatalogReadError,
+  catalogReadOutcome,
+  catalogRequestScope,
+  requireCurrentCatalogScope,
+} from "@/lib/services/supabase/catalogReads";
 import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
+import { catalogNow, recordCatalogRpc } from "@/lib/monitoring/catalogPerformance";
 import { validateOpeningSchedule } from "@/utils/openingSchedule";
 import type {
   BuildingDetail,
@@ -976,6 +983,67 @@ async function rpcRows(functionName: string, args: Row): Promise<Row[] | undefin
   return data as unknown as Row[];
 }
 
+/** Critical catalogue reads distinguish an authoritative empty result from a failed request. */
+async function strictCatalogRows(
+  surface: "home" | "dish" | "stall",
+  functionName: string,
+  args: Row,
+): Promise<Row[]> {
+  const client = getSupabaseClient();
+  if (!client) throw new CatalogReadError("The online catalog is not configured.", "contract");
+
+  const scope = catalogRequestScope();
+  const startedAt = catalogNow();
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), 8000);
+  try {
+    const request = client.rpc(functionName, args);
+    const { data, error, status } = await (typeof request.abortSignal === "function"
+      ? request.abortSignal(controller.signal)
+      : request);
+    requireCurrentCatalogScope(scope);
+    if (controller.signal.aborted) {
+      throw new CatalogReadError("The catalog request timed out.", "timeout");
+    }
+    if (error) {
+      throw new CatalogReadError(
+        error.message,
+        catalogReadOutcome({ ...error, status }),
+        status,
+        error.code,
+        error,
+      );
+    }
+    if (
+      !Array.isArray(data) ||
+      data.some((row) => !row || typeof row !== "object" || Array.isArray(row))
+    ) {
+      throw new CatalogReadError("The catalog returned an invalid response.", "contract");
+    }
+    recordCatalogRpc(surface, functionName, startedAt, data.length ? "success" : "empty");
+    return data as Row[];
+  } catch (error) {
+    if (scope !== catalogRequestScope()) {
+      recordCatalogRpc(surface, functionName, startedAt, "cancelled");
+      requireCurrentCatalogScope(scope);
+    }
+    if (controller.signal.aborted) {
+      recordCatalogRpc(surface, functionName, startedAt, "timeout");
+      throw new CatalogReadError(
+        "The catalog request timed out.",
+        "timeout",
+        undefined,
+        undefined,
+        error,
+      );
+    }
+    recordCatalogRpc(surface, functionName, startedAt, catalogReadOutcome(error));
+    throw error;
+  } finally {
+    clearTimeout(deadline);
+  }
+}
+
 function isExpectedDiscoveryRpcError(error: { code?: unknown; message?: unknown }): boolean {
   const message = String(error.message ?? "").toLowerCase();
   const code = String(error.code ?? "");
@@ -1114,15 +1182,25 @@ function reportDiscoveryTasteError(error: unknown, action = "discovery_feed_tast
 }
 
 /** Taste vectors for these dishes in one read. Empty when the read fails: Home then keeps feed order. */
+function requireEnrichmentAccess(
+  error: { message: string; code?: string } | null,
+  status?: number,
+): void {
+  if (error && catalogReadOutcome({ ...error, status }) === "auth") {
+    throw new CatalogReadError(error.message, "auth", status, error.code, error);
+  }
+}
+
 async function loadDishTasteByDishId(
   dishIds: string[],
 ): Promise<Map<string, Pick<DishPresentation, "tasteVector" | "tasteConfidence">>> {
   const client = getSupabaseClient();
   if (!client || dishIds.length === 0) return new Map();
-  const { data, error } = await client
+  const { data, error, status } = await client
     .from("dish_taste_vectors")
     .select("*")
     .in("dish_id", dishIds);
+  requireEnrichmentAccess(error, status);
   if (error || !Array.isArray(data)) {
     console.warn("Supabase discovery taste vectors read failed");
     reportDiscoveryTasteError(error ?? new Error("dish_taste_vectors returned no rows array"));
@@ -1148,6 +1226,8 @@ async function loadDishDietaryFlagsByDishId(
     client.from("dish_dietary_flags").select("dish_id,dietary_flag_id").in("dish_id", dishIds),
     client.from("dietary_flags").select("id,slug"),
   ]);
+  requireEnrichmentAccess(linkResult.error, linkResult.status);
+  requireEnrichmentAccess(flagResult.error, flagResult.status);
   if (
     linkResult.error ||
     flagResult.error ||
@@ -1176,69 +1256,77 @@ async function loadDishDietaryFlagsByDishId(
   return flagsByDishId;
 }
 
-/** Overlapping identical feed reads share one request (and one set of follow-up batched reads). */
+/** Share a critical read only within the account and project that started it. */
 export async function listDiscoveryFeedByLocationViaRpc(
   request: DiscoveryLocationFeedRequest,
-): Promise<DiscoveryLocationFeed | undefined> {
-  return shareInFlight(getSupabaseClient(), `feed:${JSON.stringify(request)}`, () =>
-    readDiscoveryFeedByLocation(request),
+): Promise<DiscoveryLocationFeed> {
+  const scope = catalogRequestScope();
+  return shareInFlight(
+    getSupabaseClient(),
+    `feed:${scope}:${JSON.stringify(request)}`,
+    async () => {
+      const rows = await strictCatalogRows("home", "get_discovery_feed_by_location", {
+        p_area_name: request.areaName?.trim() || null,
+        p_lat: request.lat ?? null,
+        p_lng: request.lng ?? null,
+        p_radius_meters: request.radiusMeters ?? null,
+        p_limit: request.limit ?? null,
+        ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
+      });
+      requireCurrentCatalogScope(scope);
+      if (rows.some((row) => !toString(row.venue_id) || !toString(row.venue_name))) {
+        throw new CatalogReadError(
+          "The discovery response is missing venue information.",
+          "contract",
+        );
+      }
+
+      const venues = rows.map(mapDiscoveryFeedVenue);
+      const results = rows.flatMap((row, index) => {
+        const dish = mapDiscoveryFeedDish(row, venues[index]);
+        return dish ? [{ dish, score: toNumber(row.rank_score) }] : [];
+      });
+      const feed: DiscoveryLocationFeed = { venues, results, needsEnrichment: venues.length > 0 };
+      return request.deferEnrichment ? feed : enrichDiscoveryFeedViaRpc(feed);
+    },
   );
 }
 
-async function readDiscoveryFeedByLocation(
-  request: DiscoveryLocationFeedRequest,
-): Promise<DiscoveryLocationFeed | undefined> {
-  let rows = await rpcRows("get_discovery_feed_by_location", {
-    p_area_name: request.areaName?.trim() || null,
-    p_lat: request.lat ?? null,
-    p_lng: request.lng ?? null,
-    p_radius_meters: request.radiusMeters ?? null,
-    p_limit: request.limit ?? null,
-    // Sent only inside a place, so everyone else keeps working against the older signature.
-    ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
-  });
-  if (!rows) return undefined;
-
-  // 20261021190000 rebuilt the feed without top_dish_dietary_flags (still missing in
-  // 20261022040100), so the Halal and Dietary needs chips matched nothing on live data. While
-  // the column is missing, this page's top-dish flags come from one batched read.
-  // The feed has no taste columns either; Home ranks "Dishes near you" by palate, so this
-  // page's vectors come from one batched read, alongside the flags read.
-  const dishIds = [...new Set(rows.map((row) => toString(row.top_dish_id)).filter(Boolean))];
-  const needsDietaryFlags = rows.length > 0 && !rows.some((row) => "top_dish_dietary_flags" in row);
-  // A paused stall must not look open on Home. One batched read; when it fails the stalls keep
-  // their stored state. It needs only the stall ids, so it runs beside the taste and flag reads
-  // instead of after them (one round trip less before Home can draw).
-  const [flagsByDishId, tasteByDishId, closures] = await Promise.all([
-    needsDietaryFlags ? loadDishDietaryFlagsByDishId(dishIds) : undefined,
+export async function enrichDiscoveryFeedViaRpc(
+  feed: DiscoveryLocationFeed,
+): Promise<DiscoveryLocationFeed> {
+  if (!feed.needsEnrichment) return feed;
+  const scope = catalogRequestScope();
+  const dishIds = [...new Set(feed.results.map(({ dish }) => dish.id))];
+  const [flags, tastes, closures] = await Promise.all([
+    loadDishDietaryFlagsByDishId(dishIds),
     loadDishTasteByDishId(dishIds),
-    getVenueClosuresViaRpc(rows.map((row) => toString(row.venue_id))),
+    getVenueClosuresViaRpc(
+      feed.venues.map((venue) => venue.id),
+      { forDiscover: true },
+    ),
   ]);
-  if (flagsByDishId) {
-    rows = rows.map((row) => ({
-      ...row,
-      top_dish_dietary_flags: flagsByDishId.get(toString(row.top_dish_id)) ?? [],
-    }));
-  }
-
-  const venues = rows.map(mapDiscoveryFeedVenue).map((venue) => {
-    const closedUntil = closures?.get(venue.id);
-    return closedUntil ? { ...venue, closedUntil } : venue;
-  });
-  const results = rows
-    .map((row, index) => {
-      const venue = venues[index];
-      const dish = mapDiscoveryFeedDish(row, venue, tasteByDishId.get(toString(row.top_dish_id)));
-      return dish
-        ? {
-            dish,
-            score: toNumber(row.rank_score),
-          }
-        : undefined;
-    })
-    .filter((result): result is SearchResult => Boolean(result));
-
-  return { venues, results };
+  requireCurrentCatalogScope(scope);
+  return {
+    ...feed,
+    needsEnrichment: !closures,
+    venues: feed.venues.map((venue) => {
+      const closedUntil = closures?.get(venue.id);
+      return closedUntil ? { ...venue, closedUntil } : venue;
+    }),
+    results: feed.results.map(({ dish, score }) => {
+      const taste = tastes.get(dish.id);
+      const dietaryFlags = flags?.get(dish.id) as DietaryFlag[] | undefined;
+      return {
+        score,
+        dish: {
+          ...dish,
+          ...(dietaryFlags ? { dietaryFlags } : {}),
+          ...(taste?.tasteVector ? taste : {}),
+        },
+      };
+    }),
+  };
 }
 
 export async function searchVenuesByLocationViaRpc(
@@ -1260,11 +1348,49 @@ export async function searchVenuesByLocationViaRpc(
  * so a network error is never shown as "this dish was removed".
  */
 export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {
-  const rows = await rpcRows("get_dish_detail", { p_dish_id: dishId });
-  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
-    throw new Error("Couldn't load this dish.");
+  if (!isSupabaseConfigured()) return undefined;
+  const [row] = await strictCatalogRows("dish", "get_dish_detail", { p_dish_id: dishId });
+  if (row && toString(row.dish_id) !== dishId) {
+    throw new CatalogReadError("The dish response did not match this dish.", "contract");
   }
-  return rows?.[0] ? mapRpcDish(rows[0]) : undefined;
+  return row ? mapRpcDish(row) : undefined;
+}
+
+export async function getStallHeaderViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+  const [row] = await strictCatalogRows("stall", "get_stall_header", { p_venue_id: venueId });
+  if (row && toString(row.venue_id) !== venueId) {
+    throw new CatalogReadError("The stall response did not match this stall.", "contract");
+  }
+  return row ? mapRpcVenue(row) : undefined;
+}
+
+export async function listStallMenuPageViaRpc(
+  venueId: string,
+  cursor?: string,
+): Promise<{ dishes: DishDetail[]; nextCursor?: string }> {
+  const [page] = await strictCatalogRows("stall", "get_stall_menu_page", {
+    p_venue_id: venueId,
+    p_cursor: cursor ?? null,
+    p_limit: 20,
+  });
+  if (!page) return { dishes: [] };
+  if (
+    !Array.isArray(page.dishes) ||
+    page.dishes.some(
+      (row) =>
+        !row ||
+        typeof row !== "object" ||
+        toString(row.venue_id) !== venueId ||
+        !toString(row.dish_id),
+    ) ||
+    (page.next_cursor != null && typeof page.next_cursor !== "string")
+  ) {
+    throw new CatalogReadError("The stall menu returned an invalid page.", "contract");
+  }
+  return {
+    dishes: (page.dishes as Row[]).map(mapRpcDish),
+    nextCursor: typeof page.next_cursor === "string" ? page.next_cursor : undefined,
+  };
 }
 
 /** search_dishes caps a page at 50 rows. */
@@ -1274,19 +1400,42 @@ const VENUE_MENU_MAX_EXTRA_PAGES = 9;
 
 /** How long one get_venue_detail result is reused (venue + menu on the same open). */
 const VENUE_DETAIL_REUSE_MS = 30_000;
+const VENUE_DETAIL_MAX_ENTRIES = 24;
 const venueDetailRequests = new Map<string, { at: number; rows: Promise<Row[] | undefined> }>();
+let venueDetailScope: string | undefined;
+
+function syncVenueDetailScope(): void {
+  const scope = catalogRequestScope();
+  if (scope === venueDetailScope) return;
+  venueDetailRequests.clear();
+  venueDetailScope = scope;
+}
 
 /** getVenue and listDishesByVenue share one get_venue_detail call per stall open. */
 function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
+  if (!isSupabaseConfigured()) return Promise.resolve(undefined);
+  syncVenueDetailScope();
   const now = Date.now();
   const cached = venueDetailRequests.get(venueId);
   if (cached && now - cached.at < VENUE_DETAIL_REUSE_MS) return cached.rows;
-  const rows = rpcRows("get_venue_detail", { p_venue_id: venueId }).then((result) => {
-    // Never reuse a failure: the next open retries.
-    if (!result) venueDetailRequests.delete(venueId);
-    return result;
-  });
+  venueDetailRequests.delete(venueId);
+  const rows = strictCatalogRows("stall", "get_venue_detail", { p_venue_id: venueId }).then(
+    (result) => {
+      if (result.length === 0 && venueDetailRequests.get(venueId)?.rows === rows) {
+        venueDetailRequests.delete(venueId);
+      }
+      return result;
+    },
+    (error: unknown) => {
+      if (venueDetailRequests.get(venueId)?.rows === rows) venueDetailRequests.delete(venueId);
+      throw error;
+    },
+  );
   venueDetailRequests.set(venueId, { at: now, rows });
+  if (venueDetailRequests.size > VENUE_DETAIL_MAX_ENTRIES) {
+    const oldest = venueDetailRequests.keys().next().value;
+    if (oldest !== undefined) venueDetailRequests.delete(oldest);
+  }
   return rows;
 }
 
@@ -1310,9 +1459,12 @@ export async function getInlineMerchantReads(venueId: string): Promise<
     }
   | undefined
 > {
+  syncVenueDetailScope();
+  const scope = venueDetailScope;
   const cached = venueDetailRequests.get(venueId);
   if (!cached || Date.now() - cached.at >= VENUE_DETAIL_REUSE_MS) return undefined;
-  const row = (await cached.rows)?.[0];
+  const row = (await cached.rows.catch(() => undefined))?.[0];
+  if (scope !== catalogRequestScope()) return undefined;
   if (!row || !("merchant_profile" in row)) return undefined;
   const profile = row.merchant_profile;
   const promotions = row.active_promotions;
@@ -1324,21 +1476,12 @@ export async function getInlineMerchantReads(venueId: string): Promise<
   };
 }
 
-/** Throws when the configured get_venue_detail RPC failed (offline, timeout). */
-async function getVenueDetailRowsOrThrow(venueId: string): Promise<Row[] | undefined> {
-  const rows = await getVenueDetailRows(venueId);
-  if (!rows && isSupabaseConfigured() && getSupabaseClient()) {
-    throw new Error("Couldn't load this stall.");
-  }
-  return rows;
-}
-
 /**
  * Undefined means "no such stall". Throws when the configured RPC failed, so a
  * network error is never shown as "Stall not found".
  */
 export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
-  const rows = await getVenueDetailRowsOrThrow(venueId);
+  const rows = await getVenueDetailRows(venueId);
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
@@ -1381,6 +1524,7 @@ export async function getVenuesByIdsViaRpc(
  */
 export async function getVenueClosuresViaRpc(
   venueIds: string[],
+  options?: { forDiscover?: boolean },
 ): Promise<Map<string, string> | undefined> {
   const unique = [...new Set(venueIds)];
   if (unique.length === 0) return new Map();
@@ -1389,10 +1533,19 @@ export async function getVenueClosuresViaRpc(
     chunks.push(unique.slice(start, start + VENUE_SUMMARIES_BATCH));
   }
   const results = await Promise.all(
-    chunks.map((ids) =>
+    chunks.map((ids) => {
+      const args = { p_venue_ids: ids };
+      if (!options?.forDiscover) {
+        // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
+        return rpcRows("get_venue_closures", args);
+      }
       // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
-      rpcRows("get_venue_closures", { p_venue_ids: ids }),
-    ),
+      return strictCatalogRows("home", "get_venue_closures", args).catch((error: unknown) => {
+        const outcome = catalogReadOutcome(error);
+        if (outcome === "auth" || outcome === "cancelled") throw error;
+        return undefined;
+      });
+    }),
   );
   if (results.some((rows) => !rows)) return undefined;
   const closures = new Map<string, string>();
@@ -1603,7 +1756,7 @@ function withoutVenuePhotoFallback(row: Row, venueImageUrl: string): Row {
 
 /** Throws when the configured RPC failed, so offline never reads as "No menu". */
 export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDetail[] | undefined> {
-  const rows = await getVenueDetailRowsOrThrow(venueId);
+  const rows = await getVenueDetailRows(venueId);
   const venue = rows?.[0];
   if (!venue) return rows ? [] : undefined;
   // Copy: the venue row is shared with getVenue through the request cache.
@@ -1660,7 +1813,7 @@ export async function listDishesByVenuePageViaRpc(
   cursor?: VenueMenuCursor,
 ): Promise<VenueMenuPage | undefined> {
   if (!cursor) {
-    const rows = await getVenueDetailRowsOrThrow(venueId);
+    const rows = await getVenueDetailRows(venueId);
     const venue = rows?.[0];
     if (!venue) return rows ? { dishes: [] } : undefined;
     const dishRows = toRowArray(venue.dishes);
@@ -1675,9 +1828,7 @@ export async function listDishesByVenuePageViaRpc(
     };
   }
   if (!isSupabaseConfigured()) return undefined;
-  const client = getSupabaseClient();
-  if (!client) return undefined;
-  const { data, error } = await client.rpc("search_dishes", {
+  const pageRows = await strictCatalogRows("stall", "search_dishes", {
     p_query: null,
     p_lat: null,
     p_lng: null,
@@ -1692,8 +1843,6 @@ export async function listDishesByVenuePageViaRpc(
     p_max_price: null,
     p_open_only: false,
   });
-  if (error) throw error;
-  const pageRows = Array.isArray(data) ? (data as unknown as Row[]) : [];
   const venueImageUrl = cursor.venueImageUrl ?? "";
   const last = pageRows[pageRows.length - 1];
   return {

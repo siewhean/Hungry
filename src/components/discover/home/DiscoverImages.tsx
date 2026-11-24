@@ -46,7 +46,15 @@ function DiscoverDishImagePlaceholder({
   );
 }
 
-export function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number }) {
+export function DiscoverBiteImage({
+  bite,
+  height,
+  onDisplay,
+}: {
+  bite: Bite;
+  height: number;
+  onDisplay?: () => void;
+}) {
   const imageUrls = useMemo(
     () =>
       [bite.photoUrl, ...(bite.mediaUrls ?? [])].filter(
@@ -71,6 +79,7 @@ export function DiscoverBiteImage({ bite, height }: { bite: Bite; height: number
         contentFit="cover"
         cachePolicy="memory-disk"
         transition={120}
+        onDisplay={onDisplay}
         onError={() => {
           setFailedUrls((current) =>
             current.includes(activeImageUrl) ? current : [...current, activeImageUrl],

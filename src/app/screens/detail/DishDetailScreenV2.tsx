@@ -10,6 +10,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
+import { useDetailPaint } from "@/features/detail/useDetailPaint";
+import { catalogReadOutcome } from "@/lib/services/supabase/catalogReads";
 import { dinerTasteFromSummary, type DinerTaste } from "@/features/detail/dishTasteSummary";
 import {
   formatAwayLabel,
@@ -163,17 +165,19 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
   const readsLocalData = getServiceProvider().mode !== "supabase";
   const dishId = route.params?.dishId ?? route.params?.id ?? "";
+  const { headerLayout, imageDisplayed, report: reportPaint } = useDetailPaint("dish", dishId);
   const catalogFallback = route.params?.catalogFallback;
+  const discovery = getHungryService().discovery;
+  const [listStallMenuPage] = useState(() => discovery.listStallMenuPage?.bind(discovery));
   const cachedDish = readsLocalData ? repository.getDishById(dishId) : undefined;
   const [hydratedDish, setHydratedDish] = useState<DishDetail | undefined>();
   const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
   const [dishLoadFailed, setDishLoadFailed] = useState(false);
   const [dishReloadKey, setDishReloadKey] = useState(0);
-  const dish = hydratedDish ?? cachedDish;
-  // What the card knew: paints the name, price and photo at once and starts the stall reads
-  // without waiting for the dish read.
+  const dish = hydratedDish?.id === dishId ? hydratedDish : cachedDish;
+  // What the card knew can paint a preview while the authoritative dish arrives.
   const prefill = route.params?.prefill;
-  const readVenueId = dish?.venueId ?? prefill?.venueId;
+  const readVenueId = dish?.venueId;
   const { componentRadii, palette, radii, spacing, shadows } = useHungryTheme();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -212,6 +216,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [dinerTaste, setDinerTaste] = useState<DinerTaste>();
   const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
+  const [closureCheckedVenueId, setClosureCheckedVenueId] = useState<string>();
   const [dishReviews, setDishReviews] = useState<Review[]>([]);
   const [reviewsStatus, setReviewsStatus] = useState<"loading" | "error" | "ready">("loading");
   const [reviewsReloadKey, setReviewsReloadKey] = useState(0);
@@ -255,7 +260,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // A failed stall read shows a retry row instead of silently dropping the stall sections.
   const [venueLoadFailed, setVenueLoadFailed] = useState(false);
   const [venueReloadKey, setVenueReloadKey] = useState(0);
-  const venue = hydratedVenue ?? cachedVenue;
+  const venue = hydratedVenue?.id === readVenueId ? hydratedVenue : cachedVenue;
 
   // Dish photos only: review photos have their own rail and cards.
   const heroPhotos = useMemo(() => (dish ? buildDishHeroPhotos(dish) : []), [dish]);
@@ -324,16 +329,17 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       };
     }
 
-    void getHungryService()
-      .discovery.getDish(dishId)
+    void (discovery.getDishDetail ? discovery.getDishDetail(dishId) : discovery.getDish(dishId))
       .then((nextDish) => {
         if (!active) return;
         setHydratedDish(nextDish);
         setHasLoadedDishDetail(true);
+        if (!nextDish) reportPaint("actionable", "missing");
       })
       .catch((error) => {
         reportError(error, { screen: "DishDetail", action: "load_dish", dishId });
         if (!active) return;
+        reportPaint("actionable", catalogReadOutcome(error));
         setDishLoadFailed(true);
         setHasLoadedDishDetail(true);
       });
@@ -341,17 +347,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedDish, dishId, dishReloadKey]);
+  }, [cachedDish, discovery, dishId, dishReloadKey, reportPaint]);
 
   // Back on screen (after writing, editing or deleting a review): read the dish again even
   // with a warm cache, so the rating, review count and Tried state are current.
   useEffect(() => {
     if (!dishRefreshKey || !dishId) return;
     let active = true;
-    void getHungryService()
-      .discovery.getDish(dishId)
+    void (discovery.getDishDetail ? discovery.getDishDetail(dishId) : discovery.getDish(dishId))
       .then((nextDish) => {
-        if (active && nextDish) setHydratedDish(nextDish);
+        if (active && (nextDish || !readsLocalData)) setHydratedDish(nextDish);
       })
       .catch((error) => {
         // The page keeps what it shows.
@@ -360,7 +365,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [dishId, dishRefreshKey]);
+  }, [discovery, dishId, dishRefreshKey, readsLocalData]);
 
   // The first focus is the mount, which already loads everything.
   const hasFocusedRef = useRef(false);
@@ -375,8 +380,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }, []),
   );
 
-  // A cold cache holds only this dish: read the stall's menu for "More from {stall}".
-  const venueIdForMenu = readVenueId;
+  // The rail needs only a single menu page after the stall header is available.
+  const venueIdForMenu = venue?.id;
   const needsVenueMenu = cachedVenueDishes.filter((item) => item.id !== dish?.id).length === 0;
   useEffect(() => {
     let active = true;
@@ -386,8 +391,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         active = false;
       };
     }
-    void getHungryService()
-      .discovery.listDishesByVenue(venueIdForMenu)
+    const firstPage =
+      listStallMenuPage?.(venueIdForMenu) ??
+      discovery.getStallLegacyMenuPage?.(venueIdForMenu) ??
+      discovery.listDishesByVenuePage?.(venueIdForMenu);
+    const menu = firstPage
+      ? firstPage.then((page) => page.dishes)
+      : discovery.listDishesByVenue(venueIdForMenu);
+    void menu
       .then((nextDishes) => {
         if (active) setFetchedVenueDishes(nextDishes);
       })
@@ -398,7 +409,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [needsVenueMenu, venueIdForMenu]);
+  }, [discovery, listStallMenuPage, needsVenueMenu, venueIdForMenu]);
 
   useEffect(() => {
     let active = true;
@@ -410,8 +421,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       };
     }
 
-    void getHungryService()
-      .discovery.getVenue(readVenueId)
+    void (
+      discovery.getStallHeader
+        ? discovery.getStallHeader(readVenueId, { legacy: !listStallMenuPage })
+        : discovery.getVenue(readVenueId)
+    )
       .then((nextVenue) => {
         if (!active) return;
         setHydratedVenue(nextVenue);
@@ -425,7 +439,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedVenue, readVenueId, venueReloadKey]);
+  }, [cachedVenue, discovery, listStallMenuPage, readVenueId, venueReloadKey]);
 
   // The saved/visited map loads here too, so "Tried" never re-marks a stall already visited.
   useEffect(() => {
@@ -470,12 +484,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   });
 
   // The owner's schedule (special hours) and temporary closure decide "Open now", as on the stall page.
-  const hoursVenueId = readVenueId;
+  const hoursVenueId = venue?.id;
+  const venueHasSchedule = Boolean(venue?.openingSchedule);
   useEffect(() => {
     let active = true;
     setOpeningSchedule(undefined);
-    setMerchantProfile(undefined);
-    if (!hoursVenueId) {
+    if (!hoursVenueId || venueHasSchedule) {
       return () => {
         active = false;
       };
@@ -489,10 +503,26 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         // Open state falls back to the listed hours.
         reportError(error, { screen: "DishDetail", action: "load_opening_schedule" });
       });
+    return () => {
+      active = false;
+    };
+  }, [hoursVenueId, venueHasSchedule]);
+
+  useEffect(() => {
+    let active = true;
+    setMerchantProfile(undefined);
+    setClosureCheckedVenueId(undefined);
+    if (!hoursVenueId) {
+      return () => {
+        active = false;
+      };
+    }
     void getHungryService()
       .discovery.getPublicMerchantProfile(hoursVenueId)
       .then((nextProfile) => {
-        if (active) setMerchantProfile(nextProfile);
+        if (!active) return;
+        setMerchantProfile(nextProfile);
+        setClosureCheckedVenueId(hoursVenueId);
       })
       .catch((error) => {
         reportError(error, { screen: "DishDetail", action: "load_merchant_profile" });
@@ -577,10 +607,15 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   // The dish renders as soon as it arrives; stall-only sections fill in when the venue read lands.
   const isDetailLoading = Boolean(dishId) && !dish && !hasLoadedDishDetail;
-  // A catalog card whose dish has no public dish page (menu not displayable, not published yet)
-  // opens the read-only catalog record instead of "We can't find this dish".
+  // Only legacy reads can open a catalog record. A strict missing can mean the current
+  // dish was archived or its display rights were revoked after a catalog release.
   const opensCatalogRecord =
-    Boolean(catalogFallback) && Boolean(dishId) && hasLoadedDishDetail && !dish && !dishLoadFailed;
+    !discovery.getDishDetail &&
+    Boolean(catalogFallback) &&
+    Boolean(dishId) &&
+    hasLoadedDishDetail &&
+    !dish &&
+    !dishLoadFailed;
   useEffect(() => {
     if (!opensCatalogRecord) return;
     navigation.replace("CatalogRawDetail", {
@@ -671,8 +706,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // The venue read can fail on its own: keep the dish page and drop venue-only sections.
   const venueName = venue?.name ?? dish.venueName ?? "This stall";
   const venueUnit = venue?.unitNumber?.trim();
-  const openState = openInfo?.openState ?? { status: "unknown" as const };
-  const openStatusLabel = openInfo?.statusLabel ?? "Hours not confirmed";
+  const openUnconfirmed =
+    listStallMenuPage && openInfo?.isOpen && closureCheckedVenueId !== venue?.id;
+  const openState = (!openUnconfirmed && openInfo?.openState) || { status: "unknown" as const };
+  const openStatusLabel = openUnconfirmed
+    ? "Check listed hours"
+    : (openInfo?.statusLabel ?? "Hours not confirmed");
   const deliveryLinks = venue?.deliveryLinks ?? [];
   const isDishSoldOut = isSoldOut(dish.availabilityFlags);
   const building = venue ? getBuildingById(venue.buildingId) : undefined;
@@ -1084,6 +1123,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                   width={width}
                   height={heroHeight}
                   subject={dish.name}
+                  onLeadImageDisplay={imageDisplayed}
                   countBottomOffset={spacing[12] + spacing[2]}
                   onViewerOpen={(position) =>
                     trackAnalyticsEvent("dish_photo_viewer_opened", {
@@ -1113,6 +1153,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </DetailHeroFade>
 
             <View
+              onLayout={headerLayout}
               style={{
                 gap: spacing[5],
                 marginTop: spacing[4],

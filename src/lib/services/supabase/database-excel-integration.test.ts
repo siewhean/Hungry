@@ -235,7 +235,7 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   }
 
   assert.match(repositorySource, /export\s+async\s+function\s+listDiscoveryFeedByLocationViaRpc/i);
-  assert.match(repositorySource, /rpcRows\("get_discovery_feed_by_location"/);
+  assert.match(repositorySource, /strictCatalogRows\("home", "get_discovery_feed_by_location"/);
   assert.match(repositorySource, /export\s+async\s+function\s+searchVenuesByLocationViaRpc/i);
   assert.match(repositorySource, /rpcRows\("search_venues_by_location"/);
   assert.match(repositorySource, /mapLocationSearchVenue/);
@@ -243,10 +243,14 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   assert.match(repositorySource, /p_lat:\s+filters\.latitude\s+\?\?\s+null/);
   assert.match(repositorySource, /p_lng:\s+filters\.longitude\s+\?\?\s+null/);
   assert.match(repositorySource, /p_max_price:\s+filters\.maxPrice\s+\?\?\s+null/);
-  assert.match(serviceSource, /async\s+listDiscoveryFeedByLocation\(request\)/);
+  assert.match(serviceSource, /listDiscoveryFeedByLocation:\s*listDiscoveryFeedByLocationViaRpc/);
   assert.match(serviceSource, /async\s+searchVenuesByLocation\(request\)/);
-  assert.match(discoverSource, /listDiscoveryFeedByLocation\(\{/);
-  assert.match(discoverSource, /supabaseDiscoveryFeed\?\.venues/);
+  assert.match(discoverSource, /useDiscoverFeed\(/);
+  const liveFeedSource = readFileSync(
+    resolve(process.cwd(), "src/features/discover/useLiveDiscoverFeed.ts"),
+    "utf8",
+  );
+  assert.match(liveFeedSource, /listDiscoveryFeedByLocation\(/);
   assert.match(quickBitesSource, /getServiceProvider\(\)\.mode\s+===\s+"supabase"/);
   // See all reads the same feed RPC as the Discover rails, so the two lists agree.
   assert.match(quickBitesSource, /getDiscoverFeedBites\(\{/);

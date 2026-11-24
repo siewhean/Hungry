@@ -38,7 +38,7 @@ test("the full read decides the fallback state", () => {
   assert.equal(live.isFallback, undefined);
 });
 
-test("a full read with nothing new returns the first page's stalls", () => {
+test("an authoritative empty full read removes the first page", () => {
   const merged = mergeDiscoverFeeds(feedOf(["a", "b"]), feedOf([]));
-  assert.deepEqual(idsOf(merged), ["a", "b"]);
+  assert.deepEqual(idsOf(merged), []);
 });

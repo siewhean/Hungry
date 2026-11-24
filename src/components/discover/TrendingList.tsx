@@ -5,6 +5,7 @@ import { ChevronRight, Utensils } from "lucide-react-native";
 import { HOME_PRICE_STYLE } from "@/components/discover/home/homeLayout";
 import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
 import { buildBiteLabel, formatBiteDistance } from "@/features/discover/biteLabel";
+import { useCatalogHomeCardVisibility } from "@/features/discover/catalogHomeVisibility";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
 
@@ -21,12 +22,24 @@ const MAX_ROWS = 8;
 const CARD_WIDTH = 300;
 
 /** The row photo; a missing or broken photo shows the same dish icon as the card rails. */
-function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: string }) {
+function TrendingThumb({
+  photoUrl,
+  dishName,
+  measureCatalogPaint,
+}: {
+  photoUrl?: string;
+  dishName: string;
+  measureCatalogPaint: boolean;
+}) {
   const { componentRadii, palette } = useHungryTheme();
   const [failedUrl, setFailedUrl] = useState<string>();
   const showPhoto = Boolean(photoUrl) && photoUrl !== failedUrl;
+  const paint = useCatalogHomeCardVisibility(measureCatalogPaint);
   return (
     <View
+      ref={paint?.ref}
+      collapsable={!paint}
+      onLayout={paint?.onLayout}
       style={{
         alignItems: "center",
         backgroundColor: palette.bgSoft,
@@ -42,6 +55,7 @@ function TrendingThumb({ photoUrl, dishName }: { photoUrl?: string; dishName: st
           source={{ uri: photoUrl }}
           decorative
           contentFit="cover"
+          onDisplay={paint?.onImageDisplay}
           onError={() => setFailedUrl(photoUrl)}
           style={{ height: "100%", width: "100%" }}
         />
@@ -94,7 +108,7 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
         style={{ width: screenWidth }}
         contentContainerStyle={{ gap: spacing[3] }}
       >
-        {bites.slice(0, MAX_ROWS).map((bite) => {
+        {bites.slice(0, MAX_ROWS).map((bite, index) => {
           const distance = formatBiteDistance(bite.distanceMeters);
           return (
             <PressableScale
@@ -115,7 +129,11 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
                 width: CARD_WIDTH,
               }}
             >
-              <TrendingThumb photoUrl={bite.photoUrl} dishName={bite.dishName} />
+              <TrendingThumb
+                photoUrl={bite.photoUrl}
+                dishName={bite.dishName}
+                measureCatalogPaint={index < 3 && bite.price > 0}
+              />
               <View style={{ flex: 1, gap: 2 }}>
                 <AppText variant="bodyBold" numberOfLines={1}>
                   {bite.dishName}

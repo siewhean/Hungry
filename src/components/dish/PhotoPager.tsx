@@ -28,6 +28,8 @@ interface PhotoPagerProps {
   children?: ReactNode;
   /** Runs when a tap opens the full-screen viewer, with the photo's position from 0. */
   onViewerOpen?: (position: number) => void;
+  /** Fires when the leading inline image is displayed. */
+  onLeadImageDisplay?: () => void;
   /** Shown when no photo is left: none were given, or every one failed to load. */
   fallback?: ReactNode;
 }
@@ -54,6 +56,7 @@ export function PhotoPager({
   blurhash,
   children,
   onViewerOpen,
+  onLeadImageDisplay,
   fallback,
 }: PhotoPagerProps) {
   const { palette, radii, spacing } = useHungryTheme();
@@ -100,6 +103,7 @@ export function PhotoPager({
               style={{ height, width }}
               placeholder={position === 0 ? blurhash : undefined}
               accessibilityLabel={`${subject} photo ${position + 1}`}
+              onDisplay={position === 0 ? onLeadImageDisplay : undefined}
               onError={() => dropFailedPhoto(url)}
             />
           </Pressable>

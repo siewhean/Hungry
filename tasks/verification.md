@@ -13,6 +13,16 @@ Use the smallest check that matches the change risk.
 
 ## Latest Known Good
 
+### CATALOG-FIRST-PAINT-20261124
+
+- The review branch passed a clean dependency install, TypeScript, 151 focused render tests, 70 focused source and service tests, four load harness tests, and the N+1, rate-limit and whitespace checks.
+- Disposable PostgreSQL passed migration up, smoke, exact down, reapply and smoke. Both menu paths traversed 123 visible dishes in exact order and covered ties, nullable ratings, rights, media, guest/authenticated visibility and malformed or cross-venue cursors.
+- The comparison harness passed 10/10 ordered Discover comparisons and captured 40 inner execution plans on a synthetic fixture. The authenticated load harness tests passed 6/6. Representative database, gateway and release-device timing are pending.
+- Hosted Singapore production and Seoul staging have the same 285 applied versions. Column order differs across 14 tables, including dishes and venues. Function definitions matched in the follow-up fingerprint that excluded ACL serialization. The previous source checkout also had unrelated migration differences. The review branch uses current main and excludes those changes. Staging rehearsal stopped at the hosted parity preflight. Hosted schemas were left unchanged.
+- The iPhone 17 Pro simulator Debug build succeeded and the app reached welcome and login after Metro warmed. The unsigned build logged an Expo Notifications keychain entitlement error. The attempted mock override did not isolate sign-in from staging, so the staging sign-in prompt was cancelled. This checked startup and stops short of authenticated device acceptance.
+- The bulk of the original working tree remains outside the PR, including the unrelated media and taste-evaluation changes. The migration safety audit requires the hosted rehearsal artifact for the split-stall migration.
+- The review branch SQL passed the 123-dish smoke and exact schema restoration on both the clean-main and deployed legacy RPC definitions. Rate-limit validation passed.
+
 ### STITCH-8-SCREENS-01 (2026-10-23)
 
 - Source: eight exact Stitch screen IDs and HTML/PNG exports in `design/stitch/iterations-11940609752387078506/README.md`; PNGs were fetched at full resolution with `curl -fsSL`.

@@ -308,39 +308,55 @@ function useLiveDishReads(discovery: Partial<HungryService["discovery"]>) {
   return repositoryReads;
 }
 
-test("on live data the dish page reads the dish, stall and menu through the service only", async () => {
+test("live dish details paint before the stall header and use one related menu page", async () => {
   stubReviews([]);
   const dish = pickDish();
   const venue = getDataRepository().getVenueById(dish.venueId);
   const calls: string[] = [];
+  let resolveDish!: (value: DishDetail) => void;
+  let resolveVenue!: (value: typeof venue) => void;
+  const dishRead = new Promise<DishDetail>((resolve) => {
+    resolveDish = resolve;
+  });
+  const venueRead = new Promise<typeof venue>((resolve) => {
+    resolveVenue = resolve;
+  });
   const repositoryReads = useLiveDishReads({
-    getDish: async () => {
-      calls.push("getDish");
-      return dish;
+    getDishDetail: () => {
+      calls.push("dish");
+      return dishRead;
     },
-    getVenue: async () => {
-      calls.push("getVenue");
-      return venue;
+    getStallHeader: () => {
+      calls.push("stall");
+      return venueRead;
     },
-    listDishesByVenue: async () => {
-      calls.push("listDishesByVenue");
-      return [dish];
+    listStallMenuPage: async (_id, cursor) => {
+      assert.equal(cursor, undefined);
+      calls.push("menu");
+      return { dishes: [dish], nextCursor: "next-page" };
     },
+    listDishesByVenue: async () => assert.fail("the rail must not load the whole menu"),
     getVenueOpeningSchedule: async () => undefined,
     getPublicMerchantProfile: async () => undefined,
   });
   const view = await renderScreen(DishDetailScreenV2 as never, {
     name: "DishDetail",
-    params: { dishId: dish.id, source: "home" },
+    params: {
+      dishId: dish.id,
+      source: "home",
+      prefill: { name: dish.name, venueId: dish.venueId },
+    },
   });
+  assert.deepEqual(calls, ["dish"], "prefill does not start stall requests");
+  await act(async () => resolveDish(dish));
   assert.ok(view.findByText(dish.name), "the dish renders from the service read");
+  assert.deepEqual(calls, ["dish", "stall"]);
+  await act(async () => resolveVenue(venue));
+  assert.deepEqual(calls, ["dish", "stall", "menu"]);
   assert.deepEqual(repositoryReads, [], "no synchronous repository read on live data");
-  assert.ok(calls.includes("getDish"));
-  assert.ok(calls.includes("getVenue"));
-  assert.ok(calls.includes("listDishesByVenue"));
 });
 
-test("a catalog card whose dish page can't be found opens the catalog record instead", async () => {
+test("a legacy catalog card whose dish page can't be found opens the catalog record instead", async () => {
   stubReviews([]);
   useLiveDishReads({ getDish: async () => undefined });
   const view = await renderScreen(DishDetailScreenV2 as never, {
@@ -356,6 +372,26 @@ test("a catalog card whose dish page can't be found opens the catalog record ins
     { kind: "dish", id: "catalog-only-dish", releaseId: "r-7" },
   ]);
   assert.doesNotMatch(view.text(), /We can't find this dish/);
+});
+
+test("a strict missing result cannot reopen the dish from a catalog release or prefill", async () => {
+  stubReviews([]);
+  useLiveDishReads({ getDishDetail: async () => undefined });
+  const view = await renderScreen(DishDetailScreenV2 as never, {
+    name: "DishDetail",
+    params: {
+      dishId: "archived-dish",
+      source: "search",
+      prefill: { name: "Previously visible dish", venueId: "previous-stall" },
+      catalogFallback: { releaseId: "r-7" },
+    },
+  });
+  assert.match(view.text(), /We can't find this dish/);
+  assert.doesNotMatch(view.text(), /Previously visible dish/);
+  assert.equal(
+    view.navigation.calls.some((call) => call.method === "replace"),
+    false,
+  );
 });
 
 test("without a catalog fallback, or when the read failed, the dish page keeps its own states", async () => {

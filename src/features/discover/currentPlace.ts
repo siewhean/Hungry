@@ -61,13 +61,16 @@ export function useCurrentPlace(coordinate: Coordinate | null) {
     }
 
     let active = true;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const finish = (next: CatalogPlace | undefined) => {
       if (!active) return;
+      active = false;
+      clearTimeout(timer);
+      if (retryTimer) clearTimeout(retryTimer);
       setPlace(next);
       setResolvedFor(`${latitude},${longitude}`);
     };
     const timer = setTimeout(() => finish(undefined), CURRENT_PLACE_LOOKUP_TIMEOUT_MS);
-    let retryTimer: ReturnType<typeof setTimeout> | undefined;
     const lookup = (canRetry: boolean) =>
       getCatalogRawService()
         .listPlaces({
@@ -77,11 +80,10 @@ export function useCurrentPlace(coordinate: Coordinate | null) {
         })
         .then((places) => finish(places[0]))
         .catch(() => {
-          // One failed read must not leave the header on the area name for the whole visit.
           if (canRetry && active) retryTimer = setTimeout(() => void lookup(false), 2_000);
           else finish(undefined);
         });
-    void lookup(true).finally(() => clearTimeout(timer));
+    void lookup(true);
     return () => {
       active = false;
       clearTimeout(timer);
@@ -89,9 +91,16 @@ export function useCurrentPlace(coordinate: Coordinate | null) {
     };
   }, [latitude, longitude]);
 
+  const holdsPlace = Boolean(
+    place &&
+    latitude !== null &&
+    longitude !== null &&
+    isStillInPlace(place, { latitude, longitude }),
+  );
+  const isResolving = key !== null && resolvedFor !== key && !holdsPlace;
   return {
-    place: key === null ? undefined : place,
+    place: key !== null && !isResolving ? place : undefined,
     /** True while the lookup for the current position has not answered yet. */
-    isResolving: key !== null && resolvedFor !== key,
+    isResolving,
   };
 }

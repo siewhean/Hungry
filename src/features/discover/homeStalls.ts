@@ -15,11 +15,17 @@ import { getScheduleOpenState, hasWeeklyHours } from "@/utils/openingSchedule";
 
 type OpenStateVenue = Pick<
   VenueSummary,
-  "operatingHours" | "isOpen" | "closedUntil" | "openingSchedule" | "closureNotice"
+  | "operatingHours"
+  | "isOpen"
+  | "closedUntil"
+  | "openingSchedule"
+  | "closureNotice"
+  | "availabilityUnverified"
 >;
 
 /** The stall page's rule on Home too: a merchant's "Closed today" / "Reopens 3 Nov" comes first. */
 export function openStateOf(venue: OpenStateVenue) {
+  if (venue.availabilityUnverified) return { status: "unknown" as const, detail: undefined };
   if (isClosureActive(venue.closedUntil)) {
     return { status: "closed" as const, detail: getClosureLabel(venue.closedUntil) };
   }
