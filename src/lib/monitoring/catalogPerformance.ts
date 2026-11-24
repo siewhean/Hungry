@@ -1,6 +1,6 @@
 import { isAnalyticsEnabled, trackAnalyticsEvent } from "@/lib/analytics";
 import { getAppEnvironment } from "@/lib/services/supabase/client";
-import { catalogProjectHost, type CatalogReadFailure } from "@/lib/services/supabase/catalogReads";
+import { catalogProjectHost, type CatalogReadFailure } from "@/lib/services/catalogReads";
 
 type Surface = "home" | "dish" | "stall";
 type Outcome = CatalogReadFailure | "success" | "empty" | "missing" | "stale";

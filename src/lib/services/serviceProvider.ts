@@ -10,10 +10,7 @@ import {
   type catalogRawService,
 } from "@/lib/services/catalog";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
-import {
-  catalogRequestScope,
-  requireCurrentCatalogScope,
-} from "@/lib/services/supabase/catalogReads";
+import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import type { TasteVector } from "@/types/domain";
 import type { CatalogRawService } from "@/lib/services/catalog";

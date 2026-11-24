@@ -7,11 +7,11 @@ const { fake } = installFakeSupabase();
 const VENUE_ID = "stall-venue";
 const DISH_ID = "stall-dish";
 let service: typeof import("./supabaseService").supabaseService.discovery;
-let catalogReadOutcome: typeof import("./catalogReads").catalogReadOutcome;
+let catalogReadOutcome: typeof import("../catalogReads").catalogReadOutcome;
 
 before(async () => {
   service = (await import("./supabaseService")).supabaseService.discovery;
-  catalogReadOutcome = (await import("./catalogReads")).catalogReadOutcome;
+  catalogReadOutcome = (await import("../catalogReads")).catalogReadOutcome;
 });
 
 beforeEach(() => {

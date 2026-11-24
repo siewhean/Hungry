@@ -15,7 +15,7 @@ import {
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
 import { clearCachedDiscoverFeed } from "@/features/discover/feedCache";
-import { catalogRequestScope } from "@/lib/services/supabase/catalogReads";
+import { catalogRequestScope } from "@/lib/services/catalogReads";
 import type { DiscoveryLocationFeedRequest } from "@/lib/services/types";
 import { useLocationStore } from "@/store/useLocationStore";
 

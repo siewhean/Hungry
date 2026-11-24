@@ -33,7 +33,13 @@ test("Discover follows the phone's location and offers to turn it on when it is 
   // off the header says "Singapore", the feed reads island-wide, and a banner offers
   // "Turn on location".
   assert.match(screen, /needsDiscoverAreaChoice\s*\?\s*"Singapore"/);
-  assert.match(screen, /DISCOVER_ISLAND_RADIUS_METERS/);
+  const readArgs = readRepoFile("src/features/discover/discoverReadArgs.ts");
+  assert.match(screen, /getDiscoverReadArgs\(\{/);
+  assert.match(readArgs, /const needsAreaChoice = isApproximate && !location\.manualLocation/);
+  assert.match(
+    readArgs,
+    /radiusMeters: needsAreaChoice \? DISCOVER_ISLAND_RADIUS_METERS : DISCOVER_AREA_RADIUS_METERS/,
+  );
   assert.match(
     screen,
     /getNearestSingaporeArea\(discoverLocationLatitude, discoverLocationLongitude\)/,

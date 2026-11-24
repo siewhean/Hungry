@@ -14,7 +14,7 @@ import {
   resetServiceProvider,
   setServiceProvider,
 } from "@/lib/services/serviceProvider";
-import { CatalogReadError } from "@/lib/services/supabase/catalogReads";
+import { CatalogReadError } from "@/lib/services/catalogReads";
 import type { DiscoveryLocationFeed, DiscoveryLocationFeedRequest } from "@/lib/services/types";
 import { useLocationStore } from "@/store/useLocationStore";
 import { useSessionStore } from "@/store/useSessionStore";

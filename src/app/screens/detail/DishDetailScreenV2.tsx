@@ -11,7 +11,7 @@ import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { useDetailSaveActions } from "@/features/checklistPortfolio/DetailSaveActions";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
 import { useDetailPaint } from "@/features/detail/useDetailPaint";
-import { catalogReadOutcome } from "@/lib/services/supabase/catalogReads";
+import { catalogReadOutcome } from "@/lib/services/catalogReads";
 import { dinerTasteFromSummary, type DinerTaste } from "@/features/detail/dishTasteSummary";
 import {
   formatAwayLabel,

@@ -18,7 +18,7 @@ import {
   catalogReadOutcome,
   catalogRequestScope,
   type CatalogReadFailure,
-} from "@/lib/services/supabase/catalogReads";
+} from "@/lib/services/catalogReads";
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
 import { useSessionStore } from "@/store/useSessionStore";
 import { useUIStore } from "@/store/useUIStore";

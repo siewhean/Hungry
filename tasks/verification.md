@@ -22,6 +22,7 @@ Use the smallest check that matches the change risk.
 - The iPhone 17 Pro simulator Debug build succeeded and the app reached welcome and login after Metro warmed. The unsigned build logged an Expo Notifications keychain entitlement error. The attempted mock override did not isolate sign-in from staging, so the staging sign-in prompt was cancelled. This checked startup and stops short of authenticated device acceptance.
 - The bulk of the original working tree remains outside the PR, including the unrelated media and taste-evaluation changes. The migration safety audit requires the hosted rehearsal artifact for the split-stall migration.
 - The review branch SQL passed the 123-dish smoke and exact schema restoration on both the clean-main and deployed legacy RPC definitions. Rate-limit validation passed.
+- CI follow-up updated the full-suite contracts for strict catalog reads and deferred loading. Added coverage for the place retry deadline, focused detail timing, viewport visibility and analytics consent. Hosted rehearsal is still pending.
 
 ### STITCH-8-SCREENS-01 (2026-10-23)
 

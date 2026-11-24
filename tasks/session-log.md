@@ -1061,3 +1061,5 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 ## 2026-11-24 — CATALOG-FIRST-PAINT-20261124
 
 Ported the catalog performance changes to a clean branch from current main. Verified the stall migration against both the main and deployed legacy SQL baselines. Hosted rehearsal and release performance remain pending.
+
+PR #294 CI follow-up repaired full-suite contracts, moved the catalog read helper outside the Supabase adapter boundary, and added place deadline and paint timing regression tests. Hosted migration evidence remains pending.

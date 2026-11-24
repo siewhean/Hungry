@@ -135,7 +135,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
 import { useDetailPaint } from "@/features/detail/useDetailPaint";
-import { catalogReadOutcome } from "@/lib/services/supabase/catalogReads";
+import { catalogReadOutcome } from "@/lib/services/catalogReads";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
 import type {

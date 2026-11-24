@@ -25,7 +25,15 @@ const dishReviewCard = read("src/components/dish/DishReviewCard.tsx");
 
 test("stall reviews are one newest-first query naming each dish, with a write-review path", () => {
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
-  assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
+  assert.match(stallDetail, /const targetVenueId = venue\?\.id;/);
+  assert.match(
+    stallDetail,
+    /const optionalVenueId =\s*usesStallMenuPages && menuStatus === "loading" \? undefined : targetVenueId;/,
+  );
+  assert.match(
+    stallDetail,
+    /reviews\.listRecentReviewsPage\(\{\s*venueId: optionalVenueId,\s*limit: STALL_COMMUNITY_REVIEW_LIMIT,/,
+  );
   assert.match(stallDetail, /on \{review\.dishName\}/);
   assert.match(
     stallDetail,
@@ -79,7 +87,10 @@ test("stall page has no fake save, timer skeleton, or menu-empty flash while loa
   assert.doesNotMatch(stallDetail, /setTimeout\(\(\) => setIsLoading\(false\), 800\)/);
   assert.match(stallDetail, /menuStatus === "loading"/);
   assert.match(stallDetail, /Couldn&apos;t load this stall&apos;s menu\./);
-  assert.match(stallDetail, /if \(active\) setMenuLoadFailed\(true\)/);
+  assert.match(
+    stallDetail,
+    /if\s*\(active\)\s*\{\s*reportPaint\("menu", catalogReadOutcome\(error\)\);\s*setMenuLoadFailed\(true\);\s*\}/,
+  );
   assert.doesNotMatch(stallDetail, /if \(active\) setHydratedDishes\(\[\]\)/);
 });
 

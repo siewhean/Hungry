@@ -7,7 +7,7 @@ import {
   catalogReadOutcome,
   catalogRequestScope,
   requireCurrentCatalogScope,
-} from "@/lib/services/supabase/catalogReads";
+} from "@/lib/services/catalogReads";
 import { shareInFlight } from "@/lib/services/supabase/shareInFlight";
 import { catalogNow, recordCatalogRpc } from "@/lib/monitoring/catalogPerformance";
 import { validateOpeningSchedule } from "@/utils/openingSchedule";

@@ -2,10 +2,7 @@ import { DISCOVER_FIRST_PAGE_LIMIT } from "@/features/discover/bites";
 import { getDiscoverReadArgs } from "@/features/discover/discoverReadArgs";
 import { readDiscoverFirstPage } from "@/features/discover/feedCache";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
-import {
-  catalogRequestScope,
-  requireCurrentCatalogScope,
-} from "@/lib/services/supabase/catalogReads";
+import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import { useLocationStore } from "@/store/useLocationStore";
 
 type ReadArgs = ReturnType<typeof getDiscoverReadArgs>;

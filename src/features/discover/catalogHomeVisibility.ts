@@ -11,7 +11,7 @@ import {
 import type { ScrollView, View } from "react-native";
 
 import { catalogNow, recordCatalogPaint } from "@/lib/monitoring/catalogPerformance";
-import type { CatalogReadFailure } from "@/lib/services/supabase/catalogReads";
+import type { CatalogReadFailure } from "@/lib/services/catalogReads";
 
 type Attempt = {
   startedAt: number;
