@@ -1063,3 +1063,5 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 Ported the catalog performance changes to a clean branch from current main. Verified the stall migration against both the main and deployed legacy SQL baselines. Hosted rehearsal and release performance remain pending.
 
 PR #294 CI follow-up repaired full-suite contracts, moved the catalog read helper outside the Supabase adapter boundary, and added place deadline and paint timing regression tests. Hosted migration evidence remains pending.
+
+Split PR #294 into the app change and database PR #295. The default app build keeps legacy stall reads until the database clears hosted rehearsal. The rehearsal remains blocked by the separately held chat migration.

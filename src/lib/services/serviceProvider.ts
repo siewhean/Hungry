@@ -145,11 +145,7 @@ async function runStrictDiscoveryRead<T>(read: () => Promise<T>): Promise<T> {
 }
 
 function stallReadsV2Enabled(): boolean {
-  const override = process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
-  if (override === "true" || override === "false") return override === "true";
-  const { peekPostHogFeatureFlag } =
-    require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
-  return peekPostHogFeatureFlag("stall_reads_v2") === true;
+  return process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 === "true";
 }
 
 function getExcelDiscoveryService(): DiscoveryService {
@@ -184,7 +180,7 @@ export function createResilientDiscoveryService(primary: DiscoveryService): Disc
       ((id, options) =>
         runStrictDiscoveryRead(() =>
           getStallHeader(id, {
-            legacy: options?.legacy ?? !stallReadsV2Enabled(),
+            legacy: options?.legacy === true || !stallReadsV2Enabled(),
           }),
         )),
     getStallLegacyMenuPage:

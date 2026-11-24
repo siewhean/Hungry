@@ -71,6 +71,39 @@ function primaryThat(behaviour: (method: string) => unknown, calls: string[]) {
   return primary as unknown as Discovery;
 }
 
+test("stall reads require an explicit build opt-in to use the split endpoints", async () => {
+  const previous = process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
+  const headerCalls: (boolean | undefined)[] = [];
+  const service = createResilientDiscoveryService({
+    ...primaryThat(() => undefined, []),
+    getStallHeader: async (_id, options) => {
+      headerCalls.push(options?.legacy);
+      return undefined;
+    },
+    listStallMenuPage: async () => ({ dishes: [] }),
+  });
+
+  try {
+    delete process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
+    assert.equal(service.listStallMenuPage, undefined);
+    await service.getStallHeader?.("fixture", { legacy: false });
+
+    process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 = "true";
+    assert.equal(typeof service.listStallMenuPage, "function");
+    await service.getStallHeader?.("fixture");
+    await service.getStallHeader?.("fixture", { legacy: true });
+
+    process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 = "false";
+    assert.equal(service.listStallMenuPage, undefined);
+    await service.getStallHeader?.("fixture");
+
+    assert.deepEqual(headerCalls, [true, false, true, true]);
+  } finally {
+    if (previous === undefined) delete process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
+    else process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 = previous;
+  }
+});
+
 test("every discovery read uses the live catalog while it answers", async () => {
   const previous = useSessionStore.getState();
   const primaryCalls: string[] = [];
