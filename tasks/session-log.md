@@ -1065,3 +1065,12 @@ Ported the catalog performance changes to a clean branch from current main. Veri
 PR #294 CI follow-up repaired full-suite contracts, moved the catalog read helper outside the Supabase adapter boundary, and added place deadline and paint timing regression tests. Hosted migration evidence remains pending.
 
 Split PR #294 into the app change and database PR #295. The default app build keeps legacy stall reads until the database clears hosted rehearsal. The rehearsal remains blocked by the separately held chat migration.
+
+## 2026-11-25 — STALL-READS-20261124
+
+- Siew Hean ran the approved production chat removal and the hosted stall rehearsals. The chat smoke passed, and the repaired stall rehearsal returned staging to the production baseline and produced evidence at `0039e75dd`.
+- Codex fixed the cursor precision and subsequent review findings. The local PostgreSQL smoke and exact rollback passed on both function baselines. Codex will verify fresh hosted evidence and merge checks after the credentialed rehearsal. Follow [STALL-READS-20261124](backlog.md#current-focus).
+
+- 2026-11-25 | Codex verified the final hosted stall rehearsal and updated the Expo patch pin after CI detected a version mismatch. The database files and rehearsal checksums stayed unchanged. Follow [STALL-READS-20261124](backlog.md#current-focus) for merge and rollout.
+
+- 2026-11-25 | Codex updated PR #294 to the merged database baseline, preserving both verification records and taking the Expo 57.0.34 pin from main. Merge follows passing required checks. Follow [CATALOG-FIRST-PAINT-20261124](backlog.md#current-focus).

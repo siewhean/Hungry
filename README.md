@@ -105,7 +105,7 @@ To override these locally, you can use `.env.development` or modify the constant
 
 ## Project Status
 
-Discover and detail loading improvements are in [app review](https://github.com/siewhean/Hungry/pull/294). The [stall RPC migration](https://github.com/siewhean/Hungry/pull/295) is awaiting hosted rehearsal. Release-device latency is pending. See `CATALOG-FIRST-PAINT-20261124` in [verification](tasks/verification.md).
+Discover and detail loading improvements are in [app review](https://github.com/siewhean/Hungry/pull/294). The [stall RPC migration](https://github.com/siewhean/Hungry/pull/295) merged after hosted rehearsal. Its database rollout is pending. Release-device latency is pending. See `CATALOG-FIRST-PAINT-20261124` in [verification](tasks/verification.md).
 
 Stitch screen iteration (23 October 2026): eight Search, Profile, Achievements,
 Settings, Reviews, Saved Dishes, Stall, and Dish design exports are saved in
