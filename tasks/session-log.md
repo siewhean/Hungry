@@ -1062,3 +1062,5 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 
 - Siew Hean ran the approved production chat removal and the hosted stall rehearsals. The chat smoke passed, and the repaired stall rehearsal returned staging to the production baseline and produced evidence at `0039e75dd`.
 - Codex fixed the cursor precision and subsequent review findings. The local PostgreSQL smoke and exact rollback passed on both function baselines. Codex will verify fresh hosted evidence and merge checks after the credentialed rehearsal. Follow [STALL-READS-20261124](backlog.md#current-focus).
+
+- 2026-11-25 | Codex verified the final hosted stall rehearsal and updated the Expo patch pin after CI detected a version mismatch. The database files and rehearsal checksums stayed unchanged. Follow [STALL-READS-20261124](backlog.md#current-focus) for merge and rollout.
