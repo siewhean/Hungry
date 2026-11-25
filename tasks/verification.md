@@ -13,6 +13,11 @@ Use the smallest check that matches the change risk.
 
 ## Latest Known Good
 
+### STALL-READS-20261124
+
+- Production applied chat removal and passed its smoke. The first stall rehearsal caught staging up, matched production's schema, and passed apply, down, comparison and reapply. Its smoke then exposed pooler float truncation on page five.
+- Disposable PostgreSQL reproduced the failure and verified the repair against both main and hosted function definitions at `extra_float_digits = 0`. Both menu paths traversed all 123 visible dishes, and rollback restored the schema exactly. The Nov 25 hosted staging rehearsal matched production schema, passed backup, apply, rollback, schema and row comparisons, reapply and smoke, and returned staging to the production baseline. Its rehearsal record matches the SQL at commit `0039e75dd`. Review follow-ups passed the stronger smoke and exact rollback against both disposable baselines, including rejection of unexpected function settings. The final hosted rehearsal passed and its record matches both reviewed SQL files. The Expo 57.0.34 patch fixed the separate CI version check. A clean install, Expo Doctor (20/20), and migration safety passed locally.
+
 ### STITCH-8-SCREENS-01 (2026-10-23)
 
 - Source: eight exact Stitch screen IDs and HTML/PNG exports in `design/stitch/iterations-11940609752387078506/README.md`; PNGs were fetched at full resolution with `curl -fsSL`.
