@@ -16,7 +16,7 @@ Use the smallest check that matches the change risk.
 ### STALL-READS-20261124
 
 - Production applied chat removal and passed its smoke. The first stall rehearsal caught staging up, matched production's schema, and passed apply, down, comparison and reapply. Its smoke then exposed pooler float truncation on page five.
-- Disposable PostgreSQL reproduced the failure and verified the repair against both main and hosted function definitions at `extra_float_digits = 0`. Both menu paths traversed all 123 visible dishes, and rollback restored the schema exactly. The revised hosted rehearsal is pending.
+- Disposable PostgreSQL reproduced the failure and verified the repair against both main and hosted function definitions at `extra_float_digits = 0`. Both menu paths traversed all 123 visible dishes, and rollback restored the schema exactly. The Nov 25 hosted staging rehearsal matched production schema, passed backup, apply, rollback, schema and row comparisons, reapply and smoke, and returned staging to the production baseline. The committed rehearsal record matches the exact up and down SQL.
 
 ### STITCH-8-SCREENS-01 (2026-10-23)
 
