@@ -195,6 +195,39 @@ test("STALL-7: a failed later menu page says so, with Retry, and the count shows
   assert.ok(pageCalls.length > before, "Retry reads the page again");
 });
 
+test("a search query stays editable after the last short page arrives", async () => {
+  const base = getServiceProvider();
+  const venue = getDataRepository().getVenueById(STALL);
+  const [first, second] = getDataRepository().listDishesByVenue(STALL);
+  assert.ok(venue && first && second);
+  const calls: (string | undefined)[] = [];
+  setServiceProvider({
+    ...base,
+    mode: "supabase",
+    service: {
+      ...base.service,
+      discovery: {
+        ...base.service.discovery,
+        getStallHeader: async () => venue,
+        listStallMenuPage: async (_venueId, cursor) => {
+          calls.push(cursor);
+          return cursor ? { dishes: [second] } : { dishes: [first], nextCursor: "last-page" };
+        },
+      },
+    },
+  });
+  restores.push(() => setServiceProvider(base));
+
+  const view = await openStall();
+  const search = view.findByLabel("Search this menu");
+  assert.ok(search);
+  await view.type(search, first.name);
+  assert.deepEqual(calls, [undefined, "last-page"]);
+  assert.ok(view.findByLabel("Search this menu"));
+  await view.type(view.findByLabel("Search this menu"), "");
+  assert.equal(view.findByLabel("Search this menu"), null);
+});
+
 test("live stall shows the header before its independently retryable menu", async () => {
   const base = getServiceProvider();
   const venue = getDataRepository().getVenueById(STALL);

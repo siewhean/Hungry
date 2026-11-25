@@ -640,6 +640,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
         reportStallError(error, "load_menu");
         if (active) {
           reportPaint("menu", catalogReadOutcome(error));
+          // Eligible transient failures return a scoped snapshot from the service.
+          // A rejection means the current read has no safe snapshot to keep.
           setLoadedMenu(undefined);
           setMenuRefreshing(false);
           setMenuLoadFailed(true);
@@ -1860,7 +1862,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </Card>
                   ) : dishes.length > 0 ? (
                     <View style={{ gap: spacing[4] }}>
-                      {dishes.length > MENU_SEARCH_MIN_ITEMS ||
+                      {menuQuery.length > 0 ||
+                      dishes.length > MENU_SEARCH_MIN_ITEMS ||
                       (usesStallMenuPages && menuNextCursor) ? (
                         <Input
                           placeholder="Search this menu"
