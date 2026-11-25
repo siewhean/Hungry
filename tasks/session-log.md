@@ -1060,6 +1060,5 @@ All 9 required audit documents updated in `tasks/Roadmap/`:
 
 ## 2026-11-25 — STALL-READS-20261124
 
-Production chat removal shipped with a verified archive and passed its smoke. The subsequent stall staging rehearsal found a cursor precision bug. Normalized venue-only menu rank scores to six decimals and made the smoke exercise the hosted float setting. Disposable PostgreSQL passed the repaired smoke and exact schema restoration against both baselines.
-
-The revised hosted rehearsal passed and pushed the evidence on commit `0039e75dd`. Staging returned to the production baseline, and the repository migration safety audit passed against the committed evidence.
+- Siew Hean ran the approved production chat removal and the hosted stall rehearsals. The chat smoke passed, and the repaired stall rehearsal returned staging to the production baseline and produced evidence at `0039e75dd`.
+- Codex fixed the cursor precision and subsequent review findings. The local PostgreSQL smoke and exact rollback passed on both function baselines. Codex will verify fresh hosted evidence and merge checks after the credentialed rehearsal. Follow [STALL-READS-20261124](backlog.md#current-focus).

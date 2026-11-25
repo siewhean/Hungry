@@ -36,8 +36,8 @@ select
   i % 3,
   case when i > 123 then 0 else (i % 4) * 200 end,
   case when i = 1 then array['sold_out'] else '{}'::text[] end,
-  i < 125,
-  case when i >= 125 then 'unverified' else 'merchant_owned' end,
+  i <> 125,
+  case when i = 125 then 'unverified' else 'merchant_owned' end,
   'https://example.com/hidden-smoke-image.jpg', false, 'unverified',
   case when i = 124 then now() end,
   i = 126
@@ -152,6 +152,16 @@ begin
     null;
   end;
 
+  begin
+    perform * from public.get_stall_menu_page(
+      'smoke-sdr-menu',
+      $cursor${"v":1,"venue":"smoke-sdr-menu","score":1,"id":"\u0000"}$cursor$
+    );
+    raise exception 'A cursor containing an unsupported JSON escape was accepted';
+  exception when invalid_parameter_value then
+    null;
+  end;
+
   select dishes into v_legacy from public.get_venue_detail('smoke-sdr-menu');
   if jsonb_array_length(v_legacy) is distinct from 50 then
     raise exception 'Legacy clients must receive a 50-item first page';
@@ -160,21 +170,21 @@ begin
   select array_agg(j->>'dish_id' order by n) into v_actual
   from jsonb_array_elements(v_legacy) with ordinality as s(j, n);
 
-  select array_agg(s.dish_id order by s.cursor_score desc, s.cursor_id) into v_expected
-  from public.search_dishes(p_venue_id => 'smoke-sdr-menu', p_limit => 50) s;
+  select array_agg(s.dish_id order by s.ordinality) into v_expected
+  from public.search_dishes(p_venue_id => 'smoke-sdr-menu', p_limit => 50) with ordinality s;
   if v_actual is distinct from v_expected then
     raise exception 'Legacy embedded menu does not share the search rank';
   end if;
 
   v_legacy_page := v_legacy;
   for i in 1..2 loop
-    select jsonb_agg(to_jsonb(s) order by s.cursor_score desc, s.cursor_id) into v_legacy_page
+    select jsonb_agg(to_jsonb(s) - 'ordinality' order by s.ordinality) into v_legacy_page
     from public.search_dishes(
       p_venue_id => 'smoke-sdr-menu',
       p_cursor_score => (v_legacy_page->49->>'cursor_score')::double precision,
       p_cursor_id => v_legacy_page->49->>'cursor_id',
       p_limit => 50
-    ) s;
+    ) with ordinality s;
     if jsonb_array_length(v_legacy_page) is distinct from (case when i = 1 then 50 else 23 end) then
       raise exception 'Legacy continuation must have the expected page size, page %', i;
     end if;

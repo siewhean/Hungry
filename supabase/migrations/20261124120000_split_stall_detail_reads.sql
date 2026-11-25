@@ -143,7 +143,7 @@ begin
       v_after_score := (v_cursor->>'score')::double precision;
       v_after_id := v_cursor->>'id';
     exception
-      when invalid_text_representation or numeric_value_out_of_range then
+      when invalid_text_representation or numeric_value_out_of_range or untranslatable_character then
         raise invalid_parameter_value using message = 'Invalid stall menu cursor';
     end;
   end if;
@@ -225,6 +225,15 @@ declare
     'fe1769da5ecd86bed8a40582c87367b2', -- main replay
     '24d872ef2579a833102f207ccfe1b732'  -- hosted
   ];
+  v_archived_filter constant text := '      and d.archived_at is null';
+  v_menu_visibility constant text := $filter$      and d.archived_at is null
+      and not (
+        d.merchant_draft
+        and nullif(p_venue_id, '') is not null
+        and nullif(trim(p_query), '') is null
+        and nullif(trim(p_area_name), '') is null
+        and p_lat is null and p_lng is null
+      )$filter$;
   v_dishes_body text;
   v_def text := pg_get_functiondef(v_sig);
   v_start text := '    coalesce((' || chr(10) || '      select jsonb_agg(' || chr(10) ||
@@ -239,6 +248,10 @@ begin
   into v_repair_venue from pg_proc where oid = v_sig;
 
   if v_repair_venue then
+    -- The rollback has a fixed historical definition, including its function settings.
+    if md5(v_def) <> 'cf158754a8d80f44cf895afd58020580' then
+      raise exception 'get_venue_detail function attributes differ from the rollback baseline';
+    end if;
     if v_pos = 0 or strpos(v_def, v_end) <= v_pos then
       raise exception 'get_venue_detail lacks the expected hosted menu projection';
     end if;
@@ -269,10 +282,14 @@ begin
   select prosrc into v_dishes_body from pg_proc where oid = v_dishes_sig;
   if not (md5(v_dishes_body) = any(v_known_dishes_bodies))
     or strpos(v_dishes_body, v_original_rank) = 0
+    or strpos(v_dishes_body, v_archived_filter) = 0
   then
     raise exception 'search_dishes differs from the expected legacy continuation definition';
   end if;
-  execute replace(pg_get_functiondef(v_dishes_sig), v_original_rank, v_menu_rank);
+  execute replace(
+    replace(pg_get_functiondef(v_dishes_sig), v_original_rank, v_menu_rank),
+    v_archived_filter, v_menu_visibility
+  );
 
   execute format(
     'comment on function app_private.stall_menu_rows(text,double precision,text,integer,boolean) is %L',

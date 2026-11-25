@@ -33,7 +33,17 @@ declare
     'fe1769da5ecd86bed8a40582c87367b2', -- main replay
     '24d872ef2579a833102f207ccfe1b732'  -- hosted
   ];
+  v_archived_filter constant text := '      and d.archived_at is null';
+  v_menu_visibility constant text := $filter$      and d.archived_at is null
+      and not (
+        d.merchant_draft
+        and nullif(p_venue_id, '') is not null
+        and nullif(trim(p_query), '') is null
+        and nullif(trim(p_area_name), '') is null
+        and p_lat is null and p_lng is null
+      )$filter$;
   v_dishes_body text;
+  v_original_dishes_body text;
   v_restore jsonb := obj_description(
     'app_private.stall_menu_rows(text,double precision,text,integer,boolean)'::regprocedure,
     'pg_proc'
@@ -48,10 +58,14 @@ begin
   select prosrc into v_dishes_body from pg_proc where oid = v_dishes_sig;
   -- The earlier rehearsal revision left search_dishes untouched.
   if not (md5(v_dishes_body) = any(v_known_dishes_bodies)) then
-    if not (md5(replace(v_dishes_body, v_menu_rank, v_original_rank)) = any(v_known_dishes_bodies)) then
+    v_original_dishes_body := replace(
+      replace(v_dishes_body, v_menu_rank, v_original_rank),
+      v_menu_visibility, v_archived_filter
+    );
+    if not (md5(v_original_dishes_body) = any(v_known_dishes_bodies)) then
       raise exception 'Cannot restore the expected search_dishes continuation definition';
     end if;
-    execute replace(pg_get_functiondef(v_dishes_sig), v_menu_rank, v_original_rank);
+    execute replace(pg_get_functiondef(v_dishes_sig), v_dishes_body, v_original_dishes_body);
   end if;
 
   if (v_restore->>'repair_venue')::boolean then
