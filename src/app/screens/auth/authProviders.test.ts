@@ -18,9 +18,10 @@ test("Google shows on Android and web when its flag is on", () => {
   assert.deepEqual(getEnabledAuthProviders("web", flags(false, true)), ["google"]);
 });
 
-test("iPhone never offers Google, so the email code stays the only way in until Apple ships", () => {
+test("iPhone offers Google only next to Apple (App Store rule 4.8)", () => {
   assert.deepEqual(getEnabledAuthProviders("ios", flags(false, true)), []);
-  assert.deepEqual(getEnabledAuthProviders("ios", flags(true, true)), ["apple"]);
+  assert.deepEqual(getEnabledAuthProviders("ios", flags(true, false)), ["apple"]);
+  assert.deepEqual(getEnabledAuthProviders("ios", flags(true, true)), ["apple", "google"]);
 });
 
 test("Apple follows the provider flag and is listed first", () => {

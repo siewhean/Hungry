@@ -97,9 +97,9 @@ export function resolveFeatureFlags(
     mockMapboxEnabled: enabled(env, "EXPO_PUBLIC_MOCK_MAPBOX_ENABLED"),
     commentsEnabled: nonProductionSurfaceEnabled,
     oauthProvidersEnabled: nonProductionSurfaceEnabled,
-    // Google sign-in on Android and web. Production opts in with EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN=1
-    // once the Google provider is configured in Supabase; iPhone never shows it until Sign in
-    // with Apple ships (App Store rule 4.8), whatever this says (authProviders.ts).
+    // Google sign-in. Production opts in with EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN=1 once the Google
+    // provider is configured in Supabase; iPhone shows it only alongside Sign in with Apple
+    // (App Store rule 4.8), whatever this says (authProviders.ts).
     googleSignInEnabled: surface("EXPO_PUBLIC_ENABLE_GOOGLE_SIGN_IN", nonProductionSurfaceEnabled),
     floorplansEnabled: false,
     gamificationEnabled: nonProductionSurfaceEnabled,
