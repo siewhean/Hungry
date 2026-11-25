@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -6,15 +6,10 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
 import { AppSymbol, AppText, Button, PressableScale, type AppSymbolName } from "@/components/ui";
-import { readLastCachedDiscoverFeed } from "@/features/discover/feedCache";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
-import type { VenueSummary } from "@/types/domain";
 import { reportError } from "@/lib/monitoring/reportError";
-
-/** How many stalls from the last visit the page lists. */
-const LAST_VISIT_LIMIT = 6;
 
 export const HOME_OFFLINE_COPY = {
   offline: {
@@ -112,8 +107,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 /**
  * The Home a diner sees when the live Home can't load: no connection, or the server is too slow.
  * It says which, offers Try again and pull to refresh, retries by itself when the phone comes
- * back online, and keeps what is already on the phone in reach (saved dishes, and the stalls
- * from the last Home that loaded).
+ * back online, and keeps saved dishes in reach.
  */
 export function HomeOfflineScreen({ onRetry }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -121,18 +115,7 @@ export function HomeOfflineScreen({ onRetry }: Props) {
   const { palette, semanticSpacing, spacing } = useHungryTheme();
   const isOffline = useUIStore((state) => state.isOffline);
   const savedDishCount = useProfileStore((state) => state.profile.favouriteDishIds.length);
-  const [lastVisitStalls, setLastVisitStalls] = useState<VenueSummary[]>([]);
   const [refreshing, setRefreshing] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void readLastCachedDiscoverFeed().then((entry) => {
-      if (active && entry) setLastVisitStalls(entry.feed.venues.slice(0, LAST_VISIT_LIMIT));
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   // The phone coming back online tries the live Home again without a tap.
   const wasOffline = useRef(isOffline);
@@ -218,27 +201,6 @@ export function HomeOfflineScreen({ onRetry }: Props) {
               subtitle={`${savedDishCount} ${savedDishCount === 1 ? "dish" : "dishes"}`}
               title="Your saved dishes"
             />
-          </Section>
-        ) : null}
-
-        {lastVisitStalls.length > 0 ? (
-          <Section title="From your last visit">
-            {lastVisitStalls.map((venue, index) => (
-              <Fragment key={venue.id}>
-                {index > 0 ? (
-                  <View style={{ backgroundColor: palette.border, height: 1, marginLeft: 60 }} />
-                ) : null}
-                <ListRow
-                  accessibilityLabel={
-                    venue.buildingName ? `${venue.name}, ${venue.buildingName}` : venue.name
-                  }
-                  icon="stall"
-                  onPress={() => navigation.navigate("StallDetail", { venueId: venue.id })}
-                  subtitle={venue.buildingName}
-                  title={venue.name}
-                />
-              </Fragment>
-            ))}
           </Section>
         ) : null}
       </ScrollView>

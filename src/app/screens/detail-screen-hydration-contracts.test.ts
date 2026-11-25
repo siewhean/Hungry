@@ -11,16 +11,21 @@ test("detail screens hydrate specific Supabase records before showing not-found 
   const dishDetailV2 = read("src/app/screens/detail/DishDetailScreenV2.tsx");
   const stallDetail = read("src/app/screens/detail/StallDetailScreen.tsx");
 
-  assert.match(dishDetailV2, /discovery\.getDish\(dishId\)/);
-  assert.match(dishDetailV2, /discovery\.getVenue\(readVenueId\)/);
+  assert.match(dishDetailV2, /discovery\.getDishDetail\(dishId\)/);
+  assert.match(dishDetailV2, /const readVenueId = dish\?\.venueId/);
+  assert.match(dishDetailV2, /discovery\.getStallHeader\(readVenueId,/);
   assert.match(dishDetailV2, /accessibilityLabel=\{`Open \$\{venueName\} stall details`\}/);
   assert.match(dishDetailV2, /openStallFromDish\(navigation, dish\.venueId\)/);
   assert.match(dishDetailV2, /!dish && !hasLoadedDishDetail/);
   // The dish renders as soon as it loads; the stall read fills in its own sections (detail-M16).
   assert.doesNotMatch(dishDetailV2, /hasLoadedVenueDetail/);
 
-  assert.match(stallDetail, /discovery\.getVenue\(venueId\)/);
-  assert.match(stallDetail, /discovery\.listDishesByVenue\(venue\.id\)/);
+  assert.match(stallDetail, /discovery\.getStallHeader\(venueId,/);
+  assert.match(stallDetail, /const targetVenueId = venue\?\.id;/);
+  assert.match(
+    stallDetail,
+    /const firstPage =\s*listStallMenuPage\?\.\(targetVenueId\)\s*\?\?\s*discovery\.getStallLegacyMenuPage\?\.\(targetVenueId\)/,
+  );
   assert.match(stallDetail, /venue\?\.buildingName \?\? building\?\.name/);
   // Header: "Centre · unit · distance"; the full address is only in the Address card.
   assert.match(

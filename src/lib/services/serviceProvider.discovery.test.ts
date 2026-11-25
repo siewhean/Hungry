@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { CatalogNetworkError, CatalogRpcError } from "@/lib/services/catalog";
 import { createResilientDiscoveryService } from "@/lib/services/serviceProvider";
+import { CatalogReadError } from "@/lib/services/catalogReads";
 import type { HungryService } from "@/lib/services/types";
 import { excelService } from "@/lib/services/excel/excelService";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -19,11 +20,19 @@ const FALLBACK_METHODS = [
   "getDish",
   "listDishesByVenue",
   "listPopularNearby",
-  "listDiscoveryFeedByLocation",
   "searchVenuesByLocation",
   "searchDishes",
   "decideForMe",
 ] as const satisfies readonly Method[];
+
+const STRICT_METHODS = [
+  "listDiscoveryFeedByLocation",
+  "getDishDetail",
+  "getStallHeader",
+  "getStallLegacyMenuPage",
+] as const satisfies readonly Method[];
+
+const DISCOVERY_METHODS = [...FALLBACK_METHODS, ...STRICT_METHODS] as const;
 
 const SIGNED_IN = {
   isAuthReady: true,
@@ -36,19 +45,24 @@ const SIGNED_IN = {
 function stubFallback(calls: string[]) {
   const target = excelService.discovery as unknown as Record<string, unknown>;
   const originals: Record<string, unknown> = {};
-  for (const method of FALLBACK_METHODS) {
+  for (const method of DISCOVERY_METHODS) {
     originals[method] = target[method];
     target[method] = async () => {
       calls.push(method);
       return `excel:${method}`;
     };
   }
-  return () => Object.assign(target, originals);
+  return () => {
+    for (const method of DISCOVERY_METHODS) {
+      if (originals[method] === undefined) delete target[method];
+      else target[method] = originals[method];
+    }
+  };
 }
 
 function primaryThat(behaviour: (method: string) => unknown, calls: string[]) {
   const primary: Record<string, unknown> = { untouched: "kept" };
-  for (const method of FALLBACK_METHODS) {
+  for (const method of DISCOVERY_METHODS) {
     primary[method] = async () => {
       calls.push(method);
       return behaviour(method);
@@ -56,6 +70,39 @@ function primaryThat(behaviour: (method: string) => unknown, calls: string[]) {
   }
   return primary as unknown as Discovery;
 }
+
+test("stall reads require an explicit build opt-in to use the split endpoints", async () => {
+  const previous = process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
+  const headerCalls: (boolean | undefined)[] = [];
+  const service = createResilientDiscoveryService({
+    ...primaryThat(() => undefined, []),
+    getStallHeader: async (_id, options) => {
+      headerCalls.push(options?.legacy);
+      return undefined;
+    },
+    listStallMenuPage: async () => ({ dishes: [] }),
+  });
+
+  try {
+    delete process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
+    assert.equal(service.listStallMenuPage, undefined);
+    await service.getStallHeader?.("fixture", { legacy: false });
+
+    process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 = "true";
+    assert.equal(typeof service.listStallMenuPage, "function");
+    await service.getStallHeader?.("fixture");
+    await service.getStallHeader?.("fixture", { legacy: true });
+
+    process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 = "false";
+    assert.equal(service.listStallMenuPage, undefined);
+    await service.getStallHeader?.("fixture");
+
+    assert.deepEqual(headerCalls, [true, false, true, true]);
+  } finally {
+    if (previous === undefined) delete process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2;
+    else process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 = previous;
+  }
+});
 
 test("every discovery read uses the live catalog while it answers", async () => {
   const previous = useSessionStore.getState();
@@ -67,10 +114,10 @@ test("every discovery read uses the live catalog while it answers", async () => 
     const service = createResilientDiscoveryService(
       primaryThat((method) => `live:${method}`, primaryCalls),
     );
-    for (const method of FALLBACK_METHODS) {
+    for (const method of DISCOVERY_METHODS) {
       assert.equal(await (service[method] as unknown as () => Promise<string>)(), `live:${method}`);
     }
-    assert.deepEqual(primaryCalls, [...FALLBACK_METHODS]);
+    assert.deepEqual(primaryCalls, [...DISCOVERY_METHODS]);
     assert.deepEqual(fallbackCalls, []);
     assert.equal((service as unknown as Record<string, unknown>).untouched, "kept");
   } finally {
@@ -79,7 +126,7 @@ test("every discovery read uses the live catalog while it answers", async () => 
   }
 });
 
-test("every discovery read falls back to Excel when the live catalog is unreachable", async () => {
+test("legacy discovery reads fall back to Excel when the live catalog is unreachable", async () => {
   const previous = useSessionStore.getState();
   const primaryCalls: string[] = [];
   const fallbackCalls: string[] = [];
@@ -98,6 +145,38 @@ test("every discovery read falls back to Excel when the live catalog is unreacha
       );
     }
     assert.deepEqual(fallbackCalls, [...FALLBACK_METHODS]);
+  } finally {
+    restore();
+    useSessionStore.setState(previous);
+  }
+});
+
+test("strict catalog reads preserve outage and rate-limit errors without reading Excel", async () => {
+  const previous = useSessionStore.getState();
+  const fallbackCalls: string[] = [];
+  const restore = stubFallback(fallbackCalls);
+  try {
+    useSessionStore.setState(SIGNED_IN);
+    for (const failure of [
+      new CatalogNetworkError(),
+      new CatalogReadError("statement timeout", "timeout", 504, "57014"),
+      new CatalogReadError("rate limited", "rate-limit", 429, "PT429"),
+    ]) {
+      const primaryCalls: string[] = [];
+      const service = createResilientDiscoveryService(
+        primaryThat(() => {
+          throw failure;
+        }, primaryCalls),
+      );
+      for (const method of STRICT_METHODS) {
+        await assert.rejects(
+          service[method]?.("fixture" as never) as Promise<unknown>,
+          (error: unknown) => error === failure,
+        );
+      }
+      assert.deepEqual(primaryCalls, [...STRICT_METHODS]);
+    }
+    assert.deepEqual(fallbackCalls, []);
   } finally {
     restore();
     useSessionStore.setState(previous);

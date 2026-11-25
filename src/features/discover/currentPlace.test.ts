@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { CatalogPlace } from "@/lib/services/catalog";
-import { isStillInPlace } from "./currentPlace";
+import { isStillInPlace, startCurrentPlaceLookup } from "./currentPlace";
 import { preferBuildingBites } from "./bites";
 import type { Bite } from "@/lib/services/types";
 
@@ -34,4 +34,49 @@ test("preferBuildingBites puts the current building first and keeps each group's
     ["b", "d", "a", "c"],
   );
   assert.equal(preferBuildingBites(bites, undefined), bites);
+});
+
+test("a stalled retry still ends at the original place lookup deadline", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const answers: (CatalogPlace | undefined)[] = [];
+  let calls = 0;
+  let completeRetry!: (places: CatalogPlace[]) => void;
+  startCurrentPlaceLookup(
+    () => {
+      calls += 1;
+      return calls === 1
+        ? Promise.reject(new Error("temporarily offline"))
+        : new Promise((resolve) => {
+            completeRetry = resolve;
+          });
+    },
+    (place) => answers.push(place),
+  );
+  await new Promise<void>((resolve) => setImmediate(resolve));
+
+  t.mock.timers.tick(2_000);
+  assert.equal(calls, 2);
+  assert.deepEqual(answers, []);
+  t.mock.timers.tick(1_000);
+  assert.deepEqual(answers, [undefined]);
+
+  completeRetry([jem]);
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  assert.deepEqual(answers, [undefined]);
+});
+
+test("cancelling a place lookup discards its result and stops its timer", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let resolveResult!: (places: CatalogPlace[]) => void;
+  const cancel = startCurrentPlaceLookup(
+    () =>
+      new Promise((resolve) => {
+        resolveResult = resolve;
+      }),
+    () => assert.fail("a cancelled read must not resolve"),
+  );
+  cancel();
+  resolveResult([jem]);
+  await new Promise<void>((resolve) => setImmediate(resolve));
+  t.mock.timers.tick(3_000);
 });

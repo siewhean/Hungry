@@ -1,92 +1,62 @@
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
-import { safeAsyncStorage } from "@/store/persistStorage";
 
-/**
- * The last Home feed that loaded, kept on the phone so the next launch draws stalls and dishes at
- * once and refreshes them quietly behind. One entry: the area the diner was last in. Public
- * catalogue data only, nothing about the diner.
- */
-const STORAGE_KEY = "hungry.discoverFeed.v1";
-/** Older than this and the cards are no longer worth showing before the live read lands. */
-export const DISCOVER_FEED_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+/** Warm results only live in memory. The feed RPC does not vouch for offline display rights. */
+export const DISCOVER_FEED_CACHE_MAX_AGE_MS = 30_000;
+const MAX_ENTRIES = 8;
 
-type CachedEntry = { feedKey: string; savedAt: number; feed: DiscoveryLocationFeed };
+type Entry = {
+  promise: Promise<DiscoveryLocationFeed | undefined>;
+  expiresAt?: number;
+};
 
-let memoryEntry: CachedEntry | null = null;
+const firstPages = new Map<string, Entry>();
 
-function isUsable(entry: CachedEntry | null, feedKey: string, now: number): entry is CachedEntry {
-  return (
-    entry !== null &&
-    entry.feedKey === feedKey &&
-    now - entry.savedAt >= 0 &&
-    now - entry.savedAt <= DISCOVER_FEED_CACHE_MAX_AGE_MS &&
-    Array.isArray(entry.feed?.venues) &&
-    Array.isArray(entry.feed?.results) &&
-    entry.feed.venues.length > 0
+export function readDiscoverFirstPage(
+  key: string,
+  load: () => Promise<DiscoveryLocationFeed | undefined>,
+  fresh = false,
+  now: () => number = Date.now,
+) {
+  const existing = firstPages.get(key);
+  if (existing && (existing.expiresAt === undefined || (!fresh && existing.expiresAt > now()))) {
+    firstPages.delete(key);
+    firstPages.set(key, existing);
+    return existing.promise;
+  }
+
+  const promise = Promise.resolve().then(load);
+  const entry: Entry = { promise };
+  firstPages.delete(key);
+  firstPages.set(key, entry);
+  if (firstPages.size > MAX_ENTRIES) {
+    const oldest = firstPages.keys().next().value;
+    if (oldest !== undefined) firstPages.delete(oldest);
+  }
+
+  void promise.then(
+    (feed) => {
+      if (firstPages.get(key) !== entry) return;
+      if (feed && !feed.isFallback) entry.expiresAt = now() + DISCOVER_FEED_CACHE_MAX_AGE_MS;
+      else firstPages.delete(key);
+    },
+    () => {
+      if (firstPages.get(key) === entry) firstPages.delete(key);
+    },
   );
+  return promise;
 }
 
-/** The saved feed for this area, or null when there is none, it is too old, or it is for another area. */
-export async function readCachedDiscoverFeed(
-  feedKey: string,
-  now: number = Date.now(),
-): Promise<DiscoveryLocationFeed | null> {
-  if (isUsable(memoryEntry, feedKey, now)) return memoryEntry.feed;
-  try {
-    const raw = await safeAsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const entry = JSON.parse(raw) as CachedEntry;
-    if (!isUsable(entry, feedKey, now)) return null;
-    memoryEntry = entry;
-    return entry.feed;
-  } catch {
-    // A corrupt or unreadable entry is the same as none: Home loads live.
-    return null;
-  }
+export function peekDiscoverFirstPage(key: string, now = Date.now()) {
+  const entry = firstPages.get(key);
+  return entry?.expiresAt !== undefined && entry.expiresAt > now
+    ? { promise: entry.promise, expiresAt: entry.expiresAt }
+    : undefined;
 }
 
-/**
- * The last saved feed whatever area it was for, with when it was saved. The offline Home lists
- * its stalls as "From your last visit" while Hungry can't be reached.
- */
-export async function readLastCachedDiscoverFeed(
-  now: number = Date.now(),
-): Promise<{ feed: DiscoveryLocationFeed; savedAt: number } | null> {
-  let entry = memoryEntry;
-  if (!entry) {
-    try {
-      const raw = await safeAsyncStorage.getItem(STORAGE_KEY);
-      entry = raw ? (JSON.parse(raw) as CachedEntry) : null;
-    } catch {
-      return null;
-    }
-  }
-  if (!entry || !isUsable(entry, entry.feedKey, now)) return null;
-  return { feed: entry.feed, savedAt: entry.savedAt };
+export function discardDiscoverFirstPage(key: string) {
+  firstPages.delete(key);
 }
 
-/** Saves a live feed. A fallback (offline copy) or empty feed is never saved over a good one. */
-export async function writeCachedDiscoverFeed(
-  feedKey: string,
-  feed: DiscoveryLocationFeed,
-  now: number = Date.now(),
-): Promise<void> {
-  if (feed.isFallback || feed.venues.length === 0) return;
-  const entry: CachedEntry = { feedKey, savedAt: now, feed };
-  memoryEntry = entry;
-  try {
-    await safeAsyncStorage.setItem(STORAGE_KEY, JSON.stringify(entry));
-  } catch {
-    // Best effort: a full or unavailable disk only means the next launch loads live.
-  }
-}
-
-/** Forgets the saved feed (used by tests and when the data source changes). */
-export async function clearCachedDiscoverFeed(): Promise<void> {
-  memoryEntry = null;
-  try {
-    await safeAsyncStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Nothing to clear.
-  }
+export function clearCachedDiscoverFeed() {
+  firstPages.clear();
 }

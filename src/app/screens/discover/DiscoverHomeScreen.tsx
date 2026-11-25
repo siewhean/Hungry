@@ -131,9 +131,14 @@ import { useUIStore } from "@/store/useUIStore";
 import { countNegativeTasteSignals, hasTrustedTasteProfile } from "@/lib/ai/tasteEngine";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { reportError } from "@/lib/monitoring/reportError";
+import { markCatalogTap } from "@/lib/monitoring/catalogPerformance";
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { Bite } from "@/lib/services/types";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import {
+  CatalogHomeVisibility,
+  useCatalogHomeVisibility,
+} from "@/features/discover/catalogHomeVisibility";
 import { useDiscoverFeed } from "@/features/discover/useDiscoverFeed";
 import { useDiscoverFilters } from "@/features/discover/useDiscoverFilters";
 import { useDelayedLoadingSkeleton } from "@/hooks/useDelayedLoadingSkeleton";
@@ -218,8 +223,7 @@ function DiscoverSkeleton() {
 
 export type DiscoverHomeScreenProps = {
   /**
-   * Called when the live feed read fails (or only the saved cache answered). The Supabase entry
-   * then shows the offline Home, which reads the catalog and, during an outage, the bundled copy.
+   * Called when the live feed is unavailable and no same-area snapshot can be shown.
    */
   onLiveFeedUnavailable?: () => void;
 };
@@ -253,11 +257,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     areaVenues,
     allDiscoverVenues,
     areaDishPool,
-    supabaseDiscoverAreaCount,
     supabaseDiscoveryFeed,
     isSupabaseDiscoveryFeedLoading,
     isDiscoverFeedPartial,
     discoverLoadError,
+    discoverFailure,
     isDiscoverRefreshing,
     loadedDiscoverFeedKey,
     currentPlace,
@@ -284,6 +288,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       }),
   });
   const scrollRef = useRef<ScrollView>(null);
+  const catalogVisibility = useCatalogHomeVisibility({
+    focused: isSupabaseDataSource && isFocused,
+    scope: discoverFeedKey,
+    viewport: scrollRef,
+    stale: Boolean(supabaseDiscoveryFeed?.isFallback),
+    terminal: discoverLoadError
+      ? discoverFailure
+      : supabaseDiscoveryFeed && !isDiscoverFeedPartial && supabaseFeedResults.length === 0
+        ? "empty"
+        : undefined,
+  });
   useScrollToTop(scrollRef);
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   const {
@@ -957,19 +972,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
     return filteredCards.slice(0, STALL_SHOWCASE_CARD_LIMIT);
   }, [isDiscoverFiltering, matchesDiscoverChipSelection, unfilteredStallShowcaseCards]);
-  // The live read failed and the saved cache is empty too: that is an error, not "0 places".
-  const isFeedFallbackEmpty =
-    Boolean(supabaseDiscoveryFeed?.isFallback) && supabaseFeedVenues.length === 0;
-  // A failed live read (or one only the saved cache answered) hands Home to the offline
-  // surface when the entry provides one; the saved cache is the mock-era synchronous copy.
-  // With no connection and no feed in hand there is nothing to wait for: show the offline page
-  // at once instead of skeletons until the read times out.
-  const isDeviceOffline = useUIStore((state) => state.isOffline);
   const isLiveFeedUnavailable =
     isSupabaseDataSource &&
-    (discoverLoadError ||
-      Boolean(supabaseDiscoveryFeed?.isFallback) ||
-      (isDeviceOffline && supabaseDiscoveryFeed === null));
+    supabaseFeedVenues.length === 0 &&
+    (discoverFailure === "network" ||
+      discoverFailure === "timeout" ||
+      discoverFailure === "server");
   useEffect(() => {
     if (isLiveFeedUnavailable) onLiveFeedUnavailable?.();
   }, [isLiveFeedUnavailable, onLiveFeedUnavailable]);
@@ -1036,16 +1044,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,
         feedVenueCount: supabaseFeedVenues.length,
         feedLimit: DISCOVER_FEED_LIMIT,
-        rpcCount: supabaseDiscoverAreaCount,
+        rpcCount: null,
       })
     : String(areaVenues.length);
-  // The count never disappears while the feed reloads (a new area, a pull to refresh): the last
-  // number stays on screen and rolls to the new one when it lands.
-  const [heldCountLabel, setHeldCountLabel] = useState<string | null>(null);
-  if (discoverAreaCountLabel !== null && discoverAreaCountLabel !== heldCountLabel) {
-    setHeldCountLabel(discoverAreaCountLabel);
-  }
-  const shownCountLabel = discoverAreaCountLabel ?? heldCountLabel;
+  const shownCountLabel = discoverAreaCountLabel;
   // Cards of the current place sort first, so they are the leading run of the list.
   const placeStallCardCount = currentPlaceId
     ? areaStallCards.filter(({ venue }) => venue.buildingId === currentPlaceId).length
@@ -1251,6 +1253,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       position,
     });
     if (isUserMode) {
+      markCatalogTap("stall", venue.id);
       navigation.navigate("StallDetail", { venueId: venue.id });
       return;
     }
@@ -1345,6 +1348,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const filteredEmptyCtaLabel = isDietaryOnlyFilter ? "Show all dishes" : "Clear filters";
   const isFilteredPageEmpty =
     isDiscoverFiltering &&
+    !isSupabaseDiscoveryFeedLoading &&
+    !discoverLoadError &&
     !inMallMode &&
     !showDiscoverFilterRailSkeleton &&
     popularFoodStyleItems.length === 0 &&
@@ -1444,13 +1449,26 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
 
   const openBiteDish = useCallback(
     (bite: Bite, buttonId: string) => {
-      navigation.navigate("DishDetail", { dishId: bite.dishId, source: "home" });
+      const biteDish = getBiteDish(bite);
+      markCatalogTap("dish", bite.dishId);
+      navigation.navigate("DishDetail", {
+        dishId: bite.dishId,
+        source: "home",
+        prefill: dishPrefillFrom(
+          biteDish ?? {
+            name: bite.dishName,
+            imageUrl: bite.photoUrl,
+            venueId: bite.venueId,
+            venueName: bite.venueName,
+          },
+        ),
+      });
       scheduleIdleWork(
         () => {
           recordTasteInteraction({
             type: "dish_result_click",
             surface: "discover",
-            dish: getBiteDish(bite),
+            dish: biteDish,
             dishId: bite.dishId,
             buttonId,
           });
@@ -1541,6 +1559,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       );
 
       if (isUserMode) {
+        markCatalogTap("stall", card.venue.id);
         navigation.navigate("StallDetail", { venueId: card.venue.id });
         return;
       }
@@ -1800,7 +1819,12 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         testID="home-worth-the-trip"
         onOpen={(dish, position) => {
           trackAnalyticsEvent("worth_the_trip_opened", { dish_id: dish.id, position });
-          navigation.navigate("DishDetail", { dishId: dish.id, source: "worth_the_trip" });
+          markCatalogTap("dish", dish.id);
+          navigation.navigate("DishDetail", {
+            dishId: dish.id,
+            source: "worth_the_trip",
+            prefill: dishPrefillFrom(dish),
+          });
         }}
       />
     ) : null;
@@ -1912,12 +1936,14 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       </>
     );
 
-  return (
+  const page = (
     <Screen scroll={false} fullWidth style={{ backgroundColor: themeTints.bg }}>
       <ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         onLayout={handleDiscoverViewportLayout}
+        onScrollEndDrag={catalogVisibility.inspect}
+        onMomentumScrollEnd={catalogVisibility.inspect}
         contentContainerStyle={{
           gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
@@ -2028,9 +2054,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             />
           ) : null}
           {
-            needsDiscoverAreaChoice ||
-            isFeedFallbackEmpty ||
-            shownCountLabel === null ? null : shownCountLabel !== "0" ? (
+            needsDiscoverAreaChoice || shownCountLabel === null ? null : shownCountLabel !== "0" ? (
               <View style={{ alignItems: "baseline", flexDirection: "row" }}>
                 {/* Only the number rolls when the count changes; it stays put while it reloads. */}
                 <NumericText
@@ -2102,10 +2126,16 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           </Pressable>
         </View>
 
-        {discoverLoadError || isFeedFallbackEmpty ? (
+        {discoverLoadError ? (
           <EmptyState
             title="Couldn't load Discover"
-            body="Check your connection and try again."
+            body={
+              discoverFailure === "auth"
+                ? "Check that you're signed in and try again."
+                : discoverFailure === "rate-limit"
+                  ? "Hungry is receiving too many requests. Try again in a moment."
+                  : "Check your connection and try again."
+            }
             icon={
               <AppSymbol
                 name="exclamationmark.magnifyingglass"
@@ -2120,7 +2150,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             }}
           />
         ) : supabaseDiscoveryFeed?.isFallback ? (
-          // The live read failed and the feed came from the saved cache: say so.
+          // Keep same-area results visible during a transient interruption.
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Showing saved results. Tap to retry."
@@ -2162,9 +2192,10 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           <WelcomeBackCard
             horizontalPadding={0}
             visible={isFocused}
-            onOpenDish={(dishId) =>
-              navigation.navigate("DishDetail", { dishId, source: "welcome_back" })
-            }
+            onOpenDish={(dishId) => {
+              markCatalogTap("dish", dishId);
+              navigation.navigate("DishDetail", { dishId, source: "welcome_back" });
+            }}
             onOpenSaved={() => navigation.navigate("Favourites")}
             onPickArea={(area) => setManualSelection(area.name, area.coordinate)}
           />
@@ -2379,23 +2410,25 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   style={edgeToEdgeHorizontalScrollStyle}
                   contentContainerStyle={{ gap: spacing[3] }}
                 >
-                  {forYouPicks.map((pick) => (
+                  {forYouPicks.map((pick, index) => (
                     <ForYouCard
                       key={pick.dish.id}
                       pick={pick}
+                      measureCatalogPaint={index < 3}
                       width={mallCardWidth}
                       onPressIn={() => prefetchDishDetail(pick.dish.id, repository)}
-                      onPress={() =>
+                      onPress={() => {
+                        markCatalogTap("dish", pick.dish.id);
                         navigation.navigate("DishDetail", {
                           dishId: pick.dish.id,
                           source: "home_pick",
                           prefill: dishPrefillFrom(pick.dish),
-                        })
-                      }
+                        });
+                      }}
                     />
                   ))}
                 </RailScrollView>
-              ) : (
+              ) : !isSupabaseDiscoveryFeedLoading ? (
                 <EmptyState
                   title="Nothing to suggest yet"
                   body="Adjust your dietary needs to see more."
@@ -2403,9 +2436,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                     ? { ctaLabel: "Clear filters", onPress: clearDiscoverFilters }
                     : {})}
                 />
-              )}
+              ) : null}
             </View>
-            {isDiscoverFiltering && hereStalls.length === 0 ? (
+            {isDiscoverFiltering && hereStalls.length === 0 && !isSupabaseDiscoveryFeedLoading ? (
               <EmptyState
                 title="No matching results"
                 body="No stalls here match your filters."
@@ -2596,6 +2629,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 scrollStyle={edgeToEdgeHorizontalScrollStyle}
                 onOpen={(pick, position) => {
                   trackAnalyticsEvent("network_pick_opened", { source: pick.source, position });
+                  markCatalogTap("stall", pick.venueId);
                   navigation.navigate("StallDetail", { venueId: pick.venueId });
                 }}
                 onOpenFeed={
@@ -2818,5 +2852,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         <HomeFeedbackCard />
       </ScrollView>
     </Screen>
+  );
+
+  return (
+    <CatalogHomeVisibility.Provider value={isSupabaseDataSource ? catalogVisibility : undefined}>
+      {page}
+    </CatalogHomeVisibility.Provider>
   );
 }

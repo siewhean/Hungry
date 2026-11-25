@@ -32,6 +32,35 @@ export function isStillInPlace(place: CatalogPlace, coordinate: Coordinate): boo
   );
 }
 
+/** One retry shares the original deadline, and a cancelled result cannot update the next scope. */
+export function startCurrentPlaceLookup(
+  read: () => Promise<CatalogPlace[]>,
+  onResolved: (place: CatalogPlace | undefined) => void,
+): () => void {
+  let active = true;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  const cancel = () => {
+    active = false;
+    clearTimeout(timer);
+    if (retryTimer) clearTimeout(retryTimer);
+  };
+  const finish = (next: CatalogPlace | undefined) => {
+    if (!active) return;
+    cancel();
+    onResolved(next);
+  };
+  const timer = setTimeout(() => finish(undefined), CURRENT_PLACE_LOOKUP_TIMEOUT_MS);
+  const lookup = (canRetry: boolean) =>
+    read()
+      .then((places) => finish(places[0]))
+      .catch(() => {
+        if (canRetry && active) retryTimer = setTimeout(() => void lookup(false), 2_000);
+        else finish(undefined);
+      });
+  void lookup(true);
+  return cancel;
+}
+
 /**
  * The mall, hawker centre or food court the phone is inside, or undefined. Pass null when the
  * position is not a real fix (no permission, or a manually picked area).
@@ -60,38 +89,30 @@ export function useCurrentPlace(coordinate: Coordinate | null) {
       return;
     }
 
-    let active = true;
-    const finish = (next: CatalogPlace | undefined) => {
-      if (!active) return;
-      setPlace(next);
-      setResolvedFor(`${latitude},${longitude}`);
-    };
-    const timer = setTimeout(() => finish(undefined), CURRENT_PLACE_LOOKUP_TIMEOUT_MS);
-    let retryTimer: ReturnType<typeof setTimeout> | undefined;
-    const lookup = (canRetry: boolean) =>
-      getCatalogRawService()
-        .listPlaces({
+    return startCurrentPlaceLookup(
+      () =>
+        getCatalogRawService().listPlaces({
           coordinate: here,
           radiusMeters: CATALOG_PLACE_ENTER_RADIUS_METERS,
           limit: 1,
-        })
-        .then((places) => finish(places[0]))
-        .catch(() => {
-          // One failed read must not leave the header on the area name for the whole visit.
-          if (canRetry && active) retryTimer = setTimeout(() => void lookup(false), 2_000);
-          else finish(undefined);
-        });
-    void lookup(true).finally(() => clearTimeout(timer));
-    return () => {
-      active = false;
-      clearTimeout(timer);
-      if (retryTimer) clearTimeout(retryTimer);
-    };
+        }),
+      (next) => {
+        setPlace(next);
+        setResolvedFor(`${latitude},${longitude}`);
+      },
+    );
   }, [latitude, longitude]);
 
+  const holdsPlace = Boolean(
+    place &&
+    latitude !== null &&
+    longitude !== null &&
+    isStillInPlace(place, { latitude, longitude }),
+  );
+  const isResolving = key !== null && resolvedFor !== key && !holdsPlace;
   return {
-    place: key === null ? undefined : place,
+    place: key !== null && !isResolving ? place : undefined,
     /** True while the lookup for the current position has not answered yet. */
-    isResolving: key !== null && resolvedFor !== key,
+    isResolving,
   };
 }

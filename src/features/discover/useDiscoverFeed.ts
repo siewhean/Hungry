@@ -1,48 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  DISCOVER_FEED_LIMIT,
-  DISCOVER_FIRST_PAGE_LIMIT,
-  searchResultToDiscoverBite,
-} from "@/features/discover/bites";
-import { reportError } from "@/lib/monitoring/reportError";
+import { useCallback, useMemo } from "react";
+import { searchResultToDiscoverBite } from "@/features/discover/bites";
+import { getDiscoverReadArgs } from "@/features/discover/discoverReadArgs";
+import { useLiveDiscoverFeed } from "@/features/discover/useLiveDiscoverFeed";
 import {
   getNearestBuildings,
   getNearestSingaporeArea,
   getNearestSingaporeAreaWithin,
 } from "@/lib/geo/singaporeBuildings";
-import {
-  getDataRepository,
-  getHungryService,
-  getServiceProvider,
-} from "@/lib/services/serviceProvider";
+import { getDataRepository, getServiceProvider } from "@/lib/services/serviceProvider";
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
 import { useCurrentPlace } from "@/features/discover/currentPlace";
 import { getEffectiveLocation, useLocationStore } from "@/store/useLocationStore";
 import { useUIStore } from "@/store/useUIStore";
 import type { DishDetail, VenueSummary } from "@/types/domain";
 import { type DiscoverRepositoryLookup } from "@/features/discover/stallShowcase";
-import { readCachedDiscoverFeed, writeCachedDiscoverFeed } from "@/features/discover/feedCache";
-import { mergeDiscoverFeeds } from "@/features/discover/feedMerge";
-
 /** Stable empties so memos keyed on the feed do not rerun every render. */
 const EMPTY_FEED_VENUES: DiscoveryLocationFeed["venues"] = [];
 const EMPTY_FEED_RESULTS: DiscoveryLocationFeed["results"] = [];
-const DISCOVER_AREA_RADIUS_METERS = 3000;
-/** Location off: picks from the whole island, read around the built-in default point. */
-const DISCOVER_ISLAND_RADIUS_METERS = 30_000;
-/** 500 steps per degree ≈ a 220m grid: small GPS moves keep the same Discover read. */
-const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
-
-/**
- * The reads one Home load makes: the area's stall count, a small first read of the nearest stalls
- * and the full feed. The first read starts with the full one and lands sooner (the server ranks
- * fewer candidates for a small limit), so the top of Home draws while the rest is still loading.
- */
-type DiscoverReads = {
-  count: Promise<number | undefined>;
-  firstPage: Promise<DiscoveryLocationFeed | undefined>;
-  feed: Promise<DiscoveryLocationFeed | undefined>;
-};
 
 /**
  * Home's data: where the diner is, the feed read for that place (live or local), and the lists of
@@ -51,33 +25,131 @@ type DiscoverReads = {
 export function useDiscoverFeed() {
   const repository = getDataRepository();
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
-  const [supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount] = useState<number | null>(null);
-  const [supabaseDiscoveryFeed, setSupabaseDiscoveryFeed] = useState<DiscoveryLocationFeed | null>(
-    null,
-  );
-  const [isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading] = useState(false);
-  // True while only the small first read is on screen and the full feed is still loading.
-  const [isDiscoverFeedPartial, setIsDiscoverFeedPartial] = useState(false);
-  const [discoverLoadError, setDiscoverLoadError] = useState(false);
-  const [discoverReloadKey, setDiscoverReloadKey] = useState(0);
-  const [isDiscoverRefreshing, setIsDiscoverRefreshing] = useState(false);
-  // The area the cards on screen were read for: a reload of the same area keeps them.
-  const [loadedDiscoverFeedKey, setLoadedDiscoverFeedKey] = useState<string | null>(null);
-  const loadedFeedKeyRef = useRef<string | null>(null);
-  // Reads begun while the place lookup is still out (see the feed effect).
-  const speculativeReadsRef = useRef<{ key: string; reads: DiscoverReads } | null>(null);
-
   const locationPermission = useLocationStore((state) => state.permission);
   const currentLocation = useLocationStore((state) => state.currentLocation);
   const manualLocation = useLocationStore((state) => state.manualLocation);
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const manualPlaceName = useLocationStore((state) => state.manualPlaceName);
   const grantLocation = useLocationStore((state) => state.grantLocation);
-  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
   const showToast = useUIStore((state) => state.showToast);
 
-  const supabaseFeedVenues = supabaseDiscoveryFeed?.venues ?? EMPTY_FEED_VENUES;
-  const supabaseFeedResults = supabaseDiscoveryFeed?.results ?? EMPTY_FEED_RESULTS;
+  const { coordinate: discoverCoordinate } = getEffectiveLocation({
+    permission: locationPermission,
+    currentLocation,
+    manualCoordinate,
+  });
+  const discoverLocationLatitude = discoverCoordinate.latitude;
+  const discoverLocationLongitude = discoverCoordinate.longitude;
+  const {
+    areaName,
+    geoCellLatitude,
+    geoCellLongitude,
+    radiusMeters,
+    needsAreaChoice: needsDiscoverAreaChoice,
+  } = getDiscoverReadArgs({
+    permission: locationPermission,
+    currentLocation,
+    manualCoordinate,
+    manualLocation,
+  });
+  const discoverArgs = useMemo(
+    () => ({
+      areaName,
+      geoCellLatitude,
+      geoCellLongitude,
+      radiusMeters,
+      needsAreaChoice: needsDiscoverAreaChoice,
+    }),
+    [areaName, geoCellLatitude, geoCellLongitude, radiusMeters, needsDiscoverAreaChoice],
+  );
+
+  const areaBuildings = useMemo(
+    () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
+    [discoverLocationLatitude, discoverLocationLongitude],
+  );
+  // The nearest named area, only when the phone is within ~5 km of one (not in Woodlands
+  // when it is overseas). Without a name the screen says "near you".
+  // With location off there is no area to name: Discover shows picks across Singapore instead.
+  const discoverAreaName = needsDiscoverAreaChoice
+    ? undefined
+    : (manualLocation ??
+      getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude));
+  const discoverLocationLabel = needsDiscoverAreaChoice
+    ? "Singapore"
+    : (discoverAreaName ?? "Near you");
+  const discoverAreaPhrase = needsDiscoverAreaChoice
+    ? "across Singapore"
+    : discoverAreaName
+      ? `in ${discoverAreaName}`
+      : "near you";
+  const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
+  const handleUseCurrentLocation = useCallback(async () => {
+    const hasFix = await grantLocation({ manualLocation });
+    if (hasFix) return;
+    const accessGranted = useLocationStore.getState().permission === "granted";
+    showToast({
+      message: accessGranted
+        ? "Couldn't get your current location. Try again or choose an area."
+        : "Location access is off. Turn it on in Settings to use your location.",
+      tone: "info",
+    });
+  }, [grantLocation, manualLocation, showToast]);
+  // Inside a mall, hawker centre or food court the header names it instead of the area. A real
+  // GPS fix or a searched place counts; a searched area or the default point is never "inside".
+  const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
+    (locationPermission === "granted" && !manualCoordinate) || (manualCoordinate && manualPlaceName)
+      ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
+      : null,
+  );
+  const currentPlaceId = currentPlace?.id;
+  // The area follows the phone: a mall or hawker centre when inside one, else the nearest area,
+  // and "Singapore" while location is off.
+  const discoverHeaderLabel =
+    currentPlace?.name ??
+    manualPlaceName ??
+    discoverAreaName ??
+    (needsDiscoverAreaChoice
+      ? "Singapore"
+      : getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude));
+
+  const {
+    key: discoverFeedKey,
+    state: live,
+    isLoading: isSupabaseDiscoveryFeedLoading,
+    isRefreshing: isDiscoverRefreshing,
+    reload: reloadDiscover,
+  } = useLiveDiscoverFeed(
+    isSupabaseDataSource,
+    discoverArgs,
+    currentPlaceId,
+    isCurrentPlaceResolving,
+  );
+
+  const supabaseDiscoveryFeed = live?.feed ?? null;
+  const loadedDiscoverFeedKey = live?.feed ? live.key : null;
+  const isDiscoverFeedPartial = Boolean(live?.feed && live.phase !== "complete");
+  const discoverFailure = live?.failure;
+  const discoverLoadError = live?.phase === "failed" && !live.feed && live.failure !== "cancelled";
+  const supabaseFeedVenues = useMemo(() => {
+    if (!supabaseDiscoveryFeed) return EMPTY_FEED_VENUES;
+    if (!supabaseDiscoveryFeed.needsEnrichment && !supabaseDiscoveryFeed.isFallback) {
+      return supabaseDiscoveryFeed.venues;
+    }
+    return supabaseDiscoveryFeed.venues.map((venue) => ({
+      ...venue,
+      availabilityUnverified: true,
+    }));
+  }, [supabaseDiscoveryFeed]);
+  const supabaseFeedResults = useMemo(() => {
+    if (!supabaseDiscoveryFeed) return EMPTY_FEED_RESULTS;
+    if (!supabaseDiscoveryFeed.isFallback && !supabaseDiscoveryFeed.needsEnrichment) {
+      return supabaseDiscoveryFeed.results;
+    }
+    return supabaseDiscoveryFeed.results.map((result) => ({
+      ...result,
+      dish: { ...result.dish, dietaryFlags: [] },
+    }));
+  }, [supabaseDiscoveryFeed]);
   // Live builds look dishes and stalls up in the feed already on screen. The synchronous
   // repository would start a full-table download (again every 45 s), miss rows past the
   // 1,000-row cap and never re-render when it lands (HOME-X5).
@@ -139,7 +211,13 @@ export function useDiscoverFeed() {
     [supabaseFeedResults],
   );
   const feedVenueHoursById = useMemo(
-    () => new Map(supabaseFeedVenues.map((venue) => [venue.id, venue.operatingHours] as const)),
+    () =>
+      new Map(
+        supabaseFeedVenues.map(
+          (venue) =>
+            [venue.id, venue.availabilityUnverified ? undefined : venue.operatingHours] as const,
+        ),
+      ),
     [supabaseFeedVenues],
   );
   // Hours for the late-night rail and chip: the live feed (live builds read nothing else),
@@ -153,251 +231,6 @@ export function useDiscoverFeed() {
         : undefined,
     [feedVenueHoursById, isSupabaseDataSource, repository],
   );
-
-  const { coordinate: discoverCoordinate, isApproximate: isDiscoverLocationApproximate } =
-    getEffectiveLocation({
-      permission: locationPermission,
-      currentLocation,
-      manualCoordinate,
-    });
-  const discoverLocationLatitude = discoverCoordinate.latitude;
-  const discoverLocationLongitude = discoverCoordinate.longitude;
-  // GPS jitter must not refetch Discover: reads are keyed on a ~200m grid cell.
-  const discoverGeoCellLatitude =
-    Math.round(discoverLocationLatitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
-    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
-  const discoverGeoCellLongitude =
-    Math.round(discoverLocationLongitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
-    DISCOVER_GEOCELL_STEPS_PER_DEGREE;
-  // Without a GPS fix or a manual pick the coordinate is only the built-in default,
-  // so the header asks the user to choose an area instead of asserting one.
-  const needsDiscoverAreaChoice = isDiscoverLocationApproximate && !manualLocation;
-
-  const areaBuildings = useMemo(
-    () => getNearestBuildings(discoverLocationLatitude, discoverLocationLongitude, 3, 14),
-    [discoverLocationLatitude, discoverLocationLongitude],
-  );
-  // Only a manual area pick asks the server for that planning area. A GPS fix reads
-  // the radius around the diner, so a stall 300 m away over an area line is not dropped.
-  const discoverAreaRequest = manualLocation;
-  // The nearest named area, only when the phone is within ~5 km of one (not in Woodlands
-  // when it is overseas). Without a name the screen says "near you".
-  // With location off there is no area to name: Discover shows picks across Singapore instead.
-  const discoverAreaName = needsDiscoverAreaChoice
-    ? undefined
-    : (manualLocation ??
-      getNearestSingaporeAreaWithin(discoverLocationLatitude, discoverLocationLongitude));
-  const discoverLocationLabel = needsDiscoverAreaChoice
-    ? "Singapore"
-    : (discoverAreaName ?? "Near you");
-  const discoverAreaPhrase = needsDiscoverAreaChoice
-    ? "across Singapore"
-    : discoverAreaName
-      ? `in ${discoverAreaName}`
-      : "near you";
-  const discoverRadiusMeters = needsDiscoverAreaChoice
-    ? DISCOVER_ISLAND_RADIUS_METERS
-    : DISCOVER_AREA_RADIUS_METERS;
-  const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
-  const handleUseCurrentLocation = useCallback(async () => {
-    if (locationPermission === "granted") {
-      await clearManualLocation();
-      return;
-    }
-    const granted = await grantLocation({ manualLocation });
-    if (!granted) {
-      showToast({
-        message: "Location access is off. Turn it on in Settings to use your location.",
-        tone: "info",
-      });
-    }
-  }, [clearManualLocation, grantLocation, locationPermission, manualLocation, showToast]);
-  // Inside a mall, hawker centre or food court the header names it instead of the area. A real
-  // GPS fix or a searched place counts; a searched area or the default point is never "inside".
-  const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
-    (locationPermission === "granted" && !manualCoordinate) || (manualCoordinate && manualPlaceName)
-      ? { latitude: discoverLocationLatitude, longitude: discoverLocationLongitude }
-      : null,
-  );
-  const currentPlaceId = currentPlace?.id;
-  const discoverFeedKey = [
-    discoverAreaRequest ?? "",
-    discoverGeoCellLatitude,
-    discoverGeoCellLongitude,
-    discoverRadiusMeters ?? "",
-    currentPlaceId ?? "",
-  ].join("|");
-  // The area follows the phone: a mall or hawker centre when inside one, else the nearest area,
-  // and "Singapore" while location is off.
-  const discoverHeaderLabel =
-    currentPlace?.name ??
-    manualPlaceName ??
-    discoverAreaName ??
-    (needsDiscoverAreaChoice
-      ? "Singapore"
-      : getNearestSingaporeArea(discoverLocationLatitude, discoverLocationLongitude));
-
-  useEffect(() => {
-    if (!isSupabaseDataSource) {
-      setSupabaseDiscoverAreaCount(null);
-      setSupabaseDiscoveryFeed(null);
-      setIsSupabaseDiscoveryFeedLoading(false);
-      return;
-    }
-
-    let isActive = true;
-    let liveFeedLanded = false;
-    // The small first read, once it is on screen: the full feed is merged behind it.
-    let shownFirstPage: DiscoveryLocationFeed | null = null;
-    // Keep the current feed on screen while a new area or GPS fix loads.
-    setIsSupabaseDiscoveryFeedLoading(true);
-    setDiscoverLoadError(false);
-
-    // Last launch's feed for this area draws at once; the live read replaces it when it lands.
-    if (discoverReloadKey === 0 && loadedFeedKeyRef.current !== discoverFeedKey) {
-      void readCachedDiscoverFeed(discoverFeedKey).then((cachedFeed) => {
-        if (!isActive || liveFeedLanded || shownFirstPage || !cachedFeed) return;
-        setSupabaseDiscoveryFeed(cachedFeed);
-        loadedFeedKeyRef.current = discoverFeedKey;
-        setLoadedDiscoverFeedKey(discoverFeedKey);
-      });
-    }
-
-    const readKey = `${discoverFeedKey}#${discoverReloadKey}`;
-    const startReads = (): DiscoverReads => {
-      const discoveryService = getHungryService().discovery;
-      const feedRequest = {
-        areaName: discoverAreaRequest,
-        lat: discoverGeoCellLatitude,
-        lng: discoverGeoCellLongitude,
-        radiusMeters: discoverRadiusMeters,
-        buildingId: currentPlaceId,
-      };
-      const reads = {
-        count: discoveryService.countVenuesInArea(
-          discoverGeoCellLatitude,
-          discoverGeoCellLongitude,
-          discoverRadiusMeters,
-          discoverAreaRequest,
-        ),
-        firstPage: discoveryService.listDiscoveryFeedByLocation({
-          ...feedRequest,
-          limit: DISCOVER_FIRST_PAGE_LIMIT,
-        }),
-        feed: discoveryService.listDiscoveryFeedByLocation({
-          ...feedRequest,
-          limit: DISCOVER_FEED_LIMIT,
-        }),
-      };
-      // A read nobody ends up waiting for must not surface as an unhandled rejection.
-      reads.count.catch(() => undefined);
-      reads.firstPage.catch(() => undefined);
-      reads.feed.catch(() => undefined);
-      return reads;
-    };
-
-    // The feed asks for the place's stalls first, so it waits for the place lookup (3 s at most).
-    // The read for "no place" starts now, beside the lookup: most diners are not inside a mall,
-    // and for them the answer is already there when the lookup ends.
-    if (isCurrentPlaceResolving) {
-      if (speculativeReadsRef.current?.key !== readKey) {
-        speculativeReadsRef.current = { key: readKey, reads: startReads() };
-      }
-      return () => {
-        isActive = false;
-      };
-    }
-
-    const speculative = speculativeReadsRef.current;
-    speculativeReadsRef.current = null;
-    const reads = speculative?.key === readKey ? speculative.reads : startReads();
-
-    let isFeedSettled = false;
-    let isCountSettled = false;
-    const finishIfSettled = () => {
-      if (isActive && isFeedSettled && isCountSettled) setIsSupabaseDiscoveryFeedLoading(false);
-    };
-    // The nearest few stalls draw as soon as the small read lands, if the full feed has not. A
-    // fallback (offline copy) or empty answer waits for the full read instead.
-    void reads.firstPage.then(
-      (firstPage) => {
-        if (!isActive || liveFeedLanded || !firstPage) return;
-        if (firstPage.isFallback || firstPage.venues.length === 0) return;
-        shownFirstPage = firstPage;
-        setSupabaseDiscoveryFeed(firstPage);
-        setIsDiscoverFeedPartial(true);
-        loadedFeedKeyRef.current = discoverFeedKey;
-        setLoadedDiscoverFeedKey(discoverFeedKey);
-        setIsDiscoverRefreshing(false);
-      },
-      () => undefined,
-    );
-    // The full feed fills in the rest, behind the first page when that is on screen. The area
-    // count fills its line when it lands.
-    void reads.feed.then(
-      (feed) => {
-        liveFeedLanded = true;
-        const complete = feed && shownFirstPage ? mergeDiscoverFeeds(shownFirstPage, feed) : feed;
-        if (complete) void writeCachedDiscoverFeed(discoverFeedKey, complete);
-        if (!isActive) return;
-        setSupabaseDiscoveryFeed(complete ?? null);
-        setIsDiscoverFeedPartial(false);
-        loadedFeedKeyRef.current = discoverFeedKey;
-        setLoadedDiscoverFeedKey(discoverFeedKey);
-        setIsDiscoverRefreshing(false);
-        isFeedSettled = true;
-        finishIfSettled();
-      },
-      (reason: unknown) => {
-        liveFeedLanded = true;
-        if (!isActive) return;
-        reportError(reason, { surface: "discover_home_feed" });
-        // The stalls already on screen stay; the error state is for a Home with nothing to show.
-        if (!shownFirstPage) setDiscoverLoadError(true);
-        setIsDiscoverFeedPartial(false);
-        setIsDiscoverRefreshing(false);
-        isFeedSettled = true;
-        finishIfSettled();
-      },
-    );
-    // A failed count never throws away a good feed.
-    void reads.count.then(
-      (count) => {
-        if (!isActive) return;
-        setSupabaseDiscoverAreaCount(typeof count === "number" ? count : null);
-        isCountSettled = true;
-        finishIfSettled();
-      },
-      () => {
-        if (!isActive) return;
-        setSupabaseDiscoverAreaCount(null);
-        isCountSettled = true;
-        finishIfSettled();
-      },
-    );
-
-    return () => {
-      isActive = false;
-    };
-  }, [
-    discoverAreaRequest,
-    discoverFeedKey,
-    discoverRadiusMeters,
-    discoverGeoCellLatitude,
-    discoverGeoCellLongitude,
-    discoverReloadKey,
-    isSupabaseDataSource,
-    isCurrentPlaceResolving,
-    currentPlaceId,
-  ]);
-
-  const reloadDiscover = useCallback(async () => {
-    setIsDiscoverRefreshing(true);
-    setDiscoverReloadKey((key) => key + 1);
-    if (!isSupabaseDataSource) {
-      setIsDiscoverRefreshing(false);
-    }
-  }, [isSupabaseDataSource]);
 
   const areaVenues = useMemo(() => {
     if (isSupabaseDataSource) {
@@ -466,11 +299,11 @@ export function useDiscoverFeed() {
     areaVenues,
     allDiscoverVenues,
     areaDishPool,
-    supabaseDiscoverAreaCount,
     supabaseDiscoveryFeed,
     isSupabaseDiscoveryFeedLoading,
     isDiscoverFeedPartial,
     discoverLoadError,
+    discoverFailure,
     isDiscoverRefreshing,
     loadedDiscoverFeedKey,
     currentPlace,

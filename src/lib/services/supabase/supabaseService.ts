@@ -5,6 +5,7 @@ import type {
 } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 
+import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
@@ -21,6 +22,10 @@ import { AUTH_REDIRECTS } from "@/constants/links";
 import { getAuthErrorCode } from "@/features/auth/authErrors";
 import {
   countVenuesInAreaViaRpc,
+  enrichDiscoveryFeedViaRpc,
+  getCachedLegacyStallHeader,
+  getCachedLegacyStallMenu,
+  getStallHeaderViaRpc,
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
   getItemDetailsViaRpc,
@@ -35,6 +40,7 @@ import {
   listDishesByVenueViaRpc,
   listDishesByVenuePageViaRpc,
   listPopularNearbyViaRpc,
+  listStallMenuPageViaRpc,
   listVenuesByBuildingViaRpc,
   mapTasteCardRow,
   refreshSupabaseRepositoryCache,
@@ -93,7 +99,6 @@ import type {
   BlockedUserEntry,
   HiddenPostEntry,
   BuildingDetail,
-  DiscoveryLocationFeed,
   ContentReportRequest,
   ExplicitFeedbackInput,
   HungryService,
@@ -923,57 +928,6 @@ const USER_REVIEWS_PAGE_SIZE = 200;
 const SAVED_POSTS_LIMIT = 200;
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
-
-function clampRadiusMeters(radiusMeters?: number): number {
-  if (typeof radiusMeters !== "number" || !Number.isFinite(radiusMeters))
-    return Number.MAX_SAFE_INTEGER;
-  return radiusMeters > 0 ? radiusMeters : Number.MAX_SAFE_INTEGER;
-}
-
-function getFallbackDiscoveryFeed(request: {
-  areaName?: string;
-  lat?: number;
-  lng?: number;
-  radiusMeters?: number;
-  limit?: number;
-}): DiscoveryLocationFeed {
-  const limit = request.limit ?? 20;
-  const fallbackFilters: SearchFilters = {
-    query: "",
-    categories: [],
-    dietaryFlags: [],
-    tasteValues: NEUTRAL_TASTE_VECTOR,
-    radius: clampRadiusMeters(request.radiusMeters),
-    latitude: request.lat,
-    longitude: request.lng,
-    areaName: request.areaName,
-    openOnly: false,
-  };
-
-  const fallbackDishes = supabaseRepository
-    .searchDishes(fallbackFilters, NEUTRAL_TASTE_VECTOR)
-    .slice(0, limit);
-
-  const venueById = new Map<string, VenueSummary>();
-  const discoveryVenues: VenueSummary[] = [];
-
-  for (const dish of fallbackDishes) {
-    const venue = supabaseRepository.getVenueById(dish.venueId);
-    if (venue && !venueById.has(venue.id)) {
-      venueById.set(venue.id, venue);
-      discoveryVenues.push(venue);
-    }
-  }
-
-  return {
-    venues: discoveryVenues,
-    results: fallbackDishes.map((dish) => ({
-      dish,
-      score: dish.rating / 5,
-    })),
-    isFallback: true,
-  };
-}
 
 function cloneStory(story: Story): Story {
   return {
@@ -4233,6 +4187,19 @@ export const supabaseService: HungryService = {
       }
     },
 
+    async getStallHeader(id, options) {
+      if (!options?.legacy) return getStallHeaderViaRpc(id);
+      const scope = catalogRequestScope();
+      try {
+        return await getVenueByIdViaRpc(id);
+      } catch (error) {
+        requireCurrentCatalogScope(scope);
+        const cached = getCachedLegacyStallHeader(id, error);
+        if (cached) return cached;
+        throw error;
+      }
+    },
+
     async getVenuesByIds(ids) {
       const unique = [...new Set(ids)];
       const cached = new Map<string, VenueSummary>();
@@ -4337,6 +4304,8 @@ export const supabaseService: HungryService = {
         throw error;
       }
     },
+
+    getDishDetail: getDishByIdViaRpc,
 
     async getDishTasteRatingSummary(dishId) {
       const client = getSupabaseClient();
@@ -4487,11 +4456,21 @@ export const supabaseService: HungryService = {
       return supabaseRepository.listPopularNearby();
     },
 
-    async listDiscoveryFeedByLocation(request) {
-      const rpcFeed = await listDiscoveryFeedByLocationViaRpc(request);
-      if (rpcFeed) return rpcFeed;
-      return getFallbackDiscoveryFeed(request);
+    async getStallLegacyMenuPage(venueId, cursor) {
+      const scope = catalogRequestScope();
+      try {
+        return (await listDishesByVenuePageViaRpc(venueId, cursor)) ?? { dishes: [] };
+      } catch (error) {
+        requireCurrentCatalogScope(scope);
+        const cached = cursor ? undefined : getCachedLegacyStallMenu(venueId, error);
+        if (cached) return cached;
+        throw error;
+      }
     },
+
+    listStallMenuPage: listStallMenuPageViaRpc,
+    listDiscoveryFeedByLocation: listDiscoveryFeedByLocationViaRpc,
+    enrichDiscoveryFeed: enrichDiscoveryFeedViaRpc,
 
     async searchVenuesByLocation(request) {
       return searchVenuesByLocationViaRpc(request);

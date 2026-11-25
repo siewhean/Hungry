@@ -95,9 +95,17 @@ function validateLoadScripts() {
     "scripts/load/detail.k6.js",
   ]) {
     const source = read(scriptPath);
-    assert.match(source, /SUPABASE_URL/);
-    assert.match(source, /SUPABASE_ANON_KEY/);
-    assert.match(source, /fail\(/, `${scriptPath} must fail closed without staging Supabase env`);
+    const usesCatalogHarness = scriptPath !== "scripts/load/search.k6.js";
+    let environmentSource = source;
+    if (usesCatalogHarness) {
+      assert.match(source, /from "\.\/catalog-rpc\.js"/);
+      assert.match(source, /verifyFixtureSessions\(\)/);
+      environmentSource = read("scripts/load/catalog-rpc.js");
+      assert.match(environmentSource, /LOAD_AUTH_TOKEN/);
+    }
+    assert.match(environmentSource, /SUPABASE_URL/);
+    assert.match(environmentSource, /SUPABASE_ANON_KEY/);
+    assert.match(environmentSource, /fail\(/, `${scriptPath} must fail closed without staging Supabase env`);
   }
 
   for (const scriptPath of [
