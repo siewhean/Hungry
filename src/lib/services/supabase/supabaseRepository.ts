@@ -1340,10 +1340,9 @@ export async function enrichDiscoveryFeedViaRpc(
   return {
     ...feed,
     needsEnrichment: !closures || !flags,
-    venues: feed.venues.map((venue) => {
-      const closedUntil = closures?.get(venue.id);
-      return closedUntil ? { ...venue, closedUntil } : venue;
-    }),
+    venues: closures
+      ? feed.venues.map((venue) => ({ ...venue, closedUntil: closures.get(venue.id) }))
+      : feed.venues,
     results: feed.results.map(({ dish, score }) => {
       const taste = tastes.get(dish.id);
       const dietaryFlags = (flags?.get(dish.id) ?? []) as DietaryFlag[];
@@ -1480,9 +1479,7 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
     snapshot: cached?.snapshot,
     rows: strictCatalogRows("stall", "get_venue_detail", { p_venue_id: venueId }, (rows) => {
       validateStallHeaderRows(rows, venueId);
-      if (rows[0] && !isStallMenuRows(rows[0].dishes, venueId)) {
-        throw new CatalogReadError("The stall returned an invalid menu.", "contract");
-      }
+      if (rows[0]) validateLegacyStallMenuRows(rows[0].dishes, venueId);
     })
       .then((result) => {
         requireCurrentCatalogScope(scope);
@@ -1665,7 +1662,22 @@ export async function getVenueClosuresViaRpc(
         return rpcRows("get_venue_closures", args);
       }
       // n-plus-one-ok: one call per 50 ids, the RPC's own cap, issued together
-      return strictCatalogRows("home", "get_venue_closures", args).catch((error: unknown) => {
+      return strictCatalogRows("home", "get_venue_closures", args, (rows) => {
+        if (
+          rows.some(
+            (row) =>
+              typeof row.venue_id !== "string" ||
+              !ids.includes(row.venue_id) ||
+              typeof row.closed_until !== "string" ||
+              !Number.isFinite(Date.parse(row.closed_until)),
+          )
+        ) {
+          throw new CatalogReadError(
+            "The catalog returned invalid closure information.",
+            "contract",
+          );
+        }
+      }).catch((error: unknown) => {
         const outcome = catalogReadOutcome(error);
         if (outcome === "auth" || outcome === "cancelled") throw error;
         return undefined;
@@ -1924,9 +1936,11 @@ function validateLegacyStallMenuRows(value: unknown, venueId: string): void {
     throw new CatalogReadError("The stall returned an invalid menu.", "contract");
   }
   const last = value.at(-1);
+  const score = last?.cursor_score ?? last?.rank_score;
   if (
     value.length >= VENUE_MENU_PAGE_SIZE &&
-    (!Number.isFinite(toNumber(last?.cursor_score ?? last?.rank_score, NaN)) ||
+    ((typeof score === "string" && !score.trim()) ||
+      !Number.isFinite(toNumber(score, NaN)) ||
       (last?.cursor_id != null && last.cursor_id !== last.dish_id))
   ) {
     throw new CatalogReadError("The stall returned an invalid menu cursor.", "contract");

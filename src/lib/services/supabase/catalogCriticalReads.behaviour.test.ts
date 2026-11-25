@@ -91,6 +91,54 @@ test("an auth failure during closure verification stays an auth failure", async 
   );
 });
 
+test("only a valid closure response verifies or clears a stall pause", async () => {
+  const closedUntil = "2030-01-01T12:00:00Z";
+  fake.rpc.get_discovery_feed_by_location = () => ({
+    data: [{ venue_id: VENUE_ID, venue_name: "Fixture stall" }],
+  });
+  fake.rpc.get_venue_closures = () => ({
+    data: [{ venue_id: VENUE_ID, closed_until: closedUntil }],
+  });
+  const first = (await service.listDiscoveryFeedByLocation({ deferEnrichment: true }))!;
+  const paused = await service.enrichDiscoveryFeed!(first);
+  assert.equal(paused.venues[0]?.closedUntil, closedUntil);
+
+  fake.rpc.get_venue_closures = () => ({
+    data: [{ venue_id: VENUE_ID, closed_until: {} }],
+  });
+  const unverified = await service.enrichDiscoveryFeed!({ ...paused, needsEnrichment: true });
+  assert.equal(unverified.needsEnrichment, true);
+  assert.equal(unverified.venues[0]?.closedUntil, closedUntil);
+
+  fake.rpc.get_venue_closures = () => ({ data: [] });
+  const current = await service.enrichDiscoveryFeed!(unverified);
+  assert.equal(current.needsEnrichment, false);
+  assert.equal(current.venues[0]?.closedUntil, undefined);
+});
+
+test("a full legacy menu with no last score is rejected before caching", async () => {
+  const venueId = "invalid-menu-cursor";
+  const dishes = Array.from({ length: 50 }, (_, index) => ({
+    venue_id: venueId,
+    dish_id: `dish-${index}`,
+    name: "Dish",
+  }));
+  fake.rpc.get_venue_detail = () => ({
+    data: [{ venue_id: venueId, name: "Fixture stall", dishes }],
+  });
+  await assert.rejects(
+    service.getStallLegacyMenuPage!(venueId),
+    (error) => catalogReadOutcome(error) === "contract",
+  );
+  fake.rpc.get_venue_detail = () => ({
+    error: { code: "57014", message: "statement timeout" },
+  });
+  await assert.rejects(
+    service.getStallLegacyMenuPage!(venueId),
+    (error) => catalogReadOutcome(error) === "timeout",
+  );
+});
+
 test("strict reads record contract errors instead of success for malformed payloads", async () => {
   fake.rpc.get_discovery_feed_by_location = () => ({ data: [{ name: "Bad response" }] });
   fake.rpc.get_dish_detail = () => ({ data: [{ name: "Wrong dish", dish_id: "other" }] });
