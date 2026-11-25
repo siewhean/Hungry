@@ -550,6 +550,8 @@ export interface DiscoveryLocationFeedRequest {
   limit?: number;
   /** The mall, hawker centre or food court the viewer is in: its stalls come first. */
   buildingId?: string;
+  /** Return the first page before optional dietary, taste and closure enrichment. */
+  deferEnrichment?: boolean;
 }
 
 export interface DiscoveryLocationFeed {
@@ -557,6 +559,8 @@ export interface DiscoveryLocationFeed {
   results: SearchResult[];
   /** True when the live read failed and these rows come from the local cache. */
   isFallback?: boolean;
+  /** Hours and dietary filtering must wait for follow-up verification. */
+  needsEnrichment?: boolean;
 }
 
 export interface VenueLocationSearchRequest extends DiscoveryLocationFeedRequest {
@@ -636,8 +640,13 @@ export interface VenueMenuCursor {
   venueImageUrl?: string;
 }
 
+export interface StallHeaderRead extends VenueSummary {
+  isFallback?: true;
+}
+
 export interface VenueMenuPage {
   dishes: DishDetail[];
+  isFallback?: true;
   /** Set while more of the menu may exist. */
   nextCursor?: VenueMenuCursor;
 }
@@ -1113,8 +1122,13 @@ export interface HungryService {
     getFloorPlan(buildingId: string, floor: string): Promise<FloorPlan | undefined>;
     listFloors(buildingId: string): Promise<string[]>;
     getVenue(id: string): Promise<VenueSummary | undefined>;
+    getStallHeader?(
+      id: string,
+      options?: { legacy?: boolean },
+    ): Promise<StallHeaderRead | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
+    getDishDetail?(id: string): Promise<DishDetail | undefined>;
     /**
      * Diner taste ratings for a dish, averaged per axis (get_dish_taste_rating_summary). Only
      * axes with 3+ raters are returned; {} while no axis has enough. Throws on a failed read.
@@ -1180,6 +1194,11 @@ export interface HungryService {
      * caller uses listDishesByVenue.
      */
     listDishesByVenuePage?(venueId: string, cursor?: VenueMenuCursor): Promise<VenueMenuPage>;
+    getStallLegacyMenuPage?(venueId: string, cursor?: VenueMenuCursor): Promise<VenueMenuPage>;
+    listStallMenuPage?(
+      venueId: string,
+      cursor?: string,
+    ): Promise<{ dishes: DishDetail[]; nextCursor?: string }>;
     /**
      * `noCatalogFallback` makes a failed server read throw instead of falling back to the cached
      * catalog, whose download is large (onboarding has none cached and shows a Retry instead).
@@ -1192,6 +1211,7 @@ export interface HungryService {
     listDiscoveryFeedByLocation(
       request: DiscoveryLocationFeedRequest,
     ): Promise<DiscoveryLocationFeed | undefined>;
+    enrichDiscoveryFeed?(feed: DiscoveryLocationFeed): Promise<DiscoveryLocationFeed>;
     searchVenuesByLocation(
       request: VenueLocationSearchRequest,
     ): Promise<VenueSummary[] | undefined>;

@@ -70,9 +70,16 @@ test("Discover names the mall the phone is inside and lists its stalls first", (
   // Only a real GPS fix counts; a picked area is never "inside" a place.
   assert.match(discover, /locationPermission === "granted" && !manualCoordinate/);
   assert.match(discover, /\{discoverHeaderLabel\}/);
-  assert.match(discover, /buildingId: currentPlaceId/);
+  assert.match(discover, /useLiveDiscoverFeed\([\s\S]*?discoverArgs,\s*currentPlaceId,/);
+  const liveFeed = read("src/features/discover/useLiveDiscoverFeed.ts");
+  assert.match(liveFeed, /listDiscoveryFeedByLocation\(\{[\s\S]*?buildingId: currentPlaceId,/);
   assert.match(discover, /preferBuildingId: currentPlaceId/);
   assert.match(discover, /Number\(isInCurrentPlace\(b\)\) - Number\(isInCurrentPlace\(a\)\)/);
-  // Only a manual area pick drives the feed query by area name; the header only changes label.
-  assert.match(discover, /areaName: discoverAreaRequest/);
+  // Only a manual area pick drives either feed request by area name; the header only changes label.
+  const readArgs = read("src/features/discover/discoverReadArgs.ts");
+  const firstPage = read("src/features/discover/warmHomeFeed.ts");
+  assert.match(readArgs, /areaName: location\.manualLocation/);
+  for (const source of [firstPage, liveFeed]) {
+    assert.match(source, /listDiscoveryFeedByLocation\(\{\s*areaName: args\.areaName,/);
+  }
 });

@@ -23,6 +23,7 @@ test("verify-package runs all mandatory repo safety gates in order and accepts f
     "staging-functions-manifest",
     "migration-safety",
     "whitespace-diff-check",
+    "whitespace-diff-check-staged",
     "PASS",
   ]);
   assert.match(withTests, /TSX_TSCONFIG_PATH=tsconfig\.test\.json/);

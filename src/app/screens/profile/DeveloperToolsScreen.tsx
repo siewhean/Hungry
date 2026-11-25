@@ -10,6 +10,7 @@ import { SettingsRow, SettingsSection } from "@/components/settings";
 import { AppSymbol, AppText, CelebrationBurst, Chip, FeedErrorBoundary } from "@/components/ui";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { isAnalyticsEnabled } from "@/lib/analytics";
+import { getAnalyticsEnvironment, isInternalBuild } from "@/lib/analytics/trafficTag";
 import {
   EXPERIMENTS,
   clearExperimentOverrides,
@@ -67,6 +68,8 @@ export function DeveloperToolsScreen() {
   const { palette, spacing } = useHungryTheme();
   const showToast = useUIStore((state) => state.showToast);
   const lock = useDeveloperToolsStore((state) => state.lock);
+  const internalDevice = useDeveloperToolsStore((state) => state.internalDevice);
+  const setInternalDevice = useDeveloperToolsStore((state) => state.setInternalDevice);
   const profileId = useProfileStore((state) => state.profile?.id);
   const [, refresh] = useReducer((count: number) => count + 1, 0);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -103,6 +106,8 @@ export function DeveloperToolsScreen() {
     ["Error tracking (Sentry)", SENTRY_ON ? "On" : "Off"],
     ["Usage analytics (PostHog)", POSTHOG_ON ? "On" : "Off"],
     ["Analytics sharing allowed", yesNo(isAnalyticsEnabled())],
+    ["Analytics environment tag", getAnalyticsEnvironment()],
+    ["Counted as team traffic", yesNo(isInternalBuild() || internalDevice)],
     ["PostHog flags loaded", yesNo(postHogFlagsLoaded())],
     ["Signed-in profile", profileId ? profileId.slice(0, 8) : "none"],
   ];
@@ -150,6 +155,22 @@ export function DeveloperToolsScreen() {
             onLongPress={copyBuildInfo}
           />
         ))}
+      </SettingsSection>
+
+      <SettingsSection
+        title="Usage numbers"
+        description="Turn this on for every phone the team tests on, so launch numbers in PostHog leave your own taps out. It is saved on this phone."
+        collapsible
+        defaultCollapsed={false}
+      >
+        <SettingsRow
+          label="Count this phone as team traffic"
+          type="toggle"
+          isLast
+          isEnabled={internalDevice}
+          onToggle={setInternalDevice}
+          icon={<AppSymbol name="analytics" size={20} color={iconColor} />}
+        />
       </SettingsSection>
 
       <SettingsSection

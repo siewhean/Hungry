@@ -1,0 +1,14 @@
+{
+  "version": "20261124120000",
+  "name": "20261124120000_split_stall_detail_reads",
+  "result": "pass",
+  "rehearsed_at": "2026-11-25T02:50:24Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "b2a7ded62c0988d168a6b17e01ce03749d9805ee",
+  "up_sha256": "f40514d41b2198de6772e01611308309bc2f8dcdbb80ed45062d0bb5307e42bd",
+  "down_sha256": "cf5e71c36787b0e409486d3b726655aed21955ee72154c5324039a8cd4ff24e8",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/split_stall_detail_reads.sql"]
+}

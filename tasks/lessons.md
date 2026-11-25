@@ -141,3 +141,5 @@
 - After merging screen layouts, run the full source-contract coverage gate before treating focused screen tests as sufficient; keep account-only Settings rows behind authentication while preserving keyed saved-dish remounts across account changes.
 - When a screen's approved heading changes, update the render matrix expectation in the same branch; source contracts and coverage can pass while a render smoke still asserts the prior title.
 - In React Native Web, a Pressable rendered as a button cannot contain another button, and native-only `accessible` props should not reach raw SVG DOM nodes. Browser smoke should select the visible Stitch tab before asserting content in a non-default tab.
+
+- Exercise the hosted `extra_float_digits` setting when a pagination cursor carries a float through JSON. Check that ties survive each page and that legacy continuation uses the same score.

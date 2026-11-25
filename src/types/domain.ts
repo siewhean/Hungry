@@ -156,6 +156,8 @@ export interface VenueSummary {
   unitNumber: string;
   floor: string;
   isOpen: boolean;
+  /** A Discover preview has not verified current closure information. */
+  availabilityUnverified?: boolean;
   liveCrowd?: "low" | "medium" | "high";
   topDishId: string;
   operatingHours: string;

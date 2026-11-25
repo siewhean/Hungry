@@ -10,6 +10,7 @@ import {
   type catalogRawService,
 } from "@/lib/services/catalog";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
+import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import type { DataRepository, HungryService } from "@/lib/services/types";
 import type { TasteVector } from "@/types/domain";
 import type { CatalogRawService } from "@/lib/services/catalog";
@@ -130,6 +131,23 @@ export async function runAuthenticatedDiscoveryFallback<T>(
   }
 }
 
+async function runStrictDiscoveryRead<T>(read: () => Promise<T>): Promise<T> {
+  const scope = catalogRequestScope();
+  try {
+    const result = await read();
+    requireCurrentCatalogScope(scope);
+    return result;
+  } catch (error) {
+    requireCurrentCatalogScope(scope);
+    expireRejectedSession(classifyCatalogAccessError(error, "rpc"));
+    throw error;
+  }
+}
+
+function stallReadsV2Enabled(): boolean {
+  return process.env.EXPO_PUBLIC_ENABLE_STALL_READS_V2 === "true";
+}
+
 function getExcelDiscoveryService(): DiscoveryService {
   try {
     const { excelService } =
@@ -148,9 +166,32 @@ export function createResilientDiscoveryService(primary: DiscoveryService): Disc
     fallback ??= getExcelDiscoveryService();
     return fallback;
   };
+  const getDishDetail = primary.getDishDetail;
+  const getStallHeader = primary.getStallHeader;
+  const getStallLegacyMenuPage = primary.getStallLegacyMenuPage;
+  const listStallMenuPage = primary.listStallMenuPage;
+  const enrichDiscoveryFeed = primary.enrichDiscoveryFeed;
 
   return {
     ...primary,
+    getDishDetail: getDishDetail && ((id) => runStrictDiscoveryRead(() => getDishDetail(id))),
+    getStallHeader:
+      getStallHeader &&
+      ((id, options) =>
+        runStrictDiscoveryRead(() =>
+          getStallHeader(id, {
+            legacy: options?.legacy === true || !stallReadsV2Enabled(),
+          }),
+        )),
+    getStallLegacyMenuPage:
+      getStallLegacyMenuPage &&
+      ((id, cursor) => runStrictDiscoveryRead(() => getStallLegacyMenuPage(id, cursor))),
+    get listStallMenuPage(): DiscoveryService["listStallMenuPage"] {
+      if (!listStallMenuPage || !stallReadsV2Enabled()) return undefined;
+      return (id, cursor) => runStrictDiscoveryRead(() => listStallMenuPage(id, cursor));
+    },
+    enrichDiscoveryFeed:
+      enrichDiscoveryFeed && ((feed) => runStrictDiscoveryRead(() => enrichDiscoveryFeed(feed))),
     async listBuildings(...args) {
       return runAuthenticatedDiscoveryFallback(
         () => primary.listBuildings(...args),
@@ -194,10 +235,7 @@ export function createResilientDiscoveryService(primary: DiscoveryService): Disc
       );
     },
     async listDiscoveryFeedByLocation(...args) {
-      return runAuthenticatedDiscoveryFallback(
-        () => primary.listDiscoveryFeedByLocation(...args),
-        () => getFallback().listDiscoveryFeedByLocation(...args),
-      );
+      return runStrictDiscoveryRead(() => primary.listDiscoveryFeedByLocation(...args));
     },
     async searchVenuesByLocation(...args) {
       return runAuthenticatedDiscoveryFallback(

@@ -4,53 +4,65 @@ import test, { beforeEach } from "node:test";
 import {
   DISCOVER_FEED_CACHE_MAX_AGE_MS,
   clearCachedDiscoverFeed,
-  readCachedDiscoverFeed,
-  readLastCachedDiscoverFeed,
-  writeCachedDiscoverFeed,
+  discardDiscoverFirstPage,
+  peekDiscoverFirstPage,
+  readDiscoverFirstPage,
 } from "@/features/discover/feedCache";
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
-import type { VenueSummary } from "@/types/domain";
 
-const venue = { id: "v1", name: "Ah Seng", buildingId: "b1" } as VenueSummary;
-const feed: DiscoveryLocationFeed = { venues: [venue], results: [] };
+const empty: DiscoveryLocationFeed = { venues: [], results: [] };
 
-beforeEach(async () => {
-  await clearCachedDiscoverFeed();
-});
+beforeEach(clearCachedDiscoverFeed);
 
-test("a saved feed comes back for the same area and no other", async () => {
-  await writeCachedDiscoverFeed("area-a", feed, 1_000);
-  assert.deepEqual(await readCachedDiscoverFeed("area-a", 2_000), feed);
-  assert.equal(await readCachedDiscoverFeed("area-b", 2_000), null);
-});
-
-test("a feed older than the max age is not shown", async () => {
-  await writeCachedDiscoverFeed("area-a", feed, 1_000);
-  const justInside = 1_000 + DISCOVER_FEED_CACHE_MAX_AGE_MS;
-  assert.deepEqual(await readCachedDiscoverFeed("area-a", justInside), feed);
-  assert.equal(await readCachedDiscoverFeed("area-a", justInside + 1), null);
-});
-
-test("an offline copy or an empty feed never replaces a good saved feed", async () => {
-  await writeCachedDiscoverFeed("area-a", feed, 1_000);
-  await writeCachedDiscoverFeed("area-a", { ...feed, isFallback: true }, 2_000);
-  await writeCachedDiscoverFeed("area-a", { venues: [], results: [] }, 3_000);
-  assert.deepEqual(await readCachedDiscoverFeed("area-a", 4_000), feed);
-});
-
-test("clearing forgets the saved feed", async () => {
-  await writeCachedDiscoverFeed("area-a", feed, 1_000);
-  await clearCachedDiscoverFeed();
-  assert.equal(await readCachedDiscoverFeed("area-a", 2_000), null);
-});
-
-test("the offline Home reads the last saved feed whatever area it was for", async () => {
-  assert.equal(await readLastCachedDiscoverFeed(2_000), null);
-  await writeCachedDiscoverFeed("area-a", feed, 1_000);
-  assert.deepEqual(await readLastCachedDiscoverFeed(2_000), { feed, savedAt: 1_000 });
+test("warm and Home share an in-flight and then a settled first page for 30 seconds", async () => {
+  let now = 1000;
+  let loads = 0;
+  const load = async () => {
+    loads += 1;
+    return empty;
+  };
+  const warm = readDiscoverFirstPage("project:account:area", load, false, () => now);
   assert.equal(
-    await readLastCachedDiscoverFeed(1_000 + DISCOVER_FEED_CACHE_MAX_AGE_MS + 1),
-    null,
-    "too old to show",
+    readDiscoverFirstPage("project:account:area", load, false, () => now),
+    warm,
   );
+  await warm;
+  now += DISCOVER_FEED_CACHE_MAX_AGE_MS - 1;
+  assert.equal(
+    readDiscoverFirstPage("project:account:area", load, false, () => now),
+    warm,
+  );
+  assert.equal(peekDiscoverFirstPage("project:account:area", now)?.promise, warm);
+  assert.equal(loads, 1);
+  now += 1;
+  assert.equal(peekDiscoverFirstPage("project:account:area", now), undefined);
+  await readDiscoverFirstPage("project:account:area", load, false, () => now);
+  assert.equal(loads, 2);
+});
+
+test("only the same scope can reuse a successful response", async () => {
+  let loads = 0;
+  const load = async () => {
+    loads += 1;
+    return empty;
+  };
+  await readDiscoverFirstPage("project-a:account-a:area-a", load);
+  await readDiscoverFirstPage("project-b:account-a:area-a", load);
+  await readDiscoverFirstPage("project-a:account-b:area-a", load);
+  await readDiscoverFirstPage("project-a:account-a:area-b", load);
+  assert.equal(loads, 4);
+});
+
+test("errors and fallback responses do not become cache hits", async () => {
+  await assert.rejects(
+    readDiscoverFirstPage("a", async () => {
+      throw new Error("timeout");
+    }),
+  );
+  assert.equal(peekDiscoverFirstPage("a"), undefined);
+  await readDiscoverFirstPage("a", async () => ({ ...empty, isFallback: true }));
+  assert.equal(peekDiscoverFirstPage("a"), undefined);
+  assert.deepEqual(await readDiscoverFirstPage("a", async () => empty), empty);
+  discardDiscoverFirstPage("a");
+  assert.equal(peekDiscoverFirstPage("a"), undefined);
 });

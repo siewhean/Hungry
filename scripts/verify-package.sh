@@ -45,5 +45,6 @@ run_step "race-patterns" npm run audit:races
 run_step "staging-functions-manifest" npm run check:staging-functions
 run_step "migration-safety" npm run audit:supabase:migration-safety
 run_step "whitespace-diff-check" git diff --check
+run_step "whitespace-diff-check-staged" git diff --cached --check
 
 echo "==> [verify-package] PASS"

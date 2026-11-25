@@ -143,8 +143,10 @@ test("Supabase source of truth and bounded service read paths are covered by rep
   assert.match(serviceReport, /Zustand stores remain device-local cache/);
   assert.match(sourceOfTruth, /Supabase writes as source of truth/);
   assert.match(repository, /rpcRows\("search_dishes"/);
-  assert.match(repository, /rpcRows\("get_discovery_feed_by_location"/);
-  assert.match(repository, /p_limit/);
+  assert.match(
+    repository,
+    /strictCatalogRows\(\s*"home",\s*"get_discovery_feed_by_location",\s*\{[^}]*p_limit: request\.limit \?\? null/,
+  );
   assert.match(repository, /p_cursor_id/);
   assert.match(service, /client\.rpc\("get_home_social_feed_v2"/);
   assert.match(service, /p_limit/);

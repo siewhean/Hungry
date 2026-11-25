@@ -39,15 +39,28 @@ begin
     raise exception 'a chat rate rule is still present';
   end if;
 
-  -- 2. No dangling references.
+  -- 2. No dangling references. Only the message text of a RAISE (its format-string literal) is blanked
+  --    first, so `raise exception 'cannot copy messages'` is not a table reference. Argument expressions
+  --    (`raise notice '%', (select count(*) from public.messages)`) and dynamic EXECUTE strings are kept.
   if exists (
     select 1
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
+    cross join lateral (
+      select regexp_replace(
+        p.prosrc,
+        '\mraise\s+((debug|log|info|notice|warning|exception)\s+)?''(?:[^'']|'''')*''',
+        ' ',
+        'gi'
+      ) as body
+    ) stripped
     where n.nspname not in ('pg_catalog', 'information_schema')
       and (
-        p.prosrc ~* '\m(conversation_participants|read_receipts|conversations)\M'
-        or p.prosrc ~* '\m(from|into|update|join)\s+(public\.)?messages\M'
+        stripped.body ~* '\m(conversation_participants|read_receipts|conversations)\M'
+        -- `messages` is a common word, so it is only matched after a keyword that takes a table:
+        -- from/into/update/join/using (select, insert, delete, merge), copy, references (foreign key),
+        -- table (alter/drop/lock/comment on table), `only`, or anywhere in a multi-table truncate/lock list.
+        or stripped.body ~* '\m(from|into|update|join|using|copy|references|table|only)\s+(only\s+)?(public\.)?messages\M|\m(truncate|lock)(\s+table)?\s+([^;$]+,\s*)*(only\s+)?(public\.)?messages\M'
       )
   ) then
     raise exception 'a function still references a dropped chat table';

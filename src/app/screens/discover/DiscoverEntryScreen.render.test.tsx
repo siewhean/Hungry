@@ -87,6 +87,7 @@ let tasteRows: Record<string, unknown>[] = [];
 function serveLiveFeed(rows: Record<string, unknown>[] = FEED_ROWS) {
   fake.rpc.get_discovery_feed_by_location = () => ({ data: rows, error: null });
   fake.rpc.count_venues_in_area = () => ({ data: rows.length, error: null });
+  fake.rpc.get_venue_closures = () => ({ data: [], error: null });
   fake.rpc.get_item_details = (args) => ({
     data: ((args.p_dish_ids as string[]) ?? []).map((id) => ({
       dish_id: id,
@@ -227,7 +228,17 @@ test("dish cards open the redesigned dish page and stall rows the stall page, wi
   await view.press(dishCards[0]);
   assert.deepEqual(view.navigation.calls.at(-1)?.args, [
     "DishDetail",
-    { dishId: "dish-2", source: "home" },
+    {
+      dishId: "dish-2",
+      source: "home",
+      prefill: {
+        name: "Chicken Rice",
+        imageUrl: "https://cdn.example.sg/dish-2.jpg",
+        price: 7,
+        venueId: "venue-2",
+        venueName: "Tian Tian",
+      },
+    },
   ]);
 
   await view.press(view.findByLabel("Open Zhen Zhen details"));
@@ -339,6 +350,44 @@ test("with no connection, Home shows the offline page at once instead of skeleto
   } finally {
     useUIStore.setState({ isOffline: false });
   }
+});
+
+test("a stuck place retry leaves nearby dishes visible and expires at the original deadline", async () => {
+  serveLiveFeed();
+  setLocation({ permission: "granted" });
+  const service = m.provider.getCatalogRawService();
+  let lookups = 0;
+  let resolvePlace = () => {};
+  service.listPlaces = () => {
+    lookups += 1;
+    if (lookups === 1) return Promise.reject(new Error("temporary place lookup failure"));
+    return new Promise((resolve) => {
+      resolvePlace = () => resolve([{ id: "mall", name: "Late Mall", venueCount: 1 }]);
+    });
+  };
+
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.match(view.text(), /Chicken Rice/);
+  assert.equal(fake.callsTo("get_discovery_feed_by_location").length, 1);
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 3_100));
+  });
+  await view.settle();
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await view.settle();
+  assert.equal(lookups, 2);
+  const calls = fake.callsTo("get_discovery_feed_by_location");
+  assert.deepEqual(
+    calls.map((call) => call.args.p_limit),
+    [10, 100],
+  );
+  assert.equal(calls[1].args.p_building_id, undefined);
+  await act(async () => {
+    resolvePlace();
+  });
+  assert.doesNotMatch(view.text(), /Late Mall/);
 });
 
 test("welcome_back_v2 on the live Home: shown to the test arm once content is on screen", async () => {
@@ -648,6 +697,10 @@ test("H4-10: saved needs name the chip, and a sparse feed explains itself instea
   fake.tables.dish_dietary_flags = () => ({ data: [], error: null });
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   assert.ok(view.findByLabel("Halal · Vegetarian +1"), "the chip names the saved needs");
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await view.settle();
   assert.match(view.text(), /No matching results/);
   assert.match(view.text(), /Nothing nearby is confirmed Halal · Vegetarian \+1 yet/);
   const showAll = view.findByLabel("Show all dishes");
@@ -1255,6 +1308,11 @@ test("H4-14: a diner with a saved dietary need still gets dishes above the class
   }));
   serveLiveFeed();
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  // The first render may precede the verified dietary flags. Wait for the deferred read.
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await view.settle();
   const text = view.text();
   assert.match(text, /Nasi Padang/, "the halal dish is on the page");
   assert.ok(text.indexOf("Dishes across Singapore") > 0);

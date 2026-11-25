@@ -1,6 +1,6 @@
 // Experiments wired to the real PostHog sink (the client is src/test/posthogStub.ts in tests).
 import assert from "node:assert/strict";
-import test, { afterEach } from "node:test";
+import test, { afterEach, beforeEach } from "node:test";
 
 process.env.EXPO_PUBLIC_POSTHOG_API_KEY = "phc_test";
 delete process.env.EXPO_PUBLIC_DISABLE_POSTHOG;
@@ -10,7 +10,13 @@ const PostHogStub = (require("@/test/posthogStub") as typeof import("@/test/post
 const sink = require("@/lib/analytics/posthogSink") as typeof import("@/lib/analytics/posthogSink");
 const experiments = require("./experiments") as typeof import("./experiments");
 
+// The freeze on A/B tests has its own tests (experiments.test.ts); these read live arms.
+beforeEach(() => {
+  experiments.setExperimentsFrozen(false);
+});
+
 afterEach(() => {
+  experiments.setExperimentsFrozen(true);
   PostHogStub.flags = undefined;
   PostHogStub.captured = [];
   experiments.setExperimentFlagSource(undefined);

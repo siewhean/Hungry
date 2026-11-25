@@ -341,6 +341,291 @@ test("the restore script reconciles deleted accounts before importing, in one tr
   assert.doesNotMatch(script.replace(/^\s*#.*$/gm, ""), /--single-transaction/);
 });
 
+// The chat RPCs are the only way a signed-in user can create a conversation. After the down file the
+// tables exist but are empty, and scripts/db/restore-chat-tables.sh refuses non-empty tables, so the
+// down file must leave the RPCs closed to `authenticated` until the restore transaction reopens them.
+const CHAT_RPCS = [
+  "public.open_chat_conversation(uuid, uuid, text)",
+  "app_private.open_chat_conversation(uuid, uuid, text)",
+  "public.send_chat_message(uuid, text, text, uuid)",
+  "app_private.send_chat_message(uuid, text, text, uuid)",
+  "public.mark_conversation_read(uuid)",
+];
+
+function normalizeSignature(signature: string): string {
+  return signature
+    .replace(/\s+/g, " ")
+    .replace(/\s*,\s*/g, ", ")
+    .trim()
+    .toLowerCase();
+}
+
+function privilegeStatements(
+  sql: string,
+  verb: "grant execute" | "revoke all",
+): { signature: string; roles: string[] }[] {
+  const pattern =
+    verb === "grant execute"
+      ? /grant execute on function ([a-z_.]+\([^)]*\)) to ([^;]+);/gi
+      : /revoke all on function ([a-z_.]+\([^)]*\)) from ([^;]+);/gi;
+  return [...code(sql).matchAll(pattern)].map((match) => ({
+    signature: normalizeSignature(match[1]),
+    roles: match[2].split(",").map((role) => role.trim().toLowerCase()),
+  }));
+}
+
+function restoreSqlParts(script: string): { head: string; tail: string } {
+  const heredoc = (name: string) => {
+    const start = script.indexOf(`cat >"$WORK/${name}.sql" <<'SQL'\n`);
+    assert.ok(start >= 0, `${name}.sql heredoc not found`);
+    const bodyStart = script.indexOf("\n", start) + 1;
+    return script.slice(bodyStart, script.indexOf("\nSQL\n", bodyStart));
+  };
+  return { head: heredoc("head"), tail: heredoc("tail") };
+}
+
+test("the down file leaves the chat RPCs executable by service_role only, until the restore reopens them", () => {
+  const grants = privilegeStatements(down, "grant execute");
+  const revokes = privilegeStatements(down, "revoke all");
+  for (const signature of CHAT_RPCS) {
+    const key = normalizeSignature(signature);
+    const granted = grants.filter((grant) => grant.signature === key);
+    assert.ok(granted.length > 0, `${signature} is not granted to anyone by the down file`);
+    for (const grant of granted) {
+      assert.deepEqual(
+        grant.roles,
+        ["service_role"],
+        `${signature} must be granted to service_role only`,
+      );
+    }
+    const revoked = revokes.filter((revoke) => revoke.signature === key);
+    assert.ok(revoked.length > 0, `${signature} is not revoked from authenticated`);
+    for (const revoke of revoked) {
+      assert.ok(
+        revoke.roles.includes("authenticated"),
+        `${signature} revoke must include authenticated`,
+      );
+      assert.ok(revoke.roles.includes("anon") && revoke.roles.includes("public"));
+    }
+  }
+  // No other statement in the file may hand a chat RPC to authenticated or anon.
+  assert.doesNotMatch(
+    code(down),
+    /grant\s+(execute|all)[^;]*\b(open_chat_conversation|send_chat_message|mark_conversation_read)\b[^;]*\bto\b[^;]*\b(authenticated|anon|public)\b/i,
+  );
+  assert.doesNotMatch(
+    code(down),
+    /grant\s+execute\s+on\s+all\s+functions/i,
+    "a blanket grant would reopen the chat RPCs",
+  );
+  // can_access_conversation only reads and is called by the row-level security policies, so it keeps
+  // its original grant; it cannot create a row.
+  const canAccess = grants.filter((grant) => grant.signature.includes("can_access_conversation"));
+  assert.equal(canAccess.length, 2);
+  for (const grant of canAccess) assert.deepEqual(grant.roles, ["authenticated", "service_role"]);
+  // The reason and the manual way out are written where someone reading the file will see them.
+  const runbook = readRepoFile("supabase/manual/chat-db-drop-runbook.md");
+  for (const signature of CHAT_RPCS) {
+    assert.ok(
+      runbook.includes(`grant execute on function ${signature} to authenticated;`),
+      `runbook does not list the manual grant for ${signature}`,
+    );
+  }
+  assert.match(down, /RPC GRANTS:/);
+  assert.match(down, /scripts\/db\/restore-chat-tables\.sh inside its restore transaction/);
+});
+
+test("the restore script reopens the chat RPCs to authenticated inside its transaction, before it drops the scratch schema", () => {
+  const script = readRepoFile("scripts/db/restore-chat-tables.sh");
+  const { tail } = restoreSqlParts(script);
+  const tailCode = code(tail);
+  const regranted = privilegeStatements(tail, "grant execute");
+  for (const grant of regranted) assert.deepEqual(grant.roles, ["authenticated"]);
+  // Exactly the functions the down file closed, no more and no fewer.
+  assert.deepEqual(
+    regranted.map((grant) => grant.signature).sort(),
+    CHAT_RPCS.map(normalizeSignature).sort(),
+  );
+  const closedByDown = privilegeStatements(down, "grant execute")
+    .filter((grant) => grant.roles.join() === "service_role")
+    .map((grant) => grant.signature)
+    .sort();
+  assert.deepEqual(closedByDown, regranted.map((grant) => grant.signature).sort());
+  // The original grants (authenticated + service_role) are what the pre-drop migrations ended with.
+  const originalMarkRead = readRepoFile(
+    "supabase/migrations/20261022150000_race_condition_fixes.sql",
+  );
+  assert.ok(
+    originalMarkRead.includes(
+      "grant execute on function public.mark_conversation_read(uuid) to authenticated, service_role;",
+    ),
+  );
+  // Inside the transaction (the tail is part of the one psql -1 run), and last before the scratch drop.
+  const dropAt = tailCode.indexOf("drop schema chat_restore_scratch cascade");
+  assert.ok(dropAt > 0);
+  const grantAt = tailCode.search(/grant execute on function/i);
+  assert.ok(
+    grantAt > 0 && grantAt < dropAt,
+    "grants must come before the scratch schema is dropped",
+  );
+  assert.ok(
+    tailCode.lastIndexOf("insert into public.read_receipts") < grantAt,
+    "RPCs must only reopen after every row is imported",
+  );
+  assert.ok(
+    tailCode.indexOf("validate constraint post_shares_target_conversation_id_fkey") < grantAt,
+    "RPCs must only reopen after the post_shares key is validated",
+  );
+  // Nothing outside the single transaction changes privileges.
+  const executable = script.replace(/^\s*#.*$/gm, "");
+  const outside = executable.replace(/cat >"\$WORK\/(head|tail)\.sql" <<'SQL'[\s\S]*?\nSQL\n/g, "");
+  assert.doesNotMatch(outside, /\bgrant\b|\brevoke\b/i);
+  // Every function it regrants must exist before it starts.
+  assert.match(script, /to_regprocedure\('\$fn'\) is not null/);
+});
+
+test("the restore script locks the four tables and checks they are empty inside the transaction", () => {
+  const script = readRepoFile("scripts/db/restore-chat-tables.sh");
+  const { head, tail } = restoreSqlParts(script);
+  const headCode = code(head);
+  const lockAt = headCode.search(
+    /lock table public\.conversations, public\.conversation_participants, public\.messages, public\.read_receipts\s+in access exclusive mode;/,
+  );
+  const checkAt = headCode.indexOf("is not empty; this script only restores into empty tables");
+  const scratchAt = headCode.indexOf("create schema chat_restore_scratch");
+  assert.ok(lockAt >= 0, "head.sql does not lock the four tables");
+  assert.ok(lockAt < checkAt, "the emptiness check must run after the lock");
+  assert.ok(checkAt < scratchAt, "the emptiness check must run before anything is imported");
+  for (const table of DROPPED_TABLES) {
+    assert.match(headCode, new RegExp(`'${table}'`), `${table} is not part of the emptiness check`);
+  }
+  assert.match(headCode, /set lock_timeout = '\d+s';/);
+  assert.ok(
+    headCode.indexOf("set lock_timeout") < lockAt,
+    "lock_timeout must be set before the lock is requested",
+  );
+  // The lock is held until COMMIT: the same single psql -1 run executes head, data and tail.
+  assert.match(
+    script,
+    /cat "\$WORK\/head\.sql" "\$WORK\/data\.sql" "\$WORK\/tail\.sql" >"\$WORK\/restore\.sql"/,
+  );
+  assert.match(script, /psql "\$DB_URL" -X -q -1 -v ON_ERROR_STOP=1 -f "\$WORK\/restore\.sql"/);
+  assert.doesNotMatch(tail, /\b(commit|begin)\b\s*;/i);
+  assert.doesNotMatch(head, /\b(commit|begin)\b\s*;/i);
+  // The old check ran in a separate session before the transaction began: it must not come back.
+  const executable = script.replace(/^\s*#.*$/gm, "");
+  assert.doesNotMatch(executable, /select count\(\*\) from public\.\$t"\)" = 0/);
+  assert.ok(
+    executable.indexOf('psql "$DB_URL" -X -q -1') > executable.indexOf("in access exclusive mode"),
+    "the lock must be part of the SQL that psql runs",
+  );
+  // The "exactly one COPY section per table" validation is still there, before psql starts.
+  assert.match(executable, /grep -c "\^COPY chat_restore_scratch\\\.\$t " "\$WORK\/data\.sql"/);
+  assert.match(executable, /has no data section for \$t; refusing to import an incomplete archive/);
+});
+
+test("the smoke's leftover scan names messages after every statement that can take a table, including multi-table lists and dynamic SQL, while ignoring RAISE diagnostics", () => {
+  const smoke = readRepoFile("supabase/smoke/drop_direct_message_chat.sql");
+  // Only a RAISE's message literal is blanked; the rest of the statement (argument expressions) stays.
+  const stripPattern = smoke.match(
+    /regexp_replace\(\s*p\.prosrc,\s*'((?:[^']|'')+)',\s*' ',\s*'gi'\s*\)\s+as\s+body/,
+  );
+  assert.ok(stripPattern, "expected the RAISE message-literal strip in the smoke");
+  const scan = [...smoke.matchAll(/stripped\.body ~\* '((?:[^']|'')+)'/g)].map((match) =>
+    match[1].replace(/''/g, "'"),
+  );
+  assert.equal(scan.length, 2, "expected the two scan patterns");
+  const upScan = [...up.matchAll(/p\.prosrc ~\* '([^']+)'/g)].map((match) => match[1]);
+  // Same table-name pattern as the migration's own scan.
+  assert.equal(scan[0], upScan[0]);
+  // PostgreSQL's \m and \M (word start/end) are \b in JavaScript; \s and the rest are the same.
+  const messages = new RegExp(scan[1].replace(/\\[mM]/g, "\\b"), "i");
+  const stripRaiseText = new RegExp(
+    stripPattern[1].replace(/''/g, "'").replace(/\\[mM]/g, "\\b"),
+    "gi",
+  );
+  const stripRaiseDiagnostics = (sql: string) => sql.replace(stripRaiseText, " ");
+  for (const body of [
+    "select 1 from messages;",
+    "insert into public.messages (id) values (1);",
+    "update messages set body = '';",
+    "select 1 from x join public.messages m on true;",
+    "delete from messages where true;",
+    "delete from x using messages m where true;",
+    "truncate messages;",
+    "truncate table public.messages;",
+    "truncate table public.other, public.messages;",
+    "truncate only messages;",
+    "TRUNCATE TABLE ONLY public.messages;",
+    "lock table messages in access exclusive mode;",
+    "lock table public.other, only public.messages in access exclusive mode;",
+    "lock public.messages;",
+    "alter table messages enable row level security;",
+    "alter table only public.messages add column x int;",
+    "drop table public.messages;",
+    "comment on table messages is 'x';",
+    "create table t (m uuid references messages(id));",
+    "create table t (m uuid references public.messages (id));",
+    "copy public.messages from stdin;",
+    "execute 'select count(*) from public.messages';",
+    "raise notice 'count: %', (select count(*) from public.messages);",
+    "raise exception 'boom: %', (select count(*) from messages);",
+    "execute 'select 1; raise exception ''boom''; delete from public.messages';",
+    "select 1\n  from\n    public.messages;",
+  ]) {
+    assert.match(stripRaiseDiagnostics(body), messages, `scan misses: ${body}`);
+  }
+  for (const body of [
+    "select 'messagesSent';",
+    "select 1 from chat_messages;",
+    "update chat_messages set body = '[deleted]';",
+    "select 1 from public.messages_archive;",
+    "select 1 from app.messages;",
+    "insert into realtime.messages (topic) values ('x');",
+    "raise exception 'too many messages';",
+    "raise exception 'cannot copy messages';",
+    "raise exception 'truncate table public.messages failed';",
+    "raise warning 'it''s from messages' using errcode = 'P0001';",
+    "raise 'cannot copy messages';",
+    "select count_messages(1);",
+  ]) {
+    assert.doesNotMatch(stripRaiseDiagnostics(body), messages, `scan wrongly flags: ${body}`);
+  }
+  // The patterns are valid under standard_conforming_strings = on (their default): `\m`, `\M` and `\s`
+  // are regex escapes inside the plain quotes, not string escapes. Do not double the backslashes.
+  assert.doesNotMatch(smoke, /E'[^']*\\m/);
+  assert.match(scan[1], /\\m\(/);
+});
+
+test("rehearse.sh runs the chat backup before up, checks has_function_privilege after down, and runs restore before comparing the schema", () => {
+  assert.match(down, /^-- pre-up-backup: scripts\/db\/backup-chat-tables\.sh$/m);
+  assert.match(down, /^-- post-down-restore: scripts\/db\/restore-chat-tables\.sh$/m);
+  const declaredClosed = [...down.matchAll(/^-- closed-after-down:\s*(.+)$/gm)].map((m) =>
+    normalizeSignature(m[1]),
+  );
+  assert.deepEqual(declaredClosed.sort(), CHAT_RPCS.map(normalizeSignature).sort());
+  const rehearse = readRepoFile("scripts/db/rehearse.sh");
+  const backupAt = rehearse.indexOf('"$REPO_ROOT/$PRE_UP_BACKUP" staging');
+  const upAt = rehearse.indexOf('apply_guarded "$UP" insert');
+  const downAt = rehearse.indexOf('apply_guarded "$DOWN" delete', upAt);
+  const closedCheckAt = rehearse.indexOf("has_function_privilege('authenticated'", downAt);
+  const restoreAt = rehearse.indexOf(
+    '"$REPO_ROOT/$POST_DOWN_RESTORE" staging "$RESTORE_ARCHIVE_DIR"',
+    downAt,
+  );
+  const schemaAfterAt = rehearse.indexOf(
+    'dump_schema "$DB_URL" "${PGPASSWORD:-}" "$WORK/schema.after"',
+    downAt,
+  );
+  assert.ok(backupAt > 0 && backupAt < upAt, "pre-up backup must run before up");
+  assert.ok(upAt < downAt, "up must run before down");
+  assert.ok(
+    downAt < closedCheckAt && closedCheckAt < restoreAt,
+    "closed-RPC privilege check must run between down and restore",
+  );
+  assert.ok(restoreAt < schemaAfterAt, "restore must run before schema.after comparison");
+});
+
 test("nothing outside the migration history still reads or writes the dropped tables", () => {
   const roots = ["src", "scripts", "supabase/functions"];
   const offenders: string[] = [];

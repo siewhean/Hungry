@@ -131,7 +131,7 @@ Choose the smallest verification set that matches the risk of the change.
 
 | Gate              | Command                       | Required when                                                                   |
 | ----------------- | ----------------------------- | ------------------------------------------------------------------------------- |
-| Type check        | `npm run typecheck`           | Broad/risky changes, commits, release gates, or TS contract changes             |
+| Type check        | `npm run typecheck`           | Broad/risky changes, release gates, or TS contract changes                      |
 | Dependency health | `npx expo-doctor`             | Dependency or Expo/native config changes                                        |
 | Component smoke   | `npm run test` / focused test | Logic, store, component, or contract changes                                    |
 | Manual simulator  | `npm run ios`                 | Native/runtime/navigation-risk changes, release smoke, or explicit user request |

@@ -418,7 +418,7 @@ function useLiveReads(discovery: Partial<HungryService["discovery"]>) {
   setServiceProvider({ ...base, mode: "supabase", service });
 }
 
-test("a card's prefill paints the name before the dish read lands and starts the stall reads at once", async () => {
+test("a card's prefill paints the name while ancillary stall reads wait for the dish", async () => {
   stubReviews([]);
   const calls: string[] = [];
   let release: (dish: DishDetail | undefined) => void = () => undefined;
@@ -452,11 +452,12 @@ test("a card's prefill paints the name before the dish read lands and starts the
   });
   assert.ok(view.findByText("Prefilled Laksa"), "the name paints before getDish resolves");
   assert.ok(view.findByText("Laksa Stall"));
-  assert.ok(calls.includes(`getVenue:${dish.venueId}`), "the stall read did not wait for the dish");
-  assert.ok(calls.includes(`schedule:${dish.venueId}`));
+  assert.equal(calls.length, 0, "prefill does not start ancillary reads");
   release(dish);
   await view.settle();
   assert.ok(view.findByText(dish.name), "the full page replaces the preview");
+  assert.ok(calls.includes(`getVenue:${dish.venueId}`));
+  assert.ok(calls.includes(`schedule:${dish.venueId}`));
 });
 
 test("without a prefill the dish page keeps its loading state", async () => {

@@ -7,6 +7,7 @@ const migration = readRepoFile(
   "supabase/migrations/20260627114814_catalog_provenance_write_hardening.sql",
 );
 const repository = readRepoFile("src/lib/services/supabase/supabaseRepository.ts");
+const service = readRepoFile("src/lib/services/supabase/supabaseService.ts");
 const stallDetail = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
 const dishDetail = readRepoFile("src/app/screens/detail/DishDetailScreenV2.tsx");
 const importer = readRepoFile("scripts/import_excel_to_supabase.py");
@@ -90,5 +91,9 @@ test("frontend Supabase menu reads prefer display-safe service data", () => {
     stallDetail,
     /cachedDishes\.length\s+>\s+0\s+&&\s+serviceProviderMode\s+!==\s+"supabase"/,
   );
-  assert.match(dishDetail, /\.discovery\.getDish\(dishId\)/);
+  assert.match(
+    dishDetail,
+    /discovery\.getDishDetail\s*\?\s*discovery\.getDishDetail\(dishId\)\s*:\s*discovery\.getDish\(dishId\)/,
+  );
+  assert.match(service, /getDishDetail: getDishByIdViaRpc/);
 });
