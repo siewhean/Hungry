@@ -13,6 +13,21 @@ Use the smallest check that matches the change risk.
 
 ## Latest Known Good
 
+### CATALOG-FIRST-PAINT-20261124
+
+- The review branch passed a clean dependency install, TypeScript, 151 focused render tests, 70 focused source and service tests, four load harness tests, and the N+1, rate-limit and whitespace checks.
+- Disposable PostgreSQL passed migration up, smoke, exact down, reapply and smoke. Both menu paths traversed 123 visible dishes in exact order and covered ties, nullable ratings, rights, media, guest/authenticated visibility and malformed or cross-venue cursors.
+- The comparison harness passed 10/10 ordered Discover comparisons and captured 40 inner execution plans on a synthetic fixture. The authenticated load harness tests passed 6/6. Representative database, gateway and release-device timing are pending.
+- Before chat removal, hosted Singapore production and Seoul staging had the same 285 applied versions. Follow-up checks matched visible column order and identified gaps in internal column numbers from dropped columns. Function definitions matched in the follow-up fingerprint that excluded ACL serialization. The rehearsal preflight stopped because the separately held chat migration, `20261119090000`, was unapplied on both projects at that point. The subsequent rehearsal is recorded below.
+- The iPhone 17 Pro simulator Debug build succeeded and the app reached welcome and login after Metro warmed. The unsigned build logged an Expo Notifications keychain entitlement error. The attempted mock override did not isolate sign-in from staging, so the staging sign-in prompt was cancelled. This checked startup and stops short of authenticated device acceptance.
+- The bulk of the original working tree remains outside the PR, including the unrelated media and taste-evaluation changes. The migration, rollback, and SQL smoke moved to [PR #295](https://github.com/siewhean/Hungry/pull/295), which merged with its passing hosted rehearsal artifact. [PR #294](https://github.com/siewhean/Hungry/pull/294) defaults to the legacy stall endpoints. A build must explicitly opt in to the split endpoints.
+- The review branch SQL passed the 123-dish smoke and exact schema restoration on both the clean-main and deployed legacy RPC definitions. Rate-limit validation passed.
+- CI follow-up updated the full-suite contracts for strict catalog reads and deferred loading. Added coverage for the place retry deadline, focused detail timing, viewport visibility and analytics consent. The database rehearsal and merge are tracked under STALL-READS-20261124.
+
+- After the split, the app branch passed TypeScript, 13 focused service tests, 78 Discover and Dish Detail render tests, and N+1, rate-limit, formatting and migration safety checks. Independent QA verified that the database PR has byte-identical SQL and that the app PR has no Supabase diff against main.
+
+- Independent review follow-ups verified same-cell building changes and late responses, detail refocus and refresh ordering, scoped stall recovery, unknown dietary status, and deadline instrumentation. The app branch inherits Expo 57.0.34 and has no database changes relative to main.
+
 ### STALL-READS-20261124
 
 - Production applied chat removal and passed its smoke. The first stall rehearsal caught staging up, matched production's schema, and passed apply, down, comparison and reapply. Its smoke then exposed pooler float truncation on page five.

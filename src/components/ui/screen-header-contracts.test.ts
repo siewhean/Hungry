@@ -433,7 +433,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /title="Budget < S\$8"[\s\S]*label="Value"/);
   assert.match(
     discover,
-    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId, source: "home" \}\)/,
+    /navigation\.navigate\("DishDetail",\s*\{\s*dishId: bite\.dishId,\s*source: "home",/,
   );
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
@@ -469,14 +469,20 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /<AppSymbol\s+name="fork\.knife"\s+fallback=\{Utensils\}\s+size=\{Math\.min\(iconSize, 24\)\}\s+color=\{palette\.textMuted\}/,
   );
-  assert.match(discover, /function DiscoverBiteImage\(\{ bite, height \}/);
+  assert.match(
+    discover,
+    /function DiscoverBiteImage\(\{\s*bite,\s*height,\s*onDisplay,\s*onSourceChange,\s*\}/,
+  );
   assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);
   assert.match(discover, /source=\{\{ uri: activeImageUrl \}\}/);
   assert.match(
     discover,
     /<DiscoverDishImagePlaceholder[\s\S]*accessibilityLabel=\{`\$\{bite\.dishName\} photo unavailable`\}/,
   );
-  assert.match(discover, /<DiscoverBiteImage bite=\{bite\} height=\{imageHeight\} \/>/);
+  assert.match(
+    discover,
+    /<DiscoverBiteImage\s+bite=\{bite\}\s+height=\{imageHeight\}\s+onDisplay=\{paint\?\.onImageDisplay\}\s+onSourceChange=\{paint\?\.onImageSourceChange\}\s*\/>/,
+  );
   assert.match(discover, /function DiscoverStallThumbnail\(/);
   assert.match(discover, /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/);
   assert.match(
@@ -611,30 +617,16 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /height: 52/);
   assert.match(discover, /Most reviewed \$\{trendingAreaPhrase\}/);
   assert.match(discover, /Stalls \$\{discoverAreaPhrase\}/);
-  assert.match(discover, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
-  assert.match(discover, /const DISCOVER_ISLAND_RADIUS_METERS = 30_000/);
+  const discoverReadArgs = read("src/features/discover/discoverReadArgs.ts");
+  const liveDiscoverFeed = read("src/features/discover/useLiveDiscoverFeed.ts");
+  assert.match(discoverReadArgs, /const DISCOVER_AREA_RADIUS_METERS = 3000/);
+  assert.match(discoverReadArgs, /const DISCOVER_ISLAND_RADIUS_METERS = 30_000/);
   assert.match(
     discover,
     /const isSupabaseDataSource = getServiceProvider\(\)\.mode === "supabase"/,
   );
-  assert.match(
-    discover,
-    /const \[supabaseDiscoverAreaCount, setSupabaseDiscoverAreaCount\] = useState<number \| null>\(null\)/,
-  );
-  assert.match(
-    discover,
-    /const \[isSupabaseDiscoveryFeedLoading, setIsSupabaseDiscoveryFeedLoading\] = useState\(false\)/,
-  );
-  assert.match(discover, /setIsSupabaseDiscoveryFeedLoading\(true\)/);
-  assert.match(discover, /setIsSupabaseDiscoveryFeedLoading\(false\)/);
-  assert.match(
-    discover,
-    /const discoveryService = getHungryService\(\)\.discovery[\s\S]*discoveryService\.countVenuesInArea\([\s\S]*discoverGeoCellLatitude,[\s\S]*discoverGeoCellLongitude,[\s\S]*discoverRadiusMeters,[\s\S]*discoverLocationLabel/,
-  );
-  assert.match(
-    discover,
-    /void reads\.count\.then\([\s\S]*typeof count === "number" \? count : null/,
-  );
+  assert.match(discover, /isLoading: isSupabaseDiscoveryFeedLoading/);
+  assert.doesNotMatch(liveDiscoverFeed, /countVenuesInArea\(/);
   assert.match(
     discover,
     /const showInitialDiscoverSkeleton =\s*isSupabaseDataSource &&\s*isSupabaseDiscoveryFeedLoading &&\s*\(supabaseDiscoveryFeed === null \|\| loadedDiscoverFeedKey !== discoverFeedKey\)/,
@@ -645,14 +637,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*rpcCount: supabaseDiscoverAreaCount,[\s\S]*: String\(areaVenues\.length\)/,
+    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,[\s\S]*rpcCount: null,[\s\S]*: String\(areaVenues\.length\)/,
   );
-  // The count line keeps the last number on screen while the feed reloads (no dash, no skeleton)
-  // and the digits roll to the new one; it hides only when there has never been a count.
-  assert.match(
-    discover,
-    /const \[heldCountLabel, setHeldCountLabel\] = useState<string \| null>\(null\)[\s\S]*const shownCountLabel = discoverAreaCountLabel \?\? heldCountLabel/,
-  );
+  // A new area's incomplete feed cannot inherit the previously displayed total.
+  assert.match(discover, /const shownCountLabel = discoverAreaCountLabel;/);
   assert.match(discover, /shownCountLabel === null \? null : shownCountLabel !== "0" \? \(/);
   assert.match(discover, /<NumericText\s+value=\{shownCountLabel\}/);
   assert.doesNotMatch(discover, /<NumericText\s+value="–"/);
@@ -856,10 +844,10 @@ test("Discover collapses empty rails and offers pull-to-refresh plus one error s
     discover,
     /refreshControl=\{\s*<RefreshControl[\s\S]*refreshing=\{isDiscoverRefreshing\}/,
   );
-  assert.match(discover, /setDiscoverLoadError\(true\)/);
+  assert.match(discover, /const discoverLoadError = live\?\.phase === "failed" && !live\.feed/);
   assert.match(
     discover,
-    /\{discoverLoadError \|\| isFeedFallbackEmpty \? \(\s*<EmptyState[\s\S]*ctaLabel="Try again"[\s\S]*reloadDiscover\(\)/,
+    /\{discoverLoadError \? \(\s*<EmptyState[\s\S]*ctaLabel="Try again"[\s\S]*reloadDiscover\(\)/,
   );
 });
 

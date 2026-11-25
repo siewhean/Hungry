@@ -179,7 +179,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   assert.match(discover, /scheduleIdleWork\([\s\S]*recordTasteInteraction[\s\S]*popular_right_now/);
   assert.match(
     discover,
-    /navigation\.navigate\("DishDetail", \{ dishId: bite\.dishId, source: "home" \}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
+    /navigation\.navigate\("DishDetail",\s*\{\s*dishId: bite\.dishId,\s*source: "home",[\s\S]*?\}\);[\s\S]*scheduleIdleWork\([\s\S]*dish_result_click/,
   );
   assert.match(
     quickBites,

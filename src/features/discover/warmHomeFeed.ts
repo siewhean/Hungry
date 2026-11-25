@@ -1,46 +1,47 @@
-import { DISCOVER_FEED_LIMIT, DISCOVER_FIRST_PAGE_LIMIT } from "@/features/discover/bites";
+import { DISCOVER_FIRST_PAGE_LIMIT } from "@/features/discover/bites";
 import { getDiscoverReadArgs } from "@/features/discover/discoverReadArgs";
+import { readDiscoverFirstPage } from "@/features/discover/feedCache";
 import { getHungryService, getServiceProvider } from "@/lib/services/serviceProvider";
+import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import { useLocationStore } from "@/store/useLocationStore";
 
-/**
- * Starts Home's first reads while the Splash screen is still up, for a diner who is signed in and
- * will land on Home. Home asks for the same stalls a moment later, joins these reads instead of
- * repeating them (see shareInFlight), and so draws as soon as it opens.
- *
- * The returned promise settles when the nearest stalls have landed, fail or not; it never rejects,
- * so Splash can wait on it without a try/catch. The request fields and their order must match
- * the ones useDiscoverFeed sends, because the shared read is keyed on the request.
- */
-export function warmHomeFeed(): Promise<void> {
-  if (getServiceProvider().mode !== "supabase") return Promise.resolve();
-  const location = useLocationStore.getState();
-  const args = getDiscoverReadArgs(location);
+type ReadArgs = ReturnType<typeof getDiscoverReadArgs>;
+
+export function discoverFirstPageKey(scope: string, args: ReadArgs): string {
+  return JSON.stringify([
+    scope,
+    args.areaName ?? null,
+    args.geoCellLatitude,
+    args.geoCellLongitude,
+    args.radiusMeters,
+  ]);
+}
+
+/** Splash and Home share a single 10-stall request, including its recently settled result. */
+export function loadDiscoverFirstPage(scope: string, args: ReadArgs, fresh = false) {
   const discovery = getHungryService().discovery;
-  const feedRequest = {
-    areaName: args.areaName,
-    lat: args.geoCellLatitude,
-    lng: args.geoCellLongitude,
-    radiusMeters: args.radiusMeters,
-    buildingId: undefined,
-  };
-  // The count and full feed are started now too (Home reads all three), but only the nearest
-  // stalls are waited for.
-  void discovery
-    .countVenuesInArea(
-      args.geoCellLatitude,
-      args.geoCellLongitude,
-      args.radiusMeters,
-      args.areaName,
-    )
-    .catch(() => undefined);
-  void discovery
-    .listDiscoveryFeedByLocation({ ...feedRequest, limit: DISCOVER_FEED_LIMIT })
-    .catch(() => undefined);
-  return discovery
-    .listDiscoveryFeedByLocation({ ...feedRequest, limit: DISCOVER_FIRST_PAGE_LIMIT })
-    .then(
-      () => undefined,
-      () => undefined,
-    );
+  return readDiscoverFirstPage(
+    discoverFirstPageKey(scope, args),
+    async () => {
+      requireCurrentCatalogScope(scope);
+      const feed = await discovery.listDiscoveryFeedByLocation({
+        areaName: args.areaName,
+        lat: args.geoCellLatitude,
+        lng: args.geoCellLongitude,
+        radiusMeters: args.radiusMeters,
+        limit: DISCOVER_FIRST_PAGE_LIMIT,
+        deferEnrichment: true,
+      });
+      requireCurrentCatalogScope(scope);
+      return feed;
+    },
+    fresh,
+  );
+}
+
+export async function warmHomeFeed(): Promise<void> {
+  if (getServiceProvider().mode !== "supabase") return;
+  const args = getDiscoverReadArgs(useLocationStore.getState());
+  // Home owns the user-visible error or retry. Splash never delays navigation for this promise.
+  await loadDiscoverFirstPage(catalogRequestScope(), args).catch(() => undefined);
 }

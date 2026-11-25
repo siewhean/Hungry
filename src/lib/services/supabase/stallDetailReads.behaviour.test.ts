@@ -28,11 +28,11 @@ beforeEach(() => {
 const hasMessage = (pattern: RegExp) => (error: { message?: string }) =>
   pattern.test(error.message ?? "");
 
-function dishRows(count: number, offset = 0) {
+function dishRows(count: number, offset = 0, venueId = VENUE) {
   return Array.from({ length: count }, (_, index) => ({
     dish_id: `dish-${offset + index}`,
     name: `Dish ${offset + index}`,
-    venue_id: VENUE,
+    venue_id: venueId,
     price: 5,
     cursor_score: 100 - (offset + index),
     cursor_id: `dish-${offset + index}`,
@@ -41,7 +41,7 @@ function dishRows(count: number, offset = 0) {
 
 test("the first menu page comes with the venue detail and says more may exist", async () => {
   fake.rpc.get_venue_detail = () => ({
-    data: [{ id: VENUE, name: "Big Stall", dishes: dishRows(50) }],
+    data: [{ venue_id: VENUE, name: "Big Stall", dishes: dishRows(50) }],
   });
   const page = await service.discovery.listDishesByVenuePage!(VENUE);
   assert.equal(page.dishes.length, 50);
@@ -51,10 +51,11 @@ test("the first menu page comes with the venue detail and says more may exist", 
 });
 
 test("a short menu has no next page", async () => {
+  const venueId = `${VENUE.slice(0, -1)}5`;
   fake.rpc.get_venue_detail = () => ({
-    data: [{ id: `${VENUE.slice(0, -1)}5`, name: "Small Stall", dishes: dishRows(3) }],
+    data: [{ venue_id: venueId, name: "Small Stall", dishes: dishRows(3, 0, venueId) }],
   });
-  const page = await service.discovery.listDishesByVenuePage!(`${VENUE.slice(0, -1)}5`);
+  const page = await service.discovery.listDishesByVenuePage!(venueId);
   assert.equal(page.dishes.length, 3);
   assert.equal(page.nextCursor, undefined);
 });
@@ -106,9 +107,9 @@ test("no merchant profile and no schedule are still plain empty answers", async 
 // R4-STALL-13: the three merchant reads ride along with get_venue_detail.
 
 const withMerchantColumns = (id: string, extra: Record<string, unknown>) => ({
-  id,
+  venue_id: id,
   name: "Merchant Stall",
-  dishes: dishRows(2),
+  dishes: dishRows(2, 0, id),
   ...extra,
 });
 

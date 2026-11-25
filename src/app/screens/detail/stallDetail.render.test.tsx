@@ -1,7 +1,7 @@
 // Stall page fixes from the round-three audit (STALL-*). Run with `npm run test:render`.
 
 import assert from "node:assert/strict";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { Linking } from "react-native";
 import test, { afterEach, beforeEach } from "node:test";
 import type * as ClipboardModule from "expo-clipboard";
@@ -16,7 +16,12 @@ import {
   setExperimentFlagSource,
   type ExperimentFlagSource,
 } from "@/lib/experiments/experiments";
-import { getDataRepository, getHungryService } from "@/lib/services/serviceProvider";
+import {
+  getDataRepository,
+  getHungryService,
+  getServiceProvider,
+  setServiceProvider,
+} from "@/lib/services/serviceProvider";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useStallInteractionStore } from "@/store/useStallInteractionStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -188,6 +193,166 @@ test("STALL-7: a failed later menu page says so, with Retry, and the count shows
   const before = pageCalls.length;
   await view.press(view.findByText("Retry"));
   assert.ok(pageCalls.length > before, "Retry reads the page again");
+});
+
+test("a search query stays editable after the last short page arrives", async () => {
+  const base = getServiceProvider();
+  const venue = getDataRepository().getVenueById(STALL);
+  const [first, second] = getDataRepository().listDishesByVenue(STALL);
+  assert.ok(venue && first && second);
+  const calls: (string | undefined)[] = [];
+  setServiceProvider({
+    ...base,
+    mode: "supabase",
+    service: {
+      ...base.service,
+      discovery: {
+        ...base.service.discovery,
+        getStallHeader: async () => venue,
+        listStallMenuPage: async (_venueId, cursor) => {
+          calls.push(cursor);
+          return cursor ? { dishes: [second] } : { dishes: [first], nextCursor: "last-page" };
+        },
+      },
+    },
+  });
+  restores.push(() => setServiceProvider(base));
+
+  const view = await openStall();
+  const search = view.findByLabel("Search this menu");
+  assert.ok(search);
+  await view.type(search, first.name);
+  assert.deepEqual(calls, [undefined, "last-page"]);
+  assert.ok(view.findByLabel("Search this menu"));
+  await view.type(view.findByLabel("Search this menu"), "");
+  assert.equal(view.findByLabel("Search this menu"), null);
+});
+
+test("live stall shows the header before its independently retryable menu", async () => {
+  const base = getServiceProvider();
+  const venue = getDataRepository().getVenueById(STALL);
+  const dishes = getDataRepository().listDishesByVenue(STALL);
+  assert.ok(venue);
+  assert.ok(dishes.length > 0);
+  let resolveHeader!: (value: NonNullable<typeof venue>) => void;
+  let rejectMenu!: (error: Error) => void;
+  const header = new Promise<typeof venue>((resolve) => {
+    resolveHeader = resolve;
+  });
+  const firstMenu = new Promise<never>((_resolve, reject) => {
+    rejectMenu = reject;
+  });
+  const menuCursors: (string | undefined)[] = [];
+  setServiceProvider({
+    ...base,
+    mode: "supabase",
+    service: {
+      ...base.service,
+      discovery: {
+        ...base.service.discovery,
+        getStallHeader: (_id, options) => {
+          assert.equal(options?.legacy, false);
+          return header;
+        },
+        getVenue: async () => assert.fail("the legacy stall detail read must not run"),
+        listStallMenuPage: (_id, cursor) => {
+          menuCursors.push(cursor);
+          return menuCursors.length === 1
+            ? firstMenu
+            : Promise.resolve({ dishes: dishes.slice(0, 1), nextCursor: "page-2" });
+        },
+      },
+    },
+  });
+  restores.push(() => setServiceProvider(base));
+
+  const view = await openStall();
+  assert.match(view.text(), /Loading stall/);
+  assert.deepEqual(menuCursors, []);
+  getHungryService().discovery.listStallMenuPage = undefined;
+  await act(async () => resolveHeader(venue));
+  assert.ok(view.findByLabel(`${venue.name}, copy stall name`));
+  assert.ok(view.findByLabel("Loading menu"));
+  assert.deepEqual(menuCursors, [undefined]);
+
+  await act(async () => rejectMenu(new Error("network request failed")));
+  assert.ok(view.findByLabel(`${venue.name}, copy stall name`));
+  assert.match(view.text(), /Couldn't load this stall's menu/);
+  await view.press(view.findByText("Retry"));
+  assert.match(view.text(), /1\+ items/);
+  assert.deepEqual(menuCursors, [undefined, undefined], "continuation waits for scroll or filters");
+});
+
+test("recent stall and menu snapshots stay visible with independent retry and unknown availability", async () => {
+  const base = getServiceProvider();
+  const fixtureVenue = getDataRepository().getVenueById(STALL);
+  const [fixtureDish] = getDataRepository().listDishesByVenue(STALL);
+  assert.ok(fixtureVenue && fixtureDish);
+  const venue = {
+    ...fixtureVenue,
+    isOpen: true,
+    operatingHours: "Daily 24 hours",
+    openingSchedule: undefined,
+  };
+  const staleDish = { ...fixtureDish, name: "Previously loaded dish" };
+  const freshDish = { ...fixtureDish, name: "Fresh menu dish" };
+  let resolveHeader!: (value: typeof venue) => void;
+  let resolveMenu!: (value: { dishes: (typeof freshDish)[] }) => void;
+  const freshHeader = new Promise<typeof venue>((resolve) => {
+    resolveHeader = resolve;
+  });
+  const freshMenu = new Promise<{ dishes: (typeof freshDish)[] }>((resolve) => {
+    resolveMenu = resolve;
+  });
+  let headerReads = 0;
+  const menuCursors: unknown[] = [];
+  setServiceProvider({
+    ...base,
+    mode: "supabase",
+    service: {
+      ...base.service,
+      discovery: {
+        ...base.service.discovery,
+        getStallHeader: () =>
+          ++headerReads === 1 ? Promise.resolve({ ...venue, isFallback: true }) : freshHeader,
+        getVenueOpeningSchedule: async () => undefined,
+        getStallLegacyMenuPage: (_venueId, cursor) => {
+          menuCursors.push(cursor);
+          return menuCursors.length === 1
+            ? Promise.resolve({
+                dishes: [staleDish],
+                nextCursor: { id: "old-cursor", score: 1 },
+                isFallback: true,
+              })
+            : freshMenu;
+        },
+      },
+    },
+  });
+  restores.push(() => setServiceProvider(base));
+
+  const view = await openStall();
+  assert.match(view.text(), /Showing recently loaded stall details/);
+  assert.match(view.text(), /Current opening status unavailable/);
+  assert.doesNotMatch(view.text(), /Open now|Open 24 hours/);
+  assert.match(view.text(), /Current availability is unknown/);
+  assert.ok(view.findByText(staleDish.name));
+  assert.deepEqual(menuCursors, [undefined], "a stale first page cannot extend the menu");
+
+  await view.press(view.findByLabel("Retry stall details"));
+  assert.equal(headerReads, 2);
+  assert.ok(view.findByLabel(`${venue.name}, copy stall name`));
+  await act(async () => resolveHeader(venue));
+  assert.doesNotMatch(view.text(), /Showing recently loaded stall details/);
+  assert.match(view.text(), /Current availability is unknown/);
+
+  await view.press(view.findByLabel("Retry menu"));
+  assert.ok(view.findByText(staleDish.name), "retry preserves the snapshot while pending");
+  await act(async () => resolveMenu({ dishes: [freshDish] }));
+  assert.deepEqual(menuCursors, [undefined, undefined]);
+  assert.doesNotMatch(view.text(), /Current availability is unknown/);
+  assert.ok(view.findByText(freshDish.name));
+  assert.equal(view.findByText(staleDish.name), null);
 });
 
 test("STALL-X4: the opening schedule is read on its own only when the venue has none", async () => {

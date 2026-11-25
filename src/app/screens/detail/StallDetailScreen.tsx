@@ -97,6 +97,7 @@ import { formatSgPhone } from "@/features/detail/formatSgPhone";
 import type {
   MerchantClaimStatus,
   RecentReviewFeedEntry,
+  StallHeaderRead,
   VenueMenuCursor,
 } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -134,6 +135,8 @@ import { reportError } from "@/lib/monitoring/reportError";
 import { useUIStore } from "@/store/useUIStore";
 import { useHungryTheme } from "@/theme";
 import { resolveStallOpenInfo } from "@/features/detail/stallOpenState";
+import { useDetailPaint } from "@/features/detail/useDetailPaint";
+import { catalogReadOutcome } from "@/lib/services/catalogReads";
 import { ReviewShareSheet, type ReviewShareTarget } from "@/app/screens/review/ReviewShareSheet";
 import { CustomerPromotionCard } from "@/components/promotion/CustomerPromotionCard";
 import type {
@@ -168,6 +171,7 @@ const STALL_REVIEW_PAGE_SIZE = 10;
 /** Photos in the hero pager: owner cover, stall photo, dish photos, then review photos. */
 const HERO_PHOTO_LIMIT = 8;
 const MENU_GRID_COLUMNS = 2;
+type StallMenuCursor = VenueMenuCursor | string;
 
 /**
  * A failed read because the diner is offline is not a defect: opening a stall offline would
@@ -308,22 +312,35 @@ export function StallDetailScreen({ navigation, route }: Props) {
     }
   });
   const venueId = route.params?.venueId ?? route.params?.id ?? "";
+  const {
+    headerLayout,
+    menuLayout,
+    imageDisplayed,
+    report: reportPaint,
+  } = useDetailPaint("stall", venueId);
   const repository = getDataRepository();
   const serviceProviderMode = getServiceProvider().mode;
+  const discovery = getHungryService().discovery;
+  // Keep the request contract for this open even if rollout settings change while scrolling.
+  const [listStallMenuPage] = useState(() => discovery.listStallMenuPage?.bind(discovery));
+  const usesStallMenuPages = Boolean(listStallMenuPage);
   // Live builds read this page through its RPCs only. The synchronous repository's first read
   // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
   const readsLocalData = serviceProviderMode !== "supabase";
   const cachedVenue = readsLocalData ? repository.getVenueById(venueId) : undefined;
-  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const [hydratedVenue, setHydratedVenue] = useState<StallHeaderRead>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   // A failed venue read (offline, timeout) is not "Stall not found".
   const [venueLoadFailed, setVenueLoadFailed] = useState(false);
   const [venueReloadKey, setVenueReloadKey] = useState(0);
-  const venue = hydratedVenue ?? cachedVenue;
+  const venue = hydratedVenue?.id === venueId ? hydratedVenue : cachedVenue;
+  const staleVenue = venue !== undefined && "isFallback" in venue && venue.isFallback === true;
 
   useEffect(() => {
     let active = true;
-    setHydratedVenue(undefined);
+    setHydratedVenue((current) =>
+      current?.id === venueId && current.isFallback ? current : undefined,
+    );
     setVenueLoadFailed(false);
     setHasLoadedVenueDetail(Boolean(cachedVenue));
     // Supabase list caches carry no delivery links, so still read the venue detail
@@ -334,16 +351,22 @@ export function StallDetailScreen({ navigation, route }: Props) {
       };
     }
 
-    void getHungryService()
-      .discovery.getVenue(venueId)
+    void (
+      discovery.getStallHeader
+        ? discovery.getStallHeader(venueId, { legacy: !usesStallMenuPages })
+        : discovery.getVenue(venueId)
+    )
       .then((nextVenue) => {
         if (!active) return;
-        if (nextVenue) setHydratedVenue(nextVenue);
+        setHydratedVenue(nextVenue);
+        if (!nextVenue) reportPaint("actionable", "missing");
         setHasLoadedVenueDetail(true);
       })
       .catch((error) => {
         reportStallError(error, "load_venue");
         if (!active) return;
+        reportPaint("actionable", catalogReadOutcome(error));
+        setHydratedVenue(undefined);
         setVenueLoadFailed(true);
         setHasLoadedVenueDetail(true);
       });
@@ -351,7 +374,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [cachedVenue, serviceProviderMode, venueId, venueReloadKey]);
+  }, [
+    cachedVenue,
+    discovery,
+    reportPaint,
+    serviceProviderMode,
+    usesStallMenuPages,
+    venueId,
+    venueReloadKey,
+  ]);
 
   const venueBuildingId = venue?.buildingId;
   // The bundled building list first; mock data's own list only when that misses. Memoised on
@@ -366,13 +397,22 @@ export function StallDetailScreen({ navigation, route }: Props) {
     () => (venue && readsLocalData ? repository.listDishesByVenue(venue.id) : EMPTY_DISHES),
     [readsLocalData, repository, venue],
   );
-  const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
+  const [loadedMenu, setLoadedMenu] = useState<{
+    venueId: string;
+    dishes: DishDetail[];
+    stale: boolean;
+  }>();
   const [menuLoadFailed, setMenuLoadFailed] = useState(false);
+  const [menuRefreshing, setMenuRefreshing] = useState(false);
   const [menuReloadKey, setMenuReloadKey] = useState(0);
   // Long menus come a page at a time: the first page shows at once, the rest on demand.
-  const [menuNextCursor, setMenuNextCursor] = useState<VenueMenuCursor>();
+  const [menuNextCursor, setMenuNextCursor] = useState<StallMenuCursor>();
   const [menuPageStatus, setMenuPageStatus] = useState<"idle" | "loading" | "error">("idle");
-  const menuVenueIdRef = useRef<string | undefined>(undefined);
+  const [menuPageRequested, setMenuPageRequested] = useState(false);
+  const menuGeneration = useRef(0);
+  const currentMenu = loadedMenu?.venueId === venue?.id ? loadedMenu : undefined;
+  const hydratedDishes = currentMenu?.dishes;
+  const staleMenu = currentMenu?.stale === true;
   const dishes =
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
   // Supabase mode has no menu until listDishesByVenue resolves; an error is not an empty menu.
@@ -502,6 +542,8 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const [isLoadingMoreReviews, setIsLoadingMoreReviews] = useState(false);
   const [activePromotions, setActivePromotions] = useState<MerchantPromotion[]>([]);
   const [merchantProfile, setMerchantProfile] = useState<PublicMerchantProfile>();
+  const [merchantClosure, setMerchantClosure] = useState<string>();
+  const [closureCheckedVenueId, setClosureCheckedVenueId] = useState<string>();
   const [openingSchedule, setOpeningSchedule] = useState<OpeningSchedule>();
   const [activeMenuCategory, setActiveMenuCategory] = useState(ALL_MENU_CATEGORY);
   const [activeDietaryFlags, setActiveDietaryFlags] = useState<string[]>([]);
@@ -554,14 +596,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
     venue?.unitNumber,
   ]);
 
-  menuVenueIdRef.current = venue?.id;
+  const targetVenueId = venue?.id;
   useEffect(() => {
     let active = true;
-    setHydratedDishes(undefined);
+    menuGeneration.current += 1;
+    setLoadedMenu((current) =>
+      current?.venueId === targetVenueId && current?.stale ? current : undefined,
+    );
     setMenuLoadFailed(false);
+    setMenuRefreshing(false);
     setMenuNextCursor(undefined);
     setMenuPageStatus("idle");
-    if (!venue?.id) {
+    setMenuPageRequested(false);
+    if (!targetVenueId) {
       return () => {
         active = false;
       };
@@ -573,36 +620,62 @@ export function StallDetailScreen({ navigation, route }: Props) {
       };
     }
 
-    const discovery = getHungryService().discovery;
-    const firstPage = discovery.listDishesByVenuePage
-      ? discovery.listDishesByVenuePage(venue.id).then((page) => {
-          if (active) setMenuNextCursor(page.nextCursor);
-          return page.dishes;
-        })
-      : discovery.listDishesByVenue(venue.id);
+    setMenuRefreshing(true);
+    const firstPage =
+      listStallMenuPage?.(targetVenueId) ??
+      discovery.getStallLegacyMenuPage?.(targetVenueId) ??
+      discovery.listDishesByVenuePage?.(targetVenueId) ??
+      discovery
+        .listDishesByVenue(targetVenueId)
+        .then((dishes) => ({ dishes, nextCursor: undefined }));
     void firstPage
-      .then((nextDishes) => {
-        if (active) setHydratedDishes(nextDishes);
+      .then((page) => {
+        if (!active) return;
+        const stale = "isFallback" in page && page.isFallback === true;
+        setLoadedMenu({ venueId: targetVenueId, dishes: page.dishes, stale });
+        setMenuNextCursor(stale ? undefined : page.nextCursor);
+        setMenuRefreshing(false);
       })
       .catch((error) => {
         reportStallError(error, "load_menu");
-        if (active) setMenuLoadFailed(true);
+        if (active) {
+          reportPaint("menu", catalogReadOutcome(error));
+          // Eligible transient failures return a scoped snapshot from the service.
+          // A rejection means the current read has no safe snapshot to keep.
+          setLoadedMenu(undefined);
+          setMenuRefreshing(false);
+          setMenuLoadFailed(true);
+        }
       });
 
     return () => {
       active = false;
+      menuGeneration.current += 1;
     };
-  }, [cachedDishes.length, menuReloadKey, serviceProviderMode, venue?.id]);
+  }, [
+    cachedDishes.length,
+    discovery,
+    listStallMenuPage,
+    menuReloadKey,
+    reportPaint,
+    serviceProviderMode,
+    targetVenueId,
+  ]);
+
+  const optionalVenueId =
+    usesStallMenuPages && menuStatus === "loading" ? undefined : targetVenueId;
 
   useEffect(() => {
     const pendingLocally = hasPendingClaimForVenue(profile.id, venueId);
     setIsClaimPending(pendingLocally);
     setClaimStatus(pendingLocally ? "submitted" : "none");
-    if (!isAuthenticated || !FEATURE_FLAGS.merchantClaimCtaEnabled) return undefined;
+    if (!optionalVenueId || !isAuthenticated || !FEATURE_FLAGS.merchantClaimCtaEnabled) {
+      return undefined;
+    }
     // The claim may have been submitted on another device or already be in review.
     let active = true;
     void getHungryService()
-      .supply.getMerchantClaimStatus(venueId)
+      .supply.getMerchantClaimStatus(optionalVenueId)
       .then((status) => {
         if (!active || status === "none") return;
         setClaimStatus(status);
@@ -612,7 +685,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, profile.id, venueId]);
+  }, [isAuthenticated, optionalVenueId, profile.id, venueId]);
 
   useEffect(() => {
     if (!venue || trackedStallViewId.current === venue.id) return;
@@ -646,36 +719,43 @@ export function StallDetailScreen({ navigation, route }: Props) {
   );
   const similarStalls = useSimilarStalls(leadDish, similarStallsPoint, profile.dietaryPreferences);
 
-  // Keyed on the id: the cached venue renders first and the hydrated one replaces it,
-  // which must not re-run these three reads.
   const sideLoadVenueId = venue?.id;
   useEffect(() => {
     let active = true;
-    if (!showDeferredDetailControls) {
-      setActivePromotions([]);
-      return () => {
-        active = false;
-      };
-    }
-    if (!sideLoadVenueId) {
-      setActivePromotions([]);
+    setMerchantProfile(undefined);
+    setMerchantClosure(undefined);
+    setClosureCheckedVenueId(undefined);
+    if (!sideLoadVenueId || (!showDeferredDetailControls && !usesStallMenuPages)) {
       return () => {
         active = false;
       };
     }
 
-    void getHungryService()
-      .discovery.getPublicMerchantProfile(sideLoadVenueId)
+    void discovery
+      .getPublicMerchantProfile(sideLoadVenueId)
       .then((profile) => {
-        if (active) setMerchantProfile(profile);
+        if (!active) return;
+        if (showDeferredDetailControls) setMerchantProfile(profile);
+        setMerchantClosure(profile?.temporaryClosure);
+        setClosureCheckedVenueId(sideLoadVenueId);
       })
-      .catch((error) => {
-        reportStallError(error, "load_merchant_profile");
-        if (active) setMerchantProfile(undefined);
-      });
+      .catch((error) => reportStallError(error, "load_merchant_profile"));
 
-    void getHungryService()
-      .discovery.listActivePromotionsForTarget({ venueId: sideLoadVenueId })
+    return () => {
+      active = false;
+    };
+  }, [discovery, showDeferredDetailControls, sideLoadVenueId, usesStallMenuPages]);
+
+  useEffect(() => {
+    let active = true;
+    if (!showDeferredDetailControls || !optionalVenueId) {
+      setActivePromotions([]);
+      return () => {
+        active = false;
+      };
+    }
+    void discovery
+      .listActivePromotionsForTarget({ venueId: optionalVenueId })
       .then((promotions) => {
         if (active) setActivePromotions(promotions);
       })
@@ -687,7 +767,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [showDeferredDetailControls, sideLoadVenueId]);
+  }, [discovery, optionalVenueId, showDeferredDetailControls]);
 
   // get_venue_detail already carries the weekly schedule; read it on its own only when the
   // settled venue has none (mock data, or an older cached row).
@@ -739,7 +819,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   // (a menu of up to 500 dishes would put every dish id in the request URL).
   useEffect(() => {
     let active = true;
-    if (!sideLoadVenueId) {
+    if (!optionalVenueId) {
       setReviewEntries([]);
       setReviewsStatus("ready");
       return () => {
@@ -750,7 +830,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     setReviewsStatus("loading");
     getHungryService()
       .reviews.listRecentReviewsPage({
-        venueId: sideLoadVenueId,
+        venueId: optionalVenueId,
         limit: STALL_COMMUNITY_REVIEW_LIMIT,
       })
       .then((page) => {
@@ -769,14 +849,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [sideLoadVenueId, reviewsReloadKey]);
+  }, [optionalVenueId, reviewsReloadKey]);
 
   const loadMoreReviews = () => {
-    if (!sideLoadVenueId || !reviewsCursor || isLoadingMoreReviews) return;
+    if (!optionalVenueId || !reviewsCursor || isLoadingMoreReviews) return;
     setIsLoadingMoreReviews(true);
     getHungryService()
       .reviews.listRecentReviewsPage({
-        venueId: sideLoadVenueId,
+        venueId: optionalVenueId,
         limit: STALL_REVIEW_PAGE_SIZE,
         before: reviewsCursor.before,
         beforeId: reviewsCursor.beforeId,
@@ -891,32 +971,41 @@ export function StallDetailScreen({ navigation, route }: Props) {
     menuStatus === "ready" &&
     Boolean(menuNextCursor) &&
     menuPageStatus === "idle" &&
-    (!hasMoreMenuItems || menuFilterActive);
+    (menuFilterActive || (!hasMoreMenuItems && (!usesStallMenuPages || menuPageRequested)));
   useEffect(() => {
-    const discovery = getHungryService().discovery;
-    const forVenueId = venue?.id;
-    if (!wantsMoreMenu || !forVenueId || !menuNextCursor || !discovery.listDishesByVenuePage) {
-      return;
-    }
+    if (!wantsMoreMenu || !targetVenueId || !menuNextCursor) return;
     const cursor = menuNextCursor;
+    const pageRequest =
+      typeof cursor === "string"
+        ? listStallMenuPage?.(targetVenueId, cursor)
+        : (discovery.getStallLegacyMenuPage?.(targetVenueId, cursor) ??
+          discovery.listDishesByVenuePage?.(targetVenueId, cursor));
+    if (!pageRequest) return;
+    const generation = menuGeneration.current;
+    setMenuPageRequested(false);
     setMenuPageStatus("loading");
-    discovery
-      .listDishesByVenuePage(forVenueId, cursor)
+    void pageRequest
       .then((page) => {
-        if (menuVenueIdRef.current !== forVenueId) return;
-        setHydratedDishes((current) => {
-          const known = new Set((current ?? []).map((dish) => dish.id));
-          return [...(current ?? []), ...page.dishes.filter((dish) => !known.has(dish.id))];
+        if (menuGeneration.current !== generation) return;
+        setLoadedMenu((current) => {
+          if (current?.venueId !== targetVenueId) return current;
+          const known = new Set(current.dishes.map((dish) => dish.id));
+          return {
+            ...current,
+            dishes: [...current.dishes, ...page.dishes.filter((dish) => !known.has(dish.id))],
+          };
         });
         // A cursor that does not move would read the same page forever.
-        setMenuNextCursor(page.nextCursor?.id !== cursor.id ? page.nextCursor : undefined);
+        const previousKey = typeof cursor === "string" ? cursor : cursor.id;
+        const nextKey = typeof page.nextCursor === "string" ? page.nextCursor : page.nextCursor?.id;
+        setMenuNextCursor(nextKey !== previousKey ? page.nextCursor : undefined);
         setMenuPageStatus("idle");
       })
       .catch((error) => {
         reportStallError(error, "load_menu_page");
-        if (menuVenueIdRef.current === forVenueId) setMenuPageStatus("error");
+        if (menuGeneration.current === generation) setMenuPageStatus("error");
       });
-  }, [menuNextCursor, venue?.id, wantsMoreMenu]);
+  }, [discovery, listStallMenuPage, menuNextCursor, targetVenueId, wantsMoreMenu]);
 
   useEffect(() => {
     setVisibleMenuItemCount(INITIAL_MENU_ITEM_COUNT);
@@ -956,10 +1045,10 @@ export function StallDetailScreen({ navigation, route }: Props) {
         ? resolveStallOpenInfo({
             venue,
             schedule: openingSchedule,
-            temporaryClosure: merchantProfile?.temporaryClosure,
+            temporaryClosure: merchantClosure,
           })
         : undefined,
-    [merchantProfile?.temporaryClosure, openingSchedule, venue],
+    [merchantClosure, openingSchedule, venue],
   );
 
   const requireAuthForProtectedAction = (message: string, onSignedIn?: () => void) =>
@@ -1036,7 +1125,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
       ? `${stallSavedCount} ${stallSavedCount === 1 ? "person" : "people"} saved this`
       : null;
   const deliveryLinks = venue.deliveryLinks ?? [];
-  const operatingStatusLabel = openInfo.statusLabel;
+  const openUnconfirmed =
+    usesStallMenuPages && openInfo.isOpen && closureCheckedVenueId !== venue.id;
+  const operatingStatusLabel = staleVenue
+    ? "Current opening status unavailable"
+    : openUnconfirmed
+      ? "Check listed hours"
+      : openInfo.statusLabel;
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
@@ -1061,14 +1156,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const hoursRows = openInfo.weekRows;
   // A single listed "Hours" line that today's row already repeats has nothing more to expand.
   const hoursExpandable = hoursRows.some(
-    (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
+    (row) =>
+      staleVenue ||
+      !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
   );
   const hoursHeader = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
       <HoursSymbol color={palette.orange} size={18} />
       <AppText
         variant="bodyBold"
-        tone={openInfo.isOpen ? "success" : "default"}
+        tone={openInfo.isOpen && !openUnconfirmed && !staleVenue ? "success" : "default"}
         // A long closure message wraps instead of being cut off at large text sizes.
         numberOfLines={3}
         style={{ flex: 1 }}
@@ -1097,6 +1194,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const stallIsEmpty =
     showDeferredDetailControls &&
     menuStatus === "ready" &&
+    !staleMenu &&
     dishes.length === 0 &&
     reviewsStatus === "ready" &&
     communityReviews.length === 0;
@@ -1200,6 +1298,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     const { y, height } = event.nativeEvent.layout;
     contentBodyLayoutRef.current = { y, height };
     syncMenuLoadAt();
+    headerLayout(staleVenue);
   };
 
   const handleReviewsSectionLayout = (event: LayoutChangeEvent) => {
@@ -1220,10 +1319,14 @@ export function StallDetailScreen({ navigation, route }: Props) {
     const { y, height } = event.nativeEvent.layout;
     menuSectionLayoutRef.current = { y, height };
     syncMenuLoadAt();
+    if (menuStatus === "ready") menuLayout(dishes.length === 0, staleMenu);
   };
 
   // Called from the scroll handler when the diner nears the end of the loaded menu.
   loadMoreMenuItemsRef.current = () => {
+    if (!hasMoreMenuItems && menuNextCursor && menuPageStatus === "idle") {
+      setMenuPageRequested(true);
+    }
     if (!hasMoreMenuItems) return;
     setVisibleMenuItemCount((current) =>
       current !== visibleMenuItemCount
@@ -1367,6 +1470,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   width={screenWidth}
                   height={heroHeight}
                   subject={displayName}
+                  onLeadImageDisplay={imageDisplayed}
                   fallback={heroFallback}
                 >
                   {/* White fade at the foot of the photo, into the page. */}
@@ -1432,6 +1536,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     ) : null}
                   </View>
                 </View>
+                {staleVenue ? (
+                  <View style={{ alignItems: "flex-start", gap: spacing[1] }}>
+                    <AppText variant="bodySmall" tone="secondary">
+                      Showing recently loaded stall details.
+                    </AppText>
+                    <Button
+                      label="Retry stall details"
+                      variant="secondary"
+                      size="sm"
+                      fullWidth={false}
+                      loading={!hasLoadedVenueDetail}
+                      onPress={() => setVenueReloadKey((key) => key + 1)}
+                    />
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   {ratingSummary ? (
                     <PressableScale
@@ -1514,7 +1633,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : null}
                 </View>
                 {/* Only when the hours card does not already say it. */}
-                {openInfo.extraNotice ? (
+                {!staleVenue && openInfo.extraNotice ? (
                   <AppText variant="bodySmall" tone="secondary">
                     {openInfo.extraNotice}
                   </AppText>
@@ -1577,7 +1696,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       {hoursHeader}
                     </View>
                   )}
-                  {openInfo.todayRows.length > 0 ? (
+                  {!staleVenue && openInfo.todayRows.length > 0 ? (
                     <AppText
                       variant="bodySmall"
                       tone="secondary"
@@ -1588,9 +1707,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : null}
                   {hoursExpanded
                     ? hoursRows.map((row) => {
-                        const isToday = openInfo.todayRows.some(
-                          (today) => today.label === row.label,
-                        );
+                        const isToday =
+                          !staleVenue &&
+                          openInfo.todayRows.some((today) => today.label === row.label);
                         return (
                           <View
                             key={`${row.label}-${row.text}`}
@@ -1655,13 +1774,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
               ) : null}
               {/* Menu */}
               {stallIsEmpty ? (
-                <StallHelpFillCard
-                  missing={["menu", ...(hoursMissing ? (["hours"] as const) : []), "reviews"]}
-                  onAddMenuPhoto={canSubmitMenuPhoto ? promptMenuPhoto : undefined}
-                  isAddingMenuPhoto={isSubmittingMenuPhoto}
-                  onAddHours={hoursMissing ? openReportHours : undefined}
-                  onWriteReview={FEATURE_FLAGS.reviewCreationEnabled ? openWriteReview : undefined}
-                />
+                <View onLayout={() => menuLayout(true)}>
+                  <StallHelpFillCard
+                    missing={["menu", ...(hoursMissing ? (["hours"] as const) : []), "reviews"]}
+                    onAddMenuPhoto={canSubmitMenuPhoto ? promptMenuPhoto : undefined}
+                    isAddingMenuPhoto={isSubmittingMenuPhoto}
+                    onAddHours={hoursMissing ? openReportHours : undefined}
+                    onWriteReview={
+                      FEATURE_FLAGS.reviewCreationEnabled ? openWriteReview : undefined
+                    }
+                  />
+                </View>
               ) : (
                 <View onLayout={handleMenuSectionLayout} style={{ gap: spacing[4] }}>
                   <View style={{ gap: spacing[1] }}>
@@ -1701,6 +1824,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       </AppText>
                     ) : null}
                   </View>
+                  {staleMenu ? (
+                    <View style={{ alignItems: "flex-start", gap: spacing[1] }}>
+                      <AppText variant="bodySmall" tone="secondary">
+                        {dishes.length > 0
+                          ? "Showing recently loaded menu. Current availability is unknown."
+                          : "No recently loaded items. Retry for the current menu."}
+                      </AppText>
+                      <Button
+                        label="Retry menu"
+                        variant="secondary"
+                        size="sm"
+                        fullWidth={false}
+                        loading={menuRefreshing}
+                        onPress={() => setMenuReloadKey((key) => key + 1)}
+                      />
+                    </View>
+                  ) : null}
                   {menuStatus === "loading" ? (
                     <View
                       accessibilityLabel="Loading menu"
@@ -1722,7 +1862,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     </Card>
                   ) : dishes.length > 0 ? (
                     <View style={{ gap: spacing[4] }}>
-                      {dishes.length > MENU_SEARCH_MIN_ITEMS ? (
+                      {menuQuery.length > 0 ||
+                      dishes.length > MENU_SEARCH_MIN_ITEMS ||
+                      (usesStallMenuPages && menuNextCursor) ? (
                         <Input
                           placeholder="Search this menu"
                           value={menuQuery}
@@ -1787,12 +1929,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
                           <Button
                             label="Retry"
                             variant="secondary"
-                            onPress={() => setMenuPageStatus("idle")}
+                            onPress={() => {
+                              setMenuPageRequested(true);
+                              setMenuPageStatus("idle");
+                            }}
                           />
                         </Card>
                       ) : null}
                     </View>
-                  ) : (
+                  ) : !staleMenu ? (
                     <Card style={{ padding: spacing[4], alignItems: "center" }}>
                       <AppText
                         variant="body"
@@ -1811,7 +1956,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         />
                       ) : null}
                     </Card>
-                  )}
+                  ) : null}
                 </View>
               )}
               {showDeferredDetailControls && activePromotions.length > 0 ? (

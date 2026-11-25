@@ -319,8 +319,15 @@ test("Supabase review reads hydrate review_photos and public profile names and a
     service,
     /getReviewsForDish\(dishId\) \{\s*return supabaseRepository\.getDishById\(dishId\)\?\.reviews/,
   );
-  // The stall reads its newest reviews in one query scoped to its menu, not one per dish.
-  assert.match(stallDetail, /reviews\.listRecentReviewsPage\(\{\s*venueId: sideLoadVenueId,/);
+  // Both the initial and continuation requests are scoped to the venue.
+  assert.match(
+    stallDetail,
+    /reviews\.listRecentReviewsPage\(\{\s*venueId: optionalVenueId,\s*limit: STALL_COMMUNITY_REVIEW_LIMIT/,
+  );
+  assert.match(
+    stallDetail,
+    /reviews\.listRecentReviewsPage\(\{\s*venueId: optionalVenueId,\s*limit: STALL_REVIEW_PAGE_SIZE,\s*before: reviewsCursor\.before,\s*beforeId: reviewsCursor\.beforeId/,
+  );
   assert.doesNotMatch(stallDetail, /getReviewsForDish/);
   assert.match(stallDetail, /<Avatar uri=\{review\.avatarUrl\}/);
   assert.match(reviewFeed, /getHungryService\(\)\.reviews\.listRecentReviewsPage\(\{/);

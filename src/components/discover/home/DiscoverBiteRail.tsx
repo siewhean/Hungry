@@ -15,6 +15,7 @@ import {
   type DiscoverRailLayout,
 } from "@/components/discover/home/homeLayout";
 import type { DiscoverCollection } from "@/features/discover/bites";
+import { useCatalogHomeCardVisibility } from "@/features/discover/catalogHomeVisibility";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import type { Bite } from "@/lib/services/types";
 import { useHungryTheme } from "@/theme";
@@ -66,6 +67,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   cardWidth,
   getCardLabel,
   imageHeight,
+  measureCatalogPaint,
   onOpen,
   onOptions,
   onPrefetch,
@@ -76,6 +78,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   cardWidth: number;
   getCardLabel: (bite: Bite) => string;
   imageHeight: number;
+  measureCatalogPaint: boolean;
   onOpen: (bite: Bite, buttonId: string) => void;
   /** Long press (or the "More options" screen reader action) on the card. */
   onOptions?: (bite: Bite) => void;
@@ -86,6 +89,7 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
 }) {
   const { palette, radii, spacing } = useHungryTheme();
   const chrome = useDiscoverCardChrome();
+  const paint = useCatalogHomeCardVisibility(measureCatalogPaint && bite.price > 0);
   const hasRating = bite.cravingCount > 0 && bite.rating > 0;
   const handlePressIn = useCallback(() => onPrefetch(bite), [bite, onPrefetch]);
   const handlePress = useCallback(() => onOpen(bite, buttonId), [bite, buttonId, onOpen]);
@@ -98,7 +102,12 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
   );
 
   return (
-    <View style={{ width: cardWidth }}>
+    <View
+      ref={paint?.ref}
+      collapsable={!paint}
+      onLayout={paint?.onLayout}
+      style={{ width: cardWidth }}
+    >
       <PressableScale
         accessibilityRole="button"
         accessibilityLabel={getCardLabel(bite)}
@@ -113,7 +122,12 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
         onLongPress={onOptions ? handleOptions : undefined}
         style={chrome.biteCardShell(cardWidth)}
       >
-        <DiscoverBiteImage bite={bite} height={imageHeight} />
+        <DiscoverBiteImage
+          bite={bite}
+          height={imageHeight}
+          onDisplay={paint?.onImageDisplay}
+          onSourceChange={paint?.onImageSourceChange}
+        />
         {/* Rating badge overlay: the rail is rating-based, not curated */}
         {variant === "topRated" && hasRating ? (
           <View
@@ -351,7 +365,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
           style={scrollStyle}
           contentContainerStyle={{ gap: spacing[4] }}
         >
-          {cards.map((bite) => (
+          {cards.map((bite, index) => (
             <DiscoverBiteCard
               key={`${rail}-${bite.id}`}
               bite={bite}
@@ -359,6 +373,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
               cardWidth={layout.cardWidth}
               getCardLabel={getCardLabel}
               imageHeight={layout.imageHeight}
+              measureCatalogPaint={index < 3}
               onOpen={handleOpenBite}
               onOptions={onBiteOptions}
               onPrefetch={onPrefetchBite}

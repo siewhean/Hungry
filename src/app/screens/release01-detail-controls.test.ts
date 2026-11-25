@@ -59,7 +59,10 @@ test("core-only builds keep detail controls read-only despite targeted feature o
   );
   // The bar's "Write a review" is the only filled button: the empty reviews state has no CTA.
   assert.doesNotMatch(stall, /ctaLabel: "Write a review"/);
-  assert.match(stall, /if \(!showDeferredDetailControls\) \{[\s\S]*?setActivePromotions\(\[\]\)/);
+  assert.match(
+    stall,
+    /if\s*\(!showDeferredDetailControls \|\| !optionalVenueId\)\s*\{\s*setActivePromotions\(\[\]\);\s*return \(\) => \{\s*active = false;\s*\};\s*\}\s*void discovery\s*\.listActivePromotionsForTarget\(/,
+  );
   assert.match(stall, /\{showDeferredDetailControls \? \([\s\S]*?<ReviewShareSheet/);
 });
 
