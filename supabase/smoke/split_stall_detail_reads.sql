@@ -1,6 +1,9 @@
 -- Validates real paging under guest and diner roles. Fixtures are rolled back.
 begin;
 
+-- Exercise the hosted setting that truncated float scores carried through JSON.
+set local extra_float_digits = 0;
+
 insert into public.buildings (id, name, building_type, latitude, longitude)
 values ('smoke-sdr-building', 'Smoke SDR Building', 'hawker_centre', 1.2803, 103.8448);
 
@@ -99,7 +102,8 @@ begin
     if jsonb_array_length(v_page.dishes) is distinct from (case when i < 7 then 20 else 3 end)
       or (v_page.next_cursor is not null) is distinct from (i < 7)
     then
-      raise exception 'Unexpected page shape at page %', i;
+      raise exception 'Unexpected page shape at page % (rows %, continuation %)',
+        i, jsonb_array_length(v_page.dishes), v_page.next_cursor is not null;
     end if;
     v_all := v_all || v_page.dishes;
     v_cursor := v_page.next_cursor;

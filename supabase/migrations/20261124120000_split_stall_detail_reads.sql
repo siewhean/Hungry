@@ -59,10 +59,11 @@ as $$
       d.food_type,
       d.course,
       d.cuisine_tags,
-      (0.55::double precision
+      -- The score must round-trip through JSON under the pooler's float settings.
+      round((0.55::double precision
         + 0.25 * least(greatest(d.rating_avg::double precision / 5, 0), 1)
         + 0.20 * greatest(0, 1 - d.distance_meters::double precision / 2500)
-      )::double precision as score
+      )::numeric, 6)::double precision as score
     from public.dishes d
     join public.buildings b on b.id = d.building_id
     where d.venue_id = p_venue_id
@@ -195,6 +196,36 @@ declare
   v_sig constant regprocedure := 'public.get_venue_detail(text)'::regprocedure;
   v_search_sig constant regprocedure :=
     'public.search_venues_by_location(text,text,double precision,double precision,integer,integer)'::regprocedure;
+  v_dishes_sig constant regprocedure :=
+    'public.search_dishes(text,double precision,double precision,integer,text[],integer,
+      double precision,text,text,text,text[],numeric,boolean,text[],text[])'::regprocedure;
+  v_original_rank constant text := $rank$      (
+        (0.55 * lean_candidates.text_score)
+        + (0.25 * lean_candidates.rating_score)
+        + (0.20 * lean_candidates.distance_score)
+      )::double precision as rank_score
+    from lean_candidates$rank$;
+  v_menu_rank constant text := $rank$      case
+        when nullif(p_venue_id, '') is not null
+          and nullif(trim(p_query), '') is null
+          and nullif(trim(p_area_name), '') is null
+          and p_lat is null and p_lng is null
+        then round(raw.rank_score::numeric, 6)::double precision
+        else raw.rank_score
+      end as rank_score
+    from lean_candidates
+    cross join lateral (
+      select (
+        (0.55 * lean_candidates.text_score)
+        + (0.25 * lean_candidates.rating_score)
+        + (0.20 * lean_candidates.distance_score)
+      )::double precision as rank_score
+    ) raw$rank$;
+  v_known_dishes_bodies constant text[] := array[
+    'fe1769da5ecd86bed8a40582c87367b2', -- main replay
+    '24d872ef2579a833102f207ccfe1b732'  -- hosted
+  ];
+  v_dishes_body text;
   v_def text := pg_get_functiondef(v_sig);
   v_start text := '    coalesce((' || chr(10) || '      select jsonb_agg(' || chr(10) ||
     '        jsonb_build_object(' || chr(10) || '          ''dish_id'', d.id,';
@@ -232,6 +263,16 @@ begin
   then
     raise exception 'search_venues_by_location differs from the known rate-limited and hosted definitions';
   end if;
+
+  -- Installed apps use search_dishes after the embedded venue page. Normalize only the
+  -- venue-only rank so its typed response also survives the gateway's JSON serialization.
+  select prosrc into v_dishes_body from pg_proc where oid = v_dishes_sig;
+  if not (md5(v_dishes_body) = any(v_known_dishes_bodies))
+    or strpos(v_dishes_body, v_original_rank) = 0
+  then
+    raise exception 'search_dishes differs from the expected legacy continuation definition';
+  end if;
+  execute replace(pg_get_functiondef(v_dishes_sig), v_original_rank, v_menu_rank);
 
   execute format(
     'comment on function app_private.stall_menu_rows(text,double precision,text,integer,boolean) is %L',

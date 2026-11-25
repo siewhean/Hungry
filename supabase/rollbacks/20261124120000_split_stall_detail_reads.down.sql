@@ -4,6 +4,36 @@ set local lock_timeout = '2s';
 
 do $rollback$
 declare
+  v_dishes_sig constant regprocedure :=
+    'public.search_dishes(text,double precision,double precision,integer,text[],integer,
+      double precision,text,text,text,text[],numeric,boolean,text[],text[])'::regprocedure;
+  v_original_rank constant text := $rank$      (
+        (0.55 * lean_candidates.text_score)
+        + (0.25 * lean_candidates.rating_score)
+        + (0.20 * lean_candidates.distance_score)
+      )::double precision as rank_score
+    from lean_candidates$rank$;
+  v_menu_rank constant text := $rank$      case
+        when nullif(p_venue_id, '') is not null
+          and nullif(trim(p_query), '') is null
+          and nullif(trim(p_area_name), '') is null
+          and p_lat is null and p_lng is null
+        then round(raw.rank_score::numeric, 6)::double precision
+        else raw.rank_score
+      end as rank_score
+    from lean_candidates
+    cross join lateral (
+      select (
+        (0.55 * lean_candidates.text_score)
+        + (0.25 * lean_candidates.rating_score)
+        + (0.20 * lean_candidates.distance_score)
+      )::double precision as rank_score
+    ) raw$rank$;
+  v_known_dishes_bodies constant text[] := array[
+    'fe1769da5ecd86bed8a40582c87367b2', -- main replay
+    '24d872ef2579a833102f207ccfe1b732'  -- hosted
+  ];
+  v_dishes_body text;
   v_restore jsonb := obj_description(
     'app_private.stall_menu_rows(text,double precision,text,integer,boolean)'::regprocedure,
     'pg_proc'
@@ -13,6 +43,15 @@ begin
     or jsonb_typeof(v_restore->'repair_search') is distinct from 'boolean'
   then
     raise exception 'Stall detail rollback cannot identify the prior function definitions';
+  end if;
+
+  select prosrc into v_dishes_body from pg_proc where oid = v_dishes_sig;
+  -- The earlier rehearsal revision left search_dishes untouched.
+  if not (md5(v_dishes_body) = any(v_known_dishes_bodies)) then
+    if not (md5(replace(v_dishes_body, v_menu_rank, v_original_rank)) = any(v_known_dishes_bodies)) then
+      raise exception 'Cannot restore the expected search_dishes continuation definition';
+    end if;
+    execute replace(pg_get_functiondef(v_dishes_sig), v_menu_rank, v_original_rank);
   end if;
 
   if (v_restore->>'repair_venue')::boolean then

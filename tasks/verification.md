@@ -13,6 +13,11 @@ Use the smallest check that matches the change risk.
 
 ## Latest Known Good
 
+### STALL-READS-20261124
+
+- Production applied chat removal and passed its smoke. The first stall rehearsal caught staging up, matched production's schema, and passed apply, down, comparison and reapply. Its smoke then exposed pooler float truncation on page five.
+- Disposable PostgreSQL reproduced the failure and verified the repair against both main and hosted function definitions at `extra_float_digits = 0`. Both menu paths traversed all 123 visible dishes, and rollback restored the schema exactly. The revised hosted rehearsal is pending.
+
 ### STITCH-8-SCREENS-01 (2026-10-23)
 
 - Source: eight exact Stitch screen IDs and HTML/PNG exports in `design/stitch/iterations-11940609752387078506/README.md`; PNGs were fetched at full resolution with `curl -fsSL`.
