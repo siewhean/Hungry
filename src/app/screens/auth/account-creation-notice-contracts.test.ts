@@ -39,7 +39,7 @@ test("no screen offers Google or Apple sign-in unless the provider flag is on", 
   assert.match(read("src/app/screens/auth/AuthProviderButtons.tsx"), /getEnabledAuthProviders\(\)/);
   const providers = read("src/app/screens/auth/authProviders.ts");
   assert.match(providers, /flags\.oauthProvidersEnabled/);
-  assert.match(providers, /flags\.googleSignInEnabled && platform !== "ios"/);
+  assert.match(providers, /flags\.googleSignInEnabled && \(platform !== "ios" \|\| flags\.oauthProvidersEnabled\)/);
   for (const file of ["LoginScreen", "SignUpScreen"]) {
     assert.match(read(`src/app/screens/auth/${file}.tsx`), /<AuthProviderButtons/, file);
   }

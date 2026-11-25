@@ -7,9 +7,10 @@ import type { AuthProvider } from "./authCopy";
  * The sign-in providers to show on this device, in button order.
  *
  * Apple follows `oauthProvidersEnabled` (not in production yet). Google follows
- * `googleSignInEnabled` and never shows on iPhone: the App Store requires Sign in with Apple
- * next to any other third-party sign-in (rule 4.8), so iOS offers the email code only until
- * Apple ships. A provider that is not configured is not rendered, so no button can fail.
+ * `googleSignInEnabled`. On iPhone Google shows only when Apple shows too: the App Store
+ * requires Sign in with Apple next to any other third-party sign-in (rule 4.8), so until Apple
+ * is on, iOS offers the email code only. A provider that is not configured is not rendered,
+ * so no button can fail.
  */
 export function getEnabledAuthProviders(
   platform: string = Platform.OS,
@@ -20,6 +21,8 @@ export function getEnabledAuthProviders(
 ): AuthProvider[] {
   const providers: AuthProvider[] = [];
   if (flags.oauthProvidersEnabled) providers.push("apple");
-  if (flags.googleSignInEnabled && platform !== "ios") providers.push("google");
+  if (flags.googleSignInEnabled && (platform !== "ios" || flags.oauthProvidersEnabled)) {
+    providers.push("google");
+  }
   return providers;
 }
