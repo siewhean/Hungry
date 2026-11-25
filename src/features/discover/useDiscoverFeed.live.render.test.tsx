@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { act } from "react";
+import { act, useLayoutEffect } from "react";
 import test, { afterEach, beforeEach } from "node:test";
 
 import { DISCOVER_FEED_LIMIT, DISCOVER_FIRST_PAGE_LIMIT } from "@/features/discover/bites";
@@ -7,7 +7,9 @@ import {
   DISCOVER_FEED_CACHE_MAX_AGE_MS,
   clearCachedDiscoverFeed,
 } from "@/features/discover/feedCache";
+import { getDiscoverReadArgs } from "@/features/discover/discoverReadArgs";
 import { useDiscoverFeed } from "@/features/discover/useDiscoverFeed";
+import { useLiveDiscoverFeed } from "@/features/discover/useLiveDiscoverFeed";
 import { warmHomeFeed } from "@/features/discover/warmHomeFeed";
 import {
   getServiceProvider,
@@ -155,18 +157,25 @@ test("Home reuses the settled Splash page", async () => {
 });
 
 test("the full page refreshes the first results and removes rows it no longer authorizes", async () => {
-  const reads = installLiveProvider();
+  const enrichment = deferred<DiscoveryLocationFeed>();
+  const reads = installLiveProvider(() => enrichment.promise);
   const { view, feed } = await mountFeed();
-  reads.firstPage[0].resolve({ venues: [venue], results: [resultFor(venue)] });
+  const firstPage = { venues: [venue], results: [resultFor(venue)] };
+  reads.firstPage[0].resolve({ ...firstPage, needsEnrichment: true });
   await view.settle();
   await flushBackground();
   reads.feed[0].resolve({ venues: [secondVenue], results: [resultFor(secondVenue)] });
+  await view.settle();
+  enrichment.resolve(firstPage);
   await view.settle();
   assert.deepEqual(
     feed().supabaseFeedVenues.map(({ id }) => id),
     [secondVenue.id],
   );
-  assert.equal(feed().supabaseFeedResults.length, 1);
+  assert.deepEqual(
+    feed().supabaseFeedResults.map(({ dish }) => dish.id),
+    ["dish-v2"],
+  );
 });
 
 test("transient refresh errors keep prior same-area cards labeled stale; auth and empty clear them", async () => {
@@ -219,18 +228,136 @@ test("an expired scoped snapshot is removed while the device stays offline", asy
   assert.equal(feed().discoverFailure, "network");
 });
 
-test("first-page enrichment can verify the existing cards while the wider feed is pending", async () => {
+test("pending dietary flags are hidden and verified enrichment survives a wider-read timeout", async () => {
   const enrichment = deferred<DiscoveryLocationFeed>();
   const reads = installLiveProvider(() => enrichment.promise);
   const { view, feed } = await mountFeed();
-  reads.firstPage[0].resolve({ ...liveFeed, needsEnrichment: true });
+  const verified = { ...liveFeed, results: [resultFor(venue)] };
+  reads.firstPage[0].resolve({ ...verified, needsEnrichment: true });
   await view.settle();
   assert.equal(feed().supabaseFeedVenues[0].availabilityUnverified, true);
+  assert.deepEqual(feed().supabaseFeedResults[0].dish.dietaryFlags, []);
+
   await flushBackground();
-  enrichment.resolve(liveFeed);
+  reads.feed[0].reject(new CatalogReadError("timed out", "timeout"));
   await view.settle();
+  assert.equal(feed().discoverFailure, "timeout");
+  assert.equal(feed().isSupabaseDiscoveryFeedLoading, false);
+  enrichment.resolve(verified);
+  await view.settle();
+
   assert.equal(feed().supabaseFeedVenues[0].availabilityUnverified, undefined);
+  assert.deepEqual(feed().supabaseFeedResults[0].dish.dietaryFlags, ["halal"]);
   assert.equal(feed().isDiscoverFeedPartial, true);
+  assert.equal(reads.feed.length, 1, "a soft failure does not retry automatically");
+});
+
+test("changing buildings in the same area refreshes the wider feed without another preview", async () => {
+  const reads = installLiveProvider();
+  const args = getDiscoverReadArgs(useLocationStore.getState());
+  let latest: ReturnType<typeof useLiveDiscoverFeed> | undefined;
+  function Probe({ place }: { place: string }) {
+    latest = useLiveDiscoverFeed(true, args, place, false);
+    return null;
+  }
+  const view = await render(<Probe place="b1" />);
+  reads.firstPage[0].resolve(liveFeed);
+  await view.settle();
+  await flushBackground();
+  const buildingOnly = { ...venue, id: "only-b1" };
+  reads.feed[0].resolve({ venues: [buildingOnly, venue], results: [] });
+  await view.settle();
+  assert.equal(latest?.state?.phase, "complete");
+  assert.equal(
+    latest?.state?.feed?.venues.some(({ id }) => id === buildingOnly.id),
+    true,
+  );
+
+  await view.rerender(<Probe place="b2" />);
+  await flushBackground();
+  assert.equal(reads.firstPage.length, 1);
+  assert.equal(reads.requests.at(-1)?.buildingId, "b2");
+  assert.equal(latest?.isLoading, true);
+  assert.deepEqual(
+    latest?.state?.feed?.venues.map(({ id }) => id),
+    ["v1"],
+  );
+  const secondBuilding = { ...secondVenue, buildingId: "b2" };
+  reads.feed[1].resolve({ venues: [venue, secondBuilding], results: [] });
+  await view.settle();
+  assert.deepEqual(
+    latest?.state?.feed?.venues.map(({ id }) => id),
+    ["v2", "v1"],
+  );
+  assert.equal(latest?.isLoading, false);
+
+  await view.rerender(<Probe place="b3" />);
+  await flushBackground();
+  reads.feed[2].reject(new CatalogReadError("timed out", "timeout"));
+  await view.settle();
+  assert.deepEqual(
+    latest?.state?.feed?.venues.map(({ id }) => id),
+    ["v1"],
+  );
+  assert.equal(latest?.isLoading, false);
+  assert.equal(reads.firstPage.length, 1);
+});
+
+test("the previous building cannot replace the feed when another building commits", async () => {
+  const reads = installLiveProvider();
+  const args = getDiscoverReadArgs(useLocationStore.getState());
+  let latest: ReturnType<typeof useLiveDiscoverFeed> | undefined;
+  function Probe({ place }: { place: string }) {
+    latest = useLiveDiscoverFeed(true, args, place, false);
+    useLayoutEffect(() => {
+      if (place === "b2") reads.feed[0].resolve(emptyFeed);
+    }, [place]);
+    return null;
+  }
+  const view = await render(<Probe place="b1" />);
+  reads.firstPage[0].resolve(liveFeed);
+  await view.settle();
+  await flushBackground();
+  await view.rerender(<Probe place="b2" />);
+  await flushBackground();
+
+  assert.equal(reads.firstPage.length, 1);
+  assert.equal(reads.requests.at(-1)?.buildingId, "b2");
+  assert.deepEqual(latest?.state?.feed, liveFeed);
+  const newFeed = { venues: [secondVenue], results: [] };
+  reads.feed[1].resolve(newFeed);
+  await view.settle();
+  assert.deepEqual(latest?.state?.feed, newFeed);
+});
+
+test("a granted permission with no GPS fix preserves the selected area for retries", async () => {
+  const originalGrant = useLocationStore.getState().grantLocation;
+  const manualCoordinate = { latitude: 1.354, longitude: 103.847 };
+  let attempts = 0;
+  useLocationStore.setState({
+    manualLocation: "Bishan",
+    manualCoordinate,
+    grantLocation: async () => {
+      attempts += 1;
+      useLocationStore.setState({ permission: "granted" });
+      return false;
+    },
+  });
+  try {
+    const { feed } = await mountFeed();
+    await act(async () => {
+      await feed().handleUseCurrentLocation();
+    });
+    assert.match(useUIStore.getState().toast?.message ?? "", /Couldn't get your current location/);
+    assert.equal(useLocationStore.getState().manualLocation, "Bishan");
+    await act(async () => {
+      await feed().handleUseCurrentLocation();
+    });
+    assert.equal(attempts, 2);
+    assert.deepEqual(useLocationStore.getState().manualCoordinate, manualCoordinate);
+  } finally {
+    useLocationStore.setState({ grantLocation: originalGrant });
+  }
 });
 
 test("first-page failure leaves the full page idle; full-page timeout retains live cards", async () => {

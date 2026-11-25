@@ -7,7 +7,7 @@ import { useDetailPaint } from "@/features/detail/useDetailPaint";
 import { useCatalogHomeVisibility } from "@/features/discover/catalogHomeVisibility";
 import { clearTrackedAnalyticsEvents, getTrackedAnalyticsEvents } from "@/lib/analytics";
 import { markCatalogTap } from "@/lib/monitoring/catalogPerformance";
-import { cleanup, render } from "@/test/render";
+import { cleanup, createFakeNavigation, render } from "@/test/render";
 
 beforeEach(clearTrackedAnalyticsEvents);
 afterEach(cleanup);
@@ -40,6 +40,61 @@ test("detail layout, empty menu and image each record once from the matching tap
     ["actionable", "success", "tap"],
     ["menu", "empty", "tap"],
     ["image", "success", "tap"],
+  ]);
+});
+
+test("returning to the same detail route starts a fresh timing attempt", async () => {
+  const listeners = new Map<string, Set<() => void>>();
+  let focused = true;
+  const navigation = Object.assign(createFakeNavigation(), {
+    isFocused: () => focused,
+    addListener(event: string, callback: () => void) {
+      const callbacks = listeners.get(event) ?? new Set<() => void>();
+      callbacks.add(callback);
+      listeners.set(event, callbacks);
+      return () => {
+        callbacks.delete(callback);
+      };
+    },
+  });
+  const setFocus = (next: boolean) =>
+    act(async () => {
+      focused = next;
+      for (const notify of [...(listeners.get(next ? "focus" : "blur") ?? [])]) notify();
+    });
+
+  let paint!: ReturnType<typeof useDetailPaint>;
+  function Probe() {
+    paint = useDetailPaint("stall", "same-stall");
+    return null;
+  }
+
+  markCatalogTap("stall", "same-stall");
+  await render(<Probe />, { navigation });
+  await act(async () => {
+    paint.headerLayout();
+    paint.menuLayout(false);
+  });
+  await act(async () => paint.imageDisplayed());
+
+  await setFocus(false);
+  await act(async () => paint.imageDisplayed());
+  assert.equal(milestones().length, 3);
+  await setFocus(true);
+  await act(async () => {
+    paint.imageDisplayed();
+    paint.imageDisplayed();
+    paint.headerLayout();
+    paint.menuLayout(false);
+  });
+
+  assert.deepEqual(milestones(), [
+    ["actionable", "success", "tap"],
+    ["menu", "success", "tap"],
+    ["image", "success", "tap"],
+    ["actionable", "success", "focus"],
+    ["menu", "success", "focus"],
+    ["image", "success", "focus"],
   ]);
 });
 

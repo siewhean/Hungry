@@ -26,6 +26,8 @@ Use the smallest check that matches the change risk.
 
 - After the split, the app branch passed TypeScript, 13 focused service tests, 78 Discover and Dish Detail render tests, and N+1, rate-limit, formatting and migration safety checks. Independent QA verified that the database PR has byte-identical SQL and that the app PR has no Supabase diff against main.
 
+- Independent review follow-ups verified same-cell building changes and late responses, detail refocus and refresh ordering, scoped stall recovery, unknown dietary status, and deadline instrumentation. The app branch inherits Expo 57.0.34 and has no database changes relative to main.
+
 ### STALL-READS-20261124
 
 - Production applied chat removal and passed its smoke. The first stall rehearsal caught staging up, matched production's schema, and passed apply, down, comparison and reapply. Its smoke then exposed pooler float truncation on page five.

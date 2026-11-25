@@ -983,11 +983,28 @@ async function rpcRows(functionName: string, args: Row): Promise<Row[] | undefin
   return data as unknown as Row[];
 }
 
+function isCatalogRow(value: unknown): value is Row {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isStallMenuRows(value: unknown, venueId: string): value is Row[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (row) =>
+        isCatalogRow(row) &&
+        row.venue_id === venueId &&
+        Boolean(toString(row.dish_id).trim() && toString(row.name).trim()),
+    )
+  );
+}
+
 /** Critical catalogue reads distinguish an authoritative empty result from a failed request. */
 async function strictCatalogRows(
   surface: "home" | "dish" | "stall",
   functionName: string,
   args: Row,
+  validate?: (rows: Row[]) => "empty" | void,
 ): Promise<Row[]> {
   const client = getSupabaseClient();
   if (!client) throw new CatalogReadError("The online catalog is not configured.", "contract");
@@ -1014,14 +1031,17 @@ async function strictCatalogRows(
         error,
       );
     }
-    if (
-      !Array.isArray(data) ||
-      data.some((row) => !row || typeof row !== "object" || Array.isArray(row))
-    ) {
+    if (!Array.isArray(data) || !data.every(isCatalogRow)) {
       throw new CatalogReadError("The catalog returned an invalid response.", "contract");
     }
-    recordCatalogRpc(surface, functionName, startedAt, data.length ? "success" : "empty");
-    return data as Row[];
+    const outcome = validate?.(data);
+    recordCatalogRpc(
+      surface,
+      functionName,
+      startedAt,
+      outcome ?? (data.length ? "success" : "empty"),
+    );
+    return data;
   } catch (error) {
     if (scope !== catalogRequestScope()) {
       recordCatalogRpc(surface, functionName, startedAt, "cancelled");
@@ -1221,7 +1241,8 @@ async function loadDishDietaryFlagsByDishId(
   dishIds: string[],
 ): Promise<Map<string, string[]> | undefined> {
   const client = getSupabaseClient();
-  if (!client || dishIds.length === 0) return undefined;
+  if (dishIds.length === 0) return new Map();
+  if (!client) return undefined;
   const [linkResult, flagResult] = await Promise.all([
     client.from("dish_dietary_flags").select("dish_id,dietary_flag_id").in("dish_id", dishIds),
     client.from("dietary_flags").select("id,slug"),
@@ -1265,21 +1286,29 @@ export async function listDiscoveryFeedByLocationViaRpc(
     getSupabaseClient(),
     `feed:${scope}:${JSON.stringify(request)}`,
     async () => {
-      const rows = await strictCatalogRows("home", "get_discovery_feed_by_location", {
-        p_area_name: request.areaName?.trim() || null,
-        p_lat: request.lat ?? null,
-        p_lng: request.lng ?? null,
-        p_radius_meters: request.radiusMeters ?? null,
-        p_limit: request.limit ?? null,
-        ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
-      });
+      const rows = await strictCatalogRows(
+        "home",
+        "get_discovery_feed_by_location",
+        {
+          p_area_name: request.areaName?.trim() || null,
+          p_lat: request.lat ?? null,
+          p_lng: request.lng ?? null,
+          p_radius_meters: request.radiusMeters ?? null,
+          p_limit: request.limit ?? null,
+          ...(request.buildingId ? { p_building_id: request.buildingId } : {}),
+        },
+        (rows) => {
+          if (
+            rows.some((row) => !toString(row.venue_id).trim() || !toString(row.venue_name).trim())
+          ) {
+            throw new CatalogReadError(
+              "The discovery response is missing venue information.",
+              "contract",
+            );
+          }
+        },
+      );
       requireCurrentCatalogScope(scope);
-      if (rows.some((row) => !toString(row.venue_id) || !toString(row.venue_name))) {
-        throw new CatalogReadError(
-          "The discovery response is missing venue information.",
-          "contract",
-        );
-      }
 
       const venues = rows.map(mapDiscoveryFeedVenue);
       const results = rows.flatMap((row, index) => {
@@ -1309,19 +1338,19 @@ export async function enrichDiscoveryFeedViaRpc(
   requireCurrentCatalogScope(scope);
   return {
     ...feed,
-    needsEnrichment: !closures,
+    needsEnrichment: !closures || !flags,
     venues: feed.venues.map((venue) => {
       const closedUntil = closures?.get(venue.id);
       return closedUntil ? { ...venue, closedUntil } : venue;
     }),
     results: feed.results.map(({ dish, score }) => {
       const taste = tastes.get(dish.id);
-      const dietaryFlags = flags?.get(dish.id) as DietaryFlag[] | undefined;
+      const dietaryFlags = (flags?.get(dish.id) ?? []) as DietaryFlag[];
       return {
         score,
         dish: {
           ...dish,
-          ...(dietaryFlags ? { dietaryFlags } : {}),
+          dietaryFlags,
           ...(taste?.tasteVector ? taste : {}),
         },
       };
@@ -1349,47 +1378,66 @@ export async function searchVenuesByLocationViaRpc(
  */
 export async function getDishByIdViaRpc(dishId: string): Promise<DishDetail | undefined> {
   if (!isSupabaseConfigured()) return undefined;
-  const [row] = await strictCatalogRows("dish", "get_dish_detail", { p_dish_id: dishId });
-  if (row && toString(row.dish_id) !== dishId) {
-    throw new CatalogReadError("The dish response did not match this dish.", "contract");
-  }
+  const [row] = await strictCatalogRows(
+    "dish",
+    "get_dish_detail",
+    { p_dish_id: dishId },
+    (rows) => {
+      const [dish] = rows;
+      if (rows.length > 1 || (dish && (dish.dish_id !== dishId || !toString(dish.name).trim()))) {
+        throw new CatalogReadError("The dish response did not match this dish.", "contract");
+      }
+    },
+  );
   return row ? mapRpcDish(row) : undefined;
 }
 
 export async function getStallHeaderViaRpc(venueId: string): Promise<VenueSummary | undefined> {
-  const [row] = await strictCatalogRows("stall", "get_stall_header", { p_venue_id: venueId });
-  if (row && toString(row.venue_id) !== venueId) {
+  const [row] = await strictCatalogRows(
+    "stall",
+    "get_stall_header",
+    { p_venue_id: venueId },
+    (rows) => validateStallHeaderRows(rows, venueId),
+  );
+  return row ? mapRpcVenue(row) : undefined;
+}
+
+function validateStallHeaderRows(rows: Row[], venueId: string): void {
+  const [row] = rows;
+  if (rows.length > 1 || (row && (row.venue_id !== venueId || !toString(row.name).trim()))) {
     throw new CatalogReadError("The stall response did not match this stall.", "contract");
   }
-  return row ? mapRpcVenue(row) : undefined;
 }
 
 export async function listStallMenuPageViaRpc(
   venueId: string,
   cursor?: string,
 ): Promise<{ dishes: DishDetail[]; nextCursor?: string }> {
-  const [page] = await strictCatalogRows("stall", "get_stall_menu_page", {
-    p_venue_id: venueId,
-    p_cursor: cursor ?? null,
-    p_limit: 20,
-  });
-  if (!page) return { dishes: [] };
-  if (
-    !Array.isArray(page.dishes) ||
-    page.dishes.some(
-      (row) =>
-        !row ||
-        typeof row !== "object" ||
-        toString(row.venue_id) !== venueId ||
-        !toString(row.dish_id),
-    ) ||
-    (page.next_cursor != null && typeof page.next_cursor !== "string")
-  ) {
-    throw new CatalogReadError("The stall menu returned an invalid page.", "contract");
-  }
+  const [page] = await strictCatalogRows(
+    "stall",
+    "get_stall_menu_page",
+    {
+      p_venue_id: venueId,
+      p_cursor: cursor ?? null,
+      p_limit: 20,
+    },
+    (rows) => {
+      const [row] = rows;
+      if (
+        rows.length > 1 ||
+        (row &&
+          (!isStallMenuRows(row.dishes, venueId) ||
+            (row.next_cursor != null &&
+              (typeof row.next_cursor !== "string" || row.next_cursor.length === 0))))
+      ) {
+        throw new CatalogReadError("The stall menu returned an invalid page.", "contract");
+      }
+      if (row && Array.isArray(row.dishes) && row.dishes.length === 0) return "empty";
+    },
+  );
   return {
-    dishes: (page.dishes as Row[]).map(mapRpcDish),
-    nextCursor: typeof page.next_cursor === "string" ? page.next_cursor : undefined,
+    dishes: page ? (page.dishes as Row[]).map(mapRpcDish) : [],
+    nextCursor: typeof page?.next_cursor === "string" ? page.next_cursor : undefined,
   };
 }
 
@@ -1401,7 +1449,13 @@ const VENUE_MENU_MAX_EXTRA_PAGES = 9;
 /** How long one get_venue_detail result is reused (venue + menu on the same open). */
 const VENUE_DETAIL_REUSE_MS = 30_000;
 const VENUE_DETAIL_MAX_ENTRIES = 24;
-const venueDetailRequests = new Map<string, { at: number; rows: Promise<Row[] | undefined> }>();
+const VENUE_DETAIL_FALLBACK_MS = 120_000;
+type VenueDetailCacheEntry = {
+  at: number;
+  rows: Promise<Row[]>;
+  snapshot?: { at: number; row: Row };
+};
+const venueDetailRequests = new Map<string, VenueDetailCacheEntry>();
 let venueDetailScope: string | undefined;
 
 function syncVenueDetailScope(): void {
@@ -1419,24 +1473,81 @@ function getVenueDetailRows(venueId: string): Promise<Row[] | undefined> {
   const cached = venueDetailRequests.get(venueId);
   if (cached && now - cached.at < VENUE_DETAIL_REUSE_MS) return cached.rows;
   venueDetailRequests.delete(venueId);
-  const rows = strictCatalogRows("stall", "get_venue_detail", { p_venue_id: venueId }).then(
-    (result) => {
-      if (result.length === 0 && venueDetailRequests.get(venueId)?.rows === rows) {
-        venueDetailRequests.delete(venueId);
+  const scope = catalogRequestScope();
+  const entry: VenueDetailCacheEntry = {
+    at: now,
+    snapshot: cached?.snapshot,
+    rows: strictCatalogRows("stall", "get_venue_detail", { p_venue_id: venueId }, (rows) => {
+      validateStallHeaderRows(rows, venueId);
+      if (rows[0] && !isStallMenuRows(rows[0].dishes, venueId)) {
+        throw new CatalogReadError("The stall returned an invalid menu.", "contract");
       }
-      return result;
-    },
-    (error: unknown) => {
-      if (venueDetailRequests.get(venueId)?.rows === rows) venueDetailRequests.delete(venueId);
-      throw error;
-    },
-  );
-  venueDetailRequests.set(venueId, { at: now, rows });
+    })
+      .then((result) => {
+        requireCurrentCatalogScope(scope);
+        if (venueDetailRequests.get(venueId) === entry) {
+          if (result[0]) entry.snapshot = { at: Date.now(), row: result[0] };
+          else venueDetailRequests.delete(venueId);
+        }
+        return result;
+      })
+      .catch((error: unknown) => {
+        if (venueDetailRequests.get(venueId) === entry) {
+          if (isFreshVenueDetailSnapshot(entry.snapshot) && canReuseVenueDetailSnapshot(error)) {
+            entry.at = Number.NEGATIVE_INFINITY;
+          } else {
+            venueDetailRequests.delete(venueId);
+          }
+        }
+        throw error;
+      }),
+  };
+  venueDetailRequests.set(venueId, entry);
   if (venueDetailRequests.size > VENUE_DETAIL_MAX_ENTRIES) {
     const oldest = venueDetailRequests.keys().next().value;
     if (oldest !== undefined) venueDetailRequests.delete(oldest);
   }
-  return rows;
+  return entry.rows;
+}
+
+function canReuseVenueDetailSnapshot(error: unknown): boolean {
+  const outcome = catalogReadOutcome(error);
+  return (
+    outcome === "timeout" ||
+    outcome === "rate-limit" ||
+    outcome === "server" ||
+    outcome === "network"
+  );
+}
+
+function isFreshVenueDetailSnapshot(
+  snapshot: VenueDetailCacheEntry["snapshot"],
+): snapshot is NonNullable<VenueDetailCacheEntry["snapshot"]> {
+  return Boolean(snapshot && Date.now() - snapshot.at < VENUE_DETAIL_FALLBACK_MS);
+}
+
+function getVenueDetailSnapshot(venueId: string, error: unknown): Row | undefined {
+  if (!canReuseVenueDetailSnapshot(error)) return undefined;
+  syncVenueDetailScope();
+  const snapshot = venueDetailRequests.get(venueId)?.snapshot;
+  return isFreshVenueDetailSnapshot(snapshot) ? snapshot.row : undefined;
+}
+
+/** Legacy fallback only uses a recent, validated response from this RPC and session. */
+export function getCachedLegacyStallHeader(
+  venueId: string,
+  error: unknown,
+): VenueSummary | undefined {
+  const row = getVenueDetailSnapshot(venueId, error);
+  return row ? mapRpcVenue(row) : undefined;
+}
+
+export function getCachedLegacyStallMenu(
+  venueId: string,
+  error: unknown,
+): VenueMenuPage | undefined {
+  const row = getVenueDetailSnapshot(venueId, error);
+  return row ? mapLegacyStallMenuPage(row.dishes as Row[], catalogDisplayImageUrl(row)) : undefined;
 }
 
 /** Forgets the reused get_venue_detail result, so the next read of that stall is fresh. */
@@ -1481,7 +1592,9 @@ export async function getInlineMerchantReads(venueId: string): Promise<
  * network error is never shown as "Stall not found".
  */
 export async function getVenueByIdViaRpc(venueId: string): Promise<VenueSummary | undefined> {
+  const scope = catalogRequestScope();
   const rows = await getVenueDetailRows(venueId);
+  requireCurrentCatalogScope(scope);
   return rows?.[0] ? mapRpcVenue(rows[0]) : undefined;
 }
 
@@ -1794,11 +1907,36 @@ export async function listDishesByVenueViaRpc(venueId: string): Promise<DishDeta
   return dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl)));
 }
 
+function validateLegacyStallMenuRows(value: unknown, venueId: string): void {
+  if (!isStallMenuRows(value, venueId)) {
+    throw new CatalogReadError("The stall returned an invalid menu.", "contract");
+  }
+  const last = value.at(-1);
+  if (
+    value.length >= VENUE_MENU_PAGE_SIZE &&
+    (!Number.isFinite(toNumber(last?.cursor_score ?? last?.rank_score, NaN)) ||
+      (last?.cursor_id != null && last.cursor_id !== last.dish_id))
+  ) {
+    throw new CatalogReadError("The stall returned an invalid menu cursor.", "contract");
+  }
+}
+
 function venueMenuCursor(row: Row, venueImageUrl: string): VenueMenuCursor {
   return {
     score: toNumber(row.cursor_score ?? row.rank_score),
     id: toString(row.cursor_id ?? row.dish_id),
     venueImageUrl: venueImageUrl || undefined,
+  };
+}
+
+function mapLegacyStallMenuPage(dishRows: Row[], venueImageUrl: string): VenueMenuPage {
+  const last = dishRows[dishRows.length - 1];
+  return {
+    dishes: dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
+    nextCursor:
+      last && dishRows.length >= VENUE_MENU_PAGE_SIZE
+        ? venueMenuCursor(last, venueImageUrl)
+        : undefined,
   };
 }
 
@@ -1813,45 +1951,35 @@ export async function listDishesByVenuePageViaRpc(
   cursor?: VenueMenuCursor,
 ): Promise<VenueMenuPage | undefined> {
   if (!cursor) {
+    const scope = catalogRequestScope();
     const rows = await getVenueDetailRows(venueId);
+    requireCurrentCatalogScope(scope);
     const venue = rows?.[0];
     if (!venue) return rows ? { dishes: [] } : undefined;
-    const dishRows = toRowArray(venue.dishes);
-    const venueImageUrl = catalogDisplayImageUrl(venue);
-    const last = dishRows[dishRows.length - 1];
-    return {
-      dishes: dishRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
-      nextCursor:
-        last && dishRows.length >= VENUE_MENU_PAGE_SIZE
-          ? venueMenuCursor(last, venueImageUrl)
-          : undefined,
-    };
+    return mapLegacyStallMenuPage(venue.dishes as Row[], catalogDisplayImageUrl(venue));
   }
   if (!isSupabaseConfigured()) return undefined;
-  const pageRows = await strictCatalogRows("stall", "search_dishes", {
-    p_query: null,
-    p_lat: null,
-    p_lng: null,
-    p_radius_meters: null,
-    p_dietary_flags: [],
-    p_limit: VENUE_MENU_PAGE_SIZE,
-    p_cursor_score: cursor.score,
-    p_cursor_id: cursor.id,
-    p_venue_id: venueId,
-    p_area_name: null,
-    p_cuisine_tags: null,
-    p_max_price: null,
-    p_open_only: false,
-  });
-  const venueImageUrl = cursor.venueImageUrl ?? "";
-  const last = pageRows[pageRows.length - 1];
-  return {
-    dishes: pageRows.map((row) => mapRpcDish(withoutVenuePhotoFallback(row, venueImageUrl))),
-    nextCursor:
-      last && pageRows.length >= VENUE_MENU_PAGE_SIZE
-        ? venueMenuCursor(last, venueImageUrl)
-        : undefined,
-  };
+  const pageRows = await strictCatalogRows(
+    "stall",
+    "search_dishes",
+    {
+      p_query: null,
+      p_lat: null,
+      p_lng: null,
+      p_radius_meters: null,
+      p_dietary_flags: [],
+      p_limit: VENUE_MENU_PAGE_SIZE,
+      p_cursor_score: cursor.score,
+      p_cursor_id: cursor.id,
+      p_venue_id: venueId,
+      p_area_name: null,
+      p_cuisine_tags: null,
+      p_max_price: null,
+      p_open_only: false,
+    },
+    (rows) => validateLegacyStallMenuRows(rows, venueId),
+  );
+  return mapLegacyStallMenuPage(pageRows, cursor.venueImageUrl ?? "");
 }
 
 export async function listPopularNearbyViaRpc(

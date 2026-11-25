@@ -1074,3 +1074,5 @@ Split PR #294 into the app change and database PR #295. The default app build ke
 - 2026-11-25 | Codex verified the final hosted stall rehearsal and updated the Expo patch pin after CI detected a version mismatch. The database files and rehearsal checksums stayed unchanged. Follow [STALL-READS-20261124](backlog.md#current-focus) for merge and rollout.
 
 - 2026-11-25 | Codex updated PR #294 to the merged database baseline, preserving both verification records and taking the Expo 57.0.34 pin from main. Merge follows passing required checks. Follow [CATALOG-FIRST-PAINT-20261124](backlog.md#current-focus).
+
+- 2026-11-25 | Codex addressed PR #294 review findings for scoped read recovery, location changes, dietary verification, timing, and viewport images. Focused app and load tests passed. Follow [CATALOG-FIRST-PAINT-20261124](backlog.md#current-focus) for review and release.

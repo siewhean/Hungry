@@ -174,6 +174,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [hasLoadedDishDetail, setHasLoadedDishDetail] = useState(Boolean(cachedDish));
   const [dishLoadFailed, setDishLoadFailed] = useState(false);
   const [dishReloadKey, setDishReloadKey] = useState(0);
+  const dishReadVersion = useRef(0);
   const dish = hydratedDish?.id === dishId ? hydratedDish : cachedDish;
   // What the card knew can paint a preview while the authoritative dish arrives.
   const prefill = route.params?.prefill;
@@ -320,6 +321,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
   useEffect(() => {
     let active = true;
+    const version = ++dishReadVersion.current;
     setHydratedDish(undefined);
     setDishLoadFailed(false);
     setHasLoadedDishDetail(Boolean(cachedDish));
@@ -331,14 +333,14 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     void (discovery.getDishDetail ? discovery.getDishDetail(dishId) : discovery.getDish(dishId))
       .then((nextDish) => {
-        if (!active) return;
+        if (!active || version !== dishReadVersion.current) return;
         setHydratedDish(nextDish);
         setHasLoadedDishDetail(true);
         if (!nextDish) reportPaint("actionable", "missing");
       })
       .catch((error) => {
+        if (!active || version !== dishReadVersion.current) return;
         reportError(error, { screen: "DishDetail", action: "load_dish", dishId });
-        if (!active) return;
         reportPaint("actionable", catalogReadOutcome(error));
         setDishLoadFailed(true);
         setHasLoadedDishDetail(true);
@@ -354,18 +356,28 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   useEffect(() => {
     if (!dishRefreshKey || !dishId) return;
     let active = true;
+    const version = ++dishReadVersion.current;
     void (discovery.getDishDetail ? discovery.getDishDetail(dishId) : discovery.getDish(dishId))
       .then((nextDish) => {
-        if (active && (nextDish || !readsLocalData)) setHydratedDish(nextDish);
+        if (!active || version !== dishReadVersion.current) return;
+        if (nextDish || !readsLocalData) setHydratedDish(nextDish);
+        setDishLoadFailed(false);
+        setHasLoadedDishDetail(true);
+        if (!nextDish && !readsLocalData) reportPaint("actionable", "missing");
       })
       .catch((error) => {
-        // The page keeps what it shows.
+        if (!active || version !== dishReadVersion.current) return;
+        const outcome = catalogReadOutcome(error);
+        if (outcome === "auth") setHydratedDish(undefined);
         reportError(error, { screen: "DishDetail", action: "refresh_dish", dishId });
+        reportPaint("actionable", outcome);
+        setDishLoadFailed(true);
+        setHasLoadedDishDetail(true);
       });
     return () => {
       active = false;
     };
-  }, [discovery, dishId, dishRefreshKey, readsLocalData]);
+  }, [discovery, dishId, dishRefreshKey, readsLocalData, reportPaint]);
 
   // The first focus is the mount, which already loads everything.
   const hasFocusedRef = useRef(false);

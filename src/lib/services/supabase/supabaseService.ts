@@ -5,6 +5,7 @@ import type {
 } from "@supabase/supabase-js";
 import * as WebBrowser from "expo-web-browser";
 
+import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import { getFloorPlan } from "@/lib/geo/floorPlans";
 import { similarityScore } from "@/lib/ai/similarityScore";
 import { computeTasteProfileFromQuiz } from "@/lib/ai/tasteQuiz";
@@ -22,6 +23,8 @@ import { getAuthErrorCode } from "@/features/auth/authErrors";
 import {
   countVenuesInAreaViaRpc,
   enrichDiscoveryFeedViaRpc,
+  getCachedLegacyStallHeader,
+  getCachedLegacyStallMenu,
   getStallHeaderViaRpc,
   getDishByIdViaRpc,
   getBuildingDetailViaRpc,
@@ -4185,7 +4188,16 @@ export const supabaseService: HungryService = {
     },
 
     async getStallHeader(id, options) {
-      return options?.legacy ? getVenueByIdViaRpc(id) : getStallHeaderViaRpc(id);
+      if (!options?.legacy) return getStallHeaderViaRpc(id);
+      const scope = catalogRequestScope();
+      try {
+        return await getVenueByIdViaRpc(id);
+      } catch (error) {
+        requireCurrentCatalogScope(scope);
+        const cached = getCachedLegacyStallHeader(id, error);
+        if (cached) return cached;
+        throw error;
+      }
     },
 
     async getVenuesByIds(ids) {
@@ -4445,7 +4457,15 @@ export const supabaseService: HungryService = {
     },
 
     async getStallLegacyMenuPage(venueId, cursor) {
-      return (await listDishesByVenuePageViaRpc(venueId, cursor)) ?? { dishes: [] };
+      const scope = catalogRequestScope();
+      try {
+        return (await listDishesByVenuePageViaRpc(venueId, cursor)) ?? { dishes: [] };
+      } catch (error) {
+        requireCurrentCatalogScope(scope);
+        const cached = cursor ? undefined : getCachedLegacyStallMenu(venueId, error);
+        if (cached) return cached;
+        throw error;
+      }
     },
 
     listStallMenuPage: listStallMenuPageViaRpc,

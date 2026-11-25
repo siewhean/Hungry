@@ -10,6 +10,7 @@ function load(name, env, iteration, http) {
     .replace(/\bexport (?:default )?/g, "");
   const checks = [];
   const metrics = [];
+  let now = 0;
   class Metric {
     constructor(name) {
       this.name = name;
@@ -24,7 +25,15 @@ function load(name, env, iteration, http) {
     __ENV: env,
     __ITER: iteration,
     __VU: 1,
-    http,
+    Date: { now: () => now },
+    http: {
+      get: http.get,
+      post(...args) {
+        const response = http.post(...args);
+        now += response.elapsedMs;
+        return response;
+      },
+    },
     Rate: Metric,
     Trend: Metric,
     fail: (message) => {
@@ -54,8 +63,14 @@ function fixtureAuth(url, options) {
   return { status: 200, json: () => ({ id: "fixture-user", role: "authenticated" }) };
 }
 
-function rpcResult(rows, duration = 10, status = 200) {
-  return { status, json: () => rows, timings: { duration }, body: JSON.stringify(rows) };
+function rpcResult(rows, duration = 10, elapsedMs = duration) {
+  return {
+    status: 200,
+    json: () => rows,
+    timings: { duration },
+    elapsedMs,
+    body: JSON.stringify(rows),
+  };
 }
 
 test("dish-only detail load uses the authenticated detail RPC on alternate iterations too", () => {
@@ -160,6 +175,22 @@ test("discovery tests both sizes, treats wrong content and slow responses as dea
       .filter(({ name }) => name === "catalog_rpc_success_by_deadline")
       .map(({ value }) => value),
     [false, false],
+  );
+});
+
+test("catalog deadline fails when connection setup consumes the budget before a fast response", () => {
+  const subject = load("detail", { ...catalogEnv, LOAD_DISH_ID: "dish-a" }, 0, {
+    get: fixtureAuth,
+    post() {
+      return rpcResult([{ dish_id: "dish-a", name: "Noodles" }], 100, 751);
+    },
+  });
+  subject.run(subject.setup());
+  assert.deepEqual(subject.checks, [true, true]);
+  assert.equal(subject.metrics.find(({ name }) => name === "catalog_rpc_elapsed_ms")?.value, 751);
+  assert.equal(
+    subject.metrics.find(({ name }) => name === "catalog_rpc_success_by_deadline")?.value,
+    false,
   );
 });
 

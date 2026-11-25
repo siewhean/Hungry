@@ -21,7 +21,7 @@ type Attempt = {
 
 type Observer = {
   inspect: () => void;
-  observe: (node: View, image: boolean) => void;
+  observe: (node: View, image?: boolean) => void;
   remove: (node: View) => void;
 };
 
@@ -116,7 +116,7 @@ export function useCatalogHomeVisibility({
     () => ({
       inspect,
       observe: (node, image) => {
-        candidates.current.set(node, image || candidates.current.get(node) === true);
+        candidates.current.set(node, image ?? candidates.current.get(node) ?? false);
         inspect();
       },
       remove: (node) => candidates.current.delete(node),
@@ -129,6 +129,7 @@ export function useCatalogHomeVisibility({
 export function useCatalogHomeCardVisibility(enabled: boolean) {
   const observer = useContext(CatalogHomeVisibility);
   const node = useRef<View | null>(null);
+  const currentImage = useRef<string | undefined>(undefined);
   const ref = useCallback(
     (element: View | null) => {
       if (node.current) observer?.remove(node.current);
@@ -137,10 +138,23 @@ export function useCatalogHomeCardVisibility(enabled: boolean) {
     [observer],
   );
   const onLayout = () => {
-    if (node.current) observer?.observe(node.current, false);
+    if (node.current) observer?.observe(node.current);
   };
-  const onImageDisplay = () => {
-    if (node.current) observer?.observe(node.current, true);
+  const onImageSourceChange = useCallback(
+    (source: string | undefined) => {
+      if (currentImage.current === source) return;
+      currentImage.current = source;
+      if (node.current) observer?.observe(node.current, false);
+    },
+    [observer],
+  );
+  const onImageDisplay = (source: string) => {
+    if (node.current && currentImage.current === source) observer?.observe(node.current, true);
   };
-  return enabled && observer ? { ref, onLayout, onImageDisplay } : undefined;
+  const onImageError = (source: string) => {
+    if (currentImage.current === source) onImageSourceChange(undefined);
+  };
+  return enabled && observer
+    ? { ref, onLayout, onImageDisplay, onImageSourceChange, onImageError }
+    : undefined;
 }

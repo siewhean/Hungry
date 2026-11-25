@@ -51,20 +51,20 @@ test("H28: a failed stall read is an error with Retry, not 'Stall not found' or 
   );
   assert.match(strictRead, /if\s*\(error\)\s*\{\s*throw new CatalogReadError\(/);
   for (const rpc of ["get_venue_detail", "get_stall_header", "get_stall_menu_page"]) {
-    assert.ok(repository.includes(`strictCatalogRows("stall", "${rpc}",`), rpc);
+    assert.match(repository, new RegExp(`strictCatalogRows\\(\\s*"stall",\\s*"${rpc}",`));
   }
-  assert.match(repository, /getVenueByIdViaRpc[\s\S]{0,160}await getVenueDetailRows\(venueId\)/);
+  assert.match(repository, /getVenueByIdViaRpc[\s\S]{0,220}await getVenueDetailRows\(venueId\)/);
   assert.match(
     repository,
-    /listDishesByVenuePageViaRpc[\s\S]{0,240}await getVenueDetailRows\(venueId\)/,
+    /listDishesByVenuePageViaRpc[\s\S]{0,280}await getVenueDetailRows\(venueId\)/,
   );
   assert.match(
     service,
-    /async getStallHeader\(id, options\)\s*\{\s*return options\?\.legacy \? getVenueByIdViaRpc\(id\) : getStallHeaderViaRpc\(id\);/,
+    /async getStallHeader\(id, options\)\s*\{\s*if \(!options\?\.legacy\) return getStallHeaderViaRpc\(id\);[\s\S]{0,300}getCachedLegacyStallHeader\(id, error\)/,
   );
   assert.match(
     service,
-    /async getStallLegacyMenuPage\(venueId, cursor\)\s*\{\s*return \(await listDishesByVenuePageViaRpc\(venueId, cursor\)\)/,
+    /async getStallLegacyMenuPage\(venueId, cursor\)\s*\{[\s\S]{0,380}cursor \? undefined : getCachedLegacyStallMenu\(venueId, error\)/,
   );
   assert.match(service, /listStallMenuPage: listStallMenuPageViaRpc/);
   // Older discovery callers still keep cached data when available and otherwise rethrow.

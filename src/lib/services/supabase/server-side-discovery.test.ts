@@ -153,8 +153,8 @@ test("Supabase discovery service uses RPC-first read paths with cache fallback",
   assert.match(repositorySource, /export\s+async\s+function\s+searchDishesViaRpc/i);
   assert.match(repositorySource, /client\.rpc\(functionName,\s+args\)/);
   assert.match(repositorySource, /rpcRows\("search_dishes"/);
-  assert.match(repositorySource, /strictCatalogRows\("dish", "get_dish_detail"/);
-  assert.match(repositorySource, /strictCatalogRows\("stall", "get_venue_detail"/);
+  assert.match(repositorySource, /strictCatalogRows\(\s*"dish",\s*"get_dish_detail"/);
+  assert.match(repositorySource, /strictCatalogRows\(\s*"stall",\s*"get_venue_detail"/);
   assert.match(repositorySource, /rpcRows\("get_nearby_open_venues"/);
 
   assert.match(serviceSource, /await\s+searchDishesViaRpc\(filters,\s*tasteProfile\)/);

@@ -1,3 +1,4 @@
+import { useLayoutEffect } from "react";
 import { Pressable, View } from "react-native";
 import { Bookmark, Star, Store } from "lucide-react-native";
 
@@ -32,6 +33,11 @@ export function ForYouCard({
   const { componentRadii, palette, radii, spacing } = useHungryTheme();
   const { dish } = pick;
   const paint = useCatalogHomeCardVisibility(Boolean(measureCatalogPaint) && dish.price > 0);
+  const imageUrl = dish.imageUrl;
+  const onImageSourceChange = paint?.onImageSourceChange;
+  useLayoutEffect(() => {
+    onImageSourceChange?.(imageUrl || undefined);
+  }, [imageUrl, onImageSourceChange]);
   const review = width ? undefined : dish.reviews.find((item) => item.text.trim().length > 0);
   const snippet = review
     ? review.text.trim().length > REVIEW_SNIPPET_LENGTH
@@ -60,13 +66,15 @@ export function ForYouCard({
       }}
       testID="for-you-card"
     >
-      {dish.imageUrl ? (
+      {imageUrl ? (
         <View style={{ height: width ? 150 : 190 }}>
           <AccessibleImage
-            source={{ uri: dish.imageUrl }}
+            key={imageUrl}
+            source={{ uri: imageUrl }}
             decorative
             contentFit="cover"
-            onDisplay={paint?.onImageDisplay}
+            onDisplay={paint ? () => paint.onImageDisplay(imageUrl) : undefined}
+            onError={paint ? () => paint.onImageError(imageUrl) : undefined}
             style={{ height: "100%", width: "100%" }}
           />
           {pick.matchPercent !== undefined ? (

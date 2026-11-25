@@ -11,6 +11,7 @@ const tokens = (__ENV.LOAD_AUTH_TOKENS || __ENV.LOAD_AUTH_TOKEN || "")
   .filter(Boolean);
 
 const rpcDeadline = new Rate("catalog_rpc_success_by_deadline");
+const rpcElapsed = new Trend("catalog_rpc_elapsed_ms", true);
 const rpcResponseBytes = new Trend("catalog_rpc_response_bytes");
 
 export const LOAD_VUS = Number(__ENV.LOAD_VUS || "1");
@@ -84,11 +85,13 @@ function responseBytes(body) {
 
 export function runCatalogRpc(route, body, cohort, deadlineMs, isExpectedResult, scenario) {
   const tags = { name: route, route, cohort, ...(scenario ? { fixture_scope: scenario } : {}) };
-  const response = http.post(
-    `${ORIGIN}/rest/v1/rpc/${route}`,
-    JSON.stringify(body),
-    requestOptions(tokens[__VU - 1], tags),
-  );
+  const url = `${ORIGIN}/rest/v1/rpc/${route}`;
+  const payload = JSON.stringify(body);
+  const options = requestOptions(tokens[__VU - 1], tags);
+  const startedAt = Date.now();
+  const response = http.post(url, payload, options);
+  // k6's http_req_duration excludes connection setup. The deadline includes it.
+  const elapsedMs = Date.now() - startedAt;
   let rows;
   if (response.status === 200) {
     try {
@@ -106,7 +109,8 @@ export function runCatalogRpc(route, body, cohort, deadlineMs, isExpectedResult,
     },
     tags,
   );
-  rpcDeadline.add(expected && response.timings.duration <= deadlineMs, tags);
+  rpcElapsed.add(elapsedMs, tags);
+  rpcDeadline.add(expected && elapsedMs <= deadlineMs, tags);
   rpcResponseBytes.add(responseBytes(response.body), tags);
   return expected ? rows : undefined;
 }

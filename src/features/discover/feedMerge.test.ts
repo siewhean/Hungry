@@ -4,9 +4,13 @@ import test from "node:test";
 import { mergeDiscoverFeeds } from "@/features/discover/feedMerge";
 import type { DiscoveryLocationFeed } from "@/lib/services/types";
 
-function feedOf(venueIds: string[], extra: Partial<DiscoveryLocationFeed> = {}) {
+function feedOf(
+  venueIds: string[],
+  extra: Partial<DiscoveryLocationFeed> = {},
+  venueBuildings: Record<string, string> = {},
+) {
   return {
-    venues: venueIds.map((id) => ({ id })),
+    venues: venueIds.map((id) => ({ id, buildingId: venueBuildings[id] })),
     results: venueIds.map((id, index) => ({
       dish: { id: `dish-${id}`, venueId: id },
       score: 1 - index / 100,
@@ -41,4 +45,12 @@ test("the full read decides the fallback state", () => {
 test("an authoritative empty full read removes the first page", () => {
   const merged = mergeDiscoverFeeds(feedOf(["a", "b"]), feedOf([]));
   assert.deepEqual(idsOf(merged), []);
+});
+
+test("current-building stalls and dishes stay first, with preview order inside each group", () => {
+  const preview = feedOf(["a", "c", "b", "d"]);
+  const full = feedOf(["b", "c", "d", "a", "e"], {}, { b: "mall", c: "mall", e: "mall" });
+  const merged = mergeDiscoverFeeds(preview, full, "mall");
+  assert.deepEqual(idsOf(merged), ["c", "b", "e", "a", "d"]);
+  assert.deepEqual(dishVenueIdsOf(merged), ["c", "b", "e", "a", "d"]);
 });

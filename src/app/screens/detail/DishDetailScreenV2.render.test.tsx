@@ -356,6 +356,40 @@ test("live dish details paint before the stall header and use one related menu p
   assert.deepEqual(repositoryReads, [], "no synchronous repository read on live data");
 });
 
+for (const outcome of ["missing", "failed"] as const) {
+  test(`an initial dish response cannot overwrite a ${outcome} refresh`, async () => {
+    stubReviews([]);
+    const dish = pickDish();
+    const reads: {
+      resolve: (result: DishDetail | undefined) => void;
+      reject: (error: Error) => void;
+    }[] = [];
+    useLiveDishReads({
+      getDishDetail: () =>
+        new Promise<DishDetail | undefined>((resolve, reject) => reads.push({ resolve, reject })),
+    });
+    const { navigation, emit } = focusableNavigation();
+    const { view } = await openDish({ navigation });
+    assert.match(view.text(), /Loading dish details/);
+    assert.equal(reads.length, 1);
+
+    await emit("blur");
+    await emit("focus");
+    assert.equal(reads.length, 2);
+    const result = outcome === "missing" ? /We can't find this dish/ : /Couldn't load this dish/;
+    await act(async () => {
+      if (outcome === "missing") reads[1].resolve(undefined);
+      else reads[1].reject(new Error("Network request failed"));
+    });
+    assert.match(view.text(), result);
+    assert.doesNotMatch(view.text(), /Loading dish details/);
+
+    await act(async () => reads[0].resolve(dish));
+    assert.match(view.text(), result);
+    assert.equal(view.findByText(dish.name), null);
+  });
+}
+
 test("a legacy catalog card whose dish page can't be found opens the catalog record instead", async () => {
   stubReviews([]);
   useLiveDishReads({ getDish: async () => undefined });

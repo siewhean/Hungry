@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { StyleProp, ViewStyle } from "react-native";
 import { View } from "react-native";
 import { Utensils } from "lucide-react-native";
@@ -50,10 +50,12 @@ export function DiscoverBiteImage({
   bite,
   height,
   onDisplay,
+  onSourceChange,
 }: {
   bite: Bite;
   height: number;
-  onDisplay?: () => void;
+  onDisplay?: (source: string) => void;
+  onSourceChange?: (source: string | undefined) => void;
 }) {
   const imageUrls = useMemo(
     () =>
@@ -71,15 +73,20 @@ export function DiscoverBiteImage({
     setFailedUrls([]);
   }, [imageSignature]);
 
+  useLayoutEffect(() => {
+    onSourceChange?.(activeImageUrl);
+  }, [activeImageUrl, onSourceChange]);
+
   if (activeImageUrl) {
     return (
       <AccessibleImage
+        key={activeImageUrl}
         source={{ uri: activeImageUrl }}
         style={{ height, width: "100%" }}
         contentFit="cover"
         cachePolicy="memory-disk"
         transition={120}
-        onDisplay={onDisplay}
+        onDisplay={onDisplay ? () => onDisplay(activeImageUrl) : undefined}
         onError={() => {
           setFailedUrls((current) =>
             current.includes(activeImageUrl) ? current : [...current, activeImageUrl],

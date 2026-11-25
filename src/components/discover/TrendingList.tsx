@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { ChevronRight, Utensils } from "lucide-react-native";
 
@@ -35,6 +35,10 @@ function TrendingThumb({
   const [failedUrl, setFailedUrl] = useState<string>();
   const showPhoto = Boolean(photoUrl) && photoUrl !== failedUrl;
   const paint = useCatalogHomeCardVisibility(measureCatalogPaint);
+  const onImageSourceChange = paint?.onImageSourceChange;
+  useLayoutEffect(() => {
+    onImageSourceChange?.(showPhoto ? photoUrl : undefined);
+  }, [onImageSourceChange, photoUrl, showPhoto]);
   return (
     <View
       ref={paint?.ref}
@@ -52,10 +56,11 @@ function TrendingThumb({
     >
       {showPhoto ? (
         <AccessibleImage
+          key={photoUrl}
           source={{ uri: photoUrl }}
           decorative
           contentFit="cover"
-          onDisplay={paint?.onImageDisplay}
+          onDisplay={paint && photoUrl ? () => paint.onImageDisplay(photoUrl) : undefined}
           onError={() => setFailedUrl(photoUrl)}
           style={{ height: "100%", width: "100%" }}
         />

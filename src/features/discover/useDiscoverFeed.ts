@@ -31,7 +31,6 @@ export function useDiscoverFeed() {
   const manualCoordinate = useLocationStore((state) => state.manualCoordinate);
   const manualPlaceName = useLocationStore((state) => state.manualPlaceName);
   const grantLocation = useLocationStore((state) => state.grantLocation);
-  const clearManualLocation = useLocationStore((state) => state.clearManualLocation);
   const showToast = useUIStore((state) => state.showToast);
 
   const { coordinate: discoverCoordinate } = getEffectiveLocation({
@@ -85,18 +84,16 @@ export function useDiscoverFeed() {
       : "near you";
   const hasManualAreaPick = Boolean(manualLocation || manualCoordinate);
   const handleUseCurrentLocation = useCallback(async () => {
-    if (locationPermission === "granted") {
-      await clearManualLocation();
-      return;
-    }
-    const granted = await grantLocation({ manualLocation });
-    if (!granted) {
-      showToast({
-        message: "Location access is off. Turn it on in Settings to use your location.",
-        tone: "info",
-      });
-    }
-  }, [clearManualLocation, grantLocation, locationPermission, manualLocation, showToast]);
+    const hasFix = await grantLocation({ manualLocation });
+    if (hasFix) return;
+    const accessGranted = useLocationStore.getState().permission === "granted";
+    showToast({
+      message: accessGranted
+        ? "Couldn't get your current location. Try again or choose an area."
+        : "Location access is off. Turn it on in Settings to use your location.",
+      tone: "info",
+    });
+  }, [grantLocation, manualLocation, showToast]);
   // Inside a mall, hawker centre or food court the header names it instead of the area. A real
   // GPS fix or a searched place counts; a searched area or the default point is never "inside".
   const { place: currentPlace, isResolving: isCurrentPlaceResolving } = useCurrentPlace(
@@ -145,7 +142,9 @@ export function useDiscoverFeed() {
   }, [supabaseDiscoveryFeed]);
   const supabaseFeedResults = useMemo(() => {
     if (!supabaseDiscoveryFeed) return EMPTY_FEED_RESULTS;
-    if (!supabaseDiscoveryFeed.isFallback) return supabaseDiscoveryFeed.results;
+    if (!supabaseDiscoveryFeed.isFallback && !supabaseDiscoveryFeed.needsEnrichment) {
+      return supabaseDiscoveryFeed.results;
+    }
     return supabaseDiscoveryFeed.results.map((result) => ({
       ...result,
       dish: { ...result.dish, dietaryFlags: [] },

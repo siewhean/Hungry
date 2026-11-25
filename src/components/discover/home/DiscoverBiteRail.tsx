@@ -122,7 +122,12 @@ const DiscoverBiteCard = memo(function DiscoverBiteCard({
         onLongPress={onOptions ? handleOptions : undefined}
         style={chrome.biteCardShell(cardWidth)}
       >
-        <DiscoverBiteImage bite={bite} height={imageHeight} onDisplay={paint?.onImageDisplay} />
+        <DiscoverBiteImage
+          bite={bite}
+          height={imageHeight}
+          onDisplay={paint?.onImageDisplay}
+          onSourceChange={paint?.onImageSourceChange}
+        />
         {/* Rating badge overlay: the rail is rating-based, not curated */}
         {variant === "topRated" && hasRating ? (
           <View

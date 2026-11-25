@@ -29,6 +29,8 @@ type FeedState = {
   phase: "partial" | "complete" | "failed";
   feed?: DiscoveryLocationFeed;
   firstPage?: DiscoveryLocationFeed;
+  preview?: DiscoveryLocationFeed;
+  fullRead?: { placeId: string | undefined; succeeded: boolean };
   expiresAt?: number;
   failure?: CatalogReadFailure;
 };
@@ -37,6 +39,31 @@ function requireLiveFeed(feed: DiscoveryLocationFeed | undefined): DiscoveryLoca
   if (feed?.isFallback) throw new CatalogReadError("Discover is unavailable.", "network");
   if (!feed) throw new CatalogReadError("Discover returned no response.", "contract");
   return feed;
+}
+
+function shouldShowPreview(
+  state: FeedState,
+  placeId: string | undefined,
+  isPlaceResolving: boolean,
+) {
+  return (
+    state.fullRead !== undefined &&
+    (isPlaceResolving || state.fullRead.placeId !== placeId || !state.fullRead.succeeded)
+  );
+}
+
+/** A full read can withdraw items from the geographic preview that stays between building reads. */
+function refreshGeographicPreview(first: DiscoveryLocationFeed, full: DiscoveryLocationFeed) {
+  const previewVenueIds = new Set(first.venues.map(({ id }) => id));
+  const venues = full.venues.filter(({ id }) => previewVenueIds.has(id));
+  if (!venues.length) return undefined;
+
+  const authorizedPreviewVenueIds = new Set(venues.map(({ id }) => id));
+  return mergeDiscoverFeeds(first, {
+    ...full,
+    venues,
+    results: full.results.filter(({ dish }) => authorizedPreviewVenueIds.has(dish.venueId)),
+  });
 }
 
 /** A committed first page is the only trigger for the background reads. */
@@ -57,13 +84,35 @@ export function useLiveDiscoverFeed(
   const [refresh, setRefresh] = useState({ key, attempt: 0 });
   const attempt = refresh.key === key ? refresh.attempt : 0;
   const [state, setState] = useState<FeedState>();
-  const currentRequest = useRef({ key, attempt });
+  const currentRequest = useRef({
+    key,
+    attempt,
+    enabled,
+    isOffline,
+    currentPlaceId,
+    isPlaceResolving,
+  });
   useLayoutEffect(() => {
-    currentRequest.current = { key, attempt };
-  }, [key, attempt]);
+    currentRequest.current = { key, attempt, enabled, isOffline, currentPlaceId, isPlaceResolving };
+  }, [key, attempt, enabled, isOffline, currentPlaceId, isPlaceResolving]);
+  const isCurrentPreview = useCallback(() => {
+    const current = currentRequest.current;
+    return (
+      current.enabled &&
+      current.isOffline === isOffline &&
+      scope === catalogRequestScope() &&
+      current.key === key &&
+      current.attempt === attempt
+    );
+  }, [attempt, isOffline, key, scope]);
   const latest = state?.key === key ? state : undefined;
-  const firstPage =
-    latest?.attempt === attempt && latest.phase === "partial" ? latest.firstPage : undefined;
+  const firstPage = latest?.attempt === attempt ? latest.firstPage : undefined;
+  const hasFullReplacement = latest?.phase === "complete";
+  const hasSettledForPlace =
+    !isPlaceResolving &&
+    latest?.fullRead !== undefined &&
+    latest.fullRead.placeId === currentPlaceId;
+  const isLoadingWiderFeed = firstPage !== undefined && !hasSettledForPlace;
   const staleExpiresAt = latest?.feed?.isFallback ? latest.expiresAt : undefined;
 
   useEffect(() => {
@@ -89,11 +138,12 @@ export function useLiveDiscoverFeed(
   useEffect(() => {
     if (!enabled) return;
     let active = true;
-    const isCurrent = () =>
-      active &&
-      scope === catalogRequestScope() &&
-      currentRequest.current.key === key &&
-      currentRequest.current.attempt === attempt;
+    const isCurrent = () => active && isCurrentPreview();
+    const getCurrentVisibleFeed = (prior: FeedState | undefined) => {
+      if (prior?.key !== key) return undefined;
+      const { currentPlaceId: placeId, isPlaceResolving: resolving } = currentRequest.current;
+      return shouldShowPreview(prior, placeId, resolving) ? prior.preview : prior.feed;
+    };
 
     const forceFresh = (wasOffline.current && !isOffline) || attempt > 0;
     wasOffline.current = isOffline;
@@ -103,10 +153,10 @@ export function useLiveDiscoverFeed(
       void Promise.resolve(cached?.promise).then((cacheFeed) => {
         if (!isCurrent()) return;
         setState((prior) => {
-          const priorVisible =
-            prior?.key === key && prior.feed?.venues.length && (prior.expiresAt ?? 0) > Date.now();
-          const visible = priorVisible ? prior.feed : cacheFeed;
-          const expiresAt = priorVisible ? prior.expiresAt : cached?.expiresAt;
+          const priorFeed = getCurrentVisibleFeed(prior);
+          const priorVisible = priorFeed?.venues.length && (prior?.expiresAt ?? 0) > Date.now();
+          const visible = priorVisible ? priorFeed : cacheFeed;
+          const expiresAt = priorVisible ? prior?.expiresAt : cached?.expiresAt;
           return {
             key,
             attempt,
@@ -132,6 +182,7 @@ export function useLiveDiscoverFeed(
           phase: feed.venues.length ? "partial" : "complete",
           feed,
           firstPage: feed.venues.length ? feed : undefined,
+          preview: feed.venues.length ? feed : undefined,
           expiresAt:
             peekDiscoverFirstPage(key)?.expiresAt ?? Date.now() + DISCOVER_FEED_CACHE_MAX_AGE_MS,
         });
@@ -142,17 +193,17 @@ export function useLiveDiscoverFeed(
         if (failure === "auth") clearCachedDiscoverFeed();
         if (failure !== "cancelled") reportError(error, { surface: "discover_home_feed" });
         setState((prior) => {
+          const previousFeed = getCurrentVisibleFeed(prior);
           const keep =
             failure !== "auth" &&
-            prior?.key === key &&
-            prior.feed?.venues.length &&
-            (prior.expiresAt ?? 0) > Date.now();
+            previousFeed?.venues.length &&
+            (prior?.expiresAt ?? 0) > Date.now();
           return {
             key,
             attempt,
             phase: "failed",
-            feed: keep && prior.feed ? { ...prior.feed, isFallback: true } : undefined,
-            expiresAt: keep ? prior.expiresAt : undefined,
+            feed: keep ? { ...previousFeed, isFallback: true } : undefined,
+            expiresAt: keep ? prior?.expiresAt : undefined,
             failure,
           };
         });
@@ -160,10 +211,10 @@ export function useLiveDiscoverFeed(
     return () => {
       active = false;
     };
-  }, [args, attempt, enabled, isOffline, key, scope]);
+  }, [args, attempt, enabled, isCurrentPreview, isOffline, key, scope]);
 
   useEffect(() => {
-    if (!enabled || isOffline || !firstPage) return;
+    if (!enabled || isOffline || !firstPage || hasFullReplacement) return;
     const first = firstPage;
     const discovery = getHungryService().discovery;
     if (!first.needsEnrichment || !discovery.enrichDiscoveryFeed) return;
@@ -172,19 +223,25 @@ export function useLiveDiscoverFeed(
       () => {
         void discovery.enrichDiscoveryFeed?.(first).then(
           (enriched) => {
-            if (!active || scope !== catalogRequestScope()) return;
+            if (!active || !isCurrentPreview()) return;
             setState((prior) =>
-              prior?.key === key && prior.attempt === attempt && prior.phase === "partial"
-                ? { ...prior, feed: enriched }
+              prior?.key === key &&
+              prior.attempt === attempt &&
+              prior.firstPage === first &&
+              prior.phase !== "complete"
+                ? { ...prior, feed: enriched, preview: enriched }
                 : prior,
             );
           },
           (error: unknown) => {
-            if (!active || scope !== catalogRequestScope()) return;
+            if (!active || !isCurrentPreview()) return;
             if (catalogReadOutcome(error) === "auth") {
               clearCachedDiscoverFeed();
               setState((prior) =>
-                prior?.key === key && prior.attempt === attempt
+                prior?.key === key &&
+                prior.attempt === attempt &&
+                prior.firstPage === first &&
+                prior.phase !== "complete"
                   ? { key, attempt, phase: "failed", failure: "auth" }
                   : prior,
               );
@@ -198,20 +255,18 @@ export function useLiveDiscoverFeed(
       active = false;
       cancel();
     };
-  }, [attempt, enabled, firstPage, isOffline, key, scope]);
+  }, [attempt, enabled, firstPage, hasFullReplacement, isCurrentPreview, isOffline, key]);
 
   useEffect(() => {
-    if (!enabled || !firstPage || isOffline || isPlaceResolving) return;
+    if (!enabled || !firstPage || isOffline || isPlaceResolving || hasSettledForPlace) return;
     let active = true;
     const first = firstPage;
     const discovery = getHungryService().discovery;
-    const isCurrent = () =>
-      active &&
-      scope === catalogRequestScope() &&
-      currentRequest.current.key === key &&
-      currentRequest.current.attempt === attempt;
+    const startedFor = currentRequest.current;
+    const isCurrent = () => active && isCurrentPreview() && currentRequest.current === startedFor;
 
     const loadRemaining = async () => {
+      if (!isCurrent()) return;
       try {
         const feed = requireLiveFeed(
           await discovery.listDiscoveryFeedByLocation({
@@ -237,7 +292,10 @@ export function useLiveDiscoverFeed(
           key,
           attempt,
           phase: "complete",
-          feed: mergeDiscoverFeeds(first, feed),
+          firstPage: first,
+          preview: refreshGeographicPreview(first, feed),
+          fullRead: { placeId: currentPlaceId, succeeded: true },
+          feed: mergeDiscoverFeeds(first, feed, currentPlaceId),
           expiresAt: Date.now() + DISCOVER_FEED_CACHE_MAX_AGE_MS,
         });
       } catch (error: unknown) {
@@ -252,7 +310,12 @@ export function useLiveDiscoverFeed(
         // The full feed is optional after the first page succeeds. Keep the live rows.
         setState((prior) =>
           prior?.key === key && prior.attempt === attempt
-            ? { ...prior, phase: "failed", failure }
+            ? {
+                ...prior,
+                phase: prior.phase === "complete" ? "complete" : "failed",
+                fullRead: { placeId: currentPlaceId, succeeded: false },
+                failure,
+              }
             : prior,
         );
       }
@@ -263,12 +326,32 @@ export function useLiveDiscoverFeed(
       active = false;
       cancel();
     };
-  }, [args, attempt, currentPlaceId, enabled, firstPage, isOffline, isPlaceResolving, key, scope]);
+  }, [
+    args,
+    attempt,
+    currentPlaceId,
+    enabled,
+    firstPage,
+    hasSettledForPlace,
+    isCurrentPreview,
+    isOffline,
+    isPlaceResolving,
+    key,
+  ]);
 
+  const visible: FeedState | undefined =
+    latest && shouldShowPreview(latest, currentPlaceId, isPlaceResolving)
+      ? {
+          ...latest,
+          phase: isLoadingWiderFeed ? "partial" : "failed",
+          feed: latest.preview,
+          failure: isLoadingWiderFeed ? undefined : latest.failure,
+        }
+      : latest;
   return {
     key,
-    state: enabled ? latest : undefined,
-    isLoading: enabled && (latest?.attempt !== attempt || latest.phase === "partial"),
+    state: enabled ? visible : undefined,
+    isLoading: enabled && (latest?.attempt !== attempt || isLoadingWiderFeed),
     isRefreshing: enabled && attempt > 0 && latest?.attempt !== attempt,
     reload,
   };

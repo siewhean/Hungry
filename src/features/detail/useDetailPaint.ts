@@ -23,7 +23,7 @@ export function useDetailPaint(surface: "dish" | "stall", id: string) {
     pending?: { milestone: Milestone; outcome: Outcome };
   }>({ id, recorded: new Set() });
   useEffect(() => {
-    if (attempt.current.id !== id) {
+    if (attempt.current.id !== id || (!focused && attempt.current.startedAt !== undefined)) {
       attempt.current = { id, recorded: new Set() };
     }
     if (!focused) return;
