@@ -22,6 +22,7 @@ import { enterScenario } from "@/test/render/sessions";
 beforeEach(async () => {
   await enterScenario("user");
   useDeveloperToolsStore.getState().lock();
+  useDeveloperToolsStore.getState().setInternalDevice(false);
 });
 
 afterEach(async () => {
@@ -64,6 +65,18 @@ test("forcing a variant changes what the experiment resolves to, and Automatic c
 
   await view.press(view.findByLabel(`${firstExperiment}: automatic`));
   assert.equal(getExperimentVariant(firstExperiment), definition.fallback);
+});
+
+test("the Usage numbers switch marks this phone as the team's and shows it in the build rows", async () => {
+  const view = await renderScreen(DeveloperToolsScreen as never, { name: "DeveloperTools" });
+  assert.ok(view.findByText("Analytics environment tag"));
+  assert.equal(useDeveloperToolsStore.getState().internalDevice, false);
+
+  await view.press(view.findByLabel("Count this phone as team traffic"));
+  assert.equal(useDeveloperToolsStore.getState().internalDevice, true);
+
+  await view.press(view.findByLabel("Count this phone as team traffic"));
+  assert.equal(useDeveloperToolsStore.getState().internalDevice, false);
 });
 
 test("the test error row reports to error tracking and tells the user", async () => {

@@ -354,6 +354,7 @@ export function useAppBootstrap() {
         applyAuthStateFromSession({
           isAuthenticated: true,
           userId: user.id,
+          email: user.email,
         });
         const cancelProfileHydration = runAfterIdle(() => {
           void getHungryService()
@@ -426,6 +427,7 @@ export function useAppBootstrap() {
       applyAuthStateFromSession({
         isAuthenticated: true,
         userId: user.id,
+        email: user.email,
         authProvider: getAuthUserProvider(user),
         isNewUser,
         completedOnboarding: isFreshSignIn && !isNewUser ? true : undefined,
