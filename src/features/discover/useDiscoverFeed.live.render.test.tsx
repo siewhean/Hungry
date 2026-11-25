@@ -303,6 +303,49 @@ test("changing buildings in the same area refreshes the wider feed without anoth
   assert.equal(reads.firstPage.length, 1);
 });
 
+for (const failure of ["offline", "refresh"] as const) {
+  test(`a ${failure} snapshot stays geographic when the current building changes`, async () => {
+    const reads = installLiveProvider();
+    const args = getDiscoverReadArgs(useLocationStore.getState());
+    let latest: ReturnType<typeof useLiveDiscoverFeed> | undefined;
+    function Probe({ place }: { place: string }) {
+      latest = useLiveDiscoverFeed(true, args, place, false);
+      return null;
+    }
+    const view = await render(<Probe place="b1" />);
+    reads.firstPage[0].resolve(liveFeed);
+    await view.settle();
+    await flushBackground();
+    const onlyFirstBuilding = { ...venue, id: "only-b1" };
+    reads.feed[0].resolve({ venues: [onlyFirstBuilding, venue], results: [] });
+    await view.settle();
+    assert.deepEqual(
+      latest?.state?.feed?.venues.map(({ id }) => id),
+      ["v1", "only-b1"],
+    );
+
+    if (failure === "offline") {
+      await act(async () => {
+        useUIStore.setState({ isOffline: true });
+      });
+    } else {
+      await act(async () => {
+        await latest?.reload();
+      });
+      reads.firstPage[1].reject(new CatalogReadError("timed out", "timeout"));
+    }
+    await view.settle();
+    await view.rerender(<Probe place="b2" />);
+
+    assert.equal(latest?.state?.feed?.isFallback, true);
+    assert.deepEqual(
+      latest?.state?.feed?.venues.map(({ id }) => id),
+      ["v1"],
+    );
+    assert.equal(reads.feed.length, 1);
+  });
+}
+
 test("the previous building cannot replace the feed when another building commits", async () => {
   const reads = installLiveProvider();
   const args = getDiscoverReadArgs(useLocationStore.getState());

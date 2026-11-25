@@ -469,7 +469,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /<AppSymbol\s+name="fork\.knife"\s+fallback=\{Utensils\}\s+size=\{Math\.min\(iconSize, 24\)\}\s+color=\{palette\.textMuted\}/,
   );
-  assert.match(discover, /function DiscoverBiteImage\(\{\s*bite,\s*height,\s*onDisplay,\s*\}/);
+  assert.match(
+    discover,
+    /function DiscoverBiteImage\(\{\s*bite,\s*height,\s*onDisplay,\s*onSourceChange,\s*\}/,
+  );
   assert.match(discover, /\[bite\.photoUrl, \.\.\.\(bite\.mediaUrls \?\? \[\]\)\]/);
   assert.match(discover, /source=\{\{ uri: activeImageUrl \}\}/);
   assert.match(
@@ -478,7 +481,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /<DiscoverBiteImage bite=\{bite\} height=\{imageHeight\} onDisplay=\{paint\?\.onImageDisplay\} \/>/,
+    /<DiscoverBiteImage\s+bite=\{bite\}\s+height=\{imageHeight\}\s+onDisplay=\{paint\?\.onImageDisplay\}\s+onSourceChange=\{paint\?\.onImageSourceChange\}\s*\/>/,
   );
   assert.match(discover, /function DiscoverStallThumbnail\(/);
   assert.match(discover, /import \{ StallLogoMark \} from "@\/components\/stall\/StallLogoMark"/);

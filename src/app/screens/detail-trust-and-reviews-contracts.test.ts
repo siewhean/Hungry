@@ -89,7 +89,7 @@ test("stall page has no fake save, timer skeleton, or menu-empty flash while loa
   assert.match(stallDetail, /Couldn&apos;t load this stall&apos;s menu\./);
   assert.match(
     stallDetail,
-    /if\s*\(active\)\s*\{\s*reportPaint\("menu", catalogReadOutcome\(error\)\);\s*setMenuLoadFailed\(true\);\s*\}/,
+    /if\s*\(active\)\s*\{\s*reportPaint\("menu", catalogReadOutcome\(error\)\);[^}]*setMenuLoadFailed\(true\);\s*\}/,
   );
   assert.doesNotMatch(stallDetail, /if \(active\) setHydratedDishes\(\[\]\)/);
 });

@@ -139,10 +139,10 @@ export function useLiveDiscoverFeed(
     if (!enabled) return;
     let active = true;
     const isCurrent = () => active && isCurrentPreview();
-    const getCurrentVisibleFeed = (prior: FeedState | undefined) => {
+    // The first-page scope is geographic, so a retained outage snapshot must also be geographic.
+    const getGeographicFallback = (prior: FeedState | undefined) => {
       if (prior?.key !== key) return undefined;
-      const { currentPlaceId: placeId, isPlaceResolving: resolving } = currentRequest.current;
-      return shouldShowPreview(prior, placeId, resolving) ? prior.preview : prior.feed;
+      return prior.fullRead ? prior.preview : prior.feed;
     };
 
     const forceFresh = (wasOffline.current && !isOffline) || attempt > 0;
@@ -153,7 +153,7 @@ export function useLiveDiscoverFeed(
       void Promise.resolve(cached?.promise).then((cacheFeed) => {
         if (!isCurrent()) return;
         setState((prior) => {
-          const priorFeed = getCurrentVisibleFeed(prior);
+          const priorFeed = getGeographicFallback(prior);
           const priorVisible = priorFeed?.venues.length && (prior?.expiresAt ?? 0) > Date.now();
           const visible = priorVisible ? priorFeed : cacheFeed;
           const expiresAt = priorVisible ? prior?.expiresAt : cached?.expiresAt;
@@ -193,7 +193,7 @@ export function useLiveDiscoverFeed(
         if (failure === "auth") clearCachedDiscoverFeed();
         if (failure !== "cancelled") reportError(error, { surface: "discover_home_feed" });
         setState((prior) => {
-          const previousFeed = getCurrentVisibleFeed(prior);
+          const previousFeed = getGeographicFallback(prior);
           const keep =
             failure !== "auth" &&
             previousFeed?.venues.length &&

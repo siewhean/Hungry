@@ -258,9 +258,14 @@ test("legacy stalls reuse only timely verified snapshots after transient failure
     fake.rpc.get_venue_detail = () => ({
       error: { code: "57014", message: "statement timeout" },
     });
-    assert.equal((await service.getStallHeader(venueId, { legacy: true }))?.id, venueId);
+    const cachedHeader = await service.getStallHeader(venueId, { legacy: true });
+    assert.equal(cachedHeader?.id, venueId);
+    assert.equal(cachedHeader?.isFallback, true);
     const cached = await service.getStallLegacyMenuPage(venueId);
+    assert.equal(cached.isFallback, true);
     assert.equal(cached.dishes[0]?.id, `${DISH_ID}-0`);
+    assert.equal(cached.dishes[0]?.halalStatus, "unknown");
+    assert.deepEqual(cached.dishes[0]?.dietaryFlags, []);
     assert.equal(cached.nextCursor?.id, `${DISH_ID}-49`);
     assert.equal(cached.nextCursor?.score, 1);
 

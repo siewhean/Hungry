@@ -9,12 +9,13 @@ import {
 
 type Milestone = "actionable" | "menu" | "image";
 type Outcome = NonNullable<Parameters<typeof recordCatalogPaint>[3]>;
+type Layout = { id: string; outcome: "success" | "stale" | "empty" };
 
 /** Report the first terminal result for each milestone of a focused detail open. */
 export function useDetailPaint(surface: "dish" | "stall", id: string) {
   const focused = useIsFocused();
-  const [layoutId, setLayoutId] = useState<string>();
-  const [menuLayout, setMenuLayout] = useState<{ id: string; empty: boolean }>();
+  const [header, setHeader] = useState<Layout>();
+  const [menu, setMenu] = useState<Layout>();
   const attempt = useRef<{
     id: string;
     startedAt?: number;
@@ -56,22 +57,29 @@ export function useDetailPaint(surface: "dish" | "stall", id: string) {
   );
 
   useEffect(() => {
-    if (focused && layoutId === id) report("actionable", "success");
-  }, [focused, id, layoutId, report]);
+    if (focused && header?.id === id) report("actionable", header.outcome);
+  }, [focused, header, id, report]);
 
   useEffect(() => {
-    if (focused && menuLayout?.id === id) report("menu", menuLayout.empty ? "empty" : "success");
-  }, [focused, id, menuLayout, report]);
+    if (focused && menu?.id === id) report("menu", menu.outcome);
+  }, [focused, id, menu, report]);
 
   return {
-    headerLayout: () => setLayoutId(id),
+    headerLayout: (stale = false) => {
+      const outcome = stale ? "stale" : "success";
+      setHeader((current) =>
+        current?.id === id && current.outcome === outcome ? current : { id, outcome },
+      );
+    },
     imageDisplayed: () => {
       if (focused) report("image", "success");
     },
-    menuLayout: (empty: boolean) =>
-      setMenuLayout((current) =>
-        current?.id === id && current.empty === empty ? current : { id, empty },
-      ),
+    menuLayout: (empty: boolean, stale = false) => {
+      const outcome = stale ? "stale" : empty ? "empty" : "success";
+      setMenu((current) =>
+        current?.id === id && current.outcome === outcome ? current : { id, outcome },
+      );
+    },
     report,
   };
 }

@@ -235,7 +235,10 @@ test("repo wiring exposes validation, import, smoke checks, and app discovery RP
   }
 
   assert.match(repositorySource, /export\s+async\s+function\s+listDiscoveryFeedByLocationViaRpc/i);
-  assert.match(repositorySource, /strictCatalogRows\("home", "get_discovery_feed_by_location"/);
+  assert.match(
+    repositorySource,
+    /strictCatalogRows\(\s*"home",\s*"get_discovery_feed_by_location"/,
+  );
   assert.match(repositorySource, /export\s+async\s+function\s+searchVenuesByLocationViaRpc/i);
   assert.match(repositorySource, /rpcRows\("search_venues_by_location"/);
   assert.match(repositorySource, /mapLocationSearchVenue/);

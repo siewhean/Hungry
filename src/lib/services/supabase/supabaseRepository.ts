@@ -18,6 +18,7 @@ import type {
   DiscoveryLocationFeedRequest,
   SavedDishCard,
   SearchResult,
+  StallHeaderRead,
   VenueLocationSearchRequest,
   VenueMenuCursor,
   VenueMenuPage,
@@ -1537,9 +1538,9 @@ function getVenueDetailSnapshot(venueId: string, error: unknown): Row | undefine
 export function getCachedLegacyStallHeader(
   venueId: string,
   error: unknown,
-): VenueSummary | undefined {
+): StallHeaderRead | undefined {
   const row = getVenueDetailSnapshot(venueId, error);
-  return row ? mapRpcVenue(row) : undefined;
+  return row ? { ...mapRpcVenue(row), isFallback: true } : undefined;
 }
 
 export function getCachedLegacyStallMenu(
@@ -1547,7 +1548,18 @@ export function getCachedLegacyStallMenu(
   error: unknown,
 ): VenueMenuPage | undefined {
   const row = getVenueDetailSnapshot(venueId, error);
-  return row ? mapLegacyStallMenuPage(row.dishes as Row[], catalogDisplayImageUrl(row)) : undefined;
+  if (!row) return undefined;
+  const page = mapLegacyStallMenuPage(row.dishes as Row[], catalogDisplayImageUrl(row));
+  return {
+    ...page,
+    isFallback: true,
+    dishes: page.dishes.map((dish) => ({
+      ...dish,
+      availabilityFlags: [],
+      dietaryFlags: [],
+      halalStatus: "unknown",
+    })),
+  };
 }
 
 /** Forgets the reused get_venue_detail result, so the next read of that stall is fresh. */

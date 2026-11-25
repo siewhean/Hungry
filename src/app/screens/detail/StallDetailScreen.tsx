@@ -97,6 +97,7 @@ import { formatSgPhone } from "@/features/detail/formatSgPhone";
 import type {
   MerchantClaimStatus,
   RecentReviewFeedEntry,
+  StallHeaderRead,
   VenueMenuCursor,
 } from "@/lib/services/types";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -327,16 +328,19 @@ export function StallDetailScreen({ navigation, route }: Props) {
   // downloads whole tables (again every 45 s) and stops at 1,000 rows, so it is never asked.
   const readsLocalData = serviceProviderMode !== "supabase";
   const cachedVenue = readsLocalData ? repository.getVenueById(venueId) : undefined;
-  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const [hydratedVenue, setHydratedVenue] = useState<StallHeaderRead>();
   const [hasLoadedVenueDetail, setHasLoadedVenueDetail] = useState(Boolean(cachedVenue));
   // A failed venue read (offline, timeout) is not "Stall not found".
   const [venueLoadFailed, setVenueLoadFailed] = useState(false);
   const [venueReloadKey, setVenueReloadKey] = useState(0);
   const venue = hydratedVenue?.id === venueId ? hydratedVenue : cachedVenue;
+  const staleVenue = venue !== undefined && "isFallback" in venue && venue.isFallback === true;
 
   useEffect(() => {
     let active = true;
-    setHydratedVenue(undefined);
+    setHydratedVenue((current) =>
+      current?.id === venueId && current.isFallback ? current : undefined,
+    );
     setVenueLoadFailed(false);
     setHasLoadedVenueDetail(Boolean(cachedVenue));
     // Supabase list caches carry no delivery links, so still read the venue detail
@@ -354,14 +358,15 @@ export function StallDetailScreen({ navigation, route }: Props) {
     )
       .then((nextVenue) => {
         if (!active) return;
-        if (nextVenue) setHydratedVenue(nextVenue);
-        else reportPaint("actionable", "missing");
+        setHydratedVenue(nextVenue);
+        if (!nextVenue) reportPaint("actionable", "missing");
         setHasLoadedVenueDetail(true);
       })
       .catch((error) => {
         reportStallError(error, "load_venue");
         if (!active) return;
         reportPaint("actionable", catalogReadOutcome(error));
+        setHydratedVenue(undefined);
         setVenueLoadFailed(true);
         setHasLoadedVenueDetail(true);
       });
@@ -392,14 +397,22 @@ export function StallDetailScreen({ navigation, route }: Props) {
     () => (venue && readsLocalData ? repository.listDishesByVenue(venue.id) : EMPTY_DISHES),
     [readsLocalData, repository, venue],
   );
-  const [hydratedDishes, setHydratedDishes] = useState<DishDetail[] | undefined>();
+  const [loadedMenu, setLoadedMenu] = useState<{
+    venueId: string;
+    dishes: DishDetail[];
+    stale: boolean;
+  }>();
   const [menuLoadFailed, setMenuLoadFailed] = useState(false);
+  const [menuRefreshing, setMenuRefreshing] = useState(false);
   const [menuReloadKey, setMenuReloadKey] = useState(0);
   // Long menus come a page at a time: the first page shows at once, the rest on demand.
   const [menuNextCursor, setMenuNextCursor] = useState<StallMenuCursor>();
   const [menuPageStatus, setMenuPageStatus] = useState<"idle" | "loading" | "error">("idle");
   const [menuPageRequested, setMenuPageRequested] = useState(false);
   const menuGeneration = useRef(0);
+  const currentMenu = loadedMenu?.venueId === venue?.id ? loadedMenu : undefined;
+  const hydratedDishes = currentMenu?.dishes;
+  const staleMenu = currentMenu?.stale === true;
   const dishes =
     hydratedDishes ?? (serviceProviderMode === "supabase" ? EMPTY_DISHES : cachedDishes);
   // Supabase mode has no menu until listDishesByVenue resolves; an error is not an empty menu.
@@ -587,8 +600,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   useEffect(() => {
     let active = true;
     menuGeneration.current += 1;
-    setHydratedDishes(undefined);
+    setLoadedMenu((current) =>
+      current?.venueId === targetVenueId && current?.stale ? current : undefined,
+    );
     setMenuLoadFailed(false);
+    setMenuRefreshing(false);
     setMenuNextCursor(undefined);
     setMenuPageStatus("idle");
     setMenuPageRequested(false);
@@ -604,6 +620,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
       };
     }
 
+    setMenuRefreshing(true);
     const firstPage =
       listStallMenuPage?.(targetVenueId) ??
       discovery.getStallLegacyMenuPage?.(targetVenueId) ??
@@ -614,13 +631,17 @@ export function StallDetailScreen({ navigation, route }: Props) {
     void firstPage
       .then((page) => {
         if (!active) return;
-        setHydratedDishes(page.dishes);
-        setMenuNextCursor(page.nextCursor);
+        const stale = "isFallback" in page && page.isFallback === true;
+        setLoadedMenu({ venueId: targetVenueId, dishes: page.dishes, stale });
+        setMenuNextCursor(stale ? undefined : page.nextCursor);
+        setMenuRefreshing(false);
       })
       .catch((error) => {
         reportStallError(error, "load_menu");
         if (active) {
           reportPaint("menu", catalogReadOutcome(error));
+          setLoadedMenu(undefined);
+          setMenuRefreshing(false);
           setMenuLoadFailed(true);
         }
       });
@@ -964,9 +985,13 @@ export function StallDetailScreen({ navigation, route }: Props) {
     void pageRequest
       .then((page) => {
         if (menuGeneration.current !== generation) return;
-        setHydratedDishes((current) => {
-          const known = new Set((current ?? []).map((dish) => dish.id));
-          return [...(current ?? []), ...page.dishes.filter((dish) => !known.has(dish.id))];
+        setLoadedMenu((current) => {
+          if (current?.venueId !== targetVenueId) return current;
+          const known = new Set(current.dishes.map((dish) => dish.id));
+          return {
+            ...current,
+            dishes: [...current.dishes, ...page.dishes.filter((dish) => !known.has(dish.id))],
+          };
         });
         // A cursor that does not move would read the same page forever.
         const previousKey = typeof cursor === "string" ? cursor : cursor.id;
@@ -1100,7 +1125,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const deliveryLinks = venue.deliveryLinks ?? [];
   const openUnconfirmed =
     usesStallMenuPages && openInfo.isOpen && closureCheckedVenueId !== venue.id;
-  const operatingStatusLabel = openUnconfirmed ? "Check listed hours" : openInfo.statusLabel;
+  const operatingStatusLabel = staleVenue
+    ? "Current opening status unavailable"
+    : openUnconfirmed
+      ? "Check listed hours"
+      : openInfo.statusLabel;
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
@@ -1125,14 +1154,16 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const hoursRows = openInfo.weekRows;
   // A single listed "Hours" line that today's row already repeats has nothing more to expand.
   const hoursExpandable = hoursRows.some(
-    (row) => !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
+    (row) =>
+      staleVenue ||
+      !openInfo.todayRows.some((day) => day.label === row.label && day.text === row.text),
   );
   const hoursHeader = (
     <View style={{ alignItems: "center", flexDirection: "row", gap: spacing[2] }}>
       <HoursSymbol color={palette.orange} size={18} />
       <AppText
         variant="bodyBold"
-        tone={openInfo.isOpen && !openUnconfirmed ? "success" : "default"}
+        tone={openInfo.isOpen && !openUnconfirmed && !staleVenue ? "success" : "default"}
         // A long closure message wraps instead of being cut off at large text sizes.
         numberOfLines={3}
         style={{ flex: 1 }}
@@ -1161,6 +1192,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const stallIsEmpty =
     showDeferredDetailControls &&
     menuStatus === "ready" &&
+    !staleMenu &&
     dishes.length === 0 &&
     reviewsStatus === "ready" &&
     communityReviews.length === 0;
@@ -1264,7 +1296,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     const { y, height } = event.nativeEvent.layout;
     contentBodyLayoutRef.current = { y, height };
     syncMenuLoadAt();
-    headerLayout();
+    headerLayout(staleVenue);
   };
 
   const handleReviewsSectionLayout = (event: LayoutChangeEvent) => {
@@ -1285,7 +1317,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
     const { y, height } = event.nativeEvent.layout;
     menuSectionLayoutRef.current = { y, height };
     syncMenuLoadAt();
-    if (menuStatus === "ready") menuLayout(dishes.length === 0);
+    if (menuStatus === "ready") menuLayout(dishes.length === 0, staleMenu);
   };
 
   // Called from the scroll handler when the diner nears the end of the loaded menu.
@@ -1502,6 +1534,21 @@ export function StallDetailScreen({ navigation, route }: Props) {
                     ) : null}
                   </View>
                 </View>
+                {staleVenue ? (
+                  <View style={{ alignItems: "flex-start", gap: spacing[1] }}>
+                    <AppText variant="bodySmall" tone="secondary">
+                      Showing recently loaded stall details.
+                    </AppText>
+                    <Button
+                      label="Retry stall details"
+                      variant="secondary"
+                      size="sm"
+                      fullWidth={false}
+                      loading={!hasLoadedVenueDetail}
+                      onPress={() => setVenueReloadKey((key) => key + 1)}
+                    />
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
                   {ratingSummary ? (
                     <PressableScale
@@ -1584,7 +1631,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : null}
                 </View>
                 {/* Only when the hours card does not already say it. */}
-                {openInfo.extraNotice ? (
+                {!staleVenue && openInfo.extraNotice ? (
                   <AppText variant="bodySmall" tone="secondary">
                     {openInfo.extraNotice}
                   </AppText>
@@ -1647,7 +1694,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       {hoursHeader}
                     </View>
                   )}
-                  {openInfo.todayRows.length > 0 ? (
+                  {!staleVenue && openInfo.todayRows.length > 0 ? (
                     <AppText
                       variant="bodySmall"
                       tone="secondary"
@@ -1658,9 +1705,9 @@ export function StallDetailScreen({ navigation, route }: Props) {
                   ) : null}
                   {hoursExpanded
                     ? hoursRows.map((row) => {
-                        const isToday = openInfo.todayRows.some(
-                          (today) => today.label === row.label,
-                        );
+                        const isToday =
+                          !staleVenue &&
+                          openInfo.todayRows.some((today) => today.label === row.label);
                         return (
                           <View
                             key={`${row.label}-${row.text}`}
@@ -1775,6 +1822,23 @@ export function StallDetailScreen({ navigation, route }: Props) {
                       </AppText>
                     ) : null}
                   </View>
+                  {staleMenu ? (
+                    <View style={{ alignItems: "flex-start", gap: spacing[1] }}>
+                      <AppText variant="bodySmall" tone="secondary">
+                        {dishes.length > 0
+                          ? "Showing recently loaded menu. Current availability is unknown."
+                          : "No recently loaded items. Retry for the current menu."}
+                      </AppText>
+                      <Button
+                        label="Retry menu"
+                        variant="secondary"
+                        size="sm"
+                        fullWidth={false}
+                        loading={menuRefreshing}
+                        onPress={() => setMenuReloadKey((key) => key + 1)}
+                      />
+                    </View>
+                  ) : null}
                   {menuStatus === "loading" ? (
                     <View
                       accessibilityLabel="Loading menu"
@@ -1870,7 +1934,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         </Card>
                       ) : null}
                     </View>
-                  ) : (
+                  ) : !staleMenu ? (
                     <Card style={{ padding: spacing[4], alignItems: "center" }}>
                       <AppText
                         variant="body"
@@ -1889,7 +1953,7 @@ export function StallDetailScreen({ navigation, route }: Props) {
                         />
                       ) : null}
                     </Card>
-                  )}
+                  ) : null}
                 </View>
               )}
               {showDeferredDetailControls && activePromotions.length > 0 ? (

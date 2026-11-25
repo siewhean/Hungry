@@ -75,6 +75,7 @@ import { FEATURE_FLAGS } from "@/constants/featureFlags";
 import { useReviewPortfolioLabels } from "@/features/foodPortfolio/useReviewPortfolioLabels";
 import { useWeeklyRanks } from "@/features/leaderboard/boardRanks";
 import { sanitizeCatalogImageUrl } from "@/lib/services/catalog/media";
+import type { StallHeaderRead } from "@/lib/services/types";
 import {
   getDataRepository,
   getHungryService,
@@ -257,11 +258,12 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     () => (dish && readsLocalData ? repository.getVenueById(dish.venueId) : undefined),
     [dish, readsLocalData, repository],
   );
-  const [hydratedVenue, setHydratedVenue] = useState<typeof cachedVenue>();
+  const [hydratedVenue, setHydratedVenue] = useState<StallHeaderRead>();
   // A failed stall read shows a retry row instead of silently dropping the stall sections.
   const [venueLoadFailed, setVenueLoadFailed] = useState(false);
   const [venueReloadKey, setVenueReloadKey] = useState(0);
-  const venue = hydratedVenue?.id === readVenueId ? hydratedVenue : cachedVenue;
+  const venue: StallHeaderRead | undefined =
+    hydratedVenue?.id === readVenueId ? hydratedVenue : cachedVenue;
 
   // Dish photos only: review photos have their own rail and cards.
   const heroPhotos = useMemo(() => (dish ? buildDishHeroPhotos(dish) : []), [dish]);
@@ -309,7 +311,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   // then the weekly schedule with special hours, then the listed hours text.
   const openInfo = useMemo(
     () =>
-      venue
+      venue && !venue.isFallback
         ? resolveStallOpenInfo({
             venue,
             schedule: openingSchedule,
@@ -1165,7 +1167,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
             </DetailHeroFade>
 
             <View
-              onLayout={headerLayout}
+              onLayout={() => headerLayout()}
               style={{
                 gap: spacing[5],
                 marginTop: spacing[4],

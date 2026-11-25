@@ -640,8 +640,13 @@ export interface VenueMenuCursor {
   venueImageUrl?: string;
 }
 
+export interface StallHeaderRead extends VenueSummary {
+  isFallback?: true;
+}
+
 export interface VenueMenuPage {
   dishes: DishDetail[];
+  isFallback?: true;
   /** Set while more of the menu may exist. */
   nextCursor?: VenueMenuCursor;
 }
@@ -1117,7 +1122,10 @@ export interface HungryService {
     getFloorPlan(buildingId: string, floor: string): Promise<FloorPlan | undefined>;
     listFloors(buildingId: string): Promise<string[]>;
     getVenue(id: string): Promise<VenueSummary | undefined>;
-    getStallHeader?(id: string, options?: { legacy?: boolean }): Promise<VenueSummary | undefined>;
+    getStallHeader?(
+      id: string,
+      options?: { legacy?: boolean },
+    ): Promise<StallHeaderRead | undefined>;
     listVenuesByBuilding(buildingId: string): Promise<VenueSummary[]>;
     getDish(id: string): Promise<DishDetail | undefined>;
     getDishDetail?(id: string): Promise<DishDetail | undefined>;

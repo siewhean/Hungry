@@ -145,7 +145,7 @@ test("Supabase source of truth and bounded service read paths are covered by rep
   assert.match(repository, /rpcRows\("search_dishes"/);
   assert.match(
     repository,
-    /strictCatalogRows\("home", "get_discovery_feed_by_location", \{[^}]*p_limit: request\.limit \?\? null/,
+    /strictCatalogRows\(\s*"home",\s*"get_discovery_feed_by_location",\s*\{[^}]*p_limit: request\.limit \?\? null/,
   );
   assert.match(repository, /p_cursor_id/);
   assert.match(service, /client\.rpc\("get_home_social_feed_v2"/);

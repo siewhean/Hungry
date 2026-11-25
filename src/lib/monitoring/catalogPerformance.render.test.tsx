@@ -98,6 +98,23 @@ test("returning to the same detail route starts a fresh timing attempt", async (
   ]);
 });
 
+test("rendered stall snapshots time stale headers and menus separately", async () => {
+  let paint!: ReturnType<typeof useDetailPaint>;
+  function Probe() {
+    paint = useDetailPaint("stall", "stale-stall");
+    return null;
+  }
+  await render(<Probe />);
+  await act(async () => {
+    paint.headerLayout(true);
+    paint.menuLayout(true, true);
+  });
+  assert.deepEqual(milestones(), [
+    ["actionable", "stale", "focus"],
+    ["menu", "stale", "focus"],
+  ]);
+});
+
 test("Home records cards only inside its viewport and measures displayed images independently", async (t) => {
   const original = Object.getOwnPropertyDescriptor(globalThis, "requestAnimationFrame");
   const frames: FrameRequestCallback[] = [];
