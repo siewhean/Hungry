@@ -1785,3 +1785,9 @@ Use the smallest check that matches the change risk.
 - Focused: posthogSink, trafficTag, experiments, useDeveloperToolsStore, useProfileStore.internalAccount tests; DeveloperToolsScreen render test; 12 render files that read experiments (336 pass with the freeze lifted by `HUNGRY_THAW_EXPERIMENTS=1` in `scripts/test-render.mjs`).
 - Full suites: run by GitHub checks on the PR.
 - Not done: the PostHog dashboard and project settings (owner decision, written in tasks/usage-analytics.md).
+
+## 2026-11-21 Wave-0 hygiene + PKG-0.7 waitlist verification
+
+- `./scripts/verify-package.sh src/store/useSessionStore.auth-account-flows.test.ts`: PASS (`9/9` auth tests, `typecheck` clean, `check:rate-limits` `10/10`, `check:n-plus-one` clean, `audit:races` clean, `check:staging-functions` `11/11` after `fileURLToPath` fix, `audit:supabase:migration-safety` clean, `git diff --check` clean).
+- `node --test scripts/__tests__/verify_package.test.mjs scripts/seed/staging-test-activity.test.mjs`: `14/14` pass.
+- `npm --prefix marketing/website/web-v2 run waitlist:e2e`: PASS (foodie + merchant signups stored, welcome email dispatched once, repeat signups idempotent without re-sending email, non-JSON/invalid/missing-business rejected). Website copy left untouched per owner decision.
