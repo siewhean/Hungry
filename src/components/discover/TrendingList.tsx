@@ -1,7 +1,8 @@
 import { useLayoutEffect, useState } from "react";
-import { Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { Pressable, View, useWindowDimensions } from "react-native";
 import { ChevronRight, Utensils } from "lucide-react-native";
 
+import { PagedRailScrollView } from "@/components/discover/home/PagedRailScrollView";
 import { HOME_PRICE_STYLE } from "@/components/discover/home/homeLayout";
 import { AccessibleImage, AppSymbol, AppText, PressableScale } from "@/components/ui";
 import { buildBiteLabel, formatBiteDistance } from "@/features/discover/biteLabel";
@@ -15,6 +16,8 @@ interface TrendingListProps {
   onOpen: (bite: Bite) => void;
   onPrefetch?: (bite: Bite) => void;
   onSeeAll?: () => void;
+  /** Cards shown before scrolling; the rest of `bites` appear as the row is scrolled. */
+  initialCount?: number;
 }
 
 const MAX_ROWS = 8;
@@ -74,8 +77,15 @@ function TrendingThumb({
 }
 
 /** Trending dishes as rich cards in a sideways row: photo, name, stall and unit, rating, price and distance. */
-export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: TrendingListProps) {
-  const { componentRadii, palette, spacing } = useHungryTheme();
+export function TrendingList({
+  title,
+  bites,
+  onOpen,
+  onPrefetch,
+  onSeeAll,
+  initialCount,
+}: TrendingListProps) {
+  const { componentRadii, palette, semanticSpacing, spacing } = useHungryTheme();
   const { width: screenWidth } = useWindowDimensions();
   if (!bites.length) return null;
   return (
@@ -107,13 +117,13 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
       ) : (
         <AppText variant="h2">{title}</AppText>
       )}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ width: screenWidth }}
-        contentContainerStyle={{ gap: spacing[3] }}
-      >
-        {bites.slice(0, MAX_ROWS).map((bite, index) => {
+      <PagedRailScrollView
+        items={bites}
+        initialCount={initialCount ?? MAX_ROWS}
+        resetKey={title}
+        style={{ marginLeft: -semanticSpacing.screenEdge, width: screenWidth }}
+        contentContainerStyle={{ gap: spacing[3], paddingHorizontal: semanticSpacing.screenEdge }}
+        renderItem={(bite, index) => {
           const distance = formatBiteDistance(bite.distanceMeters);
           return (
             <PressableScale
@@ -177,8 +187,8 @@ export function TrendingList({ title, bites, onOpen, onPrefetch, onSeeAll }: Tre
               />
             </PressableScale>
           );
-        })}
-      </ScrollView>
+        }}
+      />
     </View>
   );
 }

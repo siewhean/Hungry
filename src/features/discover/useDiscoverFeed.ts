@@ -277,6 +277,7 @@ export function useDiscoverFeed() {
   return {
     repository,
     isSupabaseDataSource,
+    discoverArgs,
     locationPermission,
     supabaseFeedVenues,
     supabaseFeedResults,

@@ -230,11 +230,9 @@ export function CatalogRawDetailScreen({ navigation, route }: Props) {
         showToast({ message: result.message, tone: "error" });
         return;
       }
-      // The same list and words as the dish page's Save.
-      showToast({
-        message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
-        tone: "success",
-      });
+      // The same list and words as the dish page's Save; removing it needs no toast.
+      if (result.status === "saved")
+        showToast({ message: "Saved to Want to try.", tone: "success" });
     } finally {
       setIsSavingFavourite(false);
     }

@@ -64,11 +64,7 @@ import {
 } from "@/components/dish/dishSymbols";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { HalalStatusTag, PriceBasisTag } from "@/components/dish/PriceLabels";
-import {
-  formatPriceWithBasis,
-  halalStatusCopy,
-  priceBasisDetail,
-} from "@/features/detail/priceBasis";
+import { formatPriceWithBasis } from "@/features/detail/priceBasis";
 import { ReviewPhotoStrip } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -196,7 +192,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
-  const [isTryingFood, setIsTryingFood] = useState(false);
+  // Save and Tried show the new state the moment they are tapped; the write follows. Both are
+  // cleared when it settles, so a failed write drops back to what the store says.
+  const [optimisticSaved, setOptimisticSaved] = useState<boolean | null>(null);
+  const [optimisticTried, setOptimisticTried] = useState<boolean | null>(null);
+  const savingRef = useRef(false);
   // Set synchronously: a second tap in the same frame never runs a second Tried write.
   const tryingFoodRef = useRef(false);
   // After marking a dish tried: the follow-up (rate-it popup, or a "Rate it" bar button).
@@ -716,7 +716,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     );
   }
 
-  const isSaved = profile.favouriteDishIds.includes(dish.id);
+  const isSaved = optimisticSaved ?? profile.favouriteDishIds.includes(dish.id);
   // The venue read can fail on its own: keep the dish page and drop venue-only sections.
   const venueName = venue?.name ?? dish.venueName ?? "This stall";
   const venueUnit = venue?.unitNumber?.trim();
@@ -747,7 +747,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
   // 4:3, so a typical food photo shows whole instead of a cropped strip. The no-photo
   // placeholder keeps the same height, so the page does not jump when a photo loads.
-  const heroPhotoHeight = Math.min(width * 0.75, 420);
+  // Square on a phone so the photo shows tall; capped so a tablet does not get a wall of food.
+  const heroPhotoHeight = Math.min(width, 480);
   // No photo listed (none do in production yet): a compact header under the status bar, not a
   // 300pt empty tile. A photo that fails after the page opened keeps its height, so nothing jumps.
   const heroHeight = heroPhotos.length > 0 ? heroPhotoHeight : insets.top + COMPACT_HERO_HEIGHT;
@@ -760,8 +761,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   ];
   const dishPriceShown = formatPriceWithBasis(dish, "long");
   const dishPrice = dishPriceShown.text;
-  const priceDetail = priceBasisDetail(dish);
-  const halalCopy = dish.halalStatus ? halalStatusCopy(dish.halalStatus) : undefined;
   // The halal status line replaces the halal chip, so halal is not shown twice.
   const dietaryChipFlags = dish.halalStatus
     ? dish.dietaryFlags.filter((flag) => flag !== "halal")
@@ -809,7 +808,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       return;
     }
 
-    const result = await toggleFavourite(dish);
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setOptimisticSaved(!isSaved);
+    let result: Awaited<ReturnType<typeof toggleFavourite>>;
+    try {
+      result = await toggleFavourite(dish);
+    } finally {
+      savingRef.current = false;
+      setOptimisticSaved(null);
+    }
     if (result.status === "failed") {
       // A tap while a toggle is pending changes nothing: no toast for it.
       if (result.reason !== "pending") showToast({ message: result.message, tone: "error" });
@@ -822,17 +830,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         dishId: dish.id,
         userId: profile.id,
       });
+      showToast({
+        message: "Saved to Want to try.",
+        tone: "success",
+        ...(FEATURE_FLAGS.portfoliosEnabled
+          ? {
+              duration: 5000,
+              action: { label: "Add to a list", onPress: () => void addToPortfolio() },
+            }
+          : {}),
+      });
     }
-    showToast({
-      message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
-      tone: "success",
-      ...(result.status === "saved" && FEATURE_FLAGS.portfoliosEnabled
-        ? {
-            duration: 5000,
-            action: { label: "Add to a list", onPress: () => void addToPortfolio() },
-          }
-        : {}),
-    });
+    // Removing it needs no toast: the button already changed.
   };
 
   const handleReview = () => {
@@ -859,7 +868,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
-  const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const isDishTried = optimisticTried ?? profile.reviewedDishIds.includes(dish.id);
   const hasReviewed = dishReviews.some((review) =>
     isOwnReview(review, isAuthenticated ? profile.id : undefined),
   );
@@ -922,28 +931,29 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
 
     tryingFoodRef.current = true;
+    // The button flips now; the write follows and a failure puts it back.
+    setOptimisticTried(!isDishTried);
     if (isDishTried) {
-      setIsTryingFood(true);
       try {
         const saved = await setDishTried(dish.id, false);
         const stillTried = useProfileStore.getState().profile.reviewedDishIds.includes(dish.id);
         if (saved && !stillTried) forgetTriedDish(profile.id, dish.id);
-        showToast({
-          message: !saved
-            ? "Couldn't update your tried dishes. Try again."
-            : stillTried
-              ? "You reviewed this dish, so it stays in your tried dishes."
-              : "Removed from your tried dishes.",
-          ...triedToastStyle,
-        });
+        // Un-marking a dish needs no toast; a failure or a kept mark still says why.
+        if (!saved || stillTried) {
+          showToast({
+            message: !saved
+              ? "Couldn't update your tried dishes. Try again."
+              : "You reviewed this dish, so it stays in your tried dishes.",
+            ...triedToastStyle,
+          });
+        }
       } finally {
         tryingFoodRef.current = false;
-        setIsTryingFood(false);
+        setOptimisticTried(null);
       }
       return;
     }
 
-    setIsTryingFood(true);
     try {
       holdCredPillForPopup();
       afterTriedMarked(await markDishTried(dish, triedDishFacts(dish, hasTasteSignal)));
@@ -952,7 +962,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       throw error;
     } finally {
       tryingFoodRef.current = false;
-      setIsTryingFood(false);
+      setOptimisticTried(null);
     }
   };
 
@@ -1017,7 +1027,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           active: isDishTried,
           mutedWhenInactive: true,
           role: "checkbox" as const,
-          loading: isTryingFood,
           onPress: () => void handleTryFood(),
           accessibilityLabel: "Tried",
           holdTitle: "Have you tried it?",
@@ -1226,31 +1235,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                       <PriceBasisTag basis={dish.priceBasis} form="long" />
                     ) : null}
                     {dish.halalStatus ? <HalalStatusTag status={dish.halalStatus} /> : null}
-                  </View>
-                ) : null}
-                {(priceDetail && dishPriceShown.listed) || halalCopy ? (
-                  <View
-                    style={{
-                      backgroundColor: palette.surfaceRaised,
-                      borderColor: palette.border,
-                      borderRadius: radii.md,
-                      borderWidth: 1,
-                      gap: spacing[2],
-                      padding: spacing[3],
-                    }}
-                  >
-                    {priceDetail && dishPriceShown.listed ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        <AppText variant="bodySmallBold">{priceDetail.title}</AppText>{" "}
-                        {priceDetail.body}
-                      </AppText>
-                    ) : null}
-                    {halalCopy ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        <AppText variant="bodySmallBold">{halalCopy.title}</AppText>{" "}
-                        {halalCopy.body}
-                      </AppText>
-                    ) : null}
                   </View>
                 ) : null}
                 {isDishSoldOut ? (

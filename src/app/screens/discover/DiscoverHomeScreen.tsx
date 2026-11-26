@@ -69,8 +69,11 @@ import {
 } from "@/features/discover/bites";
 import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
+import { useAreaVenueCount } from "@/features/discover/useAreaVenueCount";
+import { appendRailTail, RAIL_POOL_SIZE } from "@/features/discover/railPaging";
+import { PagedRailScrollView } from "@/components/discover/home/PagedRailScrollView";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
-import { getDietaryChipLabel } from "@/features/discover/homeFilters";
+import { describeDietaryNeeds } from "@/features/discover/homeFilters";
 import { buildBiteLabel } from "@/features/discover/biteLabel";
 import {
   dropDishesShownElsewhere,
@@ -189,6 +192,8 @@ import {
 const HOME_PEOPLE_FOLLOW_THRESHOLD = 5;
 const DISCOVER_STALL_INITIAL_VISIBLE_COUNT = 10;
 
+/** Stalls a Home row opens on; the rest of its stalls appear as it is scrolled. */
+const STALL_RAIL_FIRST_PAGE = 10;
 /** A horizontal rail with fewer dishes than this is hidden. */
 const MIN_DISCOVER_RAIL_ITEMS = 3;
 /** The rows TrendingList shows. */
@@ -235,6 +240,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const {
     repository,
     isSupabaseDataSource,
+    discoverArgs,
     locationPermission,
     supabaseFeedVenues,
     supabaseFeedResults,
@@ -266,6 +272,11 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     loadedDiscoverFeedKey,
     currentPlace,
   } = useDiscoverFeed();
+  const isFeedFull = supabaseFeedVenues.length >= DISCOVER_FEED_LIMIT;
+  const areaVenueCount = useAreaVenueCount(
+    discoverArgs,
+    isSupabaseDataSource && isFeedFull && supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,
+  );
   const {
     deferredDiscoverChipIds,
     activeDiscoverChipSignature,
@@ -340,9 +351,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     effectiveDiscoverViewportHeight ||
     fallbackDiscoverViewportHeight;
   const stallShowcaseCardWidth = screenWidth - semanticSpacing.screenEdge * 2;
+  // The row runs from screen edge to screen edge, so a card slides off the glass instead of
+  // being cut at the page margin; the first card still starts flush with the title.
   const edgeToEdgeHorizontalScrollStyle = {
+    marginLeft: -semanticSpacing.screenEdge,
     width: screenWidth,
   };
+  const edgeToEdgeRailContent = { paddingHorizontal: semanticSpacing.screenEdge };
   // A row inside the scroller, pulled back so the first bowl is flush with the page margin.
   const foodStyleRowStyle = {
     flexDirection: "row" as const,
@@ -749,6 +764,100 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     quickBiteCards,
     tasteOrdered.bites,
   ]);
+  // Each row opens on the cards above and, as it is scrolled, shows more of what suits it from the
+  // same feed (Netflix style); a dish never repeats inside one row.
+  const biteKey = (bite: Bite) => bite.id;
+  const withChips = (bites: Bite[]) => (isDiscoverFiltering ? filterDiscoverBites(bites) : bites);
+  // What the first screen of any row already shows: a row's tail never repeats it.
+  const firstPageIds = useMemo(
+    () =>
+      new Set(
+        [
+          ...trendingCards,
+          ...quickBiteCards,
+          ...editorChoiceCards,
+          ...budgetCards,
+          ...lateNightCards,
+          ...mealRailCards,
+          ...(similarRail?.cards ?? []),
+        ].map(biteKey),
+      ),
+    [
+      budgetCards,
+      editorChoiceCards,
+      lateNightCards,
+      mealRailCards,
+      quickBiteCards,
+      similarRail,
+      trendingCards,
+    ],
+  );
+  const railTail = useCallback(
+    (first: Bite[], candidates: Bite[]) =>
+      first.length
+        ? appendRailTail(
+            first,
+            candidates.filter((bite) => !firstPageIds.has(bite.id)),
+            biteKey,
+          )
+        : first,
+    [firstPageIds],
+  );
+  const trendingRailCards = useMemo(
+    () => railTail(trendingCards, withChips(discoverBiteCollections.trending)),
+    [
+      discoverBiteCollections.trending,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      railTail,
+      trendingCards,
+    ],
+  );
+  const quickBiteRailCards = useMemo(
+    () => railTail(quickBiteCards, tasteOrdered.bites),
+    [quickBiteCards, railTail, tasteOrdered.bites],
+  );
+  const editorChoiceRailCards = useMemo(
+    () => railTail(editorChoiceCards, withChips(discoverBiteCollections.editorChoice)),
+    [
+      discoverBiteCollections.editorChoice,
+      editorChoiceCards,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      railTail,
+    ],
+  );
+  const budgetRailCards = useMemo(
+    () => railTail(budgetCards, withChips(discoverBiteCollections.budget)),
+    [
+      budgetCards,
+      discoverBiteCollections.budget,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      railTail,
+    ],
+  );
+  const lateNightRailCards = useMemo(
+    () => railTail(lateNightCards, withChips(discoverBiteCollections.lateNight)),
+    [
+      discoverBiteCollections.lateNight,
+      filterDiscoverBites,
+      isDiscoverFiltering,
+      lateNightCards,
+      railTail,
+    ],
+  );
+  const mealRailPagedCards = useMemo(
+    () => railTail(mealRailCards, bitesForMealPeriod(tasteOrdered.bites, mealPeriod)),
+    [mealPeriod, mealRailCards, railTail, tasteOrdered.bites],
+  );
+  const similarRailPagedCards = useMemo(
+    () =>
+      similarRail
+        ? railTail(similarRail.cards, bitesLikeDish(tasteOrdered.bites, similarRail.dishName))
+        : [],
+    [railTail, similarRail, tasteOrdered.bites],
+  );
   const foodOpenness = profile.tasteProfile?.foodOpenness;
   const unfilteredPopularFoodStyleItems = useMemo(
     () =>
@@ -994,9 +1103,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const trendingListBites = useMemo(
     () =>
       needsDiscoverAreaChoice
-        ? trendingCards.map((bite) => ({ ...bite, distanceMeters: undefined }))
-        : trendingCards,
-    [needsDiscoverAreaChoice, trendingCards],
+        ? trendingRailCards.map((bite) => ({ ...bite, distanceMeters: undefined }))
+        : trendingRailCards,
+    [needsDiscoverAreaChoice, trendingRailCards],
   );
   // One home_viewed per visit, once there is content to look at: the denominator the Home
   // experiments divide by.
@@ -1044,7 +1153,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
         isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,
         feedVenueCount: supabaseFeedVenues.length,
         feedLimit: DISCOVER_FEED_LIMIT,
-        rpcCount: null,
+        rpcCount: areaVenueCount,
       })
     : String(areaVenues.length);
   const shownCountLabel = discoverAreaCountLabel;
@@ -1170,6 +1279,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       hiddenVenueIds: stallHistory.hiddenVenueIds,
       lastViewedVenueId: stallHistory.recentVenueIds[0],
       nextToTryVenueIds,
+      // More than a row opens on: the rest show as the diner scrolls along it.
+      perSection: RAIL_POOL_SIZE / 2,
+      claimLimit: STALL_RAIL_FIRST_PAGE,
     });
   }, [
     stallHistory,
@@ -1343,7 +1455,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const isDietaryOnlyFilter =
     deferredDiscoverChipIds.length === 1 && deferredDiscoverChipIds[0] === "dietary";
   const filteredEmptyBody = isDietaryOnlyFilter
-    ? `Nothing nearby is confirmed ${getDietaryChipLabel(profile.dietaryPreferences)} yet. More menus are on the way.`
+    ? `Nothing nearby is confirmed ${describeDietaryNeeds(profile.dietaryPreferences)} yet. More menus are on the way.`
     : "Try removing a filter.";
   const filteredEmptyCtaLabel = isDietaryOnlyFilter ? "Show all dishes" : "Clear filters";
   const isFilteredPageEmpty =
@@ -1666,15 +1778,17 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       seeAllLabel={
         needsDiscoverAreaChoice ? "See all dishes across Singapore" : "See all dishes near you"
       }
-      cards={quickBiteCards}
+      cards={quickBiteRailCards}
+      initialCount={quickBiteCards.length}
       reasons={tasteOrdered.reasons}
       variant="rating"
       buttonId="quick_bite_card"
       getCardLabel={getBiteLabel}
     />
   ) : null;
+  // Its bowls reserve two label lines, so pull the next section up to close the visible gap.
   const classicsSection = (
-    <View style={{ gap: discoverContentGap }}>
+    <View style={{ gap: discoverContentGap, marginBottom: -spacing[2] }}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`See all dishes: ${popularFoodTitle}`}
@@ -1703,7 +1817,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           horizontal
           showsHorizontalScrollIndicator={false}
           style={edgeToEdgeHorizontalScrollStyle}
-          contentContainerStyle={{ flexGrow: 0 }}
+          contentContainerStyle={{ ...edgeToEdgeRailContent, flexGrow: 0 }}
         >
           <View style={foodStyleRowStyle}>
             <PopularFoodStyleSkeleton />
@@ -1714,7 +1828,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           horizontal
           showsHorizontalScrollIndicator={false}
           style={edgeToEdgeHorizontalScrollStyle}
-          contentContainerStyle={{ flexGrow: 0 }}
+          contentContainerStyle={{ ...edgeToEdgeRailContent, flexGrow: 0 }}
         >
           <View style={foodStyleRowStyle}>
             {popularFoodStyleItems.map((item) => (
@@ -1750,13 +1864,13 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
     showToast({ message: `Hidden. You won't see ${venue.name} in recommendations for 30 days.` });
   };
   const renderStallRail = (cards: typeof areaStallCards, recommended = false) => (
-    <RailScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
+    <PagedRailScrollView
+      items={cards}
+      initialCount={STALL_RAIL_FIRST_PAGE}
+      resetKey={isDiscoverFiltering ? "filtered" : "all"}
       style={edgeToEdgeHorizontalScrollStyle}
-      contentContainerStyle={{ gap: spacing[3] }}
-    >
-      {cards.map(({ building, venue, topDish }, stallIndex) => (
+      contentContainerStyle={{ ...edgeToEdgeRailContent, gap: spacing[3] }}
+      renderItem={({ building, venue, topDish }, stallIndex) => (
         <StallRailCard
           key={venue.id}
           name={venue.name}
@@ -1785,8 +1899,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
           onPress={() => openAreaStall(venue, stallIndex)}
           onOptions={recommended && isSignedIn ? () => void openStallOptions(venue) : undefined}
         />
-      ))}
-    </RailScrollView>
+      )}
+    />
   );
 
   // Worth the trip: further out than the nearest stalls Home ranks, close to a trusted palate,
@@ -1905,7 +2019,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               horizontal
               showsHorizontalScrollIndicator={false}
               style={edgeToEdgeHorizontalScrollStyle}
-              contentContainerStyle={{ gap: spacing[3] }}
+              contentContainerStyle={{ ...edgeToEdgeRailContent, gap: spacing[3] }}
             >
               {nearbyPlaces.map(({ building, stallCount, distanceMeters }) => (
                 <StallRailCard
@@ -2408,7 +2522,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={edgeToEdgeHorizontalScrollStyle}
-                  contentContainerStyle={{ gap: spacing[3] }}
+                  contentContainerStyle={{ ...edgeToEdgeRailContent, gap: spacing[3] }}
                 >
                   {forYouPicks.map((pick, index) => (
                     <ForYouCard
@@ -2480,6 +2594,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             <TrendingList
               title={`Most reviewed ${trendingAreaPhrase}`}
               bites={showInitialDiscoverSkeleton ? [] : trendingListBites}
+              initialCount={trendingCards.length}
               onOpen={(bite) => {
                 trackAnalyticsEvent("discover_card_opened", {
                   surface: "home",
@@ -2507,6 +2622,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             <TrendingList
               title={`Most reviewed ${discoverAreaPhrase}`}
               bites={showInitialDiscoverSkeleton ? [] : trendingListBites}
+              initialCount={trendingCards.length}
               onOpen={(bite) => {
                 trackAnalyticsEvent("discover_card_opened", {
                   surface: "home",
@@ -2682,7 +2798,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 title="Top rated"
                 titleBadge={<DiscoverRailBadge label="4.4+" showStar tone="accent" />}
                 seeAllLabel="See all top rated dishes"
-                cards={editorChoiceCards}
+                cards={editorChoiceRailCards}
+                initialCount={editorChoiceCards.length}
                 variant="topRated"
                 buttonId="editor_choice_bite_card"
                 getCardLabel={getBiteLabel}
@@ -2696,7 +2813,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 title="Budget < S$8"
                 titleBadge={<DiscoverRailBadge label="Value" tone="success" />}
                 seeAllLabel="See all budget dishes under 8 dollars"
-                cards={budgetCards}
+                cards={budgetRailCards}
+                initialCount={budgetCards.length}
                 variant="price"
                 buttonId="budget_bite_card"
                 getCardLabel={getBiteLabel}
@@ -2711,7 +2829,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 rail="quickBites"
                 title={MEAL_RAILS[mealPeriod].title}
                 seeAllLabel={MEAL_RAILS[mealPeriod].seeAllLabel}
-                cards={mealRailCards}
+                cards={mealRailPagedCards}
+                initialCount={mealRailCards.length}
                 variant="rating"
                 buttonId="meal_time_bite_card"
                 getCardLabel={getBiteLabel}
@@ -2726,7 +2845,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 rail="quickBites"
                 title={`More like ${toTitleCase(similarRail.dishName)}`}
                 seeAllLabel={`See dishes like ${similarRail.dishName}`}
-                cards={similarRail.cards}
+                cards={similarRailPagedCards}
+                initialCount={similarRail.cards.length}
                 variant="rating"
                 buttonId="similar_dish_bite_card"
                 getCardLabel={getBiteLabel}
@@ -2740,7 +2860,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                 rail="lateNight"
                 title="Late night eats"
                 seeAllLabel="See all late night eats"
-                cards={lateNightCards}
+                cards={lateNightRailCards}
+                initialCount={lateNightCards.length}
                 variant="price"
                 buttonId="late_night_bite_card"
                 getCardLabel={getBiteLabel}

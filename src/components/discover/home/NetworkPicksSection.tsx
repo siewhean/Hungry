@@ -35,7 +35,7 @@ export function NetworkPicksSection({
   scrollStyle?: StyleProp<ViewStyle>;
   onOpen: (pick: NetworkStallPick, position: number) => void;
 }) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, semanticSpacing, spacing } = useHungryTheme();
   const shown = useMemo(() => picks.slice(0, NETWORK_PICKS_SHOWN), [picks]);
   const targets = useMemo(() => shown.map((pick) => ({ stallId: pick.venueId })), [shown]);
   const { details } = useItemDetailsState(targets);
@@ -80,7 +80,7 @@ export function NetworkPicksSection({
         horizontal
         showsHorizontalScrollIndicator={false}
         style={scrollStyle}
-        contentContainerStyle={{ gap: spacing[3] }}
+        contentContainerStyle={{ gap: spacing[3], paddingHorizontal: semanticSpacing.screenEdge }}
       >
         {cards.map(({ pick, name, imageUrl, logoUrl }, index) => {
           const reason = networkPickReason(pick);

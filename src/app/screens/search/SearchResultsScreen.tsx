@@ -1273,10 +1273,9 @@ function RawCatalogBrowseGrid({
           userId: profileId,
         });
       }
-      showToast({
-        message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
-        tone: "success",
-      });
+      // Removing it needs no toast: the button already changed.
+      if (result.status === "saved")
+        showToast({ message: "Saved to Want to try.", tone: "success" });
     },
     [profileId, showToast, toggleFavourite],
   );

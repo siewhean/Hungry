@@ -65,6 +65,9 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
   const setReturnRoute = useSessionStore((state) => state.setReturnRoute);
   const showToast = useUIStore((state) => state.showToast);
   const [isAddingToPortfolio, setIsAddingToPortfolio] = useState(false);
+  // A tick shows the moment a list is tapped; the server write follows. Cleared when it settles,
+  // at which point the store shows the real state (so a failed write puts the tick back).
+  const [pendingTicks, setPendingTicks] = useState<Record<string, boolean>>({});
   const listSheetRef = useRef<BottomSheetModal>(null);
   // Bumped on every open so the sheet reloads your lists and their items.
   const [listSheetOpenCount, setListSheetOpenCount] = useState(0);
@@ -99,6 +102,13 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
         return;
       }
       setIsAddingToPortfolio(true);
+      const tickKey = option.portfolio?.id;
+      if (tickKey) {
+        const wasSelected = Boolean(
+          findPortfolioTargetItem(usePortfolioStore.getState().items, tickKey, target),
+        );
+        setPendingTicks((current) => ({ ...current, [tickKey]: !wasSelected }));
+      }
       try {
         const portfolioState = usePortfolioStore.getState();
         let portfolio = option.portfolio;
@@ -122,8 +132,8 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
           target,
         );
         if (existing) {
+          // Taking something off a list needs no toast: the tick already went.
           await usePortfolioStore.getState().deleteItem(existing.id, portfolio.id);
-          showToast({ message: `Removed from ${portfolio.name}.`, tone: "info" });
           return;
         }
 
@@ -154,6 +164,12 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
           tone: isDuplicateError(error) ? "info" : "error",
         });
       } finally {
+        if (tickKey) {
+          setPendingTicks((current) => {
+            const { [tickKey]: _settled, ...rest } = current;
+            return rest;
+          });
+        }
         setIsAddingToPortfolio(false);
       }
     },
@@ -166,6 +182,7 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
       openCount={listSheetOpenCount}
       target={target}
       isSaving={isAddingToPortfolio}
+      pendingTicks={pendingTicks}
       onToggle={togglePortfolio}
     />
   );
@@ -199,10 +216,12 @@ export function useDetailSaveActions({ navigation, target, surface }: UseDetailS
     : buildSaveToListOptions(ownPortfolios, ownPortfolioIds ?? [], [], getPortfolioOwnerId()).map(
         (option) => ({
           option,
-          selected: Boolean(
-            option.portfolio &&
-            findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
-          ),
+          selected:
+            (option.portfolio && pendingTicks[option.portfolio.id]) ??
+            Boolean(
+              option.portfolio &&
+              findPortfolioTargetItem(portfolioItems, option.portfolio.id, target),
+            ),
         }),
       );
 
@@ -223,6 +242,8 @@ interface SaveToListSheetProps {
   openCount: number;
   target: DetailSaveTarget;
   isSaving: boolean;
+  /** Ticks that show before the server write settles, by list id. */
+  pendingTicks: Readonly<Record<string, boolean>>;
   onToggle: (option: SaveToListOption, newListName?: string) => Promise<void>;
 }
 
@@ -231,6 +252,7 @@ function SaveToListSheet({
   openCount,
   target,
   isSaving,
+  pendingTicks,
   onToggle,
 }: SaveToListSheetProps) {
   const { palette, spacing } = useHungryTheme();
@@ -319,9 +341,11 @@ function SaveToListSheet({
           </View>
         ) : null}
         {options.map((option) => {
-          const selected = Boolean(
-            option.portfolio && findPortfolioTargetItem(items, option.portfolio.id, target),
-          );
+          const selected =
+            (option.portfolio && pendingTicks[option.portfolio.id]) ??
+            Boolean(
+              option.portfolio && findPortfolioTargetItem(items, option.portfolio.id, target),
+            );
           return (
             <Pressable
               key={option.key}

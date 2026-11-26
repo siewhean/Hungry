@@ -190,3 +190,19 @@ test("the Food Portfolio is on everywhere and brings back follows and Activity",
   });
   assert.equal(noPosts.foodPortfolioEnabled, false, "no portfolio without posting");
 });
+
+test("the native tab bar is on outside production and production opts in", () => {
+  assert.equal(resolveFeatureFlags("development", "development", {}).nativeTabBarEnabled, true);
+  assert.equal(resolveFeatureFlags("staging", "production", {}).nativeTabBarEnabled, true);
+  assert.equal(resolveFeatureFlags("production", "production", {}).nativeTabBarEnabled, false);
+  assert.equal(
+    resolveFeatureFlags("production", "production", { EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR: "1" })
+      .nativeTabBarEnabled,
+    true,
+  );
+  assert.equal(
+    resolveFeatureFlags("staging", "production", { EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR: "0" })
+      .nativeTabBarEnabled,
+    false,
+  );
+});

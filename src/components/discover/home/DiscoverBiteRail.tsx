@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 import { ChevronRight } from "lucide-react-native";
 
+import { PagedRailScrollView } from "@/components/discover/home/PagedRailScrollView";
 import { AppSymbol, AppText, PressableScale, RailScrollView } from "@/components/ui";
 import { DiscoverFoodRailLoadingSkeleton } from "@/components/discover/home/DiscoverLoadingSkeletons";
 import { DiscoverBiteImage } from "@/components/discover/home/DiscoverImages";
@@ -215,6 +216,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   canSeeAll,
   cards,
   getCardLabel,
+  initialCount,
   isLoading,
   isVisible,
   layout,
@@ -233,8 +235,11 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   buttonId: string;
   /** False when the full-list screen is not registered in this build (release-01 core only). */
   canSeeAll: boolean;
+  /** Every card the row can hold; it opens on `initialCount` and shows more as it is scrolled. */
   cards: Bite[];
   getCardLabel: (bite: Bite) => string;
+  /** Cards shown before any scrolling (the row's first page). All of them when left out. */
+  initialCount?: number;
   isLoading: boolean;
   /** Home is on screen (not a tab warm-up), so an impression is real. */
   isVisible: boolean;
@@ -253,9 +258,12 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   titleBadge?: ReactNode;
   variant: DiscoverBiteCardVariant;
 }) {
-  const { palette, spacing } = useHungryTheme();
+  const { palette, semanticSpacing, spacing } = useHungryTheme();
   const impressionSentRef = useRef(false);
-  const scrollStyle = useMemo(() => ({ width: layout.screenWidth }), [layout.screenWidth]);
+  const scrollStyle = useMemo(
+    () => ({ marginLeft: -semanticSpacing.screenEdge, width: layout.screenWidth }),
+    [layout.screenWidth, semanticSpacing.screenEdge],
+  );
 
   // Once per visit, when the rail first shows dishes on screen (not on every filter change).
   // Leaving Home ends the visit, so coming back counts again.
@@ -265,15 +273,16 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
       return;
     }
     if (isLoading || cards.length === 0 || impressionSentRef.current) return;
+    const firstPage = cards.slice(0, initialCount ?? cards.length);
     impressionSentRef.current = true;
     trackAnalyticsEvent("discover_rail_impression", {
       surface: "home",
       rail,
-      count: cards.length,
+      count: firstPage.length,
       // In on-screen order, so a card's position and what it was shown beside can be read later.
-      dish_ids: cards.map((card) => card.dishId),
+      dish_ids: firstPage.map((card) => card.dishId),
     });
-  }, [cards.length, isLoading, isVisible, rail]);
+  }, [cards.length, initialCount, isLoading, isVisible, rail]);
   const handleOpenBite = useCallback(
     (bite: Bite, cardButtonId: string) => {
       trackAnalyticsEvent("discover_card_opened", {
@@ -350,7 +359,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
           horizontal
           showsHorizontalScrollIndicator={false}
           style={scrollStyle}
-          contentContainerStyle={{ gap: spacing[4] }}
+          contentContainerStyle={{ gap: spacing[4], paddingHorizontal: semanticSpacing.screenEdge }}
         >
           <DiscoverFoodRailLoadingSkeleton
             cardWidth={layout.cardWidth}
@@ -359,13 +368,13 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
           />
         </RailScrollView>
       ) : cards.length ? (
-        <RailScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
+        <PagedRailScrollView
+          items={cards}
+          initialCount={initialCount ?? cards.length}
+          resetKey={rail}
           style={scrollStyle}
-          contentContainerStyle={{ gap: spacing[4] }}
-        >
-          {cards.map((bite, index) => (
+          contentContainerStyle={{ gap: spacing[4], paddingHorizontal: semanticSpacing.screenEdge }}
+          renderItem={(bite, index) => (
             <DiscoverBiteCard
               key={`${rail}-${bite.id}`}
               bite={bite}
@@ -380,8 +389,8 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
               reason={reasons?.get(bite.dishId)}
               variant={variant}
             />
-          ))}
-        </RailScrollView>
+          )}
+        />
       ) : null}
     </View>
   );

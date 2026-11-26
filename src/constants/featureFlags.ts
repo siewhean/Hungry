@@ -118,6 +118,11 @@ export function resolveFeatureFlags(
     storiesEnabled: nonProductionSurfaceEnabled,
     merchantClaimCtaEnabled: nonProductionSurfaceEnabled,
     merchantCentreEnabled: nonProductionSurfaceEnabled,
+    // The iPhone's own tab bar for Home, Post, Reviews and Profile (owner decision 2026-11-26).
+    // On in development and staging builds first; production opts in with
+    // EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR=1 once it has been checked on a phone. `=0` goes back to
+    // the custom bar with edge swipes everywhere. Android and web always use the custom bar.
+    nativeTabBarEnabled: surface("EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR", nonProductionSurfaceEnabled),
     prototypeRoutesEnabled,
   } as const;
 }

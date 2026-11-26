@@ -688,7 +688,7 @@ test("H4-10: with no saved needs the Dietary needs chip opens the dietary step i
   assert.doesNotMatch(view.text(), /No matching results/);
 });
 
-test("H4-10: saved needs name the chip, and a sparse feed explains itself instead of leaving Home empty", async () => {
+test("H4-10: the chip stays Dietary needs while it applies the saved needs, and a sparse feed explains itself instead of leaving Home empty", async () => {
   m.useProfileStore.setState((state) => ({
     profile: { ...state.profile, dietaryPreferences: ["halal", "vegetarian", "vegan"] },
   }));
@@ -696,7 +696,10 @@ test("H4-10: saved needs name the chip, and a sparse feed explains itself instea
   // Nothing nearby carries a dietary flag yet.
   fake.tables.dish_dietary_flags = () => ({ data: [], error: null });
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.ok(view.findByLabel("Halal · Vegetarian +1"), "the chip names the saved needs");
+  assert.ok(
+    view.findByLabel("Dietary needs: Halal · Vegetarian +1"),
+    "the chip applies the saved needs without renaming itself",
+  );
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
@@ -1136,7 +1139,7 @@ test("H4-2: ranking never hides dishes; with the Dietary chip off a halal diner 
   serveLiveFeed(PALATE_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   assert.doesNotMatch(view.text(), /Dish 2/, "the Dietary chip is on: only halal dishes");
-  await view.press(view.findByLabel("Halal"));
+  await view.press(view.findByLabel("Dietary needs: Halal"));
   await m.renderKit.settle();
   const text = view.text();
   const rail = text.slice(text.indexOf("Dishes across Singapore"));

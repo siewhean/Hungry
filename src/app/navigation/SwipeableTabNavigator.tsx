@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import type {
   MaterialTopTabBarProps,
   MaterialTopTabNavigationProp,
@@ -8,11 +8,15 @@ import {
   useFocusEffect,
   useNavigation,
   useRoute,
+  type NavigationAction,
   type NavigationProp,
+  type Router,
+  type TabNavigationState,
 } from "@react-navigation/native";
 import { BookOpenText, House, PenLine, User } from "lucide-react-native";
 import type { SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { createNativeBottomTabNavigator } from "@react-navigation/bottom-tabs/unstable";
 
 import { PostTabPage } from "@/components/review/PostTabPage";
 import { AppBottomTabItem, Skeleton } from "@/components/ui";
@@ -404,7 +408,7 @@ function CustomTabBar({ state, navigation }: MaterialTopTabBarProps) {
   );
 }
 
-export function SwipeableTabNavigator() {
+function CustomSwipeTabNavigator() {
   const reduceMotion = useReduceMotion();
   const [tabPreloadEnabled, setTabPreloadEnabled] = useState(false);
 
@@ -438,6 +442,105 @@ export function SwipeableTabNavigator() {
       )}
     </Tab.Navigator>
   );
+}
+
+const NativeTab = createNativeBottomTabNavigator<MainTabParamList>();
+
+/** Routes that stay registered in the custom bar for old links but are not tabs in the native bar. */
+const NATIVE_TAB_ALIASES: Partial<Record<string, keyof MainTabParamList>> = {
+  Home: "Discover",
+};
+
+/**
+ * Sends a jump to Home (many flows reset to `MainTabs > Home`) to the Discover tab, and Post and
+ * Reviews to Discover when review creation is off, since the native bar lists only real tabs.
+ */
+function withTabAliases<Action extends NavigationAction>(
+  router: Router<TabNavigationState<MainTabParamList>, Action>,
+): Partial<Router<TabNavigationState<MainTabParamList>, Action>> {
+  return {
+    getStateForAction(state, action, options) {
+      const payload = (action as { payload?: { name?: string } }).payload;
+      const aliased = payload?.name ? NATIVE_TAB_ALIASES[payload.name] : undefined;
+      const mapped =
+        action.type === "NAVIGATE" && aliased
+          ? ({ ...action, payload: { ...payload, name: aliased } } as Action)
+          : action;
+      return router.getStateForAction(state, mapped, options);
+    },
+  };
+}
+
+/**
+ * The iPhone's own tab bar. The Post tab opens the Post page, whose button starts the review
+ * card; there is no edge swipe between tabs, since the system bar owns the tab change.
+ */
+function NativeTabNavigator() {
+  const { palette } = useHungryTheme();
+  const { t } = useTranslation();
+  const rootNavigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const tab = (symbol: SFSymbol, focusedSymbol: SFSymbol, label: string) => ({
+    tabBarLabel: label,
+    tabBarIcon: ({ focused }: { focused: boolean }) => ({
+      type: "sfSymbol" as const,
+      name: focused ? focusedSymbol : symbol,
+    }),
+  });
+
+  return (
+    <NativeTab.Navigator
+      id="Tabs"
+      initialRouteName="Discover"
+      UNSTABLE_router={withTabAliases}
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: palette.orange,
+        tabBarStyle: { backgroundColor: palette.bg },
+      }}
+      screenListeners={{
+        // Warm the screen a tab opens as soon as it is pressed, like the custom bar does.
+        tabPress: (event: { target?: string }) => {
+          const routeName = event.target?.split("-")[0];
+          if (routeName === "Create") {
+            preloadRoute(rootNavigation, "ReviewStack", { screen: "ReviewMain" });
+            return;
+          }
+          scheduleMainTabRouteWarmup(routeName);
+        },
+      }}
+    >
+      <NativeTab.Screen
+        name="Discover"
+        component={DiscoverWrapper}
+        options={tab("house", "house.fill", t("tab.home"))}
+      />
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <NativeTab.Screen
+          name="Create"
+          component={CreateWrapper}
+          options={tab("square.and.pencil", "square.and.pencil", t("tab.post"))}
+        />
+      ) : null}
+      {FEATURE_FLAGS.reviewCreationEnabled ? (
+        <NativeTab.Screen
+          name="Review"
+          component={ReviewWrapper}
+          options={tab("book", "book.fill", t("tab.reviews"))}
+        />
+      ) : null}
+      <NativeTab.Screen
+        name="Profile"
+        component={ProfileWrapper}
+        options={tab("person", "person.fill", t("tab.profile"))}
+      />
+    </NativeTab.Navigator>
+  );
+}
+
+/** The iPhone's system tab bar when the build turns it on; the custom bar with edge swipes elsewhere. */
+export function SwipeableTabNavigator() {
+  if (Platform.OS === "ios" && FEATURE_FLAGS.nativeTabBarEnabled) return <NativeTabNavigator />;
+  return <CustomSwipeTabNavigator />;
 }
 
 const createStyles = () =>
