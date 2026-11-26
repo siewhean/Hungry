@@ -206,3 +206,16 @@ test("the native tab bar is on outside production and production opts in", () =>
     false,
   );
 });
+
+test("the native tab bar flag also reads the literal process.env value a packaged build inlines", () => {
+  const saved = process.env.EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR;
+  try {
+    process.env.EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR = "1";
+    assert.equal(resolveFeatureFlags("production", "production").nativeTabBarEnabled, true);
+    process.env.EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR = "0";
+    assert.equal(resolveFeatureFlags("staging", "production").nativeTabBarEnabled, false);
+  } finally {
+    if (saved === undefined) delete process.env.EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR;
+    else process.env.EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR = saved;
+  }
+});
