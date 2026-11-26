@@ -185,10 +185,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : cards\.length \? \([\s\S]*\) : null\}/,
   );
   for (const [rail, cards] of [
-    ["quickBites", "quickBiteCards"],
-    ["editorChoice", "editorChoiceCards"],
-    ["budget", "budgetCards"],
-    ["lateNight", "lateNightCards"],
+    ["quickBites", "quickBiteRailCards"],
+    ["editorChoice", "editorChoiceRailCards"],
+    ["budget", "budgetRailCards"],
+    ["lateNight", "lateNightRailCards"],
   ]) {
     assert.match(discover, new RegExp(`rail="${rail}"[\\s\\S]*?cards=\\{${cards}\\}`));
   }
@@ -196,7 +196,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const DiscoverBiteCard = memo\(function DiscoverBiteCard/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*renderStallRail\(areaStallCards\)[\s\S]*\) : null\}/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*renderStallRail\(listedAreaStallCards\)[\s\S]*\) : null\}/,
   );
   assert.match(
     discover,
@@ -438,7 +438,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
+    /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightRailCards\}/,
   );
   assert.match(
     discover,
@@ -539,7 +539,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /<Screen scroll=\{false\} fullWidth style=\{\{ backgroundColor: themeTints\.bg \}\}>/,
   );
-  assert.match(discover, /const edgeToEdgeHorizontalScrollStyle = \{\s*width: screenWidth,\s*\}/);
+  assert.match(
+    discover,
+    /const edgeToEdgeHorizontalScrollStyle = \{\s*marginLeft: -semanticSpacing\.screenEdge,\s*width: screenWidth,\s*\}/,
+  );
   assert.doesNotMatch(discover, /const chipRailScrollStyle|const chipRailContentStyle/);
   assert.doesNotMatch(discover, /sortedChips\.map\(\(chip\) =>/);
   assert.doesNotMatch(
@@ -637,7 +640,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,[\s\S]*rpcCount: null,[\s\S]*: String\(areaVenues\.length\)/,
+    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,[\s\S]*rpcCount: areaVenueCount,[\s\S]*: String\(areaVenues\.length\)/,
   );
   // A new area's incomplete feed cannot inherit the previously displayed total.
   assert.match(discover, /const shownCountLabel = discoverAreaCountLabel;/);
@@ -646,7 +649,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /<NumericText\s+value="–"/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*renderStallRail\(areaStallCards\)/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*renderStallRail\(listedAreaStallCards\)/,
   );
   assert.match(
     discover,
