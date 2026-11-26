@@ -301,7 +301,7 @@ export function QuickBitesScreen() {
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
   const submitSearch = useCallback(() => {
     const query = sanitizeSearchQuery(searchText);
-    navigation.navigate("SearchResults", { initialQuery: query || undefined });
+    navigation.navigate("SearchResults", { browseMode: mode, initialQuery: query || undefined });
     if (query) {
       scheduleIdleWork(
         () => {
@@ -310,7 +310,7 @@ export function QuickBitesScreen() {
         { timeout: 500, fallbackDelayMs: 80 },
       );
     }
-  }, [navigation, rememberSearch, searchText]);
+  }, [mode, navigation, rememberSearch, searchText]);
 
   const prefetchBiteRoute = useCallback(
     (bite: Bite) => {

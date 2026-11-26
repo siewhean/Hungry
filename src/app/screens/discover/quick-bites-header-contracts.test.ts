@@ -15,6 +15,8 @@ test("Quick Bites header is the search header with Dishes and Stalls tabs", () =
   // A search field and back button like the Search page, then the two tabs.
   assert.match(source, /accessibilityLabel=\{`Search \$\{mode\}`\}/);
   assert.match(source, /onSubmitEditing=\{submitSearch\}/);
+  // Searching from the Stalls tab opens the stall results.
+  assert.match(source, /navigate\("SearchResults", \{ browseMode: mode,/);
   assert.match(source, /<UnderlineTabs/);
   assert.match(source, /tabs=\{MODE_TABS\}/);
   assert.doesNotMatch(source, /ExpandableSearchLauncher/);
