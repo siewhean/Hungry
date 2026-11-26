@@ -43,7 +43,7 @@ export function PhotoGridCard({
   chipLabel?: string;
   chipSymbol?: "dish" | "nearYou";
   /** The photo layer. It fills the cell and sits behind the fade and the text. */
-  children: ReactNode;
+  children?: ReactNode;
   distanceLabel?: string;
   /** Replaces the distance on the bottom left, e.g. a price beside it. */
   metaLeft?: ReactNode;

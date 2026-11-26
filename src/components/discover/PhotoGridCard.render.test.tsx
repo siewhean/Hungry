@@ -21,7 +21,6 @@ test("it shows the chip, the name, the distance and the rating, and opens on tap
       testID: "photo-card",
       title: "Jellyfish 100G",
       width: 180,
-      children: null,
     }),
   );
   assert.match(view.text(), /Sushi Express Jurong Point/);
@@ -39,7 +38,6 @@ test("with no chip, distance or rating it shows only the name", async () => {
       onPress: () => undefined,
       title: "Laksa",
       width: 180,
-      children: null,
     }),
   );
   assert.match(view.text(), /Laksa/);
