@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { NativeScrollEvent, NativeSyntheticEvent, ScrollViewProps } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  ScrollViewProps,
+} from "react-native";
 
 import { RailScrollView } from "@/components/ui";
 import { isNearRailEnd, nextRailCount, RAIL_PAGE_SIZE } from "@/features/discover/railPaging";
@@ -24,8 +29,10 @@ export function PagedRailScrollView<T>({
   renderItem: (item: T, index: number) => ReactNode;
 }) {
   const [shown, setShown] = useState(initialCount);
+  const scrollRef = useRef<ScrollView>(null);
   useEffect(() => {
     setShown(initialCount);
+    scrollRef.current?.scrollTo({ x: 0, animated: false });
   }, [initialCount, resetKey]);
   const visible = useMemo(() => items.slice(0, shown), [items, shown]);
 
@@ -50,6 +57,7 @@ export function PagedRailScrollView<T>({
 
   return (
     <RailScrollView
+      ref={scrollRef}
       horizontal
       showsHorizontalScrollIndicator={false}
       scrollEventThrottle={100}

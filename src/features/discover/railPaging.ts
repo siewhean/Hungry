@@ -21,8 +21,8 @@ export function appendRailTail<T>(
   keyOf: (item: T) => string,
   limit = RAIL_POOL_SIZE,
 ): T[] {
-  const seen = new Set(first.map(keyOf));
-  const rail = [...first];
+  const rail = first.slice(0, limit);
+  const seen = new Set(rail.map(keyOf));
   for (const item of candidates) {
     if (rail.length >= limit) break;
     const key = keyOf(item);

@@ -38,3 +38,8 @@ test("paging adds a page at a time and stops at the cards there are", () => {
   assert.equal(nextRailCount(36, 40), 40);
   assert.equal(nextRailCount(40, 40), 40);
 });
+
+test("a first page longer than the limit is cut to the limit", () => {
+  const rail = appendRailTail(["a", "b", "c", "d", "e", "f"], [], (item) => item, 5);
+  assert.deepEqual(rail, ["a", "b", "c", "d", "e"]);
+});

@@ -444,12 +444,16 @@ function CustomSwipeTabNavigator() {
   );
 }
 
-const NativeTab = createNativeBottomTabNavigator<MainTabParamList>();
+// Created on iPhone only: the package's web build throws when the factory is called.
+const NativeTab = Platform.OS === "ios" ? createNativeBottomTabNavigator<MainTabParamList>() : null;
 
 /** Routes that stay registered in the custom bar for old links but are not tabs in the native bar. */
-const NATIVE_TAB_ALIASES: Partial<Record<string, keyof MainTabParamList>> = {
-  Home: "Discover",
-};
+function nativeTabAliases(): Partial<Record<string, keyof MainTabParamList>> {
+  // Review is a tab only when review creation is on; otherwise a jump to it lands on Discover.
+  return FEATURE_FLAGS.reviewCreationEnabled
+    ? { Home: "Discover" }
+    : { Home: "Discover", Review: "Discover" };
+}
 
 /**
  * Sends a jump to Home (many flows reset to `MainTabs > Home`) to the Discover tab, and Post and
@@ -461,7 +465,7 @@ function withTabAliases<Action extends NavigationAction>(
   return {
     getStateForAction(state, action, options) {
       const payload = (action as { payload?: { name?: string } }).payload;
-      const aliased = payload?.name ? NATIVE_TAB_ALIASES[payload.name] : undefined;
+      const aliased = payload?.name ? nativeTabAliases()[payload.name] : undefined;
       const mapped =
         action.type === "NAVIGATE" && aliased
           ? ({ ...action, payload: { ...payload, name: aliased } } as Action)
@@ -486,6 +490,8 @@ function NativeTabNavigator() {
       name: focused ? focusedSymbol : symbol,
     }),
   });
+
+  if (!NativeTab) return <CustomSwipeTabNavigator />;
 
   return (
     <NativeTab.Navigator
@@ -539,7 +545,7 @@ function NativeTabNavigator() {
 
 /** The iPhone's system tab bar when the build turns it on; the custom bar with edge swipes elsewhere. */
 export function SwipeableTabNavigator() {
-  if (Platform.OS === "ios" && FEATURE_FLAGS.nativeTabBarEnabled) return <NativeTabNavigator />;
+  if (NativeTab && FEATURE_FLAGS.nativeTabBarEnabled) return <NativeTabNavigator />;
   return <CustomSwipeTabNavigator />;
 }
 

@@ -2924,7 +2924,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
                   {showDiscoverFilterRailSkeleton ? (
                     <DiscoverStallListLoadingSkeleton />
                   ) : areaStallCards.length ? (
-                    renderStallRail(areaStallCards)
+                    renderStallRail(listedAreaStallCards)
                   ) : null}
                   {foldedStallCards.length && !showDiscoverFilterRailSkeleton ? (
                     <>
