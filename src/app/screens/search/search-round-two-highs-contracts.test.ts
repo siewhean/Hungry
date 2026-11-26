@@ -49,7 +49,7 @@ test("H21: map and Quick Bites keep raw text locally and open results with the q
   }
   assert.match(
     read("src/app/screens/discover/QuickBitesScreen.tsx"),
-    /navigation\.navigate\("SearchResults", \{ initialQuery: query \|\| undefined \}\)/,
+    /navigation\.navigate\("SearchResults", \{\s*browseMode: mode,\s*initialQuery: query \|\| undefined,?\s*\}\)/,
   );
   // The map keeps the query on the map; "See all results" is the way out to Search.
   const map = read("src/app/screens/discover/HomeMapScreen.tsx");
