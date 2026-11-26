@@ -764,7 +764,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /const bitesWithImages = syncedBites[\s\S]*\.map/);
   assert.doesNotMatch(quickBites, /mockDishes/);
   assert.doesNotMatch(quickBites, /DISH_IMAGE_URLS/);
-  assert.match(quickBites, /return collectionBites\s*\.filter/);
+  assert.match(quickBites, /return collectionBites\s*\.map/);
   assert.doesNotMatch(
     quickBites,
     /collectionBites\.some\(\(collectionBite\) => collectionBite\.id === bite\.id\)/,
@@ -816,7 +816,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /const lateNight = syncedBites/);
   assert.match(
     quickBites,
-    /return getDiscoverBiteCollection\(collection, bites, dishLookup, venueHours\)/,
+    /getDiscoverBiteCollection\(collection, bites, dishLookup, venueHours\)/,
   );
   // The footer carousel repeated the grid above it.
   assert.doesNotMatch(quickBites, /renderFoodCarousel|carousel-\$\{bite\.id\}/);

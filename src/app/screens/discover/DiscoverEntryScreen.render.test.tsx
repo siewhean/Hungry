@@ -338,6 +338,42 @@ test("a failed live feed hands Home to the offline page, and Try again tries the
   assert.equal(view.findByTestId("home-offline-root"), null);
 });
 
+test("Try again that fails again keeps the offline page up instead of flickering through Home", async () => {
+  fake.rpc.get_discovery_feed_by_location = () => ({
+    data: null,
+    error: { message: "network request failed" },
+  });
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByTestId("home-offline-root"));
+
+  await view.press(view.findByTestId("home-offline-retry"));
+  await view.settle();
+
+  assert.ok(view.findByTestId("home-offline-root"), "still the offline page after a failed retry");
+  assert.match(view.text(), /Try again/, "the button is ready for another try");
+  assert.doesNotMatch(view.text(), /Trying again/, "no spinner left running");
+});
+
+test("QuickBites for a meal period lists only the dishes that suit it, with no cuisine chips", async () => {
+  serveLiveFeed([
+    feedRow(1, { top_dish_name: "Chilli Crab" }),
+    feedRow(2, { top_dish_name: "Kaya Toast" }),
+  ]);
+  const view = await m.renderKit.renderScreen(m.QuickBitesScreen as never, {
+    name: "QuickBites",
+    params: {
+      collection: "quickBites",
+      mealPeriod: "dinner",
+      latitude: 1.2813,
+      longitude: 103.8458,
+    },
+  });
+  assert.match(view.text(), /Dinner ideas/);
+  assert.match(view.text(), /Chilli Crab/);
+  assert.doesNotMatch(view.text(), /Kaya Toast/);
+  assert.equal(view.findByLabel("Chinese"), null, "the see more page has no cuisine chips");
+});
+
 test("with no connection, Home shows the offline page at once instead of skeletons waiting on the feed", async () => {
   const { useUIStore } = await import("@/store/useUIStore");
   // The feed read never answers, as on a phone with no signal.

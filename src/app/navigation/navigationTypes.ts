@@ -268,6 +268,8 @@ export type RootStackParamList = {
   QuickBites:
     | {
         collection?: "quickBites" | "trending" | "editorChoice" | "budget" | "lateNight";
+        /** Narrows the collection to the dishes that suit this part of the day (Home's meal rail). */
+        mealPeriod?: "breakfast" | "lunch" | "teaTime" | "dinner";
         /** The Discover area the list was opened from; GPS is used when absent. */
         latitude?: number;
         longitude?: number;

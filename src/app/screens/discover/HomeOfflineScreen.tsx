@@ -25,6 +25,8 @@ export const HOME_OFFLINE_COPY = {
 type Props = {
   /** Tries the live Home again (Try again, pull to refresh, or the connection coming back). */
   onRetry: () => unknown;
+  /** True while a Try again is loading the live Home; the button shows it is working. */
+  retrying?: boolean;
 };
 
 function ListRow({
@@ -109,7 +111,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  * It says which, offers Try again and pull to refresh, retries by itself when the phone comes
  * back online, and keeps saved dishes in reach.
  */
-export function HomeOfflineScreen({ onRetry }: Props) {
+export function HomeOfflineScreen({ onRetry, retrying = false }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { palette, semanticSpacing, spacing } = useHungryTheme();
@@ -182,7 +184,8 @@ export function HomeOfflineScreen({ onRetry }: Props) {
             {copy.body}
           </AppText>
           <Button
-            label="Try again"
+            label={retrying ? "Trying again" : "Try again"}
+            loading={retrying}
             leftIcon={
               <AppSymbol color={palette.textOnOrange} name="retry" size={16} weight="semibold" />
             }

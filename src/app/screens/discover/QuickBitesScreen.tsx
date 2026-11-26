@@ -5,7 +5,6 @@ import {
   Pressable,
   TextInput,
   useWindowDimensions,
-  Animated,
   type ViewToken,
 } from "react-native";
 import { Utensils } from "lucide-react-native";
@@ -15,15 +14,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FlashList } from "@shopify/flash-list";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
-import {
-  AppSymbol,
-  AppText,
-  Button,
-  FilterChipRail,
-  Screen,
-  Skeleton,
-  UnderlineTabs,
-} from "@/components/ui";
+import { AppSymbol, AppText, Button, Screen, Skeleton, UnderlineTabs } from "@/components/ui";
 import {
   formatPhotoGridDistance,
   PHOTO_GRID_CARD_RATIO,
@@ -51,7 +42,6 @@ import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { reportError } from "@/lib/monitoring/reportError";
 import { groupBitesByStall, type QuickBiteStallItem } from "@/features/discover/stallGroups";
 import {
-  DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
   getDiscoverBiteDistance,
   getDiscoverBites,
@@ -60,6 +50,7 @@ import {
   type DiscoverDishLookup,
   type VenueHoursLookup,
 } from "@/features/discover/bites";
+import { MEAL_RAILS, bitesForMealPeriod } from "@/features/discover/personalRails";
 
 /**
  * Live bites already carry the feed's name, price, rating, photo and distance, so the rails
@@ -274,13 +265,16 @@ export function QuickBitesScreen() {
   const tasteVector = useProfileStore((state) => state.profile.tasteVector);
   const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
-  const collectionCopy = COLLECTION_COPY[collection];
+  const mealPeriod = route.params?.mealPeriod;
+  const collectionCopy = mealPeriod
+    ? {
+        ...COLLECTION_COPY[collection],
+        title: MEAL_RAILS[mealPeriod].title,
+        placeholder: `Find ${MEAL_RAILS[mealPeriod].title.toLowerCase()}...`,
+        emptyTitle: `No ${MEAL_RAILS[mealPeriod].title.toLowerCase()} found nearby`,
+      }
+    : COLLECTION_COPY[collection];
 
-  const [selectedCuisine, setSelectedCuisine] = useState("All");
-  const cuisineFilterOptions = useMemo(
-    () => DISCOVER_CUISINE_FILTERS.map((cuisine) => ({ id: cuisine, label: cuisine })),
-    [],
-  );
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
   // Mock and Excel builds fill in from the local data; live builds never read it (HOME-X7).
   const fallbackBites = useMemo(
@@ -320,28 +314,6 @@ export function QuickBitesScreen() {
     },
     [navigation],
   );
-
-  // ── Animation Logic ────────────────────────────────────────────────────────
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const CHIPS_HEIGHT = 64;
-
-  const chipsOpacity = scrollY.interpolate({
-    inputRange: [0, 40],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
-  const chipsHeightAnim = scrollY.interpolate({
-    inputRange: [0, 60],
-    outputRange: [CHIPS_HEIGHT, 0],
-    extrapolate: "clamp",
-  });
-
-  const chipsTranslateY = scrollY.interpolate({
-    inputRange: [0, 60],
-    outputRange: [0, -20],
-    extrapolate: "clamp",
-  });
 
   useEffect(() => {
     let isActive = true;
@@ -389,25 +361,16 @@ export function QuickBitesScreen() {
   }, [currentLocation, fallbackBites, isSupabaseDataSource, manualLocation, reloadKey]);
 
   const collectionBites = useMemo(() => {
-    return getDiscoverBiteCollection(collection, bites, dishLookup, venueHours);
-  }, [bites, collection, dishLookup, venueHours]);
+    const all = getDiscoverBiteCollection(collection, bites, dishLookup, venueHours);
+    return mealPeriod ? bitesForMealPeriod(all, mealPeriod) : all;
+  }, [bites, collection, dishLookup, mealPeriod, venueHours]);
 
   const filteredBites = useMemo(() => {
     // The rail's own order (reviews, rating, photos) is kept: no re-sort by distance.
-    return collectionBites
-      .filter((bite) => {
-        const cuisine = selectedCuisine.toLowerCase();
-        const matchesCuisine =
-          cuisine === "all" ||
-          bite.caption.toLowerCase().includes(cuisine) ||
-          bite.dishName.toLowerCase().includes(cuisine);
-
-        return matchesCuisine;
-      })
-      .map((bite) => {
-        return { ...bite, distance: getDiscoverBiteDistance(bite, dishLookup) };
-      });
-  }, [collectionBites, dishLookup, selectedCuisine]);
+    return collectionBites.map((bite) => {
+      return { ...bite, distance: getDiscoverBiteDistance(bite, dishLookup) };
+    });
+  }, [collectionBites, dishLookup]);
 
   useEffect(() => {
     prefetchImages(
@@ -540,23 +503,6 @@ export function QuickBitesScreen() {
           value={mode}
           onChange={setMode}
         />
-
-        <Animated.View
-          style={{
-            height: chipsHeightAnim,
-            opacity: chipsOpacity,
-            transform: [{ translateY: chipsTranslateY }],
-            overflow: "hidden",
-          }}
-        >
-          <FilterChipRail
-            options={cuisineFilterOptions}
-            selectedId={selectedCuisine}
-            onSelect={setSelectedCuisine}
-            gap={spacing[2]}
-            contentContainerStyle={{ paddingVertical: spacing[3] }}
-          />
-        </Animated.View>
       </View>
 
       <AppText
@@ -580,10 +526,6 @@ export function QuickBitesScreen() {
           keyExtractor={(item) => item.id}
           onViewableItemsChanged={handleFullyVisibleBitesChanged}
           viewabilityConfig={fullTileViewabilityConfig}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-            useNativeDriver: false,
-          })}
-          scrollEventThrottle={16}
           // @ts-ignore
           estimatedItemSize={220}
           numColumns={numColumns}

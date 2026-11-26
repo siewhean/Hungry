@@ -231,9 +231,14 @@ export type DiscoverHomeScreenProps = {
    * Called when the live feed is unavailable and no same-area snapshot can be shown.
    */
   onLiveFeedUnavailable?: () => void;
+  /** Called once the live feed has real content on screen. */
+  onLiveFeedReady?: () => void;
 };
 
-export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreenProps = {}) {
+export function DiscoverHomeScreen({
+  onLiveFeedReady,
+  onLiveFeedUnavailable,
+}: DiscoverHomeScreenProps = {}) {
   const navigation = useNavigation<RootNavigation>();
   const route = useRoute();
   const isFocused = useIsFocused();
@@ -466,6 +471,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
   const favouriteFoodStyleIds = useFeedFeedbackStore((state) => state.favouriteFoodStyleIds);
   const sessionActions = useFeedFeedbackStore((state) => state.sessionActions);
   const showToast = useUIStore((state) => state.showToast);
+  const isOffline = useUIStore((state) => state.isOffline);
   const dismissedDishIds = useMemo(
     () => buildFoodHistory(foodHistoryRows).dismissedDishIds,
     [foodHistoryRows],
@@ -1097,6 +1103,9 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       !isLiveFeedUnavailable &&
       supabaseFeedVenues.length > 0
     : true;
+  useEffect(() => {
+    if (isSupabaseDataSource && hasDiscoverContent) onLiveFeedReady?.();
+  }, [hasDiscoverContent, isSupabaseDataSource, onLiveFeedReady]);
   // "See all" opens QuickBites, which release-01 core-only builds do not register.
   const canOpenDiscoverCollection = !FEATURE_FLAGS.release01CoreOnly;
   // Distances measured from the built-in default point would be made up.
@@ -1597,6 +1606,19 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
       // Same area as the rail the viewer was looking at, not a fresh GPS read.
       navigation.navigate("QuickBites", {
         collection,
+        latitude: discoverLocationLatitude,
+        longitude: discoverLocationLongitude,
+      });
+    },
+    [discoverLocationLatitude, discoverLocationLongitude, navigation],
+  );
+
+  const openMealCollection = useCallback(
+    (mealPeriod: "breakfast" | "lunch" | "teaTime" | "dinner") => {
+      trackAnalyticsEvent("discover_see_all_tapped", { surface: "home", collection: mealPeriod });
+      navigation.navigate("QuickBites", {
+        collection: "quickBites",
+        mealPeriod,
         latitude: discoverLocationLatitude,
         longitude: discoverLocationLongitude,
       });
@@ -2263,8 +2285,8 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
               void reloadDiscover();
             }}
           />
-        ) : supabaseDiscoveryFeed?.isFallback ? (
-          // Keep same-area results visible during a transient interruption.
+        ) : supabaseDiscoveryFeed?.isFallback && !isOffline ? (
+          // Keep same-area results visible during a transient interruption. Offline has its own page.
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Showing saved results. Tap to retry."
@@ -2825,7 +2847,7 @@ export function DiscoverHomeScreen({ onLiveFeedUnavailable }: DiscoverHomeScreen
             shouldRenderDiscoverRail(mealRailCards.length, personalRailMin) ? (
               <DiscoverBiteRail
                 {...discoverRailProps}
-                canSeeAll={false}
+                onSeeAll={() => openMealCollection(mealPeriod)}
                 rail="quickBites"
                 title={MEAL_RAILS[mealPeriod].title}
                 seeAllLabel={MEAL_RAILS[mealPeriod].seeAllLabel}

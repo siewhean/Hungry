@@ -104,7 +104,7 @@ test("authenticated outage smoke requires staging credentials and lands on the o
   assert.match(flow, /id: "home-offline-root"/);
   assert.match(flow, /assertVisible: "Try again"/);
   assert.match(offline, /testID="home-offline-root"/);
-  assert.match(offline, /label="Try again"/);
+  assert.match(offline, /"Try again"/);
   const spec = read("tests/e2e/authenticated-excel-fallback.spec.ts");
   assert.match(flow, /get_discovery_feed_by_location unavailable/);
   assert.match(spec, /catalog_raw_\|get_discovery_feed_by_location/);
