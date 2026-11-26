@@ -152,14 +152,13 @@ test("discover routes diners to details, opens the map from a toggle, and search
   assertSourceIncludes(
     quickBites,
     [
-      /ExpandableSearchLauncher/,
-      /accessibilityLabel="Search dishes"/,
-      /iconAlignment="right"/,
+      /accessibilityLabel=\{`Search \$\{mode\}`\}/,
+      /<UnderlineTabs/,
       /navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
       /accessibilityLabel=\{`Open \$\{item\.dishName\} at \$\{item\.venueName\}`\}/,
-      /\{item\.dishName\}/,
+      /title=\{item\.dishName\}/,
     ],
-    "QuickBitesScreen search icon and card mapping",
+    "QuickBitesScreen search header and card mapping",
   );
   assertSourceIncludes(
     searchResults,

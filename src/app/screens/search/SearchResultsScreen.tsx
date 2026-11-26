@@ -47,6 +47,7 @@ import { SearchEmptyState } from "@/features/search/SearchEmptyState";
 import { parseSearchQuery, type ParsedQueryPart } from "@/features/search/queryParser";
 import { useExperimentVariant } from "@/lib/experiments/experiments";
 import { StallLogoMark } from "@/components/stall/StallLogoMark";
+import { PHOTO_GRID_CARD_RATIO, PhotoGridCard } from "@/components/discover/PhotoGridCard";
 import { filterOpenNow, venueIdsToRead } from "@/features/search/openNowFilter";
 import type { VenueSummary } from "@/types/domain";
 import {
@@ -58,7 +59,6 @@ import {
   buildBrowseRequest,
   buildSearchShareUrl,
   cardAccessibilityLabel,
-  cardSubtitle,
   describeMatchCount,
   describeMoodResults,
   describeResultsSummary,
@@ -146,15 +146,6 @@ function analyticsFilterName(filter: string) {
   return filter === "Halal" ? "dietary" : filter;
 }
 
-/** The grid runs edge to edge: cells touch the screen sides and sit this far apart. */
-const GRID_GAP = 2;
-/** The photo is as tall as the cell is wide, so it leads the card. */
-const GRID_IMAGE_RATIO = 1;
-/** Every text block is at least this tall, so a row of cells ends on one line. */
-const GRID_TEXT_MIN_HEIGHT = 104;
-/** Stall cards carry one more line (their top dish) than dish cards. */
-const gridTextHeight = (mode: BrowseMode) => (mode === "stalls" ? 122 : GRID_TEXT_MIN_HEIGHT);
-
 function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: BrowseMode }) {
   const { palette, spacing } = useHungryTheme();
   const loadingLabel = mode === "dishes" ? "Finding dishes" : "Finding stalls";
@@ -170,8 +161,7 @@ function BrowseGridLoadingState({ itemWidth, mode }: { itemWidth: number; mode: 
           <View
             key={`browse-grid-skeleton-${index}`}
             style={{
-              height: itemWidth * GRID_IMAGE_RATIO + GRID_TEXT_MIN_HEIGHT,
-              padding: GRID_GAP / 2,
+              height: itemWidth * PHOTO_GRID_CARD_RATIO,
               width: itemWidth,
             }}
           >
@@ -208,12 +198,18 @@ const RawCatalogCard = memo(function RawCatalogCard({
   const imageUrl = stall ? stallCardImage(stall) : item.imageUrl;
   const title = item.name;
   const stallName = dish ? dish.venueName || title : title;
-  const stallRating = ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
-  // On a stall card the rating is its top dish's (the line above names that dish).
-  const rating = dish ? ratingPillText(dish.rating, dish.reviewCount) : stallRating;
+  // On a stall card the rating is its top dish's.
+  const rating = dish
+    ? ratingPillText(dish.rating, dish.reviewCount)
+    : ratingPillText(stall?.qualityRating, stall?.qualityReviewCount);
   const outlets = stall?.extraOutlets ?? 0;
-  const stallDetail = stall ? stallCardDetail(stall) : undefined;
-  const isVerified = item.verificationStatus === "approved";
+  // A dish names its stall on top; a stall names its place, since its own name is the title.
+  const place = stall?.buildingName ?? "";
+  const chipLabel = dish
+    ? stallName
+    : outlets > 0
+      ? `${place ? `${place} · ` : ""}+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`
+      : place;
   // Most catalog rows have no cleared photo, and a photo can fail to load; either way show the
   // stall's initials, not a grey caption.
   const placeholder = (
@@ -221,140 +217,60 @@ const RawCatalogCard = memo(function RawCatalogCard({
       <StallLogoMark logoUrl={stall?.logoUrl} name={stallName} size={Math.round(itemWidth * 0.3)} />
     </View>
   );
+  const distance =
+    item.distanceMeters !== undefined ? formatBrowseDistance(item.distanceMeters) : "Singapore";
 
   // The heart sits beside the card button, not inside it: a button inside a button is invalid HTML
   // on web and breaks hydration.
   return (
-    <View style={{ padding: GRID_GAP / 2, width: itemWidth }}>
-      <PressableScale
-        accessibilityRole="button"
+    <View style={{ width: itemWidth }}>
+      <PhotoGridCard
         accessibilityLabel={cardAccessibilityLabel(mode, item)}
-        accessibilityHint={isDish ? "Opens the dish" : "Opens the stall"}
-        onPress={() => onOpen(item, index)}
-        testID={`search-card-${mode}-${item.id}`}
-      >
-        <View
-          style={{
-            backgroundColor: palette.surface,
-            minHeight: itemWidth * GRID_IMAGE_RATIO + gridTextHeight(mode),
-            overflow: "hidden",
-          }}
-        >
-          <View style={{ backgroundColor: palette.bgSoft, height: itemWidth * GRID_IMAGE_RATIO }}>
-            {imageUrl ? (
-              <AccessibleImage
-                source={{ uri: imageUrl }}
-                style={StyleSheet.absoluteFill}
-                contentFit="cover"
-                decorative
-                fallback={placeholder}
+        // One badge only: approved rows are "Verified"; every other row carries no pill.
+        badgeLabel={item.verificationStatus === "approved" ? "Verified" : undefined}
+        chipLabel={chipLabel}
+        chipSymbol={dish ? "dish" : "nearYou"}
+        metaLeft={
+          <View style={{ alignItems: "baseline", flexDirection: "row", flexShrink: 1, gap: 4 }}>
+            {dish?.price !== undefined ? (
+              <PriceWithBasis
+                dish={{ price: dish.price, priceRange: "", priceBasis: dish.priceBasis }}
+                color={palette.white}
               />
-            ) : (
-              placeholder
-            )}
-            {/* One badge only: approved rows are "Verified"; every other row carries no pill. */}
-            {isVerified ? (
-              <View
-                style={{
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.pill,
-                  left: spacing[2],
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[1],
-                  position: "absolute",
-                  top: spacing[2],
-                }}
-              >
-                <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                  Verified
-                </AppText>
-              </View>
             ) : null}
-            {outlets > 0 ? (
-              <View
-                style={{
-                  backgroundColor: palette.surface,
-                  borderRadius: radii.pill,
-                  paddingHorizontal: spacing[2],
-                  paddingVertical: spacing[1],
-                  position: "absolute",
-                  right: spacing[2],
-                  top: spacing[2],
-                }}
-              >
-                <AppText variant="micro" style={{ color: palette.textSecondary }}>
-                  {`+${outlets} ${outlets === 1 ? "outlet" : "outlets"}`}
-                </AppText>
-              </View>
-            ) : null}
-          </View>
-          {/* Title and subtitle sit at the top; one meta row is pinned to the bottom, so a short
-              name never leaves a gap below the card and every rating lines up bottom right. */}
-          <View
-            style={{
-              height: gridTextHeight(mode),
-              justifyContent: "space-between",
-              overflow: "hidden",
-              padding: spacing[2],
-            }}
-          >
-            <View style={{ gap: 2 }}>
-              <AppText numberOfLines={2} variant="bodyBold">
-                {title}
-              </AppText>
-              <AppText numberOfLines={1} tone="secondary" variant="micro">
-                {cardSubtitle(mode, item)}
-              </AppText>
-              {stallDetail ? (
-                <AppText numberOfLines={1} style={{ color: palette.text }} variant="micro">
-                  {stallDetail}
-                </AppText>
-              ) : null}
-            </View>
-            <View
-              style={{
-                alignItems: "center",
-                flexDirection: "row",
-                gap: spacing[2],
-                justifyContent: "space-between",
-                minHeight: RESERVED_LINE_HEIGHT,
-              }}
+            <AppText
+              numberOfLines={1}
+              variant="micro"
+              style={{ color: palette.white, flexShrink: 1, fontWeight: "600" }}
             >
-              <View style={{ alignItems: "baseline", flexDirection: "row", flexShrink: 1, gap: 4 }}>
-                {dish?.price !== undefined ? (
-                  <PriceWithBasis
-                    dish={{ price: dish.price, priceRange: "", priceBasis: dish.priceBasis }}
-                    color={palette.text}
-                  />
-                ) : null}
-                <AppText numberOfLines={1} tone="muted" variant="micro" style={{ flexShrink: 1 }}>
-                  {dish?.price !== undefined ? "· " : ""}
-                  {item.distanceMeters !== undefined
-                    ? formatBrowseDistance(item.distanceMeters)
-                    : "Singapore"}
-                </AppText>
-              </View>
-              <View
-                accessibilityLabel={rating ? `Rated ${rating}` : "Not rated yet"}
-                style={{ alignItems: "center", flexDirection: "row", flexShrink: 0, gap: 2 }}
-              >
-                {rating ? (
-                  <>
-                    <AppSymbol name="rating" color={palette.ratingStar} size={12} />
-                    <AppText variant="micro" style={{ color: palette.text, fontWeight: "700" }}>
-                      {rating}
-                    </AppText>
-                  </>
-                ) : (
-                  <AppText tone="muted" variant="micro">
-                    New
-                  </AppText>
-                )}
-              </View>
-            </View>
+              {dish?.price !== undefined ? "· " : ""}
+              {distance}
+            </AppText>
           </View>
+        }
+        onPress={() => onOpen(item, index)}
+        ratingLabel={rating}
+        subtitle={stall ? stallCardDetail(stall) : undefined}
+        // The heart sits over the chip row on the right.
+        reserveRight={dish && onToggleSave ? 52 : 0}
+        testID={`search-card-${mode}-${item.id}`}
+        title={title}
+        width={itemWidth}
+      >
+        <View style={{ backgroundColor: palette.bgSoft, flex: 1 }}>
+          {imageUrl ? (
+            <AccessibleImage
+              source={{ uri: imageUrl }}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              decorative
+              fallback={placeholder}
+            />
+          ) : (
+            placeholder
+          )}
         </View>
-      </PressableScale>
+      </PhotoGridCard>
       {dish && onToggleSave ? (
         <SaveHeartButton
           accessibilityLabel={saved ? `Remove ${dish.name} from saved` : `Save ${dish.name}`}
@@ -367,9 +283,9 @@ const RawCatalogCard = memo(function RawCatalogCard({
             height: 44,
             justifyContent: "center",
             position: "absolute",
-            right: GRID_GAP / 2 + spacing[2],
+            right: spacing[2],
             // Top right of the picture, where a heart sits on a photo card.
-            top: GRID_GAP / 2 + spacing[2],
+            top: spacing[2],
             width: 44,
           }}
         />
@@ -377,9 +293,6 @@ const RawCatalogCard = memo(function RawCatalogCard({
     </View>
   );
 });
-
-/** One line of micro text; the rating line keeps this height when a card has nothing to show. */
-const RESERVED_LINE_HEIGHT = 16;
 
 const MODE_LABELS = { dishes: "Dishes", stalls: "Stalls" } as const;
 const MODE_TABS = (["dishes", "stalls"] as const).map((option) => ({

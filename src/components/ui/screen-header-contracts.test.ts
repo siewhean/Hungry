@@ -774,7 +774,8 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     /const openBite = useCallback\([\s\S]*navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
   );
   assert.match(quickBites, /onOpen=\{openBite\}/);
-  assert.doesNotMatch(quickBites, /navigation\.navigate\("StallDetail"/);
+  // Dish tiles open a dish; only the Stalls tab opens a stall.
+  assert.match(quickBites, /navigation\.navigate\("StallDetail", \{ venueId: stall\.venueId }\)/);
   const mockData = read("src/lib/services/mock/data.ts");
   assert.match(mockData, /id: "dish-pandan-cake"[\s\S]*name: "Pandan Cake"/);
   assert.match(mockData, /id: "dish-wagyu-burger"[\s\S]*name: "Wagyu Burger"/);
@@ -787,10 +788,10 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     quickBites,
     /const collection: DiscoverCollection = route\.params\?\.collection \?\? "quickBites"/,
   );
-  assert.match(quickBites, /placeholder="Search dishes\.\.\."/);
+  assert.match(quickBites, /placeholder=\{`Search all \${mode}`\}/);
   assert.match(
     quickBites,
-    /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*\{collectionCopy\.title\}[\s\S]*<ExpandableSearchLauncher/,
+    /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*<TextInput[\s\S]*<UnderlineTabs[\s\S]*\{summary\}/,
   );
   assert.match(quickBites, /titleRow: \{[\s\S]*flexDirection: "row"[\s\S]*marginBottom: 8/);
   assert.match(
@@ -821,7 +822,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.doesNotMatch(quickBites, /renderFoodCarousel|carousel-\$\{bite\.id\}/);
   // Distances come from the read or are hidden; counts are labelled as ratings.
   assert.doesNotMatch(quickBites, /\{item\.distance\}m/);
-  assert.match(quickBites, /item\.distance !== undefined \?/);
+  assert.match(quickBites, /distanceLabel=\{formatPhotoGridDistance\(item\.distance\)}/);
   assert.match(quickBites, /route\.params\?\.latitude/);
   assert.match(quickBites, /Couldn't load dishes/);
   // A symbol in a fixed 72-point box, never an emoji glyph that the font can clip.

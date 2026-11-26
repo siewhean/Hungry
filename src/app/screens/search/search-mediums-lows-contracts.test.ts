@@ -121,7 +121,8 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /accessibilityLabel=\{`Sort by, \$\{sortLabel\}`\}/);
   assert.match(grid, /describeResultsSummary\(\{\s*count: matchCount,\s*mode,/);
   // M5/M6: card line, rating pill, full spoken label, result announcement.
-  assert.match(grid, /cardSubtitle\(mode, item\)/);
+  assert.match(grid, /<PhotoGridCard/);
+  assert.match(grid, /chipLabel=\{chipLabel\}/);
   assert.match(grid, /ratingPillText\(dish\.rating, dish\.reviewCount\)/);
   assert.match(grid, /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/);
   assert.match(
