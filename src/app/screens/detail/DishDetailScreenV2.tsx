@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import type { ColorValue, TextStyle } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { useFocusEffect } from "@react-navigation/native";
@@ -49,6 +56,7 @@ import { DishLoadingPreview } from "@/components/dish/DishLoadingPreview";
 import { DishReviewCard } from "@/components/dish/DishReviewCard";
 import { DishReviewSummary } from "@/components/dish/DishReviewSummary";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { PhotoGridCard } from "@/components/discover/PhotoGridCard";
 import { DishHeroPlaceholder } from "@/components/dish/DishHeroPlaceholder";
 import {
   AddToListSymbol,
@@ -303,7 +311,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     excludeDishIds: similarNearbyIds,
   });
   // A rail where no dish has a photo drops the grey photo block: text tiles read as complete.
-  const moreFromHasPhotos = moreFromStall.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarHasPhotos = similarNearby.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarDishHeading = dish ? similarDishQuery(dish.name) || dish.name : "dishes";
 
@@ -1302,15 +1309,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     </View>
                   ) : null}
                 </View>
-                {dietaryChipFlags.length > 0 ? (
-                  <View style={{ gap: spacing[1] }}>
-                    <DietaryFlagChips flags={dietaryChipFlags} />
-                    <AppText variant="micro" tone="muted">
-                      Labels come from the stall or our catalogue. Check with the stall if it
-                      matters to you.
-                    </AppText>
-                  </View>
-                ) : null}
+                {dietaryChipFlags.length > 0 ? <DietaryFlagChips flags={dietaryChipFlags} /> : null}
                 {dish.description?.trim() ? (
                   (descriptionTruncates ??
                   dish.description.trim().length > DESCRIPTION_EXPANDABLE_CHARS) ? (
@@ -1468,62 +1467,52 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     }}
                     contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
                   >
-                    {moreFromStall.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.name}, ${
-                          isSoldOut(item.availabilityFlags)
-                            ? "sold out today"
-                            : formatDishPrice(item)
-                        }`}
-                        // push, not navigate: each dish gets its own screen, so Back returns here.
-                        onPress={() => {
-                          trackAnalyticsEvent("dish_more_from_opened", {
-                            dish_id: dish.id,
-                            target_dish_id: item.id,
-                          });
-                          navigation.push("DishDetail", {
-                            dishId: item.id,
-                            source: "more_from_stall",
-                            prefill: dishPrefillFrom({ ...item, venueName }),
-                          });
-                        }}
-                        style={{
-                          backgroundColor: palette.surface,
-                          borderColor: palette.border,
-                          borderRadius: componentRadii.card,
-                          borderWidth: 1,
-                          overflow: "hidden",
-                          width: signatureGridItemWidth,
-                        }}
-                      >
-                        {sanitizeCatalogImageUrl(item.imageUrl) ? (
-                          <AccessibleImage
-                            source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
-                            contentFit="cover"
-                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
-                            decorative
-                          />
-                        ) : moreFromHasPhotos ? (
-                          <NoDishPhoto
-                            dishName={item.name}
-                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
-                          />
-                        ) : null}
-                        <View style={{ gap: spacing[1], padding: spacing[3] }}>
-                          <AppText variant="bodyBold" numberOfLines={1}>
-                            {item.name}
-                          </AppText>
-                          <AppText
-                            variant="price"
-                            style={[DISH_PRICE_FONT, { color: palette.text }]}
-                          >
-                            {formatDishPrice(item)}
-                          </AppText>
-                        </View>
-                      </Pressable>
-                    ))}
+                    {moreFromStall.map((item) => {
+                      const photoUrl = sanitizeCatalogImageUrl(item.imageUrl);
+                      return (
+                        <PhotoGridCard
+                          key={item.id}
+                          accessibilityLabel={`Open ${item.name}, ${
+                            isSoldOut(item.availabilityFlags)
+                              ? "sold out today"
+                              : formatDishPrice(item)
+                          }`}
+                          metaLeft={
+                            <AppText
+                              variant="micro"
+                              style={{ color: palette.white, fontWeight: "700" }}
+                            >
+                              {formatDishPrice(item)}
+                            </AppText>
+                          }
+                          // push, not navigate: each dish gets its own screen, so Back returns here.
+                          onPress={() => {
+                            trackAnalyticsEvent("dish_more_from_opened", {
+                              dish_id: dish.id,
+                              target_dish_id: item.id,
+                            });
+                            navigation.push("DishDetail", {
+                              dishId: item.id,
+                              source: "more_from_stall",
+                              prefill: dishPrefillFrom({ ...item, venueName }),
+                            });
+                          }}
+                          title={item.name}
+                          width={signatureGridItemWidth}
+                        >
+                          {photoUrl ? (
+                            <AccessibleImage
+                              source={{ uri: photoUrl }}
+                              contentFit="cover"
+                              style={StyleSheet.absoluteFill}
+                              decorative
+                            />
+                          ) : (
+                            <NoDishPhoto dishName={item.name} style={StyleSheet.absoluteFill} />
+                          )}
+                        </PhotoGridCard>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               ) : null}

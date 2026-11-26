@@ -459,8 +459,6 @@ export function QuickBitesScreen() {
           {
             paddingHorizontal: spacing[4],
             paddingTop: spacing[2],
-            borderBottomWidth: 1,
-            borderBottomColor: palette.border,
             backgroundColor: palette.bg,
             zIndex: 10,
           },

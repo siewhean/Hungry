@@ -135,8 +135,9 @@ export function HomeOfflineScreen({ onRetry, retrying = false }: Props) {
     >
       <ScrollView
         contentContainerStyle={{
+          flexGrow: 1,
           gap: spacing[6],
-          paddingBottom: spacing[6],
+          paddingBottom: Math.max(insets.bottom, spacing[6]),
           paddingHorizontal: semanticSpacing.screenEdge,
           paddingTop: spacing[6],
         }}
@@ -159,30 +160,45 @@ export function HomeOfflineScreen({ onRetry, retrying = false }: Props) {
         showsVerticalScrollIndicator={false}
         testID="home-offline-screen"
       >
-        <View accessibilityRole="alert" style={{ alignItems: "center", gap: spacing[3] }}>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.bgSoft,
-              borderRadius: 36,
-              height: 72,
-              justifyContent: "center",
-              width: 72,
-            }}
-          >
-            <AppSymbol
-              color={palette.orange}
-              name={isOffline ? "offline" : "problem"}
-              size={32}
-              weight="medium"
-            />
+        <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+          <View accessibilityRole="alert" style={{ alignItems: "center", gap: spacing[3] }}>
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.bgSoft,
+                borderRadius: 36,
+                height: 72,
+                justifyContent: "center",
+                width: 72,
+              }}
+            >
+              <AppSymbol
+                color={palette.orange}
+                name={isOffline ? "offline" : "problem"}
+                size={32}
+                weight="medium"
+              />
+            </View>
+            <AppText accessibilityRole="header" style={{ textAlign: "center" }} variant="h2">
+              {copy.title}
+            </AppText>
+            <AppText style={{ maxWidth: 320, textAlign: "center" }} tone="secondary" variant="body">
+              {copy.body}
+            </AppText>
           </View>
-          <AppText accessibilityRole="header" style={{ textAlign: "center" }} variant="h2">
-            {copy.title}
-          </AppText>
-          <AppText style={{ maxWidth: 320, textAlign: "center" }} tone="secondary" variant="body">
-            {copy.body}
-          </AppText>
+        </View>
+        <View style={{ gap: spacing[4] }}>
+          {savedDishCount > 0 ? (
+            <Section title="Saved on this phone">
+              <ListRow
+                accessibilityLabel={`Your saved dishes, ${savedDishCount} saved`}
+                icon="saved"
+                onPress={() => navigation.navigate("Favourites", { section: "dishes" })}
+                subtitle={`${savedDishCount} ${savedDishCount === 1 ? "dish" : "dishes"}`}
+                title="Your saved dishes"
+              />
+            </Section>
+          ) : null}
           <Button
             label={retrying ? "Trying again" : "Try again"}
             loading={retrying}
@@ -190,22 +206,10 @@ export function HomeOfflineScreen({ onRetry, retrying = false }: Props) {
               <AppSymbol color={palette.textOnOrange} name="retry" size={16} weight="semibold" />
             }
             onPress={onRetry}
-            style={{ alignSelf: "stretch", marginTop: spacing[2] }}
+            style={{ alignSelf: "stretch" }}
             testID="home-offline-retry"
           />
         </View>
-
-        {savedDishCount > 0 ? (
-          <Section title="Saved on this phone">
-            <ListRow
-              accessibilityLabel={`Your saved dishes, ${savedDishCount} saved`}
-              icon="saved"
-              onPress={() => navigation.navigate("Favourites", { section: "dishes" })}
-              subtitle={`${savedDishCount} ${savedDishCount === 1 ? "dish" : "dishes"}`}
-              title="Your saved dishes"
-            />
-          </Section>
-        ) : null}
       </ScrollView>
     </View>
   );
