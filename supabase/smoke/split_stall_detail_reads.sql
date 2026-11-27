@@ -223,6 +223,31 @@ $$;
 
 reset role;
 
+-- Prod-sized menus: a stall read must not scan every dish. The venue test has to sit on the
+-- function argument (not behind the params CTE) and unused arms are gated off.
+do $$
+declare
+  v_body text := (
+    select prosrc from pg_proc
+    where oid = 'public.search_dishes(text,double precision,double precision,integer,text[],integer,
+      double precision,text,text,text,text[],numeric,boolean,text[],text[])'::regprocedure
+  );
+begin
+  if strpos(v_body, 'venue-scoped arms: p_venue_id is set') = 0
+    or strpos(v_body, 'd.venue_id = nullif(p_venue_id') = 0
+    or strpos(v_body, '(params.venue_id is null or d.venue_id = params.venue_id)') > 0
+  then
+    raise exception 'search_dishes must split its candidate arms by venue scope';
+  end if;
+
+  if not exists (
+    select 1 from public.search_dishes(p_query => 'Smoke SDR Dish 12', p_venue_id => 'smoke-sdr-menu', p_limit => 50)
+  ) then
+    raise exception 'Text search inside a stall must still find its dishes';
+  end if;
+end;
+$$;
+
 select 'split_stall_detail_reads_smoke_passed' as result;
 
 rollback;
