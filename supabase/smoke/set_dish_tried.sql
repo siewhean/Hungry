@@ -1,6 +1,7 @@
--- Smoke checks for 20261021164000_set_dish_tried.sql (H29).
--- The Tried mark is saved on the caller's profile, a reviewed dish stays
--- Tried, and guests cannot call it. Runs in a transaction and rolls back.
+-- Smoke checks for set_dish_tried (H29, then 20261127090000_untick_reviewed_tried).
+-- The Tried mark is saved on the caller's profile, a reviewed dish can be
+-- un-ticked while its review stays, and guests cannot call it. Builds its own
+-- building, stall and dishes; runs in a transaction and rolls back.
 
 begin;
 
@@ -13,8 +14,17 @@ values
   ('00000000-0000-0d29-b000-000000000002', 'Tried Smoke Other', array['untouched-dish'])
 on conflict (id) do nothing;
 
-select set_config('smoke.dish_id', (select d.id from dishes d order by d.id limit 1), true);
-select set_config('smoke.dish_id_2', (select d.id from dishes d order by d.id offset 1 limit 1), true);
+insert into buildings (id, name, building_type, latitude, longitude)
+values ('smoke-tried-building', 'Smoke Tried Building', 'hawker_centre', 1.3404, 103.7090);
+insert into venues (id, building_id, name, floor)
+values ('smoke-tried-venue', 'smoke-tried-building', 'Smoke Tried Stall', '1');
+insert into dishes (id, venue_id, building_id, name)
+values
+  ('smoke-tried-dish-1', 'smoke-tried-venue', 'smoke-tried-building', 'Smoke Tried Dish 1'),
+  ('smoke-tried-dish-2', 'smoke-tried-venue', 'smoke-tried-building', 'Smoke Tried Dish 2');
+
+select set_config('smoke.dish_id', 'smoke-tried-dish-1', true);
+select set_config('smoke.dish_id_2', 'smoke-tried-dish-2', true);
 
 do $$
 begin
@@ -50,7 +60,7 @@ begin
     raise exception 'Un-ticking an unreviewed dish should remove it, got %', v_ids;
   end if;
 
-  -- A reviewed dish stays Tried.
+  -- A reviewed dish can be un-ticked; the review stays.
   insert into reviews (id, user_id, dish_id, rating, text)
   values (
     '00000000-0000-0d29-e000-000000000001',
@@ -59,10 +69,21 @@ begin
     4,
     'Solid'
   );
-  v_ids := public.set_dish_tried(current_setting('smoke.dish_id_2'), false);
+  v_ids := public.set_dish_tried(current_setting('smoke.dish_id_2'), true);
   if not (current_setting('smoke.dish_id_2') = any(v_ids)) then
-    raise exception 'A reviewed dish must stay in the Tried list, got %', v_ids;
+    raise exception 'Tried should add the reviewed dish, got %', v_ids;
   end if;
+  v_ids := public.set_dish_tried(current_setting('smoke.dish_id_2'), false);
+  if current_setting('smoke.dish_id_2') = any(v_ids) then
+    raise exception 'A reviewed dish should come off the Tried list, got %', v_ids;
+  end if;
+  if not exists (
+    select 1 from reviews where id = '00000000-0000-0d29-e000-000000000001'
+  ) then
+    raise exception 'Un-ticking Tried must keep the review';
+  end if;
+  -- Leave it Tried for the saved-profile check below.
+  v_ids := public.set_dish_tried(current_setting('smoke.dish_id_2'), true);
 end $$;
 
 reset role;
