@@ -28,7 +28,7 @@
 --    cohort, week points, the promotion line, points to promotion and when the week ends.
 -- 6. app_private.export_my_data also exports leagueMemberships, leagueTier, leagueWeekResults.
 --
--- Rollback: supabase/rollbacks/20261127120000_weekly_leagues.down.sql.
+-- Rollback: supabase/rollbacks/20261127150000_weekly_leagues.down.sql.
 
 create schema if not exists app_private;
 grant usage on schema app_private to authenticated, service_role;

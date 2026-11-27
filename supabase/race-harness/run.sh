@@ -472,8 +472,8 @@ lb_val "update user_profiles set pinned_post_ids = array['$RK2'::uuid] where id 
   && echo "  ok    ranking cleanup drops the column and RPCs, the down restores them with their values" \
   || { echo "  FAIL  ranking cleanup up/down migration"; fail=1; }
 
-# Weekly leagues (20261127120000) on top of the boards.
-LG_MIGRATION=20261127120000_weekly_leagues
+# Weekly leagues (20261127150000) on top of the boards.
+LG_MIGRATION=20261127150000_weekly_leagues
 lb_val "create table if not exists user_food_cred (user_id uuid primary key references user_profiles(id) on delete cascade, total_points integer not null default 0 check (total_points >= 0), level_index integer not null default 0, updated_at timestamptz not null default now());
   create table if not exists food_cred_events (id uuid primary key default gen_random_uuid(), user_id uuid not null references user_profiles(id) on delete cascade, source_action text not null, points integer not null check (points >= 0), related_entity_id text, related_entity_type text, created_at timestamptz not null default now());
   create table if not exists user_stall_interactions (user_id uuid not null references user_profiles(id) on delete cascade, stall_id text not null, is_saved boolean not null default false, is_tried boolean not null default false, tried_at timestamptz, updated_at timestamptz not null default now(), primary key (user_id, stall_id));

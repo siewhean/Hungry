@@ -1,4 +1,4 @@
--- Smoke checks for 20261127120000_weekly_leagues.sql.
+-- Smoke checks for 20261127150000_weekly_leagues.sql.
 -- 1. A Food Cred award for a tried stall, a saved stall, a review or a mission writes one 'task'
 --    row to leaderboard_events worth the points paid; other awards and zero-point awards write
 --    none; the ledger refuses a second row for the same award.
