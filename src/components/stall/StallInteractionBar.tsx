@@ -198,9 +198,8 @@ export function StallInteractionBar({
         }
         showToast({ message: "Marked as visited", tone: "success", duration: 3000 });
         onVisited?.();
-      } else {
-        showToast({ message: "Removed from visited", tone: "info", duration: 3000 });
       }
+      // Clearing a visit needs no toast: the button already changed.
 
       if (triedResult.isTried) confirmHaptic();
       else tapHaptic();

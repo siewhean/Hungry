@@ -11,7 +11,11 @@ import {
   fitChipsToDiner,
   type HomeChipContext,
 } from "@/features/discover/homeChips";
-import { getDietaryChipLabel, HOME_CHEAP_PRICE_LIMIT } from "@/features/discover/homeFilters";
+import {
+  getDietaryChipA11yLabel,
+  getDietaryChipLabel,
+  HOME_CHEAP_PRICE_LIMIT,
+} from "@/features/discover/homeFilters";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -131,7 +135,11 @@ export function useDiscoverFilters({
       ? INTENT_CHIPS.filter((chip) => chip.id !== "halal")
       : INTENT_CHIPS;
     const baseChips = [
-      { id: "dietary" as const, label: getDietaryChipLabel(profile.dietaryPreferences) },
+      {
+        id: "dietary" as const,
+        label: getDietaryChipLabel(profile.dietaryPreferences),
+        accessibilityLabel: getDietaryChipA11yLabel(profile.dietaryPreferences),
+      },
       // No breakfast at dinner, no spicy for someone who cannot take it (see homeChips).
       ...fitChipsToDiner(intentChips, { ...chipContext, knownKinds: new Set() }),
     ];

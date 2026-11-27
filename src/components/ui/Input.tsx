@@ -5,8 +5,10 @@ import {
   StyleSheet,
   TextInput,
   View,
+  type StyleProp,
   type TextInputProps,
   type TextStyle,
+  type ViewStyle,
 } from "react-native";
 
 import { useHungryTheme } from "@/theme";
@@ -24,6 +26,8 @@ interface InputProps extends TextInputProps {
   rightIcon?: ReactNode;
   enableMovingPlaceholder?: boolean;
   movingPlaceholderPhrases?: string[];
+  /** The field's own box (border, height, shadow); the text style stays in `style`. */
+  fieldStyle?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -44,6 +48,7 @@ export const Input = forwardRef<TextInput, InputProps>(
       rightIcon,
       enableMovingPlaceholder,
       movingPlaceholderPhrases,
+      fieldStyle,
       placeholder,
       style,
       secureTextEntry,
@@ -128,6 +133,7 @@ export const Input = forwardRef<TextInput, InputProps>(
               minHeight: componentSizes.inputMinHeight,
               paddingHorizontal: spacing[3],
             },
+            fieldStyle,
           ]}
         >
           {leftIcon ? (

@@ -1135,13 +1135,11 @@ export function StallDetailScreen({ navigation, route }: Props) {
   const websiteLink = (merchantProfile?.socialLinks ?? []).find(
     (link) => link.platform === "website" && link.url.trim(),
   );
-  // 4:3 when there are photos, so they show whole. With none the page still opens on a hero: a
+  // Square on a phone (capped on a tablet) so the photos show tall. With none the page still opens on a hero: a
   // shorter brand band with the stall's logo or initials, so a stall nobody has added to yet
   // looks like every other stall page and not like a bare form.
   const hasPhotos = heroPhotos.length > 0;
-  const heroHeight = hasPhotos
-    ? Math.min(screenWidth * 0.75, 420)
-    : Math.min(screenWidth * 0.6, 300);
+  const heroHeight = hasPhotos ? Math.min(screenWidth, 480) : Math.min(screenWidth * 0.6, 300);
   const headerFadeHeight = heroHeight;
   const subtitle = [buildingLocation.name, venue.unitNumber?.trim(), distanceLabel]
     .filter(Boolean)

@@ -20,6 +20,7 @@ import {
   ChipGroup,
   IconButton,
   Input,
+  LoopingRow,
   PressableScale,
   Screen,
   Skeleton,
@@ -412,8 +413,10 @@ export function DishSearchScreen() {
               movingPlaceholderPhrases={DISH_SEARCH_PLACEHOLDER_PHRASES}
               accessibilityLabel="Search dishes, stalls, or hawker centres"
               returnKeyType="search"
+              // The same box as Home's search bar: 48 high, the same border, radius and shadow.
+              fieldStyle={[shadows.card, { height: 48, minHeight: 48 }]}
               // A web <input> will not shrink below its default width unless told to; at 320 it pushed the page 21pt sideways.
-              style={{ minWidth: 0 }}
+              style={{ minHeight: 48, minWidth: 0, paddingVertical: 0 }}
               value={searchText}
               onChangeText={setSearchText}
               onSubmitEditing={() => openResults(searchText, "search_typed")}
@@ -674,55 +677,66 @@ export function DishSearchScreen() {
                 </AppText>
               </Pressable>
             </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing[2] }}>
-              {recentSearches.map((query) => (
-                <View
-                  key={query}
-                  style={[
-                    shadows.card,
-                    {
-                      alignItems: "center",
-                      backgroundColor: palette.surface,
-                      borderRadius: radii.pill,
-                      flexDirection: "row",
-                      paddingLeft: spacing[3],
-                    },
-                  ]}
+            {/* Two rows that drift sideways on their own, so a long history stays in reach. */}
+            {[0, 1]
+              .map((row) => recentSearches.filter((_, index) => index % 2 === row))
+              .filter((queries) => queries.length > 0)
+              .map((queries) => (
+                <LoopingRow
+                  key={queries[0]}
+                  gap={spacing[2]}
+                  reduceMotion={reduceMotion}
+                  testID="recent-searches-row"
                 >
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Search ${query} again`}
-                    onPress={() => {
-                      setSearchText(query);
-                      openResults(query, "search_recent");
-                    }}
-                    style={{
-                      alignItems: "center",
-                      flexDirection: "row",
-                      gap: spacing[2],
-                      minHeight: 44,
-                    }}
-                  >
-                    <AppSymbol name="recent" color={palette.textMuted} size={18} />
-                    <AppText numberOfLines={1}>{query}</AppText>
-                  </Pressable>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={`Remove ${query} from recent searches`}
-                    hitSlop={4}
-                    onPress={() => removeRecentSearch(query)}
-                    style={{
-                      alignItems: "center",
-                      height: 44,
-                      justifyContent: "center",
-                      width: 44,
-                    }}
-                  >
-                    <AppSymbol name="close" color={palette.textMuted} size={16} />
-                  </Pressable>
-                </View>
+                  {queries.map((query) => (
+                    <View
+                      key={query}
+                      style={[
+                        shadows.card,
+                        {
+                          alignItems: "center",
+                          backgroundColor: palette.surface,
+                          borderRadius: radii.pill,
+                          flexDirection: "row",
+                          paddingLeft: spacing[3],
+                        },
+                      ]}
+                    >
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Search ${query} again`}
+                        onPress={() => {
+                          setSearchText(query);
+                          openResults(query, "search_recent");
+                        }}
+                        style={{
+                          alignItems: "center",
+                          flexDirection: "row",
+                          gap: spacing[2],
+                          minHeight: 44,
+                        }}
+                      >
+                        <AppSymbol name="recent" color={palette.textMuted} size={18} />
+                        <AppText numberOfLines={1}>{query}</AppText>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${query} from recent searches`}
+                        hitSlop={4}
+                        onPress={() => removeRecentSearch(query)}
+                        style={{
+                          alignItems: "center",
+                          height: 44,
+                          justifyContent: "center",
+                          width: 44,
+                        }}
+                      >
+                        <AppSymbol name="close" color={palette.textMuted} size={16} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </LoopingRow>
               ))}
-            </View>
           </View>
         ) : null}
         {!trimmedSearchText && popularFoodTypes.length > 0 ? (

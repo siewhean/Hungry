@@ -46,7 +46,7 @@ test("the dish hero fade covers part of the photo, not a fixed 260 that swallows
   assert.doesNotMatch(pager, /Math\.min\(260/);
   // A photo hero is 4:3. No photo listed: a compact 120 pt header (R3 of the round-five re-audit);
   // a photo that fails after the page opened keeps the photo height.
-  assert.match(dish, /const heroPhotoHeight = Math\.min\(width \* 0\.75, 420\);/);
+  assert.match(dish, /const heroPhotoHeight = Math\.min\(width, 480\);/);
   assert.match(
     dish,
     /heroPhotos\.length > 0\s*\?\s*heroPhotoHeight\s*:\s*insets\.top \+ COMPACT_HERO_HEIGHT/,

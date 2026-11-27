@@ -138,9 +138,6 @@ export function TriedFollowUp({
                   {`+${heldPoints} Food Cred`}
                 </AppText>
               ) : null}
-              <AppText variant="bodySmall" tone="secondary" style={{ textAlign: "center" }}>
-                How was it? Both are optional.
-              </AppText>
             </View>
             <View style={{ alignItems: "center", gap: spacing[2] }}>
               <AppText variant="bodySmallBold">Your rating</AppText>

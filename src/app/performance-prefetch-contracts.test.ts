@@ -183,7 +183,7 @@ test("prefetch layer warms images, data, and route modules without blocking navi
   );
   assert.match(
     quickBites,
-    /navigation\.navigate\("SearchResults", \{ initialQuery: query \|\| undefined \}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(query\)/,
+    /navigation\.navigate\("SearchResults", \{\s*browseMode: mode,\s*initialQuery: query \|\| undefined,?\s*\}\);[\s\S]*scheduleIdleWork\([\s\S]*rememberSearch\(query\)/,
   );
   assert.match(search, /function BrowseGridLoadingState/);
   assert.doesNotMatch(search, /getCachedBrowseIndex|getBrowseIndex/);

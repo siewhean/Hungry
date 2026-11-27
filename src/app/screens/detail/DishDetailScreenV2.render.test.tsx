@@ -458,7 +458,7 @@ test("without a catalog fallback, or when the read failed, the dish page keeps i
 
 // ─── Rails with no photos (R4-STALL-5 shared item) ────────────────────────────────────────
 
-test("a 'More from' rail where no dish has a photo drops the grey photo blocks", async () => {
+test("a 'More from' rail shows every sibling as a photo card, with a quiet tile when it has no photo", async () => {
   stubReviews([]);
   const dish = pickDish();
   const siblings = getDataRepository()
@@ -476,13 +476,10 @@ test("a 'More from' rail where no dish has a photo drops the grey photo blocks",
   assert.match(view.text(), /More from/);
   assert.ok(
     view.findByLabel(new RegExp(`^Open ${siblings[0].name}`)),
-    "the sibling is still listed",
+    "the sibling is still listed as a card",
   );
-  for (const sibling of siblings) {
-    assert.equal(
-      view.findByLabel(`${sibling.name}, no photo yet`),
-      null,
-      `${sibling.name} has no grey placeholder block`,
-    );
-  }
+  assert.ok(
+    view.findByLabel(`${siblings[0].name}, no photo yet`) !== null,
+    "a sibling with no photo keeps the same card with a quiet tile",
+  );
 });

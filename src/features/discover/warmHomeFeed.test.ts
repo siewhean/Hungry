@@ -113,3 +113,19 @@ test("getDiscoverReadArgs: no fix reads the island, a manual pick reads its area
   assert.equal(fix.geoCellLatitude, 1.3);
   assert.equal(fix.geoCellLongitude, 103.8);
 });
+
+test("a picked mall reads around the mall itself, not its planning area's centre", () => {
+  const coordinate = { latitude: 1.33484, longitude: 103.72035 };
+  const base = {
+    permission: "denied" as const,
+    currentLocation: useLocationStore.getState().currentLocation,
+    manualCoordinate: coordinate,
+    manualLocation: "Jurong West",
+  };
+  assert.equal(getDiscoverReadArgs(base).areaName, "Jurong West");
+  const place = getDiscoverReadArgs({ ...base, manualPlaceName: "Taman Jurong Shopping Centre" });
+  assert.equal(place.areaName, undefined);
+  assert.equal(place.radiusMeters, DISCOVER_AREA_RADIUS_METERS);
+  assert.ok(Math.abs(place.geoCellLatitude - coordinate.latitude) < 0.002);
+  assert.ok(Math.abs(place.geoCellLongitude - coordinate.longitude) < 0.002);
+});

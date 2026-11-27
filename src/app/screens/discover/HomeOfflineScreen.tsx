@@ -25,6 +25,8 @@ export const HOME_OFFLINE_COPY = {
 type Props = {
   /** Tries the live Home again (Try again, pull to refresh, or the connection coming back). */
   onRetry: () => unknown;
+  /** True while a Try again is loading the live Home; the button shows it is working. */
+  retrying?: boolean;
 };
 
 function ListRow({
@@ -109,7 +111,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
  * It says which, offers Try again and pull to refresh, retries by itself when the phone comes
  * back online, and keeps saved dishes in reach.
  */
-export function HomeOfflineScreen({ onRetry }: Props) {
+export function HomeOfflineScreen({ onRetry, retrying = false }: Props) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const insets = useSafeAreaInsets();
   const { palette, semanticSpacing, spacing } = useHungryTheme();
@@ -133,8 +135,9 @@ export function HomeOfflineScreen({ onRetry }: Props) {
     >
       <ScrollView
         contentContainerStyle={{
+          flexGrow: 1,
           gap: spacing[6],
-          paddingBottom: spacing[6],
+          paddingBottom: Math.max(insets.bottom, spacing[6]),
           paddingHorizontal: semanticSpacing.screenEdge,
           paddingTop: spacing[6],
         }}
@@ -157,52 +160,56 @@ export function HomeOfflineScreen({ onRetry }: Props) {
         showsVerticalScrollIndicator={false}
         testID="home-offline-screen"
       >
-        <View accessibilityRole="alert" style={{ alignItems: "center", gap: spacing[3] }}>
-          <View
-            style={{
-              alignItems: "center",
-              backgroundColor: palette.bgSoft,
-              borderRadius: 36,
-              height: 72,
-              justifyContent: "center",
-              width: 72,
-            }}
-          >
-            <AppSymbol
-              color={palette.orange}
-              name={isOffline ? "offline" : "problem"}
-              size={32}
-              weight="medium"
-            />
+        <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+          <View accessibilityRole="alert" style={{ alignItems: "center", gap: spacing[3] }}>
+            <View
+              style={{
+                alignItems: "center",
+                backgroundColor: palette.bgSoft,
+                borderRadius: 36,
+                height: 72,
+                justifyContent: "center",
+                width: 72,
+              }}
+            >
+              <AppSymbol
+                color={palette.orange}
+                name={isOffline ? "offline" : "problem"}
+                size={32}
+                weight="medium"
+              />
+            </View>
+            <AppText accessibilityRole="header" style={{ textAlign: "center" }} variant="h2">
+              {copy.title}
+            </AppText>
+            <AppText style={{ maxWidth: 320, textAlign: "center" }} tone="secondary" variant="body">
+              {copy.body}
+            </AppText>
           </View>
-          <AppText accessibilityRole="header" style={{ textAlign: "center" }} variant="h2">
-            {copy.title}
-          </AppText>
-          <AppText style={{ maxWidth: 320, textAlign: "center" }} tone="secondary" variant="body">
-            {copy.body}
-          </AppText>
+        </View>
+        <View style={{ gap: spacing[4] }}>
+          {savedDishCount > 0 ? (
+            <Section title="Saved on this phone">
+              <ListRow
+                accessibilityLabel={`Your saved dishes, ${savedDishCount} saved`}
+                icon="saved"
+                onPress={() => navigation.navigate("Favourites", { section: "dishes" })}
+                subtitle={`${savedDishCount} ${savedDishCount === 1 ? "dish" : "dishes"}`}
+                title="Your saved dishes"
+              />
+            </Section>
+          ) : null}
           <Button
-            label="Try again"
+            label={retrying ? "Trying again" : "Try again"}
+            loading={retrying}
             leftIcon={
               <AppSymbol color={palette.textOnOrange} name="retry" size={16} weight="semibold" />
             }
             onPress={onRetry}
-            style={{ alignSelf: "stretch", marginTop: spacing[2] }}
+            style={{ alignSelf: "stretch" }}
             testID="home-offline-retry"
           />
         </View>
-
-        {savedDishCount > 0 ? (
-          <Section title="Saved on this phone">
-            <ListRow
-              accessibilityLabel={`Your saved dishes, ${savedDishCount} saved`}
-              icon="saved"
-              onPress={() => navigation.navigate("Favourites", { section: "dishes" })}
-              subtitle={`${savedDishCount} ${savedDishCount === 1 ? "dish" : "dishes"}`}
-              title="Your saved dishes"
-            />
-          </Section>
-        ) : null}
       </ScrollView>
     </View>
   );

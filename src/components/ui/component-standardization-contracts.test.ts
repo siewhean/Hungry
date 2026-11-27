@@ -51,11 +51,8 @@ test("primary user filter surfaces use shared chip primitives", () => {
     [/<ChipGroup[\s\S]*options=\{REVIEW_EDITOR_TAGS\.map/],
     "Review composer taste tags",
   );
-  assertSourceIncludes(
-    quickBites,
-    [/<FilterChipRail[\s\S]*options=\{cuisineFilterOptions\}/],
-    "Quick Bites",
-  );
+  // The see more page has no chip rail: its search field and Dishes/Stalls tabs do the narrowing.
+  assertSourceExcludes(quickBites, [/FilterChipRail/], "Quick Bites");
   assertSourceIncludes(
     dishSearch,
     [/<ChipGroup[\s\S]*options=\{CATEGORY_OPTIONS\}/],

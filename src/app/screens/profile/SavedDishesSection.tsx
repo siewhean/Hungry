@@ -28,6 +28,7 @@ import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/ex
 import type { SavedDishCard as SavedDish } from "@/lib/services/types";
 import { openTrustedMapsUrl } from "@/lib/security/safeLinking";
 import { useLocationStore } from "@/store/useLocationStore";
+import { confirmUntickTried } from "@/features/detail/confirmUntickTried";
 import { useProfileStore } from "@/store/useProfileStore";
 import type { SavedDishTab, SavedViewMode } from "@/store/useSavedViewStore";
 import { useUIStore } from "@/store/useUIStore";
@@ -219,6 +220,8 @@ export function SavedDishesSection({
 
   const toggleTried = async (dish: SavedDish) => {
     const wasTried = reviewedDishIds.includes(dish.id);
+    const hasReview = Boolean(useProfileStore.getState().reviewEntries[dish.id]);
+    if (wasTried && !(await confirmUntickTried(dish.name, hasReview))) return;
     const done = await setDishTried(dish.id, !wasTried);
     if (!done) {
       showToast({ message: "Couldn't update your tried dishes. Try again.", tone: "error" });

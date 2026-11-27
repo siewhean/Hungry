@@ -185,10 +185,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : cards\.length \? \([\s\S]*\) : null\}/,
   );
   for (const [rail, cards] of [
-    ["quickBites", "quickBiteCards"],
-    ["editorChoice", "editorChoiceCards"],
-    ["budget", "budgetCards"],
-    ["lateNight", "lateNightCards"],
+    ["quickBites", "quickBiteEndlessCards"],
+    ["editorChoice", "editorChoiceEndlessCards"],
+    ["budget", "budgetEndlessCards"],
+    ["lateNight", "lateNightRailCards"],
   ]) {
     assert.match(discover, new RegExp(`rail="${rail}"[\\s\\S]*?cards=\\{${cards}\\}`));
   }
@@ -196,7 +196,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const DiscoverBiteCard = memo\(function DiscoverBiteCard/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*renderStallRail\(areaStallCards\)[\s\S]*\) : null\}/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*areaStallCards\.length \? \([\s\S]*renderStallRail\(listedAreaStallCards\)[\s\S]*\) : null\}/,
   );
   assert.match(
     discover,
@@ -438,7 +438,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /const isLateNightMakanVisible = isLateNightHour\(currentHour\)/);
   assert.match(
     discover,
-    /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightCards\}/,
+    /\{isLateNightMakanVisible &&\s*shouldRenderDiscoverRail\(\s*lateNightCards\.length,\s*MIN_DISCOVER_RAIL_ITEMS,?\s*\) \? \([\s\S]*title="Late night eats"[\s\S]*cards=\{lateNightRailCards\}/,
   );
   assert.match(
     discover,
@@ -511,7 +511,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /stalls \$\{discoverAreaName/);
   assert.match(
     discover,
-    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*paddingBottom: spacing\[4\],\s*\}\}/,
+    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*paddingBottom: spacing\[4\] \+ tabBarOverlap,\s*\}\}/,
   );
   assert.match(discover, /paddingTop: spacing\[1\]/);
   assert.match(discover, /Dishes/);
@@ -539,7 +539,10 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     discover,
     /<Screen scroll=\{false\} fullWidth style=\{\{ backgroundColor: themeTints\.bg \}\}>/,
   );
-  assert.match(discover, /const edgeToEdgeHorizontalScrollStyle = \{\s*width: screenWidth,\s*\}/);
+  assert.match(
+    discover,
+    /const edgeToEdgeHorizontalScrollStyle = \{\s*marginLeft: -semanticSpacing\.screenEdge,\s*width: screenWidth,\s*\}/,
+  );
   assert.doesNotMatch(discover, /const chipRailScrollStyle|const chipRailContentStyle/);
   assert.doesNotMatch(discover, /sortedChips\.map\(\(chip\) =>/);
   assert.doesNotMatch(
@@ -637,7 +640,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,[\s\S]*rpcCount: null,[\s\S]*: String\(areaVenues\.length\)/,
+    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded:\s*supabaseDiscoveryFeed !== null && \(!isDiscoverFeedPartial \|\| isDiscoverFeedFirstPageOnly\),[\s\S]*isFirstPageOnly: isDiscoverFeedFirstPageOnly,[\s\S]*rpcCount: areaVenueCount,[\s\S]*: String\(areaVenues\.length\)/,
   );
   // A new area's incomplete feed cannot inherit the previously displayed total.
   assert.match(discover, /const shownCountLabel = discoverAreaCountLabel;/);
@@ -646,7 +649,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.doesNotMatch(discover, /<NumericText\s+value="–"/);
   assert.match(
     discover,
-    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*renderStallRail\(areaStallCards\)/,
+    /Stalls \$\{discoverAreaPhrase\}[\s\S]*<View style=\{\{ gap: discoverContentGap \}\}>[\s\S]*renderStallRail\(listedAreaStallCards\)/,
   );
   assert.match(
     discover,
@@ -761,7 +764,7 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /const bitesWithImages = syncedBites[\s\S]*\.map/);
   assert.doesNotMatch(quickBites, /mockDishes/);
   assert.doesNotMatch(quickBites, /DISH_IMAGE_URLS/);
-  assert.match(quickBites, /return collectionBites\s*\.filter/);
+  assert.match(quickBites, /return collectionBites\s*\.map/);
   assert.doesNotMatch(
     quickBites,
     /collectionBites\.some\(\(collectionBite\) => collectionBite\.id === bite\.id\)/,
@@ -771,7 +774,8 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     /const openBite = useCallback\([\s\S]*navigation\.navigate\("DishDetail", \{ dishId: activeItem\.dishId, source: "quick_bites" }\)/,
   );
   assert.match(quickBites, /onOpen=\{openBite\}/);
-  assert.doesNotMatch(quickBites, /navigation\.navigate\("StallDetail"/);
+  // Dish tiles open a dish; only the Stalls tab opens a stall.
+  assert.match(quickBites, /navigation\.navigate\("StallDetail", \{ venueId: stall\.venueId }\)/);
   const mockData = read("src/lib/services/mock/data.ts");
   assert.match(mockData, /id: "dish-pandan-cake"[\s\S]*name: "Pandan Cake"/);
   assert.match(mockData, /id: "dish-wagyu-burger"[\s\S]*name: "Wagyu Burger"/);
@@ -784,10 +788,10 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
     quickBites,
     /const collection: DiscoverCollection = route\.params\?\.collection \?\? "quickBites"/,
   );
-  assert.match(quickBites, /placeholder="Search dishes\.\.\."/);
+  assert.match(quickBites, /placeholder=\{`Search all \${mode}`\}/);
   assert.match(
     quickBites,
-    /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*\{collectionCopy\.title\}[\s\S]*<ExpandableSearchLauncher/,
+    /<View style=\{styles\.titleRow\}>[\s\S]*navigation\.goBack\(\)[\s\S]*<TextInput[\s\S]*<UnderlineTabs[\s\S]*\{summary\}/,
   );
   assert.match(quickBites, /titleRow: \{[\s\S]*flexDirection: "row"[\s\S]*marginBottom: 8/);
   assert.match(
@@ -812,13 +816,13 @@ test("Quick Bites contract: empty-state icon is not clipped", () => {
   assert.match(discoverBites, /const lateNight = syncedBites/);
   assert.match(
     quickBites,
-    /return getDiscoverBiteCollection\(collection, bites, dishLookup, venueHours\)/,
+    /getDiscoverBiteCollection\(collection, bites, dishLookup, venueHours\)/,
   );
   // The footer carousel repeated the grid above it.
   assert.doesNotMatch(quickBites, /renderFoodCarousel|carousel-\$\{bite\.id\}/);
   // Distances come from the read or are hidden; counts are labelled as ratings.
   assert.doesNotMatch(quickBites, /\{item\.distance\}m/);
-  assert.match(quickBites, /item\.distance !== undefined \?/);
+  assert.match(quickBites, /distanceLabel=\{formatPhotoGridDistance\(item\.distance\)}/);
   assert.match(quickBites, /route\.params\?\.latitude/);
   assert.match(quickBites, /Couldn't load dishes/);
   // A symbol in a fixed 72-point box, never an emoji glyph that the font can clip.

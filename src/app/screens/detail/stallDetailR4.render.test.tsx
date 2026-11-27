@@ -481,7 +481,7 @@ test("R4-STALL-3: unmarking a visit clears it without opening the sheet", async 
     opened,
     "clearing a visit opens nothing",
   );
-  assert.match(useUIStore.getState().toast?.message ?? "", /Removed from visited/);
+  assert.doesNotMatch(useUIStore.getState().toast?.message ?? "", /Removed from visited/);
 });
 
 // Food Cred for a visit needs a review.

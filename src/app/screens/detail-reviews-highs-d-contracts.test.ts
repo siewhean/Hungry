@@ -108,7 +108,7 @@ test("H29: Tried is saved on the server, rolls back on failure and is not a revi
   );
   assert.doesNotMatch(dishDetail, /removeReviewedDish\(dish\.id\)/);
 
-  // Mock mirror: a reviewed dish stays Tried; an unreviewed one is removed.
+  // Mock mirror: any dish can be un-ticked, and a reviewed dish keeps its review.
   await hungryService.auth.signIn("tried-d@hungry.sg", "password");
   const profile = await hungryService.profile.getProfile();
   const dish = dishes[0];
@@ -130,7 +130,9 @@ test("H29: Tried is saved on the server, rolls back on failure and is not a revi
     },
   ];
   try {
-    assert.ok((await hungryService.profile.setDishTried(dish.id, false)).includes(dish.id));
+    assert.ok((await hungryService.profile.setDishTried(dish.id, true)).includes(dish.id));
+    assert.ok(!(await hungryService.profile.setDishTried(dish.id, false)).includes(dish.id));
+    assert.ok(dish.reviews.some((review) => review.id === "review-tried-d"));
   } finally {
     dish.reviews = dish.reviews.filter((review) => review.id !== "review-tried-d");
   }

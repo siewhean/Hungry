@@ -234,11 +234,10 @@ test("synthetic post action stays behind the Release 0.1 post flag", () => {
   assert.match(tabs, /rootNavigation\?\.navigate\("AuthStack", \{ screen: "Login" \}\)/);
 });
 
-test("going offline shows a banner instead of taking over navigation", () => {
+test("going offline leaves the screen in place; the offline page is the only notice", () => {
   const rootNavigator = read("src/app/navigation/RootNavigator.tsx");
 
-  assert.match(rootNavigator, /function OfflineBanner\(\)/);
-  assert.match(rootNavigator, /<OfflineBanner \/>/);
+  assert.doesNotMatch(rootNavigator, /OfflineBanner/);
   assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
   assert.doesNotMatch(rootNavigator, /currentTopRoute === "Offline"/);
   // The route stays registered for the developer launcher.
