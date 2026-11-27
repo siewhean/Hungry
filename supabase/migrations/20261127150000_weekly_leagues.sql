@@ -218,6 +218,9 @@ begin
   if p_user_id is null then
     return null;
   end if;
+  -- Every point of the week holds this week's lock shared until it commits; the close takes it
+  -- exclusive, so a close waits for points still in flight instead of missing them.
+  perform pg_advisory_xact_lock_shared(hashtextextended('league:week:' || v_week::text, 0));
   select m.cohort_id into v_cohort
   from league_memberships m
   where m.week_start = v_week and m.user_id = p_user_id;
@@ -440,6 +443,9 @@ declare
   v_top integer := app_private.league_setting('tier_count');
   v_rows integer;
 begin
+  -- Wait for the week's points still in flight (they hold this lock shared until commit). Taken
+  -- before league:close, so nobody holds league:close while waiting on a week.
+  perform pg_advisory_xact_lock(hashtextextended('league:week:' || p_week_start::text, 0));
   perform pg_advisory_xact_lock(hashtextextended('league:close', 0));
 
   with ranked as (
