@@ -316,6 +316,7 @@ insert into rollback_archive.league_memberships_20261127150000 select * from pub
 create table if not exists rollback_archive.league_cohorts_20261127150000 as
 select * from public.league_cohorts with no data;
 insert into rollback_archive.league_cohorts_20261127150000 select * from public.league_cohorts;
+drop table if exists app_private.league_closed_weeks;
 drop table if exists public.league_week_results;
 drop table if exists public.league_user_tiers;
 drop table if exists public.league_memberships;

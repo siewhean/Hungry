@@ -316,11 +316,19 @@ create trigger trg_leaderboard_events_join_league
   )
   execute function app_private.join_league_on_points();
 
+-- One row per closed week, written by close_league_week under the week lock even when the week
+-- had no players, so late points can tell that their week is over.
+create table if not exists app_private.league_closed_weeks (
+  week_start date primary key,
+  closed_at timestamptz not null default now()
+);
+revoke all on table app_private.league_closed_weeks from public, anon, authenticated;
+
 -- Points dated in a week that has already closed (an award whose transaction began before
 -- Monday 00:00 and reached the week lock only after the close ran) would never count: the close
 -- is once only. Before the row is written, take the week lock shared (held to commit, so a close
--- that starts later waits for it); if that week already has close results, the points count in
--- the current week instead.
+-- that starts later waits for it); if that week is already closed (a close marker or close results),
+-- the points count in the current week instead.
 create or replace function app_private.league_points_week_guard()
 returns trigger
 language plpgsql
@@ -333,7 +341,8 @@ begin
   perform pg_advisory_xact_lock_shared(hashtextextended('league:week:' || v_week::text, 0));
   if v_week < date_trunc('week', clock_timestamp() at time zone 'Asia/Singapore')::date
     and (
-      exists (select 1 from league_week_results r where r.week_start = v_week)
+      exists (select 1 from app_private.league_closed_weeks c where c.week_start = v_week)
+      or exists (select 1 from league_week_results r where r.week_start = v_week)
       or exists (select 1 from leaderboard_week_results r where r.week_start = v_week)
     )
   then
@@ -487,6 +496,8 @@ begin
   -- before league:close, so nobody holds league:close while waiting on a week.
   perform pg_advisory_xact_lock(hashtextextended('league:week:' || p_week_start::text, 0));
   perform pg_advisory_xact_lock(hashtextextended('league:close', 0));
+  insert into app_private.league_closed_weeks (week_start) values (p_week_start)
+  on conflict (week_start) do nothing;
 
   with ranked as (
     select s.user_id, s.cohort_id, s.tier, s.score,
