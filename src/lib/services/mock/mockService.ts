@@ -2439,12 +2439,8 @@ export const hungryService: HungryService = {
     },
 
     async setDishTried(dishId, tried) {
-      // Mirrors set_dish_tried: a dish the user reviewed stays in the Tried list.
-      const hasReview = dishes.some(
-        (dish) =>
-          dish.id === dishId && dish.reviews.some((review) => review.authorId === _profile.id),
-      );
-      const keep = tried || hasReview;
+      // Mirrors set_dish_tried: un-ticking removes the mark; any review stays.
+      const keep = tried;
       const current = _profile.reviewedDishIds;
       const reviewedDishIds = keep
         ? current.includes(dishId)

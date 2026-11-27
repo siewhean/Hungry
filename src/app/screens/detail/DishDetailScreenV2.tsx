@@ -46,6 +46,7 @@ import {
   buildReviewSummary,
   ratingsHeadline,
 } from "@/features/detail/dishReviewSummary";
+import { confirmUntickTried } from "@/features/detail/confirmUntickTried";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
 import { useDishReviewActions } from "@/features/detail/useDishReviewActions";
@@ -938,19 +939,21 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     }
 
     tryingFoodRef.current = true;
-    // The button flips now; the write follows and a failure puts it back.
-    setOptimisticTried(!isDishTried);
     if (isDishTried) {
+      // Un-ticking asks first; a reviewed dish keeps its review.
+      if (!(await confirmUntickTried(dish.name, hasReviewed))) {
+        tryingFoodRef.current = false;
+        return;
+      }
+      // The button flips now; the write follows and a failure puts it back.
+      setOptimisticTried(false);
       try {
         const saved = await setDishTried(dish.id, false);
-        const stillTried = useProfileStore.getState().profile.reviewedDishIds.includes(dish.id);
-        if (saved && !stillTried) forgetTriedDish(profile.id, dish.id);
-        // Un-marking a dish needs no toast; a failure or a kept mark still says why.
-        if (!saved || stillTried) {
+        if (saved) forgetTriedDish(profile.id, dish.id);
+        // Un-marking a dish needs no toast; a failure still says why.
+        else {
           showToast({
-            message: !saved
-              ? "Couldn't update your tried dishes. Try again."
-              : "You reviewed this dish, so it stays in your tried dishes.",
+            message: "Couldn't update your tried dishes. Try again.",
             ...triedToastStyle,
           });
         }
@@ -961,6 +964,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       return;
     }
 
+    setOptimisticTried(true);
     try {
       holdCredPillForPopup();
       afterTriedMarked(await markDishTried(dish, triedDishFacts(dish, hasTasteSignal)));
