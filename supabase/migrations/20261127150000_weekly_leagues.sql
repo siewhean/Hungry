@@ -316,6 +316,46 @@ create trigger trg_leaderboard_events_join_league
   )
   execute function app_private.join_league_on_points();
 
+-- Points dated in a week that has already closed (an award whose transaction began before
+-- Monday 00:00 and reached the week lock only after the close ran) would never count: the close
+-- is once only. Before the row is written, take the week lock shared (held to commit, so a close
+-- that starts later waits for it); if that week already has close results, the points count in
+-- the current week instead.
+create or replace function app_private.league_points_week_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_week date := date_trunc('week', coalesce(new.created_at, now()) at time zone 'Asia/Singapore')::date;
+begin
+  perform pg_advisory_xact_lock_shared(hashtextextended('league:week:' || v_week::text, 0));
+  if v_week < date_trunc('week', clock_timestamp() at time zone 'Asia/Singapore')::date
+    and (
+      exists (select 1 from league_week_results r where r.week_start = v_week)
+      or exists (select 1 from leaderboard_week_results r where r.week_start = v_week)
+    )
+  then
+    new.created_at := clock_timestamp();
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function app_private.league_points_week_guard() from public, anon, authenticated;
+
+drop trigger if exists trg_leaderboard_events_league_week_guard on public.leaderboard_events;
+create trigger trg_leaderboard_events_league_week_guard
+  before insert on public.leaderboard_events
+  for each row
+  when (
+    new.points > 0
+    and new.voided_at is null
+    and new.kind in ('post', 'new_stall', 'first_dish_photo', 'rich_post', 'achievement', 'task')
+  )
+  execute function app_private.league_points_week_guard();
+
 -- 4. Scores and the weekly close.
 
 -- 20261107120000's body with 'task' on the Most active board.

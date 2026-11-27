@@ -11,6 +11,7 @@ delete from app_private.request_rate_rules where route = 'rpc/get_my_league_stat
 
 drop trigger if exists trg_food_cred_events_league_task on public.food_cred_events;
 drop trigger if exists trg_leaderboard_events_join_league on public.leaderboard_events;
+drop trigger if exists trg_leaderboard_events_league_week_guard on public.leaderboard_events;
 
 create or replace function app_private.leaderboard_scores(
   p_board text,
@@ -263,6 +264,7 @@ $$;
 
 drop trigger if exists trg_league_memberships_release_place on public.league_memberships;
 drop function if exists app_private.credit_food_cred_task();
+drop function if exists app_private.league_points_week_guard();
 drop function if exists app_private.join_league_on_points();
 drop function if exists app_private.join_league_week(uuid, timestamptz);
 drop function if exists app_private.close_league_week(date);

@@ -247,6 +247,21 @@ begin
   end if;
 end $$;
 
+-- Points dated in a week that already closed count in the current week, not the closed one.
+insert into leaderboard_events (user_id, kind, points, created_at)
+values ('00000000-0000-1127-f300-000000000001', 'task', 3, timestamp '2020-01-15 10:00' at time zone 'Asia/Singapore');
+
+do $$
+begin
+  if exists (
+    select 1 from leaderboard_events
+    where user_id = '00000000-0000-1127-f300-000000000001' and points = 3
+      and created_at < now() - interval '1 day'
+  ) then
+    raise exception 'points dated in a closed week move to the current week';
+  end if;
+end $$;
+
 -- 4. get_my_league_status, as the first account.
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '00000000-0000-1127-f000-000000000001', true);
