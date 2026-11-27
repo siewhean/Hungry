@@ -3,7 +3,7 @@ import { Animated, Easing, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppSymbol, AppText } from "@/components/ui";
-import { nextRankLabel, usePointsScoreBar } from "@/features/leaderboard/pointsScoreBar";
+import { usePointsScoreBar } from "@/features/leaderboard/pointsScoreBar";
 import * as Haptics from "@/lib/haptics";
 import { useHungryTheme } from "@/theme";
 
@@ -28,7 +28,7 @@ export function PointsScoreBar({ onOpenLeaderboard }: { onOpenLeaderboard: () =>
   useEffect(() => {
     if (!bar) return undefined;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const target = bar.goal?.progress ?? 1;
+    const target = bar.progress;
     if (reducedMotion) {
       slide.setValue(1);
       fill.setValue(target);
@@ -66,8 +66,7 @@ export function PointsScoreBar({ onOpenLeaderboard }: { onOpenLeaderboard: () =>
   }, [bar, count, dismiss, fill, reducedMotion, slide]);
 
   if (!bar) return null;
-  const rankText = bar.rank ? `#${bar.rank} this week` : "This week";
-  const goalText = nextRankLabel(bar.goal, bar.rank);
+  const { placeText: rankText, goalText } = bar;
 
   return (
     <Animated.View

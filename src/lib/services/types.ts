@@ -933,6 +933,27 @@ export interface LeaderboardMovement {
   allRank: number | null;
 }
 
+/** Your weekly league: a group of up to 30 at your tier; the top go up, the bottom go down. */
+export interface LeagueStatus {
+  /** 1 (Bronze) to 5 (Diamond). */
+  tier: number;
+  /** False until your first points of the week put you in a group. */
+  isMember: boolean;
+  cohortSize: number;
+  /** Your live place in the group, or null before you join. */
+  rank: number | null;
+  weekPoints: number;
+  /** Points held by the last promoted place, or null with too few to promote. */
+  promotionLinePoints: number | null;
+  /** Points still needed to reach the promotion places; 0 when you are in them. */
+  pointsToPromotion: number | null;
+  promoteCount: number;
+  relegateCount: number;
+  weekStart: string;
+  /** When the week closes (next Monday 00:00 Singapore time). */
+  weekEndsAt: string;
+}
+
 export type PortfolioPointsKind =
   | "post"
   | "off_board_post"
@@ -1512,6 +1533,8 @@ export interface HungryService {
     listMyPoints(limit?: number): Promise<PortfolioPointsEntry[]>;
     /** How your rank moved since Monday and where you finished last week. Null for guests. */
     getMyMovement(): Promise<LeaderboardMovement | null>;
+    /** Your weekly league standing. Null for guests or before leagues exist on the server. */
+    getMyLeagueStatus(): Promise<LeagueStatus | null>;
   };
 
   communitySafety: {

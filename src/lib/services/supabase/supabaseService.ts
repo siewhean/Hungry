@@ -6352,6 +6352,32 @@ export const supabaseService: HungryService = {
       };
     },
 
+    async getMyLeagueStatus() {
+      const client = requireSupabaseClient();
+      if (!(await getCurrentSupabaseUserId())) return null;
+      const { data, error } = await client.rpc("get_my_league_status");
+      // An app build can run before the migration that adds leagues: no league yet.
+      if (error && (error.code === "42883" || error.code === "PGRST202")) return null;
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) as Row | undefined;
+      const weekStart = asString(row?.week_start);
+      const weekEndsAt = asString(row?.week_ends_at);
+      if (!row || !weekStart || !weekEndsAt) return null;
+      return {
+        tier: asNumber(row.tier) ?? 1,
+        isMember: row.is_member === true,
+        cohortSize: asNumber(row.cohort_size) ?? 0,
+        rank: asNumber(row.rank) ?? null,
+        weekPoints: asNumber(row.week_points) ?? 0,
+        promotionLinePoints: asNumber(row.promotion_line_points) ?? null,
+        pointsToPromotion: asNumber(row.points_to_promotion) ?? null,
+        promoteCount: asNumber(row.promote_count) ?? 0,
+        relegateCount: asNumber(row.relegate_count) ?? 0,
+        weekStart,
+        weekEndsAt,
+      };
+    },
+
     async listMyPoints(limit = 30) {
       const client = requireSupabaseClient();
       if (!(await getCurrentSupabaseUserId())) return [];

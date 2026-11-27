@@ -1,10 +1,13 @@
-// The score bar that slides in after you earn points: what you earned, your place on this week's
-// Most active board, and how many more points pass the next person up.
+// The score bar that slides in after you earn points: what you earned, your place in this week's
+// league and the points to promotion (or, before leagues, your Most active rank and the points
+// to pass the next person up).
 import { create } from "zustand";
 
 import { reportError } from "@/lib/monitoring/reportError";
 import { getHungryService } from "@/lib/services/serviceProvider";
-import type { LeaderboardRow } from "@/lib/services/types";
+import type { LeaderboardRow, LeagueStatus } from "@/lib/services/types";
+
+import { leagueGoalLabel, leagueProgress, leaguePlaceLabel } from "./leagues";
 
 export type NextRankGoal = {
   /** The rank you move up to. */
@@ -49,9 +52,36 @@ export function nextRankLabel(goal: NextRankGoal | null, myRank: number | null):
 export type ScoreBarState = {
   earned: number;
   weekPoints: number;
-  rank: number | null;
-  goal: NextRankGoal | null;
+  /** "Gold league · #4", or "#4 this week" on the Most active board. */
+  placeText: string;
+  /** "12 points to promotion · 2d 5h left", or "12 points to reach #3". */
+  goalText: string;
+  /** 0-1 for the bar's fill. */
+  progress: number;
 };
+
+/** The bar's lines: the league when you are in one, else the Most active board. */
+export function scoreBarLines(
+  league: LeagueStatus | null,
+  rows: readonly LeaderboardRow[],
+  rank: number | null,
+  weekPoints: number,
+  now: Date = new Date(),
+): Pick<ScoreBarState, "placeText" | "goalText" | "progress"> {
+  if (league) {
+    return {
+      placeText: leaguePlaceLabel(league),
+      goalText: leagueGoalLabel(league, now),
+      progress: leagueProgress(league),
+    };
+  }
+  const goal = nextRankGoal(rows, rank, weekPoints);
+  return {
+    placeText: rank ? `#${rank} this week` : "This week",
+    goalText: nextRankLabel(goal, rank),
+    progress: goal?.progress ?? 1,
+  };
+}
 
 type Store = {
   bar: ScoreBarState | null;
@@ -67,18 +97,21 @@ export const usePointsScoreBar = create<Store>((set) => ({
     if (earned <= 0) return;
     const leaderboard = getHungryService().leaderboard;
     try {
-      const [summary, rows] = await Promise.all([
+      const [summary, rows, league] = await Promise.all([
         leaderboard.getMySummary(),
         leaderboard.getLeaderboard({ board: "active", period: "week", limit: 100 }),
+        // A league read that fails falls back to the Most active board.
+        leaderboard.getMyLeagueStatus().catch((error: unknown) => {
+          reportError(error, { screen: "points_score_bar", action: "load_league" });
+          return null;
+        }),
       ]);
       if (!summary) return;
-      const rank = summary.activeWeekRank;
       set({
         bar: {
           earned,
-          weekPoints: summary.weekPoints,
-          rank,
-          goal: nextRankGoal(rows, rank, summary.weekPoints),
+          weekPoints: league?.weekPoints ?? summary.weekPoints,
+          ...scoreBarLines(league, rows, summary.activeWeekRank, summary.weekPoints),
         },
       });
     } catch (error) {

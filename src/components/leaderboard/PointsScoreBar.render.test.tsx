@@ -6,6 +6,7 @@ import test, { afterEach } from "node:test";
 import { PointsScoreBar } from "@/components/leaderboard/PointsScoreBar";
 import { usePointsScoreBar } from "@/features/leaderboard/pointsScoreBar";
 import { getHungryService } from "@/lib/services/serviceProvider";
+import type { LeagueStatus } from "@/lib/services/types";
 import { cleanup, render, settle } from "@/test/render";
 
 afterEach(() => {
@@ -13,7 +14,7 @@ afterEach(() => {
   cleanup();
 });
 
-function stubBoard() {
+function stubBoard(league: LeagueStatus | null = null) {
   const leaderboard = getHungryService().leaderboard;
   const original = { ...leaderboard };
   leaderboard.getMySummary = async () => ({
@@ -25,6 +26,7 @@ function stubBoard() {
     creditedPostsToday: 1,
     dailyCap: 5,
   });
+  leaderboard.getMyLeagueStatus = async () => league;
   leaderboard.getLeaderboard = async () => [
     { rank: 3, userId: "a", displayName: "A", score: 45, isMe: false },
     { rank: 4, userId: "me", displayName: "Me", score: 40, isMe: true },
@@ -60,6 +62,34 @@ test("zero points shows nothing", async () => {
   try {
     await usePointsScoreBar.getState().celebrate(0);
     assert.equal(usePointsScoreBar.getState().bar, null);
+  } finally {
+    restore();
+  }
+});
+
+test("in a league, the bar shows the tier, place and points to promotion with the time left", async () => {
+  const restore = stubBoard({
+    tier: 2,
+    isMember: true,
+    cohortSize: 30,
+    rank: 9,
+    weekPoints: 40,
+    promotionLinePoints: 52,
+    pointsToPromotion: 13,
+    promoteCount: 7,
+    relegateCount: 5,
+    weekStart: "2026-11-23",
+    weekEndsAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString(),
+  });
+  try {
+    const view = await render(<PointsScoreBar onOpenLeaderboard={() => undefined} />);
+    await usePointsScoreBar.getState().celebrate(10);
+    await settle();
+    assert.ok(
+      view.findByLabel(
+        /^Plus 10 points\. Silver league · #9\. 13 points to promotion · 2d 0h left\./,
+      ),
+    );
   } finally {
     restore();
   }

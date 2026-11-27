@@ -61,6 +61,7 @@ import type {
   LeaderboardQuery,
   LeaderboardRow,
   LeaderboardMovement,
+  LeagueStatus,
   LeaderboardSummary,
   PortfolioPointsEntry,
   BuildingDetail,
@@ -3317,6 +3318,40 @@ export const hungryService: HungryService = {
         weekStartAllRank: allRank,
         allRank,
       } satisfies LeaderboardMovement);
+    },
+
+    async getMyLeagueStatus() {
+      await hydrateSocial();
+      // The demo league is the demo board's week: one group, Bronze, top 7 go up.
+      const scores = [...mockLeaderboardScores("active").values()].sort(
+        (a, b) => b.score - a.score,
+      );
+      const mine = scores.find((entry) => entry.userId === _profile.id);
+      const rank = mine ? scores.filter((entry) => entry.score > mine.score).length + 1 : null;
+      const line = scores[Math.min(6, scores.length - 1)]?.score ?? null;
+      const now = new Date();
+      const monday = new Date(now);
+      monday.setUTCHours(0, 0, 0, 0);
+      monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+      const ends = new Date(monday.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return resolve({
+        tier: 1,
+        isMember: Boolean(mine),
+        cohortSize: Math.min(30, scores.length),
+        rank,
+        weekPoints: mine?.score ?? 0,
+        promotionLinePoints: line,
+        pointsToPromotion:
+          mine && line !== null
+            ? rank && rank <= 7
+              ? 0
+              : Math.max(1, line - mine.score + 1)
+            : null,
+        promoteCount: 7,
+        relegateCount: 5,
+        weekStart: monday.toISOString().slice(0, 10),
+        weekEndsAt: ends.toISOString(),
+      } satisfies LeagueStatus);
     },
 
     async listMyPoints(limit = 30) {

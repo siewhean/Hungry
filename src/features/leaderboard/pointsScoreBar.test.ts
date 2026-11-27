@@ -41,3 +41,38 @@ test("one point needed reads in the singular", () => {
     "1 point to reach #2",
   );
 });
+
+test("the bar prefers the league line and falls back to the Most active board", async () => {
+  const { scoreBarLines } = await import("./pointsScoreBar");
+  const rows = [
+    { rank: 3, userId: "a", displayName: "A", score: 45, isMe: false },
+    { rank: 4, userId: "me", displayName: "Me", score: 40, isMe: true },
+  ];
+  const board = scoreBarLines(null, rows, 4, 40);
+  assert.equal(board.placeText, "#4 this week");
+  assert.equal(board.goalText, "6 points to reach #3");
+  const league = scoreBarLines(
+    {
+      tier: 1,
+      isMember: true,
+      cohortSize: 12,
+      rank: 2,
+      weekPoints: 40,
+      promotionLinePoints: 30,
+      pointsToPromotion: 0,
+      promoteCount: 7,
+      relegateCount: 5,
+      weekStart: "2026-11-23",
+      weekEndsAt: "2026-11-27T09:00:00Z",
+    },
+    rows,
+    4,
+    40,
+    new Date("2026-11-27T04:00:00Z"),
+  );
+  assert.deepEqual(league, {
+    placeText: "Bronze league · #2",
+    goalText: "In the promotion zone · 5h left",
+    progress: 1,
+  });
+});
