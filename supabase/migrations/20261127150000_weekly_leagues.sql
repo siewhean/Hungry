@@ -91,6 +91,28 @@ create table if not exists public.league_memberships (
 create index if not exists idx_league_memberships_cohort
   on public.league_memberships (cohort_id);
 
+-- A membership that goes (an account deleted cascades here) frees its place: one statement,
+-- so it needs no lock against a join that is counting the same cohort.
+create or replace function app_private.release_league_place()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  update league_cohorts set member_count = greatest(member_count - 1, 0) where id = old.cohort_id;
+  return old;
+end;
+$$;
+
+revoke all on function app_private.release_league_place() from public, anon, authenticated;
+
+drop trigger if exists trg_league_memberships_release_place on public.league_memberships;
+create trigger trg_league_memberships_release_place
+  after delete on public.league_memberships
+  for each row
+  execute function app_private.release_league_place();
+
 -- The tier an account plays at next; no row means the start tier.
 create table if not exists public.league_user_tiers (
   user_id uuid primary key references public.user_profiles(id) on delete cascade,
@@ -207,6 +229,19 @@ begin
     where x.user_id = p_user_id and (x.until is null or x.until > now())
   ) then
     return null;
+  end if;
+
+  -- This week's tier is what last week's close decided. If the account played last week and
+  -- that week is not closed yet (the first points after Monday 00:00, or a late close job),
+  -- close it now; the close is once only, so the scheduled close later changes nothing.
+  if exists (
+    select 1 from league_memberships m
+    where m.week_start = v_week - 7 and m.user_id = p_user_id
+  ) and not exists (
+    select 1 from league_week_results r
+    where r.week_start = v_week - 7 and r.user_id = p_user_id
+  ) then
+    perform app_private.close_league_week(v_week - 7);
   end if;
 
   v_tier := coalesce(
@@ -516,18 +551,26 @@ as $$
     where m.week_start = wk.week_start and m.user_id = auth.uid()
   ),
   board as (
-    select s.user_id, s.score,
+    select s.user_id, s.score, s.joined_at,
       row_number() over (order by s.score desc, s.joined_at, s.user_id)::integer as rank
     from wk, me, app_private.league_cohort_scores(wk.week_start, me.cohort_id) s
   ),
   mine as (
-    select b.rank, b.score from board b where b.user_id = auth.uid()
+    select b.rank, b.score, b.joined_at from board b where b.user_id = auth.uid()
   ),
+  -- The member on the promotion line, and whether a tie with them would rank the caller ahead
+  -- (the ranking breaks ties by who joined first, then by id).
   line as (
-    select coalesce(
-      (select b.score from board b where b.rank = app_private.league_setting('promote_count')),
-      0
-    ) as points
+    select
+      coalesce(
+        (select b.score from board b where b.rank = app_private.league_setting('promote_count')),
+        0
+      ) as points,
+      coalesce((
+        select (m.joined_at, auth.uid()) < (b.joined_at, b.user_id)
+        from board b, mine m
+        where b.rank = app_private.league_setting('promote_count')
+      ), false) as tie_wins
   ),
   tier as (
     select coalesce(
@@ -549,7 +592,10 @@ as $$
       when not exists (select 1 from mine) then null
       when (select mine.rank from mine) <= app_private.league_setting('promote_count')
         and (select mine.score from mine) > 0 then 0
-      else greatest(line.points - (select mine.score from mine) + 1, 1)
+      else greatest(
+        line.points - (select mine.score from mine) + case when line.tie_wins then 0 else 1 end,
+        1
+      )
     end,
     app_private.league_setting('promote_count'),
     app_private.league_setting('relegate_count'),

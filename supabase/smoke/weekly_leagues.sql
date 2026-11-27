@@ -6,7 +6,9 @@
 --    awards follow; an excluded account does not join; no cohort is ever bigger than 30 or
 --    disagrees with its memberships (31 accounts earn at once).
 -- 3. close_leaderboard_week also closes the leagues, once: of a 14 person tier 2 cohort the top
---    7 move up, the bottom 5 move down, the rest stay; a second close changes nothing.
+--    7 move up, the bottom 5 move down, the rest stay; a second close changes nothing. An
+--    account that earns in a new week before last week is closed joins at the tier that close
+--    decides. A membership that goes frees its cohort place.
 -- 4. get_my_league_status answers for a signed-in caller, anon cannot run it, it has a rate rule
 --    and a tier 1 diner has a promotion line; the data export includes the league tables.
 -- 5. The league tables are closed to the app roles.
@@ -15,6 +17,7 @@
 --   b:       00000000-0000-1127-f000-000000000002 (excluded from the boards)
 --   cap:     00000000-0000-1127-f200-0000000000NN (31 accounts, NN 01..31)
 --   closing: 00000000-0000-1127-f100-0000000000NN (14 accounts in a tier 2 cohort, NN 01..14)
+--   late:    00000000-0000-1127-f300-000000000001 (earns in a week whose last week is not closed)
 
 begin;
 
@@ -27,6 +30,8 @@ from generate_series(1, 14) g
 union all
 select ('00000000-0000-1127-f200-' || lpad(g::text, 12, '0'))::uuid, 'league-smoke-k' || g || '@example.test'
 from generate_series(1, 31) g
+union all
+select '00000000-0000-1127-f300-000000000001'::uuid, 'league-smoke-late@example.test'
 on conflict (id) do nothing;
 
 insert into user_profiles (id, display_name, created_at)
@@ -157,6 +162,15 @@ begin
   ) then
     raise exception 'a cohort counts exactly its members';
   end if;
+  -- A membership that goes (an account deleted cascades here) frees its place.
+  delete from league_memberships
+  where week_start = v_week and user_id = '00000000-0000-1127-f200-000000000031';
+  if exists (
+    select 1 from league_cohorts c
+    where c.member_count <> (select count(*) from league_memberships m where m.cohort_id = c.id)
+  ) then
+    raise exception 'a membership that goes frees its cohort place';
+  end if;
 end $$;
 
 -- 3. The weekly close. A 14 person tier 2 cohort the Monday of 2020-01-06, scored 14 down to 1.
@@ -206,6 +220,30 @@ begin
   end if;
   if (select tier from league_user_tiers where user_id = '00000000-0000-1127-f100-000000000001') <> 3 then
     raise exception 'a second close must not move a tier twice';
+  end if;
+end $$;
+
+-- Points in a new week before last week is closed: the join closes last week first, so the
+-- account plays this week at the tier it won. A tier 2 account tops the week of 2020-01-13,
+-- then earns on 2020-01-21 with that week still open.
+insert into league_user_tiers (user_id, tier)
+values ('00000000-0000-1127-f300-000000000001', 2);
+insert into leaderboard_events (user_id, kind, points, created_at)
+values
+  ('00000000-0000-1127-f300-000000000001', 'task', 5, timestamp '2020-01-14 10:00' at time zone 'Asia/Singapore'),
+  ('00000000-0000-1127-f300-000000000001', 'task', 5, timestamp '2020-01-21 10:00' at time zone 'Asia/Singapore');
+
+do $$
+begin
+  if (select outcome from league_week_results
+      where week_start = date '2020-01-13' and user_id = '00000000-0000-1127-f300-000000000001')
+      is distinct from 'promoted' then
+    raise exception 'joining a new week closes last week first';
+  end if;
+  if (select tier from league_memberships
+      where week_start = date '2020-01-20' and user_id = '00000000-0000-1127-f300-000000000001')
+      is distinct from 3 then
+    raise exception 'the new week starts at the tier last week''s close decided';
   end if;
 end $$;
 

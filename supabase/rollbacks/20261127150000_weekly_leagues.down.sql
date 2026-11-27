@@ -261,6 +261,7 @@ begin
 end;
 $$;
 
+drop trigger if exists trg_league_memberships_release_place on public.league_memberships;
 drop function if exists app_private.credit_food_cred_task();
 drop function if exists app_private.join_league_on_points();
 drop function if exists app_private.join_league_week(uuid, timestamptz);
@@ -268,10 +269,13 @@ drop function if exists app_private.close_league_week(date);
 drop function if exists app_private.league_cohort_scores(date, uuid);
 drop function if exists app_private.league_task_points(text, integer);
 drop function if exists app_private.league_setting(text);
+drop function if exists app_private.release_league_place();
 
 create schema if not exists rollback_archive;
-drop table if exists rollback_archive.leaderboard_events_task_20261127150000;
-create table rollback_archive.leaderboard_events_task_20261127150000 as
+-- The archives keep what an earlier rollback saved: rows are added, never replaced.
+create table if not exists rollback_archive.leaderboard_events_task_20261127150000 as
+select * from public.leaderboard_events with no data;
+insert into rollback_archive.leaderboard_events_task_20261127150000
 select * from public.leaderboard_events where kind = 'task' or food_cred_event_id is not null;
 delete from public.leaderboard_events where kind = 'task' or food_cred_event_id is not null;
 drop index if exists public.uniq_leaderboard_events_food_cred_event;
@@ -298,14 +302,18 @@ alter table public.leaderboard_events
     'follower', 'like', 'save', 'share'
   ));
 
-drop table if exists rollback_archive.league_week_results_20261127150000;
-create table rollback_archive.league_week_results_20261127150000 as select * from public.league_week_results;
-drop table if exists rollback_archive.league_user_tiers_20261127150000;
-create table rollback_archive.league_user_tiers_20261127150000 as select * from public.league_user_tiers;
-drop table if exists rollback_archive.league_memberships_20261127150000;
-create table rollback_archive.league_memberships_20261127150000 as select * from public.league_memberships;
-drop table if exists rollback_archive.league_cohorts_20261127150000;
-create table rollback_archive.league_cohorts_20261127150000 as select * from public.league_cohorts;
+create table if not exists rollback_archive.league_week_results_20261127150000 as
+select * from public.league_week_results with no data;
+insert into rollback_archive.league_week_results_20261127150000 select * from public.league_week_results;
+create table if not exists rollback_archive.league_user_tiers_20261127150000 as
+select * from public.league_user_tiers with no data;
+insert into rollback_archive.league_user_tiers_20261127150000 select * from public.league_user_tiers;
+create table if not exists rollback_archive.league_memberships_20261127150000 as
+select * from public.league_memberships with no data;
+insert into rollback_archive.league_memberships_20261127150000 select * from public.league_memberships;
+create table if not exists rollback_archive.league_cohorts_20261127150000 as
+select * from public.league_cohorts with no data;
+insert into rollback_archive.league_cohorts_20261127150000 select * from public.league_cohorts;
 drop table if exists public.league_week_results;
 drop table if exists public.league_user_tiers;
 drop table if exists public.league_memberships;

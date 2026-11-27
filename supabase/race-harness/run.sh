@@ -287,7 +287,8 @@ T23 one review submitted twice at once with two different entry ids (one linked 
 T24 two dishes made the best of the same dish type at once (one best, the later one)
 T25 two first awards of the week at once for one person (one league membership, both task rows)
 T26 two people join a league cohort with one place left (the cohort stops at 30, one new cohort)
-T27 two league week closes at once (one result per person, the tier moves once)"
+T27 two league week closes at once (one result per person, the tier moves once)
+T28 a new week's first points while last week closes (the new membership takes the closed tier)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -505,6 +506,11 @@ lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values
 lb_race T27 "select app_private.close_leaderboard_week($LG_WEEK);" "select app_private.close_leaderboard_week($LG_WEEK);" >>"$LB_OUT"
 echo "T27_results=$(lb_val "select count(*) from league_week_results")_$(lb_val "select tier from league_user_tiers where user_id = '$U1'")" >>"$LB_OUT"
 
+lg_reset
+lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 20, (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" >/dev/null
+lb_race T28 "select app_private.close_leaderboard_week($LG_WEEK);" "insert into food_cred_events(user_id, source_action, points) values ('$U1', 'stall_saved', 2);" >>"$LB_OUT"
+echo "T28_tier=$(lb_val "select count(*) from league_week_results")_$(lb_val "select tier from league_memberships where user_id = '$U1' and week_start = date_trunc('week', now() at time zone 'Asia/Singapore')::date")" >>"$LB_OUT"
+
 PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$LG_MIGRATION.down.sql" >/dev/null 2>&1 \
   && [ "$(lb_val "select count(*) from pg_proc where proname like '%league%'")" = 0 ] \
   && [ "$(lb_val "select to_regclass('public.league_cohorts') is null")" = t ] \
@@ -541,7 +547,9 @@ T25_status=1_true_1_17.00_0_1_true
 T26_errors=0
 T26_cohorts=2_30_true
 T27_errors=0
-T27_results=2_2"
+T27_results=2_2
+T28_errors=0
+T28_tier=1_2"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
