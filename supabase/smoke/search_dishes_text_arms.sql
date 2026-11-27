@@ -40,7 +40,8 @@ declare
 begin
   if strpos(v_body, 'app_private.search_dish_name_ilike_rows(params.query)') = 0
     or strpos(v_body, 'app_private.search_dish_tag_ids(params.query)') = 0
-    or strpos(v_body, 'or array_to_string(v.cuisine_tags, '' '') ilike ''%'' || params.query') > 0
+    or strpos(v_body, 'and nullif(p_venue_id, '''') is null' || chr(10) || '          and (' || chr(10)
+      || '            coalesce(d.food_type, '''') ilike') > 0
   then
     raise exception 'search_dishes must read its text candidates through the indexed helpers';
   end if;
