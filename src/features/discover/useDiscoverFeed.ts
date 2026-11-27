@@ -51,6 +51,7 @@ export function useDiscoverFeed() {
     currentLocation,
     manualCoordinate,
     manualLocation,
+    manualPlaceName,
   });
   const discoverArgs = useMemo(
     () => ({
@@ -128,6 +129,10 @@ export function useDiscoverFeed() {
   const supabaseDiscoveryFeed = live?.feed ?? null;
   const loadedDiscoverFeedKey = live?.feed ? live.key : null;
   const isDiscoverFeedPartial = Boolean(live?.feed && live.phase !== "complete");
+  // The first page is on show but the full read failed (a timeout, say): nothing more is coming.
+  const isDiscoverFeedFirstPageOnly = Boolean(
+    live?.feed && live.phase === "failed" && !live.feed.isFallback,
+  );
   const discoverFailure = live?.failure;
   const discoverLoadError = live?.phase === "failed" && !live.feed && live.failure !== "cancelled";
   const supabaseFeedVenues = useMemo(() => {
@@ -303,6 +308,7 @@ export function useDiscoverFeed() {
     supabaseDiscoveryFeed,
     isSupabaseDiscoveryFeedLoading,
     isDiscoverFeedPartial,
+    isDiscoverFeedFirstPageOnly,
     discoverLoadError,
     discoverFailure,
     isDiscoverRefreshing,

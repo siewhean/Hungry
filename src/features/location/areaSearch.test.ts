@@ -186,3 +186,32 @@ test("a typed postal code finds its address, and plain text or an unknown code f
   assert.equal(postalCodeAnchor("069185", [address]), null);
   assert.equal(postalCodeAnchor("maxwell", [address]), null);
 });
+
+test("a building OneMap finds by name is offered as a place, once", () => {
+  const coordinate = { latitude: 1.324, longitude: 103.93 };
+  const results = buildAreaSearchResults({
+    query: "gek poh",
+    areas: AREAS,
+    places: [],
+    addresses: [
+      {
+        postalCode: "640762",
+        address: "762 JURONG WEST STREET 75 GEK POH SHOPPING CENTRE SINGAPORE 640762",
+        building: "GEK POH SHOPPING CENTRE",
+        coordinate,
+      },
+      {
+        postalCode: "640762",
+        address: "762 JURONG WEST STREET 75 SINGAPORE 640762",
+        building: "GEK POH SHOPPING CENTRE",
+        coordinate,
+      },
+    ],
+    areaForCoordinate: areaFor,
+  });
+  const places = results.filter((result) => result.kind === "place");
+  assert.equal(places.length, 1);
+  assert.equal(places[0].title, "Gek Poh Shopping Centre");
+  assert.equal(places[0].placeName, "Gek Poh Shopping Centre");
+  assert.equal(places[0].subtitle, "Place · Bedok");
+});

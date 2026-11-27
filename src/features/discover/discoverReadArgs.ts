@@ -9,7 +9,8 @@ const DISCOVER_GEOCELL_STEPS_PER_DEGREE = 500;
 type DiscoverLocationInput = Pick<
   ReturnType<typeof useLocationStore.getState>,
   "permission" | "currentLocation" | "manualCoordinate" | "manualLocation"
->;
+> &
+  Partial<Pick<ReturnType<typeof useLocationStore.getState>, "manualPlaceName">>;
 
 /**
  * The place and size of the read Home makes for a diner, from where they are. Home and the
@@ -27,8 +28,10 @@ export function getDiscoverReadArgs(location: DiscoverLocationInput) {
     geoCellLongitude:
       Math.round(coordinate.longitude * DISCOVER_GEOCELL_STEPS_PER_DEGREE) /
       DISCOVER_GEOCELL_STEPS_PER_DEGREE,
-    // Only a manual area pick asks the server for that planning area.
-    areaName: location.manualLocation,
+    // Only a manual area pick asks the server for that planning area. A picked mall or food
+    // centre reads around its own position instead: the area read centres on the planning
+    // area (Jurong West is Jurong Point), not on the place the diner chose.
+    areaName: location.manualPlaceName ? undefined : location.manualLocation,
     radiusMeters: needsAreaChoice ? DISCOVER_ISLAND_RADIUS_METERS : DISCOVER_AREA_RADIUS_METERS,
     needsAreaChoice,
   };

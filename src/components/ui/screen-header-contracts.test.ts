@@ -511,7 +511,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   assert.match(discover, /stalls \$\{discoverAreaName/);
   assert.match(
     discover,
-    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*paddingBottom: spacing\[4\],\s*\}\}/,
+    /contentContainerStyle=\{\{\s*gap: discoverSectionGap,\s*paddingHorizontal: semanticSpacing\.screenEdge,\s*paddingBottom: spacing\[4\] \+ tabBarOverlap,\s*\}\}/,
   );
   assert.match(discover, /paddingTop: spacing\[1\]/);
   assert.match(discover, /Dishes/);
@@ -640,7 +640,7 @@ test("Discover V1 contract: situation intents live in their matching sections", 
   );
   assert.match(
     discover,
-    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,[\s\S]*rpcCount: areaVenueCount,[\s\S]*: String\(areaVenues\.length\)/,
+    /const discoverAreaCountLabel = isSupabaseDataSource[\s\S]*\? getDiscoverAreaCountLabel\(\{[\s\S]*isFeedLoaded:\s*supabaseDiscoveryFeed !== null && \(!isDiscoverFeedPartial \|\| isDiscoverFeedFirstPageOnly\),[\s\S]*isFirstPageOnly: isDiscoverFeedFirstPageOnly,[\s\S]*rpcCount: areaVenueCount,[\s\S]*: String\(areaVenues\.length\)/,
   );
   // A new area's incomplete feed cannot inherit the previously displayed total.
   assert.match(discover, /const shownCountLabel = discoverAreaCountLabel;/);

@@ -65,3 +65,19 @@ test("a full feed uses the separate count only when it is not smaller than the l
     "100+",
   );
 });
+
+test("when only the first page arrived, its size is a floor until the separate count answers", () => {
+  const firstPage = {
+    isFeedLoaded: true,
+    isFirstPageOnly: true,
+    feedVenueCount: 12,
+    feedLimit: 100,
+  };
+  assert.equal(getDiscoverAreaCountLabel({ ...firstPage, rpcCount: null }), "12+");
+  assert.equal(getDiscoverAreaCountLabel({ ...firstPage, rpcCount: 84 }), "84");
+  assert.equal(getDiscoverAreaCountLabel({ ...firstPage, rpcCount: 4 }), "12+");
+  assert.equal(
+    getDiscoverAreaCountLabel({ ...firstPage, feedVenueCount: 0, rpcCount: null }),
+    null,
+  );
+});

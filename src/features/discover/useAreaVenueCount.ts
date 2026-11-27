@@ -11,9 +11,9 @@ type AreaCountArgs = {
 };
 
 /**
- * The real number of stalls in Home's area, read only when the feed came back full (so the
- * list alone would say "100+"). One count per area; null until it arrives or when it fails,
- * in which case the label keeps its "100+".
+ * The real number of stalls in Home's area, read only when the list alone can't say it: the
+ * feed came back full ("100+"), or only its first page arrived. One count per area; null until
+ * it arrives or when it fails, in which case the label keeps its "N+".
  */
 export function useAreaVenueCount(args: AreaCountArgs, enabled: boolean): number | null {
   const { areaName, geoCellLatitude, geoCellLongitude, radiusMeters } = args;

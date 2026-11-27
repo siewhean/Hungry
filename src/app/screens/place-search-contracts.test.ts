@@ -78,7 +78,10 @@ test("Discover names the mall the phone is inside and lists its stalls first", (
   // Only a manual area pick drives either feed request by area name; the header only changes label.
   const readArgs = read("src/features/discover/discoverReadArgs.ts");
   const firstPage = read("src/features/discover/warmHomeFeed.ts");
-  assert.match(readArgs, /areaName: location\.manualLocation/);
+  assert.match(
+    readArgs,
+    /areaName: location\.manualPlaceName \? undefined : location\.manualLocation/,
+  );
   for (const source of [firstPage, liveFeed]) {
     assert.match(source, /listDiscoveryFeedByLocation\(\{\s*areaName: args\.areaName,/);
   }

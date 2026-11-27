@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -271,6 +272,7 @@ export function DiscoverHomeScreen({
     supabaseDiscoveryFeed,
     isSupabaseDiscoveryFeedLoading,
     isDiscoverFeedPartial,
+    isDiscoverFeedFirstPageOnly,
     discoverLoadError,
     discoverFailure,
     isDiscoverRefreshing,
@@ -280,7 +282,9 @@ export function DiscoverHomeScreen({
   const isFeedFull = supabaseFeedVenues.length >= DISCOVER_FEED_LIMIT;
   const areaVenueCount = useAreaVenueCount(
     discoverArgs,
-    isSupabaseDataSource && isFeedFull && supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,
+    isSupabaseDataSource &&
+      supabaseDiscoveryFeed !== null &&
+      ((isFeedFull && !isDiscoverFeedPartial) || isDiscoverFeedFirstPageOnly),
   );
   const {
     deferredDiscoverChipIds,
@@ -349,6 +353,10 @@ export function DiscoverHomeScreen({
   );
   const bottomTabVisibleHeight =
     componentSizes.bottomTabBar + tabBarBottomPadding(insets.bottom, spacing[2]);
+  // The iPhone's own tab bar floats over the page, and its automatic scroll inset misses this
+  // nested ScrollView, so the page keeps the bar's height free at the bottom itself.
+  const tabBarOverlap =
+    Platform.OS === "ios" && FEATURE_FLAGS.nativeTabBarEnabled ? bottomTabVisibleHeight : 0;
   const fallbackDiscoverViewportHeight = Math.max(0, screenHeight - insets.top);
   const effectiveDiscoverViewportHeight = discoverViewportHeight || fallbackDiscoverViewportHeight;
   const stallShowcasePageHeight =
@@ -1159,7 +1167,9 @@ export function DiscoverHomeScreen({
     ? getDiscoverAreaCountLabel({
         isFallback: Boolean(supabaseDiscoveryFeed?.isFallback),
         // The first few stalls alone are not the area's count: wait for the full feed.
-        isFeedLoaded: supabaseDiscoveryFeed !== null && !isDiscoverFeedPartial,
+        isFeedLoaded:
+          supabaseDiscoveryFeed !== null && (!isDiscoverFeedPartial || isDiscoverFeedFirstPageOnly),
+        isFirstPageOnly: isDiscoverFeedFirstPageOnly,
         feedVenueCount: supabaseFeedVenues.length,
         feedLimit: DISCOVER_FEED_LIMIT,
         rpcCount: areaVenueCount,
@@ -2083,7 +2093,7 @@ export function DiscoverHomeScreen({
         contentContainerStyle={{
           gap: discoverSectionGap,
           paddingHorizontal: semanticSpacing.screenEdge,
-          paddingBottom: spacing[4],
+          paddingBottom: spacing[4] + tabBarOverlap,
         }}
         refreshControl={
           <RefreshControl
