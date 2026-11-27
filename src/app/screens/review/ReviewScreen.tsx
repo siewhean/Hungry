@@ -48,6 +48,8 @@ import {
   type PortfolioEntryChoice,
 } from "@/components/foodPortfolio/ReviewPortfolioSection";
 import { loadPortfolioPicks } from "@/features/foodPortfolio/foodPortfolioLoaders";
+import { loadPostPoints } from "@/features/foodPortfolio/postAnnouncement";
+import { usePointsScoreBar } from "@/features/leaderboard/pointsScoreBar";
 import { TRENDING_MUSIC } from "@/features/review/musicData";
 import {
   NEUTRAL_TASTE_VECTOR,
@@ -620,6 +622,10 @@ export function ReviewScreen({ navigation, route }: Props) {
           : undefined,
       });
       if (withPortfolioEntry && submitted?.portfolioPostId) {
+        // The score bar follows on its own once the points land; the success sheet does not wait.
+        void loadPostPoints(submitted.portfolioPostId).then((points) => {
+          if (points) void usePointsScoreBar.getState().celebrate(points);
+        });
         const madeBest = bestOnOffer && makeBest;
         trackAnalyticsEvent("review_added_to_portfolio", {
           dish_id: selectedDish.id,

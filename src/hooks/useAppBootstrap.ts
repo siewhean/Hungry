@@ -251,7 +251,7 @@ export function useAppBootstrap() {
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
-      // Offline is a non-blocking banner (RootNavigator OfflineBanner); the
+      // Offline is non-blocking (the offline page covers Home); the
       // current screen stays put, and authenticated catalog reads keep their
       // classified read-only Excel fallback. `null` reachability is not offline.
       setOffline(isNetworkOffline(state));

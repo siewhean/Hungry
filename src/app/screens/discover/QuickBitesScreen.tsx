@@ -3,27 +3,23 @@ import {
   View,
   StyleSheet,
   Pressable,
+  TextInput,
   useWindowDimensions,
-  Animated,
   type ViewToken,
 } from "react-native";
-import { MapPinned, Star, Utensils } from "lucide-react-native";
+import { Utensils } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute, type RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { FlashList } from "@shopify/flash-list";
-import { LinearGradient } from "expo-linear-gradient";
 
 import type { RootStackParamList } from "@/app/navigation/navigationTypes";
+import { AppSymbol, AppText, Button, Screen, Skeleton, UnderlineTabs } from "@/components/ui";
 import {
-  AppSymbol,
-  AppText,
-  Button,
-  ExpandableSearchLauncher,
-  FilterChipRail,
-  Screen,
-  Skeleton,
-} from "@/components/ui";
+  formatPhotoGridDistance,
+  PHOTO_GRID_CARD_RATIO,
+  PhotoGridCard,
+} from "@/components/discover/PhotoGridCard";
 import {
   CyclingGridImage,
   CYCLING_GRID_IMAGE_INTERVAL_MS,
@@ -44,8 +40,8 @@ import { useProfileStore } from "@/store/useProfileStore";
 import { scheduleIdleWork } from "@/lib/performance/scheduleIdleWork";
 import { sanitizeSearchQuery } from "@/lib/security/inputSanitization";
 import { reportError } from "@/lib/monitoring/reportError";
+import { groupBitesByStall, type QuickBiteStallItem } from "@/features/discover/stallGroups";
 import {
-  DISCOVER_CUISINE_FILTERS,
   getDiscoverBiteCollection,
   getDiscoverBiteDistance,
   getDiscoverBites,
@@ -54,6 +50,7 @@ import {
   type DiscoverDishLookup,
   type VenueHoursLookup,
 } from "@/features/discover/bites";
+import { MEAL_RAILS, bitesForMealPeriod } from "@/features/discover/personalRails";
 
 /**
  * Live bites already carry the feed's name, price, rating, photo and distance, so the rails
@@ -64,6 +61,44 @@ const LIVE_FEED_DISH_LOOKUP: DiscoverDishLookup = { getDishById: () => undefined
 type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
 type QuickBitesRoute = RouteProp<RootStackParamList, "QuickBites">;
 type QuickBiteGridItem = Bite & { distance?: number };
+type QuickBiteMode = "dishes" | "stalls";
+const MODE_TABS: { value: QuickBiteMode; label: string; accessibilityLabel: string }[] = [
+  { value: "dishes", label: "Dishes", accessibilityLabel: "Show dishes" },
+  { value: "stalls", label: "Stalls", accessibilityLabel: "Show stalls" },
+];
+
+function QuickBiteStallCard({
+  item,
+  itemWidth,
+  onOpen,
+}: {
+  item: QuickBiteStallItem;
+  itemWidth: number;
+  onOpen: (item: QuickBiteStallItem) => void;
+}) {
+  return (
+    <PhotoGridCard
+      accessibilityLabel={`Open ${item.venueName}`}
+      chipLabel={item.buildingName}
+      chipSymbol="nearYou"
+      distanceLabel={formatPhotoGridDistance(item.distance)}
+      onPress={() => onOpen(item)}
+      title={item.venueName}
+      width={itemWidth}
+    >
+      <QuickBiteImagePlaceholder height={itemWidth * PHOTO_GRID_CARD_RATIO} />
+      {item.photoUrl.trim() ? (
+        <CyclingGridImage
+          images={[item.photoUrl]}
+          cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
+          isAutoCycleActive={false}
+          startDelayMs={0}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : null}
+    </PhotoGridCard>
+  );
+}
 
 function QuickBiteImagePlaceholder({ height }: { height: number }) {
   const { palette } = useHungryTheme();
@@ -107,26 +142,26 @@ function QuickBiteGridCard({
   onOpen: (item: QuickBiteGridItem) => void;
   onPrefetch: (item: QuickBiteGridItem) => void;
 }) {
-  const { palette } = useHungryTheme();
   // The tile always opens its own dish; only that dish's own photos cycle.
   const imageUrls = useMemo(() => getQuickBiteImageUrls(item), [item]);
+  const rating =
+    item.cravingCount > 0 && item.rating > 0
+      ? `${item.rating.toFixed(1)} (${item.cravingCount})`
+      : undefined;
 
   return (
-    <Pressable
-      accessibilityRole="button"
+    <PhotoGridCard
       accessibilityLabel={`Open ${item.dishName} at ${item.venueName}`}
-      onPressIn={() => onPrefetch(item)}
+      // The stall, not a person: these are the stall's dishes, not a user's post.
+      chipLabel={item.venueName}
+      distanceLabel={formatPhotoGridDistance(item.distance)}
       onPress={() => onOpen(item)}
-      style={{
-        width: itemWidth,
-        height: itemWidth * 1.35,
-        backgroundColor: palette.surface,
-        borderRightWidth: 0.5,
-        borderBottomWidth: 0.5,
-        borderColor: palette.border,
-      }}
+      onPressIn={() => onPrefetch(item)}
+      ratingLabel={rating}
+      title={item.dishName}
+      width={itemWidth}
     >
-      <QuickBiteImagePlaceholder height={itemWidth * 1.35} />
+      <QuickBiteImagePlaceholder height={itemWidth * PHOTO_GRID_CARD_RATIO} />
       <CyclingGridImage
         images={imageUrls}
         cycleMs={CYCLING_GRID_IMAGE_INTERVAL_MS}
@@ -134,61 +169,7 @@ function QuickBiteGridCard({
         startDelayMs={(index % 4) * 350}
         style={StyleSheet.absoluteFill}
       />
-      <LinearGradient
-        pointerEvents="none"
-        colors={["transparent", palette.mediaGradientMid, palette.detailImageOverlay]}
-        style={StyleSheet.absoluteFill}
-      />
-      <View pointerEvents="none" style={styles.cardContent}>
-        {/* The stall, not a person: these are the stall's dishes, not a user's post. */}
-        <View style={[styles.authorBadge, { backgroundColor: palette.mediaScrimStrong }]}>
-          <AppSymbol name="fork.knife" fallback={Utensils} size={12} color={palette.white} />
-          <AppText
-            variant="micro"
-            numberOfLines={1}
-            style={{ color: palette.white, flexShrink: 1, fontWeight: "700" }}
-          >
-            {item.venueName}
-          </AppText>
-        </View>
-        <View style={{ flex: 1 }} />
-        <AppText
-          variant="bodySmallBold"
-          style={{ color: palette.white, marginBottom: 2 }}
-          numberOfLines={1}
-        >
-          {item.dishName}
-        </AppText>
-        <View style={styles.metaRow}>
-          {item.distance !== undefined ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2 }}>
-              <AppSymbol
-                name="mappin.and.ellipse"
-                fallback={MapPinned}
-                size={10}
-                color={palette.white}
-              />
-              <AppText variant="micro" style={{ color: palette.white, fontWeight: "600" }}>
-                {item.distance >= 1000
-                  ? `${(item.distance / 1000).toFixed(1)}km`
-                  : `${Math.round(item.distance)}m`}
-              </AppText>
-            </View>
-          ) : (
-            <View />
-          )}
-          {/* The count is reviews, so it is shown as the rating with its review count. */}
-          {item.cravingCount > 0 && item.rating > 0 ? (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-              <AppSymbol name="star.fill" fallback={Star} filled size={10} color={palette.white} />
-              <AppText variant="micro" style={{ color: palette.white, fontWeight: "700" }}>
-                {`${item.rating.toFixed(1)} (${item.cravingCount})`}
-              </AppText>
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </Pressable>
+    </PhotoGridCard>
   );
 }
 
@@ -284,13 +265,16 @@ export function QuickBitesScreen() {
   const tasteVector = useProfileStore((state) => state.profile.tasteVector);
   const dietaryPreferences = useProfileStore((state) => state.profile.dietaryPreferences);
   const collection: DiscoverCollection = route.params?.collection ?? "quickBites";
-  const collectionCopy = COLLECTION_COPY[collection];
+  const mealPeriod = route.params?.mealPeriod;
+  const collectionCopy = mealPeriod
+    ? {
+        ...COLLECTION_COPY[collection],
+        title: MEAL_RAILS[mealPeriod].title,
+        placeholder: `Find ${MEAL_RAILS[mealPeriod].title.toLowerCase()}...`,
+        emptyTitle: `No ${MEAL_RAILS[mealPeriod].title.toLowerCase()} found nearby`,
+      }
+    : COLLECTION_COPY[collection];
 
-  const [selectedCuisine, setSelectedCuisine] = useState("All");
-  const cuisineFilterOptions = useMemo(
-    () => DISCOVER_CUISINE_FILTERS.map((cuisine) => ({ id: cuisine, label: cuisine })),
-    [],
-  );
   const isSupabaseDataSource = getServiceProvider().mode === "supabase";
   // Mock and Excel builds fill in from the local data; live builds never read it (HOME-X7).
   const fallbackBites = useMemo(
@@ -307,15 +291,11 @@ export function QuickBitesScreen() {
   const [fullyVisibleBiteIds, setFullyVisibleBiteIds] = useState<Set<string>>(() => new Set());
   // Raw text stays local so spaces survive typing; it is sanitised only on submit.
   const [searchText, setSearchText] = useState("");
+  const [mode, setMode] = useState<QuickBiteMode>("dishes");
   const rememberSearch = useSearchStore((state) => state.rememberSearch);
-  const searchBarWidth = useMemo(
-    () => Math.max(screenWidth - spacing[4] * 2 - 32 - 12, 240),
-    [screenWidth, spacing],
-  );
-
   const submitSearch = useCallback(() => {
     const query = sanitizeSearchQuery(searchText);
-    navigation.navigate("SearchResults", { initialQuery: query || undefined });
+    navigation.navigate("SearchResults", { browseMode: mode, initialQuery: query || undefined });
     if (query) {
       scheduleIdleWork(
         () => {
@@ -324,7 +304,7 @@ export function QuickBitesScreen() {
         { timeout: 500, fallbackDelayMs: 80 },
       );
     }
-  }, [navigation, rememberSearch, searchText]);
+  }, [mode, navigation, rememberSearch, searchText]);
 
   const prefetchBiteRoute = useCallback(
     (bite: Bite) => {
@@ -334,28 +314,6 @@ export function QuickBitesScreen() {
     },
     [navigation],
   );
-
-  // ── Animation Logic ────────────────────────────────────────────────────────
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const CHIPS_HEIGHT = 64;
-
-  const chipsOpacity = scrollY.interpolate({
-    inputRange: [0, 40],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
-  const chipsHeightAnim = scrollY.interpolate({
-    inputRange: [0, 60],
-    outputRange: [CHIPS_HEIGHT, 0],
-    extrapolate: "clamp",
-  });
-
-  const chipsTranslateY = scrollY.interpolate({
-    inputRange: [0, 60],
-    outputRange: [0, -20],
-    extrapolate: "clamp",
-  });
 
   useEffect(() => {
     let isActive = true;
@@ -403,25 +361,16 @@ export function QuickBitesScreen() {
   }, [currentLocation, fallbackBites, isSupabaseDataSource, manualLocation, reloadKey]);
 
   const collectionBites = useMemo(() => {
-    return getDiscoverBiteCollection(collection, bites, dishLookup, venueHours);
-  }, [bites, collection, dishLookup, venueHours]);
+    const all = getDiscoverBiteCollection(collection, bites, dishLookup, venueHours);
+    return mealPeriod ? bitesForMealPeriod(all, mealPeriod) : all;
+  }, [bites, collection, dishLookup, mealPeriod, venueHours]);
 
   const filteredBites = useMemo(() => {
     // The rail's own order (reviews, rating, photos) is kept: no re-sort by distance.
-    return collectionBites
-      .filter((bite) => {
-        const cuisine = selectedCuisine.toLowerCase();
-        const matchesCuisine =
-          cuisine === "all" ||
-          bite.caption.toLowerCase().includes(cuisine) ||
-          bite.dishName.toLowerCase().includes(cuisine);
-
-        return matchesCuisine;
-      })
-      .map((bite) => {
-        return { ...bite, distance: getDiscoverBiteDistance(bite, dishLookup) };
-      });
-  }, [collectionBites, dishLookup, selectedCuisine]);
+    return collectionBites.map((bite) => {
+      return { ...bite, distance: getDiscoverBiteDistance(bite, dishLookup) };
+    });
+  }, [collectionBites, dishLookup]);
 
   useEffect(() => {
     prefetchImages(
@@ -474,6 +423,34 @@ export function QuickBitesScreen() {
     [itemWidth, openBite, prefetchBiteRoute],
   );
 
+  const stallRows = useMemo(() => groupBitesByStall(filteredBites), [filteredBites]);
+  const openStall = useCallback(
+    (stall: QuickBiteStallItem) => navigation.navigate("StallDetail", { venueId: stall.venueId }),
+    [navigation],
+  );
+  const renderGridItem = useCallback(
+    (info: {
+      item: QuickBiteGridItem | QuickBiteStallItem;
+      index: number;
+      extraData?: ReadonlySet<string>;
+    }) =>
+      mode === "dishes" ? (
+        renderBiteItem({ ...info, item: info.item as QuickBiteGridItem })
+      ) : (
+        <QuickBiteStallCard
+          item={info.item as QuickBiteStallItem}
+          itemWidth={itemWidth}
+          onOpen={openStall}
+        />
+      ),
+    [itemWidth, mode, openStall, renderBiteItem],
+  );
+  const shownCount = mode === "dishes" ? filteredBites.length : stallRows.length;
+  const [one, many] = mode === "dishes" ? ["dish", "dishes"] : ["stall", "stalls"];
+  const summary = isLoading
+    ? collectionCopy.title
+    : `${collectionCopy.title} · ${shownCount} ${shownCount === 1 ? one : many}`;
+
   return (
     <Screen scroll={false} fullWidth style={{ backgroundColor: palette.bg }}>
       <View
@@ -482,8 +459,6 @@ export function QuickBitesScreen() {
           {
             paddingHorizontal: spacing[4],
             paddingTop: spacing[2],
-            borderBottomWidth: 1,
-            borderBottomColor: palette.border,
             backgroundColor: palette.bg,
             zIndex: 10,
           },
@@ -500,56 +475,55 @@ export function QuickBitesScreen() {
           >
             <AppSymbol name="back" size={24} weight="medium" color={palette.text} />
           </Pressable>
-          <AppText variant="h2" style={{ flex: 1 }}>
-            {collectionCopy.title}
-          </AppText>
-          <ExpandableSearchLauncher
-            query={searchText}
-            onQueryChange={setSearchText}
-            onSubmit={submitSearch}
-            accessibilityLabel="Search dishes"
-            iconAlignment="right"
-            iconSize={40}
-            barHeight={40}
-            placeholder="Search dishes..."
-            expandedWidth={searchBarWidth}
-            borderColor={palette.border}
-            backgroundColor={palette.bgSoft}
-            textColor={palette.text}
-            onClear={() => setSearchText("")}
+          <TextInput
+            accessibilityLabel={`Search ${mode}`}
+            autoCorrect={false}
+            onChangeText={setSearchText}
+            onSubmitEditing={submitSearch}
+            placeholder={`Search all ${mode}`}
+            placeholderTextColor={palette.textMuted}
+            returnKeyType="search"
+            style={[
+              styles.searchInput,
+              {
+                backgroundColor: palette.surface,
+                borderColor: palette.border,
+                color: palette.text,
+              },
+            ]}
+            value={searchText}
           />
         </View>
-
-        <Animated.View
-          style={{
-            height: chipsHeightAnim,
-            opacity: chipsOpacity,
-            transform: [{ translateY: chipsTranslateY }],
-            overflow: "hidden",
-          }}
-        >
-          <FilterChipRail
-            options={cuisineFilterOptions}
-            selectedId={selectedCuisine}
-            onSelect={setSelectedCuisine}
-            gap={spacing[2]}
-            contentContainerStyle={{ paddingVertical: spacing[3] }}
-          />
-        </Animated.View>
+        <UnderlineTabs
+          accessibilityLabel="Collection results"
+          fill
+          tabs={MODE_TABS}
+          value={mode}
+          onChange={setMode}
+        />
       </View>
 
+      <AppText
+        tone="secondary"
+        variant="bodySmall"
+        style={{ paddingHorizontal: spacing[4], paddingVertical: spacing[2] }}
+      >
+        {summary}
+      </AppText>
       <View style={{ flex: 1, width: "100%" }}>
         <FlashList
-          data={filteredBites}
-          renderItem={renderBiteItem}
+          key={mode}
+          data={
+            (mode === "dishes" ? filteredBites : stallRows) as (
+              | QuickBiteGridItem
+              | QuickBiteStallItem
+            )[]
+          }
+          renderItem={renderGridItem}
           extraData={fullyVisibleBiteIds}
           keyExtractor={(item) => item.id}
           onViewableItemsChanged={handleFullyVisibleBitesChanged}
           viewabilityConfig={fullTileViewabilityConfig}
-          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
-            useNativeDriver: false,
-          })}
-          scrollEventThrottle={16}
           // @ts-ignore
           estimatedItemSize={220}
           numColumns={numColumns}
@@ -607,17 +581,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 72,
   },
-  cardContent: { ...StyleSheet.absoluteFill, padding: 10, justifyContent: "flex-end" },
-  authorBadge: {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    padding: 4,
-    paddingRight: 8,
-    borderRadius: 12,
+  searchInput: {
+    borderRadius: 18,
+    borderWidth: 1,
+    flex: 1,
+    fontSize: 16,
+    minHeight: 48,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
 });

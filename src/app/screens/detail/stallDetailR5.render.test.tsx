@@ -72,7 +72,7 @@ test("R5-STALL-1: the page's only filled button is the bar's Write a review (sou
 
 test("a stall with no photo still opens on a hero band, shorter than a photo's (source contract)", () => {
   const stall = readRepoFile("src/app/screens/detail/StallDetailScreen.tsx");
-  assert.match(stall, /Math\.min\(screenWidth \* 0\.75, 420\)/);
+  assert.match(stall, /Math\.min\(screenWidth, 480\)/);
   assert.match(stall, /Math\.min\(screenWidth \* 0\.6, 300\)/);
   assert.match(stall, /<DetailHeroFade scrollY=\{heroScrollY\} height=\{heroHeight\}>/);
   assert.doesNotMatch(stall, /hasHero/, "no branch drops the hero");

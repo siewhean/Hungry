@@ -52,7 +52,7 @@ test("the card also shows a visible more-options button, so the long press is no
   assert.match(rail, /onPress=\{handleOptions\}/);
 });
 
-test("the rail impression event lists the dish ids in on-screen order", () => {
+test("the rail impression event lists the dish ids of the first page, in on-screen order", () => {
   const rail = readRepoFile(RAIL);
-  assert.match(rail, /dish_ids: cards\.map\(\(card\) => card\.dishId\)/);
+  assert.match(rail, /dish_ids: firstPage\.map\(\(card\) => card\.dishId\)/);
 });

@@ -121,6 +121,26 @@ export function buildAreaSearchResults(input: {
     const result = placeSearchResult(place, input.areaForCoordinate);
     if (result) results.push(result);
   }
+  // A mall or building OneMap knows by the name typed (Gek Poh Shopping Centre) is a place
+  // too, even when the catalogue lists too few of its stalls to offer it.
+  const needle = input.query.trim().toLowerCase();
+  const seenPlaces = new Set(results.map((result) => result.title.toLowerCase()));
+  for (const address of input.addresses) {
+    const building = address.building ? formatAddress(address.building) : undefined;
+    if (!building || !building.toLowerCase().includes(needle)) continue;
+    if (seenPlaces.has(building.toLowerCase())) continue;
+    seenPlaces.add(building.toLowerCase());
+    const areaName = input.areaForCoordinate(address.coordinate);
+    results.push({
+      key: `building:${building.toLowerCase()}`,
+      kind: "place",
+      title: building,
+      subtitle: `Place · ${areaName}`,
+      areaName,
+      coordinate: address.coordinate,
+      placeName: building,
+    });
+  }
   for (const area of matchAreas(input.query, input.areas)) {
     results.push({
       key: `area:${area.id}`,

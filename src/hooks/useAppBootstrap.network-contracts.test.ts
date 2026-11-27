@@ -19,7 +19,7 @@ test("app bootstrap keeps authenticated catalog routes mounted during NetInfo ou
     path.join(process.cwd(), "src/app/navigation/RootNavigator.tsx"),
     "utf8",
   );
-  assert.match(rootNavigator, /function OfflineBanner\(\)/);
+  assert.doesNotMatch(rootNavigator, /OfflineBanner/);
   assert.doesNotMatch(rootNavigator, /navigationRef\.navigate\("Offline"\)/);
   assert.match(source, /return unsubscribe;/);
   assert.doesNotMatch(source, /setOffline\(false\);/);

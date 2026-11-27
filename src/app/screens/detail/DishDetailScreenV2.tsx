@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import type { ColorValue, TextStyle } from "react-native";
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { useFocusEffect } from "@react-navigation/native";
@@ -39,6 +46,7 @@ import {
   buildReviewSummary,
   ratingsHeadline,
 } from "@/features/detail/dishReviewSummary";
+import { confirmUntickTried } from "@/features/detail/confirmUntickTried";
 import { dishPrefillFrom } from "@/features/detail/dishPrefill";
 import { getExperimentVariant, useExperimentVariant } from "@/lib/experiments/experiments";
 import { useDishReviewActions } from "@/features/detail/useDishReviewActions";
@@ -49,6 +57,7 @@ import { DishLoadingPreview } from "@/components/dish/DishLoadingPreview";
 import { DishReviewCard } from "@/components/dish/DishReviewCard";
 import { DishReviewSummary } from "@/components/dish/DishReviewSummary";
 import { NoDishPhoto } from "@/components/dish/NoDishPhoto";
+import { PhotoGridCard } from "@/components/discover/PhotoGridCard";
 import { DishHeroPlaceholder } from "@/components/dish/DishHeroPlaceholder";
 import {
   AddToListSymbol,
@@ -64,11 +73,7 @@ import {
 } from "@/components/dish/dishSymbols";
 import { DietaryFlagChips } from "@/components/dish/DietaryFlagChips";
 import { HalalStatusTag, PriceBasisTag } from "@/components/dish/PriceLabels";
-import {
-  formatPriceWithBasis,
-  halalStatusCopy,
-  priceBasisDetail,
-} from "@/features/detail/priceBasis";
+import { formatPriceWithBasis } from "@/features/detail/priceBasis";
 import { ReviewPhotoStrip } from "@/components/review";
 import { isOwnReview } from "@/features/review/reviewEdit";
 import { FEATURE_FLAGS } from "@/constants/featureFlags";
@@ -196,7 +201,11 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   const [activeShareReview, setActiveShareReview] = useState<ReviewShareTarget | null>(null);
   const shareSheetRef = useRef<BottomSheetModal>(null);
   const lastRecordedDishViewId = useRef<string | null>(null);
-  const [isTryingFood, setIsTryingFood] = useState(false);
+  // Save and Tried show the new state the moment they are tapped; the write follows. Both are
+  // cleared when it settles, so a failed write drops back to what the store says.
+  const [optimisticSaved, setOptimisticSaved] = useState<boolean | null>(null);
+  const [optimisticTried, setOptimisticTried] = useState<boolean | null>(null);
+  const savingRef = useRef(false);
   // Set synchronously: a second tap in the same frame never runs a second Tried write.
   const tryingFoodRef = useRef(false);
   // After marking a dish tried: the follow-up (rate-it popup, or a "Rate it" bar button).
@@ -303,7 +312,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     excludeDishIds: similarNearbyIds,
   });
   // A rail where no dish has a photo drops the grey photo block: text tiles read as complete.
-  const moreFromHasPhotos = moreFromStall.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarHasPhotos = similarNearby.some((item) => sanitizeCatalogImageUrl(item.imageUrl));
   const similarDishHeading = dish ? similarDishQuery(dish.name) || dish.name : "dishes";
 
@@ -716,7 +724,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     );
   }
 
-  const isSaved = profile.favouriteDishIds.includes(dish.id);
+  const isSaved = optimisticSaved ?? profile.favouriteDishIds.includes(dish.id);
   // The venue read can fail on its own: keep the dish page and drop venue-only sections.
   const venueName = venue?.name ?? dish.venueName ?? "This stall";
   const venueUnit = venue?.unitNumber?.trim();
@@ -747,7 +755,8 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     savedCount > 0 ? `${savedCount} ${savedCount === 1 ? "person" : "people"} saved this` : null;
   // 4:3, so a typical food photo shows whole instead of a cropped strip. The no-photo
   // placeholder keeps the same height, so the page does not jump when a photo loads.
-  const heroPhotoHeight = Math.min(width * 0.75, 420);
+  // Square on a phone so the photo shows tall; capped so a tablet does not get a wall of food.
+  const heroPhotoHeight = Math.min(width, 480);
   // No photo listed (none do in production yet): a compact header under the status bar, not a
   // 300pt empty tile. A photo that fails after the page opened keeps its height, so nothing jumps.
   const heroHeight = heroPhotos.length > 0 ? heroPhotoHeight : insets.top + COMPACT_HERO_HEIGHT;
@@ -760,8 +769,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
   ];
   const dishPriceShown = formatPriceWithBasis(dish, "long");
   const dishPrice = dishPriceShown.text;
-  const priceDetail = priceBasisDetail(dish);
-  const halalCopy = dish.halalStatus ? halalStatusCopy(dish.halalStatus) : undefined;
   // The halal status line replaces the halal chip, so halal is not shown twice.
   const dietaryChipFlags = dish.halalStatus
     ? dish.dietaryFlags.filter((flag) => flag !== "halal")
@@ -809,7 +816,16 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       return;
     }
 
-    const result = await toggleFavourite(dish);
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setOptimisticSaved(!isSaved);
+    let result: Awaited<ReturnType<typeof toggleFavourite>>;
+    try {
+      result = await toggleFavourite(dish);
+    } finally {
+      savingRef.current = false;
+      setOptimisticSaved(null);
+    }
     if (result.status === "failed") {
       // A tap while a toggle is pending changes nothing: no toast for it.
       if (result.reason !== "pending") showToast({ message: result.message, tone: "error" });
@@ -822,17 +838,18 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
         dishId: dish.id,
         userId: profile.id,
       });
+      showToast({
+        message: "Saved to Want to try.",
+        tone: "success",
+        ...(FEATURE_FLAGS.portfoliosEnabled
+          ? {
+              duration: 5000,
+              action: { label: "Add to a list", onPress: () => void addToPortfolio() },
+            }
+          : {}),
+      });
     }
-    showToast({
-      message: result.status === "saved" ? "Saved to Want to try." : "Removed from Want to try.",
-      tone: "success",
-      ...(result.status === "saved" && FEATURE_FLAGS.portfoliosEnabled
-        ? {
-            duration: 5000,
-            action: { label: "Add to a list", onPress: () => void addToPortfolio() },
-          }
-        : {}),
-    });
+    // Removing it needs no toast: the button already changed.
   };
 
   const handleReview = () => {
@@ -859,7 +876,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
     });
   };
 
-  const isDishTried = profile.reviewedDishIds.includes(dish.id);
+  const isDishTried = optimisticTried ?? profile.reviewedDishIds.includes(dish.id);
   const hasReviewed = dishReviews.some((review) =>
     isOwnReview(review, isAuthenticated ? profile.id : undefined),
   );
@@ -923,27 +940,31 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
 
     tryingFoodRef.current = true;
     if (isDishTried) {
-      setIsTryingFood(true);
+      // Un-ticking asks first; a reviewed dish keeps its review.
+      if (!(await confirmUntickTried(dish.name, hasReviewed))) {
+        tryingFoodRef.current = false;
+        return;
+      }
+      // The button flips now; the write follows and a failure puts it back.
+      setOptimisticTried(false);
       try {
         const saved = await setDishTried(dish.id, false);
-        const stillTried = useProfileStore.getState().profile.reviewedDishIds.includes(dish.id);
-        if (saved && !stillTried) forgetTriedDish(profile.id, dish.id);
-        showToast({
-          message: !saved
-            ? "Couldn't update your tried dishes. Try again."
-            : stillTried
-              ? "You reviewed this dish, so it stays in your tried dishes."
-              : "Removed from your tried dishes.",
-          ...triedToastStyle,
-        });
+        if (saved) forgetTriedDish(profile.id, dish.id);
+        // Un-marking a dish needs no toast; a failure still says why.
+        else {
+          showToast({
+            message: "Couldn't update your tried dishes. Try again.",
+            ...triedToastStyle,
+          });
+        }
       } finally {
         tryingFoodRef.current = false;
-        setIsTryingFood(false);
+        setOptimisticTried(null);
       }
       return;
     }
 
-    setIsTryingFood(true);
+    setOptimisticTried(true);
     try {
       holdCredPillForPopup();
       afterTriedMarked(await markDishTried(dish, triedDishFacts(dish, hasTasteSignal)));
@@ -952,7 +973,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
       throw error;
     } finally {
       tryingFoodRef.current = false;
-      setIsTryingFood(false);
+      setOptimisticTried(null);
     }
   };
 
@@ -1017,7 +1038,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
           active: isDishTried,
           mutedWhenInactive: true,
           role: "checkbox" as const,
-          loading: isTryingFood,
           onPress: () => void handleTryFood(),
           accessibilityLabel: "Tried",
           holdTitle: "Have you tried it?",
@@ -1228,31 +1248,6 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     {dish.halalStatus ? <HalalStatusTag status={dish.halalStatus} /> : null}
                   </View>
                 ) : null}
-                {(priceDetail && dishPriceShown.listed) || halalCopy ? (
-                  <View
-                    style={{
-                      backgroundColor: palette.surfaceRaised,
-                      borderColor: palette.border,
-                      borderRadius: radii.md,
-                      borderWidth: 1,
-                      gap: spacing[2],
-                      padding: spacing[3],
-                    }}
-                  >
-                    {priceDetail && dishPriceShown.listed ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        <AppText variant="bodySmallBold">{priceDetail.title}</AppText>{" "}
-                        {priceDetail.body}
-                      </AppText>
-                    ) : null}
-                    {halalCopy ? (
-                      <AppText variant="bodySmall" tone="secondary">
-                        <AppText variant="bodySmallBold">{halalCopy.title}</AppText>{" "}
-                        {halalCopy.body}
-                      </AppText>
-                    ) : null}
-                  </View>
-                ) : null}
                 {isDishSoldOut ? (
                   <View
                     accessible
@@ -1318,15 +1313,7 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     </View>
                   ) : null}
                 </View>
-                {dietaryChipFlags.length > 0 ? (
-                  <View style={{ gap: spacing[1] }}>
-                    <DietaryFlagChips flags={dietaryChipFlags} />
-                    <AppText variant="micro" tone="muted">
-                      Labels come from the stall or our catalogue. Check with the stall if it
-                      matters to you.
-                    </AppText>
-                  </View>
-                ) : null}
+                {dietaryChipFlags.length > 0 ? <DietaryFlagChips flags={dietaryChipFlags} /> : null}
                 {dish.description?.trim() ? (
                   (descriptionTruncates ??
                   dish.description.trim().length > DESCRIPTION_EXPANDABLE_CHARS) ? (
@@ -1484,62 +1471,52 @@ export function DishDetailScreenV2({ navigation, route }: Props) {
                     }}
                     contentContainerStyle={{ gap: spacing[3], paddingHorizontal: spacing[4] }}
                   >
-                    {moreFromStall.map((item) => (
-                      <Pressable
-                        key={item.id}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Open ${item.name}, ${
-                          isSoldOut(item.availabilityFlags)
-                            ? "sold out today"
-                            : formatDishPrice(item)
-                        }`}
-                        // push, not navigate: each dish gets its own screen, so Back returns here.
-                        onPress={() => {
-                          trackAnalyticsEvent("dish_more_from_opened", {
-                            dish_id: dish.id,
-                            target_dish_id: item.id,
-                          });
-                          navigation.push("DishDetail", {
-                            dishId: item.id,
-                            source: "more_from_stall",
-                            prefill: dishPrefillFrom({ ...item, venueName }),
-                          });
-                        }}
-                        style={{
-                          backgroundColor: palette.surface,
-                          borderColor: palette.border,
-                          borderRadius: componentRadii.card,
-                          borderWidth: 1,
-                          overflow: "hidden",
-                          width: signatureGridItemWidth,
-                        }}
-                      >
-                        {sanitizeCatalogImageUrl(item.imageUrl) ? (
-                          <AccessibleImage
-                            source={{ uri: sanitizeCatalogImageUrl(item.imageUrl) }}
-                            contentFit="cover"
-                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
-                            decorative
-                          />
-                        ) : moreFromHasPhotos ? (
-                          <NoDishPhoto
-                            dishName={item.name}
-                            style={{ width: "100%", height: signatureGridItemWidth * 0.62 }}
-                          />
-                        ) : null}
-                        <View style={{ gap: spacing[1], padding: spacing[3] }}>
-                          <AppText variant="bodyBold" numberOfLines={1}>
-                            {item.name}
-                          </AppText>
-                          <AppText
-                            variant="price"
-                            style={[DISH_PRICE_FONT, { color: palette.text }]}
-                          >
-                            {formatDishPrice(item)}
-                          </AppText>
-                        </View>
-                      </Pressable>
-                    ))}
+                    {moreFromStall.map((item) => {
+                      const photoUrl = sanitizeCatalogImageUrl(item.imageUrl);
+                      return (
+                        <PhotoGridCard
+                          key={item.id}
+                          accessibilityLabel={`Open ${item.name}, ${
+                            isSoldOut(item.availabilityFlags)
+                              ? "sold out today"
+                              : formatDishPrice(item)
+                          }`}
+                          metaLeft={
+                            <AppText
+                              variant="micro"
+                              style={{ color: palette.white, fontWeight: "700" }}
+                            >
+                              {formatDishPrice(item)}
+                            </AppText>
+                          }
+                          // push, not navigate: each dish gets its own screen, so Back returns here.
+                          onPress={() => {
+                            trackAnalyticsEvent("dish_more_from_opened", {
+                              dish_id: dish.id,
+                              target_dish_id: item.id,
+                            });
+                            navigation.push("DishDetail", {
+                              dishId: item.id,
+                              source: "more_from_stall",
+                              prefill: dishPrefillFrom({ ...item, venueName }),
+                            });
+                          }}
+                          title={item.name}
+                          width={signatureGridItemWidth}
+                        >
+                          {photoUrl ? (
+                            <AccessibleImage
+                              source={{ uri: photoUrl }}
+                              contentFit="cover"
+                              style={StyleSheet.absoluteFill}
+                              decorative
+                            />
+                          ) : (
+                            <NoDishPhoto dishName={item.name} style={StyleSheet.absoluteFill} />
+                          )}
+                        </PhotoGridCard>
+                      );
+                    })}
                   </ScrollView>
                 </View>
               ) : null}

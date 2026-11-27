@@ -31,8 +31,10 @@ export function resolveFeatureFlags(
   const appEnv = resolveAppEnvironment(appEnvRaw?.trim().toLowerCase(), nodeEnv);
   const prototypeRoutesEnabled = appEnv !== "production";
   const nonProductionSurfaceEnabled = prototypeRoutesEnabled;
-  const surface = (key: string, defaultValue: boolean) => {
-    const value = env[key]?.trim();
+  // Expo inlines only a literal `process.env.EXPO_PUBLIC_X` in a packaged build, so a flag that a
+  // build profile switches reads its value this way too (`literal`), not only through `env[key]`.
+  const surface = (key: string, defaultValue: boolean, literal?: string) => {
+    const value = (env[key] ?? (env === process.env ? literal : undefined))?.trim();
     if (value === "1") return true;
     if (value === "0") return false;
     return defaultValue;
@@ -118,6 +120,15 @@ export function resolveFeatureFlags(
     storiesEnabled: nonProductionSurfaceEnabled,
     merchantClaimCtaEnabled: nonProductionSurfaceEnabled,
     merchantCentreEnabled: nonProductionSurfaceEnabled,
+    // The iPhone's own tab bar for Home, Post, Reviews and Profile (owner decision 2026-11-26).
+    // On in development and staging builds first; production opts in with
+    // EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR=1 once it has been checked on a phone. `=0` goes back to
+    // the custom bar with edge swipes everywhere. Android and web always use the custom bar.
+    nativeTabBarEnabled: surface(
+      "EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR",
+      nonProductionSurfaceEnabled,
+      process.env.EXPO_PUBLIC_ENABLE_NATIVE_TAB_BAR,
+    ),
     prototypeRoutesEnabled,
   } as const;
 }

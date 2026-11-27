@@ -10,6 +10,8 @@ export function getDiscoverAreaCountLabel(input: {
   /** True when the live read failed and the saved cache answered. */
   isFallback?: boolean;
   isFeedLoaded: boolean;
+  /** True when the first page is all there is, because the full read failed. */
+  isFirstPageOnly?: boolean;
   feedVenueCount: number;
   feedLimit: number;
   rpcCount: number | null;
@@ -19,6 +21,14 @@ export function getDiscoverAreaCountLabel(input: {
   }
   if (input.isFallback && input.feedVenueCount === 0) {
     return null;
+  }
+  // Only the first page arrived (the full read failed): its size is a floor, not the count.
+  if (input.isFirstPageOnly) {
+    if (input.feedVenueCount === 0) return null;
+    if (typeof input.rpcCount === "number" && input.rpcCount >= input.feedVenueCount) {
+      return String(input.rpcCount);
+    }
+    return `${input.feedVenueCount}+`;
   }
   if (input.feedVenueCount < input.feedLimit) {
     return String(input.feedVenueCount);

@@ -18,6 +18,7 @@ import {
 import { getHungryService } from "@/lib/services/serviceProvider";
 import type { SavedDishCard } from "@/lib/services/types";
 import { useLocationStore } from "@/store/useLocationStore";
+import { useChoiceSheetStore } from "@/store/useChoiceSheetStore";
 import { useProfileStore } from "@/store/useProfileStore";
 import { useUIStore } from "@/store/useUIStore";
 import { cleanup, renderScreen } from "@/test/render";
@@ -221,7 +222,24 @@ test("the Tried control shows its state and Undo restores it (SAVED4-13)", async
   const checkbox = view.findByText("Tried")?.closest('[role="checkbox"]');
   assert.equal(checkbox?.getAttribute("aria-checked"), "true");
 
-  await view.press(tried());
+  // Un-ticking asks first; the test answers "Mark not tried" as the sheet opens.
+  let asked = "";
+  useChoiceSheetStore.setState({ sheetOpen: false });
+  const stopAnswering = useChoiceSheetStore.subscribe((state) => {
+    if (!state.request) return;
+    asked = state.request.title;
+    queueMicrotask(() => {
+      useChoiceSheetStore.setState({ sheetOpen: false });
+      useChoiceSheetStore.getState().settle("untick");
+    });
+  });
+  try {
+    await view.press(tried());
+    await view.settle();
+  } finally {
+    stopAnswering();
+  }
+  assert.match(asked, /as not tried\?/);
   assert.deepEqual(useProfileStore.getState().profile.reviewedDishIds, []);
   assert.equal(useUIStore.getState().toast?.message, "Removed from your tried dishes.");
   useUIStore.getState().toast?.action?.onPress();

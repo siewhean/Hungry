@@ -18,6 +18,7 @@ import {
 } from "@/components/ui";
 import { publishComposerPost } from "@/features/post/publishing";
 import { loadPostPoints, postedToastMessage } from "@/features/foodPortfolio/postAnnouncement";
+import { usePointsScoreBar } from "@/features/leaderboard/pointsScoreBar";
 import { useComposerStore, type MediaItem } from "@/features/post/useComposerStore";
 import { askMediaSource, captureWithCamera } from "@/lib/permissions/mediaSource";
 import { createClientReviewId } from "@/features/review/reviewDraft";
@@ -239,8 +240,10 @@ function PostComposerScreenInner({ navigation, route }: Props) {
         if (FEATURE_FLAGS.foodPortfolioEnabled) {
           // The points read is capped, so the toast follows the post within a second or two.
           const points = published?.id ? await loadPostPoints(published.id) : null;
+          // The score bar at the top shows the points; the toast keeps the "See it" link.
+          if (points) void usePointsScoreBar.getState().celebrate(points);
           showToast({
-            message: postedToastMessage(points),
+            message: postedToastMessage(null),
             tone: "success",
             duration: 5000,
             action: {

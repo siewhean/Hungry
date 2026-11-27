@@ -338,6 +338,42 @@ test("a failed live feed hands Home to the offline page, and Try again tries the
   assert.equal(view.findByTestId("home-offline-root"), null);
 });
 
+test("Try again that fails again keeps the offline page up instead of flickering through Home", async () => {
+  fake.rpc.get_discovery_feed_by_location = () => ({
+    data: null,
+    error: { message: "network request failed" },
+  });
+  const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
+  assert.ok(view.findByTestId("home-offline-root"));
+
+  await view.press(view.findByTestId("home-offline-retry"));
+  await view.settle();
+
+  assert.ok(view.findByTestId("home-offline-root"), "still the offline page after a failed retry");
+  assert.match(view.text(), /Try again/, "the button is ready for another try");
+  assert.doesNotMatch(view.text(), /Trying again/, "no spinner left running");
+});
+
+test("QuickBites for a meal period lists only the dishes that suit it, with no cuisine chips", async () => {
+  serveLiveFeed([
+    feedRow(1, { top_dish_name: "Chilli Crab" }),
+    feedRow(2, { top_dish_name: "Kaya Toast" }),
+  ]);
+  const view = await m.renderKit.renderScreen(m.QuickBitesScreen as never, {
+    name: "QuickBites",
+    params: {
+      collection: "quickBites",
+      mealPeriod: "dinner",
+      latitude: 1.2813,
+      longitude: 103.8458,
+    },
+  });
+  assert.match(view.text(), /Dinner ideas/);
+  assert.match(view.text(), /Chilli Crab/);
+  assert.doesNotMatch(view.text(), /Kaya Toast/);
+  assert.equal(view.findByLabel("Chinese"), null, "the see more page has no cuisine chips");
+});
+
 test("with no connection, Home shows the offline page at once instead of skeletons waiting on the feed", async () => {
   const { useUIStore } = await import("@/store/useUIStore");
   // The feed read never answers, as on a phone with no signal.
@@ -688,7 +724,7 @@ test("H4-10: with no saved needs the Dietary needs chip opens the dietary step i
   assert.doesNotMatch(view.text(), /No matching results/);
 });
 
-test("H4-10: saved needs name the chip, and a sparse feed explains itself instead of leaving Home empty", async () => {
+test("H4-10: the chip stays Dietary needs while it applies the saved needs, and a sparse feed explains itself instead of leaving Home empty", async () => {
   m.useProfileStore.setState((state) => ({
     profile: { ...state.profile, dietaryPreferences: ["halal", "vegetarian", "vegan"] },
   }));
@@ -696,7 +732,10 @@ test("H4-10: saved needs name the chip, and a sparse feed explains itself instea
   // Nothing nearby carries a dietary flag yet.
   fake.tables.dish_dietary_flags = () => ({ data: [], error: null });
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
-  assert.ok(view.findByLabel("Halal · Vegetarian +1"), "the chip names the saved needs");
+  assert.ok(
+    view.findByLabel("Dietary needs: Halal · Vegetarian +1"),
+    "the chip applies the saved needs without renaming itself",
+  );
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
@@ -1136,7 +1175,7 @@ test("H4-2: ranking never hides dishes; with the Dietary chip off a halal diner 
   serveLiveFeed(PALATE_ROWS);
   const view = await m.renderKit.render(createElement(m.DiscoverEntryScreen));
   assert.doesNotMatch(view.text(), /Dish 2/, "the Dietary chip is on: only halal dishes");
-  await view.press(view.findByLabel("Halal"));
+  await view.press(view.findByLabel("Dietary needs: Halal"));
   await m.renderKit.settle();
   const text = view.text();
   const rail = text.slice(text.indexOf("Dishes across Singapore"));

@@ -96,6 +96,8 @@ export type HomeSectionOptions<T> = BuildCategorySectionsOptions<T> & {
   /** True when the stall is open right now; the hour's section only holds such stalls. */
   isOpenNow?: (card: T) => boolean;
   maxSections?: number;
+  /** Cards a section keeps to itself; any past this (up to perSection) may repeat in later sections. */
+  claimLimit?: number;
   /** The mall or food centre the diner is in: its stalls lead each section. */
   preferBuildingId?: string;
   /** "favourites" keeps to what the diner knows, so "Try something different" stays off. */
@@ -275,6 +277,9 @@ export function buildHomeSections<T extends HomeSectionCard>(
   const maxSections = options.maxSections ?? 8;
   const minItems = options.minItems ?? 3;
   const perSection = options.perSection ?? 10;
+  // A section may hold more than it claims: its first cards are its own, the rest may also
+  // appear in a later section, so a long row never starves the sections below it.
+  const claimLimit = options.claimLimit ?? perSection;
   const claimed = new Set<string>([
     ...(options.excludeVenueIds ?? []),
     ...(options.hiddenVenueIds ?? []),
@@ -346,7 +351,7 @@ export function buildHomeSections<T extends HomeSectionCard>(
   const sections: HomeSection<T>[] = [];
   const add = (section: Omit<HomeSection<T>, "cards"> & { cards: readonly T[] }) => {
     if (section.cards.length < minItems) return false;
-    claim(section.cards);
+    claim(section.cards.slice(0, claimLimit));
     sections.push({ ...section, cards: [...section.cards] });
     return true;
   };

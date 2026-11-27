@@ -121,7 +121,8 @@ test("M2/M3/M5/M6/M10/L8/L10/L12: the results grid", () => {
   assert.match(grid, /accessibilityLabel=\{`Sort by, \$\{sortLabel\}`\}/);
   assert.match(grid, /describeResultsSummary\(\{\s*count: matchCount,\s*mode,/);
   // M5/M6: card line, rating pill, full spoken label, result announcement.
-  assert.match(grid, /cardSubtitle\(mode, item\)/);
+  assert.match(grid, /<PhotoGridCard/);
+  assert.match(grid, /chipLabel=\{chipLabel\}/);
   assert.match(grid, /ratingPillText\(dish\.rating, dish\.reviewCount\)/);
   assert.match(grid, /accessibilityLabel=\{cardAccessibilityLabel\(mode, item\)\}/);
   assert.match(
@@ -234,7 +235,7 @@ test("SR4 re-audit: Search home fits a 320 screen and a failed featured photo sh
   const source = read("src/app/screens/search/DishSearchScreen.tsx");
   // A web <input> keeps its default width unless it may shrink; at 320 it pushed the page 21pt sideways.
   assert.match(source, /<View style=\{\{ flex: 1, minWidth: 0 \}\}>\s*<Input/);
-  assert.match(source, /style=\{\{ minWidth: 0 \}\}/);
+  assert.match(source, /style=\{\{ minHeight: 48, minWidth: 0, paddingVertical: 0 \}\}/);
   assert.match(source, /fallback=\{<FeaturedDishPlaceholder \/>\}/);
 });
 

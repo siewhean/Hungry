@@ -590,7 +590,7 @@ test("a new search starts from where the diner is now (SR4-26)", async () => {
   assert.equal(view.findByLabel("Update for new location"), null);
 });
 
-test("a card with no rating keeps the rating line's height, so a row of cards lines up (SR4-19)", async () => {
+test("a card with no rating shows no rating, and both cards are the same size (SR4-19)", async () => {
   stubCatalog({
     listDishes: async () =>
       page([dishCard("1"), dishCard("2", { rating: undefined, reviewCount: 0 })]),
@@ -598,14 +598,12 @@ test("a card with no rating keeps the rating line's height, so a row of cards li
   });
   const view = await renderResults({ browseMode: "dishes" });
   await wait(400);
-  for (const label of [/^Dish 1,/, /^Dish 2,/]) {
-    const card = view.findByLabel(label);
-    assert.ok(card, `${label}`);
-    const reserved = Array.from(card.querySelectorAll<HTMLElement>("div")).filter(
-      (el) => el.style.minHeight === "16px",
-    );
-    assert.equal(reserved.length, 1, `${label} reserves one rating line`);
-  }
+  const rated = view.findByLabel(/^Dish 1,/);
+  const unrated = view.findByLabel(/^Dish 2,/);
+  assert.ok(rated && unrated);
+  assert.match(rated.textContent ?? "", /\d\.\d \(\d+\)/, "a rated dish shows its rating");
+  assert.doesNotMatch(unrated.textContent ?? "", /\d\.\d \(\d+\)/);
+  assert.equal(rated.style.height, unrated.style.height, "the cards are one height");
 });
 
 test("the offline copy keeps the catalog page for a stall tap", async () => {
@@ -1581,11 +1579,11 @@ test("SR5-6: the other tab's button switches to it", async () => {
 test("the browse grid is edge to edge: half-screen cells, no rounded bordered cards, equal text blocks", () => {
   const results = readFileSync("src/app/screens/search/SearchResultsScreen.tsx", "utf8");
   assert.match(results, /const itemWidth = width \/ 2;/);
-  assert.match(results, /const GRID_GAP = 2;/);
-  assert.match(results, /minHeight: itemWidth \* GRID_IMAGE_RATIO \+ gridTextHeight\(mode\)/);
+  // Every cell is the shared picture card, a fixed height taller than it is wide.
+  assert.match(results, /height: itemWidth \* PHOTO_GRID_CARD_RATIO/);
   const card = results.slice(
     results.indexOf("const RawCatalogCard"),
-    results.indexOf("const RESERVED_LINE_HEIGHT"),
+    results.indexOf("const MODE_LABELS"),
   );
   assert.doesNotMatch(card, /componentRadii\.card|borderRadius: componentRadii/);
   assert.doesNotMatch(card, /borderWidth: 1/, "the cell has no card outline");
@@ -1603,7 +1601,9 @@ test("the browse grid is edge to edge: half-screen cells, no rounded bordered ca
 test("SR5-3: cards press down 0.97 over 120 ms (PressableScale) and list rows highlight", () => {
   const results = readFileSync("src/app/screens/search/SearchResultsScreen.tsx", "utf8");
   const home = readFileSync("src/app/screens/search/DishSearchScreen.tsx", "utf8");
-  assert.match(results, /<PressableScale[\s\S]*?testID=\{`search-card-/);
+  const photoCard = readFileSync("src/components/discover/PhotoGridCard.tsx", "utf8");
+  assert.match(photoCard, /<PressableScale/);
+  assert.match(results, /<PhotoGridCard[\s\S]*?testID=\{`search-card-/);
   assert.match(home, /<PressableScale[\s\S]*?accessibilityLabel=\{`View \$\{dish\.name\}/);
   assert.match(home, /style=\{\(\{ pressed \}\) => rowStyle\(pressed\)\}/);
   const pressable = readFileSync("src/components/ui/PressableScale.tsx", "utf8");
