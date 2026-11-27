@@ -290,7 +290,8 @@ T26 two people join a league cohort with one place left (the cohort stops at 30,
 T27 two league week closes at once (one result per person, the tier moves once)
 T28 a new week's first points while last week closes (the new membership takes the closed tier)
 T29 points still in flight while their week closes (the close waits and counts them)
-T30 points that reach the week lock after their week closed (they count in the current week)"
+T30 points that reach the week lock after their week closed (they count in the current week)
+T31 a refresh paying points (it holds the refresh lock) while last week closes (no deadlock)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -488,7 +489,7 @@ for m in "$LG_MIGRATION"; do
   done
 done
 lg_reset() {
-  lb_val "truncate league_week_results, league_user_tiers, league_memberships, league_cohorts, food_cred_events, user_food_cred, user_stall_interactions, leaderboard_events cascade;" >/dev/null
+  lb_val "truncate league_week_results, league_user_tiers, league_memberships, league_cohorts, food_cred_events, user_food_cred, user_stall_interactions, leaderboard_events, leaderboard_week_results, leaderboard_rank_snapshots cascade;" >/dev/null
 }
 lg_reset
 lb_race T25 "insert into food_cred_events(user_id, source_action, points) values ('$U1', 'stall_saved', 2);" "insert into food_cred_events(user_id, source_action, points) values ('$U1', 'review_created', 15);" >>"$LB_OUT"
@@ -514,17 +515,21 @@ lb_race T28 "select app_private.close_leaderboard_week($LG_WEEK);" "insert into 
 echo "T28_tier=$(lb_val "select count(*) from league_week_results")_$(lb_val "select tier from league_memberships where user_id = '$U1' and week_start = date_trunc('week', now() at time zone 'Asia/Singapore')::date")" >>"$LB_OUT"
 
 lg_reset
-lb_val "truncate leaderboard_week_results, leaderboard_rank_snapshots; update user_profiles set created_at = now() - interval '30 days' where id = '$U1';" >/dev/null
+lb_val "update user_profiles set created_at = now() - interval '30 days' where id = '$U1';" >/dev/null
 lb_val "select app_private.join_league_week('$U1', (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" >/dev/null
 lb_race T29 "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 20, (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" "select app_private.close_leaderboard_week($LG_WEEK);" >>"$LB_OUT"
 echo "T29_counted=$(lb_val "select score || '_' || outcome from league_week_results where user_id = '$U1'")" >>"$LB_OUT"
 echo "T29_board=$(lb_val "select score from leaderboard_week_results where board = 'active' and user_id = '$U1'")_$(lb_val "select score from leaderboard_rank_snapshots where user_id = '$U1'")" >>"$LB_OUT"
 
 lg_reset
-lb_val "truncate leaderboard_week_results, leaderboard_rank_snapshots;" >/dev/null
 lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 20, (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" >/dev/null
 lb_race T30 "select app_private.close_leaderboard_week($LG_WEEK);" "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 7, (($LG_WEEK)::timestamp + interval '2 days') at time zone 'Asia/Singapore');" >>"$LB_OUT"
 echo "T30_late=$(lb_val "select score from league_week_results where user_id = '$U1'")_$(lb_val "select count(*) from leaderboard_events where user_id = '$U1' and created_at < (($LG_WEEK) + 7)::timestamp at time zone 'Asia/Singapore'")_$(lb_val "select count(*) from league_memberships where user_id = '$U1' and week_start = date_trunc('week', now() at time zone 'Asia/Singapore')::date")" >>"$LB_OUT"
+
+lg_reset
+lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 20, (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" >/dev/null
+lb_race T31 "select pg_advisory_xact_lock(hashtextextended('leaderboard:refresh', 0)); select pg_sleep(1); insert into leaderboard_events(user_id, kind, points) values ('$U1', 'task', 5);" "select app_private.close_leaderboard_week($LG_WEEK);" >>"$LB_OUT"
+echo "T31_closed=$(lb_val "select count(*) from league_week_results where user_id = '$U1'")_$(lb_val "select tier from league_memberships where user_id = '$U1' and week_start = date_trunc('week', now() at time zone 'Asia/Singapore')::date")" >>"$LB_OUT"
 
 PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$LG_MIGRATION.down.sql" >/dev/null 2>&1 \
   && [ "$(lb_val "select count(*) from pg_proc where proname like '%league%'")" = 0 ] \
@@ -569,7 +574,9 @@ T29_errors=0
 T29_counted=20.00_promoted
 T29_board=20.00_20.00
 T30_errors=0
-T30_late=20.00_1_1"
+T30_late=20.00_1_1
+T31_errors=0
+T31_closed=1_2"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
