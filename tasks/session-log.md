@@ -1084,3 +1084,4 @@ Split PR #294 into the app change and database PR #295. The default app build ke
 
 - 2026-11-26 PR #297 follow-up: Budget (QuickBites) page now has the Search-style header (back, search field) with Dishes/Stalls tabs; one shared PhotoGridCard (photo, chip, name, distance) used by Budget, Search dishes and Search/Stalls tabs. Unit + render + coverage focused runs passed.
 - 2026-11-26 PR #297 iPhone check fixes: bottom-tabs 7.15.9 -> 7.16.0 (matches react-native-screens 4.26 so native tab icons and pages work), offline toast removed, saved-results card hidden offline, Try again keeps the offline page up with a spinner, Dinner ideas see all (QuickBites mealPeriod), no chips on see more page.
+- 2026-11-27 PR #299 rehearsal on real staging failed the new smoke: the final venue filter after the candidate arms legitimately keeps params.venue_id, so the smoke now checks only the arms section (verified against the migrated staging body).
