@@ -122,6 +122,7 @@ jobs:
           npm run check:staging-test-activity
           npm run check:zone-hours
           node --test scripts/__tests__/verify_package.test.mjs
+          npm run check:zone-promote
 
       - name: Rate-limit contract
         run: npm run check:rate-limits

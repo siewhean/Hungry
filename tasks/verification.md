@@ -1791,3 +1791,10 @@ Use the smallest check that matches the change risk.
 - `./scripts/verify-package.sh src/store/useSessionStore.auth-account-flows.test.ts`: PASS (`9/9` auth tests, `typecheck` clean, `check:rate-limits` `10/10`, `check:n-plus-one` clean, `audit:races` clean, `check:staging-functions` `11/11` after `fileURLToPath` fix, `audit:supabase:migration-safety` clean, `git diff --check` clean).
 - `node --test scripts/__tests__/verify_package.test.mjs scripts/seed/staging-test-activity.test.mjs`: `14/14` pass.
 - `npm --prefix marketing/website/web-v2 run waitlist:e2e`: PASS (foodie + merchant signups stored, welcome email dispatched once, repeat signups idempotent without re-sending email, non-JSON/invalid/missing-business rejected). Website copy left untouched per owner decision.
+
+## 2026-11-28 PKG-1.7 Free-tier budget reclamation + launch-zone promote + offline zone cache
+
+- `npm run check:zone-promote`: pass (`reclaim-free-tier-budget.sh` and `promote-launch-zone.sh` syntax, project-ref guards, backup-before-write order, quoted file payload, outside-DO psql option passing, separate-command `VACUUM`, optional-table existence guards, active-release + gallery restoration, and merchant exclusion across dishes/images/dietary links).
+- `launchZoneOfflineCache.test.ts` + `bestEffortCatalogFallback.test.ts` + `launchZonePlaces.behaviour.test.ts` + `test-coverage-guard-contracts.test.ts` + `ci-supply-chain.test.ts`: pass (shared hydration promise, generation-guarded clear, serialized writes, per-entry 7-day TTL, normalized sort/limit cache keys, no synthetic release ID leaked to detail RPCs).
+- `npm run typecheck`, ESLint, Prettier, `npm run check:n-plus-one`, `npm run audit:races`, `npm run audit:supabase:migration-safety`, and local CodeRabbit CLI review: pass.
+- Not run: `reclaim-free-tier-budget.sh prod --apply` and `promote-launch-zone.sh --apply` against live prod/staging (sh runs on Mac with DB credentials).

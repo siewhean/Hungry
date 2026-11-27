@@ -9,6 +9,16 @@ import {
   type CatalogPage,
   type catalogRawService,
 } from "@/lib/services/catalog";
+import {
+  clearLaunchZoneOfflineCache,
+  LAUNCH_ZONE_OFFLINE_RELEASE_ID,
+  readCachedLaunchZoneDishesPage,
+  readCachedLaunchZonePlaces,
+  readCachedLaunchZoneVenuesPage,
+  rememberLaunchZoneDishesPage,
+  rememberLaunchZonePlaces,
+  rememberLaunchZoneVenuesPage,
+} from "@/lib/services/catalog/launchZoneOfflineCache";
 import { getConfiguredDataSource, setConfiguredDataSource } from "@/lib/services/supabase/client";
 import { catalogRequestScope, requireCurrentCatalogScope } from "@/lib/services/catalogReads";
 import type { DataRepository, HungryService } from "@/lib/services/types";
@@ -387,6 +397,16 @@ function isExcelFallbackRelease(releaseId?: string): boolean {
   return Boolean(releaseId?.startsWith("excel-fallback"));
 }
 
+/**
+ * Cached launch-zone offline pages omit/strip non-UUID release identifiers so detail and
+ * continuation RPCs resolve the current active release instead of sending a non-UUID string.
+ */
+function normalizeCatalogReleaseId(releaseId?: string): string | undefined {
+  const trimmed = releaseId?.trim();
+  if (!trimmed || trimmed === LAUNCH_ZONE_OFFLINE_RELEASE_ID) return undefined;
+  return trimmed;
+}
+
 /** Excel cursors are offset tokens prefixed with `excel:`; anything else is a live RPC cursor. */
 export function isExcelCatalogCursor(cursor?: string): boolean {
   return Boolean(cursor?.startsWith("excel:"));
@@ -479,56 +499,73 @@ export function createResilientCatalogReadService(
     clearCache() {
       primary.clearCache();
       fallback.clearCache();
+      clearLaunchZoneOfflineCache();
     },
     async listDishes(request) {
+      const normalized = { ...request, releaseId: normalizeCatalogReleaseId(request.releaseId) };
       return runPagedCatalogRead(
-        request,
-        () => primary.listDishes(request),
-        () => fallback.listDishes(request),
+        normalized,
+        async () => {
+          const page = requireCatalogRelease(await primary.listDishes(normalized));
+          void rememberLaunchZoneDishesPage(normalized, page);
+          return page;
+        },
+        async () =>
+          (await readCachedLaunchZoneDishesPage(normalized)) ?? fallback.listDishes(normalized),
       );
     },
     async listVenues(request) {
+      const normalized = { ...request, releaseId: normalizeCatalogReleaseId(request.releaseId) };
       return runPagedCatalogRead(
-        request,
-        () => primary.listVenues(request),
-        () => fallback.listVenues(request),
+        normalized,
+        async () => {
+          const page = requireCatalogRelease(await primary.listVenues(normalized));
+          void rememberLaunchZoneVenuesPage(normalized, page);
+          return page;
+        },
+        async () =>
+          (await readCachedLaunchZoneVenuesPage(normalized)) ?? fallback.listVenues(normalized),
       );
     },
     async getDish(id, releaseId) {
-      if (isExcelFallbackRelease(releaseId)) {
+      const liveReleaseId = normalizeCatalogReleaseId(releaseId);
+      if (isExcelFallbackRelease(liveReleaseId)) {
         requireAuthenticatedCatalogFallbackSession();
-        return fallback.getDish(id, releaseId);
+        return fallback.getDish(id, liveReleaseId);
       }
       return runAuthenticatedCatalogFallback(
-        () => primary.getDish(id, releaseId),
-        () => fallback.getDish(id, releaseId),
+        () => primary.getDish(id, liveReleaseId),
+        () => fallback.getDish(id, liveReleaseId),
       );
     },
     async getVenue(id, releaseId) {
-      if (isExcelFallbackRelease(releaseId)) {
+      const liveReleaseId = normalizeCatalogReleaseId(releaseId);
+      if (isExcelFallbackRelease(liveReleaseId)) {
         requireAuthenticatedCatalogFallbackSession();
-        return fallback.getVenue(id, releaseId);
+        return fallback.getVenue(id, liveReleaseId);
       }
       return runAuthenticatedCatalogFallback(
-        () => primary.getVenue(id, releaseId),
-        () => fallback.getVenue(id, releaseId),
+        () => primary.getVenue(id, liveReleaseId),
+        () => fallback.getVenue(id, liveReleaseId),
       );
     },
     async listVenueMenu(venueId, request = {}) {
+      const normalized = { ...request, releaseId: normalizeCatalogReleaseId(request.releaseId) };
       return runPagedCatalogRead(
-        request,
-        () => primary.listVenueMenu(venueId, request),
-        () => fallback.listVenueMenu(venueId, request),
+        normalized,
+        () => primary.listVenueMenu(venueId, normalized),
+        () => fallback.listVenueMenu(venueId, normalized),
       );
     },
     async getMapViewport(request) {
-      if (isExcelFallbackRelease(request.releaseId)) {
+      const normalized = { ...request, releaseId: normalizeCatalogReleaseId(request.releaseId) };
+      if (isExcelFallbackRelease(normalized.releaseId)) {
         requireAuthenticatedCatalogFallbackSession();
-        return fallback.getMapViewport(request);
+        return fallback.getMapViewport(normalized);
       }
       return runAuthenticatedCatalogFallback(
-        async () => requireMapRelease(await primary.getMapViewport(request)),
-        () => fallback.getMapViewport(request),
+        async () => requireMapRelease(await primary.getMapViewport(normalized)),
+        () => fallback.getMapViewport(normalized),
       );
     },
     // Typeahead is best effort: an unavailable live catalog just gives no suggestions.
@@ -549,14 +586,19 @@ export function createResilientCatalogReadService(
           ),
         );
     },
-    // The launch zone list is best effort too: without the live catalog it is empty.
+    // The launch zone list caches to device storage so weak hawker-centre signal still serves it.
     async listLaunchZonePlaces() {
       return primary
         .listLaunchZonePlaces()
+        .then((places) => {
+          void rememberLaunchZonePlaces(places);
+          return places;
+        })
         .catch((error: unknown) =>
-          bestEffortCatalogFallback(error, "catalog_launch_zone_places", () =>
-            fallback.listLaunchZonePlaces(),
-          ),
+          bestEffortCatalogFallback(error, "catalog_launch_zone_places", async () => {
+            const cached = await readCachedLaunchZonePlaces();
+            return cached ?? fallback.listLaunchZonePlaces();
+          }),
         );
     },
   };
