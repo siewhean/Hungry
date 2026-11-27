@@ -76,3 +76,63 @@ test("the bar prefers the league line and falls back to the Most active board", 
     progress: 1,
   });
 });
+
+test("celebrate shows the league line, falls back to the board when the league read fails, and skips zero", async () => {
+  const { usePointsScoreBar } = await import("./pointsScoreBar");
+  const { getHungryService } = await import("@/lib/services/serviceProvider");
+  const leaderboard = getHungryService().leaderboard;
+  const original = { ...leaderboard };
+  leaderboard.getMySummary = async () => ({
+    totalPoints: 90,
+    weekPoints: 40,
+    activeWeekRank: 4,
+    activeAllRank: 9,
+    trendingRank: null,
+    creditedPostsToday: 1,
+    dailyCap: 6,
+  });
+  leaderboard.getLeaderboard = async () => [
+    { rank: 3, userId: "a", displayName: "A", score: 45, isMe: false },
+    { rank: 4, userId: "me", displayName: "Me", score: 40, isMe: true },
+  ];
+  try {
+    leaderboard.getMyLeagueStatus = async () => ({
+      tier: 4,
+      isMember: true,
+      cohortSize: 30,
+      rank: 12,
+      weekPoints: 55,
+      promotionLinePoints: 70,
+      pointsToPromotion: 16,
+      promoteCount: 7,
+      relegateCount: 5,
+      weekStart: "2026-11-23",
+      weekEndsAt: new Date(Date.now() + 3 * 60 * 60 * 1000 + 60_000).toISOString(),
+    });
+    await usePointsScoreBar.getState().celebrate(10);
+    let bar = usePointsScoreBar.getState().bar;
+    assert.equal(bar?.placeText, "Platinum league · #12");
+    assert.equal(bar?.goalText, "16 points to promotion · 3h left");
+    assert.equal(bar?.weekPoints, 55);
+
+    leaderboard.getMyLeagueStatus = async () => {
+      throw new Error("offline");
+    };
+    await usePointsScoreBar.getState().celebrate(5);
+    bar = usePointsScoreBar.getState().bar;
+    assert.equal(bar?.placeText, "#4 this week");
+    assert.equal(bar?.goalText, "6 points to reach #3");
+
+    usePointsScoreBar.getState().dismiss();
+    await usePointsScoreBar.getState().celebrate(0);
+    assert.equal(usePointsScoreBar.getState().bar, null);
+
+    leaderboard.getMySummary = async () => {
+      throw new Error("down");
+    };
+    await usePointsScoreBar.getState().celebrate(3);
+    assert.equal(usePointsScoreBar.getState().bar, null);
+  } finally {
+    Object.assign(leaderboard, original);
+  }
+});
