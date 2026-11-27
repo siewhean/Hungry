@@ -21,7 +21,7 @@ test("tag search is index backed and the fuzzy name read narrows once 250 substr
   }
   // A substring match scores at least 0.65, so with 250 of them a looser match cannot reach the top 250.
   assert.match(up, /select count\(\*\) >= 250 as many/);
-  assert.match(up, /set pg_trgm\.similarity_threshold = '0\.65'/);
+  assert.match(up, /set pg_trgm\.similarity_threshold = '0\.6499999761581421'/);
   assert.match(up, /greatest\(r\.name_sim, 0\.65::real\)/);
 });
 

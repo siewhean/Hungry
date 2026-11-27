@@ -70,7 +70,9 @@ strict
 rows 500
 security invoker
 set search_path = pg_catalog, public, extensions
-set pg_trgm.similarity_threshold = '0.65'
+-- float4(0.65) as a double: the operator compares a real similarity with this threshold, and a
+-- candidate scoring exactly the substring floor must stay eligible (it ties and the rating decides).
+set pg_trgm.similarity_threshold = '0.6499999761581421'
 as $$
   select d.id, d.rating_avg, similarity(d.name, q),
     public.catalog_menu_is_displayable(d.menu_approved_for_display, d.menu_rights_status, d.menu_source_url),
