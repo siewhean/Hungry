@@ -42,8 +42,22 @@ declare
         and nullif(trim(p_area_name), '') is null
         and p_lat is null and p_lng is null
       )$filter$;
+  -- Mirrors the up migration's split of the candidate arms into unscoped and venue-scoped copies.
+  v_arms_open constant text := '    from (' || chr(10) || '      (' || chr(10);
+  v_arms_close constant text := chr(10) || '    ) matched' || chr(10);
+  v_venue_or constant text := '(params.venue_id is null or d.venue_id = params.venue_id)';
+  v_arms_sep constant text := chr(10) || chr(10) || '      union all -- venue-scoped arms: p_venue_id is set' || chr(10) || chr(10);
+  v_unscoped constant text := 'nullif(p_venue_id, '''') is null';
+  v_query_gate constant text := 'nullif(trim(coalesce(p_query, '''')), '''') is not null' || chr(10) ||
+    '          and params.query is not null';
+  v_noquery_gate constant text := '(nullif(trim(coalesce(p_query, '''')), '''') is null' || chr(10) ||
+    '            or exists (select 1 from query_area_match))' || chr(10) ||
+    '          and params.query is null';
   v_dishes_body text;
   v_original_dishes_body text;
+  v_arms_at integer;
+  v_arms_to integer;
+  v_arms text;
   v_restore jsonb := obj_description(
     'app_private.stall_menu_rows(text,double precision,text,integer,boolean)'::regprocedure,
     'pg_proc'
@@ -58,8 +72,24 @@ begin
   select prosrc into v_dishes_body from pg_proc where oid = v_dishes_sig;
   -- The earlier rehearsal revision left search_dishes untouched.
   if not (md5(v_dishes_body) = any(v_known_dishes_bodies)) then
+    v_original_dishes_body := v_dishes_body;
+    v_arms_at := strpos(v_original_dishes_body, v_arms_open) + length('    from (' || chr(10));
+    v_arms_to := strpos(v_original_dishes_body, v_arms_close);
+    if v_arms_at > length('    from (' || chr(10)) and v_arms_to > v_arms_at then
+      v_arms := substr(v_original_dishes_body, v_arms_at, v_arms_to - v_arms_at);
+      if strpos(v_arms, v_arms_sep) > 0 then
+        -- Keep the unscoped copy and put the original predicates back.
+        v_arms := substr(v_arms, 1, strpos(v_arms, v_arms_sep) - 1);
+        v_arms := replace(replace(replace(v_arms,
+          v_noquery_gate, 'params.query is null'),
+          v_query_gate, 'params.query is not null'),
+          v_unscoped, v_venue_or);
+        v_original_dishes_body := overlay(v_original_dishes_body placing v_arms
+          from v_arms_at for v_arms_to - v_arms_at);
+      end if;
+    end if;
     v_original_dishes_body := replace(
-      replace(v_dishes_body, v_menu_rank, v_original_rank),
+      replace(v_original_dishes_body, v_menu_rank, v_original_rank),
       v_menu_visibility, v_archived_filter
     );
     if not (md5(v_original_dishes_body) = any(v_known_dishes_bodies)) then

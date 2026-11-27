@@ -234,7 +234,29 @@ declare
         and nullif(trim(p_area_name), '') is null
         and p_lat is null and p_lng is null
       )$filter$;
+  -- The candidate arms test the venue through the params CTE, which hides it from the
+  -- planner: a stall menu read every dish on prod. Each arm is split in two, one for the
+  -- unscoped and one for the venue-scoped call, with gates on the function arguments
+  -- (one-time filters) so the arms that do not apply never run.
+  v_arms_open constant text := '    from (' || chr(10) || '      (' || chr(10);
+  v_arms_close constant text := chr(10) || '    ) matched' || chr(10);
+  v_venue_or constant text := '(params.venue_id is null or d.venue_id = params.venue_id)';
+  v_arms_sep constant text := chr(10) || chr(10) || '      union all -- venue-scoped arms: p_venue_id is set' || chr(10) || chr(10);
+  v_unscoped constant text := 'nullif(p_venue_id, '''') is null';
+  v_scoped constant text := 'nullif(p_venue_id, '''') is not null' || chr(10) ||
+    '          and d.venue_id = nullif(p_venue_id, '''')';
+  v_query_gate constant text := 'nullif(trim(coalesce(p_query, '''')), '''') is not null' || chr(10) ||
+    '          and params.query is not null';
+  v_noquery_gate constant text := '(nullif(trim(coalesce(p_query, '''')), '''') is null' || chr(10) ||
+    '            or exists (select 1 from query_area_match))' || chr(10) ||
+    '          and params.query is null';
   v_dishes_body text;
+  v_dishes_def text;
+  v_arms_at integer;
+  v_arms_to integer;
+  v_arms text;
+  v_unscoped_arms text;
+  v_scoped_arms text;
   v_def text := pg_get_functiondef(v_sig);
   v_start text := '    coalesce((' || chr(10) || '      select jsonb_agg(' || chr(10) ||
     '        jsonb_build_object(' || chr(10) || '          ''dish_id'', d.id,';
@@ -286,10 +308,33 @@ begin
   then
     raise exception 'search_dishes differs from the expected legacy continuation definition';
   end if;
-  execute replace(
+  v_dishes_def := replace(
     replace(pg_get_functiondef(v_dishes_sig), v_original_rank, v_menu_rank),
     v_archived_filter, v_menu_visibility
   );
+
+  v_arms_at := strpos(v_dishes_def, v_arms_open) + length('    from (' || chr(10));
+  v_arms_to := strpos(v_dishes_def, v_arms_close);
+  if v_arms_at <= length('    from (' || chr(10)) or v_arms_to <= v_arms_at then
+    raise exception 'search_dishes lacks the expected candidate arms';
+  end if;
+  v_arms := substr(v_dishes_def, v_arms_at, v_arms_to - v_arms_at);
+  if (length(v_arms) - length(replace(v_arms, v_venue_or, ''))) <> 4 * length(v_venue_or)
+    or (length(v_arms) - length(replace(v_arms, 'params.query is not null', ''))) <> 3 * length('params.query is not null')
+    or (length(v_arms) - length(replace(v_arms, 'params.query is null', ''))) <> length('params.query is null')
+  then
+    raise exception 'search_dishes candidate arms differ from the expected definition';
+  end if;
+  v_unscoped_arms := replace(replace(replace(v_arms,
+    v_venue_or, v_unscoped),
+    'params.query is not null', v_query_gate),
+    'params.query is null', v_noquery_gate);
+  v_scoped_arms := replace(replace(replace(v_arms,
+    v_venue_or, v_scoped),
+    'params.query is not null', v_query_gate),
+    'params.query is null', v_noquery_gate);
+  execute overlay(v_dishes_def placing v_unscoped_arms || v_arms_sep || v_scoped_arms
+    from v_arms_at for v_arms_to - v_arms_at);
 
   execute format(
     'comment on function app_private.stall_menu_rows(text,double precision,text,integer,boolean) is %L',
