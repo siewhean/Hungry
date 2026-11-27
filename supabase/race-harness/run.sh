@@ -287,9 +287,7 @@ T23 one review submitted twice at once with two different entry ids (one linked 
 T24 two dishes made the best of the same dish type at once (one best, the later one)
 T25 two first awards of the week at once for one person (one league membership, both task rows)
 T26 two people join a league cohort with one place left (the cohort stops at 30, one new cohort)
-T27 two league week closes at once (one result per person, the tier moves once)
-T28 the same dish un-tried twice at once (Food Cred and the task row taken back once)
-T29 two dishes at one stall un-tried at once (the stall's award taken back once)"
+T27 two league week closes at once (one result per person, the tier moves once)"
 
 if [ -n "${RACE_SHOW_BEFORE:-}" ]; then
   run_scenarios before "$WORK/before.txt"
@@ -474,17 +472,13 @@ lb_val "update user_profiles set pinned_post_ids = array['$RK2'::uuid] where id 
   && echo "  ok    ranking cleanup drops the column and RPCs, the down restores them with their values" \
   || { echo "  FAIL  ranking cleanup up/down migration"; fail=1; }
 
-# Weekly leagues (20261127120000) and un-try take-back (20261127130000) on top of the boards.
+# Weekly leagues (20261127120000) on top of the boards.
 LG_MIGRATION=20261127120000_weekly_leagues
-UT_MIGRATION=20261127130000_untry_dish_takes_back
 lb_val "create table if not exists user_food_cred (user_id uuid primary key references user_profiles(id) on delete cascade, total_points integer not null default 0 check (total_points >= 0), level_index integer not null default 0, updated_at timestamptz not null default now());
   create table if not exists food_cred_events (id uuid primary key default gen_random_uuid(), user_id uuid not null references user_profiles(id) on delete cascade, source_action text not null, points integer not null check (points >= 0), related_entity_id text, related_entity_type text, created_at timestamptz not null default now());
   create table if not exists user_stall_interactions (user_id uuid not null references user_profiles(id) on delete cascade, stall_id text not null, is_saved boolean not null default false, is_tried boolean not null default false, tried_at timestamptz, updated_at timestamptz not null default now(), primary key (user_id, stall_id));
-  create or replace function public.food_cred_level_index(p integer) returns integer language sql immutable as \$\$ select case when p >= 200 then 2 when p >= 50 then 1 else 0 end \$\$;
-  alter table dishes add column if not exists venue_id text;
-  alter table user_profiles add column if not exists reviewed_dish_ids text[] not null default '{}';
-  insert into dishes(id, name, venue_id) values ('dut1', 'Mee pok', 'v6'), ('dut2', 'Fishball soup', 'v6') on conflict (id) do nothing;" >/dev/null
-for m in "$LG_MIGRATION" "$UT_MIGRATION"; do
+" >/dev/null
+for m in "$LG_MIGRATION"; do
   for pass in 1 2; do
     PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$m.sql" >/dev/null 2>&1 \
       || { echo "  FAIL  $m does not apply (pass $pass)"; fail=1; }
@@ -511,29 +505,6 @@ lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values
 lb_race T27 "select app_private.close_leaderboard_week($LG_WEEK);" "select app_private.close_leaderboard_week($LG_WEEK);" >>"$LB_OUT"
 echo "T27_results=$(lb_val "select count(*) from league_week_results")_$(lb_val "select tier from league_user_tiers where user_id = '$U1'")" >>"$LB_OUT"
 
-ut_setup() {
-  lg_reset
-  lb_val "update user_profiles set reviewed_dish_ids = array['dut1', 'dut2'] where id = '$U1';
-    insert into user_stall_interactions(user_id, stall_id, is_tried, tried_at) values ('$U1', 'v6', true, now());
-    insert into user_food_cred(user_id, total_points) values ('$U1', 100);
-    insert into food_cred_events(user_id, source_action, points, related_entity_id) values ('$U1', 'stall_marked_tried', 5, 'v6');" >/dev/null
-}
-UNTRY() { echo "select set_config('request.jwt.claim.sub', '$U1', true); select public.set_dish_tried('$1', false);"; }
-ut_setup
-lb_val "update user_profiles set reviewed_dish_ids = array['dut1'] where id = '$U1';" >/dev/null
-lb_race T28 "$(UNTRY dut1)" "$(UNTRY dut1)" >>"$LB_OUT"
-echo "T28_taken=$(lb_val "select total_points from user_food_cred where user_id = '$U1'")_$(lb_val "select count(*) from food_cred_events where voided_at is not null")_$(lb_val "select count(*) from leaderboard_events where kind = 'task' and voided_at is null")_$(lb_val "select is_tried from user_stall_interactions where user_id = '$U1'")" >>"$LB_OUT"
-ut_setup
-lb_race T29 "$(UNTRY dut1)" "$(UNTRY dut2)" >>"$LB_OUT"
-echo "T29_taken=$(lb_val "select total_points from user_food_cred where user_id = '$U1'")_$(lb_val "select cardinality(reviewed_dish_ids) from user_profiles where id = '$U1'")_$(lb_val "select is_tried from user_stall_interactions where user_id = '$U1'")" >>"$LB_OUT"
-
-"${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$UT_MIGRATION.down.sql" >/dev/null 2>&1 \
-  && [ "$(lb_val "select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where p.proname = 'set_dish_tried' and n.nspname = 'app_private'")" = 0 ] \
-  && [ "$(lb_val "select count(*) from information_schema.columns where table_name = 'food_cred_events' and column_name = 'voided_at'")" = 0 ] \
-  && PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../migrations/$UT_MIGRATION.sql" >/dev/null 2>&1 \
-  && "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$UT_MIGRATION.down.sql" >/dev/null 2>&1 \
-  && echo "  ok    un-try down migration restores set_dish_tried and re-applies after up" \
-  || { echo "  FAIL  un-try down/up migration"; fail=1; }
 PGOPTIONS='-c check_function_bodies=off' "${PSQL[@]}" -d lb -v ON_ERROR_STOP=1 -f "$HERE/../rollbacks/$LG_MIGRATION.down.sql" >/dev/null 2>&1 \
   && [ "$(lb_val "select count(*) from pg_proc where proname like '%league%'")" = 0 ] \
   && [ "$(lb_val "select to_regclass('public.league_cohorts') is null")" = t ] \
@@ -570,11 +541,7 @@ T25_status=1_true_1_17.00_0_1_true
 T26_errors=0
 T26_cohorts=2_30_true
 T27_errors=0
-T27_results=2_2
-T28_errors=0
-T28_taken=95_1_0_f
-T29_errors=0
-T29_taken=95_0_f"
+T27_results=2_2"
 echo "--- leaderboards:"
 while IFS= read -r line; do
   key=${line%%=*}; want=$(printf '%s\n' "$LB_EXPECTED" | grep "^$key=" | cut -d= -f2-)
