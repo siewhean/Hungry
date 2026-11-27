@@ -62,10 +62,11 @@ test("loadPostPoints reads the ledger, and gives up on a failure or a slow read"
   assert.ok(Date.now() - started < 1000);
 });
 
-test("the composer announces the post with its points and a See it action to your Profile", () => {
+test("the composer shows points on the score bar and a See it toast to your Profile", () => {
   const composer = readFileSync("src/app/screens/post/PostComposerScreen.tsx", "utf8");
   assert.match(composer, /await loadPostPoints\(published\.id\)/);
-  assert.match(composer, /message: postedToastMessage\(points\)/);
+  assert.match(composer, /if \(points\) void usePointsScoreBar\.getState\(\)\.celebrate\(points\)/);
+  assert.match(composer, /message: postedToastMessage\(null\)/);
   assert.match(
     composer,
     /label: "See it"[\s\S]{0,200}screen: "Profile",\s*params: \{ screen: "ProfileHome" \}/,

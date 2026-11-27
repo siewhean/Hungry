@@ -14,6 +14,7 @@ import {
 import { SplashScreen } from "@/app/screens/SplashScreen";
 import { AuthStack } from "@/app/screens/auth/AuthStack";
 import { OnboardingStack } from "@/app/screens/onboarding/OnboardingStack";
+import { PointsScoreBar } from "@/components/leaderboard/PointsScoreBar";
 import { FloatingToast } from "@/components/ui";
 import { trackScreen } from "@/features/feedback/screenTracking";
 import { UserProfileScreen } from "@/app/screens/profile/UserProfileScreen";
@@ -897,6 +898,9 @@ export function RootNavigator({ theme }: { theme: Theme }) {
       ) : null}
       <FloatingToast />
       <CredEarnedToastHost />
+      {FEATURE_FLAGS.foodPortfolioEnabled ? (
+        <PointsScoreBar onOpenLeaderboard={() => navigationRef.navigate("Leaderboard")} />
+      ) : null}
       <StampMomentHostMount onOpenPassport={() => navigationRef.navigate("PassportScreen")} />
     </>
   );

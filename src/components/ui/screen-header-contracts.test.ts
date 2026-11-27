@@ -185,9 +185,9 @@ test("Discover V1 contract: situation intents live in their matching sections", 
     /<DiscoverFoodRailLoadingSkeleton[\s\S]*\) : cards\.length \? \([\s\S]*\) : null\}/,
   );
   for (const [rail, cards] of [
-    ["quickBites", "quickBiteRailCards"],
-    ["editorChoice", "editorChoiceRailCards"],
-    ["budget", "budgetRailCards"],
+    ["quickBites", "quickBiteEndlessCards"],
+    ["editorChoice", "editorChoiceEndlessCards"],
+    ["budget", "budgetEndlessCards"],
     ["lateNight", "lateNightRailCards"],
   ]) {
     assert.match(discover, new RegExp(`rail="${rail}"[\\s\\S]*?cards=\\{${cards}\\}`));
