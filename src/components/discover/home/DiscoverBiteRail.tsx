@@ -224,6 +224,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   onOpenBite,
   onPrefetchBite,
   onPrefetchCollection,
+  onReachEnd,
   onSeeAll,
   rail,
   reasons,
@@ -249,6 +250,8 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
   onOpenBite: (bite: Bite, buttonId: string) => void;
   onPrefetchBite: (bite: Bite) => void;
   onPrefetchCollection: (collection: DiscoverCollection) => void;
+  /** Every card is on show and the diner nears the end: fetch more for the row. */
+  onReachEnd?: () => void;
   onSeeAll: (collection: DiscoverCollection) => void;
   rail: DiscoverCollection;
   /** Reason line per dish id, for a palate-ordered rail. */
@@ -372,6 +375,7 @@ export const DiscoverBiteRail = memo(function DiscoverBiteRail({
           items={cards}
           initialCount={initialCount ?? cards.length}
           resetKey={rail}
+          onReachEnd={onReachEnd}
           style={scrollStyle}
           contentContainerStyle={{ gap: spacing[4], paddingHorizontal: semanticSpacing.screenEdge }}
           renderItem={(bite, index) => (

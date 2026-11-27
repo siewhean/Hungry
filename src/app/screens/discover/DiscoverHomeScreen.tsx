@@ -60,7 +60,9 @@ import { WeeklyRecapCard } from "@/components/gamification/WeeklyRecapCard";
 import { MoreLikeThisRail } from "@/components/recommendations/MoreLikeThisRail";
 import { useWorthTheTrip } from "@/features/recommendations/tasteSlates";
 import {
+  BUDGET_PRICE_CEILING,
   DISCOVER_FEED_LIMIT,
+  TOP_RATED_MIN_RATING,
   getDiscoverBiteCollections,
   getDiscoverBites,
   getDiscoverCardImage,
@@ -72,6 +74,7 @@ import { stallBuildingLabel } from "@/features/detail/stallLocation";
 import { getDiscoverAreaCountLabel } from "@/features/discover/areaCount";
 import { useAreaVenueCount } from "@/features/discover/useAreaVenueCount";
 import { appendRailTail, RAIL_POOL_SIZE } from "@/features/discover/railPaging";
+import { useEndlessDishRail } from "@/features/discover/useEndlessDishRail";
 import { PagedRailScrollView } from "@/components/discover/home/PagedRailScrollView";
 import { orderHawkerClassics } from "@/features/discover/hawkerClassics";
 import { describeDietaryNeeds } from "@/features/discover/homeFilters";
@@ -860,6 +863,45 @@ export function DiscoverHomeScreen({
       lateNightCards,
       railTail,
     ],
+  );
+  // Past the feed's own dishes, the near-you, top rated and budget rows keep going with catalogue
+  // dishes from around here, page by page as the diner scrolls (off while chips filter Home).
+  const endlessArea =
+    isSupabaseDataSource && !isDiscoverFiltering && !needsDiscoverAreaChoice
+      ? {
+          coordinate: {
+            latitude: discoverArgs.geoCellLatitude,
+            longitude: discoverArgs.geoCellLongitude,
+          },
+          radiusMeters: discoverArgs.radiusMeters,
+        }
+      : null;
+  const moreNearby = useEndlessDishRail(endlessArea && { ...endlessArea, sort: "nearby" });
+  const moreTopRated = useEndlessDishRail(endlessArea && { ...endlessArea, sort: "quality" });
+  const moreBudget = useEndlessDishRail(
+    endlessArea && { ...endlessArea, sort: "nearby", maxPrice: BUDGET_PRICE_CEILING - 0.01 },
+  );
+  const withMore = useCallback(
+    (rail: Bite[], more: readonly Bite[]) =>
+      more.length ? appendRailTail(rail, more, (bite) => bite.dishId, Infinity) : rail,
+    [],
+  );
+  const quickBiteEndlessCards = useMemo(
+    () => withMore(quickBiteRailCards, moreNearby.bites),
+    [moreNearby.bites, quickBiteRailCards, withMore],
+  );
+  const editorChoiceEndlessCards = useMemo(
+    () =>
+      withMore(
+        editorChoiceRailCards,
+        // The row promises 4.4+, so catalogue dishes below that stay out of it.
+        moreTopRated.bites.filter((bite) => bite.rating >= TOP_RATED_MIN_RATING),
+      ),
+    [editorChoiceRailCards, moreTopRated.bites, withMore],
+  );
+  const budgetEndlessCards = useMemo(
+    () => withMore(budgetRailCards, moreBudget.bites),
+    [budgetRailCards, moreBudget.bites, withMore],
   );
   const mealRailPagedCards = useMemo(
     () => railTail(mealRailCards, bitesForMealPeriod(tasteOrdered.bites, mealPeriod)),
@@ -1810,7 +1852,8 @@ export function DiscoverHomeScreen({
       seeAllLabel={
         needsDiscoverAreaChoice ? "See all dishes across Singapore" : "See all dishes near you"
       }
-      cards={quickBiteRailCards}
+      cards={quickBiteEndlessCards}
+      onReachEnd={moreNearby.loadMore}
       initialCount={quickBiteCards.length}
       reasons={tasteOrdered.reasons}
       variant="rating"
@@ -2830,7 +2873,8 @@ export function DiscoverHomeScreen({
                 title="Top rated"
                 titleBadge={<DiscoverRailBadge label="4.4+" showStar tone="accent" />}
                 seeAllLabel="See all top rated dishes"
-                cards={editorChoiceRailCards}
+                cards={editorChoiceEndlessCards}
+                onReachEnd={moreTopRated.loadMore}
                 initialCount={editorChoiceCards.length}
                 variant="topRated"
                 buttonId="editor_choice_bite_card"
@@ -2845,7 +2889,8 @@ export function DiscoverHomeScreen({
                 title="Budget < S$8"
                 titleBadge={<DiscoverRailBadge label="Value" tone="success" />}
                 seeAllLabel="See all budget dishes under 8 dollars"
-                cards={budgetRailCards}
+                cards={budgetEndlessCards}
+                onReachEnd={moreBudget.loadMore}
                 initialCount={budgetCards.length}
                 variant="price"
                 buttonId="budget_bite_card"

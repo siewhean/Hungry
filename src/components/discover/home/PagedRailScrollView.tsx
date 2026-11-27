@@ -11,7 +11,8 @@ import { isNearRailEnd, nextRailCount, RAIL_PAGE_SIZE } from "@/features/discove
 
 /**
  * A sideways row that opens on `initialCount` cards and shows the next page as the diner nears
- * the end. `resetKey` puts it back on its first cards (a chip or filter changed).
+ * the end. `resetKey` puts it back on its first cards (a chip or filter changed). Once every card
+ * it holds is on show, nearing the end calls `onReachEnd`, so the row can fetch more.
  */
 export function PagedRailScrollView<T>({
   items,
@@ -19,6 +20,7 @@ export function PagedRailScrollView<T>({
   pageSize = RAIL_PAGE_SIZE,
   resetKey,
   renderItem,
+  onReachEnd,
   onScroll,
   ...scrollProps
 }: Omit<ScrollViewProps, "children" | "horizontal"> & {
@@ -27,6 +29,7 @@ export function PagedRailScrollView<T>({
   pageSize?: number;
   resetKey?: string;
   renderItem: (item: T, index: number) => ReactNode;
+  onReachEnd?: () => void;
 }) {
   const [shown, setShown] = useState(initialCount);
   const scrollRef = useRef<ScrollView>(null);
@@ -47,12 +50,13 @@ export function PagedRailScrollView<T>({
           contentWidth: contentSize.width,
         })
       ) {
+        if (shown >= items.length) onReachEnd?.();
         setShown((count) =>
           count >= items.length ? count : nextRailCount(count, items.length, pageSize),
         );
       }
     },
-    [items.length, onScroll, pageSize],
+    [items.length, onReachEnd, onScroll, pageSize, shown],
   );
 
   return (
