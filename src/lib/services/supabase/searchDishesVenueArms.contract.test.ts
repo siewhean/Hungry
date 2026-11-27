@@ -11,7 +11,10 @@ const smoke = read("supabase/smoke/split_stall_detail_reads.sql");
 
 test("search_dishes candidate arms are split so a stall menu reads only that stall", () => {
   // The old predicate sat behind the params CTE, so the planner scanned every dish.
-  assert.match(up, /v_venue_or constant text := '\(params\.venue_id is null or d\.venue_id = params\.venue_id\)'/);
+  assert.match(
+    up,
+    /v_venue_or constant text := '\(params\.venue_id is null or d\.venue_id = params\.venue_id\)'/,
+  );
   assert.match(up, /d\.venue_id = nullif\(p_venue_id, ''''\)/);
   assert.match(up, /venue-scoped arms: p_venue_id is set/);
   // Arms that do not apply are gated on function arguments, so they never run.
