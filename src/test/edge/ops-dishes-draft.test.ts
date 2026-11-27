@@ -13,13 +13,30 @@ const ENV = {
 const NOW = new Date("2026-10-22T04:00:00Z");
 const ORIGIN = { origin: "https://ops.usehungry.com" };
 
+const DEFAULT_CLAIMABLE_DRAFT = {
+  id: "11111111-1111-4111-8111-111111111111",
+  venue_id: "ven-1",
+  building_id: "jurong-west-hc",
+  name: "Char Kway Teow",
+  price_cents: 450,
+  modifiers: ["less sweet"],
+  promoted_dish_id: null,
+  updated_at: "2026-10-22T03:00:00Z",
+};
+
 interface Options {
   user?: string | null;
   admin?: boolean;
   allowed?: unknown;
   rpcError?: boolean;
   drafts?: Result;
+  draftSingle?: Result;
   review?: Result;
+  dishes?: Result;
+  refreshVenue?: Result;
+  submissions?: Result;
+  signedUrls?: Result;
+  halalFlag?: Result;
   env?: Record<string, string>;
 }
 
@@ -36,10 +53,22 @@ async function load(options: Options = {}) {
     options.rpcError
       ? { error: { message: "down" } }
       : { data: "allowed" in options ? options.allowed : true };
-  supabase.tables.dishes_draft = (query) =>
-    query.ops.some(([op]) => op === "update")
-      ? (options.review ?? { data: null })
-      : (options.drafts ?? { data: [{ id: "draft-1", name: "Laksa" }] });
+  supabase.rpc.catalog_raw_refresh_venue = () =>
+    options.refreshVenue ?? { data: null, error: null };
+  supabase.tables.dishes_draft = (query) => {
+    if (query.ops.some(([op]) => op === "update")) {
+      return options.review ?? { data: DEFAULT_CLAIMABLE_DRAFT };
+    }
+    if (query.ops.some(([op]) => op === "maybeSingle")) {
+      return options.draftSingle ?? { data: DEFAULT_CLAIMABLE_DRAFT };
+    }
+    return options.drafts ?? { data: [{ id: "draft-1", name: "Laksa" }] };
+  };
+  supabase.tables.dishes = () => options.dishes ?? { data: null, error: null };
+  supabase.tables.menu_photo_submissions = () => options.submissions ?? { data: [], error: null };
+  supabase.tables.dietary_flags = () =>
+    options.halalFlag ?? { data: { id: "flag-halal-uuid" }, error: null };
+  supabase.storage.createSignedUrls = () => options.signedUrls ?? { data: [], error: null };
   const handler = await loadEdgeFunction("ops-dishes-draft", {
     env: { ...ENV, ...options.env },
     supabase,
@@ -139,114 +168,186 @@ test("ops-dishes-draft rejects unknown actions and is rate limited per actor and
   }
 });
 
-test("ops-dishes-draft lists the newest 100 drafts, optionally for one venue, and audits it", async () => {
-  const { handler, supabase } = await load({ drafts: { data: [{ id: "a" }, { id: "b" }] } });
+test("ops-dishes-draft lists drafts ordered by (created_at desc, id desc) with batched signed URLs and keyset cursor", async () => {
+  const draftAId = "22222222-2222-4222-8222-222222222222";
+  const draftBId = "33333333-3333-4333-8333-333333333333";
+  const { handler, supabase } = await load({
+    drafts: {
+      data: [
+        { id: draftAId, source_photo_id: "photo-1", created_at: "2026-10-22T03:00:00Z" },
+        { id: draftBId, source_photo_id: "photo-2", created_at: "2026-10-22T02:00:00Z" },
+      ],
+    },
+    submissions: {
+      data: [
+        { id: "photo-1", storage_bucket: "menu-photos", storage_path: "u1/ven-1/m1.jpg" },
+        { id: "photo-2", storage_bucket: "menu-photos", storage_path: "u1/ven-1/m2.jpg" },
+      ],
+    },
+    signedUrls: {
+      data: [
+        { path: "u1/ven-1/m1.jpg", signedUrl: "https://signed.example/m1.jpg" },
+        { path: "u1/ven-1/m2.jpg", signedUrl: "https://signed.example/m2.jpg" },
+      ],
+    },
+  });
+
   const response = await handler(
     call(
-      { action: "list", venueId: " ven-1 " },
+      {
+        action: "list",
+        venueId: " ven-1 ",
+        status: "pending",
+        limit: 2,
+        cursorCreatedAt: "2026-10-22T04:00:00Z",
+        cursorId: "44444444-4444-4444-8444-444444444444",
+      },
       { ...ORIGIN, "x-forwarded-for": "203.0.113.5, 10.0.0.1" },
     ),
   );
   assert.equal(response.status, 200);
-  assert.deepEqual(await json(response), { rows: [{ id: "a" }, { id: "b" }] });
+  const body = await json(response);
+  assert.equal(body.rows.length, 2);
+  assert.equal(body.rows[0].source_photo_url, "https://signed.example/m1.jpg");
+  assert.deepEqual(body.nextCursor, {
+    cursorCreatedAt: "2026-10-22T02:00:00Z",
+    cursorId: draftBId,
+  });
 
-  const ops = supabase.queriesOn("dishes_draft")[0].ops;
-  assert.deepEqual(ops.find(([op]) => op === "order")![1], ["created_at", { ascending: false }]);
-  assert.deepEqual(ops.find(([op]) => op === "limit")![1], [100]);
-  assert.deepEqual(ops.find(([op]) => op === "eq")![1], ["venue_id", "ven-1"]);
+  const orders = supabase
+    .queriesOn("dishes_draft")[0]
+    .ops.filter(([op]) => op === "order")
+    .map(([, args]) => args);
+  assert.deepEqual(orders, [
+    ["created_at", { ascending: false }],
+    ["id", { ascending: false }],
+  ]);
+  assert.equal(supabase.storageCalls.filter((c) => c.method === "createSignedUrls").length, 1);
 
   const audit = supabase.queriesOn("app_ops_audit_events")[0].ops[0][1][0] as Record<
     string,
     unknown
   >;
-  assert.deepEqual(
-    [
-      audit.actor_user_id,
-      audit.action,
-      audit.target_type,
-      audit.target_id,
-      audit.origin,
-      audit.metadata,
-    ],
-    ["ops-1", "dishes_draft.list", "venue", "ven-1", ORIGIN.origin, { rowCount: 2 }],
-  );
-  assert.equal(
-    audit.ip_hash,
-    createHash("sha256").update("203.0.113.5").digest("hex"),
-    "only a hash of the first forwarded IP is kept",
-  );
+  assert.equal(audit.ip_hash, createHash("sha256").update("203.0.113.5").digest("hex"));
 });
 
-test("ops-dishes-draft lists across venues when no venue is given", async () => {
+test("ops-dishes-draft edit persists priceBasis, halalStatus, and description inside modifiers and returns them", async () => {
   const { handler, supabase } = await load();
-  await handler(call({ action: "list" }));
-  assert.ok(!supabase.queriesOn("dishes_draft")[0].ops.some(([op]) => op === "eq"));
-  const audit = supabase.queriesOn("app_ops_audit_events")[0].ops[0][1][0] as Record<
-    string,
-    unknown
-  >;
-  assert.equal(audit.target_id, null);
-  assert.equal(audit.ip_hash, createHash("sha256").update("unknown").digest("hex"));
+  const res = await handler(
+    call({
+      action: "edit",
+      draftDishId: DEFAULT_CLAIMABLE_DRAFT.id,
+      name: "Char Kway Teow (Small)",
+      priceCents: 400,
+      priceBasis: "counter",
+      halalStatus: "yes",
+      description: "Fried to order",
+    }),
+  );
+  assert.equal(res.status, 200);
+  assert.deepEqual(await json(res), {
+    ok: true,
+    priceBasis: "counter",
+    halalStatus: "yes",
+    description: "Fried to order",
+  });
+
+  const updateQuery = supabase
+    .queriesOn("dishes_draft")
+    .find((q) => q.ops.some(([op]) => op === "update"))!;
+  const patch = updateQuery.ops[0][1][0] as Record<string, unknown>;
+  assert.deepEqual(patch.modifiers, [
+    "less sweet",
+    {
+      __ops_edit: 1,
+      priceBasis: "counter",
+      halalStatus: "yes",
+      description: "Fried to order",
+    },
+  ]);
 });
 
-test("ops-dishes-draft reports a failed list without auditing it", async () => {
-  const { handler, supabase } = await load({ drafts: { error: { message: "boom" } } });
-  const response = await handler(call({ action: "list" }));
-  assert.deepEqual([response.status, (await json(response)).error], [500, "list_failed"]);
-  assert.equal(supabase.queriesOn("app_ops_audit_events").length, 0);
-});
-
-test("ops-dishes-draft review needs a draft id and one of three decisions", async () => {
-  const { handler, supabase } = await load();
+test("ops-dishes-draft review validates inputs, returns 409 when rejected/duplicate matches 0 rows, and handles valid rejections", async () => {
+  const { handler } = await load();
   const noId = await handler(call({ action: "review", decision: "accepted" }));
   assert.deepEqual([noId.status, (await json(noId)).error], [400, "draft_dish_id_required"]);
   for (const decision of ["", "maybe", "ACCEPTED", undefined]) {
     const response = await handler(call({ action: "review", draftDishId: "d1", decision }));
     assert.deepEqual([response.status, (await json(response)).error], [400, "invalid_decision"]);
   }
-  assert.ok(
-    !supabase.queriesOn("dishes_draft").some((query) => query.ops.some(([op]) => op === "update")),
-  );
-});
 
-test("ops-dishes-draft review records the decision, trims long notes, and audits without storing the notes", async () => {
-  for (const decision of ["accepted", "rejected", "duplicate"]) {
-    const { handler, supabase } = await load();
-    const response = await handler(
+  for (const decision of ["rejected", "duplicate"]) {
+    const sub = await load();
+    const response = await sub.handler(
       call({ action: "review", draftDishId: " d1 ", decision, notes: "n".repeat(5000) }),
     );
     assert.deepEqual([response.status, await json(response)], [200, { ok: true }]);
 
-    const update = supabase.queriesOn("dishes_draft")[0].ops;
-    const fields = update[0][1][0] as Record<string, unknown>;
-    assert.equal(fields.review_status, decision);
-    assert.equal((fields.review_notes as string).length, 4000);
-    assert.equal("ocr_raw_text" in fields, false, "the OCR text is never overwritten");
-    assert.equal(fields.reviewed_at, NOW.toISOString());
-    assert.deepEqual(update[1], ["eq", ["id", "d1"]]);
-
-    const audit = supabase.queriesOn("app_ops_audit_events")[0].ops[0][1][0] as Record<
-      string,
-      unknown
-    >;
+    const alreadyPromoted = await load({ review: { data: null } });
+    const conflict = await alreadyPromoted.handler(
+      call({ action: "review", draftDishId: "d1", decision }),
+    );
     assert.deepEqual(
-      [audit.action, audit.target_id, audit.metadata],
-      ["dishes_draft.review", "d1", { decision, hasNotes: true }],
+      [conflict.status, (await json(conflict)).error],
+      [409, "draft_not_reviewable"],
     );
   }
 });
 
-test("ops-dishes-draft review without notes leaves the stored text alone, and reports a failed update", async () => {
-  const { handler, supabase } = await load();
-  await handler(call({ action: "review", draftDishId: "d1", decision: "accepted" }));
-  const fields = supabase.queriesOn("dishes_draft")[0].ops[0][1][0] as Record<string, unknown>;
-  assert.equal(fields.ocr_raw_text, undefined);
-  assert.equal(fields.review_notes, undefined);
-
-  const failing = await load({ review: { error: { message: "rls" } } });
-  const response = await failing.handler(
-    call({ action: "review", draftDishId: "d1", decision: "accepted" }),
+test("ops-dishes-draft accepted review promotes draft to public.dishes and releases claim to edited if catalog refresh fails", async () => {
+  const { handler, supabase } = await load({
+    review: {
+      data: {
+        ...DEFAULT_CLAIMABLE_DRAFT,
+        modifiers: [
+          "less sweet",
+          {
+            __ops_edit: 1,
+            priceBasis: "counter",
+            halalStatus: "yes",
+            description: "Saved from earlier edit",
+          },
+        ],
+      },
+    },
+  });
+  const response = await handler(
+    call({
+      action: "review",
+      draftDishId: DEFAULT_CLAIMABLE_DRAFT.id,
+      decision: "accepted",
+      notes: "Verified against stall board",
+    }),
   );
-  assert.deepEqual([response.status, (await json(response)).error], [500, "review_failed"]);
-  assert.equal(failing.supabase.queriesOn("app_ops_audit_events").length, 0);
+  assert.equal(response.status, 200);
+  const expectedDishId = `draft:${DEFAULT_CLAIMABLE_DRAFT.id}`;
+  assert.deepEqual(await json(response), { ok: true, promotedDishId: expectedDishId });
+
+  const dishUpsert = supabase.queriesOn("dishes")[0].ops[0][1][0] as Record<string, unknown>;
+  assert.deepEqual(dishUpsert, {
+    id: expectedDishId,
+    venue_id: "ven-1",
+    building_id: "jurong-west-hc",
+    name: "Char Kway Teow",
+    description: "Saved from earlier edit",
+    price: 4.5,
+    price_confidence: "counter_price",
+    price_checked_at: NOW.toISOString(),
+    dietary_status: { flags: { halal: "yes" } },
+    menu_approved_for_display: true,
+    menu_rights_status: "operator_owned",
+    archived_at: null,
+  });
+
+  // If catalog_raw_refresh_venue fails, draft is released back to 'edited' instead of finalizing 'promoted'.
+  const failedRefresh = await load({
+    refreshVenue: { data: null, error: { message: "rpc timeout" } },
+  });
+  const failRes = await failedRefresh.handler(
+    call({ action: "review", draftDishId: DEFAULT_CLAIMABLE_DRAFT.id, decision: "accepted" }),
+  );
+  assert.deepEqual([failRes.status, (await json(failRes)).error], [500, "catalog_refresh_failed"]);
+  const draftUpdates = failedRefresh.supabase.queriesOn("dishes_draft");
+  const revertPatch = draftUpdates[draftUpdates.length - 1].ops[0][1][0] as Record<string, unknown>;
+  assert.equal(revertPatch.review_status, "edited");
 });

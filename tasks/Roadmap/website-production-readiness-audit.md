@@ -210,6 +210,7 @@ All P0 blockers resolved. All static predeploy gates pass.
 | `/api/console/merchants` | API private | Private | Yes | No | Supabase console data | High | Admin auth + redaction |
 | `/api/console/merchants/[outletId]/verification` | API private | Private | Yes | No | Supabase console mutation | High | Admin auth + UUID validation + audit log |
 | `/api/console/claims/[claimId]` | API private | Private | Yes | No | Supabase console mutation | High | Ops auth + CSRF header + UUID validation + rate limit + audit log; approval runs approve_merchant_claim (service role) |
+| `/api/console/dish-drafts/[draftId]` | API private | Private | Yes | No | Supabase console mutation | High | Ops auth + CSRF header + JSON/UUID validation + rate limit + audit log; acceptance promotes draft into public.dishes (service role) |
 | `/api/console/summary` | API private | Private | Yes | No | Supabase console data | High | Admin auth + redaction |
 | `/api/console/team` | API private | Private | Yes | No | Console admin membership | High | Admin role + CSRF + JSON validation + rate limit |
 | `/api/console/team/[memberId]` | API private | Private | Yes | No | Console admin membership mutation | High | Admin role + CSRF + validation + rate limit |

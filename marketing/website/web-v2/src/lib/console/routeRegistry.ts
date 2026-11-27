@@ -109,7 +109,7 @@ export const CONSOLE_ROUTES: ConsoleRouteDefinition[] = [
     minRole: "ops",
     purpose: "Review merchant edits, menu photo submissions, and draft dish workflows.",
     section: "stall-submissions",
-    status: "partial",
+    status: "ready",
   },
   {
     dataSources: ["auth.users", "user_profiles", "content_reports", "website_console_audit_events"],

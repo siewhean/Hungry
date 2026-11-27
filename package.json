@@ -51,6 +51,7 @@
     "smoke:staging-functions": "scripts/staging-functions.sh smoke",
     "check:staging-test-activity": "node --test scripts/seed/staging-test-activity.test.mjs",
     "check:zone-hours": "node --import tsx --test scripts/hours/zone-hours-plan.test.ts scripts/hours/fill-zone-hours.test.mjs",
+    "check:field-kit": "node --import tsx --test scripts/__tests__/ingest_stall_folder.test.mjs",
     "check:rate-limits": "node --test scripts/check-rate-limits.test.mjs && node scripts/check-rate-limits.mjs",
     "scaling:validate": "node scripts/validate-scaling-readiness.mjs",
     "load:public-web": "k6 run scripts/load/public-web.k6.js",

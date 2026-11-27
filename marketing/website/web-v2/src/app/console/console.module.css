@@ -3586,6 +3586,29 @@ input:checked + .slider::before {
   text-overflow: ellipsis;
 }
 
+.draftPhotoPreview {
+  border: 1px solid var(--console-line);
+  border-radius: var(--radius-lg);
+  display: block;
+  max-height: 200px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.draftEditGrid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.draftEditGrid label {
+  color: var(--color-text-secondary);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: var(--space-1);
+}
+
 @media (max-width: 900px) {
   .routeShell {
     padding: var(--space-5);

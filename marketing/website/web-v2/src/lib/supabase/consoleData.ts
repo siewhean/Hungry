@@ -8,6 +8,7 @@ import {
 import { redactEmail } from "@/lib/console/redaction";
 import { sendClaimNotApprovedEmail, sendMerchantApprovalEmail } from "@/lib/email/merchantApprovalEmail";
 import {
+  createStorageSignedUrls,
   getSupabaseConfigStatus,
   getUserFromAccessToken,
   isSupabaseServiceConfigured,
@@ -450,6 +451,515 @@ export async function reviewMerchantClaim(
   return { status };
 }
 
+export type DishDraftDecision = "edit" | "accepted" | "rejected" | "duplicate";
+export type DishDraftPriceBasis = "counter" | "menu" | "delivery";
+export type DishDraftHalalStatus = "yes" | "no" | "unknown";
+
+export class DishDraftConflictError extends Error {}
+
+const DRAFT_SELECT =
+  "id,venue_id,building_id,source_photo_id,name,price_cents,currency,modifiers,extraction_confidence,review_status,review_notes,promoted_dish_id,created_at,updated_at";
+const OPEN_DRAFT_PAGE_SIZE = 40;
+const STALE_DRAFT_CLAIM_MS = 60_000;
+
+interface StoredOpsDraftMeta {
+  __ops_edit: 1;
+  description?: string | null;
+  halalStatus?: DishDraftHalalStatus;
+  priceBasis?: DishDraftPriceBasis | null;
+}
+
+function extractOpsMeta(modifiers: unknown): {
+  meta: StoredOpsDraftMeta | null;
+  stringModifiers: string[];
+} {
+  if (!Array.isArray(modifiers)) return { meta: null, stringModifiers: [] };
+  const stringModifiers: string[] = [];
+  let meta: StoredOpsDraftMeta | null = null;
+  for (const item of modifiers) {
+    if (typeof item === "string") {
+      stringModifiers.push(item);
+    } else if (
+      item &&
+      typeof item === "object" &&
+      (item as Record<string, unknown>).__ops_edit === 1
+    ) {
+      meta = item as StoredOpsDraftMeta;
+    }
+  }
+  return { meta, stringModifiers };
+}
+
+function mergeOpsMeta(
+  existingModifiers: unknown,
+  input: {
+    description?: string | null;
+    halalStatus?: DishDraftHalalStatus;
+    priceBasis?: DishDraftPriceBasis;
+  },
+): unknown[] {
+  const { meta, stringModifiers } = extractOpsMeta(existingModifiers);
+  const nextMeta: StoredOpsDraftMeta = {
+    __ops_edit: 1,
+    description:
+      input.description !== undefined ? input.description : (meta?.description ?? null),
+    halalStatus:
+      input.halalStatus !== undefined ? input.halalStatus : (meta?.halalStatus ?? "unknown"),
+    priceBasis:
+      input.priceBasis !== undefined ? input.priceBasis : (meta?.priceBasis ?? null),
+  };
+  return [...stringModifiers, nextMeta];
+}
+
+function mapPriceBasisToConfidence(basis?: DishDraftPriceBasis | null): string | null {
+  if (basis === "counter") return "counter_price";
+  if (basis === "delivery") return "delivery_price";
+  if (basis === "menu") return "listed_price";
+  return null;
+}
+
+async function getStallSubmissionRecords(offset = 0): Promise<{
+  hasMoreOpenDrafts: boolean;
+  openDraftsLoaded: number;
+  records: ConsoleRecord[];
+  warnings: string[];
+}> {
+  if (!isSupabaseServiceConfigured()) {
+    return { hasMoreOpenDrafts: false, openDraftsLoaded: 0, records: [], warnings: [] };
+  }
+
+  const warnings: string[] = [];
+  const safeOffset = Math.max(0, Math.min(10_000, offset));
+
+  const [openResult, closedResult, changeRequestsResult] = await Promise.all([
+    supabaseFetchOnDemand<Row[]>("rest/v1/dishes_draft", {
+      params: {
+        limit: OPEN_DRAFT_PAGE_SIZE + 1,
+        offset: safeOffset,
+        order: "created_at.asc,id.asc",
+        review_status: "in.(pending,edited,accepted)",
+        select: DRAFT_SELECT,
+      },
+      serviceRole: true,
+    }).catch((error: unknown) => {
+      warnings.push(
+        `dishes_draft (open): ${error instanceof Error ? error.message : "Unknown Supabase error"}`,
+      );
+      return { data: [] as Row[] };
+    }),
+    safeOffset === 0
+      ? supabaseFetchOnDemand<Row[]>("rest/v1/dishes_draft", {
+          params: {
+            limit: 15,
+            order: "updated_at.desc,id.desc",
+            review_status: "in.(promoted,rejected,duplicate)",
+            select: DRAFT_SELECT,
+          },
+          serviceRole: true,
+        }).catch(() => ({ data: [] as Row[] }))
+      : Promise.resolve({ data: [] as Row[] }),
+    safeOffset === 0
+      ? fetchRows("merchant_change_requests")
+      : Promise.resolve<{ records: ConsoleRecord[]; warning?: string }>({ records: [] }),
+  ]);
+
+  if (changeRequestsResult.warning) warnings.push(changeRequestsResult.warning);
+
+  const rawOpen = asRowArray(openResult.data);
+  const hasMoreOpenDrafts = rawOpen.length > OPEN_DRAFT_PAGE_SIZE;
+  const openDrafts = rawOpen.slice(0, OPEN_DRAFT_PAGE_SIZE);
+  const closedDrafts = asRowArray(closedResult.data);
+  const drafts = [...openDrafts, ...closedDrafts];
+
+  const venueIds = Array.from(
+    new Set(drafts.map((row) => asString(row.venue_id)).filter((id): id is string => Boolean(id))),
+  );
+  const photoIds = Array.from(
+    new Set(
+      drafts.map((row) => asString(row.source_photo_id)).filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  const venueLabels = new Map<string, string>();
+  if (venueIds.length > 0) {
+    try {
+      const { data: venues } = await supabaseFetchOnDemand<Row[]>("rest/v1/venues", {
+        params: {
+          id: `in.(${venueIds.map((id) => `"${postgrestValue(id)}"`).join(",")})`,
+          select: "id,name,unit_number",
+        },
+        serviceRole: true,
+      });
+      for (const venue of asRowArray(venues)) {
+        const id = asString(venue.id);
+        if (id) {
+          venueLabels.set(
+            id,
+            [asString(venue.name), asString(venue.unit_number)].filter(Boolean).join(" "),
+          );
+        }
+      }
+    } catch (error) {
+      warnings.push(`venues: ${error instanceof Error ? error.message : "Unknown Supabase error"}`);
+    }
+  }
+
+  const signedPhotoBySubmissionId = new Map<string, string>();
+  if (photoIds.length > 0) {
+    try {
+      const { data: submissions } = await supabaseFetchOnDemand<Row[]>(
+        "rest/v1/menu_photo_submissions",
+        {
+          params: {
+            id: `in.(${photoIds.map((id) => `"${postgrestValue(id)}"`).join(",")})`,
+            select: "id,storage_bucket,storage_path",
+          },
+          serviceRole: true,
+        },
+      );
+      const byBucket = new Map<string, Array<{ id: string; path: string }>>();
+      for (const sub of asRowArray(submissions)) {
+        const id = asString(sub.id);
+        const bucket = asString(sub.storage_bucket) ?? "menu-photos";
+        const path = asString(sub.storage_path);
+        if (!id || !path) continue;
+        const list = byBucket.get(bucket) ?? [];
+        list.push({ id, path });
+        byBucket.set(bucket, list);
+      }
+      for (const [bucket, items] of byBucket.entries()) {
+        const urls = await createStorageSignedUrls(
+          bucket,
+          items.map((item) => item.path),
+          3600,
+        );
+        for (const item of items) {
+          const url = urls.get(item.path);
+          if (url) signedPhotoBySubmissionId.set(item.id, url);
+        }
+      }
+    } catch (error) {
+      warnings.push(
+        `menu_photo_submissions: ${error instanceof Error ? error.message : "Unknown Supabase error"}`,
+      );
+    }
+  }
+
+  const draftRecords: ConsoleRecord[] = drafts.map((row) => {
+    const id = asString(row.id) ?? "unknown";
+    const venueId = asString(row.venue_id) ?? "";
+    const photoId = asString(row.source_photo_id) ?? "";
+    const priceCents = typeof row.price_cents === "number" ? row.price_cents : null;
+    const priceLabel =
+      priceCents !== null && priceCents > 0
+        ? `S$${(priceCents / 100).toFixed(2)}`
+        : "Price not listed";
+    const stallLabel = venueLabels.get(venueId) || venueId || "Unknown stall";
+    const signedUrl = photoId ? signedPhotoBySubmissionId.get(photoId) : undefined;
+    const { meta } = extractOpsMeta(row.modifiers);
+    const fullNotes = asString(row.review_notes)?.slice(0, 2000) ?? null;
+
+    return {
+      id,
+      metadata: {
+        kind: "dish_draft",
+        venue_id: venueId || null,
+        price_cents: priceCents,
+        price_basis: meta?.priceBasis ?? null,
+        halal_status: meta?.halalStatus ?? null,
+        draft_description: meta?.description ?? null,
+        confidence:
+          typeof row.extraction_confidence === "number" ||
+          typeof row.extraction_confidence === "string"
+            ? String(row.extraction_confidence)
+            : null,
+        promoted_dish_id: asString(row.promoted_dish_id) ?? null,
+        review_notes: fullNotes,
+        source_photo_url: signedUrl ?? null,
+      },
+      status: asString(row.review_status) ?? "pending",
+      subtitle: `${stallLabel} • ${priceLabel}`,
+      title: asString(row.name) ?? id,
+      updatedAt: asString(row.updated_at) ?? asString(row.created_at),
+    };
+  });
+
+  return {
+    hasMoreOpenDrafts,
+    openDraftsLoaded: openDrafts.length,
+    records: [...draftRecords, ...changeRequestsResult.records],
+    warnings,
+  };
+}
+
+export async function reviewDishDraft(
+  actor: ConsoleActor,
+  draftId: string,
+  input: {
+    decision: DishDraftDecision;
+    description?: string | null;
+    halalStatus?: DishDraftHalalStatus;
+    name?: string;
+    notes?: string;
+    priceBasis?: DishDraftPriceBasis;
+    priceCents?: number | null;
+  },
+) {
+  const nowMs = Date.now();
+  const nowIso = new Date(nowMs).toISOString();
+  const trimmedName = input.name?.trim();
+  const normalizedName = trimmedName ? trimmedName.toLowerCase().replace(/\s+/g, " ") : undefined;
+  const trimmedNotes = input.notes?.trim() ? input.notes.trim().slice(0, 2000) : undefined;
+
+  if (input.decision === "edit") {
+    const { data: currentRows } = await supabaseFetchOnDemand<Row[]>("rest/v1/dishes_draft", {
+      params: {
+        id: eq(draftId),
+        review_status: "in.(pending,edited)",
+        select: "id,modifiers,updated_at",
+      },
+      serviceRole: true,
+    });
+    const current = asRowArray(currentRows)[0];
+    if (!current) {
+      throw new DishDraftConflictError("This draft has already been finalised or no longer exists.");
+    }
+
+    const patch: Row = {
+      modifiers: mergeOpsMeta(current.modifiers, {
+        description: input.description,
+        halalStatus: input.halalStatus,
+        priceBasis: input.priceBasis,
+      }),
+      review_status: "edited",
+      updated_at: nowIso,
+    };
+    if (trimmedName) {
+      patch.name = trimmedName;
+      patch.name_normalized = normalizedName;
+    }
+    if (input.priceCents !== undefined) patch.price_cents = input.priceCents;
+    if (trimmedNotes !== undefined) patch.review_notes = trimmedNotes;
+
+    const patchParams: Record<string, string> = {
+      id: eq(draftId),
+      review_status: "in.(pending,edited)",
+      select: "id",
+    };
+    const priorUpdatedAt = asString(current.updated_at);
+    if (priorUpdatedAt) patchParams.updated_at = eq(priorUpdatedAt);
+
+    const { data: updated } = await supabaseFetchOnDemand<Row[]>("rest/v1/dishes_draft", {
+      body: patch,
+      method: "PATCH",
+      params: patchParams,
+      prefer: "return=representation",
+      serviceRole: true,
+    });
+    if (!Array.isArray(updated) || updated.length === 0) {
+      throw new DishDraftConflictError("This draft was modified concurrently or already finalised.");
+    }
+    await recordConsoleAuditEvent(actor, {
+      action: "dish_draft_edited",
+      metadata: { editedName: Boolean(trimmedName), editedPrice: input.priceCents !== undefined },
+      targetId: draftId,
+      targetType: "dishes_draft",
+    }).catch((err) => console.error("Console audit write failed after draft edit", err));
+    return { status: "edited" };
+  }
+
+  if (input.decision === "rejected" || input.decision === "duplicate") {
+    const { data: updated } = await supabaseFetchOnDemand<Row[]>("rest/v1/dishes_draft", {
+      body: {
+        review_notes: trimmedNotes,
+        review_status: input.decision,
+        reviewed_at: nowIso,
+      },
+      method: "PATCH",
+      params: { id: eq(draftId), review_status: "in.(pending,edited)", select: "id" },
+      prefer: "return=representation",
+      serviceRole: true,
+    });
+    if (!Array.isArray(updated) || updated.length === 0) {
+      throw new DishDraftConflictError("This draft has already been finalised or no longer exists.");
+    }
+    await recordConsoleAuditEvent(actor, {
+      action: `dish_draft_${input.decision}`,
+      metadata: { decision: input.decision },
+      targetId: draftId,
+      targetType: "dishes_draft",
+    }).catch((err) => console.error("Console audit write failed after draft rejection", err));
+    return { status: input.decision };
+  }
+
+  // Exclusive claim: only pending/edited (or a crashed accepted claim older than 60s) can be claimed,
+  // preventing two concurrent operators from racing on the same draft.
+  const staleCutoffIso = new Date(nowMs - STALE_DRAFT_CLAIM_MS).toISOString();
+  const claimPatch: Row = {
+    review_status: "accepted",
+    reviewed_at: nowIso,
+  };
+  if (trimmedName) {
+    claimPatch.name = trimmedName;
+    claimPatch.name_normalized = normalizedName;
+  }
+  if (input.priceCents !== undefined) claimPatch.price_cents = input.priceCents;
+  if (trimmedNotes !== undefined) claimPatch.review_notes = trimmedNotes;
+
+  const { data: claimedRows } = await supabaseFetchOnDemand<Row[]>("rest/v1/dishes_draft", {
+    body: claimPatch,
+    method: "PATCH",
+    params: {
+      id: eq(draftId),
+      or: `(review_status.in.(pending,edited),and(review_status.eq.accepted,reviewed_at.lt.${staleCutoffIso}))`,
+      select: "id,venue_id,building_id,name,price_cents,modifiers,promoted_dish_id",
+    },
+    prefer: "return=representation",
+    serviceRole: true,
+  });
+  const claimed = asRowArray(claimedRows)[0];
+  if (!claimed) {
+    throw new DishDraftConflictError(
+      "This draft is already being published or has already been finalised.",
+    );
+  }
+
+  const releaseClaim = async () => {
+    await supabaseFetchOnDemand<unknown>("rest/v1/dishes_draft", {
+      body: { review_status: "edited", updated_at: new Date().toISOString() },
+      method: "PATCH",
+      params: { id: eq(draftId), review_status: eq("accepted"), reviewed_at: eq(nowIso) },
+      prefer: "return=minimal",
+      serviceRole: true,
+    }).catch(() => undefined);
+  };
+
+  let dishId = "";
+  let venueId = "";
+  let finalPrice = 0;
+  let finalConfidence: string | null = null;
+  let halalStatus: DishDraftHalalStatus = "unknown";
+
+  try {
+    const { meta: savedMeta } = extractOpsMeta(claimed.modifiers);
+    venueId = asString(claimed.venue_id)?.trim() ?? "";
+    const buildingId = asString(claimed.building_id)?.trim() ?? "";
+    const finalName = trimmedName ?? asString(claimed.name)?.trim() ?? "";
+    if (!venueId || !buildingId || !finalName) {
+      throw new Error("Draft is missing required venue, building, or dish name.");
+    }
+
+    const effectiveCents =
+      input.priceCents !== undefined
+        ? input.priceCents
+        : typeof claimed.price_cents === "number"
+          ? claimed.price_cents
+          : null;
+    const hasRealPrice = typeof effectiveCents === "number" && effectiveCents > 0;
+    finalPrice = hasRealPrice ? Number((effectiveCents / 100).toFixed(2)) : 0;
+    const effectiveBasis =
+      input.priceBasis !== undefined ? input.priceBasis : (savedMeta?.priceBasis ?? undefined);
+    finalConfidence = hasRealPrice
+      ? (mapPriceBasisToConfidence(effectiveBasis) ?? "listed_price")
+      : null;
+    halalStatus =
+      input.halalStatus !== undefined ? input.halalStatus : (savedMeta?.halalStatus ?? "unknown");
+    const effectiveDescription =
+      input.description !== undefined ? input.description : savedMeta?.description;
+    dishId = asString(claimed.promoted_dish_id)?.trim() || `draft:${draftId}`;
+
+    const dishBody: Row = {
+      archived_at: null,
+      building_id: buildingId,
+      dietary_status: { flags: { halal: halalStatus } },
+      id: dishId,
+      menu_approved_for_display: true,
+      menu_rights_status: "operator_owned",
+      name: finalName,
+      price: finalPrice,
+      price_checked_at: hasRealPrice ? nowIso : null,
+      price_confidence: finalConfidence,
+      venue_id: venueId,
+    };
+    if (effectiveDescription !== undefined) {
+      dishBody.description = effectiveDescription?.trim() ? effectiveDescription.trim() : null;
+    }
+
+    await supabaseFetchOnDemand<unknown>("rest/v1/dishes", {
+      body: dishBody,
+      method: "POST",
+      params: { on_conflict: "id" },
+      prefer: "resolution=merge-duplicates,return=minimal",
+      serviceRole: true,
+    });
+
+    await supabaseFetchOnDemand<unknown>("rest/v1/venues", {
+      body: { menu_approved_for_display: true, menu_rights_status: "operator_owned" },
+      method: "PATCH",
+      params: { id: eq(venueId), menu_rights_status: eq("unverified") },
+      prefer: "return=minimal",
+      serviceRole: true,
+    });
+
+    const { data: halalFlags } = await supabaseFetchOnDemand<Row[]>("rest/v1/dietary_flags", {
+      params: { limit: 1, select: "id", slug: eq("halal") },
+      serviceRole: true,
+    });
+    const halalFlagId = asString(asRowArray(halalFlags)[0]?.id);
+    if (halalFlagId) {
+      if (halalStatus === "yes") {
+        await supabaseFetchOnDemand<unknown>("rest/v1/dish_dietary_flags", {
+          body: { dietary_flag_id: halalFlagId, dish_id: dishId },
+          method: "POST",
+          params: { on_conflict: "dish_id,dietary_flag_id" },
+          prefer: "resolution=merge-duplicates,return=minimal",
+          serviceRole: true,
+        });
+      } else {
+        await supabaseFetchOnDemand<unknown>("rest/v1/dish_dietary_flags", {
+          method: "DELETE",
+          params: { dietary_flag_id: eq(halalFlagId), dish_id: eq(dishId) },
+          prefer: "return=minimal",
+          serviceRole: true,
+        });
+      }
+    }
+
+    await supabaseFetchOnDemand<unknown>("rest/v1/rpc/catalog_raw_refresh_venue", {
+      body: { p_venue_id: venueId },
+      method: "POST",
+      serviceRole: true,
+    });
+
+    await supabaseFetchOnDemand<unknown>("rest/v1/dishes_draft", {
+      body: { promoted_dish_id: dishId, review_status: "promoted", reviewed_at: nowIso },
+      method: "PATCH",
+      params: { id: eq(draftId), review_status: eq("accepted"), reviewed_at: eq(nowIso) },
+      prefer: "return=minimal",
+      serviceRole: true,
+    });
+  } catch (promotionError) {
+    await releaseClaim();
+    throw promotionError;
+  }
+
+  // Audit failure after successful promotion must never report the promotion as failed.
+  await recordConsoleAuditEvent(actor, {
+    action: "dish_draft_promoted",
+    metadata: {
+      halalStatus,
+      price: finalPrice,
+      priceConfidence: finalConfidence,
+      promotedDishId: dishId,
+      venueId,
+    },
+    targetId: draftId,
+    targetType: "dishes_draft",
+  }).catch((auditErr) => console.error("Console audit write failed after draft promotion", auditErr));
+
+  return { promotedDishId: dishId, status: "promoted" };
+}
+
 async function getReportsRecords() {
   const { records, warning } = await fetchRows(
     "content_reports",
@@ -600,6 +1110,32 @@ export async function getConsoleRouteDataset(
         value: formatCount(
           records.filter((record) => !["verified", "converted", "rejected"].includes(record.status ?? "")).length,
         ),
+      },
+    ];
+  } else if (normalizedSection === "stall-submissions") {
+    const rawOffset = Array.isArray(searchParams.offset) ? searchParams.offset[0] : searchParams.offset;
+    const parsedOffset = rawOffset ? Number.parseInt(rawOffset, 10) : 0;
+    const offset = Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0;
+    const submissions = await getStallSubmissionRecords(offset);
+    warnings.push(...submissions.warnings);
+    records = submissions.records;
+    metrics = [
+      {
+        label: "Open drafts",
+        value: formatCount(submissions.openDraftsLoaded),
+        detail: submissions.hasMoreOpenDrafts
+          ? `Offset ${offset} (more pending)`
+          : `Offset ${offset} (oldest first)`,
+      },
+      {
+        label: "Published (recent)",
+        value: formatCount(records.filter((r) => r.status === "promoted").length),
+        detail: "Live on stall pages",
+      },
+      {
+        label: "Merchant edits",
+        value: formatCount(records.filter((r) => r.metadata?.kind !== "dish_draft").length),
+        detail: "From merchant_change_requests",
       },
     ];
   } else if (normalizedSection === "reports") {

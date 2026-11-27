@@ -364,3 +364,43 @@ export async function getUserFromAccessToken(accessToken: string): Promise<Supab
   }
   return data;
 }
+
+/**
+ * Generates batched signed preview URLs for private Storage objects in one request per bucket
+ * (never N+1), normalizing relative `/object/sign/...` paths returned by Supabase Storage REST.
+ */
+export async function createStorageSignedUrls(
+  bucket: string,
+  paths: string[],
+  expiresInSeconds = 3600,
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  const uniquePaths = Array.from(new Set(paths.map((p) => p.trim()).filter(Boolean)));
+  if (uniquePaths.length === 0 || !isSupabaseServiceConfigured()) return result;
+
+  const baseUrl = requireSupabaseUrl();
+  const { data } = await supabaseFetchOnDemand<
+    Array<{ error?: string | null; path?: string; signedURL?: string; signedUrl?: string }>
+  >(`storage/v1/object/sign/${encodeURIComponent(bucket)}`, {
+    body: { expiresIn: expiresInSeconds, paths: uniquePaths },
+    method: "POST",
+    serviceRole: true,
+  });
+
+  if (!Array.isArray(data)) return result;
+  for (const row of data) {
+    const itemPath = typeof row?.path === "string" ? row.path : "";
+    const rawSigned =
+      typeof row?.signedUrl === "string"
+        ? row.signedUrl
+        : typeof row?.signedURL === "string"
+          ? row.signedURL
+          : "";
+    if (!itemPath || !rawSigned || row?.error) continue;
+    const fullUrl = rawSigned.startsWith("http")
+      ? rawSigned
+      : `${baseUrl}/storage/v1/${rawSigned.replace(/^\//, "")}`;
+    result.set(itemPath, fullUrl);
+  }
+  return result;
+}

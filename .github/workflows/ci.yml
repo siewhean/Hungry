@@ -121,6 +121,7 @@ jobs:
           npm run check:staging-functions
           npm run check:staging-test-activity
           npm run check:zone-hours
+          npm run check:field-kit
           node --test scripts/__tests__/verify_package.test.mjs
 
       - name: Rate-limit contract

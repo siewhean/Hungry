@@ -1791,3 +1791,10 @@ Use the smallest check that matches the change risk.
 - `./scripts/verify-package.sh src/store/useSessionStore.auth-account-flows.test.ts`: PASS (`9/9` auth tests, `typecheck` clean, `check:rate-limits` `10/10`, `check:n-plus-one` clean, `audit:races` clean, `check:staging-functions` `11/11` after `fileURLToPath` fix, `audit:supabase:migration-safety` clean, `git diff --check` clean).
 - `node --test scripts/__tests__/verify_package.test.mjs scripts/seed/staging-test-activity.test.mjs`: `14/14` pass.
 - `npm --prefix marketing/website/web-v2 run waitlist:e2e`: PASS (foodie + merchant signups stored, welcome email dispatched once, repeat signups idempotent without re-sending email, non-JSON/invalid/missing-business rejected). Website copy left untouched per owner decision.
+
+## 2026-11-28 PKG-1.2 field kit + draft promotion + live console review
+
+- `src/test/edge/ops-dishes-draft.test.ts` + `npm run check:edge-functions` + `npm run check:field-kit`: pass (batched `createSignedUrls`, keyset pagination, inline edit + atomic `accepted` promotion into `public.dishes` with `operator_owned` provenance, `price_confidence`, `dietary_status`, `catalog_raw_refresh_venue`, unpriced safety, and `409` conflict guard).
+- `npm --prefix marketing/website/web-v2 run predeploy:local`: pass (Next.js production build, lint, security route contracts, route inventory, private routes QC, SEO/a11y checks).
+- `./scripts/verify-package.sh` + local CodeRabbit CLI review: pass.
+- Not run: physical Jurong West field visit and live `ingest-stall-folder.mjs --apply` against staging (sh runs during field capture).

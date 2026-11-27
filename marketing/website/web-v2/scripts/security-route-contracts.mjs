@@ -130,6 +130,21 @@ assertContains(
   'requireConsoleRole(auth, "ops")',
   "Console claim ops-role contract failed",
 );
+assertContains(
+  "src/app/api/console/dish-drafts/[draftId]/route.ts",
+  "requireConsoleMutationProtection(request)",
+  "Console dish-draft mutation origin contract failed",
+);
+assertContains(
+  "src/app/api/console/dish-drafts/[draftId]/route.ts",
+  'requireConsoleRole(auth, "ops")',
+  "Console dish-draft ops-role contract failed",
+);
+assertContains(
+  "src/app/api/console/dish-drafts/[draftId]/route.ts",
+  "await requireRateLimit(request",
+  "Console dish-draft rate-limit contract failed",
+);
 assertContains("src/app/api/waitlist/route.ts", "await requireRateLimit(request", "Waitlist rate-limit contract failed");
 assertContains("src/app/api/waitlist/route.ts", "requireJsonRequest(request)", "Waitlist JSON content-type contract failed");
 assertContains("src/app/api/waitlist/route.ts", "Enter your business name.", "Waitlist merchant business-name validation contract failed");
