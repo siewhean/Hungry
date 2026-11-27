@@ -525,7 +525,7 @@ echo "T29_board=$(lb_val "select score from leaderboard_week_results where board
 lg_reset
 lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 20, (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" >/dev/null
 lb_race T30 "select app_private.close_leaderboard_week($LG_WEEK);" "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 7, (($LG_WEEK)::timestamp + interval '2 days') at time zone 'Asia/Singapore');" >>"$LB_OUT"
-echo "T30_late=$(lb_val "select score from league_week_results where user_id = '$U1'")_$(lb_val "select count(*) from leaderboard_events where user_id = '$U1' and created_at < (($LG_WEEK) + 7)::timestamp at time zone 'Asia/Singapore'")_$(lb_val "select count(*) from league_memberships where user_id = '$U1' and week_start = date_trunc('week', now() at time zone 'Asia/Singapore')::date")" >>"$LB_OUT"
+echo "T30_late=$(lb_val "select score from league_week_results where user_id = '$U1'")_$(lb_val "select count(*) from leaderboard_events where user_id = '$U1' and created_at < (($LG_WEEK) + 7)::timestamp at time zone 'Asia/Singapore'")_$(lb_val "select count(*) from league_memberships where user_id = '$U1' and week_start = date_trunc('week', now() at time zone 'Asia/Singapore')::date")_$(lb_val "select count(*) from leaderboard_events where user_id = '$U1' and points = 7 and date_trunc('week', created_at at time zone 'Asia/Singapore') = date_trunc('week', now() at time zone 'Asia/Singapore')")" >>"$LB_OUT"
 
 lg_reset
 lb_val "insert into leaderboard_events(user_id, kind, points, created_at) values ('$U1', 'task', 20, (($LG_WEEK)::timestamp + interval '1 day') at time zone 'Asia/Singapore');" >/dev/null
@@ -579,7 +579,7 @@ T29_errors=0
 T29_counted=20.00_promoted
 T29_board=20.00_20.00
 T30_errors=0
-T30_late=20.00_1_1
+T30_late=20.00_1_1_1
 T31_errors=0
 T31_closed=1_2
 T32_errors=0

@@ -253,11 +253,12 @@ values ('00000000-0000-1127-f300-000000000001', 'task', 3, timestamp '2020-01-15
 
 do $$
 begin
-  if exists (
-    select 1 from leaderboard_events
+  if (
+    select count(*) from leaderboard_events
     where user_id = '00000000-0000-1127-f300-000000000001' and points = 3
-      and created_at < now() - interval '1 day'
-  ) then
+      and date_trunc('week', created_at at time zone 'Asia/Singapore')
+        = date_trunc('week', now() at time zone 'Asia/Singapore')
+  ) <> 1 then
     raise exception 'points dated in a closed week move to the current week';
   end if;
 end $$;
