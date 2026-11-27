@@ -501,6 +501,9 @@ begin
   if extract(isodow from v_start) <> 1 then
     raise exception 'week_start must be a Monday' using errcode = '22023';
   end if;
+  -- Wait for the week's in-flight points before any board reads them (same lock and order as
+  -- close_league_week: the week lock first).
+  perform pg_advisory_xact_lock(hashtextextended('league:week:' || v_start::text, 0));
   perform pg_advisory_xact_lock(hashtextextended('leaderboard:refresh', 0));
 
   insert into leaderboard_week_results (week_start, board, user_id, rank, score)
