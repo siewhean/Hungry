@@ -90,7 +90,11 @@ test("H29: Tried is saved on the server, rolls back on failure and is not a revi
   );
   assert.match(sql, /security invoker/);
   assert.match(sql, /array_remove\(up\.reviewed_dish_ids, v_dish_id\)/);
-  assert.match(sql, /coalesce\(p_tried, true\) or v_has_review/);
+  // 20261127150000 (untick part): a reviewed dish can be un-ticked too; the review is untouched.
+  const untick = migration("20261127150000_weekly_leagues.sql");
+  assert.match(untick, /when coalesce\(p_tried, true\) then/);
+  assert.doesNotMatch(untick, /v_has_review|delete from reviews/);
+  assert.match(untick, /array_remove\(up\.reviewed_dish_ids, v_dish_id\)/);
   assert.match(
     sql,
     /grant execute on function public\.set_dish_tried\(text, boolean\) to authenticated/,
