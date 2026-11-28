@@ -1,0 +1,14 @@
+{
+  "version": "20261127140000",
+  "name": "20261127140000_search_dishes_text_arms",
+  "result": "pass",
+  "rehearsed_at": "2026-11-28T03:04:29Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "a07c961fc9568a8844593f93cd8a13af166c1ea2",
+  "up_sha256": "ff5a3689a6777e301316abdfc55fa54fe14a4587c1ccb60e8d2558a74f9008c1",
+  "down_sha256": "36cda7804f5d555686d906362426fa8002b66905d454a4ec7dcd143b2406015a",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/search_dishes_text_arms.sql"]
+}
