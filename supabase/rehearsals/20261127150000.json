@@ -1,0 +1,14 @@
+{
+  "version": "20261127150000",
+  "name": "20261127150000_weekly_leagues",
+  "result": "pass",
+  "rehearsed_at": "2026-11-28T02:17:19Z",
+  "staging_ref": "uuylnktiipkmcweyqnpd",
+  "prod_schema_matched": true,
+  "git_sha": "72974a2ec20b0b13e2d981120f9c5daf9e95e13c",
+  "up_sha256": "7fe024dbc657de11227d0b3d6f2b9145ad845a7997f7eeb3df9a801a5b116531",
+  "down_sha256": "c5307aee795f990d113bde6cf819aafda9f27e4bfe150af0d03c758018cb294a",
+  "steps": { "backup": true, "up": true, "down": true, "schema_roundtrip": true, "data_roundtrip": true, "reapply": true },
+  "rows_lost": [],
+  "smokes": ["supabase/smoke/set_dish_tried.sql","supabase/smoke/weekly_leagues.sql"]
+}
